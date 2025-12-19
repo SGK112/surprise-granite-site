@@ -5,6 +5,52 @@ services:
     buildCommand: echo "Static site ready"
     staticPublishPath: .
     routes:
+      # Special offers page
+      - type: rewrite
+        source: /special-offers
+        destination: /pages/special-offers.html
+      # All pages with underscores convert to slashes
+      - type: rewrite
+        source: /company/*
+        destination: /pages/company_:splat.html
+      - type: rewrite
+        source: /services/*
+        destination: /pages/services_:splat.html
+      - type: rewrite
+        source: /materials/*
+        destination: /pages/materials_:splat.html
+      - type: rewrite
+        source: /blog/*
+        destination: /pages/blog_:splat.html
+      - type: rewrite
+        source: /tools/*
+        destination: /pages/tools_:splat.html
+      - type: rewrite
+        source: /legal/*
+        destination: /pages/legal_:splat.html
+      - type: rewrite
+        source: /financing/*
+        destination: /pages/financing_:splat.html
+      - type: rewrite
+        source: /coverage-plans/*
+        destination: /pages/coverage-plans_:splat.html
+      # Individual pages
+      - type: rewrite
+        source: /contact-us
+        destination: /pages/contact-us.html
+      - type: rewrite
+        source: /get-a-free-estimate
+        destination: /pages/get-a-free-estimate.html
+      - type: rewrite
+        source: /blog
+        destination: /pages/blog.html
+      - type: rewrite
+        source: /search
+        destination: /pages/search.html
+      - type: rewrite
+        source: /ai-visualizer
+        destination: /pages/ai-visualizer.html
+      # Fallback to index
       - type: rewrite
         source: /*
         destination: /index.html
