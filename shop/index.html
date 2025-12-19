@@ -2094,3 +2094,22 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script></body></html>
+<script>
+// Redirect product page links to Shopify store
+document.addEventListener('DOMContentLoaded', function() {
+  // Intercept clicks on product links
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link && link.href) {
+      const url = new URL(link.href);
+      // Check if it's a product page link
+      if (url.pathname.startsWith('/products/') || url.pathname.match(/^\/product\//)) {
+        e.preventDefault();
+        // Redirect to Shopify store
+        const productSlug = url.pathname.replace(/^\/(products?\/)?/, '');
+        window.location.href = 'https://surprise-granite.myshopify.com/products/' + productSlug;
+      }
+    }
+  });
+});
+</script>
