@@ -4,3 +4,44 @@ services:
     runtime: static
     buildCommand: echo "Static site ready"
     staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /special-offers
+        destination: /pages/special-offers.html
+      - type: rewrite
+        source: /get-a-free-estimate
+        destination: /pages/get-a-free-estimate.html
+      - type: rewrite
+        source: /contact-us
+        destination: /pages/contact-us.html
+      - type: rewrite
+        source: /blog
+        destination: /pages/blog.html
+      - type: rewrite
+        source: /search
+        destination: /pages/search.html
+      - type: rewrite
+        source: /ai-visualizer
+        destination: /pages/ai-visualizer.html
+      - type: rewrite
+        source: /company/about-us
+        destination: /pages/company_about-us.html
+      - type: rewrite
+        source: /company/reviews
+        destination: /pages/company_reviews.html
+      - type: rewrite
+        source: /company/faq-center
+        destination: /pages/company_faq-center.html
+      - type: rewrite
+        source: /materials/all-countertops
+        destination: /pages/materials_all-countertops.html
+      - type: rewrite
+        source: /services/home/kitchen-remodeling-arizona
+        destination: /pages/services_home_kitchen-remodeling-arizona.html
+      - type: rewrite
+        source: /services/home/bathroom-remodeling-arizona
+        destination: /pages/services_home_bathroom-remodeling-arizona.html
