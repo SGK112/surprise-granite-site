@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <title>Free Kitchen & Bathroom Remodeling Estimate | Surprise Granite Marble &amp; Quartz</title>
-  <meta name="description" content="Get a free estimate for countertops, kitchen and bathroom remodeling. Same-day estimates available in the Phoenix metro area."/>
+  <link rel="canonical" href="https://surprisegranite.com/get-a-free-estimate/"/>
+  <meta name="description" content="Schedule your free in-home countertop estimate. Our Arizona specialists measure your space and provide detailed, no-obligation quotes."/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -390,6 +391,37 @@
         source: 'website-estimate-form',
         timestamp: new Date().toISOString()
       };
+
+      // Validate required fields
+      const errors = [];
+
+      if (!formData.firstName) {
+        errors.push('First name is required');
+      }
+      if (!formData.lastName) {
+        errors.push('Last name is required');
+      }
+      if (!formData.email) {
+        errors.push('Email address is required');
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        errors.push('Please enter a valid email address');
+      }
+      if (!formData.phone) {
+        errors.push('Phone number is required');
+      } else if (formData.phone.replace(/\D/g, '').length < 10) {
+        errors.push('Please enter a valid 10-digit phone number');
+      }
+      if (!formData.projectType) {
+        errors.push('Please select a project type');
+      }
+
+      if (errors.length > 0) {
+        errorMessage.innerHTML = errors.join('<br>');
+        errorMessage.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Get My Free Estimate';
+        return;
+      }
 
       try {
         // Try to send to CRM webhook
