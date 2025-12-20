@@ -27,381 +27,67 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-      line-height: 1.6;
-    }
-
-    .header {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 15px 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 15px 0; position: sticky; top: 0; z-index: 100; }
+    .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
     .logo { height: 36px; filter: brightness(0) invert(1); }
-
-    .header-nav {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-
-    .header-nav a {
-      color: #94a3b8;
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: color 0.2s;
-    }
-
+    .header-nav { display: flex; gap: 20px; align-items: center; }
+    .header-nav a { color: #94a3b8; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
     .header-nav a:hover { color: white; }
-
-    .btn-estimate {
-      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
-      color: #1a1a2e;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
-      color: white;
-      padding: 60px 20px;
-    }
-
-    .hero-content {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .breadcrumb {
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-bottom: 20px;
-    }
-
+    .btn-estimate { background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%); color: #1a1a2e; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%); color: white; padding: 60px 20px; }
+    .hero-content { max-width: 1200px; margin: 0 auto; }
+    .breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; }
     .breadcrumb a { color: #94a3b8; text-decoration: none; }
     .breadcrumb a:hover { color: #ffc107; }
-
-    .vendor-header {
-      display: flex;
-      gap: 40px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
+    .vendor-header { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
     .vendor-info { flex: 1; min-width: 300px; }
-
-    .vendor-info h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 15px;
-      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .vendor-description {
-      font-size: 1.1rem;
-      color: #94a3b8;
-      margin-bottom: 20px;
-      max-width: 600px;
-    }
-
+    .vendor-info h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 15px; background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .vendor-description { font-size: 1.1rem; color: #94a3b8; margin-bottom: 20px; max-width: 600px; }
     .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-
-    .tag {
-      background: rgba(255, 193, 7, 0.15);
-      color: #ffc107;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .vendor-stats {
-      display: flex;
-      gap: 30px;
-      margin-top: 25px;
-    }
-
+    .tag { background: rgba(255, 193, 7, 0.15); color: #ffc107; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+    .vendor-stats { display: flex; gap: 30px; margin-top: 25px; }
     .stat { text-align: center; }
     .stat-value { font-size: 2rem; font-weight: 800; color: #ffc107; }
     .stat-label { font-size: 0.85rem; color: #64748b; }
-
-    .vendor-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      min-width: 280px;
-    }
-
-    .slab-locator-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      color: white;
-      padding: 16px 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1rem;
-      transition: all 0.3s;
-    }
-
-    .slab-locator-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
-    }
-
+    .vendor-actions { display: flex; flex-direction: column; gap: 15px; min-width: 280px; }
+    .slab-locator-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 16px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1rem; transition: all 0.3s; }
+    .slab-locator-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3); }
     .slab-locator-btn svg { width: 20px; height: 20px; }
-
-    .secondary-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      padding: 14px 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      border: 1px solid rgba(255,255,255,0.2);
-      transition: all 0.2s;
-    }
-
-    .secondary-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
-
-    .premium-badge {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
-      color: #1a1a2e;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-
-    .main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 50px 20px;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    .section-header h2 {
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-
-    .materials-filter {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .material-chip {
-      background: #e2e8f0;
-      color: #475569;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .material-chip:hover, .material-chip.active {
-      background: #1a1a2e;
-      color: white;
-    }
-
-    .products-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 25px;
-    }
-
-    .product-card {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      text-decoration: none;
-      color: inherit;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      border: 1px solid #e2e8f0;
-      transition: all 0.3s;
-    }
-
-    .product-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      border-color: #ffc107;
-    }
-
-    .product-images {
-      position: relative;
-      aspect-ratio: 4/3;
-      overflow: hidden;
-    }
-
-    .product-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
-      top: 0;
-      left: 0;
-      transition: opacity 0.3s;
-    }
-
+    .secondary-btn { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.1); color: white; padding: 14px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; }
+    .secondary-btn:hover { background: rgba(255,255,255,0.2); }
+    .premium-badge { position: absolute; top: 15px; right: 15px; background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%); color: #1a1a2e; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+    .main { max-width: 1200px; margin: 0 auto; padding: 50px 20px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+    .section-header h2 { font-size: 1.8rem; font-weight: 700; }
+    .materials-filter { display: flex; gap: 10px; flex-wrap: wrap; }
+    .material-chip { background: #e2e8f0; color: #475569; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .material-chip:hover, .material-chip.active { background: #1a1a2e; color: white; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; }
+    .product-card { background: white; border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; transition: all 0.3s; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-color: #ffc107; }
+    .product-images { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+    .product-img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; transition: opacity 0.3s; }
     .product-img.hover { opacity: 0; }
     .product-card:hover .product-img.primary { opacity: 0; }
     .product-card:hover .product-img.hover { opacity: 1; }
-
-    .product-info {
-      padding: 20px;
-    }
-
-    .product-info h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .material-tag {
-      background: #f1f5f9;
-      color: #64748b;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-    }
-
-    .view-all-btn {
-      display: block;
-      text-align: center;
-      padding: 16px;
-      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
-      color: #1a1a2e;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 700;
-      margin-top: 30px;
-      transition: all 0.3s;
-    }
-
-    .view-all-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(255, 193, 7, 0.3);
-    }
-
-    .info-section {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      margin-top: 50px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-
-    .info-section h2 {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 30px;
-    }
-
-    .info-item h3 {
-      font-size: 1rem;
-      color: #64748b;
-      margin-bottom: 8px;
-    }
-
-    .info-item p {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    .cta-section {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 60px 40px;
-      border-radius: 24px;
-      text-align: center;
-      margin-top: 50px;
-    }
-
-    .cta-section h2 {
-      font-size: 2rem;
-      margin-bottom: 15px;
-    }
-
-    .cta-section p {
-      color: #94a3b8;
-      margin-bottom: 25px;
-    }
-
-    .cta-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
-      color: #1a1a2e;
-      padding: 14px 28px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .footer {
-      background: #0f172a;
-      color: #64748b;
-      padding: 40px 20px;
-      text-align: center;
-      margin-top: 60px;
-    }
-
+    .product-info { padding: 20px; }
+    .product-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .material-tag { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
+    .view-all-btn { display: block; text-align: center; padding: 16px; background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%); color: #1a1a2e; text-decoration: none; border-radius: 12px; font-weight: 700; margin-top: 30px; transition: all 0.3s; }
+    .view-all-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 193, 7, 0.3); }
+    .info-section { background: white; border-radius: 20px; padding: 40px; margin-top: 50px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .info-section h2 { font-size: 1.5rem; margin-bottom: 20px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+    .info-item h3 { font-size: 1rem; color: #64748b; margin-bottom: 8px; }
+    .info-item p { font-size: 1.1rem; font-weight: 600; }
+    .cta-section { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 60px 40px; border-radius: 24px; text-align: center; margin-top: 50px; }
+    .cta-section h2 { font-size: 2rem; margin-bottom: 15px; }
+    .cta-section p { color: #94a3b8; margin-bottom: 25px; }
+    .cta-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+    .btn-primary { background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%); color: #1a1a2e; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; }
+    .footer { background: #0f172a; color: #64748b; padding: 40px 20px; text-align: center; margin-top: 60px; }
     .footer a { color: #ffc107; text-decoration: none; }
-
     @media (max-width: 768px) {
       .vendor-header { flex-direction: column; gap: 30px; }
       .vendor-info h1 { font-size: 2rem; }
@@ -452,24 +138,14 @@
 
         <div class="vendor-actions">
           <div class="premium-badge">Premium Partner</div>
-          <a href="https://www.cambriausa.com/quartz-countertops/" target="_blank" rel="noopener" class="slab-locator-btn">
+          <a href="https://www.cambriausa.com/quartz-countertops/slab-selector" target="_blank" rel="noopener" class="slab-locator-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             Find Available Slabs
           </a>
-          <a href="/get-a-free-estimate" class="secondary-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            Get Free Quote
-          </a>
-          <a href="tel:+16028333189" class="secondary-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            (602) 833-3189
-          </a>
+          <a href="/get-a-free-estimate" class="secondary-btn">Get Free Quote</a>
+          <a href="tel:+16028333189" class="secondary-btn">(602) 833-3189</a>
         </div>
       </div>
     </div>
@@ -479,16 +155,27 @@
     <div class="section-header">
       <h2>Cambria Countertop Colors</h2>
       <div class="materials-filter">
-        <span class="material-chip">Quartz</span>
+        <span class="material-chip">Dekton</span><span class="material-chip">Granite</span><span class="material-chip">Quartz</span>
       </div>
     </div>
 
     <div class="products-grid">
-      
+
+      <a href="/countertops/smithfield/" class="product-card">
+        <div class="product-images">
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2cf48fbb638_cambria-surprise-granite-smithfield-close-up.avif" alt="Smithfield countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2cf48fbb638_cambria-surprise-granite-smithfield-close-up.avif" alt="Smithfield" class="product-img hover" loading="lazy"/>
+        </div>
+        <div class="product-info">
+          <h3>Smithfield</h3>
+          <span class="material-tag">Quartz</span>
+        </div>
+      </a>
+
       <a href="/countertops/annicca-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Annicca countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Annicca close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb267e6fbb83b_cambria-surprise-granite-annicca-close-up.avif" alt="Annicca countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb267e6fbb83b_cambria-surprise-granite-annicca-close-up.avif" alt="Annicca" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Annicca</h3>
@@ -496,21 +183,10 @@
         </div>
       </a>
 
-      <a href="/countertops/burnbury-quartz/" class="product-card">
-        <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Burnbury countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Burnbury close-up" class="product-img hover" loading="lazy"/>
-        </div>
-        <div class="product-info">
-          <h3>Burnbury</h3>
-          <span class="material-tag">Quartz</span>
-        </div>
-      </a>
-
       <a href="/countertops/inverness-cobalt-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Inverness Cobalt countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Inverness Cobalt close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb261a8fbbff2_cambria-surprise-granite-inverness-cobalt-quartz-close-up.avif" alt="Inverness Cobalt countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb261a8fbbff2_cambria-surprise-granite-inverness-cobalt-quartz-close-up.avif" alt="Inverness Cobalt" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Inverness Cobalt</h3>
@@ -520,8 +196,8 @@
 
       <a href="/countertops/snowdon-white-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Snowdon White countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Snowdon White close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb202d4fbb7f6_cambria-surprise-granite-snowdon-white-close-up.avif" alt="Snowdon White countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb202d4fbb7f6_cambria-surprise-granite-snowdon-white-close-up.avif" alt="Snowdon White" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Snowdon White</h3>
@@ -529,21 +205,21 @@
         </div>
       </a>
 
-      <a href="/countertops/smithfield/" class="product-card">
+      <a href="/countertops/burnbury-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Smithfield countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Smithfield close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb278abfbc137_cambria-surprise-granite-burnbury-quartz-close-up.avif" alt="Burnbury countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb278abfbc137_cambria-surprise-granite-burnbury-quartz-close-up.avif" alt="Burnbury" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
-          <h3>Smithfield</h3>
+          <h3>Burnbury</h3>
           <span class="material-tag">Quartz</span>
         </div>
       </a>
 
       <a href="/countertops/clare-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Clare countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Clare close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2cc72fbbb97_cambria-surprise-granite-clare-close-up.avif" alt="Clare countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2cc72fbbb97_cambria-surprise-granite-clare-close-up.avif" alt="Clare" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Clare</h3>
@@ -551,21 +227,10 @@
         </div>
       </a>
 
-      <a href="/countertops/brittanicca-quartz/" class="product-card">
-        <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Brittanicca countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Brittanicca close-up" class="product-img hover" loading="lazy"/>
-        </div>
-        <div class="product-info">
-          <h3>Brittanicca</h3>
-          <span class="material-tag">Granite</span>
-        </div>
-      </a>
-
       <a href="/countertops/halstead-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Halstead countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Halstead close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb25ce2fbc0a4_cambria-surprise-granite-halstead-quartz-close-up.avif" alt="Halstead countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb25ce2fbc0a4_cambria-surprise-granite-halstead-quartz-close-up.avif" alt="Halstead" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Halstead</h3>
@@ -573,10 +238,21 @@
         </div>
       </a>
 
+      <a href="/countertops/brittanicca-quartz/" class="product-card">
+        <div class="product-images">
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb210ebfbb79d_cambria-surprise-granite-brittanicca-close-up.avif" alt="Brittanicca countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb210ebfbb79d_cambria-surprise-granite-brittanicca-close-up.avif" alt="Brittanicca" class="product-img hover" loading="lazy"/>
+        </div>
+        <div class="product-info">
+          <h3>Brittanicca</h3>
+          <span class="material-tag">Granite</span>
+        </div>
+      </a>
+
       <a href="/countertops/ainsley-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Ainsley countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Ainsley close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22442fbbb46_cambria-surprise-granite-ainsley-close-up.avif" alt="Ainsley countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22442fbbb46_cambria-surprise-granite-ainsley-close-up.avif" alt="Ainsley" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Ainsley</h3>
@@ -586,8 +262,8 @@
 
       <a href="/countertops/collybrooke-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Collybrooke countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Collybrooke close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27a9cfbc0eb_cambria-surprise-granite-collybrooke-quartz-close-up.avif" alt="Collybrooke countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27a9cfbc0eb_cambria-surprise-granite-collybrooke-quartz-close-up.avif" alt="Collybrooke" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Collybrooke</h3>
@@ -597,8 +273,8 @@
 
       <a href="/countertops/black-rock-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Black Rock countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Black Rock close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20af9fbc20f_cambria-surprise-granite-black-rock-quartz-close-up.avif" alt="Black Rock countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20af9fbc20f_cambria-surprise-granite-black-rock-quartz-close-up.avif" alt="Black Rock" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Black Rock</h3>
@@ -608,8 +284,8 @@
 
       <a href="/countertops/durham-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Durham countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Durham close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb24c03fbc195_cambria-surprise-granite-durham-quartz-close-up.avif" alt="Durham countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb24c03fbc195_cambria-surprise-granite-durham-quartz-close-up.avif" alt="Durham" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Durham</h3>
@@ -619,8 +295,8 @@
 
       <a href="/countertops/clyde-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Clyde countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Clyde close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2adbbfbc02f_cambria-surprise-granite-clyde-quartz-close-up.avif" alt="Clyde countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2adbbfbc02f_cambria-surprise-granite-clyde-quartz-close-up.avif" alt="Clyde" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Clyde</h3>
@@ -630,8 +306,8 @@
 
       <a href="/countertops/parys-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Parys countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Parys close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2e8f7fbc0cc_cambria-surprise-granite-parys-quartz-close-up.avif" alt="Parys countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2e8f7fbc0cc_cambria-surprise-granite-parys-quartz-close-up.avif" alt="Parys" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Parys</h3>
@@ -639,21 +315,10 @@
         </div>
       </a>
 
-      <a href="/countertops/tenby-cream-quartz/" class="product-card">
-        <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Tenby Cream countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Tenby Cream close-up" class="product-img hover" loading="lazy"/>
-        </div>
-        <div class="product-info">
-          <h3>Tenby Cream</h3>
-          <span class="material-tag">Quartz</span>
-        </div>
-      </a>
-
       <a href="/countertops/pikes-peak-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Pikes Peak countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Pikes Peak close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20915fbbb6f_cambria-surprise-granite-pikes-peak-close-up.avif" alt="Pikes Peak countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20915fbbb6f_cambria-surprise-granite-pikes-peak-close-up.avif" alt="Pikes Peak" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Pikes Peak</h3>
@@ -661,21 +326,21 @@
         </div>
       </a>
 
-      <a href="/countertops/oakleigh-quartz/" class="product-card">
+      <a href="/countertops/tenby-cream-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Oakleigh countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Oakleigh close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27110fbbbb6_cambria-surprise-granite-tenby-cream-close-up.avif" alt="Tenby Cream countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27110fbbbb6_cambria-surprise-granite-tenby-cream-close-up.avif" alt="Tenby Cream" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
-          <h3>Oakleigh</h3>
+          <h3>Tenby Cream</h3>
           <span class="material-tag">Quartz</span>
         </div>
       </a>
 
       <a href="/countertops/hamilton-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Hamilton countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Hamilton close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2c71afbc1d1_cambria-surprise-granite-hamilton-quartz-close-up.avif" alt="Hamilton countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2c71afbc1d1_cambria-surprise-granite-hamilton-quartz-close-up.avif" alt="Hamilton" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Hamilton</h3>
@@ -683,10 +348,21 @@
         </div>
       </a>
 
+      <a href="/countertops/oakleigh-quartz/" class="product-card">
+        <div class="product-images">
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb25831fbb345_Cambria_Surprise_Granite_Oakleigh_Slab.avif" alt="Oakleigh countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb25831fbb345_Cambria_Surprise_Granite_Oakleigh_Slab.avif" alt="Oakleigh" class="product-img hover" loading="lazy"/>
+        </div>
+        <div class="product-info">
+          <h3>Oakleigh</h3>
+          <span class="material-tag">Quartz</span>
+        </div>
+      </a>
+
       <a href="/countertops/archdale-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Archdale countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Archdale close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb21c2bfbb6fe_cambria-surprise-granite-archdale-close-up.avif" alt="Archdale countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb21c2bfbb6fe_cambria-surprise-granite-archdale-close-up.avif" alt="Archdale" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Archdale</h3>
@@ -696,8 +372,8 @@
 
       <a href="/countertops/kelvingrove-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Kelvingrove countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Kelvingrove close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb23d32fbb895_cambria-surprise-granite-kelvingrove-close-up.avif" alt="Kelvingrove countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb23d32fbb895_cambria-surprise-granite-kelvingrove-close-up.avif" alt="Kelvingrove" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Kelvingrove</h3>
@@ -707,8 +383,8 @@
 
       <a href="/countertops/nottingham-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Nottingham countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Nottingham close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2723afbc12f_cambria-surprise-granite-nottingham-quartz-close-up.avif" alt="Nottingham countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2723afbc12f_cambria-surprise-granite-nottingham-quartz-close-up.avif" alt="Nottingham" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Nottingham</h3>
@@ -718,8 +394,8 @@
 
       <a href="/countertops/dunmore-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Dunmore countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Dunmore close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2fe07fbc036_cambria-surprise-granite-dunmore-close-up.avif" alt="Dunmore countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2fe07fbc036_cambria-surprise-granite-dunmore-close-up.avif" alt="Dunmore" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Dunmore</h3>
@@ -729,8 +405,8 @@
 
       <a href="/countertops/highgate-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="Highgate countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="Highgate close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb243b6fbb6a7_cambria-surprise-granite-highate-close-up.avif" alt="Highgate countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb243b6fbb6a7_cambria-surprise-granite-highate-close-up.avif" alt="Highgate" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>Highgate</h3>
@@ -740,14 +416,15 @@
 
       <a href="/countertops/st-giles-quartz/" class="product-card">
         <div class="product-images">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/660aa72203fa7810f453685c_bianco-levanto-thumbnai.avif" alt="St Giles countertop" class="product-img primary" loading="lazy"/>
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66141c74516f26d7ac1dc2fc_IMG_2585.avif" alt="St Giles close-up" class="product-img hover" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22395fbb8e4_cambria-surprise-granite-St.Giles-close-up.avif" alt="St Giles countertop" class="product-img primary" loading="lazy"/>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22395fbb8e4_cambria-surprise-granite-St.Giles-close-up.avif" alt="St Giles" class="product-img hover" loading="lazy"/>
         </div>
         <div class="product-info">
           <h3>St Giles</h3>
           <span class="material-tag">Quartz</span>
         </div>
       </a>
+
     </div>
 
     <a href="/materials/all-countertops?brand=Cambria" class="view-all-btn">View All 188 Colors</a>
@@ -757,7 +434,7 @@
       <div class="info-grid">
         <div class="info-item">
           <h3>Materials</h3>
-          <p>Quartz</p>
+          <p>Dekton, Granite, Quartz</p>
         </div>
         <div class="info-item">
           <h3>Warranty</h3>
@@ -765,7 +442,7 @@
         </div>
         <div class="info-item">
           <h3>Slab Inventory</h3>
-          <p><a href="https://www.cambriausa.com/quartz-countertops/" target="_blank" style="color: #ffc107;">Check Real-Time Availability</a></p>
+          <p><a href="https://www.cambriausa.com/quartz-countertops/slab-selector" target="_blank" style="color: #ffc107;">Check Real-Time Availability</a></p>
         </div>
       </div>
     </div>
