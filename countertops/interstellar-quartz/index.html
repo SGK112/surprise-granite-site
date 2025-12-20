@@ -57,8 +57,9 @@
     "category": "Quartz Countertop",
     "offers": {
       "@type": "Offer",
-      "availability": "https://schema.org/InStock",
+      "price": "12.99",
       "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
       "seller": {
         "@type": "Organization",
         "name": "Surprise Granite"
@@ -150,6 +151,7 @@
       .product-grid {
         grid-template-columns: 1fr;
       }
+      .header-nav { display: none; }
     }
 
     .product-image {
@@ -186,7 +188,7 @@
     .material-type {
       color: #64748b;
       font-size: 1rem;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .description {
@@ -231,6 +233,69 @@
       text-decoration: none;
     }
     
+    .product-pricing {
+      margin: 15px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .price {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+    .price-compare {
+      font-size: 1.2rem;
+      color: #94a3b8;
+      text-decoration: line-through;
+    }
+    .price-note {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+    .variant-select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      background: white;
+    }
+    .add-to-cart-btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
+      color: #1a1a2e;
+      text-align: center;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .add-to-cart-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    }
+    .stock-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .stock-badge.in-stock { background: #dcfce7; color: #166534; }
+    .stock-badge.low-stock { background: #fef3c7; color: #92400e; }
+    .stock-badge.out-of-stock { background: #fee2e2; color: #991b1b; }
+    .eol-badge { display: inline-block; background: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+    .eol-notice { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; margin: 15px 0; }
+    .eol-notice strong { color: #dc2626; }
+    .eol-notice p { color: #7f1d1d; margin: 5px 0 0; }
   </style>
 </head>
 <body>
@@ -261,10 +326,20 @@
       </div>
       <div class="product-info">
         <h1 class="product-title">Interstellar</h1>
-        <a href="/company/vendors-list" class="brand-badge">Radianz Quartz</a> 
+        <a href="/company/vendors-list" class="brand-badge">Radianz Quartz</a>  <span class="stock-badge out-of-stock">Out of Stock</span>
         <div class="material-type">Quartz Countertop</div>
+        
+        <div class="product-pricing">
+          <span class="price">$12.99</span>
+          <span class="price-note">Sample</span>
+        </div>
         <p class="description">Interstellar is a quartz countertop slab with a white background and gray accent color.</p>
 
+        
+        
+        <button class="add-to-cart-btn" onclick="addToCart(40678988710023)">
+          Add Sample to Cart
+        </button>
         <a href="/get-a-free-estimate" class="cta-btn">Get a Free Estimate</a>
         <a href="/contact-us" class="cta-btn secondary">Contact Us</a>
       </div>
@@ -274,6 +349,28 @@
   <footer class="footer">
     <p>&copy; 2025 Surprise Granite. <a href="/">Home</a> | <a href="/materials/all-countertops">Countertops</a> | <a href="/contact-us">Contact</a></p>
   </footer>
+
+  <!-- Shopify Buy Button SDK -->
+  <script src="https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js"></script>
+  <script src="/js/shopify-cart.js"></script>
+  
+  <script>
+    function addToCart(variantId) {
+      if (window.SurpriseCart) {
+        window.SurpriseCart.addToCart(variantId);
+      } else {
+        // Fallback: redirect to Shopify
+        window.location.href = 'https://store.surprisegranite.com/cart/' + variantId + ':1';
+      }
+    }
+    function updateVariant(select) {
+      const option = select.options[select.selectedIndex];
+      const price = option.dataset.price;
+      const variantId = option.value;
+      document.querySelector('.price').textContent = '$' + parseFloat(price).toFixed(2);
+      document.querySelector('.add-to-cart-btn').onclick = function() { addToCart(variantId); };
+    }
+  </script>
 
   <elevenlabs-convai agent-id="agent_7301k246v5fyebkbsqvzw3d7nkqw"></elevenlabs-convai>
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
