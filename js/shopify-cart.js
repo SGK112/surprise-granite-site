@@ -21,7 +21,6 @@
   // Initialize when SDK is loaded
   function init() {
     if (typeof ShopifyBuy === 'undefined') {
-      console.warn('Shopify Buy SDK not loaded');
       return;
     }
 
@@ -45,7 +44,6 @@
       getItemCount: getItemCount
     };
 
-    console.log('Surprise Granite cart initialized');
   }
 
   // Load existing checkout or create new
@@ -60,7 +58,7 @@
           return;
         }
       } catch (e) {
-        console.log('Creating new checkout');
+        // Create new checkout on error
       }
     }
 
@@ -94,7 +92,6 @@
 
       return true;
     } catch (error) {
-      console.error('Add to cart error:', error);
       showNotification('Could not add to cart', 'error');
       return false;
     }
@@ -116,7 +113,7 @@
       updateCartCount();
       updateCartItems();
     } catch (error) {
-      console.error('Update quantity error:', error);
+      // Silently handle update errors
     }
   }
 
@@ -127,7 +124,7 @@
       updateCartCount();
       updateCartItems();
     } catch (error) {
-      console.error('Remove item error:', error);
+      // Silently handle remove errors
     }
   }
 

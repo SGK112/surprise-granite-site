@@ -2,30 +2,27 @@
 # https://render.com/docs/static-sites#headers
 
 /*
-  # Security Headers
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
-
-  # Cache static assets
-  Cache-Control: public, max-age=31536000, immutable
+  Content-Security-Policy: frame-ancestors 'self'
 
 /*.html
-  # Don't cache HTML for fresh content
   Cache-Control: public, max-age=0, must-revalidate
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
 
 /sitemap.xml
   Cache-Control: public, max-age=86400
 
 /robots.txt
   Cache-Control: public, max-age=86400
-
-# Images - long cache
-/images/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# Allow embedding for specific resources
-/tools/*
-  X-Frame-Options: SAMEORIGIN
