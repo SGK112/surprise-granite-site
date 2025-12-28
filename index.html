@@ -4481,131 +4481,10 @@ form.addEventListener('submit', async (e) => {
     background: #9ca3af;
   }
 
-  /* Mobile Responsive - Tablet */
+  /* Mobile Responsive - handled by mobile-optimizations.css */
   @media (max-width: 768px) {
-    /* Hide floating button - bottom bar used instead */
     #sg-chat-button {
       display: none !important;
-    }
-
-    #sg-chat-widget {
-      bottom: 0;
-      right: 0;
-      left: 0;
-      width: 100%;
-    }
-
-    /* Chat window - anchored to bottom, full height */
-    #sg-chat-window {
-      position: fixed;
-      width: 100%;
-      max-width: 100%;
-      height: calc(100vh - 70px);
-      max-height: calc(100vh - 70px);
-      bottom: 0;
-      right: 0;
-      left: 0;
-      border-radius: 20px 20px 0 0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
-      transition: height 0.2s ease;
-    }
-
-    /* When keyboard opens, reduce height but stay at bottom */
-    .keyboard-open #sg-chat-window {
-      height: 50vh;
-      max-height: 50vh;
-    }
-
-    .sg-chat-header {
-      padding: 12px 16px;
-      border-radius: 20px 20px 0 0;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    }
-
-    .sg-chat-close {
-      min-width: 36px;
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.1);
-      border-radius: 50%;
-    }
-
-    .sg-chat-input {
-      font-size: 16px;
-      min-height: 44px;
-      padding: 12px 16px;
-    }
-
-    .sg-send-btn {
-      min-width: 44px;
-      min-height: 44px;
-    }
-
-    .sg-message-content {
-      max-width: 85%;
-    }
-  }
-
-  /* Mobile Responsive - Phone */
-  @media (max-width: 480px) {
-    #sg-chat-window {
-      height: calc(100vh - 70px);
-      max-height: calc(100vh - 70px);
-      bottom: 0;
-    }
-
-    .sg-chat-header {
-      padding: 10px 14px;
-    }
-
-    .sg-chat-avatar {
-      width: 36px;
-      height: 36px;
-    }
-
-    .sg-chat-header-text h3 {
-      font-size: 15px;
-    }
-
-    .sg-chat-header-text p {
-      font-size: 12px;
-    }
-
-    .sg-chat-input-wrapper {
-      padding: 12px 14px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-    }
-
-    .sg-chat-input {
-      font-size: 16px;
-      min-height: 44px;
-      padding: 12px 16px;
-    }
-
-    .sg-send-btn {
-      min-width: 44px;
-      min-height: 44px;
-    }
-
-    .sg-message-content {
-      max-width: 88%;
-      font-size: 14px;
-      padding: 12px 16px;
-    }
-  }
-
-  /* Safe area for iPhone X+ */
-  @supports (padding: max(0px)) {
-    @media (max-width: 768px) {
-      .sg-chat-input-wrapper {
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-      }
-
-      #sg-chat-widget {
-        bottom: max(90px, calc(env(safe-area-inset-bottom) + 90px));
-      }
     }
   }
 </style>
@@ -5714,24 +5593,19 @@ document.addEventListener('DOMContentLoaded', function () {
   </div>
 </div>
 
-<!-- Chat Overlay for iOS -->
+<!-- Chat Overlay -->
 <div class="chat-overlay" id="chatOverlay"></div>
 
 <script>
 /**
- * iOS-Optimized Mobile Chat & Tab Bar Controller
- * Implements Apple HIG best practices:
- * - visualViewport API for keyboard detection
- * - Swipe-to-dismiss gestures
- * - Haptic feedback (where supported)
- * - Body scroll lock when modal open
- * - Spring animations
+ * Simple Mobile Chat Controller
+ * - Opens/closes chat from bottom bar
+ * - Keyboard detection for height adjustment
  */
 (function() {
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
     const openChatBtn = document.getElementById('openChatBtn');
     const chatButton = document.getElementById('sg-chat-button');
     const chatWindow = document.getElementById('sg-chat-window');
@@ -5739,110 +5613,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const chatOverlay = document.getElementById('chatOverlay');
     const chatClose = document.querySelector('.sg-chat-close');
 
-    // State
     let isChatOpen = false;
-    let scrollPosition = 0;
-    let touchStartY = 0;
-    let touchCurrentY = 0;
-    let isDragging = false;
 
-    // ===== HAPTIC FEEDBACK =====
-    function triggerHaptic(style) {
-      // iOS Haptic Engine via Taptic API
-      if ('vibrate' in navigator) {
-        switch(style) {
-          case 'light':
-            navigator.vibrate(10);
-            break;
-          case 'medium':
-            navigator.vibrate(20);
-            break;
-          case 'heavy':
-            navigator.vibrate(30);
-            break;
-          case 'success':
-            navigator.vibrate([10, 50, 20]);
-            break;
-        }
-      }
-    }
-
-    // ===== BODY SCROLL LOCK (iOS Safari compatible) =====
-    function lockBodyScroll() {
-      scrollPosition = window.pageYOffset;
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollPosition}px`;
-      document.body.style.width = '100%';
-      document.body.classList.add('chat-open');
-    }
-
-    function unlockBodyScroll() {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.classList.remove('chat-open');
-      window.scrollTo(0, scrollPosition);
-    }
-
-    // ===== CHAT OPEN/CLOSE =====
+    // Open chat
     function openChat() {
-      if (isChatOpen || !chatWindow) return;
+      if (isChatOpen) return;
       isChatOpen = true;
 
-      triggerHaptic('light');
-
-      // Lock body scroll on mobile
-      if (window.innerWidth <= 768) {
-        lockBodyScroll();
-      }
+      // Trigger the original chat toggle
+      if (chatButton) chatButton.click();
 
       // Show overlay
-      if (chatOverlay) {
-        chatOverlay.classList.add('active');
-      }
+      if (chatOverlay) chatOverlay.classList.add('active');
 
-      // Trigger the original chat button
-      if (chatButton) {
-        chatButton.click();
-      }
-
-      // Hide bottom bar with animation
-      if (bottomBar) {
-        bottomBar.style.transition = 'transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s ease';
-        bottomBar.style.transform = 'translateY(100%)';
-        bottomBar.style.opacity = '0';
+      // Hide bottom bar
+      if (bottomBar && window.innerWidth <= 768) {
+        bottomBar.style.display = 'none';
       }
     }
 
+    // Close chat
     function closeChat() {
-      if (!isChatOpen) return;
       isChatOpen = false;
 
-      triggerHaptic('light');
-
-      // Unlock body scroll
-      unlockBodyScroll();
-
       // Hide overlay
-      if (chatOverlay) {
-        chatOverlay.classList.remove('active');
-      }
+      if (chatOverlay) chatOverlay.classList.remove('active');
 
-      // Close the chat window
-      if (chatClose) {
-        chatClose.click();
-      }
-
-      // Show bottom bar with animation
+      // Show bottom bar
       if (bottomBar && window.innerWidth <= 768) {
-        bottomBar.style.transform = 'translateY(0)';
-        bottomBar.style.opacity = '1';
+        bottomBar.style.display = 'block';
       }
+
+      // Remove keyboard class
+      document.body.classList.remove('keyboard-open');
     }
 
-    // ===== EVENT LISTENERS =====
+    // Open button click
     if (openChatBtn) {
       openChatBtn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -5850,211 +5656,71 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
 
-    // Close on overlay tap
+    // Overlay click to close
     if (chatOverlay) {
-      chatOverlay.addEventListener('click', closeChat);
+      chatOverlay.addEventListener('click', function() {
+        if (chatClose) chatClose.click();
+        closeChat();
+      });
     }
 
-    // Close button
+    // Watch close button
     if (chatClose) {
       chatClose.addEventListener('click', function() {
-        setTimeout(closeChat, 50);
+        setTimeout(closeChat, 100);
       });
     }
 
-    // ===== SWIPE TO DISMISS =====
+    // Watch for chat window class changes (when closed externally)
     if (chatWindow) {
-      chatWindow.addEventListener('touchstart', function(e) {
-        // Only allow swipe from the header/drag handle area
-        const touch = e.touches[0];
-        const rect = chatWindow.getBoundingClientRect();
-        const headerHeight = 60;
-
-        if (touch.clientY - rect.top < headerHeight) {
-          touchStartY = touch.clientY;
-          isDragging = true;
-        }
-      }, { passive: true });
-
-      chatWindow.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-
-        touchCurrentY = e.touches[0].clientY;
-        const deltaY = touchCurrentY - touchStartY;
-
-        // Only allow downward swipe
-        if (deltaY > 0) {
-          const translateY = Math.min(deltaY * 0.6, 200);
-          chatWindow.style.transform = `translateY(${translateY}px)`;
-          chatWindow.style.transition = 'none';
-
-          // Dim overlay based on drag distance
-          if (chatOverlay) {
-            const opacity = Math.max(0, 1 - (deltaY / 300));
-            chatOverlay.style.opacity = opacity;
-          }
-        }
-      }, { passive: true });
-
-      chatWindow.addEventListener('touchend', function(e) {
-        if (!isDragging) return;
-        isDragging = false;
-
-        const deltaY = touchCurrentY - touchStartY;
-
-        // If dragged more than 100px, close the chat
-        if (deltaY > 100) {
-          triggerHaptic('medium');
-          chatWindow.style.transition = 'transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)';
-          chatWindow.style.transform = 'translateY(100%)';
-
-          setTimeout(function() {
-            closeChat();
-            chatWindow.style.transform = '';
-            chatWindow.style.transition = '';
-          }, 300);
-        } else {
-          // Snap back
-          chatWindow.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-          chatWindow.style.transform = 'translateY(0)';
-
-          if (chatOverlay) {
-            chatOverlay.style.opacity = '';
-          }
-        }
-
-        touchStartY = 0;
-        touchCurrentY = 0;
-      }, { passive: true });
-    }
-
-    // ===== KEYBOARD DETECTION (visualViewport API - iOS 13+) =====
-    if (window.visualViewport) {
-      let initialViewportHeight = window.visualViewport.height;
-
-      window.visualViewport.addEventListener('resize', function() {
-        if (window.innerWidth > 768) return;
-
-        const currentHeight = window.visualViewport.height;
-        const heightDiff = initialViewportHeight - currentHeight;
-
-        // Keyboard threshold (typically ~250px+)
-        if (heightDiff > 150) {
-          document.body.classList.add('keyboard-open');
-
-          // Adjust chat window height dynamically
-          if (chatWindow && isChatOpen) {
-            chatWindow.style.height = `${currentHeight - 20}px`;
-          }
-        } else {
-          document.body.classList.remove('keyboard-open');
-
-          // Reset chat window height
-          if (chatWindow) {
-            chatWindow.style.height = '';
-          }
-        }
-      });
-    } else {
-      // Fallback for older browsers
-      let initialHeight = window.innerHeight;
-
-      window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) return;
-
-        const heightDiff = initialHeight - window.innerHeight;
-
-        if (heightDiff > 150) {
-          document.body.classList.add('keyboard-open');
-        } else {
-          document.body.classList.remove('keyboard-open');
-        }
-      });
-    }
-
-    // ===== INPUT FOCUS HANDLING =====
-    document.addEventListener('focusin', function(e) {
-      if (window.innerWidth <= 768) {
-        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-        if (isInput) {
-          document.body.classList.add('keyboard-open');
-
-          // Scroll input into view after keyboard appears
-          setTimeout(function() {
-            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 300);
-        }
-      }
-    });
-
-    document.addEventListener('focusout', function(e) {
-      if (window.innerWidth <= 768) {
-        setTimeout(function() {
-          const active = document.activeElement;
-          const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
-          if (!isInput) {
-            document.body.classList.remove('keyboard-open');
-          }
-        }, 100);
-      }
-    });
-
-    // ===== PREVENT IOS OVERSCROLL/BOUNCE ON CHAT =====
-    if (chatWindow) {
-      const chatBody = chatWindow.querySelector('.sg-chat-body, .sg-chat-messages');
-      if (chatBody) {
-        chatBody.addEventListener('touchmove', function(e) {
-          const scrollTop = chatBody.scrollTop;
-          const scrollHeight = chatBody.scrollHeight;
-          const height = chatBody.offsetHeight;
-
-          // Prevent overscroll at boundaries
-          if (scrollTop === 0 && e.touches[0].clientY > touchStartY) {
-            // At top, trying to scroll up
-            e.preventDefault();
-          } else if (scrollTop + height >= scrollHeight && e.touches[0].clientY < touchStartY) {
-            // At bottom, trying to scroll down
-            e.preventDefault();
-          }
-        }, { passive: false });
-      }
-    }
-
-    // ===== WATCH FOR CHAT STATE CHANGES =====
-    if (chatWindow) {
-      const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          if (mutation.attributeName === 'class' || mutation.attributeName === 'style') {
-            const isVisible = chatWindow.classList.contains('active') ||
-                              (chatWindow.style.display !== 'none' &&
-                               chatWindow.style.display !== '');
-
-            if (!isVisible && isChatOpen) {
-              // Chat was closed externally
-              closeChat();
-            }
-          }
-        });
-      });
-      observer.observe(chatWindow, { attributes: true });
-    }
-
-    // ===== BACK BUTTON / ESCAPE KEY =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && isChatOpen) {
-        closeChat();
-      }
-    });
-
-    // Handle browser back button
-    if (window.history && window.history.pushState) {
-      window.addEventListener('popstate', function(e) {
-        if (isChatOpen) {
+      const observer = new MutationObserver(function() {
+        const isVisible = chatWindow.classList.contains('active');
+        if (!isVisible && isChatOpen) {
           closeChat();
         }
       });
+      observer.observe(chatWindow, { attributes: true, attributeFilter: ['class'] });
     }
 
+    // Keyboard detection
+    if (window.visualViewport) {
+      const initialHeight = window.visualViewport.height;
+      window.visualViewport.addEventListener('resize', function() {
+        if (window.innerWidth > 768) return;
+        const diff = initialHeight - window.visualViewport.height;
+        if (diff > 150) {
+          document.body.classList.add('keyboard-open');
+        } else {
+          document.body.classList.remove('keyboard-open');
+        }
+      });
+    }
+
+    // Input focus
+    document.addEventListener('focusin', function(e) {
+      if (window.innerWidth <= 768 && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        document.body.classList.add('keyboard-open');
+      }
+    });
+
+    document.addEventListener('focusout', function() {
+      if (window.innerWidth <= 768) {
+        setTimeout(function() {
+          const active = document.activeElement;
+          if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+            document.body.classList.remove('keyboard-open');
+          }
+        }, 150);
+      }
+    });
+
+    // Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && isChatOpen) {
+        if (chatClose) chatClose.click();
+        closeChat();
+      }
+    });
   });
 })();
 </script>
