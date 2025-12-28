@@ -2461,7 +2461,7 @@ form.addEventListener('submit', async (e) => {
         </div>
       </a>
       <a href="/materials/flooring" class="shop-card">
-        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2d85bfbb1d2_All%20Flooring%20Hero%20Background%20Image.jpeg" alt="Flooring" class="shop-card-img">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2e30ffbb1d1_All%20Flooring%20Hero%20Background%20Image.jpeg" alt="Flooring" class="shop-card-img">
         <div class="shop-card-overlay">
           <h3>Flooring</h3>
           <span>Tile, Hardwood, Vinyl</span>
@@ -5332,9 +5332,65 @@ form.addEventListener('submit', async (e) => {
   }
 
   /* Mobile Responsive - handled by mobile-optimizations.css */
+</style>
+
+<!-- Help Pill - Floats above chat -->
+<div id="sg-help-pill" class="sg-help-pill">
+  <span class="help-pill-icon">?</span>
+  <span class="help-pill-text">Need Help?</span>
+</div>
+
+<style>
+  .sg-help-pill {
+    position: fixed;
+    bottom: 110px;
+    right: 24px;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    padding: 10px 18px 10px 12px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.2);
+    transition: all 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  .sg-help-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 215, 0, 0.4);
+  }
+  .help-pill-icon {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .help-pill-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+  }
   @media (max-width: 768px) {
-    #sg-chat-button {
-      display: none !important;
+    .sg-help-pill {
+      bottom: 90px;
+      right: 16px;
+      padding: 8px 14px 8px 10px;
+    }
+    .help-pill-icon {
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+    }
+    .help-pill-text {
+      font-size: 13px;
     }
   }
 </style>
@@ -5397,9 +5453,10 @@ form.addEventListener('submit', async (e) => {
   const closeButton = document.querySelector('.sg-chat-close');
   const badge = document.querySelector('.sg-chat-badge');
   const messagesContainer = document.getElementById('sg-messages');
-  const chatBody = document.getElementById('sg-chat-body'); // FIX: Reference the scrollable container
+  const chatBody = document.getElementById('sg-chat-body');
   const chatInput = document.getElementById('sg-chat-input');
   const sendBtn = document.getElementById('sg-send-btn');
+  const helpPill = document.getElementById('sg-help-pill');
 
   let isOpen = false;
   let sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -5567,6 +5624,13 @@ form.addEventListener('submit', async (e) => {
 
   chatButton.addEventListener('click', toggleChat);
   closeButton.addEventListener('click', toggleChat);
+
+  // Help pill opens chat
+  if (helpPill) {
+    helpPill.addEventListener('click', () => {
+      if (!isOpen) toggleChat();
+    });
+  }
 
   sendBtn.addEventListener('click', () => {
     handleUserMessage(chatInput.value);

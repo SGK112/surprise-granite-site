@@ -152,25 +152,20 @@ html {
 /* ===== CHAT WIDGET MOBILE ===== */
 
 @media (max-width: 768px) {
-  /* Hide default chat buttons on mobile - we use our custom FAB */
-  #sg-chat-widget #sg-chat-button,
-  .sg-chat-toggle {
-    display: none !important;
-  }
-}
-
-/* ElevenLabs ConvAI Widget Mobile Fixes */
-@media (max-width: 768px) {
-  elevenlabs-convai {
-    --widget-size: 56px;
+  /* Mobile chat button positioning */
+  #sg-chat-widget {
     bottom: 16px !important;
     right: 16px !important;
   }
 
-  /* Ensure widget doesn't overlap with other elements */
-  .elevenlabs-widget,
-  [class*="elevenlabs"] {
-    z-index: 9998 !important;
+  #sg-chat-button {
+    width: 60px;
+    height: 60px;
+  }
+
+  #sg-chat-button svg {
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -560,14 +555,9 @@ html {
       padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 
-    /* Chat window anchored to bottom, adjusts with safe area */
-    .sg-chat-toggle,
+    /* Chat widget with safe area padding */
     #sg-chat-widget {
-      bottom: 0 !important;
-    }
-
-    #sg-chat-button {
-      display: none !important;
+      bottom: max(16px, env(safe-area-inset-bottom)) !important;
     }
   }
 }
