@@ -110,26 +110,34 @@
 }
 
 @media (max-width: 768px) {
-  /* Move chat widget above mobile sticky CTA (70px + padding) */
-  #sg-chat-widget,
-  .sg-chat-toggle,
-  #sg-chat-button {
-    bottom: 85px !important;
+  /* Hide floating chat button - use pull tab instead */
+  #sg-chat-widget #sg-chat-button,
+  .sg-chat-toggle {
+    display: none !important;
   }
 
-  /* Chat window mobile sizing */
+  /* Keep widget container for the window */
+  #sg-chat-widget {
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Chat window mobile sizing - above bottom menu */
   .sg-chat-window,
   #sg-chat-window {
     position: fixed !important;
-    bottom: 70px !important;
+    bottom: 120px !important;
     right: 0 !important;
     left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 24px 24px 0 0 !important;
     margin: 0 !important;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.3) !important;
   }
 
   /* Chat header */
