@@ -1,8 +1,59 @@
 /**
  * Mobile Optimizations for Surprise Granite
- * Fixes touch targets, chat widget, forms, and navigation
- * Min touch target: 44px (WCAG AAA)
+ * iOS/Apple Best Practices Implementation
+ * - 44pt minimum touch targets (Apple HIG)
+ * - Safe area insets for notch/home indicator
+ * - Native iOS animations and gestures
+ * - Prevent zoom, bounce, and scroll issues
  */
+
+/* ===== iOS ROOT FIXES ===== */
+
+/* Fix iOS 100vh bug - use -webkit-fill-available */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --vh: 1vh;
+    --app-height: 100vh;
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --app-height: -webkit-fill-available;
+    }
+  }
+}
+
+/* iOS System Font Stack */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+               'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent iOS text size adjustment */
+@media (max-width: 768px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+/* iOS Safe Area Variables */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* iOS Spring Animation Curves (matches UIKit) */
+:root {
+  --ios-spring: cubic-bezier(0.23, 1, 0.32, 1);
+  --ios-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ios-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+  --ios-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
 /* ===== GLOBAL MOBILE FIXES ===== */
 
@@ -122,9 +173,10 @@
     right: 0 !important;
     left: 0 !important;
     width: 100% !important;
+    z-index: 10000 !important;
   }
 
-  /* Chat window - full height minus bottom bar, anchored to bottom */
+  /* Chat window - iOS sheet style, anchored to bottom */
   .sg-chat-window,
   #sg-chat-window {
     position: fixed !important;
@@ -133,57 +185,171 @@
     left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: calc(100vh - 70px) !important;
-    max-height: calc(100vh - 70px) !important;
-    border-radius: 20px 20px 0 0 !important;
+    /* Use CSS variable for dynamic height, fallback to calc */
+    height: calc(100% - 70px - var(--safe-top, 0px)) !important;
+    max-height: calc(100% - 70px) !important;
+    border-radius: 16px 16px 0 0 !important;
     margin: 0 !important;
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.2) !important;
-    transition: height 0.2s ease !important;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.25) !important;
+    /* iOS spring animation */
+    transition: transform 0.4s var(--ios-spring, cubic-bezier(0.23, 1, 0.32, 1)),
+                height 0.3s var(--ios-ease-out, ease-out),
+                opacity 0.25s ease !important;
+    /* Enable hardware acceleration */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    /* Prevent overscroll bounce */
+    overscroll-behavior: contain;
+    /* iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS-style drag handle */
+  #sg-chat-window::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    z-index: 10;
   }
 
   /* When keyboard opens, reduce chat height */
   .keyboard-open .sg-chat-window,
   .keyboard-open #sg-chat-window {
-    height: 50vh !important;
-    max-height: 50vh !important;
+    height: 55vh !important;
+    max-height: 55vh !important;
   }
 
-  /* Chat header */
+  /* Chat header - iOS navigation bar style */
   .sg-chat-header {
-    padding: 16px 20px;
-    border-radius: 20px 20px 0 0;
+    padding: 20px 16px 16px;
+    border-radius: 16px 16px 0 0;
+    /* Account for drag handle */
+    padding-top: 24px;
+    /* iOS blur background */
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: linear-gradient(135deg,
+      rgba(255, 185, 70, 0.95) 0%,
+      rgba(255, 152, 0, 0.95) 100%) !important;
   }
 
-  /* Chat messages area */
-  .sg-chat-messages {
-    height: calc(100% - 140px);
+  /* Chat messages area - iOS style */
+  .sg-chat-messages,
+  .sg-chat-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px;
+    /* iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent rubber-band at edges */
+    overscroll-behavior-y: contain;
   }
 
-  /* Chat input area */
+  /* Chat input area - iOS style */
+  .sg-chat-input-wrapper,
   .sg-chat-input-area {
     padding: 12px 16px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-bottom: max(16px, calc(var(--safe-bottom, 0px) + 12px));
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .sg-chat-input {
-    min-height: 48px;
-    font-size: 16px;
-    padding: 12px 16px;
-    border-radius: 24px;
+    min-height: 44px;
+    font-size: 17px; /* iOS default */
+    padding: 10px 16px;
+    border-radius: 22px;
+    background: #f2f2f7; /* iOS system gray 6 */
+    border: none;
+    /* Prevent zoom on focus */
+    font-size: 16px !important;
   }
 
-  .sg-chat-send {
-    min-width: 48px;
-    min-height: 48px;
-    border-radius: 24px;
+  .sg-chat-input:focus {
+    background: #e5e5ea; /* iOS system gray 5 */
+    outline: none;
   }
 
-  /* Close button */
+  .sg-chat-input::placeholder {
+    color: #8e8e93; /* iOS placeholder gray */
+  }
+
+  .sg-send-btn {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 22px;
+    /* iOS blue */
+    background: #007AFF;
+    transition: transform 0.15s var(--ios-spring, ease),
+                background 0.15s ease;
+  }
+
+  .sg-send-btn:active {
+    transform: scale(0.92);
+    background: #0056b3;
+  }
+
+  /* Close button - iOS style */
   .sg-chat-close {
     min-width: 44px;
     min-height: 44px;
-    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: transform 0.15s var(--ios-spring, ease),
+                background 0.15s ease;
+  }
+
+  .sg-chat-close:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Message bubbles - iOS style */
+  .sg-message-content {
+    border-radius: 18px;
+    padding: 10px 14px;
+  }
+
+  .sg-message.user .sg-message-content {
+    background: #007AFF; /* iOS blue */
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .sg-message.bot .sg-message-content {
+    background: #e5e5ea; /* iOS gray bubble */
+    color: #1c1c1e;
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Quick reply buttons - iOS style */
+  .sg-quick-reply-btn {
+    min-height: 36px;
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 15px;
+    font-weight: 500;
+    background: rgba(0, 122, 255, 0.1);
+    color: #007AFF;
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    transition: all 0.15s var(--ios-spring, ease);
+  }
+
+  .sg-quick-reply-btn:active {
+    transform: scale(0.96);
+    background: rgba(0, 122, 255, 0.2);
   }
 }
 
