@@ -5369,285 +5369,345 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script>
-<!-- Mobile Chat Overlay with Actions -->
+<!-- Mobile Pull Tab -->
 <style>
 /* ========================================
-   MOBILE CHAT OVERLAY - MINIMALIST
+   MOBILE PULL TAB - BOTTOM DRAWER
    ======================================== */
 
-/* Floating chat button */
-.mobile-chat-fab {
+/* Pull tab handle at bottom of screen */
+.mobile-pull-tab {
   display: none;
   position: fixed;
-  bottom: 24px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  background: #1a1a1a;
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9997;
-  padding-bottom: env(safe-area-inset-bottom);
-  transition: transform 0.2s ease;
 }
 
 @media (max-width: 768px) {
-  .mobile-chat-fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .mobile-pull-tab {
+    display: block;
+  }
+  body {
+    padding-bottom: 0 !important;
   }
 }
 
-.mobile-chat-fab svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 1.5;
-}
-
-.mobile-chat-fab:active {
-  transform: scale(0.95);
-}
-
-/* Full-screen overlay */
-.chat-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(255,255,255,0.98);
-  z-index: 9998;
-  flex-direction: column;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.chat-overlay.active {
-  display: flex;
-  opacity: 1;
-}
-
-/* Overlay header */
-.chat-overlay-header {
+.pull-tab-handle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  padding-top: max(16px, env(safe-area-inset-top));
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 32px 16px;
+  padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
+  background: #1a1a1a;
+  border-radius: 20px 20px 0 0;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pull-tab-handle:active {
+  background: #2a2a2a;
+}
+
+.pull-tab-line {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 2px;
+}
+
+.pull-tab-text {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Drawer that slides up */
+.mobile-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  z-index: 9998;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
+}
+
+.mobile-drawer.open {
+  transform: translateY(0);
+}
+
+/* Drawer backdrop */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 9997;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Drawer header */
+.drawer-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px 16px;
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
-.chat-overlay-title {
-  font-size: 17px;
+.drawer-handle {
+  width: 40px;
+  height: 5px;
+  background: #ddd;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+
+.drawer-title {
+  font-size: 18px;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
 }
 
-.chat-overlay-close {
-  width: 36px;
-  height: 36px;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-overlay-close svg {
-  width: 20px;
-  height: 20px;
-  stroke: #666;
-  stroke-width: 2;
-}
-
-.chat-overlay-close:active {
-  background: rgba(0,0,0,0.05);
-}
-
-/* Overlay content */
-.chat-overlay-content {
-  flex: 1;
+/* Drawer content */
+.drawer-content {
+  padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  gap: 16px;
+  gap: 12px;
 }
 
-/* Action buttons */
-.chat-action {
+/* Action cards */
+.drawer-action {
   display: flex;
   align-items: center;
   gap: 16px;
-  width: 100%;
-  max-width: 300px;
-  padding: 20px 24px;
-  background: #fafafa;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 12px;
+  padding: 16px 20px;
+  background: #f8f8f8;
+  border: none;
+  border-radius: 14px;
   text-decoration: none;
   color: #1a1a1a;
   cursor: pointer;
   transition: background 0.15s ease;
+  text-align: left;
+  width: 100%;
 }
 
-.chat-action:active {
+.drawer-action:active {
   background: #f0f0f0;
 }
 
-.chat-action-icon {
-  width: 44px;
-  height: 44px;
+.drawer-action-icon {
+  width: 48px;
+  height: 48px;
   background: #1a1a1a;
-  border-radius: 50%;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.chat-action-icon svg {
-  width: 20px;
-  height: 20px;
+.drawer-action-icon svg {
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: #fff;
   stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.chat-action-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.chat-action-label {
-  font-size: 16px;
-  font-weight: 500;
-  color: #1a1a1a;
-}
-
-.chat-action-desc {
-  font-size: 13px;
-  color: #888;
-}
-
-/* Quote action with accent */
-.chat-action.quote .chat-action-icon {
+.drawer-action-icon.chat {
   background: #B8860B;
+}
+
+.drawer-action-icon.call {
+  background: #2d8a4e;
+}
+
+.drawer-action-icon.quote {
+  background: #1a1a1a;
+}
+
+.drawer-action-text {
+  flex: 1;
+}
+
+.drawer-action-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.drawer-action-desc {
+  display: block;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Chevron */
+.drawer-action-arrow {
+  width: 20px;
+  height: 20px;
+  stroke: #999;
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 </style>
 
-<!-- Floating chat button -->
-<button class="mobile-chat-fab" id="mobileChatFab" aria-label="Open menu">
-  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-</button>
+<!-- Pull tab -->
+<div class="mobile-pull-tab" id="mobilePullTab">
+  <button class="pull-tab-handle" id="pullTabHandle" aria-label="Open menu">
+    <span class="pull-tab-text">Get Help</span>
+    <div class="pull-tab-line"></div>
+  </button>
+</div>
 
-<!-- Overlay -->
-<div class="chat-overlay" id="chatOverlay">
-  <div class="chat-overlay-header">
-    <h2 class="chat-overlay-title">How can we help?</h2>
-    <button class="chat-overlay-close" id="chatOverlayClose" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+<!-- Backdrop -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+<!-- Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <div class="drawer-handle"></div>
+    <h2 class="drawer-title">How can we help?</h2>
   </div>
-  <div class="chat-overlay-content">
-    <button class="chat-action" id="startChatAction">
-      <div class="chat-action-icon">
+  <div class="drawer-content">
+    <button class="drawer-action" id="startChatAction">
+      <div class="drawer-action-icon chat">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       </div>
-      <div class="chat-action-text">
-        <span class="chat-action-label">Chat with us</span>
-        <span class="chat-action-desc">Get instant answers</span>
+      <div class="drawer-action-text">
+        <span class="drawer-action-label">Chat with AI</span>
+        <span class="drawer-action-desc">Get instant answers 24/7</span>
       </div>
+      <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
-    <a href="tel:+16028333189" class="chat-action">
-      <div class="chat-action-icon">
+    <a href="tel:+16028333189" class="drawer-action">
+      <div class="drawer-action-icon call">
         <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
       </div>
-      <div class="chat-action-text">
-        <span class="chat-action-label">Call us</span>
-        <span class="chat-action-desc">(602) 833-3189</span>
+      <div class="drawer-action-text">
+        <span class="drawer-action-label">Call Us</span>
+        <span class="drawer-action-desc">(602) 833-3189</span>
       </div>
+      <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
-    <a href="/get-a-free-estimate/" class="chat-action quote">
-      <div class="chat-action-icon">
+    <a href="/get-a-free-estimate/" class="drawer-action">
+      <div class="drawer-action-icon quote">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
-      <div class="chat-action-text">
-        <span class="chat-action-label">Get a free quote</span>
-        <span class="chat-action-desc">No obligation estimate</span>
+      <div class="drawer-action-text">
+        <span class="drawer-action-label">Free Quote</span>
+        <span class="drawer-action-desc">No obligation estimate</span>
       </div>
+      <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
   </div>
 </div>
 
 <script>
 /**
- * Mobile Chat Overlay Controller
- * Simple overlay with action buttons
+ * Mobile Pull Tab Drawer
  */
 (function() {
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function() {
-    const fab = document.getElementById('mobileChatFab');
-    const overlay = document.getElementById('chatOverlay');
-    const closeBtn = document.getElementById('chatOverlayClose');
+    const pullTab = document.getElementById('mobilePullTab');
+    const handle = document.getElementById('pullTabHandle');
+    const drawer = document.getElementById('mobileDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
     const startChat = document.getElementById('startChatAction');
     const elevenLabsWidget = document.querySelector('elevenlabs-convai');
 
-    // Open overlay
-    function openOverlay() {
-      if (overlay) {
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-      if (fab) fab.style.display = 'none';
+    let isOpen = false;
+
+    function openDrawer() {
+      if (isOpen) return;
+      isOpen = true;
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+      pullTab.style.display = 'none';
+      document.body.style.overflow = 'hidden';
     }
 
-    // Close overlay
-    function closeOverlay() {
-      if (overlay) {
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-      if (fab && window.innerWidth <= 768) {
-        fab.style.display = 'flex';
-      }
+    function closeDrawer() {
+      if (!isOpen) return;
+      isOpen = false;
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+      document.body.style.overflow = '';
+      setTimeout(function() {
+        if (window.innerWidth <= 768) {
+          pullTab.style.display = 'block';
+        }
+      }, 300);
     }
 
-    // FAB click
-    if (fab) {
-      fab.addEventListener('click', openOverlay);
+    // Open on handle click
+    if (handle) {
+      handle.addEventListener('click', openDrawer);
     }
 
-    // Close button
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeOverlay);
+    // Close on backdrop click
+    if (backdrop) {
+      backdrop.addEventListener('click', closeDrawer);
     }
 
-    // Start chat - trigger ElevenLabs widget
+    // Swipe down to close
+    let touchStartY = 0;
+    if (drawer) {
+      drawer.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      drawer.addEventListener('touchend', function(e) {
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        if (deltaY > 80) {
+          closeDrawer();
+        }
+      }, { passive: true });
+    }
+
+    // Chat action - trigger ElevenLabs
     if (startChat) {
       startChat.addEventListener('click', function() {
-        closeOverlay();
-        // Trigger ElevenLabs widget if present
+        closeDrawer();
         if (elevenLabsWidget) {
-          elevenLabsWidget.click();
+          setTimeout(function() {
+            elevenLabsWidget.click();
+          }, 350);
         }
       });
     }
 
     // Escape key
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) {
-        closeOverlay();
+      if (e.key === 'Escape' && isOpen) {
+        closeDrawer();
       }
     });
   });
