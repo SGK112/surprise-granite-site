@@ -1193,7 +1193,97 @@ setInterval(displayOpeningStatus, 60000);
   });
 </script>
 
-<elevenlabs-convai agent-id="agent_7301k246v5fyebkbsqvzw3d7nkqw"></elevenlabs-convai><script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script><script>
+  <!-- SG Chat Widget Styles -->
+  <style>
+    #sg-chat-widget {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    #sg-chat-button {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(255, 152, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #sg-chat-button:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(255, 152, 0, 0.5); }
+    #sg-chat-button.active { transform: rotate(180deg); }
+    #sg-chat-button svg { width: 32px; height: 32px; fill: white; transition: transform 0.3s ease; }
+    #sg-chat-button.active svg.chat-icon { display: none; }
+    #sg-chat-button.active svg.close-icon { display: block; }
+    #sg-chat-button svg.close-icon { display: none; }
+    #sg-chat-window { position: absolute; bottom: 90px; right: 0; width: 380px; height: 520px; background: #1a1a1a; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    #sg-chat-window.active { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+    .sg-chat-header { background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%); padding: 20px; display: flex; align-items: center; gap: 12px; }
+    .sg-chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .sg-chat-header-info h3 { margin: 0; color: white; font-size: 18px; font-weight: 600; }
+    .sg-chat-header-info p { margin: 4px 0 0; color: rgba(255,255,255,0.9); font-size: 13px; }
+    .sg-chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .sg-message { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; animation: messageSlide 0.3s ease; }
+    @keyframes messageSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .sg-message.bot { background: #2d2d2d; color: #fff; align-self: flex-start; border-bottom-left-radius: 6px; }
+    .sg-message.user { background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%); color: white; align-self: flex-end; border-bottom-right-radius: 6px; }
+    .sg-chat-input-area { padding: 16px; background: #252525; display: flex; gap: 12px; align-items: center; }
+    #sg-chat-input { flex: 1; background: #1a1a1a; border: 1px solid #3d3d3d; border-radius: 24px; padding: 12px 20px; color: white; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    #sg-chat-input:focus { border-color: #FFB946; }
+    #sg-chat-input::placeholder { color: #888; }
+    #sg-send-btn { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s, box-shadow 0.2s; }
+    #sg-send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4); }
+    #sg-send-btn svg { width: 20px; height: 20px; fill: white; }
+    .sg-typing { display: flex; gap: 4px; padding: 12px 16px; background: #2d2d2d; border-radius: 18px; align-self: flex-start; border-bottom-left-radius: 6px; }
+    .sg-typing span { width: 8px; height: 8px; background: #888; border-radius: 50%; animation: typing 1.4s infinite; }
+    .sg-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .sg-typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+    .sg-help-pill { position: fixed; bottom: 110px; right: 24px; z-index: 9998; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #3d3d3d; border-radius: 30px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); transition: all 0.3s ease; animation: pillPulse 3s ease-in-out infinite; }
+    .sg-help-pill:hover { transform: translateX(-5px); box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3); border-color: #FFB946; }
+    .sg-help-pill.hidden { display: none; }
+    @keyframes pillPulse { 0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); } 50% { box-shadow: 0 4px 20px rgba(255, 152, 0, 0.2); } }
+    .help-pill-icon { width: 24px; height: 24px; background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; }
+    .help-pill-text { color: #fff; font-size: 14px; font-weight: 500; }
+    @media (max-width: 480px) { #sg-chat-window { width: calc(100vw - 32px); height: 70vh; right: -8px; bottom: 80px; } #sg-chat-button { width: 60px; height: 60px; } .sg-help-pill { bottom: 100px; right: 16px; } }
+  </style>
+  <div id="sg-help-pill" class="sg-help-pill"><span class="help-pill-icon">?</span><span class="help-pill-text">Need Help?</span></div>
+  <div id="sg-chat-widget">
+    <button id="sg-chat-button" aria-label="Open chat"><svg class="chat-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg><svg class="close-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <div id="sg-chat-window">
+      <div class="sg-chat-header"><div class="sg-chat-avatar">💬</div><div class="sg-chat-header-info"><h3>Surprise Granite</h3><p>Ask us about countertops!</p></div></div>
+      <div id="sg-chat-messages" class="sg-chat-messages"><div class="sg-message bot">Hi! 👋 Looking for the perfect countertop? I can help you find the right material, get pricing, or answer any questions!</div></div>
+      <div class="sg-chat-input-area"><input type="text" id="sg-chat-input" placeholder="Type your message..." autocomplete="off"><button id="sg-send-btn" aria-label="Send message"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button></div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    const WEBHOOK_URL = 'https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
+    const chatButton = document.getElementById('sg-chat-button');
+    const chatWindow = document.getElementById('sg-chat-window');
+    const chatMessages = document.getElementById('sg-chat-messages');
+    const chatInput = document.getElementById('sg-chat-input');
+    const sendBtn = document.getElementById('sg-send-btn');
+    const helpPill = document.getElementById('sg-help-pill');
+    let isOpen = false;
+    let sessionId = localStorage.getItem('sg_chat_session') || 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('sg_chat_session', sessionId);
+    function toggleChat() { isOpen = !isOpen; chatButton.classList.toggle('active', isOpen); chatWindow.classList.toggle('active', isOpen); if (helpPill) helpPill.classList.toggle('hidden', isOpen); if (isOpen) chatInput.focus(); }
+    function addMessage(text, isUser = false) { const msg = document.createElement('div'); msg.className = 'sg-message ' + (isUser ? 'user' : 'bot'); msg.textContent = text; chatMessages.appendChild(msg); chatMessages.scrollTop = chatMessages.scrollHeight; }
+    function showTyping() { const typing = document.createElement('div'); typing.className = 'sg-typing'; typing.id = 'sg-typing'; typing.innerHTML = '<span></span><span></span><span></span>'; chatMessages.appendChild(typing); chatMessages.scrollTop = chatMessages.scrollHeight; }
+    function hideTyping() { const typing = document.getElementById('sg-typing'); if (typing) typing.remove(); }
+    async function sendMessage() { const text = chatInput.value.trim(); if (!text) return; addMessage(text, true); chatInput.value = ''; showTyping(); try { const response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, sessionId: sessionId, visitor: { page: window.location.href, referrer: document.referrer } }) }); hideTyping(); if (response.ok) { const data = await response.json(); addMessage(data.message || data.response || "Thanks for your message! We'll get back to you soon."); } else { addMessage("Thanks for reaching out! Our team will follow up with you shortly."); } } catch (err) { hideTyping(); addMessage("Thanks for your message! We'll get back to you soon."); } }
+    chatButton.addEventListener('click', toggleChat);
+    if (helpPill) helpPill.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendMessage(); });
+  })();
+  </script><script>
 document.addEventListener("DOMContentLoaded", function() {
   const galleryLists = document.querySelectorAll('.project-gallery_list');
 
