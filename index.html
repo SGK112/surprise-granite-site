@@ -5598,9 +5598,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
 /**
- * Simple Mobile Chat Controller
+ * Mobile Chat Controller
  * - Opens/closes chat from bottom bar
- * - Keyboard detection for height adjustment
+ * - Pull-to-close gesture
+ * - Keyboard detection
  */
 (function() {
   'use strict';
@@ -5612,8 +5613,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const bottomBar = document.getElementById('mobileBottomBar');
     const chatOverlay = document.getElementById('chatOverlay');
     const chatClose = document.querySelector('.sg-chat-close');
+    const chatHeader = document.querySelector('.sg-chat-header');
 
     let isChatOpen = false;
+    let touchStartY = 0;
+    let touchCurrentY = 0;
+    let isDragging = false;
 
     // Open chat
     function openChat() {
@@ -5671,7 +5676,59 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
 
-    // Watch for chat window class changes (when closed externally)
+    // ===== PULL TO CLOSE GESTURE =====
+    if (chatHeader && chatWindow) {
+      chatHeader.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].clientY;
+        isDragging = true;
+        chatWindow.style.transition = 'none';
+      }, { passive: true });
+
+      chatHeader.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        touchCurrentY = e.touches[0].clientY;
+        const deltaY = touchCurrentY - touchStartY;
+
+        // Only allow pulling down
+        if (deltaY > 0) {
+          const translateY = Math.min(deltaY * 0.7, 250);
+          chatWindow.style.transform = `translateY(${translateY}px)`;
+
+          // Fade overlay
+          if (chatOverlay) {
+            chatOverlay.style.opacity = Math.max(0, 1 - (deltaY / 200));
+          }
+        }
+      }, { passive: true });
+
+      chatHeader.addEventListener('touchend', function() {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const deltaY = touchCurrentY - touchStartY;
+        chatWindow.style.transition = 'transform 0.3s ease-out';
+
+        // If pulled down more than 80px, close
+        if (deltaY > 80) {
+          chatWindow.style.transform = 'translateY(100%)';
+          setTimeout(function() {
+            if (chatClose) chatClose.click();
+            closeChat();
+            chatWindow.style.transform = '';
+            chatWindow.style.transition = '';
+          }, 300);
+        } else {
+          // Snap back
+          chatWindow.style.transform = 'translateY(0)';
+          if (chatOverlay) chatOverlay.style.opacity = '';
+        }
+
+        touchStartY = 0;
+        touchCurrentY = 0;
+      }, { passive: true });
+    }
+
+    // Watch for chat window class changes
     if (chatWindow) {
       const observer = new MutationObserver(function() {
         const isVisible = chatWindow.classList.contains('active');
