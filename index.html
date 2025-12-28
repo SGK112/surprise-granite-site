@@ -5692,17 +5692,49 @@ document.addEventListener('DOMContentLoaded', function () {
       }, { passive: true });
     }
 
-    // Chat action - trigger ElevenLabs
+    // Chat action - trigger ElevenLabs widget
     if (startChat) {
       startChat.addEventListener('click', function() {
         closeDrawer();
-        if (elevenLabsWidget) {
-          setTimeout(function() {
-            elevenLabsWidget.click();
-          }, 350);
-        }
+
+        setTimeout(function() {
+          let triggered = false;
+
+          // Find and click the ElevenLabs widget button
+          if (elevenLabsWidget && elevenLabsWidget.shadowRoot) {
+            // Look for any button or clickable element in shadow DOM
+            const shadowBtn = elevenLabsWidget.shadowRoot.querySelector('button, [role="button"], .widget-button, div[class*="button"]');
+            if (shadowBtn) {
+              shadowBtn.click();
+              triggered = true;
+            }
+          }
+
+          // Fallback: Try clicking the widget container itself
+          if (!triggered && elevenLabsWidget) {
+            try {
+              // Make widget visible and flash it
+              elevenLabsWidget.style.animation = 'pulse-widget 0.5s ease 3';
+              elevenLabsWidget.click();
+              triggered = true;
+            } catch(e) {
+              console.log('Widget click failed:', e);
+            }
+          }
+
+          // If still not triggered, show the widget prominently
+          if (!triggered) {
+            // Scroll to bottom where widget is and highlight it
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          }
+        }, 400);
       });
     }
+
+    // Add pulse animation for widget highlight
+    const style = document.createElement('style');
+    style.textContent = '@keyframes pulse-widget { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }';
+    document.head.appendChild(style);
 
     // Escape key
     document.addEventListener('keydown', function(e) {
