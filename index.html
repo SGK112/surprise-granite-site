@@ -1122,7 +1122,12 @@ setInterval(displayOpeningStatus, 60000);
 <!-- Clean Hero Section -->
 <section class="hero-clean">
   <div class="hero-clean-bg">
-    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp" alt="Premium Quartz Kitchen Countertops" class="hero-clean-img" />
+    <div class="hero-slides">
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp" alt="Premium Quartz Kitchen" class="hero-slide active" />
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6535e32ca24c9a3fff3024e0_bathroom-remodeling-services-arizona.webp" alt="Luxury Bathroom Remodel" class="hero-slide" />
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/666c82cd5e8c79229b330f4b_Surprise%20Granite%20Homepage%20Hero.webp" alt="Modern Kitchen Design" class="hero-slide" />
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/65335c9d645a5e7646ba6841_Bathroom-Remodel-Silverton.webp" alt="Custom Bathroom Design" class="hero-slide" />
+    </div>
     <div class="hero-clean-overlay"></div>
   </div>
 
@@ -1157,6 +1162,21 @@ setInterval(displayOpeningStatus, 60000);
     </div>
   </div>
 </section>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.hero-slide');
+  let currentSlide = 0;
+
+  function nextSlide() {
+    slides[currentSlide].classList.remove('active');
+    currentSlide = (currentSlide + 1) % slides.length;
+    slides[currentSlide].classList.add('active');
+  }
+
+  setInterval(nextSlide, 6000);
+})();
+</script>
 
 <!-- Modal Overlay -->
 <div id="formModal" class="form-modal-overlay">
@@ -1291,10 +1311,26 @@ setInterval(displayOpeningStatus, 60000);
   z-index: 0;
 }
 
-.hero-clean-img {
+.hero-slides {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 1.5s ease, transform 8s ease;
+}
+
+.hero-slide.active {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .hero-clean-overlay {
