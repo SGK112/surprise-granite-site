@@ -5369,271 +5369,121 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script>
-<!-- Mobile Pull Tab -->
+<!-- Mobile Pull Tab + Aria Chat -->
 <style>
-/* ========================================
-   MOBILE PULL TAB - BOTTOM DRAWER
-   ======================================== */
+/* Pull Tab */
+.mobile-pull-tab { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 9997; }
+@media (max-width: 768px) { .mobile-pull-tab { display: block; } body { padding-bottom: 0 !important; } }
+.pull-tab-handle { display: flex; align-items: center; gap: 8px; padding: 12px 32px; padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px)); background: #1a1a1a; border-radius: 20px 20px 0 0; border: none; cursor: pointer; box-shadow: 0 -2px 20px rgba(0,0,0,0.15); }
+.pull-tab-handle:active { background: #2a2a2a; }
+.pull-tab-line { width: 36px; height: 4px; background: rgba(255,255,255,0.4); border-radius: 2px; }
+.pull-tab-text { color: #fff; font-size: 14px; font-weight: 500; }
 
-/* Pull tab handle at bottom of screen */
-.mobile-pull-tab {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9997;
-}
+/* Drawer */
+.mobile-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-radius: 24px 24px 0 0; z-index: 9998; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); max-height: 85vh; box-shadow: 0 -4px 30px rgba(0,0,0,0.12); }
+.mobile-drawer.open { transform: translateY(0); }
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 9997; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.drawer-backdrop.active { opacity: 1; pointer-events: auto; }
+.drawer-header { display: flex; flex-direction: column; align-items: center; padding: 12px 20px 16px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.drawer-handle { width: 40px; height: 5px; background: #ddd; border-radius: 3px; margin-bottom: 12px; }
+.drawer-title { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.drawer-content { padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+.drawer-action { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: #f8f8f8; border: none; border-radius: 14px; text-decoration: none; color: #1a1a1a; cursor: pointer; text-align: left; width: 100%; }
+.drawer-action:active { background: #f0f0f0; }
+.drawer-action-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.drawer-action-icon svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.5; }
+.drawer-action-icon.chat { background: #B8860B; }
+.drawer-action-icon.call { background: #2d8a4e; }
+.drawer-action-icon.quote { background: #1a1a1a; }
+.drawer-action-text { flex: 1; }
+.drawer-action-label { display: block; font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+.drawer-action-desc { display: block; font-size: 13px; color: #666; }
+.drawer-action-arrow { width: 20px; height: 20px; stroke: #999; stroke-width: 2; }
 
-@media (max-width: 768px) {
-  .mobile-pull-tab {
-    display: block;
-  }
-  body {
-    padding-bottom: 0 !important;
-  }
-}
-
-.pull-tab-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 32px 16px;
-  padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
-  background: #1a1a1a;
-  border-radius: 20px 20px 0 0;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.pull-tab-handle:active {
-  background: #2a2a2a;
-}
-
-.pull-tab-line {
-  width: 36px;
-  height: 4px;
-  background: rgba(255,255,255,0.4);
-  border-radius: 2px;
-}
-
-.pull-tab-text {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
-
-/* Drawer that slides up */
-.mobile-drawer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  border-radius: 24px 24px 0 0;
-  z-index: 9998;
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  max-height: 85vh;
-  box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
-}
-
-.mobile-drawer.open {
-  transform: translateY(0);
-}
-
-/* Drawer backdrop */
-.drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 9997;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.drawer-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Drawer header */
-.drawer-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 20px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-
-.drawer-handle {
-  width: 40px;
-  height: 5px;
-  background: #ddd;
-  border-radius: 3px;
-  margin-bottom: 12px;
-}
-
-.drawer-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0;
-}
-
-/* Drawer content */
-.drawer-content {
-  padding: 20px;
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Action cards */
-.drawer-action {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: #f8f8f8;
-  border: none;
-  border-radius: 14px;
-  text-decoration: none;
-  color: #1a1a1a;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  text-align: left;
-  width: 100%;
-}
-
-.drawer-action:active {
-  background: #f0f0f0;
-}
-
-.drawer-action-icon {
-  width: 48px;
-  height: 48px;
-  background: #1a1a1a;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.drawer-action-icon svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.drawer-action-icon.chat {
-  background: #B8860B;
-}
-
-.drawer-action-icon.call {
-  background: #2d8a4e;
-}
-
-.drawer-action-icon.quote {
-  background: #1a1a1a;
-}
-
-.drawer-action-text {
-  flex: 1;
-}
-
-.drawer-action-label {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 2px;
-}
-
-.drawer-action-desc {
-  display: block;
-  font-size: 13px;
-  color: #666;
-}
-
-/* Chevron */
-.drawer-action-arrow {
-  width: 20px;
-  height: 20px;
-  stroke: #999;
-  stroke-width: 2;
-  flex-shrink: 0;
-}
+/* Aria Chat */
+.aria-chat { position: fixed; inset: 0; background: #fff; z-index: 10000; display: none; flex-direction: column; }
+.aria-chat.active { display: flex; }
+.aria-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); background: linear-gradient(135deg, #B8860B 0%, #8B6914 100%); color: #fff; }
+.aria-header-info { display: flex; align-items: center; gap: 12px; }
+.aria-avatar { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.aria-name { font-size: 17px; font-weight: 600; margin: 0; }
+.aria-status { font-size: 12px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
+.aria-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; }
+.aria-close { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.aria-close svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2; }
+.aria-body { flex: 1; overflow-y: auto; padding: 20px; background: #f5f5f5; -webkit-overflow-scrolling: touch; }
+.aria-messages { display: flex; flex-direction: column; gap: 16px; }
+.aria-msg { display: flex; gap: 10px; max-width: 85%; }
+.aria-msg.user { flex-direction: row-reverse; margin-left: auto; }
+.aria-msg-avatar { width: 32px; height: 32px; background: #B8860B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.aria-msg.user .aria-msg-avatar { background: #1a1a1a; }
+.aria-msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; }
+.aria-msg.bot .aria-msg-bubble { background: #fff; color: #1a1a1a; border-bottom-left-radius: 4px; }
+.aria-msg.user .aria-msg-bubble { background: #1a1a1a; color: #fff; border-bottom-right-radius: 4px; }
+.aria-typing { display: flex; gap: 4px; padding: 12px 16px; background: #fff; border-radius: 18px; width: fit-content; }
+.aria-typing span { width: 8px; height: 8px; background: #999; border-radius: 50%; animation: bounce 1.4s ease-in-out infinite; }
+.aria-typing span:nth-child(2) { animation-delay: 0.2s; }
+.aria-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+.aria-input-area { padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #eee; display: flex; gap: 12px; align-items: flex-end; }
+.aria-input { flex: 1; min-height: 44px; max-height: 120px; padding: 12px 16px; border: 1px solid #ddd; border-radius: 22px; font-size: 16px; resize: none; outline: none; }
+.aria-input:focus { border-color: #B8860B; }
+.aria-send { width: 44px; height: 44px; background: #B8860B; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.aria-send:disabled { background: #ccc; }
+.aria-send svg { width: 20px; height: 20px; fill: #fff; }
 </style>
 
 <!-- Pull tab -->
 <div class="mobile-pull-tab" id="mobilePullTab">
-  <button class="pull-tab-handle" id="pullTabHandle" aria-label="Open menu">
-    <span class="pull-tab-text">Get Help</span>
-    <div class="pull-tab-line"></div>
-  </button>
+  <button class="pull-tab-handle" id="pullTabHandle"><span class="pull-tab-text">Get Help</span><div class="pull-tab-line"></div></button>
 </div>
 
-<!-- Backdrop -->
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
-<!-- Drawer -->
 <div class="mobile-drawer" id="mobileDrawer">
-  <div class="drawer-header">
-    <div class="drawer-handle"></div>
-    <h2 class="drawer-title">How can we help?</h2>
-  </div>
+  <div class="drawer-header"><div class="drawer-handle"></div><h2 class="drawer-title">How can we help?</h2></div>
   <div class="drawer-content">
     <button class="drawer-action" id="startChatAction">
-      <div class="drawer-action-icon chat">
-        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      </div>
-      <div class="drawer-action-text">
-        <span class="drawer-action-label">Chat with AI</span>
-        <span class="drawer-action-desc">Get instant answers 24/7</span>
-      </div>
+      <div class="drawer-action-icon chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+      <div class="drawer-action-text"><span class="drawer-action-label">Chat with Aria</span><span class="drawer-action-desc">AI assistant 24/7</span></div>
       <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
     <a href="tel:+16028333189" class="drawer-action">
-      <div class="drawer-action-icon call">
-        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-      </div>
-      <div class="drawer-action-text">
-        <span class="drawer-action-label">Call Us</span>
-        <span class="drawer-action-desc">(602) 833-3189</span>
-      </div>
+      <div class="drawer-action-icon call"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <div class="drawer-action-text"><span class="drawer-action-label">Call Us</span><span class="drawer-action-desc">(602) 833-3189</span></div>
       <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
     <a href="/get-a-free-estimate/" class="drawer-action">
-      <div class="drawer-action-icon quote">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      </div>
-      <div class="drawer-action-text">
-        <span class="drawer-action-label">Free Quote</span>
-        <span class="drawer-action-desc">No obligation estimate</span>
-      </div>
+      <div class="drawer-action-icon quote"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <div class="drawer-action-text"><span class="drawer-action-label">Free Quote</span><span class="drawer-action-desc">No obligation estimate</span></div>
       <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
+  </div>
+</div>
+
+<!-- Aria Chat -->
+<div class="aria-chat" id="ariaChat">
+  <div class="aria-header">
+    <div class="aria-header-info">
+      <div class="aria-avatar">✨</div>
+      <div><h3 class="aria-name">Aria</h3><p class="aria-status"><span class="aria-dot"></span>Online</p></div>
+    </div>
+    <button class="aria-close" id="ariaChatClose"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="aria-body" id="ariaChatBody">
+    <div class="aria-messages" id="ariaMessages">
+      <div class="aria-msg bot"><div class="aria-msg-avatar">✨</div><div class="aria-msg-bubble">Hi! I'm Aria from Surprise Granite. How can I help you today?</div></div>
+    </div>
+  </div>
+  <div class="aria-input-area">
+    <textarea class="aria-input" id="ariaInput" placeholder="Type a message..." rows="1"></textarea>
+    <button class="aria-send" id="ariaSend"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
   </div>
 </div>
 
 <script>
-/**
- * Mobile Pull Tab Drawer
- */
 (function() {
-  'use strict';
+  const ARIA_WEBHOOK = 'https://voiceflow-crm.onrender.com/api/webhooks/agent/aria/trigger';
 
   document.addEventListener('DOMContentLoaded', function() {
     const pullTab = document.getElementById('mobilePullTab');
@@ -5641,107 +5491,49 @@ document.addEventListener('DOMContentLoaded', function () {
     const drawer = document.getElementById('mobileDrawer');
     const backdrop = document.getElementById('drawerBackdrop');
     const startChat = document.getElementById('startChatAction');
-    const elevenLabsWidget = document.querySelector('elevenlabs-convai');
+    const chat = document.getElementById('ariaChat');
+    const chatClose = document.getElementById('ariaChatClose');
+    const chatBody = document.getElementById('ariaChatBody');
+    const messages = document.getElementById('ariaMessages');
+    const input = document.getElementById('ariaInput');
+    const sendBtn = document.getElementById('ariaSend');
 
-    let isOpen = false;
+    let drawerOpen = false, chatOpen = false;
+    let sessionId = 'aria_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
 
-    function openDrawer() {
-      if (isOpen) return;
-      isOpen = true;
-      drawer.classList.add('open');
-      backdrop.classList.add('active');
-      pullTab.style.display = 'none';
-      document.body.style.overflow = 'hidden';
+    function openDrawer() { drawerOpen = true; drawer.classList.add('open'); backdrop.classList.add('active'); pullTab.style.display = 'none'; document.body.style.overflow = 'hidden'; }
+    function closeDrawer() { drawerOpen = false; drawer.classList.remove('open'); backdrop.classList.remove('active'); document.body.style.overflow = ''; if (!chatOpen) setTimeout(() => { if (window.innerWidth <= 768) pullTab.style.display = 'block'; }, 300); }
+    function openChat() { chatOpen = true; chat.classList.add('active'); document.body.style.overflow = 'hidden'; input.focus(); }
+    function closeChat() { chatOpen = false; chat.classList.remove('active'); document.body.style.overflow = ''; if (window.innerWidth <= 768) pullTab.style.display = 'block'; }
+    function scroll() { setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50); }
+    function addMsg(type, text) { const m = document.createElement('div'); m.className = 'aria-msg ' + type; m.innerHTML = '<div class="aria-msg-avatar">' + (type === 'bot' ? '✨' : '👤') + '</div><div class="aria-msg-bubble">' + text + '</div>'; messages.appendChild(m); scroll(); }
+    function showTyping() { const t = document.createElement('div'); t.id = 'ariaTyping'; t.className = 'aria-msg bot'; t.innerHTML = '<div class="aria-msg-avatar">✨</div><div class="aria-typing"><span></span><span></span><span></span></div>'; messages.appendChild(t); scroll(); }
+    function hideTyping() { const t = document.getElementById('ariaTyping'); if (t) t.remove(); }
+
+    async function send() {
+      const text = input.value.trim(); if (!text) return;
+      input.value = ''; input.style.height = 'auto'; sendBtn.disabled = true;
+      addMsg('user', text); showTyping();
+      try {
+        const res = await fetch(ARIA_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, sessionId: sessionId, source: 'website', page: location.pathname }) });
+        const data = await res.json(); hideTyping();
+        addMsg('bot', data.response || data.message || "Thanks! We'll follow up shortly.");
+      } catch(e) { hideTyping(); addMsg('bot', "I'm having trouble connecting. Please call us at (602) 833-3189."); }
+      sendBtn.disabled = false; input.focus();
     }
 
-    function closeDrawer() {
-      if (!isOpen) return;
-      isOpen = false;
-      drawer.classList.remove('open');
-      backdrop.classList.remove('active');
-      document.body.style.overflow = '';
-      setTimeout(function() {
-        if (window.innerWidth <= 768) {
-          pullTab.style.display = 'block';
-        }
-      }, 300);
-    }
+    handle?.addEventListener('click', openDrawer);
+    backdrop?.addEventListener('click', closeDrawer);
+    startChat?.addEventListener('click', () => { closeDrawer(); setTimeout(openChat, 300); });
+    chatClose?.addEventListener('click', closeChat);
+    sendBtn?.addEventListener('click', send);
+    input?.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    input?.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
 
-    // Open on handle click
-    if (handle) {
-      handle.addEventListener('click', openDrawer);
-    }
-
-    // Close on backdrop click
-    if (backdrop) {
-      backdrop.addEventListener('click', closeDrawer);
-    }
-
-    // Swipe down to close
-    let touchStartY = 0;
-    if (drawer) {
-      drawer.addEventListener('touchstart', function(e) {
-        touchStartY = e.touches[0].clientY;
-      }, { passive: true });
-
-      drawer.addEventListener('touchend', function(e) {
-        const deltaY = e.changedTouches[0].clientY - touchStartY;
-        if (deltaY > 80) {
-          closeDrawer();
-        }
-      }, { passive: true });
-    }
-
-    // Chat action - trigger ElevenLabs widget
-    if (startChat) {
-      startChat.addEventListener('click', function() {
-        closeDrawer();
-
-        setTimeout(function() {
-          let triggered = false;
-
-          // Find and click the ElevenLabs widget button
-          if (elevenLabsWidget && elevenLabsWidget.shadowRoot) {
-            // Look for any button or clickable element in shadow DOM
-            const shadowBtn = elevenLabsWidget.shadowRoot.querySelector('button, [role="button"], .widget-button, div[class*="button"]');
-            if (shadowBtn) {
-              shadowBtn.click();
-              triggered = true;
-            }
-          }
-
-          // Fallback: Try clicking the widget container itself
-          if (!triggered && elevenLabsWidget) {
-            try {
-              // Make widget visible and flash it
-              elevenLabsWidget.style.animation = 'pulse-widget 0.5s ease 3';
-              elevenLabsWidget.click();
-              triggered = true;
-            } catch(e) {
-              console.log('Widget click failed:', e);
-            }
-          }
-
-          // If still not triggered, show the widget prominently
-          if (!triggered) {
-            // Scroll to bottom where widget is and highlight it
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-          }
-        }, 400);
-      });
-    }
-
-    // Add pulse animation for widget highlight
-    const style = document.createElement('style');
-    style.textContent = '@keyframes pulse-widget { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }';
-    document.head.appendChild(style);
-
-    // Escape key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && isOpen) {
-        closeDrawer();
-      }
-    });
+    let touchY = 0;
+    drawer?.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+    drawer?.addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchY > 80) closeDrawer(); }, { passive: true });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (chatOpen) closeChat(); else if (drawerOpen) closeDrawer(); } });
   });
 })();
 </script>
