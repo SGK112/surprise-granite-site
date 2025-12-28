@@ -176,72 +176,59 @@ html {
     z-index: 10000 !important;
   }
 
-  /* Chat window - compact size, not overwhelming */
+  /* Chat window - FULL SCREEN mobile-first design */
   .sg-chat-window,
   #sg-chat-window {
     position: fixed !important;
+    top: 0 !important;
     bottom: 0 !important;
     right: 0 !important;
     left: 0 !important;
     width: 100% !important;
+    height: 100% !important;
     max-width: 100% !important;
-    /* Compact height - about 55% of screen */
-    height: 55vh !important;
-    max-height: 450px !important;
-    border-radius: 20px 20px 0 0 !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
     margin: 0 !important;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.3) !important;
+    box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
     background: #fff !important;
     overflow: hidden !important;
+    z-index: 99999 !important;
     /* Smooth slide-up animation */
     transform: translateY(0);
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
-                height 0.3s ease-out !important;
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
   }
 
   /* Hidden state - for animation */
   #sg-chat-window:not(.active) {
     transform: translateY(100%) !important;
+    pointer-events: none !important;
   }
 
-  /* When keyboard opens - even smaller */
+  /* When keyboard opens - adjust for keyboard */
   .keyboard-open .sg-chat-window,
   .keyboard-open #sg-chat-window {
-    height: 40vh !important;
-    max-height: 320px !important;
+    height: 100% !important;
+    max-height: 100% !important;
   }
 
-  /* Chat header - iOS style with drag handle */
+  /* Chat header - full screen style */
   .sg-chat-header {
     flex-shrink: 0 !important;
-    min-height: 64px !important;
-    padding: 16px 16px 12px !important;
-    border-radius: 20px 20px 0 0 !important;
-    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%) !important;
+    min-height: 70px !important;
+    padding: 20px 16px 16px !important;
+    padding-top: max(20px, env(safe-area-inset-top)) !important;
+    border-radius: 0 !important;
+    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     position: relative !important;
     z-index: 5 !important;
-    /* Touch-friendly */
-    cursor: grab;
     user-select: none;
     -webkit-user-select: none;
-  }
-
-  /* iOS drag handle */
-  .sg-chat-header::before {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 3px;
   }
 
   /* Header info styling */
@@ -506,32 +493,32 @@ html {
     fill: #fff !important;
   }
 
-  /* Close button */
+  /* Close button - prominent for full-screen */
   .sg-chat-close {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: rgba(0, 0, 0, 0.12) !important;
-    border: none !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 50% !important;
     cursor: pointer !important;
     z-index: 10 !important;
-    transition: background 0.2s ease, transform 0.15s ease !important;
+    transition: all 0.2s ease !important;
   }
 
   .sg-chat-close:active {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: rgba(255, 255, 255, 0.3) !important;
     transform: scale(0.9) !important;
   }
 
   .sg-chat-close svg,
   .sg-chat-close .sg-icon-sm {
-    width: 18px !important;
-    height: 18px !important;
+    width: 22px !important;
+    height: 22px !important;
     fill: #fff !important;
   }
 

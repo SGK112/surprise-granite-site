@@ -5369,182 +5369,173 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script>
-<!-- iOS-Style Mobile Tab Bar -->
+<!-- BOLD Mobile Navigation - Impossible to Miss -->
 <style>
-/* iOS Tab Bar - matches Apple HIG */
+/* ========================================
+   MOBILE NAVIGATION - BOLD REDESIGN
+   ======================================== */
+
 .mobile-bottom-bar {
   display: none;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  /* iOS frosted glass effect */
-  background: rgba(249, 249, 249, 0.94);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  /* Safe area padding for iPhone X+ */
-  padding: 8px 0;
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  /* BOLD dark background */
+  background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+  padding: 12px 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 9997;
-  /* iOS-style top border */
-  border-top: 0.5px solid rgba(0, 0, 0, 0.12);
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .mobile-bottom-bar {
-    background: rgba(30, 30, 30, 0.88);
-    border-top-color: rgba(255, 255, 255, 0.08);
-  }
+  /* Strong top border */
+  border-top: 3px solid #FF9800;
+  /* Glow effect */
+  box-shadow: 0 -4px 30px rgba(255, 152, 0, 0.3);
 }
 
 @media (max-width: 768px) {
   .mobile-bottom-bar {
-    display: block;
+    display: block !important;
   }
   body {
-    /* Account for tab bar height + safe area */
-    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 90px !important;
   }
 }
 
-/* Handle bar - iOS sheet style */
+/* Remove handle - not needed */
 .bottom-bar-handle {
-  width: 36px;
-  height: 5px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 2.5px;
-  margin: 0 auto 6px;
+  display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  .bottom-bar-handle {
-    background: rgba(255, 255, 255, 0.15);
-  }
-}
-
-/* Tab bar icons row - iOS layout */
+/* Navigation row */
 .bottom-bar-icons {
   display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
-  max-width: 500px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
   margin: 0 auto;
-  padding: 0 16px;
 }
 
-/* Tab button - iOS HIG 44pt minimum */
+/* Base button style - BOLD */
 .bottom-bar-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 4px 16px;
-  min-width: 64px;
-  min-height: 49px; /* iOS standard */
-  background: none;
-  border: none;
-  /* iOS inactive gray */
-  color: #8e8e93;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  /* iOS spring animation */
-  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
-              color 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-  /* Improve touch response */
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
-.bottom-bar-btn svg {
-  width: 28px;
-  height: 28px;
-  fill: currentColor;
-  /* Smooth icon transition */
-  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-/* iOS-style active/pressed state */
-.bottom-bar-btn:active {
-  transform: scale(0.9);
-}
-
-.bottom-bar-btn:active svg {
-  transform: scale(0.95);
-}
-
-/* Selected/active tab state */
-.bottom-bar-btn.active {
-  color: #007AFF; /* iOS blue */
-}
-
-/* Chat button with notification dot */
-.bottom-bar-btn.chat-btn {
-  position: relative;
-}
-
-.bottom-bar-btn.chat-btn::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 12px;
-  width: 10px;
-  height: 10px;
-  /* iOS red notification */
-  background: #FF3B30;
-  border-radius: 50%;
-  border: 2px solid rgba(249, 249, 249, 0.94);
-  box-shadow: 0 1px 3px rgba(255, 59, 48, 0.4);
-}
-
-@media (prefers-color-scheme: dark) {
-  .bottom-bar-btn.chat-btn::after {
-    border-color: rgba(30, 30, 30, 0.88);
-  }
-}
-
-/* Primary CTA button - Gold accent */
-.bottom-bar-btn.primary-btn {
-  /* Golden gradient */
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  color: #1a1a2e;
-  border-radius: 22px;
-  padding: 10px 18px;
-  min-height: 44px;
-  font-weight: 600;
-  font-size: 13px;
-  flex-direction: row;
   gap: 6px;
-  /* Subtle shadow */
-  box-shadow: 0 2px 8px rgba(255, 165, 0, 0.25),
-              0 1px 2px rgba(0, 0, 0, 0.1);
+  padding: 10px 16px;
+  min-width: 70px;
+  min-height: 60px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.bottom-bar-btn.primary-btn svg {
-  width: 18px;
-  height: 18px;
+/* LARGE filled icons */
+.bottom-bar-btn svg {
+  width: 32px;
+  height: 32px;
+  fill: currentColor;
 }
 
-.bottom-bar-btn.primary-btn:active {
-  transform: scale(0.96);
-  box-shadow: 0 1px 4px rgba(255, 165, 0, 0.2);
+/* Tap effect */
+.bottom-bar-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 152, 0, 0.2);
+  border-color: #FF9800;
 }
 
-/* Hide bottom bar when keyboard or chat is open */
-.keyboard-open .mobile-bottom-bar,
-.chat-open .mobile-bottom-bar {
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
+/* CALL button - Green */
+.bottom-bar-btn.call-btn {
+  background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
+  border-color: #00E676;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4);
 }
 
-/* iOS-style overlay when chat opens */
+.bottom-bar-btn.call-btn:active {
+  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3);
+}
+
+/* CHAT button - Orange with pulse */
+.bottom-bar-btn.chat-btn {
+  background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%);
+  border-color: #FF9800;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+  animation: chat-pulse 2s ease-in-out infinite;
+}
+
+@keyframes chat-pulse {
+  0%, 100% { box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4); }
+  50% { box-shadow: 0 4px 25px rgba(255, 152, 0, 0.7); }
+}
+
+/* Notification badge */
+.bottom-bar-btn.chat-btn::after {
+  content: '1';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 22px;
+  height: 22px;
+  background: #FF3D00;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1a1a2e;
+  animation: badge-bounce 1s ease infinite;
+}
+
+@keyframes badge-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* QUOTE button - Gold, larger */
+.bottom-bar-btn.quote-btn {
+  flex: 1;
+  max-width: 140px;
+  flex-direction: row;
+  gap: 8px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+  border-color: #FFD700;
+  color: #1a1a2e;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+}
+
+.bottom-bar-btn.quote-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.bottom-bar-btn.quote-btn:active {
+  background: linear-gradient(135deg, #FFA000 0%, #FF8F00 100%);
+}
+
+/* ========================================
+   FULL-SCREEN MOBILE CHAT
+   ======================================== */
+
+/* Overlay */
 .chat-overlay {
   display: none;
   position: fixed;
@@ -5552,11 +5543,12 @@ document.addEventListener('DOMContentLoaded', function () {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.7);
   z-index: 9998;
   opacity: 0;
   transition: opacity 0.3s ease;
-  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .chat-overlay.active {
@@ -5564,30 +5556,244 @@ document.addEventListener('DOMContentLoaded', function () {
   opacity: 1;
 }
 
-/* Dark mode tab colors */
-@media (prefers-color-scheme: dark) {
-  .bottom-bar-btn {
-    color: #98989f;
+/* Full screen mobile chat container */
+@media (max-width: 768px) {
+  #sg-chat-window.active {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #f5f5f5 !important;
   }
-  .bottom-bar-btn.active {
-    color: #0a84ff; /* iOS dark mode blue */
+
+  /* Full-screen chat header */
+  #sg-chat-window.active .sg-chat-header {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
+    padding: 16px 16px !important;
+    padding-top: max(16px, env(safe-area-inset-top)) !important;
+    min-height: 70px !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  /* Header content */
+  #sg-chat-window.active .sg-chat-header-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  #sg-chat-window.active .sg-chat-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    border: 3px solid rgba(255, 255, 255, 0.4) !important;
+    overflow: hidden !important;
+  }
+
+  #sg-chat-window.active .sg-chat-header-text h3 {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    margin: 0 !important;
+  }
+
+  #sg-chat-window.active .sg-chat-header-text p {
+    font-size: 13px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin: 4px 0 0 !important;
+  }
+
+  /* Close button - BIG X */
+  #sg-chat-window.active .sg-chat-close {
+    width: 44px !important;
+    height: 44px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    cursor: pointer !important;
+  }
+
+  #sg-chat-window.active .sg-chat-close svg {
+    width: 24px !important;
+    height: 24px !important;
+    fill: #fff !important;
+  }
+
+  /* Chat body - full space */
+  #sg-chat-window.active .sg-chat-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    background: #f0f2f5 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Messages container */
+  #sg-chat-window.active .sg-chat-messages {
+    padding: 20px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Message bubbles */
+  #sg-chat-window.active .sg-message {
+    display: flex !important;
+    gap: 12px !important;
+    animation: msg-slide 0.3s ease-out !important;
+  }
+
+  @keyframes msg-slide {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #sg-chat-window.active .sg-message.user {
+    flex-direction: row-reverse !important;
+  }
+
+  #sg-chat-window.active .sg-message-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
+    background: #ddd !important;
+  }
+
+  #sg-chat-window.active .sg-message-content {
+    max-width: 75% !important;
+    padding: 14px 18px !important;
+    border-radius: 24px !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+
+  #sg-chat-window.active .sg-message.bot .sg-message-content {
+    background: #fff !important;
+    color: #1f2937 !important;
+    border-bottom-left-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  #sg-chat-window.active .sg-message.user .sg-message-content {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
+    color: #fff !important;
+    border-bottom-right-radius: 8px !important;
+  }
+
+  /* Quick replies */
+  #sg-chat-window.active .sg-quick-replies {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 10px 16px 20px !important;
+  }
+
+  #sg-chat-window.active .sg-quick-reply-btn {
+    padding: 12px 20px !important;
+    background: #fff !important;
+    border: 2px solid #FF9800 !important;
+    border-radius: 24px !important;
+    color: #FF9800 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+
+  #sg-chat-window.active .sg-quick-reply-btn:active {
+    background: #FF9800 !important;
+    color: #fff !important;
+  }
+
+  /* Input area - fixed at bottom */
+  #sg-chat-window.active .sg-chat-input-wrapper {
+    padding: 16px !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+    background: #fff !important;
+    border-top: 1px solid #e5e7eb !important;
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  #sg-chat-window.active .sg-chat-input {
+    flex: 1 !important;
+    min-height: 50px !important;
+    font-size: 17px !important;
+    padding: 14px 20px !important;
+    border-radius: 28px !important;
+    background: #f3f4f6 !important;
+    border: 2px solid transparent !important;
+    outline: none !important;
+  }
+
+  #sg-chat-window.active .sg-chat-input:focus {
+    border-color: #FF9800 !important;
+    background: #fff !important;
+  }
+
+  #sg-chat-window.active .sg-send-btn {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
+  }
+
+  #sg-chat-window.active .sg-send-btn svg {
+    width: 24px !important;
+    height: 24px !important;
+    fill: #fff !important;
+  }
+
+  #sg-chat-window.active .sg-send-btn:active {
+    transform: scale(0.9) !important;
+  }
+
+  /* Hide footer in mobile */
+  #sg-chat-window.active .sg-chat-footer {
+    display: none !important;
   }
 }
 </style>
 
 <div class="mobile-bottom-bar" id="mobileBottomBar">
-  <div class="bottom-bar-handle"></div>
   <div class="bottom-bar-icons">
-    <a href="tel:+16028333189" class="bottom-bar-btn">
-      <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-      <span>Call</span>
+    <!-- CALL Button - Green -->
+    <a href="tel:+16028333189" class="bottom-bar-btn call-btn">
+      <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+      <span>Call Us</span>
     </a>
+
+    <!-- CHAT Button - Orange -->
     <button class="bottom-bar-btn chat-btn" id="openChatBtn" aria-label="Open chat">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
       <span>Chat</span>
     </button>
-    <a href="/get-a-free-estimate/" class="bottom-bar-btn primary-btn">
-      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+
+    <!-- QUOTE Button - Gold, prominent -->
+    <a href="/get-a-free-estimate/" class="bottom-bar-btn quote-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
       <span>Quote</span>
     </a>
   </div>
