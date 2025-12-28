@@ -5373,14 +5373,17 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
 /* iOS Glassmorphic Variables */
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-bg-dark: rgba(30, 30, 32, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --accent-gold: #C9A227;
-  --accent-gradient: linear-gradient(135deg, #C9A227 0%, #A07D1C 100%);
+  --accent-gold: #D4AF37;
+  --accent-gradient: linear-gradient(135deg, #D4AF37 0%, #B8960C 100%);
+  --ai-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --user-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   --text-primary: #1c1c1e;
   --text-secondary: #8e8e93;
-  --ios-blur: blur(20px) saturate(180%);
+  --ios-blur: blur(24px) saturate(200%);
 }
 
 /* Pull Tab - Floating Pill */
@@ -5438,7 +5441,7 @@ document.addEventListener('DOMContentLoaded', function () {
 /* Aria Chat - iOS Full Screen with Glass */
 .aria-chat {
   position: fixed; inset: 0;
-  background: linear-gradient(180deg, #f2f2f7 0%, #e5e5ea 100%);
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
   z-index: 10000; display: none; flex-direction: column;
   animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -5449,113 +5452,122 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .aria-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; padding-top: max(12px, calc(env(safe-area-inset-top) + 4px));
-  background: var(--glass-bg); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
-  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+  padding: 14px 16px; padding-top: max(14px, calc(env(safe-area-inset-top) + 8px));
+  background: rgba(255,255,255,0.08); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .aria-header-info { display: flex; align-items: center; gap: 12px; }
 .aria-avatar {
-  width: 44px; height: 44px;
-  background: var(--accent-gradient);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; box-shadow: 0 3px 12px rgba(201, 162, 39, 0.35);
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-@keyframes pulse-glow { 0%, 100% { box-shadow: 0 3px 12px rgba(201, 162, 39, 0.35); } 50% { box-shadow: 0 3px 20px rgba(201, 162, 39, 0.55); } }
-.aria-name { font-size: 17px; font-weight: 600; margin: 0; color: var(--text-primary); letter-spacing: -0.3px; }
-.aria-status { font-size: 13px; color: #34c759; display: flex; align-items: center; gap: 5px; font-weight: 500; }
-.aria-status::before { content: ''; width: 8px; height: 8px; background: #34c759; border-radius: 50%; animation: pulse 2s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.aria-close {
-  width: 32px; height: 32px; background: rgba(0,0,0,0.06);
-  border: none; border-radius: 50%; cursor: pointer;
+  width: 46px; height: 46px; border-radius: 14px; overflow: hidden;
+  background: var(--ai-gradient);
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s ease;
-  font-size: 18px; color: #3a3a3c; font-weight: 300; line-height: 1;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  position: relative;
 }
-.aria-close:active { background: rgba(0,0,0,0.12); }
+.aria-avatar::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%);
+  border-radius: 14px;
+}
+.aria-avatar-img { width: 28px; height: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+.aria-name { font-size: 17px; font-weight: 600; margin: 0; color: #fff; letter-spacing: -0.3px; }
+.aria-status { font-size: 13px; color: #4ade80; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.aria-status::before { content: ''; width: 8px; height: 8px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #4ade80; } 50% { opacity: 0.6; box-shadow: 0 0 12px #4ade80; } }
+.aria-close {
+  width: 34px; height: 34px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 16px; color: rgba(255,255,255,0.8); font-weight: 300; line-height: 1;
+}
+.aria-close:active { background: rgba(255,255,255,0.2); transform: scale(0.95); }
 
-.aria-body { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
-.aria-messages { display: flex; flex-direction: column; gap: 12px; }
+.aria-body { flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch; }
+.aria-messages { display: flex; flex-direction: column; gap: 16px; }
 
-.aria-msg { display: flex; gap: 8px; max-width: 82%; opacity: 0; animation: msgFadeIn 0.3s ease forwards; }
-@keyframes msgFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.aria-msg { display: flex; gap: 10px; max-width: 85%; opacity: 0; animation: msgFadeIn 0.4s ease forwards; }
+@keyframes msgFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .aria-msg.user { flex-direction: row-reverse; margin-left: auto; }
 .aria-msg-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; flex-shrink: 0; align-self: flex-end;
+  flex-shrink: 0; align-self: flex-end; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-.aria-msg.bot .aria-msg-avatar { background: var(--accent-gradient); box-shadow: 0 2px 8px rgba(201, 162, 39, 0.25); }
-.aria-msg.user .aria-msg-avatar { background: linear-gradient(135deg, #3a3a3c 0%, #1c1c1e 100%); }
+.aria-msg.bot .aria-msg-avatar { background: var(--ai-gradient); }
+.aria-msg.user .aria-msg-avatar { background: var(--user-gradient); border: 1px solid rgba(255,255,255,0.1); }
+.aria-msg-avatar-icon { font-size: 16px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
 .aria-msg-bubble {
-  padding: 12px 16px; border-radius: 20px;
-  font-size: 16px; line-height: 1.4; letter-spacing: -0.2px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 12px 16px; border-radius: 18px;
+  font-size: 15px; line-height: 1.45; letter-spacing: -0.1px;
 }
 .aria-msg.bot .aria-msg-bubble {
-  background: var(--glass-bg); backdrop-filter: blur(10px);
-  color: var(--text-primary); border-bottom-left-radius: 6px;
-  border: 0.5px solid rgba(0,0,0,0.04);
+  background: rgba(255,255,255,0.1); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  color: rgba(255,255,255,0.95); border-bottom-left-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 .aria-msg.user .aria-msg-bubble {
   background: var(--accent-gradient);
   color: #fff; border-bottom-right-radius: 6px;
-  box-shadow: 0 2px 12px rgba(201, 162, 39, 0.3);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
 }
 
 /* AI Typing Indicator */
-.aria-typing-wrap { display: flex; gap: 8px; max-width: 82%; }
-.aria-typing-avatar { width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; align-self: flex-end; box-shadow: 0 2px 8px rgba(201, 162, 39, 0.25); }
+.aria-typing-wrap { display: flex; gap: 10px; max-width: 85%; }
+.aria-typing-avatar { width: 32px; height: 32px; background: var(--ai-gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; align-self: flex-end; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.aria-typing-avatar-icon { font-size: 16px; }
 .aria-typing {
-  display: flex; align-items: center; gap: 5px;
-  padding: 14px 18px; background: var(--glass-bg); backdrop-filter: blur(10px);
-  border-radius: 20px; border-bottom-left-radius: 6px; border: 0.5px solid rgba(0,0,0,0.04);
+  display: flex; align-items: center; gap: 6px;
+  padding: 16px 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(16px);
+  border-radius: 18px; border-bottom-left-radius: 6px; border: 1px solid rgba(255,255,255,0.12);
 }
 .aria-typing span {
-  width: 8px; height: 8px; background: var(--accent-gold);
+  width: 8px; height: 8px; background: rgba(255,255,255,0.6);
   border-radius: 50%; animation: typingBounce 1.4s ease-in-out infinite;
 }
 .aria-typing span:nth-child(2) { animation-delay: 0.15s; }
 .aria-typing span:nth-child(3) { animation-delay: 0.3s; }
-@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 30% { transform: translateY(-8px) scale(1.1); opacity: 1; } }
+@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0) scale(1); opacity: 0.3; } 30% { transform: translateY(-8px) scale(1.15); opacity: 1; } }
 
-/* Input Area - iOS Style */
+/* Input Area - Glassmorphic */
 .aria-input-area {
-  padding: 12px 16px; padding-bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px));
-  background: var(--glass-bg); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
-  border-top: 0.5px solid rgba(0,0,0,0.08);
-  display: flex; gap: 10px; align-items: flex-end;
+  padding: 14px 16px; padding-bottom: max(14px, calc(env(safe-area-inset-bottom) + 10px));
+  background: rgba(255,255,255,0.08); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex; gap: 12px; align-items: flex-end;
 }
 .aria-input {
-  flex: 1; min-height: 40px; max-height: 100px; padding: 10px 16px;
-  background: rgba(0,0,0,0.04); border: 1px solid transparent; border-radius: 20px;
-  font-size: 16px; resize: none; outline: none; color: var(--text-primary);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  flex: 1; min-height: 44px; max-height: 100px; padding: 12px 18px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px;
+  font-size: 16px; resize: none; outline: none; color: #fff;
+  transition: all 0.2s ease;
   -webkit-appearance: none; -moz-appearance: none; appearance: none;
 }
-.aria-input::placeholder { color: var(--text-secondary); }
-.aria-input:focus { background: rgba(0,0,0,0.06); border-color: rgba(201, 162, 39, 0.3); }
+.aria-input::placeholder { color: rgba(255,255,255,0.4); }
+.aria-input:focus { background: rgba(255,255,255,0.12); border-color: rgba(212, 175, 55, 0.5); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15); }
 .aria-send {
-  width: 40px; height: 40px; background: var(--accent-gradient);
+  width: 44px; height: 44px; background: var(--accent-gradient);
   border: none; border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 10px rgba(201, 162, 39, 0.35);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   font-size: 18px; color: #fff; line-height: 1;
 }
 .aria-send:active { transform: scale(0.92); }
-.aria-send:disabled { background: rgba(0,0,0,0.08); box-shadow: none; color: var(--text-secondary); }
+.aria-send:disabled { background: rgba(255,255,255,0.1); box-shadow: none; color: rgba(255,255,255,0.3); }
 
 /* Quick Actions */
-.aria-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.aria-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .aria-quick-btn {
-  padding: 8px 14px; background: rgba(201, 162, 39, 0.1);
-  border: 1px solid rgba(201, 162, 39, 0.3); border-radius: 16px;
-  font-size: 14px; color: var(--accent-gold); font-weight: 500;
+  padding: 10px 16px; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
+  font-size: 14px; color: rgba(255,255,255,0.9); font-weight: 500;
   cursor: pointer; transition: all 0.15s ease;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
-.aria-quick-btn:active { background: rgba(201, 162, 39, 0.2); transform: scale(0.96); }
+.aria-quick-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.96); border-color: var(--accent-gold); }
 </style>
 
 <!-- Pull tab -->
@@ -5593,14 +5605,14 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="aria-chat" id="ariaChat">
   <div class="aria-header">
     <div class="aria-header-info">
-      <div class="aria-avatar">✨</div>
+      <div class="aria-avatar"><span class="aria-avatar-img">🤖</span></div>
       <div><h3 class="aria-name">Aria</h3><p class="aria-status">Online</p></div>
     </div>
     <button class="aria-close" id="ariaChatClose">✕</button>
   </div>
   <div class="aria-body" id="ariaChatBody">
     <div class="aria-messages" id="ariaMessages">
-      <div class="aria-msg bot"><div class="aria-msg-avatar">✨</div><div class="aria-msg-bubble">Hey! 👋 I'm Aria, your AI assistant at Surprise Granite. How can I help you today?</div></div>
+      <div class="aria-msg bot"><div class="aria-msg-avatar"><span class="aria-msg-avatar-icon">🤖</span></div><div class="aria-msg-bubble">Hey! 👋 I'm Aria, your AI assistant at Surprise Granite. How can I help you today?</div></div>
       <div class="aria-quick-actions" id="ariaQuickActions">
         <button class="aria-quick-btn" data-msg="Get a free quote">💰 Free Quote</button>
         <button class="aria-quick-btn" data-msg="What countertops do you offer?">🪨 Materials</button>
@@ -5610,7 +5622,7 @@ document.addEventListener('DOMContentLoaded', function () {
   </div>
   <div class="aria-input-area">
     <textarea class="aria-input" id="ariaInput" placeholder="Message Aria..." rows="1"></textarea>
-    <button class="aria-send" id="ariaSend">➤</button>
+    <button class="aria-send" id="ariaSend">↑</button>
   </div>
 </div>
 
@@ -5673,7 +5685,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const m = document.createElement('div');
       m.className = 'aria-msg ' + type;
-      m.innerHTML = '<div class="aria-msg-avatar">' + (type === 'bot' ? '✨' : '👤') + '</div><div class="aria-msg-bubble">' + text + '</div>';
+      const icon = type === 'bot' ? '🤖' : '👤';
+      m.innerHTML = '<div class="aria-msg-avatar"><span class="aria-msg-avatar-icon">' + icon + '</span></div><div class="aria-msg-bubble">' + text + '</div>';
       messages.appendChild(m);
       scroll();
     }
@@ -5682,7 +5695,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const t = document.createElement('div');
       t.id = 'ariaTyping';
       t.className = 'aria-typing-wrap';
-      t.innerHTML = '<div class="aria-typing-avatar">✨</div><div class="aria-typing"><span></span><span></span><span></span></div>';
+      t.innerHTML = '<div class="aria-typing-avatar"><span class="aria-typing-avatar-icon">🤖</span></div><div class="aria-typing"><span></span><span></span><span></span></div>';
       messages.appendChild(t);
       scroll();
     }
