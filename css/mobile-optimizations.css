@@ -124,20 +124,28 @@
     width: 100% !important;
   }
 
-  /* Chat window - 75% of screen height, above bottom bar */
+  /* Chat window - full height minus bottom bar, anchored to bottom */
   .sg-chat-window,
   #sg-chat-window {
     position: fixed !important;
-    bottom: 56px !important;
+    bottom: 0 !important;
     right: 0 !important;
     left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: 75vh !important;
-    max-height: 75vh !important;
+    height: calc(100vh - 70px) !important;
+    max-height: calc(100vh - 70px) !important;
     border-radius: 20px 20px 0 0 !important;
     margin: 0 !important;
     box-shadow: 0 -4px 24px rgba(0,0,0,0.2) !important;
+    transition: height 0.2s ease !important;
+  }
+
+  /* When keyboard opens, reduce chat height */
+  .keyboard-open .sg-chat-window,
+  .keyboard-open #sg-chat-window {
+    height: 50vh !important;
+    max-height: 50vh !important;
   }
 
   /* Chat header */
@@ -580,11 +588,14 @@
       padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 
-    /* Position chat button above mobile sticky CTA (70px) + safe area */
+    /* Chat window anchored to bottom, adjusts with safe area */
     .sg-chat-toggle,
-    #sg-chat-widget,
+    #sg-chat-widget {
+      bottom: 0 !important;
+    }
+
     #sg-chat-button {
-      bottom: max(85px, calc(env(safe-area-inset-bottom) + 85px)) !important;
+      display: none !important;
     }
   }
 }

@@ -4495,18 +4495,25 @@ form.addEventListener('submit', async (e) => {
       width: 100%;
     }
 
-    /* Chat window - 75% height, discrete positioning */
+    /* Chat window - anchored to bottom, full height */
     #sg-chat-window {
       position: fixed;
       width: 100%;
       max-width: 100%;
-      height: 75vh;
-      max-height: 75vh;
-      bottom: 56px;
+      height: calc(100vh - 70px);
+      max-height: calc(100vh - 70px);
+      bottom: 0;
       right: 0;
       left: 0;
       border-radius: 20px 20px 0 0;
       box-shadow: 0 -4px 24px rgba(0,0,0,0.2);
+      transition: height 0.2s ease;
+    }
+
+    /* When keyboard opens, reduce height but stay at bottom */
+    .keyboard-open #sg-chat-window {
+      height: 50vh;
+      max-height: 50vh;
     }
 
     .sg-chat-header {
@@ -4544,9 +4551,9 @@ form.addEventListener('submit', async (e) => {
   /* Mobile Responsive - Phone */
   @media (max-width: 480px) {
     #sg-chat-window {
-      height: 75vh;
-      max-height: 75vh;
-      bottom: 56px;
+      height: calc(100vh - 70px);
+      max-height: calc(100vh - 70px);
+      bottom: 0;
     }
 
     .sg-chat-header {
@@ -5491,25 +5498,25 @@ document.addEventListener('DOMContentLoaded', function () {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(26, 26, 46, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 6px 12px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  background: rgba(26, 26, 46, 0.98);
+  backdrop-filter: blur(12px);
+  padding: 8px 16px 10px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
   z-index: 9997;
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.2);
 }
 @media (max-width: 768px) {
   .mobile-bottom-bar { display: block; }
-  body { padding-bottom: 56px; }
+  body { padding-bottom: 70px; }
 }
 
 /* Handle bar */
 .bottom-bar-handle {
-  width: 32px;
-  height: 3px;
-  background: rgba(255,255,255,0.15);
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
   border-radius: 2px;
-  margin: 0 auto 6px;
+  margin: 0 auto 8px;
 }
 
 /* Icon buttons row */
@@ -5517,33 +5524,36 @@ document.addEventListener('DOMContentLoaded', function () {
   display: flex;
   justify-content: space-around;
   align-items: center;
+  gap: 8px;
 }
 
 .bottom-bar-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px 14px;
+  gap: 4px;
+  padding: 8px 20px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.7);
   text-decoration: none;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
 }
 
 .bottom-bar-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   fill: currentColor;
 }
 
 .bottom-bar-btn:active {
   color: #FFD700;
+  transform: scale(0.95);
 }
 
 .bottom-bar-btn.chat-btn {
@@ -5553,33 +5563,40 @@ document.addEventListener('DOMContentLoaded', function () {
 .bottom-bar-btn.chat-btn::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: 10px;
-  width: 6px;
-  height: 6px;
+  top: 4px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
   background: #FFD700;
   border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255,215,0,0.6);
 }
 
 .bottom-bar-btn.primary-btn {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   color: #1a1a2e;
-  border-radius: 16px;
-  padding: 6px 14px;
+  border-radius: 20px;
+  padding: 10px 20px;
   font-weight: 600;
-  font-size: 10px;
+  font-size: 12px;
   flex-direction: row;
-  gap: 4px;
+  gap: 6px;
+  box-shadow: 0 2px 12px rgba(255,165,0,0.3);
 }
 
 .bottom-bar-btn.primary-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .bottom-bar-btn.primary-btn:active {
   transform: scale(0.96);
   color: #1a1a2e;
+}
+
+/* Hide bottom bar when keyboard is open */
+.keyboard-open .mobile-bottom-bar {
+  display: none !important;
 }
 </style>
 
@@ -5606,11 +5623,76 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('DOMContentLoaded', function() {
     const openChatBtn = document.getElementById('openChatBtn');
     const chatButton = document.getElementById('sg-chat-button');
+    const chatWindow = document.getElementById('sg-chat-window');
+    const bottomBar = document.getElementById('mobileBottomBar');
+
+    // Open chat when bottom bar button clicked
     if (openChatBtn && chatButton) {
       openChatBtn.addEventListener('click', function() {
         chatButton.click();
+        // Hide bottom bar when chat opens
+        if (bottomBar) bottomBar.style.display = 'none';
       });
     }
+
+    // Show bottom bar when chat closes
+    if (chatWindow) {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
+            const isVisible = chatWindow.style.display !== 'none' &&
+                              !chatWindow.classList.contains('hidden');
+            if (!isVisible && bottomBar && window.innerWidth <= 768) {
+              bottomBar.style.display = 'block';
+            }
+          }
+        });
+      });
+      observer.observe(chatWindow, { attributes: true });
+    }
+
+    // Keyboard detection for mobile
+    const initialHeight = window.innerHeight;
+    let keyboardOpen = false;
+
+    window.addEventListener('resize', function() {
+      if (window.innerWidth <= 768) {
+        const heightDiff = initialHeight - window.innerHeight;
+        if (heightDiff > 150) {
+          // Keyboard opened
+          if (!keyboardOpen) {
+            keyboardOpen = true;
+            document.body.classList.add('keyboard-open');
+          }
+        } else {
+          // Keyboard closed
+          if (keyboardOpen) {
+            keyboardOpen = false;
+            document.body.classList.remove('keyboard-open');
+          }
+        }
+      }
+    });
+
+    // Also detect focus on inputs in chat
+    document.addEventListener('focusin', function(e) {
+      if (window.innerWidth <= 768 &&
+          (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        document.body.classList.add('keyboard-open');
+      }
+    });
+
+    document.addEventListener('focusout', function(e) {
+      if (window.innerWidth <= 768) {
+        setTimeout(function() {
+          if (!document.activeElement ||
+              (document.activeElement.tagName !== 'INPUT' &&
+               document.activeElement.tagName !== 'TEXTAREA')) {
+            document.body.classList.remove('keyboard-open');
+          }
+        }, 100);
+      }
+    });
   });
 })();
 </script>
