@@ -5459,11 +5459,11 @@ document.addEventListener('DOMContentLoaded', function () {
 .aria-header-info { display: flex; align-items: center; gap: 12px; }
 .aria-avatar {
   width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #F97316 0%, #ea580c 100%);
   display: flex; align-items: center; justify-content: center;
   border: 2px solid rgba(255,255,255,0.2);
 }
-.aria-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.aria-avatar-text { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
 .aria-name { font-size: 16px; font-weight: 600; margin: 0; color: #fff; }
 .aria-status { font-size: 13px; color: #4ade80; display: flex; align-items: center; gap: 6px; font-weight: 400; }
 .aria-status::before { content: ''; width: 8px; height: 8px; background: #4ade80; border-radius: 50%; }
@@ -5486,12 +5486,10 @@ document.addEventListener('DOMContentLoaded', function () {
   width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; align-self: flex-start; overflow: hidden;
-  background: #f0f0f0;
+  font-size: 12px; font-weight: 700; color: #fff;
 }
-.aria-msg.bot .aria-msg-avatar { background: #f0f0f0; }
-.aria-msg.user .aria-msg-avatar { background: #2D3436; }
-.aria-msg-avatar-img { width: 100%; height: 100%; object-fit: cover; }
-.aria-msg-avatar-icon { font-size: 18px; }
+.aria-msg-avatar.bot-avatar { background: linear-gradient(135deg, #F97316 0%, #ea580c 100%); }
+.aria-msg-avatar.user-avatar { background: linear-gradient(135deg, #2D3436 0%, #1a1a1a 100%); }
 .aria-msg-bubble {
   padding: 12px 16px; border-radius: 16px;
   font-size: 15px; line-height: 1.5;
@@ -5507,8 +5505,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 /* AI Typing Indicator */
 .aria-typing-wrap { display: flex; gap: 10px; max-width: 85%; }
-.aria-typing-avatar { width: 36px; height: 36px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; align-self: flex-start; overflow: hidden; }
-.aria-typing-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.aria-typing-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #F97316 0%, #ea580c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; align-self: flex-start; font-size: 12px; font-weight: 700; color: #fff; }
 .aria-typing {
   display: flex; align-items: center; gap: 5px;
   padding: 14px 18px; background: #fff;
@@ -5529,8 +5526,11 @@ document.addEventListener('DOMContentLoaded', function () {
   background: #fff; border-top: 1px solid #eee;
   display: flex; gap: 12px; align-items: center;
 }
+.aria-input-wrap {
+  flex: 1; position: relative; display: flex; align-items: center;
+}
 .aria-input {
-  flex: 1; min-height: 44px; max-height: 100px; padding: 12px 16px;
+  width: 100%; min-height: 44px; max-height: 100px; padding: 12px 50px 12px 16px;
   background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 22px;
   font-size: 15px; resize: none; outline: none; color: #1a1a1a;
   transition: all 0.2s ease;
@@ -5538,8 +5538,20 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 .aria-input::placeholder { color: #999; }
 .aria-input:focus { border-color: #F97316; background: #fff; }
+.aria-mic {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; background: transparent;
+  border: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #999; transition: all 0.2s ease;
+}
+.aria-mic svg { width: 20px; height: 20px; }
+.aria-mic:hover { color: #F97316; }
+.aria-mic:active { transform: translateY(-50%) scale(0.95); }
+.aria-mic.recording { color: #ef4444; animation: micPulse 1s ease-in-out infinite; }
+@keyframes micPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .aria-send {
-  width: 44px; height: 44px; background: #F97316;
+  width: 44px; height: 44px; background: #F97316; flex-shrink: 0;
   border: none; border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.15s ease;
@@ -5596,14 +5608,14 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="aria-chat" id="ariaChat">
   <div class="aria-header">
     <div class="aria-header-info">
-      <div class="aria-avatar"><img class="aria-avatar-img" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=face" alt="Design Assistant"></div>
+      <div class="aria-avatar"><span class="aria-avatar-text">SG</span></div>
       <div><h3 class="aria-name">Surprise Granite</h3><p class="aria-status">Design Assistant</p></div>
     </div>
     <button class="aria-close" id="ariaChatClose">✕</button>
   </div>
   <div class="aria-body" id="ariaChatBody">
     <div class="aria-messages" id="ariaMessages">
-      <div class="aria-msg bot"><div class="aria-msg-avatar"><img class="aria-msg-avatar-img" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face" alt="Assistant"></div><div class="aria-msg-bubble">Hi there! How can I assist you today?</div></div>
+      <div class="aria-msg bot"><div class="aria-msg-avatar bot-avatar"><span>SG</span></div><div class="aria-msg-bubble">Hi there! How can I assist you today?</div></div>
       <div class="aria-quick-actions" id="ariaQuickActions">
         <button class="aria-quick-btn" data-msg="Get a free quote">Free Quote</button>
         <button class="aria-quick-btn" data-msg="What countertops do you offer?">Materials</button>
@@ -5612,7 +5624,12 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
   </div>
   <div class="aria-input-area">
-    <textarea class="aria-input" id="ariaInput" placeholder="Ask about countertops, design tips..." rows="1"></textarea>
+    <div class="aria-input-wrap">
+      <textarea class="aria-input" id="ariaInput" placeholder="Ask about countertops, design tips..." rows="1"></textarea>
+      <button class="aria-mic" id="ariaMic" title="Voice input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+    </div>
     <button class="aria-send" id="ariaSend">➤</button>
   </div>
   <div class="aria-footer">Powered by <a href="https://surprisegranite.com">Surprise Granite</a></div>
@@ -5671,17 +5688,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function scroll() { setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50); }
 
-    const botAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face';
-    const userAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face';
-
     function addMsg(type, text) {
       // Hide quick actions after first user message
       if (type === 'user' && quickActions) quickActions.style.display = 'none';
 
       const m = document.createElement('div');
       m.className = 'aria-msg ' + type;
-      const avatar = type === 'bot' ? botAvatar : userAvatar;
-      m.innerHTML = '<div class="aria-msg-avatar"><img class="aria-msg-avatar-img" src="' + avatar + '" alt=""></div><div class="aria-msg-bubble">' + text + '</div>';
+      const avatarClass = type === 'bot' ? 'bot-avatar' : 'user-avatar';
+      const initials = type === 'bot' ? 'SG' : 'You';
+      m.innerHTML = '<div class="aria-msg-avatar ' + avatarClass + '"><span>' + initials + '</span></div><div class="aria-msg-bubble">' + text + '</div>';
       messages.appendChild(m);
       scroll();
     }
@@ -5690,7 +5705,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const t = document.createElement('div');
       t.id = 'ariaTyping';
       t.className = 'aria-typing-wrap';
-      t.innerHTML = '<div class="aria-typing-avatar"><img class="aria-typing-avatar-img" src="' + botAvatar + '" alt=""></div><div class="aria-typing"><span></span><span></span><span></span></div>';
+      t.innerHTML = '<div class="aria-typing-avatar"><span>SG</span></div><div class="aria-typing"><span></span><span></span><span></span></div>';
       messages.appendChild(t);
       scroll();
     }
@@ -5733,6 +5748,69 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.aria-quick-btn').forEach(btn => {
       btn.addEventListener('click', () => send(btn.dataset.msg));
     });
+
+    // Voice input (Mic button)
+    const micBtn = document.getElementById('ariaMic');
+    let recognition = null;
+    let isRecording = false;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = function() {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        input.placeholder = 'Listening...';
+      };
+
+      recognition.onend = function() {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        input.placeholder = 'Ask about countertops, design tips...';
+      };
+
+      recognition.onresult = function(event) {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        input.value = transcript;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+        // Auto-send on final result
+        if (event.results[event.results.length - 1].isFinal && transcript.trim()) {
+          setTimeout(() => send(), 300);
+        }
+      };
+
+      recognition.onerror = function(event) {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        input.placeholder = 'Ask about countertops, design tips...';
+        if (event.error !== 'no-speech') {
+          console.log('Speech recognition error:', event.error);
+        }
+      };
+
+      micBtn?.addEventListener('click', function() {
+        if (isRecording) {
+          recognition.stop();
+        } else {
+          try {
+            recognition.start();
+          } catch(e) {
+            console.log('Speech recognition already running');
+          }
+        }
+      });
+    } else {
+      // Hide mic button if speech recognition not supported
+      if (micBtn) micBtn.style.display = 'none';
+    }
 
     // Swipe to close drawer
     let touchY = 0;
