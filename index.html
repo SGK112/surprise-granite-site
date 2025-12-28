@@ -5369,73 +5369,201 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script>
-<!-- Mobile Pull Tab + Aria Chat -->
+<!-- Mobile Pull Tab + Aria Chat - iOS Glassmorphic Design -->
 <style>
-/* Pull Tab */
-.mobile-pull-tab { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 9997; }
+/* iOS Glassmorphic Variables */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --accent-gold: #C9A227;
+  --accent-gradient: linear-gradient(135deg, #C9A227 0%, #A07D1C 100%);
+  --text-primary: #1c1c1e;
+  --text-secondary: #8e8e93;
+  --ios-blur: blur(20px) saturate(180%);
+}
+
+/* Pull Tab - Floating Pill */
+.mobile-pull-tab { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 9997; padding-bottom: env(safe-area-inset-bottom); }
 @media (max-width: 768px) { .mobile-pull-tab { display: block; } body { padding-bottom: 0 !important; } }
-.pull-tab-handle { display: flex; align-items: center; gap: 8px; padding: 12px 32px; padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px)); background: #1a1a1a; border-radius: 20px 20px 0 0; border: none; cursor: pointer; box-shadow: 0 -2px 20px rgba(0,0,0,0.15); }
-.pull-tab-handle:active { background: #2a2a2a; }
-.pull-tab-line { width: 36px; height: 4px; background: rgba(255,255,255,0.4); border-radius: 2px; }
-.pull-tab-text { color: #fff; font-size: 14px; font-weight: 500; }
+.pull-tab-handle {
+  display: flex; align-items: center; gap: 10px; padding: 14px 28px;
+  background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.pull-tab-handle:active { transform: scale(0.96); }
+.pull-tab-icon { width: 20px; height: 20px; fill: none; stroke: var(--accent-gold); stroke-width: 2; }
+.pull-tab-text { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
 
-/* Drawer */
-.mobile-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-radius: 24px 24px 0 0; z-index: 9998; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); max-height: 85vh; box-shadow: 0 -4px 30px rgba(0,0,0,0.12); }
+/* Drawer - iOS Sheet */
+.mobile-drawer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--glass-bg); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
+  border-radius: 20px 20px 0 0; z-index: 9998;
+  transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh; box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+  border-top: 0.5px solid var(--glass-border);
+}
 .mobile-drawer.open { transform: translateY(0); }
-.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 9997; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 9997; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .drawer-backdrop.active { opacity: 1; pointer-events: auto; }
-.drawer-header { display: flex; flex-direction: column; align-items: center; padding: 12px 20px 16px; border-bottom: 1px solid rgba(0,0,0,0.06); }
-.drawer-handle { width: 40px; height: 5px; background: #ddd; border-radius: 3px; margin-bottom: 12px; }
-.drawer-title { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
-.drawer-content { padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
-.drawer-action { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: #f8f8f8; border: none; border-radius: 14px; text-decoration: none; color: #1a1a1a; cursor: pointer; text-align: left; width: 100%; }
-.drawer-action:active { background: #f0f0f0; }
-.drawer-action-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.drawer-action-icon svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.5; }
-.drawer-action-icon.chat { background: #B8860B; }
-.drawer-action-icon.call { background: #2d8a4e; }
-.drawer-action-icon.quote { background: #1a1a1a; }
+.drawer-header { display: flex; flex-direction: column; align-items: center; padding: 8px 20px 20px; }
+.drawer-handle { width: 36px; height: 5px; background: rgba(0,0,0,0.15); border-radius: 3px; margin-bottom: 16px; }
+.drawer-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.4px; }
+.drawer-content { padding: 0 16px 16px; padding-bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px)); display: flex; flex-direction: column; gap: 10px; }
+.drawer-action {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  background: rgba(255,255,255,0.6); backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(0,0,0,0.04); border-radius: 16px;
+  text-decoration: none; color: var(--text-primary); cursor: pointer; text-align: left; width: 100%;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.drawer-action:active { background: rgba(0,0,0,0.04); transform: scale(0.98); }
+.drawer-action-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.drawer-action-icon svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.5; }
+.drawer-action-icon.chat { background: var(--accent-gradient); }
+.drawer-action-icon.call { background: linear-gradient(135deg, #34c759 0%, #28a745 100%); }
+.drawer-action-icon.quote { background: linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 100%); }
 .drawer-action-text { flex: 1; }
-.drawer-action-label { display: block; font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-.drawer-action-desc { display: block; font-size: 13px; color: #666; }
-.drawer-action-arrow { width: 20px; height: 20px; stroke: #999; stroke-width: 2; }
+.drawer-action-label { display: block; font-size: 16px; font-weight: 600; margin-bottom: 2px; letter-spacing: -0.2px; color: var(--text-primary); }
+.drawer-action-desc { display: block; font-size: 13px; color: var(--text-secondary); }
+.drawer-action-arrow { width: 16px; height: 16px; stroke: var(--text-secondary); stroke-width: 2.5; opacity: 0.5; }
 
-/* Aria Chat */
-.aria-chat { position: fixed; inset: 0; background: #fff; z-index: 10000; display: none; flex-direction: column; }
+/* Aria Chat - iOS Full Screen with Glass */
+.aria-chat {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg, #f2f2f7 0%, #e5e5ea 100%);
+  z-index: 10000; display: none; flex-direction: column;
+  animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .aria-chat.active { display: flex; }
-.aria-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); background: linear-gradient(135deg, #B8860B 0%, #8B6914 100%); color: #fff; }
+.aria-chat.closing { animation: slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+@keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
+
+.aria-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; padding-top: max(12px, calc(env(safe-area-inset-top) + 4px));
+  background: var(--glass-bg); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
 .aria-header-info { display: flex; align-items: center; gap: 12px; }
-.aria-avatar { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.aria-name { font-size: 17px; font-weight: 600; margin: 0; }
-.aria-status { font-size: 12px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
-.aria-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; }
-.aria-close { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.aria-close svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2; }
-.aria-body { flex: 1; overflow-y: auto; padding: 20px; background: #f5f5f5; -webkit-overflow-scrolling: touch; }
-.aria-messages { display: flex; flex-direction: column; gap: 16px; }
-.aria-msg { display: flex; gap: 10px; max-width: 85%; }
+.aria-avatar {
+  width: 44px; height: 44px;
+  background: var(--accent-gradient);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 3px 12px rgba(201, 162, 39, 0.35);
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 3px 12px rgba(201, 162, 39, 0.35); } 50% { box-shadow: 0 3px 20px rgba(201, 162, 39, 0.55); } }
+.aria-name { font-size: 17px; font-weight: 600; margin: 0; color: var(--text-primary); letter-spacing: -0.3px; }
+.aria-status { font-size: 13px; color: #34c759; display: flex; align-items: center; gap: 5px; font-weight: 500; }
+.aria-status::before { content: ''; width: 8px; height: 8px; background: #34c759; border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.aria-close {
+  width: 32px; height: 32px; background: rgba(0,0,0,0.06);
+  border: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.aria-close:active { background: rgba(0,0,0,0.12); }
+.aria-close svg { width: 14px; height: 14px; stroke: var(--text-secondary); stroke-width: 2.5; }
+
+.aria-body { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+.aria-messages { display: flex; flex-direction: column; gap: 12px; }
+
+.aria-msg { display: flex; gap: 8px; max-width: 82%; opacity: 0; animation: msgFadeIn 0.3s ease forwards; }
+@keyframes msgFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .aria-msg.user { flex-direction: row-reverse; margin-left: auto; }
-.aria-msg-avatar { width: 32px; height: 32px; background: #B8860B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-.aria-msg.user .aria-msg-avatar { background: #1a1a1a; }
-.aria-msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; }
-.aria-msg.bot .aria-msg-bubble { background: #fff; color: #1a1a1a; border-bottom-left-radius: 4px; }
-.aria-msg.user .aria-msg-bubble { background: #1a1a1a; color: #fff; border-bottom-right-radius: 4px; }
-.aria-typing { display: flex; gap: 4px; padding: 12px 16px; background: #fff; border-radius: 18px; width: fit-content; }
-.aria-typing span { width: 8px; height: 8px; background: #999; border-radius: 50%; animation: bounce 1.4s ease-in-out infinite; }
-.aria-typing span:nth-child(2) { animation-delay: 0.2s; }
-.aria-typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
-.aria-input-area { padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #eee; display: flex; gap: 12px; align-items: flex-end; }
-.aria-input { flex: 1; min-height: 44px; max-height: 120px; padding: 12px 16px; border: 1px solid #ddd; border-radius: 22px; font-size: 16px; resize: none; outline: none; }
-.aria-input:focus { border-color: #B8860B; }
-.aria-send { width: 44px; height: 44px; background: #B8860B; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.aria-send:disabled { background: #ccc; }
-.aria-send svg { width: 20px; height: 20px; fill: #fff; }
+.aria-msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; align-self: flex-end;
+}
+.aria-msg.bot .aria-msg-avatar { background: var(--accent-gradient); box-shadow: 0 2px 8px rgba(201, 162, 39, 0.25); }
+.aria-msg.user .aria-msg-avatar { background: linear-gradient(135deg, #3a3a3c 0%, #1c1c1e 100%); }
+.aria-msg-bubble {
+  padding: 12px 16px; border-radius: 20px;
+  font-size: 16px; line-height: 1.4; letter-spacing: -0.2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.aria-msg.bot .aria-msg-bubble {
+  background: var(--glass-bg); backdrop-filter: blur(10px);
+  color: var(--text-primary); border-bottom-left-radius: 6px;
+  border: 0.5px solid rgba(0,0,0,0.04);
+}
+.aria-msg.user .aria-msg-bubble {
+  background: var(--accent-gradient);
+  color: #fff; border-bottom-right-radius: 6px;
+  box-shadow: 0 2px 12px rgba(201, 162, 39, 0.3);
+}
+
+/* AI Typing Indicator */
+.aria-typing-wrap { display: flex; gap: 8px; max-width: 82%; }
+.aria-typing-avatar { width: 28px; height: 28px; background: var(--accent-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; align-self: flex-end; box-shadow: 0 2px 8px rgba(201, 162, 39, 0.25); }
+.aria-typing {
+  display: flex; align-items: center; gap: 5px;
+  padding: 14px 18px; background: var(--glass-bg); backdrop-filter: blur(10px);
+  border-radius: 20px; border-bottom-left-radius: 6px; border: 0.5px solid rgba(0,0,0,0.04);
+}
+.aria-typing span {
+  width: 8px; height: 8px; background: var(--accent-gold);
+  border-radius: 50%; animation: typingBounce 1.4s ease-in-out infinite;
+}
+.aria-typing span:nth-child(2) { animation-delay: 0.15s; }
+.aria-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 30% { transform: translateY(-8px) scale(1.1); opacity: 1; } }
+
+/* Input Area - iOS Style */
+.aria-input-area {
+  padding: 12px 16px; padding-bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px));
+  background: var(--glass-bg); backdrop-filter: var(--ios-blur); -webkit-backdrop-filter: var(--ios-blur);
+  border-top: 0.5px solid rgba(0,0,0,0.08);
+  display: flex; gap: 10px; align-items: flex-end;
+}
+.aria-input {
+  flex: 1; min-height: 40px; max-height: 100px; padding: 10px 16px;
+  background: rgba(0,0,0,0.04); border: none; border-radius: 20px;
+  font-size: 16px; resize: none; outline: none; color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+.aria-input::placeholder { color: var(--text-secondary); }
+.aria-input:focus { background: rgba(0,0,0,0.06); }
+.aria-send {
+  width: 40px; height: 40px; background: var(--accent-gradient);
+  border: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(201, 162, 39, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.aria-send:active { transform: scale(0.92); }
+.aria-send:disabled { background: rgba(0,0,0,0.08); box-shadow: none; }
+.aria-send:disabled svg { fill: var(--text-secondary); }
+.aria-send svg { width: 18px; height: 18px; fill: #fff; transform: translateX(1px); }
+
+/* Quick Actions */
+.aria-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.aria-quick-btn {
+  padding: 8px 14px; background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.3); border-radius: 16px;
+  font-size: 14px; color: var(--accent-gold); font-weight: 500;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.aria-quick-btn:active { background: rgba(201, 162, 39, 0.2); transform: scale(0.96); }
 </style>
 
 <!-- Pull tab -->
 <div class="mobile-pull-tab" id="mobilePullTab">
-  <button class="pull-tab-handle" id="pullTabHandle"><span class="pull-tab-text">Get Help</span><div class="pull-tab-line"></div></button>
+  <button class="pull-tab-handle" id="pullTabHandle">
+    <svg class="pull-tab-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span class="pull-tab-text">Get Help</span>
+  </button>
 </div>
 
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
@@ -5445,7 +5573,7 @@ document.addEventListener('DOMContentLoaded', function () {
   <div class="drawer-content">
     <button class="drawer-action" id="startChatAction">
       <div class="drawer-action-icon chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-      <div class="drawer-action-text"><span class="drawer-action-label">Chat with Aria</span><span class="drawer-action-desc">AI assistant 24/7</span></div>
+      <div class="drawer-action-text"><span class="drawer-action-label">Chat with Aria</span><span class="drawer-action-desc">AI assistant · responds instantly</span></div>
       <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
     <a href="tel:+16028333189" class="drawer-action">
@@ -5455,35 +5583,40 @@ document.addEventListener('DOMContentLoaded', function () {
     </a>
     <a href="/get-a-free-estimate/" class="drawer-action">
       <div class="drawer-action-icon quote"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <div class="drawer-action-text"><span class="drawer-action-label">Free Quote</span><span class="drawer-action-desc">No obligation estimate</span></div>
+      <div class="drawer-action-text"><span class="drawer-action-label">Free Quote</span><span class="drawer-action-desc">Get an instant estimate</span></div>
       <svg class="drawer-action-arrow" viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
   </div>
 </div>
 
-<!-- Aria Chat -->
+<!-- Aria Chat - iOS Glassmorphic -->
 <div class="aria-chat" id="ariaChat">
   <div class="aria-header">
     <div class="aria-header-info">
       <div class="aria-avatar">✨</div>
-      <div><h3 class="aria-name">Aria</h3><p class="aria-status"><span class="aria-dot"></span>Online</p></div>
+      <div><h3 class="aria-name">Aria</h3><p class="aria-status">Online</p></div>
     </div>
     <button class="aria-close" id="ariaChatClose"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
   <div class="aria-body" id="ariaChatBody">
     <div class="aria-messages" id="ariaMessages">
-      <div class="aria-msg bot"><div class="aria-msg-avatar">✨</div><div class="aria-msg-bubble">Hi! I'm Aria from Surprise Granite. How can I help you today?</div></div>
+      <div class="aria-msg bot"><div class="aria-msg-avatar">✨</div><div class="aria-msg-bubble">Hey! 👋 I'm Aria, your AI assistant at Surprise Granite. How can I help you today?</div></div>
+      <div class="aria-quick-actions" id="ariaQuickActions">
+        <button class="aria-quick-btn" data-msg="Get a free quote">💰 Free Quote</button>
+        <button class="aria-quick-btn" data-msg="What countertops do you offer?">🪨 Materials</button>
+        <button class="aria-quick-btn" data-msg="Schedule a visit">📅 Visit</button>
+      </div>
     </div>
   </div>
   <div class="aria-input-area">
-    <textarea class="aria-input" id="ariaInput" placeholder="Type a message..." rows="1"></textarea>
+    <textarea class="aria-input" id="ariaInput" placeholder="Message Aria..." rows="1"></textarea>
     <button class="aria-send" id="ariaSend"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
   </div>
 </div>
 
 <script>
 (function() {
-  const ARIA_WEBHOOK = 'https://voiceflow-crm.onrender.com/api/webhooks/agent/aria/trigger';
+  const ARIA_WEBHOOK = 'https://voiceflow-crm.onrender.com/api/webhook/agent/6913b021776947444de0638e/aria';
 
   document.addEventListener('DOMContentLoaded', function() {
     const pullTab = document.getElementById('mobilePullTab');
@@ -5497,42 +5630,108 @@ document.addEventListener('DOMContentLoaded', function () {
     const messages = document.getElementById('ariaMessages');
     const input = document.getElementById('ariaInput');
     const sendBtn = document.getElementById('ariaSend');
+    const quickActions = document.getElementById('ariaQuickActions');
 
     let drawerOpen = false, chatOpen = false;
     let sessionId = 'aria_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
 
-    function openDrawer() { drawerOpen = true; drawer.classList.add('open'); backdrop.classList.add('active'); pullTab.style.display = 'none'; document.body.style.overflow = 'hidden'; }
-    function closeDrawer() { drawerOpen = false; drawer.classList.remove('open'); backdrop.classList.remove('active'); document.body.style.overflow = ''; if (!chatOpen) setTimeout(() => { if (window.innerWidth <= 768) pullTab.style.display = 'block'; }, 300); }
-    function openChat() { chatOpen = true; chat.classList.add('active'); document.body.style.overflow = 'hidden'; input.focus(); }
-    function closeChat() { chatOpen = false; chat.classList.remove('active'); document.body.style.overflow = ''; if (window.innerWidth <= 768) pullTab.style.display = 'block'; }
+    function openDrawer() {
+      drawerOpen = true;
+      drawer.classList.add('open');
+      backdrop.classList.add('active');
+      pullTab.style.display = 'none';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      drawerOpen = false;
+      drawer.classList.remove('open');
+      backdrop.classList.remove('active');
+      document.body.style.overflow = '';
+      if (!chatOpen) setTimeout(() => { if (window.innerWidth <= 768) pullTab.style.display = 'block'; }, 300);
+    }
+    function openChat() {
+      chatOpen = true;
+      chat.classList.remove('closing');
+      chat.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => input.focus(), 400);
+    }
+    function closeChat() {
+      chat.classList.add('closing');
+      setTimeout(() => {
+        chatOpen = false;
+        chat.classList.remove('active', 'closing');
+        document.body.style.overflow = '';
+        if (window.innerWidth <= 768) pullTab.style.display = 'block';
+      }, 300);
+    }
     function scroll() { setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50); }
-    function addMsg(type, text) { const m = document.createElement('div'); m.className = 'aria-msg ' + type; m.innerHTML = '<div class="aria-msg-avatar">' + (type === 'bot' ? '✨' : '👤') + '</div><div class="aria-msg-bubble">' + text + '</div>'; messages.appendChild(m); scroll(); }
-    function showTyping() { const t = document.createElement('div'); t.id = 'ariaTyping'; t.className = 'aria-msg bot'; t.innerHTML = '<div class="aria-msg-avatar">✨</div><div class="aria-typing"><span></span><span></span><span></span></div>'; messages.appendChild(t); scroll(); }
-    function hideTyping() { const t = document.getElementById('ariaTyping'); if (t) t.remove(); }
 
-    async function send() {
-      const text = input.value.trim(); if (!text) return;
-      input.value = ''; input.style.height = 'auto'; sendBtn.disabled = true;
-      addMsg('user', text); showTyping();
-      try {
-        const res = await fetch(ARIA_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, sessionId: sessionId, source: 'website', page: location.pathname }) });
-        const data = await res.json(); hideTyping();
-        addMsg('bot', data.response || data.message || "Thanks! We'll follow up shortly.");
-      } catch(e) { hideTyping(); addMsg('bot', "I'm having trouble connecting. Please call us at (602) 833-3189."); }
-      sendBtn.disabled = false; input.focus();
+    function addMsg(type, text) {
+      // Hide quick actions after first user message
+      if (type === 'user' && quickActions) quickActions.style.display = 'none';
+
+      const m = document.createElement('div');
+      m.className = 'aria-msg ' + type;
+      m.innerHTML = '<div class="aria-msg-avatar">' + (type === 'bot' ? '✨' : '👤') + '</div><div class="aria-msg-bubble">' + text + '</div>';
+      messages.appendChild(m);
+      scroll();
     }
 
+    function showTyping() {
+      const t = document.createElement('div');
+      t.id = 'ariaTyping';
+      t.className = 'aria-typing-wrap';
+      t.innerHTML = '<div class="aria-typing-avatar">✨</div><div class="aria-typing"><span></span><span></span><span></span></div>';
+      messages.appendChild(t);
+      scroll();
+    }
+    function hideTyping() { const t = document.getElementById('ariaTyping'); if (t) t.remove(); }
+
+    async function send(customMsg) {
+      const text = customMsg || input.value.trim();
+      if (!text) return;
+      if (!customMsg) { input.value = ''; input.style.height = 'auto'; }
+      sendBtn.disabled = true;
+      addMsg('user', text);
+      showTyping();
+      try {
+        const res = await fetch(ARIA_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, sessionId: sessionId, visitor: { page: location.pathname } })
+        });
+        const data = await res.json();
+        hideTyping();
+        addMsg('bot', data.response || data.message || "Thanks! We'll follow up shortly.");
+      } catch(e) {
+        hideTyping();
+        addMsg('bot', "I'm having trouble connecting. Please call us at (602) 833-3189.");
+      }
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    // Event listeners
     handle?.addEventListener('click', openDrawer);
     backdrop?.addEventListener('click', closeDrawer);
     startChat?.addEventListener('click', () => { closeDrawer(); setTimeout(openChat, 300); });
     chatClose?.addEventListener('click', closeChat);
-    sendBtn?.addEventListener('click', send);
+    sendBtn?.addEventListener('click', () => send());
     input?.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-    input?.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
+    input?.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
 
+    // Quick action buttons
+    document.querySelectorAll('.aria-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => send(btn.dataset.msg));
+    });
+
+    // Swipe to close drawer
     let touchY = 0;
     drawer?.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
     drawer?.addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchY > 80) closeDrawer(); }, { passive: true });
+
+    // Escape key
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (chatOpen) closeChat(); else if (drawerOpen) closeDrawer(); } });
   });
 })();
