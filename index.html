@@ -417,7 +417,9 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
-  animation: textPulse 1.5s ease-in-out infinite;
+  transition: opacity 0.3s ease;
+  min-width: 280px;
+  text-align: center;
 }
 @keyframes textPulse {
   0%, 100% { opacity: 0.6; }
@@ -447,14 +449,41 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
     <div class="cloud cloud-2"></div>
     <div class="cloud cloud-3"></div>
   </div>
-  <div class="preloader-text">Building<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  <div class="preloader-text" id="preloaderText">Polishing the granite<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span></div>
 </div>
 <script>
-window.addEventListener('load', function() {
-  setTimeout(function() {
-    document.getElementById('cloudPreloader').classList.add('loaded');
-  }, 800);
-});
+(function() {
+  const quips = [
+    "Polishing the granite",
+    "Measuring twice, cutting once",
+    "Selecting the perfect slab",
+    "Heating up the showroom",
+    "Buffing the marble",
+    "Aligning the countertops",
+    "Mixing the perfect quartz",
+    "Warming up the design tools",
+    "Loading beautiful kitchens",
+    "Crafting your dream space"
+  ];
+  let quipIndex = 0;
+  const textEl = document.getElementById('preloaderText');
+
+  const quipInterval = setInterval(function() {
+    textEl.style.opacity = '0';
+    setTimeout(function() {
+      quipIndex = (quipIndex + 1) % quips.length;
+      textEl.innerHTML = quips[quipIndex] + '<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span>';
+      textEl.style.opacity = '1';
+    }, 300);
+  }, 2500);
+
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      clearInterval(quipInterval);
+      document.getElementById('cloudPreloader').classList.add('loaded');
+    }, 800);
+  });
+})();
 </script>
 
 <a href="#main-content" class="skip-link">Skip to main content</a><div class="page-wrapper"><div class="global-styles w-embed w-iframe"><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3XFDN8"
