@@ -14,8 +14,197 @@
 
 <!-- Sygnal Attributes 5 | Forms --> 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/css/webflow-form.css">
-<link rel="stylesheet" href="/css/mobile-optimizations.css"> 
+<link rel="stylesheet" href="/css/mobile-optimizations.css">
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/nocode/webflow-form.js"></script>
+
+<!-- Enhanced Countertops Page Styles -->
+<style>
+  /* Enhanced Product Card Hover Effects */
+  .product-thumb_item {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .product-thumb_item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .materials_image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .materials_image-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 185, 70, 0) 0%, rgba(255, 152, 0, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .product-thumb_item:hover .materials_image-wrapper::after {
+    opacity: 1;
+  }
+
+  .product1_image {
+    transition: transform 0.4s ease;
+  }
+
+  .product-thumb_item:hover .product1_image {
+    transform: scale(1.05);
+  }
+
+  /* Enhanced Filter Sidebar */
+  .filters_filters-wrapper {
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .filters2_filter-group-heading {
+    font-weight: 600;
+    color: #1a1a1a;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #FFB946;
+    margin-bottom: 16px;
+  }
+
+  .filters_form-checkbox1 {
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 4px 0;
+  }
+
+  .filters_form-checkbox1:hover {
+    background: rgba(255, 185, 70, 0.1);
+  }
+
+  .filters_form-checkbox1-icon:checked + .filters_form-checkbox1-label {
+    color: #FF9800;
+    font-weight: 600;
+  }
+
+  /* Header Enhancement */
+  .section_header54 {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section_header54::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255, 185, 70, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .section_header54 h1 {
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .section_header54 p {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  /* Category Pills Enhancement */
+  .button-pill-white {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .button-pill-white:hover {
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    border-color: #FF9800;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  }
+
+  /* Add Sample Button Enhancement */
+  .button.is-small {
+    transition: all 0.3s ease;
+  }
+
+  .button.is-small:hover {
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  }
+
+  /* View Count Badge */
+  .product-views_component {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 4px 8px;
+    border-radius: 20px;
+  }
+
+  /* Results Counter Enhancement */
+  .filters_results-wrapper {
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    padding: 12px 20px;
+    border-radius: 30px;
+    color: #fff;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .filters_results-text {
+    color: #fff;
+  }
+
+  /* Scroll to Top Indicator */
+  .header54_scroll-down-wrapper {
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-10px);
+    }
+    60% {
+      transform: translateY(-5px);
+    }
+  }
+
+  /* Mobile Responsive Enhancements */
+  @media (max-width: 768px) {
+    .filters_filters-wrapper {
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .product-thumb_item:hover {
+      transform: translateY(-4px);
+    }
+
+    .filters_results-wrapper {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+  }
+</style>
 
 <style>  
 body {
@@ -929,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 </script>
 
-<elevenlabs-convai agent-id="agent_7301k246v5fyebkbsqvzw3d7nkqw"></elevenlabs-convai><script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script><!-- Finsweet CMS Load script should be included at the end of the body -->
+<!-- Finsweet CMS Load script should be included at the end of the body -->
 <script src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsload@1.0.0/dist/finsweet-attributes-cmsload.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmssort@1.0.0/dist/finsweet-attributes-cmssort.umd.js"></script>
 <script>
@@ -1091,5 +1280,685 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
+</script>
+
+<!-- SG Chat Widget Styles -->
+<style>
+  #sg-chat-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  #sg-chat-button {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #sg-chat-button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(255, 152, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  #sg-chat-button svg {
+    width: 32px;
+    height: 32px;
+    fill: #fff;
+    transition: all 0.3s ease;
+  }
+
+  #sg-chat-button .sg-icon-chat { display: block; }
+  #sg-chat-button .sg-icon-close { display: none; }
+  #sg-chat-button.active .sg-icon-chat { display: none; }
+  #sg-chat-button.active .sg-icon-close { display: block; }
+
+  .sg-chat-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: linear-gradient(135deg, #FF5252 0%, #E53935 100%);
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(229, 57, 53, 0.4);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  #sg-chat-window {
+    position: absolute;
+    bottom: 90px;
+    right: 0;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    height: 650px;
+    max-height: calc(100vh - 130px);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  #sg-chat-window.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .sg-chat-header {
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sg-chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .sg-chat-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+  }
+
+  .sg-chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sg-chat-header-text h3 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .sg-chat-header-text p {
+    margin: 6px 0 0 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .sg-status-dot {
+    width: 9px;
+    height: 9px;
+    background: #4CAF50;
+    border-radius: 50%;
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .sg-chat-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #fff;
+  }
+
+  .sg-chat-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+  }
+
+  .sg-chat-close svg {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+  }
+
+  .sg-chat-body {
+    flex: 1;
+    overflow-y: auto;
+    background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sg-chat-messages {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 100%;
+  }
+
+  .sg-message {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.4s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sg-message.user { flex-direction: row-reverse; }
+
+  .sg-message-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .sg-message.bot .sg-message-avatar {
+    background: #fff;
+    border: 2px solid #FFB946;
+  }
+
+  .sg-message.bot .sg-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sg-message.user .sg-message-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+  }
+
+  .sg-message-content {
+    max-width: 75%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    word-wrap: break-word;
+    line-height: 1.5;
+  }
+
+  .sg-message.bot .sg-message-content {
+    background: #fff;
+    color: #2c3e50;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .sg-message.user .sg-message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .sg-message-time {
+    font-size: 11px;
+    opacity: 0.6;
+    margin-top: 6px;
+    display: block;
+  }
+
+  .sg-typing-indicator {
+    display: flex;
+    gap: 5px;
+    padding: 10px 0;
+  }
+
+  .sg-typing-indicator span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #999;
+    animation: typing 1.4s infinite;
+  }
+
+  .sg-typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .sg-typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.7; }
+    30% { transform: translateY(-12px); opacity: 1; }
+  }
+
+  .sg-quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .sg-quick-reply-btn {
+    background: #fff;
+    border: 2px solid #FFB946;
+    color: #FF9800;
+    padding: 10px 18px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sg-quick-reply-btn:hover {
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .sg-chat-input-wrapper {
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #e8eaf0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .sg-chat-input {
+    flex: 1;
+    border: 2px solid #e8eaf0;
+    border-radius: 26px;
+    padding: 14px 22px;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+  }
+
+  .sg-chat-input:focus {
+    border-color: #FFB946;
+    background: #fff;
+  }
+
+  .sg-send-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #fff;
+  }
+
+  .sg-send-btn:hover {
+    transform: scale(1.08);
+  }
+
+  .sg-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .sg-send-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #fff;
+  }
+
+  .sg-chat-footer {
+    padding: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: #95a5a6;
+    background: #f8f9fa;
+    border-top: 1px solid #e8eaf0;
+  }
+
+  .sg-chat-footer a {
+    color: #FF9800;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .sg-help-pill {
+    position: fixed;
+    bottom: 110px;
+    right: 24px;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    padding: 10px 18px 10px 12px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.2);
+    transition: all 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .sg-help-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 215, 0, 0.4);
+  }
+
+  .help-pill-icon {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #FFB946 0%, #FF9800 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .help-pill-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    #sg-chat-widget {
+      bottom: 16px;
+      right: 16px;
+    }
+    #sg-chat-button {
+      width: 60px;
+      height: 60px;
+    }
+    #sg-chat-button svg {
+      width: 28px;
+      height: 28px;
+    }
+    .sg-help-pill {
+      bottom: 90px;
+      right: 16px;
+      padding: 8px 14px 8px 10px;
+    }
+  }
+</style>
+
+<!-- Help Pill -->
+<div id="sg-help-pill" class="sg-help-pill">
+  <span class="help-pill-icon">?</span>
+  <span class="help-pill-text">Need Help?</span>
+</div>
+
+<!-- Chat Widget HTML -->
+<div id="sg-chat-widget">
+  <button id="sg-chat-button" aria-label="Open chat">
+    <svg class="sg-icon sg-icon-chat" viewBox="0 0 512 512"><path d="M256 448c141.4 0 256-93.1 256-208S397.4 32 256 32S0 125.1 0 240c0 45.1 17.7 86.8 47.7 120.9c-1.9 24.5-11.4 46.3-21.4 62.9c-5.5 9.2-11.1 16.6-15.2 21.6c-2.1 2.5-3.7 4.4-4.9 5.7c-.6 .6-1 1.1-1.3 1.4l-.3 .3c-4.4 4.3-5.5 10.9-2.8 16.4c2.7 5.5 8.4 9 14.6 9c23.5 0 45.7-5.5 64.3-12.5c18.4-7 34.4-16.4 46.6-25.1c12.1-8.6 20.4-16.1 24.6-20.3c23.3 10.3 49.3 16.3 77.1 16.8c.9 0 1.8 0 2.7 0c.5 0 1 0 1.5 0zM96 240a32 32 0 1 1 64 0a32 32 0 1 1-64 0zm128 0a32 32 0 1 1 64 0a32 32 0 1 1-64 0zm160-32a32 32 0 1 1 0 64a32 32 0 1 1 0-64z"/></svg>
+    <svg class="sg-icon sg-icon-close" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
+    <span class="sg-chat-badge">1</span>
+  </button>
+
+  <div id="sg-chat-window">
+    <div class="sg-chat-header">
+      <div class="sg-chat-header-info">
+        <div class="sg-chat-avatar">
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg" alt="Design Assistant" loading="lazy">
+        </div>
+        <div class="sg-chat-header-text">
+          <h3>Surprise Granite</h3>
+          <p>
+            <span class="sg-status-dot"></span>
+            Design Assistant
+          </p>
+        </div>
+      </div>
+      <button class="sg-chat-close" aria-label="Close chat">
+        <svg viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
+      </button>
+    </div>
+
+    <div class="sg-chat-body" id="sg-chat-body">
+      <div class="sg-chat-messages" id="sg-messages"></div>
+    </div>
+
+    <div class="sg-chat-input-wrapper">
+      <input type="text" class="sg-chat-input" id="sg-chat-input" placeholder="Ask about countertops, design tips..." autocomplete="off" aria-label="Ask about countertops"/>
+      <button class="sg-send-btn" id="sg-send-btn" aria-label="Send message">
+        <svg viewBox="0 0 512 512"><path d="M498.1 5.6c10.1 7 15.4 19.1 13.5 31.2l-64 416c-1.5 9.7-7.4 18.2-16 23s-18.9 5.4-28 1.6L284 427.7l-68.5 74.1c-8.9 9.7-22.9 12.9-35.2 8.1S160 492.3 160 480V396.4c0-4 1.5-7.8 4.2-10.7L331.8 202.8c5.8-6.3 5.4-16-.9-21.9s-16.6-5.1-22.4 1.2l-185.8 202-47.5-19.8c-10.2-4.2-16.6-14.1-16.2-24.9s7.6-20.2 18-24L483.6 .5c10.1-3.6 21.4-2 30.5 5.1z"/></svg>
+      </button>
+    </div>
+
+    <div class="sg-chat-footer">
+      Powered by <a href="https://www.surprisegranite.com" target="_blank">Surprise Granite</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const WEBHOOK_URL = 'https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
+
+  const chatButton = document.getElementById('sg-chat-button');
+  const chatWindow = document.getElementById('sg-chat-window');
+  const closeButton = document.querySelector('.sg-chat-close');
+  const badge = document.querySelector('.sg-chat-badge');
+  const messagesContainer = document.getElementById('sg-messages');
+  const chatBody = document.getElementById('sg-chat-body');
+  const chatInput = document.getElementById('sg-chat-input');
+  const sendBtn = document.getElementById('sg-send-btn');
+  const helpPill = document.getElementById('sg-help-pill');
+
+  let isOpen = false;
+  let sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+  function scrollToBottom() {
+    setTimeout(() => {
+      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+    }, 50);
+  }
+
+  function toggleChat() {
+    isOpen = !isOpen;
+    chatButton.classList.toggle('active', isOpen);
+    chatWindow.classList.toggle('active', isOpen);
+
+    if (isOpen) {
+      if (badge) {
+        badge.style.display = 'none';
+        localStorage.setItem('sg-chat-viewed', 'true');
+      }
+      if (messagesContainer.children.length === 0) {
+        sendMessageToAI('Hello');
+      }
+      chatInput.focus();
+    }
+  }
+
+  function addMessage(type, text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `sg-message ${type}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'sg-message-avatar';
+
+    if (type === 'bot') {
+      const img = document.createElement('img');
+      img.src = 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg';
+      img.alt = 'Design Assistant';
+      avatar.appendChild(img);
+    } else {
+      avatar.innerHTML = '<svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 448 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>';
+    }
+
+    const content = document.createElement('div');
+    content.className = 'sg-message-content';
+    content.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    const time = document.createElement('div');
+    time.className = 'sg-message-time';
+    time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    content.appendChild(time);
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(content);
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+  }
+
+  function addQuickReplies(replies) {
+    const existingReplies = document.querySelector('.sg-quick-replies');
+    if (existingReplies) existingReplies.remove();
+    if (!replies || replies.length === 0) return;
+
+    const quickRepliesDiv = document.createElement('div');
+    quickRepliesDiv.className = 'sg-quick-replies';
+
+    replies.forEach(reply => {
+      const btn = document.createElement('button');
+      btn.className = 'sg-quick-reply-btn';
+      btn.innerHTML = `${reply} <svg style="width:12px;height:12px;fill:currentColor" viewBox="0 0 448 512"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg>`;
+      btn.onclick = () => {
+        addMessage('user', reply);
+        sendMessageToAI(reply);
+      };
+      quickRepliesDiv.appendChild(btn);
+    });
+
+    messagesContainer.appendChild(quickRepliesDiv);
+    scrollToBottom();
+  }
+
+  function showTypingIndicator() {
+    const typing = document.createElement('div');
+    typing.className = 'sg-message bot';
+    typing.id = 'typing-indicator';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'sg-message-avatar';
+    const img = document.createElement('img');
+    img.src = 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg';
+    img.alt = 'Design Assistant';
+    avatar.appendChild(img);
+
+    const content = document.createElement('div');
+    content.className = 'sg-message-content';
+    const indicator = document.createElement('div');
+    indicator.className = 'sg-typing-indicator';
+    indicator.innerHTML = '<span></span><span></span><span></span>';
+    content.appendChild(indicator);
+    typing.appendChild(avatar);
+    typing.appendChild(content);
+    messagesContainer.appendChild(typing);
+    scrollToBottom();
+  }
+
+  function removeTypingIndicator() {
+    const typing = document.getElementById('typing-indicator');
+    if (typing) typing.remove();
+  }
+
+  async function sendMessageToAI(message) {
+    showTypingIndicator();
+    sendBtn.disabled = true;
+
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, sessionId: sessionId })
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data = await response.json();
+      removeTypingIndicator();
+      addMessage('bot', data.response);
+
+      if (data.quickReplies && data.quickReplies.length > 0) {
+        addQuickReplies(data.quickReplies);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      removeTypingIndicator();
+      addMessage('bot', "I apologize, but I'm having trouble connecting right now. Please call us directly at (602) 833-3189 or email info@surprisegranite.com for immediate assistance.");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  function handleUserMessage(text) {
+    if (!text.trim()) return;
+    addMessage('user', text);
+    chatInput.value = '';
+    sendMessageToAI(text);
+  }
+
+  chatButton.addEventListener('click', toggleChat);
+  closeButton.addEventListener('click', toggleChat);
+
+  if (helpPill) {
+    helpPill.addEventListener('click', () => {
+      if (!isOpen) toggleChat();
+    });
+  }
+
+  sendBtn.addEventListener('click', () => handleUserMessage(chatInput.value));
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleUserMessage(chatInput.value);
+  });
+
+  if (localStorage.getItem('sg-chat-viewed') === 'true') {
+    badge.style.display = 'none';
+  }
+
+  if (!localStorage.getItem('sg-chat-viewed')) {
+    setTimeout(() => { if (!isOpen) toggleChat(); }, 3000);
+  }
+})();
 </script>
 </body></html>
