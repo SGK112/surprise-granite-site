@@ -4797,6 +4797,29 @@ form.addEventListener('submit', async (e) => {
     right: 24px;
     z-index: 9999;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  #sg-chat-widget.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  #sg-help-pill {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  #sg-help-pill.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
   }
 
   /* Chat Button */
@@ -5457,8 +5480,25 @@ form.addEventListener('submit', async (e) => {
   const chatInput = document.getElementById('sg-chat-input');
   const sendBtn = document.getElementById('sg-send-btn');
   const helpPill = document.getElementById('sg-help-pill');
+  const chatWidget = document.getElementById('sg-chat-widget');
 
   let isOpen = false;
+
+  // Show chat widget after scrolling 300px
+  let chatVisible = false;
+  function checkScroll() {
+    if (window.scrollY > 300 && !chatVisible) {
+      chatVisible = true;
+      if (chatWidget) chatWidget.classList.add('visible');
+      if (helpPill) helpPill.classList.add('visible');
+    } else if (window.scrollY <= 300 && chatVisible && !isOpen) {
+      chatVisible = false;
+      if (chatWidget) chatWidget.classList.remove('visible');
+      if (helpPill) helpPill.classList.remove('visible');
+    }
+  }
+  window.addEventListener('scroll', checkScroll);
+  checkScroll(); // Check on load
   let sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
   // FIX: Helper function to scroll to bottom
