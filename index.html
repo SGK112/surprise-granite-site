@@ -5369,619 +5369,285 @@ document.addEventListener('DOMContentLoaded', function () {
   // Start observing the document body for child node additions
   observer.observe(document.body, { childList: true, subtree: true });
 </script>
-<!-- BOLD Mobile Navigation - Impossible to Miss -->
+<!-- Mobile Chat Overlay with Actions -->
 <style>
 /* ========================================
-   MOBILE NAVIGATION - BOLD REDESIGN
+   MOBILE CHAT OVERLAY - MINIMALIST
    ======================================== */
 
-.mobile-bottom-bar {
+/* Floating chat button */
+.mobile-chat-fab {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  /* BOLD dark background */
-  background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
-  padding: 12px 16px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  bottom: 24px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
   z-index: 9997;
-  /* Strong top border */
-  border-top: 3px solid #FF9800;
-  /* Glow effect */
-  box-shadow: 0 -4px 30px rgba(255, 152, 0, 0.3);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: transform 0.2s ease;
 }
 
 @media (max-width: 768px) {
-  .mobile-bottom-bar {
-    display: block !important;
-  }
-  body {
-    padding-bottom: 90px !important;
+  .mobile-chat-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
-/* Remove handle - not needed */
-.bottom-bar-handle {
+.mobile-chat-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.mobile-chat-fab:active {
+  transform: scale(0.95);
+}
+
+/* Full-screen overlay */
+.chat-overlay {
   display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.98);
+  z-index: 9998;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-/* Navigation row */
-.bottom-bar-icons {
+.chat-overlay.active {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  max-width: 400px;
-  margin: 0 auto;
+  opacity: 1;
 }
 
-/* Base button style - BOLD */
-.bottom-bar-btn {
+/* Overlay header */
+.chat-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.chat-overlay-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.chat-overlay-close {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-overlay-close svg {
+  width: 20px;
+  height: 20px;
+  stroke: #666;
+  stroke-width: 2;
+}
+
+.chat-overlay-close:active {
+  background: rgba(0,0,0,0.05);
+}
+
+/* Overlay content */
+.chat-overlay-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
-  min-width: 70px;
-  min-height: 60px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  color: #fff;
+  padding: 40px 24px;
+  gap: 16px;
+}
+
+/* Action buttons */
+.chat-action {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 300px;
+  padding: 20px 24px;
+  background: #fafafa;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
   text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  color: #1a1a1a;
   cursor: pointer;
-  transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
 }
 
-/* LARGE filled icons */
-.bottom-bar-btn svg {
-  width: 32px;
-  height: 32px;
-  fill: currentColor;
+.chat-action:active {
+  background: #f0f0f0;
 }
 
-/* Tap effect */
-.bottom-bar-btn:active {
-  transform: scale(0.92);
-  background: rgba(255, 152, 0, 0.2);
-  border-color: #FF9800;
-}
-
-/* CALL button - Green */
-.bottom-bar-btn.call-btn {
-  background: linear-gradient(135deg, #00C853 0%, #00E676 100%);
-  border-color: #00E676;
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4);
-}
-
-.bottom-bar-btn.call-btn:active {
-  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3);
-}
-
-/* CHAT button - Orange with pulse */
-.bottom-bar-btn.chat-btn {
-  background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%);
-  border-color: #FF9800;
-  color: #fff;
-  position: relative;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-  animation: chat-pulse 2s ease-in-out infinite;
-}
-
-@keyframes chat-pulse {
-  0%, 100% { box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4); }
-  50% { box-shadow: 0 4px 25px rgba(255, 152, 0, 0.7); }
-}
-
-/* Notification badge */
-.bottom-bar-btn.chat-btn::after {
-  content: '1';
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 22px;
-  height: 22px;
-  background: #FF3D00;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+.chat-action-icon {
+  width: 44px;
+  height: 44px;
+  background: #1a1a1a;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #1a1a2e;
-  animation: badge-bounce 1s ease infinite;
+  flex-shrink: 0;
 }
 
-@keyframes badge-bounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+.chat-action-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
 }
 
-/* QUOTE button - Gold, larger */
-.bottom-bar-btn.quote-btn {
-  flex: 1;
-  max-width: 140px;
-  flex-direction: row;
-  gap: 8px;
-  padding: 14px 20px;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
-  border-color: #FFD700;
-  color: #1a1a2e;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+.chat-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.bottom-bar-btn.quote-btn svg {
-  width: 24px;
-  height: 24px;
+.chat-action-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
 }
 
-.bottom-bar-btn.quote-btn:active {
-  background: linear-gradient(135deg, #FFA000 0%, #FF8F00 100%);
+.chat-action-desc {
+  font-size: 13px;
+  color: #888;
 }
 
-/* ========================================
-   FULL-SCREEN MOBILE CHAT
-   ======================================== */
-
-/* Overlay */
-.chat-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 9998;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.chat-overlay.active {
-  display: block;
-  opacity: 1;
-}
-
-/* Full screen mobile chat container */
-@media (max-width: 768px) {
-  #sg-chat-window.active {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    border-radius: 0 !important;
-    z-index: 10000 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    background: #f5f5f5 !important;
-  }
-
-  /* Full-screen chat header */
-  #sg-chat-window.active .sg-chat-header {
-    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
-    padding: 16px 16px !important;
-    padding-top: max(16px, env(safe-area-inset-top)) !important;
-    min-height: 70px !important;
-    border-radius: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-
-  /* Header content */
-  #sg-chat-window.active .sg-chat-header-info {
-    display: flex !important;
-    align-items: center !important;
-    gap: 14px !important;
-  }
-
-  #sg-chat-window.active .sg-chat-avatar {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 50% !important;
-    border: 3px solid rgba(255, 255, 255, 0.4) !important;
-    overflow: hidden !important;
-  }
-
-  #sg-chat-window.active .sg-chat-header-text h3 {
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    color: #fff !important;
-    margin: 0 !important;
-  }
-
-  #sg-chat-window.active .sg-chat-header-text p {
-    font-size: 13px !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-    margin: 4px 0 0 !important;
-  }
-
-  /* Close button - BIG X */
-  #sg-chat-window.active .sg-chat-close {
-    width: 44px !important;
-    height: 44px !important;
-    background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: none !important;
-    cursor: pointer !important;
-  }
-
-  #sg-chat-window.active .sg-chat-close svg {
-    width: 24px !important;
-    height: 24px !important;
-    fill: #fff !important;
-  }
-
-  /* Chat body - full space */
-  #sg-chat-window.active .sg-chat-body {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    background: #f0f2f5 !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  /* Messages container */
-  #sg-chat-window.active .sg-chat-messages {
-    padding: 20px 16px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-  }
-
-  /* Message bubbles */
-  #sg-chat-window.active .sg-message {
-    display: flex !important;
-    gap: 12px !important;
-    animation: msg-slide 0.3s ease-out !important;
-  }
-
-  @keyframes msg-slide {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  #sg-chat-window.active .sg-message.user {
-    flex-direction: row-reverse !important;
-  }
-
-  #sg-chat-window.active .sg-message-avatar {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 50% !important;
-    flex-shrink: 0 !important;
-    overflow: hidden !important;
-    background: #ddd !important;
-  }
-
-  #sg-chat-window.active .sg-message-content {
-    max-width: 75% !important;
-    padding: 14px 18px !important;
-    border-radius: 24px !important;
-    font-size: 16px !important;
-    line-height: 1.5 !important;
-  }
-
-  #sg-chat-window.active .sg-message.bot .sg-message-content {
-    background: #fff !important;
-    color: #1f2937 !important;
-    border-bottom-left-radius: 8px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
-  }
-
-  #sg-chat-window.active .sg-message.user .sg-message-content {
-    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
-    color: #fff !important;
-    border-bottom-right-radius: 8px !important;
-  }
-
-  /* Quick replies */
-  #sg-chat-window.active .sg-quick-replies {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
-    padding: 10px 16px 20px !important;
-  }
-
-  #sg-chat-window.active .sg-quick-reply-btn {
-    padding: 12px 20px !important;
-    background: #fff !important;
-    border: 2px solid #FF9800 !important;
-    border-radius: 24px !important;
-    color: #FF9800 !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-  }
-
-  #sg-chat-window.active .sg-quick-reply-btn:active {
-    background: #FF9800 !important;
-    color: #fff !important;
-  }
-
-  /* Input area - fixed at bottom */
-  #sg-chat-window.active .sg-chat-input-wrapper {
-    padding: 16px !important;
-    padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
-    background: #fff !important;
-    border-top: 1px solid #e5e7eb !important;
-    display: flex !important;
-    gap: 12px !important;
-    align-items: center !important;
-  }
-
-  #sg-chat-window.active .sg-chat-input {
-    flex: 1 !important;
-    min-height: 50px !important;
-    font-size: 17px !important;
-    padding: 14px 20px !important;
-    border-radius: 28px !important;
-    background: #f3f4f6 !important;
-    border: 2px solid transparent !important;
-    outline: none !important;
-  }
-
-  #sg-chat-window.active .sg-chat-input:focus {
-    border-color: #FF9800 !important;
-    background: #fff !important;
-  }
-
-  #sg-chat-window.active .sg-send-btn {
-    width: 50px !important;
-    height: 50px !important;
-    border-radius: 50% !important;
-    background: linear-gradient(135deg, #FF6B00 0%, #FF9800 100%) !important;
-    border: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
-  }
-
-  #sg-chat-window.active .sg-send-btn svg {
-    width: 24px !important;
-    height: 24px !important;
-    fill: #fff !important;
-  }
-
-  #sg-chat-window.active .sg-send-btn:active {
-    transform: scale(0.9) !important;
-  }
-
-  /* Hide footer in mobile */
-  #sg-chat-window.active .sg-chat-footer {
-    display: none !important;
-  }
+/* Quote action with accent */
+.chat-action.quote .chat-action-icon {
+  background: #B8860B;
 }
 </style>
 
-<div class="mobile-bottom-bar" id="mobileBottomBar">
-  <div class="bottom-bar-icons">
-    <!-- CALL Button - Green -->
-    <a href="tel:+16028333189" class="bottom-bar-btn call-btn">
-      <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
-      <span>Call Us</span>
-    </a>
+<!-- Floating chat button -->
+<button class="mobile-chat-fab" id="mobileChatFab" aria-label="Open menu">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+</button>
 
-    <!-- CHAT Button - Orange -->
-    <button class="bottom-bar-btn chat-btn" id="openChatBtn" aria-label="Open chat">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-      <span>Chat</span>
+<!-- Overlay -->
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-overlay-header">
+    <h2 class="chat-overlay-title">How can we help?</h2>
+    <button class="chat-overlay-close" id="chatOverlayClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-
-    <!-- QUOTE Button - Gold, prominent -->
-    <a href="/get-a-free-estimate/" class="bottom-bar-btn quote-btn">
-      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>Quote</span>
+  </div>
+  <div class="chat-overlay-content">
+    <button class="chat-action" id="startChatAction">
+      <div class="chat-action-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <div class="chat-action-text">
+        <span class="chat-action-label">Chat with us</span>
+        <span class="chat-action-desc">Get instant answers</span>
+      </div>
+    </button>
+    <a href="tel:+16028333189" class="chat-action">
+      <div class="chat-action-icon">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+      </div>
+      <div class="chat-action-text">
+        <span class="chat-action-label">Call us</span>
+        <span class="chat-action-desc">(602) 833-3189</span>
+      </div>
+    </a>
+    <a href="/get-a-free-estimate/" class="chat-action quote">
+      <div class="chat-action-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div class="chat-action-text">
+        <span class="chat-action-label">Get a free quote</span>
+        <span class="chat-action-desc">No obligation estimate</span>
+      </div>
     </a>
   </div>
 </div>
 
-<!-- Chat Overlay -->
-<div class="chat-overlay" id="chatOverlay"></div>
-
 <script>
 /**
- * Mobile Chat Controller
- * - Opens/closes chat from bottom bar
- * - Pull-to-close gesture
- * - Keyboard detection
+ * Mobile Chat Overlay Controller
+ * Simple overlay with action buttons
  */
 (function() {
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function() {
-    const openChatBtn = document.getElementById('openChatBtn');
-    const chatButton = document.getElementById('sg-chat-button');
-    const chatWindow = document.getElementById('sg-chat-window');
-    const bottomBar = document.getElementById('mobileBottomBar');
-    const chatOverlay = document.getElementById('chatOverlay');
-    const chatClose = document.querySelector('.sg-chat-close');
-    const chatHeader = document.querySelector('.sg-chat-header');
+    const fab = document.getElementById('mobileChatFab');
+    const overlay = document.getElementById('chatOverlay');
+    const closeBtn = document.getElementById('chatOverlayClose');
+    const startChat = document.getElementById('startChatAction');
+    const elevenLabsWidget = document.querySelector('elevenlabs-convai');
 
-    let isChatOpen = false;
-    let touchStartY = 0;
-    let touchCurrentY = 0;
-    let isDragging = false;
+    // Open overlay
+    function openOverlay() {
+      if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+      if (fab) fab.style.display = 'none';
+    }
 
-    // Open chat
-    function openChat() {
-      if (isChatOpen) return;
-      isChatOpen = true;
-
-      // Trigger the original chat toggle
-      if (chatButton) chatButton.click();
-
-      // Show overlay
-      if (chatOverlay) chatOverlay.classList.add('active');
-
-      // Hide bottom bar
-      if (bottomBar && window.innerWidth <= 768) {
-        bottomBar.style.display = 'none';
+    // Close overlay
+    function closeOverlay() {
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      if (fab && window.innerWidth <= 768) {
+        fab.style.display = 'flex';
       }
     }
 
-    // Close chat
-    function closeChat() {
-      isChatOpen = false;
-
-      // Hide overlay
-      if (chatOverlay) chatOverlay.classList.remove('active');
-
-      // Show bottom bar
-      if (bottomBar && window.innerWidth <= 768) {
-        bottomBar.style.display = 'block';
-      }
-
-      // Remove keyboard class
-      document.body.classList.remove('keyboard-open');
+    // FAB click
+    if (fab) {
+      fab.addEventListener('click', openOverlay);
     }
 
-    // Open button click
-    if (openChatBtn) {
-      openChatBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        openChat();
-      });
+    // Close button
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeOverlay);
     }
 
-    // Overlay click to close
-    if (chatOverlay) {
-      chatOverlay.addEventListener('click', function() {
-        if (chatClose) chatClose.click();
-        closeChat();
-      });
-    }
-
-    // Watch close button
-    if (chatClose) {
-      chatClose.addEventListener('click', function() {
-        setTimeout(closeChat, 100);
-      });
-    }
-
-    // ===== PULL TO CLOSE GESTURE =====
-    if (chatHeader && chatWindow) {
-      chatHeader.addEventListener('touchstart', function(e) {
-        touchStartY = e.touches[0].clientY;
-        isDragging = true;
-        chatWindow.style.transition = 'none';
-      }, { passive: true });
-
-      chatHeader.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-        touchCurrentY = e.touches[0].clientY;
-        const deltaY = touchCurrentY - touchStartY;
-
-        // Only allow pulling down
-        if (deltaY > 0) {
-          const translateY = Math.min(deltaY * 0.7, 250);
-          chatWindow.style.transform = `translateY(${translateY}px)`;
-
-          // Fade overlay
-          if (chatOverlay) {
-            chatOverlay.style.opacity = Math.max(0, 1 - (deltaY / 200));
-          }
-        }
-      }, { passive: true });
-
-      chatHeader.addEventListener('touchend', function() {
-        if (!isDragging) return;
-        isDragging = false;
-
-        const deltaY = touchCurrentY - touchStartY;
-        chatWindow.style.transition = 'transform 0.3s ease-out';
-
-        // If pulled down more than 80px, close
-        if (deltaY > 80) {
-          chatWindow.style.transform = 'translateY(100%)';
-          setTimeout(function() {
-            if (chatClose) chatClose.click();
-            closeChat();
-            chatWindow.style.transform = '';
-            chatWindow.style.transition = '';
-          }, 300);
-        } else {
-          // Snap back
-          chatWindow.style.transform = 'translateY(0)';
-          if (chatOverlay) chatOverlay.style.opacity = '';
-        }
-
-        touchStartY = 0;
-        touchCurrentY = 0;
-      }, { passive: true });
-    }
-
-    // Watch for chat window class changes
-    if (chatWindow) {
-      const observer = new MutationObserver(function() {
-        const isVisible = chatWindow.classList.contains('active');
-        if (!isVisible && isChatOpen) {
-          closeChat();
-        }
-      });
-      observer.observe(chatWindow, { attributes: true, attributeFilter: ['class'] });
-    }
-
-    // Keyboard detection
-    if (window.visualViewport) {
-      const initialHeight = window.visualViewport.height;
-      window.visualViewport.addEventListener('resize', function() {
-        if (window.innerWidth > 768) return;
-        const diff = initialHeight - window.visualViewport.height;
-        if (diff > 150) {
-          document.body.classList.add('keyboard-open');
-        } else {
-          document.body.classList.remove('keyboard-open');
+    // Start chat - trigger ElevenLabs widget
+    if (startChat) {
+      startChat.addEventListener('click', function() {
+        closeOverlay();
+        // Trigger ElevenLabs widget if present
+        if (elevenLabsWidget) {
+          elevenLabsWidget.click();
         }
       });
     }
-
-    // Input focus
-    document.addEventListener('focusin', function(e) {
-      if (window.innerWidth <= 768 && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-        document.body.classList.add('keyboard-open');
-      }
-    });
-
-    document.addEventListener('focusout', function() {
-      if (window.innerWidth <= 768) {
-        setTimeout(function() {
-          const active = document.activeElement;
-          if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
-            document.body.classList.remove('keyboard-open');
-          }
-        }, 150);
-      }
-    });
 
     // Escape key
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && isChatOpen) {
-        if (chatClose) chatClose.click();
-        closeChat();
+      if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) {
+        closeOverlay();
       }
     });
   });
