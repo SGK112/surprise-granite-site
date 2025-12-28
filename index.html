@@ -5594,7 +5594,7 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 .form-popup-header {
-  padding: 20px 24px 16px;
+  padding: 24px 24px 20px;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   text-align: center; position: relative;
 }
@@ -5606,19 +5606,73 @@ document.addEventListener('DOMContentLoaded', function () {
   display: flex; align-items: center; justify-content: center;
 }
 .form-popup-close:active { opacity: 0.7; }
-.form-popup-title {
-  color: #fff; font-size: 22px; font-weight: 700;
-  margin: 0 0 6px 0;
+.form-popup-logo {
+  height: 32px; width: auto; margin-bottom: 4px;
+  filter: brightness(0) invert(1);
 }
-.form-popup-subtitle {
-  color: rgba(255,255,255,0.7); font-size: 14px; margin: 0;
+.form-popup-tagline {
+  color: #D4AF37; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; margin: 0; font-weight: 600;
 }
-.form-popup-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(74,222,128,0.15); color: #4ade80;
-  padding: 6px 12px; border-radius: 20px; font-size: 12px;
-  font-weight: 600; margin-top: 12px;
+
+/* Wizard Progress */
+.wizard-progress {
+  display: flex; justify-content: center; gap: 8px;
+  padding: 16px 24px; background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
+.wizard-step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 20px;
+  background: #fff; border: 1px solid #e5e7eb;
+  opacity: 0.5; transition: all 0.3s ease;
+}
+.wizard-step.active { opacity: 1; border-color: #D4AF37; background: rgba(212,175,55,0.08); }
+.wizard-step.completed { opacity: 1; border-color: #4ade80; background: rgba(74,222,128,0.08); }
+.wizard-step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #e5e7eb; color: #6b7280;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.wizard-step.active .wizard-step-num { background: #D4AF37; color: #fff; }
+.wizard-step.completed .wizard-step-num { background: #4ade80; color: #fff; }
+.wizard-step-label { font-size: 13px; font-weight: 600; color: #6b7280; }
+.wizard-step.active .wizard-step-label { color: #1a1a2e; }
+@media (max-width: 480px) { .wizard-step-label { display: none; } .wizard-step { padding: 8px 12px; } }
+
+/* Wizard Panels */
+.wizard-panel { display: none; animation: wizardFade 0.3s ease; }
+.wizard-panel.active { display: block; }
+@keyframes wizardFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+.wizard-panel-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin: 0 0 6px 0; }
+.wizard-panel-desc { font-size: 14px; color: #6b7280; margin: 0 0 20px 0; }
+
+/* Wizard Options Grid */
+.wizard-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+.wizard-option input { display: none; }
+.wizard-option-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 12px; border: 2px solid #e5e7eb; border-radius: 16px;
+  background: #fff; cursor: pointer; transition: all 0.2s ease;
+}
+.wizard-option-card:active { transform: scale(0.97); }
+.wizard-option input:checked + .wizard-option-card {
+  border-color: #D4AF37; background: rgba(212,175,55,0.06);
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+}
+.wizard-option-icon { font-size: 28px; }
+.wizard-option-text { font-size: 13px; font-weight: 600; color: #1a1a2e; text-align: center; }
+
+/* Wizard Navigation */
+.wizard-nav { display: flex; gap: 12px; margin-top: 8px; }
+.wizard-back {
+  flex: 1; padding: 14px 20px; font-size: 15px; font-weight: 600;
+  border: 2px solid #e5e7eb; border-radius: 12px; background: #fff;
+  color: #6b7280; cursor: pointer; transition: all 0.2s ease;
+}
+.wizard-back:active { background: #f3f4f6; }
+.wizard-nav .form-popup-submit { flex: 2; }
 
 .form-popup-body {
   padding: 24px; overflow-y: auto; flex: 1;
@@ -5688,57 +5742,130 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 </style>
 
-<!-- Form Popup -->
+<!-- Form Popup - Wizard Style -->
 <div class="form-popup-overlay" id="formPopup">
   <div class="form-popup-card">
     <div class="form-popup-header">
       <button class="form-popup-close" id="formPopupClose">✕</button>
-      <h2 class="form-popup-title">Get Your Free Quote</h2>
-      <p class="form-popup-subtitle">We'll respond within 24 hours</p>
-      <div class="form-popup-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        No obligation · 100% free
-      </div>
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="form-popup-logo">
+      <p class="form-popup-tagline">Marble & Quartz</p>
     </div>
+
+    <!-- Progress Steps -->
+    <div class="wizard-progress">
+      <div class="wizard-step active" data-step="1"><span class="wizard-step-num">1</span><span class="wizard-step-label">Contact</span></div>
+      <div class="wizard-step" data-step="2"><span class="wizard-step-num">2</span><span class="wizard-step-label">Project</span></div>
+      <div class="wizard-step" data-step="3"><span class="wizard-step-num">3</span><span class="wizard-step-label">Details</span></div>
+    </div>
+
     <div class="form-popup-body">
       <form id="popupEstimateForm">
-        <div class="form-popup-row">
-          <div class="form-popup-group">
-            <label class="form-popup-label">First Name <span class="req">*</span></label>
-            <input type="text" class="form-popup-input" name="firstName" placeholder="John" required>
+        <!-- Step 1: Contact Info -->
+        <div class="wizard-panel active" data-panel="1">
+          <h3 class="wizard-panel-title">Let's get started</h3>
+          <p class="wizard-panel-desc">Tell us how to reach you</p>
+          <div class="form-popup-row">
+            <div class="form-popup-group">
+              <label class="form-popup-label">First Name <span class="req">*</span></label>
+              <input type="text" class="form-popup-input" name="firstName" placeholder="John" required>
+            </div>
+            <div class="form-popup-group">
+              <label class="form-popup-label">Last Name <span class="req">*</span></label>
+              <input type="text" class="form-popup-input" name="lastName" placeholder="Smith" required>
+            </div>
           </div>
           <div class="form-popup-group">
-            <label class="form-popup-label">Last Name <span class="req">*</span></label>
-            <input type="text" class="form-popup-input" name="lastName" placeholder="Smith" required>
+            <label class="form-popup-label">Email <span class="req">*</span></label>
+            <input type="email" class="form-popup-input" name="email" placeholder="john@example.com" required>
+          </div>
+          <div class="form-popup-group">
+            <label class="form-popup-label">Phone <span class="req">*</span></label>
+            <input type="tel" class="form-popup-input" name="phone" placeholder="(602) 555-1234" required>
+          </div>
+          <button type="button" class="form-popup-submit wizard-next" data-next="2">Continue →</button>
+        </div>
+
+        <!-- Step 2: Project Type -->
+        <div class="wizard-panel" data-panel="2">
+          <h3 class="wizard-panel-title">What are you looking for?</h3>
+          <p class="wizard-panel-desc">Select your project type</p>
+          <div class="wizard-options">
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="countertops">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">🪨</span>
+                <span class="wizard-option-text">Countertops</span>
+              </span>
+            </label>
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="kitchen">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">🍳</span>
+                <span class="wizard-option-text">Kitchen Remodel</span>
+              </span>
+            </label>
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="bathroom">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">🛁</span>
+                <span class="wizard-option-text">Bathroom Remodel</span>
+              </span>
+            </label>
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="flooring">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">🏠</span>
+                <span class="wizard-option-text">Flooring</span>
+              </span>
+            </label>
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="cabinets">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">🚪</span>
+                <span class="wizard-option-text">Cabinets</span>
+              </span>
+            </label>
+            <label class="wizard-option">
+              <input type="radio" name="projectType" value="full-remodel">
+              <span class="wizard-option-card">
+                <span class="wizard-option-icon">⭐</span>
+                <span class="wizard-option-text">Full Remodel</span>
+              </span>
+            </label>
+          </div>
+          <div class="wizard-nav">
+            <button type="button" class="wizard-back" data-back="1">← Back</button>
+            <button type="button" class="form-popup-submit wizard-next" data-next="3">Continue →</button>
           </div>
         </div>
-        <div class="form-popup-group">
-          <label class="form-popup-label">Email <span class="req">*</span></label>
-          <input type="email" class="form-popup-input" name="email" placeholder="john@example.com" required>
+
+        <!-- Step 3: Details -->
+        <div class="wizard-panel" data-panel="3">
+          <h3 class="wizard-panel-title">Almost done!</h3>
+          <p class="wizard-panel-desc">Any details you'd like to share?</p>
+          <div class="form-popup-group">
+            <label class="form-popup-label">Project Timeline</label>
+            <select class="form-popup-select" name="timeline">
+              <option value="">When do you need this done?</option>
+              <option value="asap">As soon as possible</option>
+              <option value="1-month">Within 1 month</option>
+              <option value="1-3-months">1-3 months</option>
+              <option value="3-6-months">3-6 months</option>
+              <option value="just-exploring">Just exploring options</option>
+            </select>
+          </div>
+          <div class="form-popup-group">
+            <label class="form-popup-label">Tell us more about your project</label>
+            <textarea class="form-popup-textarea" name="message" placeholder="Dimensions, material preferences, budget range, questions..."></textarea>
+          </div>
+          <div class="wizard-nav">
+            <button type="button" class="wizard-back" data-back="2">← Back</button>
+            <button type="submit" class="form-popup-submit" id="popupSubmitBtn">Get My Free Quote</button>
+          </div>
         </div>
-        <div class="form-popup-group">
-          <label class="form-popup-label">Phone <span class="req">*</span></label>
-          <input type="tel" class="form-popup-input" name="phone" placeholder="(602) 555-1234" required>
-        </div>
-        <div class="form-popup-group">
-          <label class="form-popup-label">Project Type <span class="req">*</span></label>
-          <select class="form-popup-select" name="projectType" required>
-            <option value="">Select project type...</option>
-            <option value="countertops">Countertops Only</option>
-            <option value="kitchen">Kitchen Remodel</option>
-            <option value="bathroom">Bathroom Remodel</option>
-            <option value="flooring">Flooring</option>
-            <option value="cabinets">Cabinets</option>
-            <option value="full-remodel">Full Home Remodel</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="form-popup-group">
-          <label class="form-popup-label">Tell us about your project</label>
-          <textarea class="form-popup-textarea" name="message" placeholder="Describe your project, timeline, questions..."></textarea>
-        </div>
-        <button type="submit" class="form-popup-submit" id="popupSubmitBtn">Get My Free Quote</button>
       </form>
+
+      <!-- Success State -->
       <div class="form-popup-success" id="popupSuccess">
         <div class="form-popup-success-icon">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -5751,6 +5878,7 @@ document.addEventListener('DOMContentLoaded', function () {
         </a>
       </div>
     </div>
+
     <div class="form-popup-footer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
       Your information is secure and never shared
@@ -6031,13 +6159,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // Escape key
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (chatOpen) closeChat(); else if (drawerOpen) closeDrawer(); } });
 
-    // Form Popup
+    // Form Popup - Wizard
     const formPopup = document.getElementById('formPopup');
     const formPopupClose = document.getElementById('formPopupClose');
     const openQuoteBtn = document.getElementById('openQuoteForm');
     const popupForm = document.getElementById('popupEstimateForm');
     const popupSubmitBtn = document.getElementById('popupSubmitBtn');
     const popupSuccess = document.getElementById('popupSuccess');
+    let currentStep = 1;
 
     function openFormPopup() {
       closeDrawer();
@@ -6051,9 +6180,47 @@ document.addEventListener('DOMContentLoaded', function () {
       document.body.style.overflow = '';
     }
 
+    function goToStep(step) {
+      currentStep = step;
+      // Update panels
+      document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.wizard-panel[data-panel="${step}"]`)?.classList.add('active');
+      // Update progress steps
+      document.querySelectorAll('.wizard-step').forEach(s => {
+        const stepNum = parseInt(s.dataset.step);
+        s.classList.remove('active', 'completed');
+        if (stepNum === step) s.classList.add('active');
+        else if (stepNum < step) s.classList.add('completed');
+      });
+    }
+
+    // Validate step 1
+    function validateStep1() {
+      const firstName = popupForm.firstName.value.trim();
+      const lastName = popupForm.lastName.value.trim();
+      const email = popupForm.email.value.trim();
+      const phone = popupForm.phone.value.replace(/\D/g, '');
+      if (!firstName || !lastName) { alert('Please enter your name'); return false; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Please enter a valid email'); return false; }
+      if (phone.length < 10) { alert('Please enter a valid phone number'); return false; }
+      return true;
+    }
+
     openQuoteBtn?.addEventListener('click', openFormPopup);
     formPopupClose?.addEventListener('click', closeFormPopup);
     formPopup?.addEventListener('click', e => { if (e.target === formPopup) closeFormPopup(); });
+
+    // Wizard navigation
+    document.querySelectorAll('.wizard-next').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nextStep = parseInt(btn.dataset.next);
+        if (currentStep === 1 && !validateStep1()) return;
+        goToStep(nextStep);
+      });
+    });
+    document.querySelectorAll('.wizard-back').forEach(btn => {
+      btn.addEventListener('click', () => goToStep(parseInt(btn.dataset.back)));
+    });
 
     // Phone formatting
     const phoneInput = popupForm?.querySelector('input[name="phone"]');
@@ -6076,9 +6243,10 @@ document.addEventListener('DOMContentLoaded', function () {
         name: popupForm.firstName.value.trim() + ' ' + popupForm.lastName.value.trim(),
         email: popupForm.email.value.trim(),
         phone: popupForm.phone.value.trim(),
-        projectType: popupForm.projectType.value,
+        projectType: popupForm.projectType?.value || '',
+        timeline: popupForm.timeline?.value || '',
         message: popupForm.message.value.trim(),
-        source: 'website-popup-form',
+        source: 'website-wizard-form',
         timestamp: new Date().toISOString()
       };
 
@@ -6097,6 +6265,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Show success
       popupForm.style.display = 'none';
+      document.querySelector('.wizard-progress').style.display = 'none';
       popupSuccess.classList.add('show');
       popupSubmitBtn.disabled = false;
       popupSubmitBtn.textContent = 'Get My Free Quote';
