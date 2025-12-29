@@ -25,5 +25,86 @@
 </head>
 <body>
   <p>Redirecting to <a href="/get-a-free-estimate/">Get a Free Estimate</a>...</p>
+<!-- SG Chat Widget -->
+<style>
+#sg-chat-widget { position: fixed; bottom: 24px; right: 24px; z-index: 9999; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
+#sg-chat-button { width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); border: none; cursor: pointer; box-shadow: 0 2px 20px rgba(249,203,0,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+#sg-chat-button:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(249,203,0,0.5), 0 0 0 1px rgba(255,255,255,0.2) inset; }
+#sg-chat-button:active { transform: scale(0.96); }
+#sg-chat-button svg { width: 26px; height: 26px; fill: #1a1a2e; }
+#sg-chat-button .sg-icon-close { display: none; }
+#sg-chat-button.active .sg-icon-chat { display: none; }
+#sg-chat-button.active .sg-icon-close { display: block; }
+#sg-help-pill { display: none; position: fixed; bottom: 96px; right: 24px; background: rgba(26,26,46,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #fff; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset; z-index: 9998; letter-spacing: -0.2px; }
+@media (max-width: 768px) { #sg-help-pill { display: block; } }
+#sg-chat-window { position: fixed; bottom: 96px; right: 24px; width: 380px; max-width: calc(100vw - 48px); height: 540px; max-height: 75vh; background: rgba(255,255,255,0.72); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06); display: none; flex-direction: column; overflow: hidden; z-index: 9999; border: 1px solid rgba(255,255,255,0.5); }
+#sg-chat-window.active { display: flex; animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.sg-chat-header { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.sg-chat-header-info { display: flex; align-items: center; gap: 12px; }
+.sg-chat-avatar { width: 38px; height: 38px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.sg-chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sg-chat-header h3 { color: #1a1a2e; font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.3px; }
+.sg-chat-header p { color: rgba(26,26,46,0.6); font-size: 12px; margin: 2px 0 0; font-weight: 500; }
+.sg-chat-close { background: rgba(26,26,46,0.08); border: none; width: 30px; height: 30px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.sg-chat-close:hover { background: rgba(26,26,46,0.15); }
+.sg-chat-close svg { width: 14px; height: 14px; fill: #1a1a2e; }
+.sg-chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: rgba(248,249,250,0.5); }
+.sg-chat-body::-webkit-scrollbar { width: 6px; }
+.sg-chat-body::-webkit-scrollbar-track { background: transparent; }
+.sg-chat-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+.sg-message { max-width: 82%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.45; letter-spacing: -0.1px; }
+.sg-message.bot { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); color: #1a1a2e; align-self: flex-start; border-bottom-left-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+.sg-message.user { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); color: #1a1a2e; align-self: flex-end; border-bottom-right-radius: 6px; font-weight: 500; box-shadow: 0 2px 8px rgba(249,203,0,0.3); }
+.sg-typing { display: flex; gap: 5px; padding: 14px 18px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 16px; border-bottom-left-radius: 6px; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.sg-typing span { width: 7px; height: 7px; background: #9ca3af; border-radius: 50%; animation: typing 1.4s infinite; }
+.sg-typing span:nth-child(2) { animation-delay: 0.15s; }
+.sg-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+.sg-chat-input-area { padding: 14px 16px; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: center; }
+.sg-chat-input { flex: 1; background: rgba(248,249,250,0.9); border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 12px 16px; color: #1a1a2e; font-size: 14px; outline: none; transition: all 0.15s; }
+.sg-chat-input:focus { border-color: #f9cb00; background: #fff; box-shadow: 0 0 0 3px rgba(249,203,0,0.15); }
+.sg-chat-input::placeholder { color: #9ca3af; }
+.sg-send-btn { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; box-shadow: 0 2px 8px rgba(249,203,0,0.3); }
+.sg-send-btn:hover { transform: scale(1.05); }
+.sg-send-btn:active { transform: scale(0.95); }
+.sg-send-btn svg { width: 18px; height: 18px; fill: #1a1a2e; }
+@media (max-width: 480px) { #sg-chat-widget { bottom: 16px; right: 16px; } #sg-chat-button { width: 54px; height: 54px; border-radius: 16px; } #sg-chat-window { bottom: 80px; right: 16px; width: calc(100vw - 32px); border-radius: 18px; } #sg-help-pill { bottom: 82px; right: 16px; } }
+</style>
+<div id="sg-chat-widget">
+  <div id="sg-help-pill">Need help? Chat with us</div>
+  <button id="sg-chat-button" aria-label="Open chat">
+    <svg class="sg-icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+    <svg class="sg-icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+  </button>
+  <div id="sg-chat-window">
+    <div class="sg-chat-header">
+      <div class="sg-chat-header-info">
+        <div class="sg-chat-avatar"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg" alt="Assistant"></div>
+        <div><h3>Surprise Granite</h3><p>Design Assistant</p></div>
+      </div>
+      <button class="sg-chat-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="sg-chat-body" id="sg-chat-body"></div>
+    <div class="sg-chat-input-area">
+      <input type="text" class="sg-chat-input" id="sg-chat-input" placeholder="Ask about countertops..." autocomplete="off">
+      <button class="sg-send-btn" id="sg-send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const WEBHOOK='https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
+  const btn=document.getElementById('sg-chat-button'),win=document.getElementById('sg-chat-window'),close=document.querySelector('.sg-chat-close'),body=document.getElementById('sg-chat-body'),input=document.getElementById('sg-chat-input'),send=document.getElementById('sg-send-btn'),pill=document.getElementById('sg-help-pill');
+  let open=false,sid='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
+  function toggle(){open=!open;btn.classList.toggle('active',open);win.classList.toggle('active',open);if(pill)pill.style.display='none';if(open&&!body.children.length)chat('Hello');if(open)input.focus();}
+  function msg(t,isUser){const d=document.createElement('div');d.className='sg-message '+(isUser?'user':'bot');d.textContent=t;body.appendChild(d);body.scrollTop=body.scrollHeight;}
+  function typing(show){let t=document.getElementById('sg-typing');if(show&&!t){t=document.createElement('div');t.id='sg-typing';t.className='sg-typing';t.innerHTML='<span></span><span></span><span></span>';body.appendChild(t);body.scrollTop=body.scrollHeight;}else if(!show&&t)t.remove();}
+  async function chat(m){if(m!=='Hello')msg(m,true);typing(true);try{const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,sessionId:sid,page:location.pathname})});typing(false);if(r.ok){const d=await r.json();msg(d.response||d.message||"Thanks! How can I help?",false);}else msg("Thanks for reaching out! Call us at (602) 833-3189.",false);}catch(e){typing(false);msg("Thanks! Call us at (602) 833-3189 for immediate help.",false);}}
+  function send_msg(){const m=input.value.trim();if(m){input.value='';chat(m);}}
+  btn.onclick=toggle;close.onclick=toggle;if(pill)pill.onclick=toggle;send.onclick=send_msg;input.onkeypress=e=>{if(e.key==='Enter')send_msg();};
+})();
+</script>
+
 </body>
 </html>
