@@ -125,122 +125,156 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.3.11/dist/nocode/webflow-format.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 
-<!-- Horizontal Gallery Style -->
+<!-- Mobile-Responsive Shop Gallery - Site Native Patterns -->
 <style>
-/* Prevent horizontal page scroll only */
-html, body {
-  overflow-x: hidden !important;
+/* Container matching site native max-width (85rem) with proper padding */
+.section_carousel-countertops .container-large {
+  max-width: var(--container-max-width, 85rem);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
-/* Make carousel sections wider - 95% with padding */
-.section_carousel-countertops .container-large,
-.carousel-countertops_component {
-  max-width: 95vw !important;
-  width: 95vw !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  padding-left: 2.5vw !important;
-  padding-right: 2.5vw !important;
-}
-
-/* Parent containers */
-.section_carousel-countertops,
-.carousel-countertops_component {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Swiper containers - horizontal scroll */
+/* Swiper containers - use site's slider pattern with hidden scrollbar */
 .swiper_product,
 .swiper_services,
 .swiper_bis,
 .swiper_faucets,
 .swiper_silestone {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  overflow: hidden !important;
-  width: 100% !important;
+  width: 100%;
+  overflow: visible;
 }
 
-/* Swiper wrapper - single horizontal row */
+/* Swiper wrapper - horizontal scroll with hidden scrollbar (matches .slider-list_wrapper) */
 .swiper_product .swiper-wrapper,
 .swiper_services .swiper-wrapper,
 .swiper_bis .swiper-wrapper,
 .swiper_faucets .swiper-wrapper,
 .swiper_silestone .swiper-wrapper {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  gap: 16px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scroll-behavior: smooth !important;
-  -webkit-overflow-scrolling: touch !important;
-  padding-bottom: 10px !important;
-  scrollbar-width: thin !important;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1rem;
+  /* Hidden scrollbar - site native pattern */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Slides - fixed width, no shrink */
-.swiper_product .swiper-slide,
-.swiper_services .swiper-slide,
-.swiper_bis .swiper-slide,
-.swiper_faucets .swiper-slide,
-.swiper_silestone .swiper-slide {
-  width: 220px !important;
-  min-width: 220px !important;
-  flex-shrink: 0 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: relative !important;
-}
-
-/* Responsive slide widths */
-@media (max-width: 768px) {
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    width: 180px !important;
-    min-width: 180px !important;
-  }
-}
-@media (max-width: 480px) {
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    width: 160px !important;
-    min-width: 160px !important;
-  }
-}
-
-/* Custom scrollbar */
 .swiper_product .swiper-wrapper::-webkit-scrollbar,
 .swiper_services .swiper-wrapper::-webkit-scrollbar,
 .swiper_bis .swiper-wrapper::-webkit-scrollbar,
 .swiper_faucets .swiper-wrapper::-webkit-scrollbar,
 .swiper_silestone .swiper-wrapper::-webkit-scrollbar {
-  height: 6px !important;
+  display: none;
 }
-.swiper_product .swiper-wrapper::-webkit-scrollbar-track,
-.swiper_services .swiper-wrapper::-webkit-scrollbar-track,
-.swiper_bis .swiper-wrapper::-webkit-scrollbar-track,
-.swiper_faucets .swiper-wrapper::-webkit-scrollbar-track,
-.swiper_silestone .swiper-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1 !important;
-  border-radius: 3px !important;
+
+/* Product slides - responsive widths */
+.swiper_product .swiper-slide,
+.swiper_services .swiper-slide,
+.swiper_bis .swiper-slide,
+.swiper_faucets .swiper-slide,
+.swiper_silestone .swiper-slide {
+  flex-shrink: 0;
+  width: calc(20% - 0.8rem);
+  min-width: 200px;
+  max-width: 240px;
 }
-.swiper_product .swiper-wrapper::-webkit-scrollbar-thumb,
-.swiper_services .swiper-wrapper::-webkit-scrollbar-thumb,
-.swiper_bis .swiper-wrapper::-webkit-scrollbar-thumb,
-.swiper_faucets .swiper-wrapper::-webkit-scrollbar-thumb,
-.swiper_silestone .swiper-wrapper::-webkit-scrollbar-thumb {
-  background: #888 !important;
-  border-radius: 3px !important;
+
+/* Tablet - 3-4 visible */
+@media (max-width: 991px) {
+  .swiper_product .swiper-slide,
+  .swiper_services .swiper-slide,
+  .swiper_bis .swiper-slide,
+  .swiper_faucets .swiper-slide,
+  .swiper_silestone .swiper-slide {
+    width: calc(33.33% - 0.67rem);
+    min-width: 180px;
+    max-width: 220px;
+  }
+}
+
+/* Mobile landscape - 2-3 visible */
+@media (max-width: 767px) {
+  .section_carousel-countertops .container-large {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .swiper_product .swiper-slide,
+  .swiper_services .swiper-slide,
+  .swiper_bis .swiper-slide,
+  .swiper_faucets .swiper-slide,
+  .swiper_silestone .swiper-slide {
+    width: calc(50% - 0.5rem);
+    min-width: 150px;
+    max-width: 180px;
+  }
+}
+
+/* Mobile portrait - 2 visible, edge-to-edge feel */
+@media (max-width: 479px) {
+  .section_carousel-countertops .container-large {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .swiper_product .swiper-wrapper,
+  .swiper_services .swiper-wrapper,
+  .swiper_bis .swiper-wrapper,
+  .swiper_faucets .swiper-wrapper,
+  .swiper_silestone .swiper-wrapper {
+    gap: 0.75rem;
+  }
+
+  .swiper_product .swiper-slide,
+  .swiper_services .swiper-slide,
+  .swiper_bis .swiper-slide,
+  .swiper_faucets .swiper-slide,
+  .swiper_silestone .swiper-slide {
+    width: calc(50% - 0.375rem);
+    min-width: 140px;
+    max-width: 165px;
+  }
+}
+
+/* Product card images - maintain aspect ratio */
+.product-thumb_item .materials_image-wrapper {
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.product-thumb_item .product1_image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Navigation buttons - consistent with site */
+.swiper_services-navigation .button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.swiper-button {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.swiper-button:hover {
+  opacity: 1;
+}
+
+/* Hide nav buttons on mobile - swipe to scroll */
+@media (max-width: 767px) {
+  .swiper_services-navigation {
+    display: none;
+  }
 }
 </style>
 
