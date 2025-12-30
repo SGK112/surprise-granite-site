@@ -29,40 +29,56 @@
 #sg-chat-widget { position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 9999 !important; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif !important; }
 #sg-chat-button { width: 60px !important; height: 60px !important; min-width: 60px !important; min-height: 60px !important; border-radius: 50% !important; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%) !important; border: none !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(249,203,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: transform 0.2s ease !important; -webkit-tap-highlight-color: transparent !important; }
 #sg-chat-button:active { transform: scale(0.92) !important; }
-#sg-chat-button svg { width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important; fill: #1a1a2e !important; }
+#sg-chat-button svg { width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important; fill: #ffffff !important; }
 #sg-chat-button .sg-icon-close { display: none !important; }
 #sg-chat-button.active .sg-icon-chat { display: none !important; }
 #sg-chat-button.active .sg-icon-close { display: block !important; }
-#sg-chat-window { position: fixed !important; bottom: 90px !important; right: 20px !important; width: 360px !important; max-width: calc(100vw - 40px) !important; height: 480px !important; max-height: 65vh !important; background: #fff !important; border-radius: 16px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; display: none !important; flex-direction: column !important; overflow: hidden !important; z-index: 9999 !important; }
+#sg-chat-window { position: fixed !important; bottom: 90px !important; right: 20px !important; width: 360px !important; max-width: calc(100vw - 40px) !important; height: 450px !important; max-height: calc(100vh - 120px) !important; background: #fff !important; border-radius: 16px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.25) !important; display: none !important; flex-direction: column !important; overflow: hidden !important; z-index: 9999 !important; }
 #sg-chat-window.active { display: flex !important; animation: sgSlide 0.2s ease-out !important; }
 @keyframes sgSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.sg-chat-header { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%) !important; padding: 14px 16px !important; display: flex !important; justify-content: space-between !important; align-items: center !important; }
+.sg-chat-header { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%) !important; padding: 14px 16px !important; display: flex !important; justify-content: space-between !important; align-items: center !important; min-height: 60px !important; flex-shrink: 0 !important; }
 .sg-chat-header-info { display: flex !important; align-items: center !important; gap: 10px !important; }
-.sg-chat-avatar { width: 36px !important; height: 36px !important; border-radius: 50% !important; overflow: hidden !important; }
+.sg-chat-avatar { width: 36px !important; height: 36px !important; border-radius: 50% !important; overflow: hidden !important; flex-shrink: 0 !important; }
 .sg-chat-avatar img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 .sg-chat-header h3 { color: #1a1a2e !important; font-size: 15px !important; font-weight: 600 !important; margin: 0 !important; }
 .sg-chat-header p { color: rgba(26,26,46,0.7) !important; font-size: 12px !important; margin: 2px 0 0 !important; }
-.sg-chat-close { background: rgba(0,0,0,0.1) !important; border: none !important; width: 32px !important; height: 32px !important; border-radius: 50% !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-.sg-chat-close svg { width: 16px !important; height: 16px !important; fill: #1a1a2e !important; }
-.sg-chat-body { flex: 1 !important; overflow-y: auto !important; padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; background: #f5f5f5 !important; }
-.sg-message { max-width: 85% !important; padding: 10px 14px !important; border-radius: 14px !important; font-size: 14px !important; line-height: 1.4 !important; }
-.sg-message.bot { background: #fff !important; color: #1a1a2e !important; align-self: flex-start !important; border-bottom-left-radius: 4px !important; }
+.sg-chat-close { background: rgba(0,0,0,0.15) !important; border: none !important; width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; border-radius: 50% !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important; }
+.sg-chat-close svg { width: 18px !important; height: 18px !important; fill: #1a1a2e !important; }
+.sg-chat-body { flex: 1 !important; overflow-y: auto !important; padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; background: #f5f5f5 !important; -webkit-overflow-scrolling: touch !important; }
+.sg-message { max-width: 85% !important; padding: 10px 14px !important; border-radius: 14px !important; font-size: 14px !important; line-height: 1.4 !important; word-wrap: break-word !important; }
+.sg-message.bot { background: #fff !important; color: #1a1a2e !important; align-self: flex-start !important; border-bottom-left-radius: 4px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important; }
 .sg-message.user { background: #f9cb00 !important; color: #1a1a2e !important; align-self: flex-end !important; border-bottom-right-radius: 4px !important; }
 .sg-typing { display: flex !important; gap: 4px !important; padding: 10px 14px !important; background: #fff !important; border-radius: 14px !important; align-self: flex-start !important; }
-.sg-typing span { width: 6px !important; height: 6px !important; background: #ccc !important; border-radius: 50% !important; animation: sgDot 1.4s infinite !important; }
+.sg-typing span { width: 6px !important; height: 6px !important; background: #999 !important; border-radius: 50% !important; animation: sgDot 1.4s infinite !important; }
 .sg-typing span:nth-child(2) { animation-delay: 0.15s !important; }
 .sg-typing span:nth-child(3) { animation-delay: 0.3s !important; }
 @keyframes sgDot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
-.sg-chat-input-area { padding: 12px !important; background: #fff !important; border-top: 1px solid #eee !important; display: flex !important; gap: 8px !important; }
-.sg-chat-input { flex: 1 !important; background: #f5f5f5 !important; border: none !important; border-radius: 20px !important; padding: 10px 14px !important; font-size: 14px !important; outline: none !important; }
-.sg-chat-input:focus { background: #fff !important; box-shadow: inset 0 0 0 2px #f9cb00 !important; }
-.sg-send-btn { width: 38px !important; height: 38px !important; min-width: 38px !important; border-radius: 50% !important; background: #f9cb00 !important; border: none !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-.sg-send-btn svg { width: 18px !important; height: 18px !important; fill: #1a1a2e !important; }
+.sg-chat-input-area { padding: 12px !important; background: #fff !important; border-top: 1px solid #eee !important; display: flex !important; gap: 10px !important; align-items: center !important; flex-shrink: 0 !important; }
+.sg-chat-input { flex: 1 !important; background: #f5f5f5 !important; border: 1px solid #ddd !important; border-radius: 20px !important; padding: 10px 14px !important; font-size: 14px !important; outline: none !important; color: #1a1a2e !important; }
+.sg-chat-input:focus { border-color: #f9cb00 !important; background: #fff !important; }
+.sg-chat-input::placeholder { color: #999 !important; }
+.sg-send-btn { width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; border-radius: 50% !important; background: #f9cb00 !important; border: none !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important; }
+.sg-send-btn:active { transform: scale(0.95) !important; }
+.sg-send-btn svg { width: 20px !important; height: 20px !important; fill: #1a1a2e !important; }
 @media (max-width: 480px) {
   #sg-chat-widget { bottom: 16px !important; right: 16px !important; }
   #sg-chat-button { width: 56px !important; height: 56px !important; min-width: 56px !important; min-height: 56px !important; }
   #sg-chat-button svg { width: 26px !important; height: 26px !important; }
-  #sg-chat-window { bottom: 80px !important; right: 12px !important; left: 12px !important; width: auto !important; max-width: none !important; height: 70vh !important; max-height: calc(100vh - 100px) !important; }
+  #sg-chat-window {
+    position: fixed !important;
+    top: 10px !important;
+    bottom: auto !important;
+    right: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    height: calc(100vh - 90px) !important;
+    max-height: calc(100vh - 90px) !important;
+    border-radius: 12px !important;
+  }
+  .sg-chat-header { padding: 12px 14px !important; }
+  .sg-chat-body { padding: 12px !important; }
+  .sg-chat-input-area { padding: 10px !important; }
 }
 </style>
 <div id="sg-chat-widget">
@@ -81,47 +97,131 @@
     <div class="sg-chat-body" id="sg-chat-body"></div>
     <div class="sg-chat-input-area">
       <input type="text" class="sg-chat-input" id="sg-chat-input" placeholder="Ask about countertops..." autocomplete="off">
-      <button class="sg-send-btn" id="sg-send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      <button class="sg-send-btn" id="sg-send-btn" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
     </div>
   </div>
 </div>
 <script>
 (function(){
   // Chat widget
-  const WEBHOOK='https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
-  const btn=document.getElementById('sg-chat-button'),win=document.getElementById('sg-chat-window'),closeBtn=document.querySelector('.sg-chat-close'),chatBody=document.getElementById('sg-chat-body'),input=document.getElementById('sg-chat-input'),sendBtn=document.getElementById('sg-send-btn');
-  let isOpen=false,sid='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
-  function toggleChat(){isOpen=!isOpen;btn.classList.toggle('active',isOpen);win.classList.toggle('active',isOpen);if(isOpen&&!chatBody.children.length)sendChat('Hello');if(isOpen)setTimeout(()=>input.focus(),100);}
-  function addMsg(t,isUser){const d=document.createElement('div');d.className='sg-message '+(isUser?'user':'bot');d.textContent=t;chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight;}
-  function showTyping(show){let t=document.getElementById('sg-typing');if(show&&!t){t=document.createElement('div');t.id='sg-typing';t.className='sg-typing';t.innerHTML='<span></span><span></span><span></span>';chatBody.appendChild(t);chatBody.scrollTop=chatBody.scrollHeight;}else if(!show&&t)t.remove();}
-  async function sendChat(m){if(m!=='Hello')addMsg(m,true);showTyping(true);try{const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,sessionId:sid,page:location.pathname})});showTyping(false);if(r.ok){const d=await r.json();addMsg(d.response||d.message||"Thanks! How can I help?",false);}else addMsg("Thanks! Call us at (602) 833-3189.",false);}catch(e){showTyping(false);addMsg("Thanks! Call (602) 833-3189 for help.",false);}}
-  function doSend(){const m=input.value.trim();if(m){input.value='';sendChat(m);}}
+  var WEBHOOK='https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
+  var btn=document.getElementById('sg-chat-button');
+  var win=document.getElementById('sg-chat-window');
+  var closeBtn=document.querySelector('.sg-chat-close');
+  var chatBody=document.getElementById('sg-chat-body');
+  var input=document.getElementById('sg-chat-input');
+  var sendBtn=document.getElementById('sg-send-btn');
+  var isOpen=false;
+  var sid='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
+
+  function toggleChat(){
+    isOpen=!isOpen;
+    if(btn)btn.classList.toggle('active',isOpen);
+    if(win)win.classList.toggle('active',isOpen);
+    if(isOpen&&chatBody&&!chatBody.children.length)sendChat('Hello');
+    if(isOpen&&input)setTimeout(function(){input.focus();},100);
+  }
+
+  function addMsg(t,isUser){
+    if(!chatBody)return;
+    var d=document.createElement('div');
+    d.className='sg-message '+(isUser?'user':'bot');
+    d.textContent=t;
+    chatBody.appendChild(d);
+    chatBody.scrollTop=chatBody.scrollHeight;
+  }
+
+  function showTyping(show){
+    var t=document.getElementById('sg-typing');
+    if(show&&!t&&chatBody){
+      t=document.createElement('div');
+      t.id='sg-typing';
+      t.className='sg-typing';
+      t.innerHTML='<span></span><span></span><span></span>';
+      chatBody.appendChild(t);
+      chatBody.scrollTop=chatBody.scrollHeight;
+    }else if(!show&&t){
+      t.remove();
+    }
+  }
+
+  function sendChat(m){
+    if(m!=='Hello')addMsg(m,true);
+    showTyping(true);
+    fetch(WEBHOOK,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:m,sessionId:sid,page:location.pathname})
+    }).then(function(r){
+      showTyping(false);
+      if(r.ok){
+        r.json().then(function(d){
+          addMsg(d.response||d.message||"Thanks! How can I help?",false);
+        });
+      }else{
+        addMsg("Thanks! Call us at (602) 833-3189.",false);
+      }
+    }).catch(function(){
+      showTyping(false);
+      addMsg("Thanks! Call (602) 833-3189 for help.",false);
+    });
+  }
+
+  function doSend(){
+    if(!input)return;
+    var m=input.value.trim();
+    if(m){input.value='';sendChat(m);}
+  }
+
   if(btn)btn.onclick=toggleChat;
   if(closeBtn)closeBtn.onclick=toggleChat;
   if(sendBtn)sendBtn.onclick=doSend;
-  if(input)input.onkeypress=e=>{if(e.key==='Enter')doSend();};
+  if(input)input.onkeypress=function(e){if(e.key==='Enter')doSend();};
 
-  // Fix hamburger menu
-  const menuBtn=document.querySelector('.navbar_menu-button, .w-nav-button');
-  const navOverlay=document.querySelector('.w-nav-overlay');
-  const navMenu=document.querySelector('.navbar_menu, .w-nav-menu');
-  if(menuBtn){
-    menuBtn.addEventListener('click',function(e){
-      e.preventDefault();
-      const isMenuOpen=menuBtn.classList.contains('w--open');
-      if(isMenuOpen){
-        menuBtn.classList.remove('w--open');
-        if(navOverlay)navOverlay.style.display='none';
-        if(navMenu)navMenu.classList.remove('w--open');
-        document.body.style.overflow='';
-      }else{
-        menuBtn.classList.add('w--open');
-        if(navOverlay){navOverlay.style.display='block';navOverlay.style.height='100vh';}
-        if(navMenu)navMenu.classList.add('w--open');
-        document.body.style.overflow='hidden';
-      }
-    });
-  }
+  // Mobile nav fix - enhance Webflow nav
+  setTimeout(function(){
+    var navBtn=document.querySelector('.navbar_menu-button');
+    var wNavBtn=document.querySelector('.w-nav-button');
+    var menuBtn=navBtn||wNavBtn;
+    var navComponent=document.querySelector('.navbar_component, .w-nav');
+    var navOverlay=document.querySelector('.w-nav-overlay');
+
+    if(menuBtn&&navComponent){
+      // Clone and replace to remove existing listeners
+      var newBtn=menuBtn.cloneNode(true);
+      menuBtn.parentNode.replaceChild(newBtn,menuBtn);
+
+      newBtn.addEventListener('click',function(e){
+        e.preventDefault();
+        e.stopPropagation();
+
+        var isOpen=newBtn.classList.contains('w--open');
+
+        if(isOpen){
+          // Close menu
+          newBtn.classList.remove('w--open');
+          navComponent.classList.remove('w--open');
+          if(navOverlay){
+            navOverlay.style.display='none';
+            navOverlay.style.height='0';
+          }
+          document.body.style.overflow='';
+          document.body.classList.remove('no-scroll');
+        }else{
+          // Open menu
+          newBtn.classList.add('w--open');
+          navComponent.classList.add('w--open');
+          if(navOverlay){
+            navOverlay.style.display='block';
+            navOverlay.style.height='100vh';
+            navOverlay.style.width='100%';
+          }
+          document.body.style.overflow='hidden';
+          document.body.classList.add('no-scroll');
+        }
+      },true);
+    }
+  },500);
 })();
 </script>
 
