@@ -125,8 +125,25 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.3.11/dist/nocode/webflow-format.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 
-<!-- Swiper CSS Fallback - Show products even without JS -->
+<!-- Force Products Visible - Override ALL hiding -->
 <style>
+/* Force parent containers visible */
+.section_carousel-countertops,
+.carousel-countertops_component,
+.swiper_product,
+.swiper_services,
+.swiper_bis,
+.swiper_faucets,
+.swiper_silestone {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Force swiper wrappers to grid */
 .swiper_product .swiper-wrapper,
 .swiper_services .swiper-wrapper,
 .swiper_bis .swiper-wrapper,
@@ -135,7 +152,12 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 16px !important;
+  overflow: visible !important;
+  height: auto !important;
+  transform: none !important;
 }
+
+/* Force slides visible with proper sizing */
 .swiper_product .swiper-slide,
 .swiper_services .swiper-slide,
 .swiper_bis .swiper-slide,
@@ -143,7 +165,14 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 .swiper_silestone .swiper-slide {
   width: calc(20% - 13px) !important;
   flex-shrink: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  transform: none !important;
 }
+
+/* Responsive breakpoints */
 @media (max-width: 1200px) {
   .swiper_product .swiper-slide,
   .swiper_services .swiper-slide,
