@@ -1161,47 +1161,43 @@ setInterval(displayOpeningStatus, 60000);
 
   <!-- SG Chat Widget -->
 <style>
-#sg-chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
-#sg-chat-button { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(249,203,0,0.4); display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
-#sg-chat-button:active { transform: scale(0.95); }
-#sg-chat-button svg { width: 24px; height: 24px; fill: #1a1a2e; }
-#sg-chat-button .sg-icon-close { display: none; }
-#sg-chat-button.active .sg-icon-chat { display: none; }
-#sg-chat-button.active .sg-icon-close { display: block; }
-#sg-chat-window { position: fixed; bottom: 88px; right: 20px; width: 360px; max-width: calc(100vw - 40px); height: 500px; max-height: 70vh; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 9999; }
-#sg-chat-window.active { display: flex; animation: sgSlideUp 0.25s ease-out; }
-@keyframes sgSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.sg-chat-header { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); padding: 16px; display: flex; justify-content: space-between; align-items: center; }
-.sg-chat-header-info { display: flex; align-items: center; gap: 12px; }
-.sg-chat-avatar { width: 36px; height: 36px; border-radius: 10px; overflow: hidden; }
-.sg-chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.sg-chat-header h3 { color: #1a1a2e; font-size: 15px; font-weight: 600; margin: 0; }
-.sg-chat-header p { color: rgba(26,26,46,0.6); font-size: 12px; margin: 2px 0 0; }
-.sg-chat-close { background: rgba(26,26,46,0.1); border: none; width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
-.sg-chat-close svg { width: 14px; height: 14px; fill: #1a1a2e; }
-.sg-chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #f8f9fa; -webkit-overflow-scrolling: touch; }
-.sg-message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4; }
-.sg-message.bot { background: #fff; color: #1a1a2e; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.sg-message.user { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); color: #1a1a2e; align-self: flex-end; border-bottom-right-radius: 4px; }
-.sg-typing { display: flex; gap: 4px; padding: 12px 16px; background: #fff; border-radius: 16px; border-bottom-left-radius: 4px; align-self: flex-start; }
-.sg-typing span { width: 6px; height: 6px; background: #ccc; border-radius: 50%; animation: sgTyping 1.4s infinite; }
-.sg-typing span:nth-child(2) { animation-delay: 0.15s; }
-.sg-typing span:nth-child(3) { animation-delay: 0.3s; }
-@keyframes sgTyping { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
-.sg-chat-input-area { padding: 12px 16px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
-.sg-chat-input { flex: 1; background: #f5f5f5; border: none; border-radius: 20px; padding: 12px 16px; color: #1a1a2e; font-size: 14px; outline: none; -webkit-appearance: none; }
-.sg-chat-input:focus { background: #fff; box-shadow: 0 0 0 2px rgba(249,203,0,0.3); }
-.sg-chat-input::placeholder { color: #999; }
-.sg-send-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
-.sg-send-btn:active { transform: scale(0.95); }
-.sg-send-btn svg { width: 18px; height: 18px; fill: #1a1a2e; }
+#sg-chat-widget { position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 9999 !important; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif !important; }
+#sg-chat-button { width: 60px !important; height: 60px !important; min-width: 60px !important; min-height: 60px !important; border-radius: 50% !important; background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%) !important; border: none !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(249,203,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: transform 0.2s ease !important; -webkit-tap-highlight-color: transparent !important; }
+#sg-chat-button:active { transform: scale(0.92) !important; }
+#sg-chat-button svg { width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important; fill: #1a1a2e !important; }
+#sg-chat-button .sg-icon-close { display: none !important; }
+#sg-chat-button.active .sg-icon-chat { display: none !important; }
+#sg-chat-button.active .sg-icon-close { display: block !important; }
+#sg-chat-window { position: fixed !important; bottom: 90px !important; right: 20px !important; width: 360px !important; max-width: calc(100vw - 40px) !important; height: 480px !important; max-height: 65vh !important; background: #fff !important; border-radius: 16px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; display: none !important; flex-direction: column !important; overflow: hidden !important; z-index: 9999 !important; }
+#sg-chat-window.active { display: flex !important; animation: sgSlide 0.2s ease-out !important; }
+@keyframes sgSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.sg-chat-header { background: linear-gradient(135deg, #f9cb00 0%, #f0c000 100%) !important; padding: 14px 16px !important; display: flex !important; justify-content: space-between !important; align-items: center !important; }
+.sg-chat-header-info { display: flex !important; align-items: center !important; gap: 10px !important; }
+.sg-chat-avatar { width: 36px !important; height: 36px !important; border-radius: 50% !important; overflow: hidden !important; }
+.sg-chat-avatar img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.sg-chat-header h3 { color: #1a1a2e !important; font-size: 15px !important; font-weight: 600 !important; margin: 0 !important; }
+.sg-chat-header p { color: rgba(26,26,46,0.7) !important; font-size: 12px !important; margin: 2px 0 0 !important; }
+.sg-chat-close { background: rgba(0,0,0,0.1) !important; border: none !important; width: 32px !important; height: 32px !important; border-radius: 50% !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.sg-chat-close svg { width: 16px !important; height: 16px !important; fill: #1a1a2e !important; }
+.sg-chat-body { flex: 1 !important; overflow-y: auto !important; padding: 16px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; background: #f5f5f5 !important; }
+.sg-message { max-width: 85% !important; padding: 10px 14px !important; border-radius: 14px !important; font-size: 14px !important; line-height: 1.4 !important; }
+.sg-message.bot { background: #fff !important; color: #1a1a2e !important; align-self: flex-start !important; border-bottom-left-radius: 4px !important; }
+.sg-message.user { background: #f9cb00 !important; color: #1a1a2e !important; align-self: flex-end !important; border-bottom-right-radius: 4px !important; }
+.sg-typing { display: flex !important; gap: 4px !important; padding: 10px 14px !important; background: #fff !important; border-radius: 14px !important; align-self: flex-start !important; }
+.sg-typing span { width: 6px !important; height: 6px !important; background: #ccc !important; border-radius: 50% !important; animation: sgDot 1.4s infinite !important; }
+.sg-typing span:nth-child(2) { animation-delay: 0.15s !important; }
+.sg-typing span:nth-child(3) { animation-delay: 0.3s !important; }
+@keyframes sgDot { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+.sg-chat-input-area { padding: 12px !important; background: #fff !important; border-top: 1px solid #eee !important; display: flex !important; gap: 8px !important; }
+.sg-chat-input { flex: 1 !important; background: #f5f5f5 !important; border: none !important; border-radius: 20px !important; padding: 10px 14px !important; font-size: 14px !important; outline: none !important; }
+.sg-chat-input:focus { background: #fff !important; box-shadow: inset 0 0 0 2px #f9cb00 !important; }
+.sg-send-btn { width: 38px !important; height: 38px !important; min-width: 38px !important; border-radius: 50% !important; background: #f9cb00 !important; border: none !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.sg-send-btn svg { width: 18px !important; height: 18px !important; fill: #1a1a2e !important; }
 @media (max-width: 480px) {
-  #sg-chat-widget { bottom: 16px; right: 16px; }
-  #sg-chat-button { width: 52px; height: 52px; }
-  #sg-chat-window { bottom: 76px; right: 16px; left: 16px; width: auto; max-width: none; height: calc(100vh - 140px); max-height: none; border-radius: 16px; }
-  .sg-chat-header { padding: 14px; }
-  .sg-chat-body { padding: 12px; }
-  .sg-chat-input-area { padding: 10px 12px; }
+  #sg-chat-widget { bottom: 16px !important; right: 16px !important; }
+  #sg-chat-button { width: 56px !important; height: 56px !important; min-width: 56px !important; min-height: 56px !important; }
+  #sg-chat-button svg { width: 26px !important; height: 26px !important; }
+  #sg-chat-window { bottom: 80px !important; right: 12px !important; left: 12px !important; width: auto !important; max-width: none !important; height: 70vh !important; max-height: calc(100vh - 100px) !important; }
 }
 </style>
 <div id="sg-chat-widget">
@@ -1212,29 +1208,55 @@ setInterval(displayOpeningStatus, 60000);
   <div id="sg-chat-window">
     <div class="sg-chat-header">
       <div class="sg-chat-header-info">
-        <div class="sg-chat-avatar"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg" alt="Assistant"></div>
+        <div class="sg-chat-avatar"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg" alt=""></div>
         <div><h3>Surprise Granite</h3><p>Design Assistant</p></div>
       </div>
-      <button class="sg-chat-close" aria-label="Close chat"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      <button class="sg-chat-close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
     </div>
     <div class="sg-chat-body" id="sg-chat-body"></div>
     <div class="sg-chat-input-area">
       <input type="text" class="sg-chat-input" id="sg-chat-input" placeholder="Ask about countertops..." autocomplete="off">
-      <button class="sg-send-btn" id="sg-send-btn" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      <button class="sg-send-btn" id="sg-send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
     </div>
   </div>
 </div>
 <script>
 (function(){
+  // Chat widget
   const WEBHOOK='https://www.voicenowcrm.com/api/webhook/agent/6913b021776947444de0638e/sales';
-  const btn=document.getElementById('sg-chat-button'),win=document.getElementById('sg-chat-window'),close=document.querySelector('.sg-chat-close'),body=document.getElementById('sg-chat-body'),input=document.getElementById('sg-chat-input'),send=document.getElementById('sg-send-btn');
-  let open=false,sid='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
-  function toggle(){open=!open;btn.classList.toggle('active',open);win.classList.toggle('active',open);if(open&&!body.children.length)chat('Hello');if(open)setTimeout(()=>input.focus(),100);}
-  function msg(t,isUser){const d=document.createElement('div');d.className='sg-message '+(isUser?'user':'bot');d.textContent=t;body.appendChild(d);body.scrollTop=body.scrollHeight;}
-  function typing(show){let t=document.getElementById('sg-typing');if(show&&!t){t=document.createElement('div');t.id='sg-typing';t.className='sg-typing';t.innerHTML='<span></span><span></span><span></span>';body.appendChild(t);body.scrollTop=body.scrollHeight;}else if(!show&&t)t.remove();}
-  async function chat(m){if(m!=='Hello')msg(m,true);typing(true);try{const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,sessionId:sid,page:location.pathname})});typing(false);if(r.ok){const d=await r.json();msg(d.response||d.message||"Thanks! How can I help?",false);}else msg("Thanks for reaching out! Call us at (602) 833-3189.",false);}catch(e){typing(false);msg("Thanks! Call us at (602) 833-3189 for immediate help.",false);}}
-  function send_msg(){const m=input.value.trim();if(m){input.value='';chat(m);}}
-  btn.onclick=toggle;close.onclick=toggle;send.onclick=send_msg;input.onkeypress=e=>{if(e.key==='Enter')send_msg();};
+  const btn=document.getElementById('sg-chat-button'),win=document.getElementById('sg-chat-window'),closeBtn=document.querySelector('.sg-chat-close'),chatBody=document.getElementById('sg-chat-body'),input=document.getElementById('sg-chat-input'),sendBtn=document.getElementById('sg-send-btn');
+  let isOpen=false,sid='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
+  function toggleChat(){isOpen=!isOpen;btn.classList.toggle('active',isOpen);win.classList.toggle('active',isOpen);if(isOpen&&!chatBody.children.length)sendChat('Hello');if(isOpen)setTimeout(()=>input.focus(),100);}
+  function addMsg(t,isUser){const d=document.createElement('div');d.className='sg-message '+(isUser?'user':'bot');d.textContent=t;chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight;}
+  function showTyping(show){let t=document.getElementById('sg-typing');if(show&&!t){t=document.createElement('div');t.id='sg-typing';t.className='sg-typing';t.innerHTML='<span></span><span></span><span></span>';chatBody.appendChild(t);chatBody.scrollTop=chatBody.scrollHeight;}else if(!show&&t)t.remove();}
+  async function sendChat(m){if(m!=='Hello')addMsg(m,true);showTyping(true);try{const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,sessionId:sid,page:location.pathname})});showTyping(false);if(r.ok){const d=await r.json();addMsg(d.response||d.message||"Thanks! How can I help?",false);}else addMsg("Thanks! Call us at (602) 833-3189.",false);}catch(e){showTyping(false);addMsg("Thanks! Call (602) 833-3189 for help.",false);}}
+  function doSend(){const m=input.value.trim();if(m){input.value='';sendChat(m);}}
+  if(btn)btn.onclick=toggleChat;
+  if(closeBtn)closeBtn.onclick=toggleChat;
+  if(sendBtn)sendBtn.onclick=doSend;
+  if(input)input.onkeypress=e=>{if(e.key==='Enter')doSend();};
+
+  // Fix hamburger menu
+  const menuBtn=document.querySelector('.navbar_menu-button, .w-nav-button');
+  const navOverlay=document.querySelector('.w-nav-overlay');
+  const navMenu=document.querySelector('.navbar_menu, .w-nav-menu');
+  if(menuBtn){
+    menuBtn.addEventListener('click',function(e){
+      e.preventDefault();
+      const isMenuOpen=menuBtn.classList.contains('w--open');
+      if(isMenuOpen){
+        menuBtn.classList.remove('w--open');
+        if(navOverlay)navOverlay.style.display='none';
+        if(navMenu)navMenu.classList.remove('w--open');
+        document.body.style.overflow='';
+      }else{
+        menuBtn.classList.add('w--open');
+        if(navOverlay){navOverlay.style.display='block';navOverlay.style.height='100vh';}
+        if(navMenu)navMenu.classList.add('w--open');
+        document.body.style.overflow='hidden';
+      }
+    });
+  }
 })();
 </script>
 
