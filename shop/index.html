@@ -125,11 +125,18 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.3.11/dist/nocode/webflow-format.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 
-<!-- Force Products Visible - Override ALL hiding -->
+<!-- Horizontal Gallery Style -->
 <style>
-/* Force parent containers visible */
+/* Parent containers */
 .section_carousel-countertops,
-.carousel-countertops_component,
+.carousel-countertops_component {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+}
+
+/* Swiper containers - horizontal scroll */
 .swiper_product,
 .swiper_services,
 .swiper_bis,
@@ -138,68 +145,87 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  overflow: visible !important;
-  height: auto !important;
-  max-height: none !important;
+  overflow: hidden !important;
+  width: 100% !important;
 }
 
-/* Force swiper wrappers to grid */
+/* Swiper wrapper - single horizontal row */
 .swiper_product .swiper-wrapper,
 .swiper_services .swiper-wrapper,
 .swiper_bis .swiper-wrapper,
 .swiper_faucets .swiper-wrapper,
 .swiper_silestone .swiper-wrapper {
   display: flex !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
   gap: 16px !important;
-  overflow: visible !important;
-  height: auto !important;
-  transform: none !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-bottom: 10px !important;
+  scrollbar-width: thin !important;
 }
 
-/* Force slides visible with proper sizing */
+/* Slides - fixed width, no shrink */
 .swiper_product .swiper-slide,
 .swiper_services .swiper-slide,
 .swiper_bis .swiper-slide,
 .swiper_faucets .swiper-slide,
 .swiper_silestone .swiper-slide {
-  width: calc(20% - 13px) !important;
+  width: 220px !important;
+  min-width: 220px !important;
   flex-shrink: 0 !important;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   position: relative !important;
-  transform: none !important;
 }
 
-/* Responsive breakpoints */
-@media (max-width: 1200px) {
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide { width: calc(25% - 12px) !important; }
-}
-@media (max-width: 992px) {
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide { width: calc(33.333% - 11px) !important; }
-}
+/* Responsive slide widths */
 @media (max-width: 768px) {
   .swiper_product .swiper-slide,
   .swiper_services .swiper-slide,
   .swiper_bis .swiper-slide,
   .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide { width: calc(50% - 8px) !important; }
+  .swiper_silestone .swiper-slide {
+    width: 180px !important;
+    min-width: 180px !important;
+  }
 }
 @media (max-width: 480px) {
   .swiper_product .swiper-slide,
   .swiper_services .swiper-slide,
   .swiper_bis .swiper-slide,
   .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide { width: 100% !important; }
+  .swiper_silestone .swiper-slide {
+    width: 160px !important;
+    min-width: 160px !important;
+  }
+}
+
+/* Custom scrollbar */
+.swiper_product .swiper-wrapper::-webkit-scrollbar,
+.swiper_services .swiper-wrapper::-webkit-scrollbar,
+.swiper_bis .swiper-wrapper::-webkit-scrollbar,
+.swiper_faucets .swiper-wrapper::-webkit-scrollbar,
+.swiper_silestone .swiper-wrapper::-webkit-scrollbar {
+  height: 6px !important;
+}
+.swiper_product .swiper-wrapper::-webkit-scrollbar-track,
+.swiper_services .swiper-wrapper::-webkit-scrollbar-track,
+.swiper_bis .swiper-wrapper::-webkit-scrollbar-track,
+.swiper_faucets .swiper-wrapper::-webkit-scrollbar-track,
+.swiper_silestone .swiper-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 3px !important;
+}
+.swiper_product .swiper-wrapper::-webkit-scrollbar-thumb,
+.swiper_services .swiper-wrapper::-webkit-scrollbar-thumb,
+.swiper_bis .swiper-wrapper::-webkit-scrollbar-thumb,
+.swiper_faucets .swiper-wrapper::-webkit-scrollbar-thumb,
+.swiper_silestone .swiper-wrapper::-webkit-scrollbar-thumb {
+  background: #888 !important;
+  border-radius: 3px !important;
 }
 </style>
 
