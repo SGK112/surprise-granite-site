@@ -76,35 +76,102 @@ a, button {
   display: none !important;
 }
 
-/* Mobile responsive iframe */
+/* Mobile responsive iframe - Enhanced for better mobile experience */
 .visualizer-embed {
   width: 100%;
   position: relative;
+  min-height: 800px;
 }
 
 .visualizer-embed iframe {
   width: 100%;
   border: none;
+  min-height: 800px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
+  /* Tablet */
   .visualizer-embed {
-    min-height: 70vh;
-    height: auto;
+    min-height: 85vh;
+    height: calc(100vh - 80px);
   }
 
   .visualizer-embed iframe {
-    min-height: 600px;
+    min-height: 85vh;
+    height: 100%;
+  }
+
+  /* Hide page header/footer on tool pages for more space */
+  .section_header54,
+  .section_footer2 {
+    display: none !important;
+  }
+
+  /* Make main wrapper take full height */
+  .main-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Mobile */
+  .visualizer-embed {
+    min-height: 90vh;
+    height: calc(100vh - 60px);
+    margin: 0 -20px;
+    width: calc(100% + 40px);
+  }
+
+  .visualizer-embed iframe {
+    min-height: 90vh;
+    height: 100%;
+  }
+
+  /* Minimize navbar height on tool pages */
+  .navbar-fixed_wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 50px !important;
+    min-height: 50px !important;
+  }
+
+  /* Hide extra page elements */
+  .padding-global,
+  .spacer-small,
+  .spacer-medium {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
 
 @media (max-width: 480px) {
+  /* Small mobile - maximize iframe space */
   .visualizer-embed {
-    min-height: 60vh;
+    min-height: 92vh;
+    height: calc(100vh - 50px);
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    width: 100%;
+    z-index: 100;
   }
 
   .visualizer-embed iframe {
-    min-height: 500px;
+    min-height: 92vh;
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Hide navbar on very small screens - user can scroll up to see it */
+  .page-wrapper {
+    overflow: visible;
   }
 }
 </style>

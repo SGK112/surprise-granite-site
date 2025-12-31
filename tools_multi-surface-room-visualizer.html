@@ -71,28 +71,116 @@ a, button {
 		pointer-events: none;
 }
 
-/* Mobile optimization for Roomvo iframe */
+/* Mobile optimization for Roomvo iframe - Enhanced */
 .roomvo-modal_component,
 .roomvo-modal_container,
 .roomvo-modal_embed {
   min-height: 80vh;
   height: 800px;
+  width: 100%;
 }
 
 .roomvo-modal_embed iframe {
   min-height: 800px;
+  width: 100%;
+  border: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
+  /* Tablet */
   .roomvo-modal_component,
   .roomvo-modal_container,
   .roomvo-modal_embed {
-    min-height: 70vh;
-    height: auto;
+    min-height: 85vh;
+    height: calc(100vh - 80px);
   }
 
   .roomvo-modal_embed iframe {
-    min-height: 600px;
+    min-height: 85vh;
+    height: 100%;
+  }
+
+  /* Hide page header/footer for more space */
+  .section_header54,
+  .section_footer2 {
+    display: none !important;
+  }
+
+  .main-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Mobile */
+  .roomvo-modal_component {
+    min-height: 90vh;
+    height: calc(100vh - 60px);
+    margin: 0 -20px;
+    width: calc(100% + 40px);
+  }
+
+  .roomvo-modal_container,
+  .roomvo-modal_embed {
+    min-height: 90vh;
+    height: 100%;
+  }
+
+  .roomvo-modal_embed iframe {
+    min-height: 90vh;
+    height: 100%;
+  }
+
+  /* Minimize navbar */
+  .navbar-fixed_wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 50px !important;
+    min-height: 50px !important;
+  }
+
+  .padding-global,
+  .spacer-small,
+  .spacer-medium {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Small mobile - maximize iframe */
+  .roomvo-modal_component {
+    min-height: 92vh;
+    height: calc(100vh - 50px);
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    width: 100%;
+    z-index: 100;
+  }
+
+  .roomvo-modal_container,
+  .roomvo-modal_embed {
+    min-height: 92vh;
+    height: 100%;
+    width: 100%;
+  }
+
+  .roomvo-modal_embed iframe {
+    min-height: 92vh;
+    height: 100%;
+    width: 100%;
+  }
+
+  .page-wrapper {
+    overflow: visible;
   }
 }
 
