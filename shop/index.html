@@ -157,7 +157,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   opacity: 1 !important;
 }
 
-/* Swiper wrapper - horizontal scroll with natural feel */
+/* Swiper wrapper - let Swiper.js handle scrolling */
 .swiper_product .swiper-wrapper,
 .swiper_services .swiper-wrapper,
 .swiper_bis .swiper-wrapper,
@@ -165,22 +165,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 .swiper_silestone .swiper-wrapper {
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 1rem;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: auto; /* Reduced sensitivity on iOS */
-  padding-bottom: 1rem;
-  /* Hidden scrollbar - site native pattern */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.swiper_product .swiper-wrapper::-webkit-scrollbar,
-.swiper_services .swiper-wrapper::-webkit-scrollbar,
-.swiper_bis .swiper-wrapper::-webkit-scrollbar,
-.swiper_faucets .swiper-wrapper::-webkit-scrollbar,
-.swiper_silestone .swiper-wrapper::-webkit-scrollbar {
-  display: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Product slides - ensure visibility and responsive widths */
@@ -190,12 +175,24 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 .swiper_faucets .swiper-slide,
 .swiper_silestone .swiper-slide {
   flex-shrink: 0 !important;
-  width: calc(20% - 0.8rem);
-  min-width: 200px;
-  max-width: 240px;
+  width: auto !important;
+  min-width: 160px;
+  max-width: 220px;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+}
+
+/* Mobile slide sizing */
+@media (max-width: 767px) {
+  .swiper_product .swiper-slide,
+  .swiper_services .swiper-slide,
+  .swiper_bis .swiper-slide,
+  .swiper_faucets .swiper-slide,
+  .swiper_silestone .swiper-slide {
+    min-width: 140px;
+    max-width: 160px;
+  }
 }
 
 /* Ensure product cards and images are visible */
@@ -216,77 +213,18 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   height: auto;
 }
 
-/* Tablet - 3-4 visible */
-@media (max-width: 991px) {
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    width: calc(33.33% - 0.67rem);
-    min-width: 180px;
-    max-width: 220px;
-  }
-}
-
-/* Mobile landscape - 2-3 visible */
+/* Container padding adjustments */
 @media (max-width: 767px) {
   .section_carousel-countertops .container-large {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    width: calc(50% - 0.5rem);
-    min-width: 150px;
-    max-width: 180px;
-  }
-
-  /* Reduce scroll sensitivity on mobile */
-  .swiper_product .swiper-wrapper,
-  .swiper_services .swiper-wrapper,
-  .swiper_bis .swiper-wrapper,
-  .swiper_faucets .swiper-wrapper,
-  .swiper_silestone .swiper-wrapper {
-    scroll-snap-type: x proximity; /* Gentle snap */
-  }
-
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    scroll-snap-align: start;
-  }
 }
 
-/* Mobile portrait - 2 visible, edge-to-edge feel */
 @media (max-width: 479px) {
   .section_carousel-countertops .container-large {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
-  }
-
-  .swiper_product .swiper-wrapper,
-  .swiper_services .swiper-wrapper,
-  .swiper_bis .swiper-wrapper,
-  .swiper_faucets .swiper-wrapper,
-  .swiper_silestone .swiper-wrapper {
-    gap: 0.75rem;
-  }
-
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    width: calc(50% - 0.375rem);
-    min-width: 140px;
-    max-width: 165px;
   }
 }
 
@@ -1811,14 +1749,22 @@ setInterval(displayOpeningStatus, 60000);
   <!-- Swiper Initialization for ALL carousels -->
   <script>
   document.addEventListener('DOMContentLoaded', function() {
+    var isMobile = window.innerWidth <= 767;
+
     var swiperConfig = {
-      slidesPerView: 1,
+      slidesPerView: 'auto',
       spaceBetween: 16,
+      freeMode: true,
+      freeModeSticky: false,
+      cssMode: isMobile,
+      touchEventsTarget: 'container',
+      grabCursor: true,
       breakpoints: {
-        480: { slidesPerView: 2 },
-        768: { slidesPerView: 3 },
-        992: { slidesPerView: 4 },
-        1200: { slidesPerView: 5 }
+        0: { slidesPerView: 2, spaceBetween: 12 },
+        480: { slidesPerView: 2, spaceBetween: 12 },
+        768: { slidesPerView: 3, spaceBetween: 16 },
+        992: { slidesPerView: 4, spaceBetween: 16 },
+        1200: { slidesPerView: 5, spaceBetween: 16 }
       }
     };
 
