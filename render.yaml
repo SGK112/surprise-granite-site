@@ -8,6 +8,15 @@ services:
       - path: /*
         name: X-Frame-Options
         value: SAMEORIGIN
+      - path: /*.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /tools/*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /materials/*
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
     routes:
       # Clean URLs pointing to root HTML files
       - type: rewrite
