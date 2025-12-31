@@ -1538,5 +1538,80 @@ setInterval(displayOpeningStatus, 60000);
 @media (max-width: 700px) { .footer-bottom-inner { flex-direction: column; text-align: center; } }
 </style>
 
+<script>
+// FORCE mobile fullscreen iframe via JavaScript
+(function() {
+  function forceMobileFullscreen() {
+    if (window.innerWidth <= 991) {
+      var component = document.querySelector('.roomvo-modal_component');
+      var container = document.querySelector('.roomvo-modal_container');
+      var embed = document.querySelector('.roomvo-modal_embed');
+      var iframe = embed ? embed.querySelector('iframe') : null;
+      var navbar = document.querySelector('.navbar-fixed_wrapper');
+      var pageWrapper = document.querySelector('.page-wrapper');
+      var footer = document.querySelector('footer') || document.querySelector('.simple-footer');
+
+      var navHeight = window.innerWidth <= 480 ? 48 : 56;
+      var styleStr =
+        'position:fixed !important;' +
+        'top:' + navHeight + 'px !important;' +
+        'left:0 !important;' +
+        'right:0 !important;' +
+        'bottom:0 !important;' +
+        'width:100vw !important;' +
+        'height:calc(100vh - ' + navHeight + 'px) !important;' +
+        'min-height:calc(100vh - ' + navHeight + 'px) !important;' +
+        'max-height:calc(100vh - ' + navHeight + 'px) !important;' +
+        'z-index:100 !important;' +
+        'margin:0 !important;' +
+        'padding:0 !important;' +
+        'overflow:hidden !important;';
+
+      if (component) component.setAttribute('style', styleStr);
+      if (container) container.setAttribute('style', 'width:100% !important;height:100% !important;');
+      if (embed) embed.setAttribute('style', 'width:100% !important;height:100% !important;');
+      if (iframe) {
+        iframe.setAttribute('style',
+          'width:100% !important;' +
+          'height:100% !important;' +
+          'min-height:100% !important;' +
+          'border:none !important;' +
+          'display:block !important;'
+        );
+      }
+      if (navbar) {
+        navbar.setAttribute('style',
+          'position:fixed !important;' +
+          'top:0 !important;' +
+          'left:0 !important;' +
+          'right:0 !important;' +
+          'height:' + navHeight + 'px !important;' +
+          'max-height:' + navHeight + 'px !important;' +
+          'z-index:1000 !important;' +
+          'overflow:hidden !important;'
+        );
+      }
+      if (pageWrapper) {
+        pageWrapper.setAttribute('style', 'overflow:hidden !important;height:100vh !important;');
+      }
+      if (footer) {
+        footer.style.display = 'none';
+      }
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      document.documentElement.style.overflow = 'hidden';
+    }
+  }
+
+  // Run immediately and after DOM loads
+  forceMobileFullscreen();
+  document.addEventListener('DOMContentLoaded', forceMobileFullscreen);
+  window.addEventListener('load', forceMobileFullscreen);
+  window.addEventListener('resize', forceMobileFullscreen);
+  // Run again after a delay in case of late-loading content
+  setTimeout(forceMobileFullscreen, 500);
+  setTimeout(forceMobileFullscreen, 1500);
+})();
+</script>
 
 </body></html>
