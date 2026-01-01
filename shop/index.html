@@ -842,7 +842,7 @@ setInterval(displayOpeningStatus, 60000);
 <!-- Shop Hero -->
 <section class="shop-hero"><div class="padding-global"><div class="container-large"><h1>Shop <span style="color:#cca600;">Surprise Granite</span></h1><p>Premium countertops, sinks, faucets and more for your Arizona home.</p></div></div></section>
 
-<!-- Category Filter Bar -->
+<!-- Category Filter Bar - Custom Storefront API -->
 <style>
 .shop-filter-bar {
     background: #fff;
@@ -858,6 +858,27 @@ setInterval(displayOpeningStatus, 60000);
     right: 0;
     z-index: 999;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+/* Discreet mode on scroll */
+.shop-filter-bar.is-sticky.discreet {
+    padding: 10px 0;
+}
+.shop-filter-bar.is-sticky.discreet .filter-search {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+.shop-filter-bar.is-sticky.discreet .filter-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+}
+.shop-filter-bar.is-sticky.discreet .filter-btn svg {
+    width: 14px;
+    height: 14px;
+}
+.shop-filter-bar.is-sticky.discreet .filter-expand-btn {
+    display: inline-flex;
 }
 .filter-placeholder {
     display: none;
@@ -875,6 +896,7 @@ setInterval(displayOpeningStatus, 60000);
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
 }
 .filter-btn {
     display: inline-flex;
@@ -889,6 +911,7 @@ setInterval(displayOpeningStatus, 60000);
     border: 2px solid #eee;
     background: #fff;
     color: #333;
+    cursor: pointer;
 }
 .filter-btn:hover {
     border-color: #cca600;
@@ -902,6 +925,18 @@ setInterval(displayOpeningStatus, 60000);
 .filter-btn svg {
     width: 18px;
     height: 18px;
+    transition: all 0.2s;
+}
+.filter-expand-btn {
+    display: none;
+    padding: 8px 12px !important;
+    background: #cca600 !important;
+    border-color: #cca600 !important;
+    color: #fff !important;
+}
+.filter-expand-btn:hover {
+    background: #b89500 !important;
+    border-color: #b89500 !important;
 }
 .filter-search {
     display: flex;
@@ -909,6 +944,9 @@ setInterval(displayOpeningStatus, 60000);
     gap: 12px;
     margin-top: 16px;
     justify-content: center;
+    max-height: 60px;
+    opacity: 1;
+    transition: all 0.3s ease;
 }
 .filter-search input {
     padding: 12px 20px;
@@ -931,13 +969,125 @@ setInterval(displayOpeningStatus, 60000);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: background 0.2s;
 }
 .filter-search button:hover {
     background: #b89500;
 }
+.filter-search .clear-search {
+    padding: 10px 16px;
+    background: #f5f5f5;
+    color: #666;
+    border: 2px solid #eee;
+    display: none;
+}
+.filter-search .clear-search:hover {
+    background: #eee;
+    border-color: #ddd;
+}
+.filter-search .clear-search.show {
+    display: inline-block;
+}
+/* Loading spinner */
+.shop-loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+.shop-loading::after {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #eee;
+    border-top-color: #cca600;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* Product grid */
+.shop-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+}
+.shop-product-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.shop-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.shop-product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.shop-product-info {
+    padding: 16px;
+}
+.shop-product-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+.shop-product-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #cca600;
+    margin: 0 0 12px;
+}
+.shop-product-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.shop-product-btn:hover {
+    background: #333;
+}
+.shop-no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+.shop-no-results h3 {
+    margin: 0 0 10px;
+    color: #333;
+}
+.filter-result-count {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 12px;
+}
 @media (max-width: 600px) {
     .filter-search input { width: 100%; }
-    .filter-search { flex-direction: column; }
+    .filter-search { flex-direction: column; gap: 8px; }
+    .filter-btn { padding: 8px 14px; font-size: 13px; }
+    .shop-product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .shop-product-card img { height: 140px; }
+    .shop-product-info { padding: 12px; }
+    .shop-product-title { font-size: 13px; }
 }
 </style>
 
@@ -945,59 +1095,262 @@ setInterval(displayOpeningStatus, 60000);
 <section class="shop-filter-bar" id="shopFilterBar">
     <div class="filter-container">
         <div class="filter-buttons">
-            <a href="https://surprise-granite.myshopify.com/collections/all" target="_blank" class="filter-btn active">
+            <button class="filter-btn active" data-collection="all" onclick="filterProducts('all', this)">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                All Products
-            </a>
-            <a href="https://surprise-granite.myshopify.com/collections/countertop-samples" target="_blank" class="filter-btn">
+                All
+            </button>
+            <button class="filter-btn" data-collection="countertop-samples" onclick="filterProducts('countertop-samples', this)">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                Countertop Samples
-            </a>
-            <a href="https://surprise-granite.myshopify.com/collections/sinks" target="_blank" class="filter-btn">
+                Samples
+            </button>
+            <button class="filter-btn" data-collection="sinks" onclick="filterProducts('sinks', this)">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 Sinks
-            </a>
-            <a href="https://surprise-granite.myshopify.com/collections/faucets" target="_blank" class="filter-btn">
+            </button>
+            <button class="filter-btn" data-collection="faucets" onclick="filterProducts('faucets', this)">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 5h8m-4-9v18m-4-4h8"/></svg>
                 Faucets
-            </a>
+            </button>
+            <button class="filter-btn filter-expand-btn" onclick="expandFilterBar()" title="Show search">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
         </div>
         <div class="filter-search">
             <input type="text" id="shopSearch" placeholder="Search products...">
-            <button onclick="searchShopify()">Search</button>
+            <button onclick="searchProducts()">Search</button>
+            <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()">Clear</button>
         </div>
+        <div class="filter-result-count" id="resultCount" style="display:none;"></div>
     </div>
 </section>
 
 <script>
-function searchShopify() {
-    var query = document.getElementById('shopSearch').value;
-    if (query.trim()) {
-        window.open('https://surprise-granite.myshopify.com/search?q=' + encodeURIComponent(query), '_blank');
+// Shopify Storefront API Configuration
+var SHOPIFY_CONFIG = {
+    domain: 'surprise-granite.myshopify.com',
+    token: '17a4557623df390a5a866c7640ec021a',
+    collections: {
+        'all': '276721336455',
+        'countertop-samples': '278939041927',
+        'sinks': '275066290311',
+        'faucets': null // Will use product type filter
+    }
+};
+
+var currentFilter = 'all';
+var allProducts = [];
+var isSearching = false;
+
+// Storefront API GraphQL query
+function fetchStorefrontAPI(query) {
+    return fetch('https://' + SHOPIFY_CONFIG.domain + '/api/2024-01/graphql.json', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Storefront-Access-Token': SHOPIFY_CONFIG.token
+        },
+        body: JSON.stringify({ query: query })
+    }).then(function(r) { return r.json(); });
+}
+
+// Fetch products from collection
+function fetchCollection(collectionId, first) {
+    first = first || 50;
+    var query = '{ collection(id: "gid://shopify/Collection/' + collectionId + '") { products(first: ' + first + ') { edges { node { id title handle priceRange { minVariantPrice { amount currencyCode } } images(first: 1) { edges { node { url altText } } } onlineStoreUrl } } } } }';
+    return fetchStorefrontAPI(query);
+}
+
+// Fetch all products
+function fetchAllProducts(first) {
+    first = first || 50;
+    var query = '{ products(first: ' + first + ') { edges { node { id title handle productType priceRange { minVariantPrice { amount currencyCode } } images(first: 1) { edges { node { url altText } } } onlineStoreUrl } } } }';
+    return fetchStorefrontAPI(query);
+}
+
+// Search products
+function searchProductsAPI(searchQuery, first) {
+    first = first || 50;
+    var query = '{ products(first: ' + first + ', query: "' + searchQuery.replace(/"/g, '\\"') + '") { edges { node { id title handle productType priceRange { minVariantPrice { amount currencyCode } } images(first: 1) { edges { node { url altText } } } onlineStoreUrl } } } }';
+    return fetchStorefrontAPI(query);
+}
+
+// Render products to grid
+function renderProducts(products, container) {
+    if (!products || products.length === 0) {
+        container.innerHTML = '<div class="shop-no-results"><h3>No products found</h3><p>Try a different search or filter.</p></div>';
+        document.getElementById('resultCount').style.display = 'none';
+        return;
+    }
+
+    var html = '<div class="shop-product-grid">';
+    products.forEach(function(p) {
+        var node = p.node || p;
+        var img = (node.images && node.images.edges && node.images.edges[0])
+            ? node.images.edges[0].node.url
+            : 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder.png';
+        var price = node.priceRange ? parseFloat(node.priceRange.minVariantPrice.amount).toFixed(2) : '0.00';
+        var url = node.onlineStoreUrl || ('https://' + SHOPIFY_CONFIG.domain + '/products/' + node.handle);
+
+        html += '<div class="shop-product-card">';
+        html += '<a href="' + url + '" target="_blank"><img src="' + img + '" alt="' + (node.title || '').replace(/"/g, '&quot;') + '" loading="lazy"></a>';
+        html += '<div class="shop-product-info">';
+        html += '<h3 class="shop-product-title">' + node.title + '</h3>';
+        html += '<p class="shop-product-price">$' + price + '</p>';
+        html += '<a href="' + url + '" target="_blank" class="shop-product-btn">View Product</a>';
+        html += '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Show result count
+    var countEl = document.getElementById('resultCount');
+    countEl.textContent = products.length + ' product' + (products.length !== 1 ? 's' : '') + ' found';
+    countEl.style.display = 'block';
+}
+
+// Filter products by collection
+function filterProducts(collection, btn) {
+    currentFilter = collection;
+    isSearching = false;
+
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    if (btn) btn.classList.add('active');
+
+    // Clear search
+    document.getElementById('shopSearch').value = '';
+    document.getElementById('clearSearchBtn').classList.remove('show');
+
+    var container = document.getElementById('collection-featured');
+    container.innerHTML = '<div class="shop-loading">Loading products</div>';
+
+    var collectionId = SHOPIFY_CONFIG.collections[collection];
+
+    if (collection === 'all' || !collectionId) {
+        // Fetch all products
+        fetchAllProducts(50).then(function(data) {
+            var products = [];
+            if (data.data && data.data.products) {
+                products = data.data.products.edges;
+                allProducts = products;
+
+                // If filtering faucets, filter by product type
+                if (collection === 'faucets') {
+                    products = products.filter(function(p) {
+                        var type = (p.node.productType || '').toLowerCase();
+                        return type.indexOf('faucet') >= 0;
+                    });
+                }
+            }
+            renderProducts(products, container);
+        }).catch(function(err) {
+            console.error('Fetch error:', err);
+            container.innerHTML = '<div class="shop-no-results"><h3>Unable to load products</h3><p>Please try again later.</p></div>';
+        });
+    } else {
+        // Fetch from specific collection
+        fetchCollection(collectionId, 50).then(function(data) {
+            var products = [];
+            if (data.data && data.data.collection && data.data.collection.products) {
+                products = data.data.collection.products.edges;
+            }
+            renderProducts(products, container);
+        }).catch(function(err) {
+            console.error('Fetch error:', err);
+            container.innerHTML = '<div class="shop-no-results"><h3>Unable to load products</h3><p>Please try again later.</p></div>';
+        });
     }
 }
+
+// Search products
+function searchProducts() {
+    var query = document.getElementById('shopSearch').value.trim();
+    if (!query) return;
+
+    isSearching = true;
+
+    // Show clear button
+    document.getElementById('clearSearchBtn').classList.add('show');
+
+    // Remove active from collection buttons
+    document.querySelectorAll('.filter-btn[data-collection]').forEach(function(b) {
+        b.classList.remove('active');
+    });
+
+    var container = document.getElementById('collection-featured');
+    container.innerHTML = '<div class="shop-loading">Searching</div>';
+
+    searchProductsAPI(query, 50).then(function(data) {
+        var products = [];
+        if (data.data && data.data.products) {
+            products = data.data.products.edges;
+        }
+        renderProducts(products, container);
+    }).catch(function(err) {
+        console.error('Search error:', err);
+        container.innerHTML = '<div class="shop-no-results"><h3>Search failed</h3><p>Please try again.</p></div>';
+    });
+}
+
+// Clear search
+function clearSearch() {
+    document.getElementById('shopSearch').value = '';
+    document.getElementById('clearSearchBtn').classList.remove('show');
+    filterProducts('all', document.querySelector('.filter-btn[data-collection="all"]'));
+}
+
+// Handle Enter key in search
 document.getElementById('shopSearch').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') { searchShopify(); }
+    if (e.key === 'Enter') { searchProducts(); }
 });
 
-// Sticky filter bar
+// Expand filter bar when in discreet mode
+function expandFilterBar() {
+    var filterBar = document.getElementById('shopFilterBar');
+    filterBar.classList.remove('discreet');
+    // Focus search input
+    setTimeout(function() {
+        document.getElementById('shopSearch').focus();
+    }, 100);
+}
+
+// Sticky filter bar with discreet mode
 (function() {
     var filterBar = document.getElementById('shopFilterBar');
     var placeholder = document.getElementById('filterPlaceholder');
     var filterTop = filterBar.offsetTop;
     var filterHeight = filterBar.offsetHeight;
+    var scrollThreshold = 150; // Pixels to scroll before going discreet
+    var lastScrollY = 0;
 
     window.addEventListener('scroll', function() {
-        if (window.pageYOffset >= filterTop) {
+        var scrollY = window.pageYOffset;
+
+        if (scrollY >= filterTop) {
             filterBar.classList.add('is-sticky');
             placeholder.style.height = filterHeight + 'px';
             placeholder.classList.add('show');
+
+            // Go discreet after scrolling past threshold
+            if (scrollY > filterTop + scrollThreshold) {
+                filterBar.classList.add('discreet');
+            }
         } else {
             filterBar.classList.remove('is-sticky');
+            filterBar.classList.remove('discreet');
             placeholder.classList.remove('show');
         }
+
+        lastScrollY = scrollY;
     });
 })();
+
+// Load initial products
+document.addEventListener('DOMContentLoaded', function() {
+    filterProducts('all', document.querySelector('.filter-btn[data-collection="all"]'));
+});
 </script>
 
 <!-- Featured Products -->
@@ -2227,4 +2580,4 @@ document.getElementById('shopSearch').addEventListener('keypress', function(e) {
 })();
 </script>
 
-<script>(function(){var s=document.createElement("script");s.async=true;s.src="https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js";s.onload=function(){var c=ShopifyBuy.buildClient({domain:"surprise-granite.myshopify.com",storefrontAccessToken:"17a4557623df390a5a866c7640ec021a"});ShopifyBuy.UI.onReady(c).then(function(ui){ui.createComponent("collection",{id:"276721336455",node:document.getElementById("collection-featured"),moneyFormat:"%24%7B%7Bamount%7D%7D",options:{product:{contents:{img:true,title:true,price:true,button:true},text:{button:"Add to Cart"},styles:{button:{"background-color":"#cca600"}}}}});});};document.head.appendChild(s);})();</script></body></html>
+<!-- Products loaded via Storefront API above --></body></html>
