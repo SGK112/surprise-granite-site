@@ -178,6 +178,37 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
         <p>Or call us: <a href="tel:+16028333189" style="color:#cca600;font-weight:600;">(602) 833-3189</a></p>
     </div>
 </div>
+<style>
+.side-tab { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 9999; }
+.side-tab-handle { background: #1a1a1a; color: #fff; padding: 15px 8px; border-radius: 0 8px 8px 0; cursor: pointer; writing-mode: vertical-rl; font-size: 13px; font-weight: 600; letter-spacing: 1px; box-shadow: 2px 0 10px rgba(0,0,0,0.15); }
+.side-tab-handle:hover { background: #333; }
+.side-tab-handle span { color: #cca600; }
+.side-tab-panel { position: fixed; left: -320px; top: 0; width: 320px; height: 100%; background: #fff; box-shadow: 4px 0 20px rgba(0,0,0,0.15); transition: left 0.3s ease; z-index: 10000; overflow-y: auto; }
+.side-tab-panel.open { left: 0; }
+.side-tab-panel-header { background: #1a1a1a; color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+.side-tab-panel-header h3 { margin: 0; font-size: 18px; }
+.side-tab-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+.side-tab-form { padding: 20px; }
+.side-tab-form input, .side-tab-form textarea, .side-tab-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.side-tab-form input:focus, .side-tab-form textarea:focus, .side-tab-form select:focus { outline: none; border-color: #cca600; }
+.side-tab-form button { width: 100%; background: #cca600; color: #fff; border: none; padding: 14px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
+.side-tab-form button:hover { background: #b89500; }
+.side-tab-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9998; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+.side-tab-overlay.open { opacity: 1; visibility: visible; }
+@media (max-width: 480px) { .side-tab-panel { width: 100%; left: -100%; } }
+</style>
+<script>
+(function(){
+    var handle = document.getElementById('sideTabHandle');
+    var panel = document.getElementById('sideTabPanel');
+    var overlay = document.getElementById('sideTabOverlay');
+    var close = document.getElementById('sideTabClose');
+    function toggle() { panel.classList.toggle('open'); overlay.classList.toggle('open'); }
+    handle.addEventListener('click', toggle);
+    overlay.addEventListener('click', toggle);
+    close.addEventListener('click', toggle);
+})();
+</script>
 <div class="page-wrapper"><div class="global-styles w-embed w-iframe"><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3XFDN8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
@@ -806,7 +837,171 @@ function displayOpeningStatus() {
 
 displayOpeningStatus();
 setInterval(displayOpeningStatus, 60000);
-</script></div></nav></div><main class="main-wrapper"><section class="shop-hero"><div class="padding-global"><div class="container-large"><h1>Shop <span style="color:#cca600;">Surprise Granite</span></h1><p>Premium countertops, sinks, faucets and more for your Arizona home.</p></div></div></section><section class="shop-products"><div class="padding-global"><div class="container-large"><div class="shop-products-header"><h2>Featured Products</h2><a href="https://surprise-granite.myshopify.com/collections/all" target="_blank">View All Products</a></div><div id="collection-featured" style="min-height:300px;">Loading products...</div></div></div></section><section class="section_contact23"><div class="padding-global"><div class="container-medium"></div><div class="code-embed-7 w-embed w-script"><!DOCTYPE html>
+</script></div></nav></div><main class="main-wrapper">
+
+<!-- Shop Hero -->
+<section class="shop-hero"><div class="padding-global"><div class="container-large"><h1>Shop <span style="color:#cca600;">Surprise Granite</span></h1><p>Premium countertops, sinks, faucets and more for your Arizona home.</p></div></div></section>
+
+<!-- Category Filter Bar -->
+<style>
+.shop-filter-bar {
+    background: #fff;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+.shop-filter-bar.is-sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.filter-placeholder {
+    display: none;
+}
+.filter-placeholder.show {
+    display: block;
+}
+.filter-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: 2px solid #eee;
+    background: #fff;
+    color: #333;
+}
+.filter-btn:hover {
+    border-color: #cca600;
+    color: #cca600;
+}
+.filter-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+.filter-btn svg {
+    width: 18px;
+    height: 18px;
+}
+.filter-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+.filter-search input {
+    padding: 12px 20px;
+    border: 2px solid #eee;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 300px;
+    max-width: 100%;
+}
+.filter-search input:focus {
+    outline: none;
+    border-color: #cca600;
+}
+.filter-search button {
+    padding: 12px 24px;
+    background: #cca600;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.filter-search button:hover {
+    background: #b89500;
+}
+@media (max-width: 600px) {
+    .filter-search input { width: 100%; }
+    .filter-search { flex-direction: column; }
+}
+</style>
+
+<div class="filter-placeholder" id="filterPlaceholder"></div>
+<section class="shop-filter-bar" id="shopFilterBar">
+    <div class="filter-container">
+        <div class="filter-buttons">
+            <a href="https://surprise-granite.myshopify.com/collections/all" target="_blank" class="filter-btn active">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                All Products
+            </a>
+            <a href="https://surprise-granite.myshopify.com/collections/countertop-samples" target="_blank" class="filter-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                Countertop Samples
+            </a>
+            <a href="https://surprise-granite.myshopify.com/collections/sinks" target="_blank" class="filter-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Sinks
+            </a>
+            <a href="https://surprise-granite.myshopify.com/collections/faucets" target="_blank" class="filter-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 5h8m-4-9v18m-4-4h8"/></svg>
+                Faucets
+            </a>
+        </div>
+        <div class="filter-search">
+            <input type="text" id="shopSearch" placeholder="Search products...">
+            <button onclick="searchShopify()">Search</button>
+        </div>
+    </div>
+</section>
+
+<script>
+function searchShopify() {
+    var query = document.getElementById('shopSearch').value;
+    if (query.trim()) {
+        window.open('https://surprise-granite.myshopify.com/search?q=' + encodeURIComponent(query), '_blank');
+    }
+}
+document.getElementById('shopSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') { searchShopify(); }
+});
+
+// Sticky filter bar
+(function() {
+    var filterBar = document.getElementById('shopFilterBar');
+    var placeholder = document.getElementById('filterPlaceholder');
+    var filterTop = filterBar.offsetTop;
+    var filterHeight = filterBar.offsetHeight;
+
+    window.addEventListener('scroll', function() {
+        if (window.pageYOffset >= filterTop) {
+            filterBar.classList.add('is-sticky');
+            placeholder.style.height = filterHeight + 'px';
+            placeholder.classList.add('show');
+        } else {
+            filterBar.classList.remove('is-sticky');
+            placeholder.classList.remove('show');
+        }
+    });
+})();
+</script>
+
+<!-- Featured Products -->
+<section class="shop-products"><div class="padding-global"><div class="container-large"><div class="shop-products-header"><h2>Featured Products</h2><a href="https://surprise-granite.myshopify.com/collections/all" target="_blank">View All Products</a></div><div id="collection-featured" style="min-height:300px;">Loading products...</div></div></div></section><section class="section_contact23"><div class="padding-global"><div class="container-medium"></div><div class="code-embed-7 w-embed w-script"><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1348,132 +1543,6 @@ setInterval(displayOpeningStatus, 60000);
         });
     </script>
 
-<!-- Side Tab - Free Estimate -->
-<style>
-.side-tab {
-    position: fixed;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 9999;
-}
-.side-tab-handle {
-    background: #1a1a1a;
-    color: #fff;
-    padding: 15px 8px;
-    border-radius: 0 8px 8px 0;
-    cursor: pointer;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.15);
-    transition: background 0.2s;
-}
-.side-tab-handle:hover { background: #333; }
-.side-tab-handle span { color: #cca600; }
-.side-tab-panel {
-    position: fixed;
-    left: -320px;
-    top: 0;
-    width: 320px;
-    height: 100%;
-    background: #fff;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-    transition: left 0.3s ease;
-    z-index: 10000;
-    overflow-y: auto;
-}
-.side-tab-panel.open { left: 0; }
-.side-tab-panel-header {
-    background: #1a1a1a;
-    color: #fff;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.side-tab-panel-header h3 { margin: 0; font-size: 18px; }
-.side-tab-close {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-}
-.side-tab-form {
-    padding: 20px;
-}
-.side-tab-form input,
-.side-tab-form textarea,
-.side-tab-form select {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-.side-tab-form input:focus,
-.side-tab-form textarea:focus,
-.side-tab-form select:focus {
-    outline: none;
-    border-color: #cca600;
-}
-.side-tab-form button {
-    width: 100%;
-    background: #cca600;
-    color: #fff;
-    border: none;
-    padding: 14px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.side-tab-form button:hover { background: #b89500; }
-.side-tab-form p {
-    text-align: center;
-    color: #666;
-    font-size: 12px;
-    margin-top: 15px;
-}
-.side-tab-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.4);
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s;
-}
-.side-tab-overlay.open { opacity: 1; visibility: visible; }
-@media (max-width: 480px) {
-    .side-tab-panel { width: 100%; left: -100%; }
-}
-</style>
-<script>
-(function(){
-    var handle = document.getElementById('sideTabHandle');
-    var panel = document.getElementById('sideTabPanel');
-    var overlay = document.getElementById('sideTabOverlay');
-    var close = document.getElementById('sideTabClose');
-    function toggle() {
-        panel.classList.toggle('open');
-        overlay.classList.toggle('open');
-    }
-    handle.addEventListener('click', toggle);
-    overlay.addEventListener('click', toggle);
-    close.addEventListener('click', toggle);
-})();
 </script>
 
 </div></div></section></main></div><script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=6456ce4476abb25581fbad0c" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/js/webflow.schunk.59c6248219f37ae8.js" type="text/javascript"></script><script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/js/webflow.schunk.55b1d870bd166d43.js" type="text/javascript"></script><script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/js/webflow.741b4ac7.a2dfb666f301e88a.js" type="text/javascript"></script><script>
