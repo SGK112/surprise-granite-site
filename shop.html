@@ -13,14 +13,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <script async src="https://embed.wized.com/WMGPH2y4YPYIfOsGNDqW.js"></script>
 <script async type="module" data-wized-id="WMGPH2y4YPYIfOsGNDqW" src="https://embed.wized.com/v2/index.js"></script>
 
-<!-- [Attributes by Finsweet] CMS Filter -->
-<script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsfilter@1/cmsfilter.js"></script>
-<!-- [Attributes by Finsweet] CMS Load -->
-<script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsload@1/cmsload.js"></script>
-<!-- [Attributes by Finsweet] CMS Sort -->
-<script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmssort@1/cmssort.js"></script>
-<!-- [Attributes by Finsweet] CMS Combine -->
-<script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmscombine@1/cmscombine.js"></script>
+<!-- Collections-based navigation (filter scripts removed) -->
 
 
 <!-- Sygnal Attributes 5 | Forms --> 
@@ -81,6 +74,33 @@ a, button {
 
 .sf-stock-exceeded {
 		pointer-events: none;
+}
+
+/* Critical CSS for Shop Page - Mobile First */
+@media (max-width: 768px) {
+  /* Product grid mobile layout */
+  .w-dyn-items { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px; }
+  .product-card_link-wrapper { border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .product-card_image-wrapper { aspect-ratio: 1; border-radius: 12px 12px 0 0; }
+  .product-card_details { padding: 12px; }
+  .product-card_title { font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-card_current-price { font-size: 16px; font-weight: 700; }
+  .product-card_cta .button { width: 100%; min-height: 44px; font-size: 14px; border-radius: 8px; }
+  /* Hide swiper arrows on mobile */
+  .swiper-button-next, .swiper-button-prev { display: none !important; }
+}
+
+/* Tablet layout */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .w-dyn-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+}
+
+/* Desktop layout */
+@media (min-width: 1024px) {
+  .w-dyn-items { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+}
+@media (min-width: 1440px) {
+  .w-dyn-items { grid-template-columns: repeat(5, 1fr); }
 }
 </style>
 
@@ -883,43 +903,9 @@ setInterval(displayOpeningStatus, 60000);
       .container { padding: 0 3vw; }
       .hero-header { min-height: 50vh; }
       .hero-content { padding: 0.3rem; }
-      .hero-search {
-        max-width: 100%;
-        width: 100%;
-        padding: 0.3rem;
-        border-radius: 12px;
-        min-height: 44px;
-      }
-      .hero-search input[type="text"] {
-        font-size: 16px;
-        padding: 0.6rem 0.6rem 0.6rem 2rem;
-        border-radius: 12px 0 0 12px;
-        min-height: 44px;
-      }
-      .hero-search button {
-        font-size: 16px;
-        border-radius: 0 12px 12px 0;
-        min-height: 44px;
-        padding: 0.6rem 1rem;
-      }
-      .autocomplete-suggestions {
-        position: absolute;
-        left: 0;
-        top: calc(100% + 4px);
-        width: 100%;
-        min-width: 0;
-        max-width: 100vw;
-        border-radius: 0 0 12px 12px;
-        font-size: 15px;
-      }
     }
     @media (max-width: 480px) {
       .hero-header { min-height: 55vh; }
-      .hero-search, .autocomplete-suggestions {
-        font-size: 15px;
-        min-width: 0;
-        max-width: 100vw;
-      }
       .hero-title { font-size: clamp(1.5rem, 5vw, 2.5rem); }
       .hero-subtitle { font-size: clamp(0.8rem, 2.5vw, 1rem); }
     }
@@ -954,108 +940,6 @@ setInterval(displayOpeningStatus, 60000);
       font-family: 'Arial', sans-serif;
       margin-left: auto;
       margin-right: auto;
-    }
-    .hero-search {
-      position: relative;
-      display: flex;
-      max-width: 450px;
-      margin: 0 auto 1rem;
-      min-height: 2.5rem;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 30px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(4px);
-    }
-    .hero-search input[type="text"] {
-      padding: 0.6rem 0.6rem 0.6rem 2rem;
-      font-size: 15px;
-      border: none;
-      border-radius: 30px;
-      flex: 1;
-      background: transparent;
-      color: #fff;
-      transition: all 0.2s ease;
-      font-family: 'Arial', sans-serif;
-    }
-    .hero-search input[type="text"]::placeholder {
-      color: #ccc;
-      transition: opacity 0.2s ease;
-    }
-    .hero-search input[type="text"]:focus { outline: none; }
-    .hero-search input[type="text"]:focus::placeholder { opacity: 0; }
-    .hero-search::before {
-      content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
-      position: absolute;
-      left: 0.6rem;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-    }
-    .hero-search button {
-      padding: 0.6rem 1.2rem;
-      font-size: 15px;
-      background: linear-gradient(135deg, #ffd700, #f4c430);
-      color: #121212;
-      border: none;
-      border-radius: 0 30px 30px 0;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-      min-height: 44px;
-      font-weight: 600;
-      font-family: 'Arial', sans-serif;
-    }
-    .hero-search button:hover {
-      transform: scale(1.02);
-    }
-    .hero-search button[aria-busy="true"] { color: transparent; }
-    .hero-search button[aria-busy="true"]::after {
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border: 2px solid #fff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .autocomplete-suggestions {
-      position: absolute;
-      background: #fff;
-      border: 1px solid #ffd700;
-      border-radius: 10px;
-      max-height: 180px;
-      overflow-y: auto;
-      z-index: 100;
-      display: none;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-      padding: 0.3rem 0;
-      width: 100%;
-      min-width: 0;
-      transition: opacity 0.2s ease;
-      left: 0;
-      top: 100%;
-      margin-top: 4px;
-    }
-    .autocomplete-suggestions.active {
-      display: block;
-      opacity: 1;
-    }
-    .suggestion-item {
-      padding: 0.6rem 0.8rem;
-      font-size: 15px;
-      color: #121212;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      min-height: 44px;
-      font-family: 'Arial', sans-serif;
-      outline: none;
-    }
-    .suggestion-item:hover, .suggestion-item.active {
-      background: #ffd700;
-      color: #121212;
     }
     .hero-cta {
       display: flex;
@@ -1208,6 +1092,94 @@ setInterval(displayOpeningStatus, 60000);
       transform: translate(-50%, -50%);
     }
     @keyframes fadeIn { to { opacity: 1; } }
+
+    /* Collections Section */
+    .collections-section {
+      padding: 60px 24px;
+      background: #f8f9fa;
+    }
+    .collections-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .collections-title {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+    .collections-subtitle {
+      font-size: 1rem;
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 40px;
+    }
+    .collections-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .collection-card {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .collection-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .collection-image {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.5s ease;
+    }
+    .collection-card:hover .collection-image {
+      transform: scale(1.1);
+    }
+    .collection-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.1) 100%);
+    }
+    .collection-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px;
+      color: white;
+    }
+    .collection-content h3 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .collection-content p {
+      font-size: 0.9rem;
+      opacity: 0.85;
+      margin: 0;
+    }
+    @media (max-width: 1024px) {
+      .collections-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .collections-section { padding: 40px 16px; }
+      .collections-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .collection-content { padding: 16px; }
+      .collection-content h3 { font-size: 1.2rem; }
+    }
+    @media (max-width: 480px) {
+      .collections-grid { grid-template-columns: 1fr; gap: 12px; }
+      .collection-card { aspect-ratio: 16/9; }
+    }
   </style>
 </head>
 <body>
@@ -1222,17 +1194,87 @@ setInterval(displayOpeningStatus, 60000);
       <p class="hero-subtitle">
         Explore premium stone, tile, and sinks. Order samples or book a free consultation today!
       </p>
-      <div class="hero-search" aria-label="Search Products">
-        <input type="text" id="search-input" placeholder="Search countertops, tiles..." aria-label="Search for countertops, tiles, and more" autocomplete="off">
-        <button type="button" id="search-button" aria-label="Search">Search</button>
-        <div class="autocomplete-suggestions" id="autocomplete-suggestions" role="listbox"></div>
-      </div>
       <div class="hero-cta">
-        <a href="https://store.surprisegranite.com/collections/countertop-samples" class="btn btn-primary" aria-label="Order Samples Now">Order Samples</a>
+        <a href="/get-a-free-estimate" class="btn btn-primary" aria-label="Get Free Estimate">Get Free Estimate</a>
         <button class="btn btn-secondary" id="open-consultation-modal" aria-label="Book a Free Consultation">Book Consultation</button>
       </div>
     </div>
   </section>
+
+  <!-- Collections Section -->
+  <section class="collections-section" aria-label="Shop by Collection">
+    <div class="collections-container">
+      <h2 class="collections-title">Shop by Collection</h2>
+      <p class="collections-subtitle">Browse our curated selection of premium materials</p>
+      <div class="collections-grid">
+        <a href="/materials/countertops/quartz-countertops" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe5b_quartz-countertops-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Quartz</h3>
+            <p>Engineered elegance</p>
+          </div>
+        </a>
+        <a href="/materials/countertops/granite-countertops" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe59_granite-countertops-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Granite</h3>
+            <p>Natural beauty</p>
+          </div>
+        </a>
+        <a href="/materials/countertops/marble-countertops" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe58_marble-countertops-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Marble</h3>
+            <p>Timeless luxury</p>
+          </div>
+        </a>
+        <a href="/materials/countertops/quartzite-countertops" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe5c_quartzite-countertops-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Quartzite</h3>
+            <p>Durable & unique</p>
+          </div>
+        </a>
+        <a href="/materials/countertops/porcelain-countertops" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe5a_porcelain-countertops-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Porcelain</h3>
+            <p>Modern versatility</p>
+          </div>
+        </a>
+        <a href="/materials/all-tile" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe57_tile-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Tile</h3>
+            <p>Floors & walls</p>
+          </div>
+        </a>
+        <a href="/materials/all-cabinets" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/658d12c161cdc3543474cddc_designer-avatar-profile.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Cabinets</h3>
+            <p>Complete your space</p>
+          </div>
+        </a>
+        <a href="/materials/all-sinks" class="collection-card">
+          <div class="collection-image" style="background-image: url('https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6512a0334a993ce9630ebe56_sinks-collection-thumb.jpg');"></div>
+          <div class="collection-overlay"></div>
+          <div class="collection-content">
+            <h3>Sinks</h3>
+            <p>Kitchen & bath</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Modal Pop-up -->
   <div class="modal-2025" id="consultation-modal-2025" aria-hidden="true" role="dialog" aria-describedby="modal-description">
     <div class="modal-content">
@@ -1327,116 +1369,6 @@ setInterval(displayOpeningStatus, 60000);
           if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
         });
       }
-
-      // --- Search ---
-      const searchInput = document.getElementById('search-input');
-      const searchButton = document.getElementById('search-button');
-      const suggestionsContainer = document.getElementById('autocomplete-suggestions');
-      const mockSuggestions = [
-        'Granite Countertops', 'Marble Tiles', 'Porcelain Sinks', 'Quartz Countertops', 'Ceramic Tiles'
-      ];
-      let activeSuggestionIdx = -1;
-
-      function positionSuggestions() {
-        suggestionsContainer.style.position = 'absolute';
-        suggestionsContainer.style.top = '100%';
-        suggestionsContainer.style.left = '0';
-        suggestionsContainer.style.width = '100%';
-        suggestionsContainer.style.zIndex = '100';
-        suggestionsContainer.style.marginTop = '4px';
-        searchInput.parentElement.appendChild(suggestionsContainer);
-      }
-
-      searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim().toLowerCase();
-        suggestionsContainer.innerHTML = '';
-        activeSuggestionIdx = -1;
-
-        const filtered = query ? mockSuggestions.filter(txt => txt.toLowerCase().includes(query)) : [];
-
-        if (filtered.length) {
-          filtered.forEach((suggestion, idx) => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = suggestion;
-            div.tabIndex = 0;
-            div.id = `suggestion-${idx}`;
-            div.setAttribute('role', 'option');
-            div.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
-            div.addEventListener('mousedown', (event) => {
-              searchInput.value = suggestion;
-              suggestionsContainer.classList.remove('active');
-              performSearch(suggestion);
-              event.preventDefault();
-            });
-            suggestionsContainer.appendChild(div);
-          });
-          suggestionsContainer.classList.add('active');
-          positionSuggestions();
-        } else {
-          suggestionsContainer.classList.remove('active');
-          suggestionsContainer.innerHTML = '';
-        }
-      });
-
-      searchInput.addEventListener('keydown', (e) => {
-        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
-        if (suggestionsContainer.classList.contains('active')) {
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            activeSuggestionIdx = (activeSuggestionIdx + 1) % items.length;
-            items.forEach((item, idx) => {
-              item.setAttribute('aria-selected', idx === activeSuggestionIdx ? 'true' : 'false');
-              if (idx === activeSuggestionIdx) item.focus();
-            });
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            activeSuggestionIdx = (activeSuggestionIdx - 1 + items.length) % items.length;
-            items.forEach((item, idx) => {
-              item.setAttribute('aria-selected', idx === activeSuggestionIdx ? 'true' : 'false');
-              if (idx === activeSuggestionIdx) item.focus();
-            });
-          } else if (e.key === 'Enter') {
-            if (activeSuggestionIdx > -1 && items[activeSuggestionIdx]) {
-              items[activeSuggestionIdx].click();
-              e.preventDefault();
-            } else {
-              performSearch(searchInput.value);
-            }
-          } else if (e.key === 'Escape') {
-            suggestionsContainer.classList.remove('active');
-          }
-        }
-      });
-
-      searchButton.addEventListener('click', () => {
-        performSearch(searchInput.value);
-      });
-
-      document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-          suggestionsContainer.classList.remove('active');
-        }
-      });
-
-      function performSearch(query) {
-        if (query) {
-          searchButton.setAttribute('aria-busy', 'true');
-          searchButton.disabled = true;
-          sessionStorage.setItem('sg_scroll', window.scrollY);
-          setTimeout(() => {
-            window.location.href = `https://surprise-granite.myshopify.com/search?q=${encodeURIComponent(query)}&type=product`;
-            searchButton.removeAttribute('aria-busy');
-            searchButton.disabled = false;
-          }, 200);
-        }
-      }
-
-      // Restore scroll position after back navigation
-      window.addEventListener('pageshow', (e) => {
-        const y = sessionStorage.getItem('sg_scroll');
-        if (y) window.scrollTo(0, Number(y));
-      });
 
       // --- Form Validation ---
       const form = document.getElementById('consultation-form-2025');
@@ -2180,6 +2112,8 @@ setInterval(displayOpeningStatus, 60000);
 @media (max-width: 700px) { .footer-bottom-inner { flex-direction: column; text-align: center; } }
 </style>
 
+<!-- Shop Page Optimizations -->
+<script defer src="/js/shop-optimizations.js"></script>
 
 </body></html>
 <script>
