@@ -949,70 +949,364 @@ setInterval(displayOpeningStatus, 60000);
 .hours-row .day { color: #666; }
 .hours-row .time { color: #1a1a1a; font-weight: 500; }
 
-/* Contact Form */
+/* Dynamic Card Contact Form */
 .contact-form-section {
-    background: #fff;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border-radius: 24px;
+    padding: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    border: 1px solid rgba(204, 166, 0, 0.2);
 }
-.contact-form-section h2 {
-    font-size: 1.5rem;
-    color: #1a1a1a;
+
+.form-card {
+    padding: 32px;
+}
+
+.form-card-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.form-card-header h2 {
+    font-size: 1.6rem;
+    color: #fff;
     margin: 0 0 8px;
     font-weight: 700;
 }
-.contact-form-section > p {
-    color: #666;
-    margin: 0 0 24px;
+
+.form-card-header p {
+    color: rgba(255,255,255,0.6);
+    margin: 0;
     font-size: 0.95rem;
 }
-.contact-form label {
-    display: block;
-    font-size: 0.9rem;
-    color: #1a1a1a;
-    font-weight: 500;
-    margin-bottom: 6px;
+
+/* Progress Steps */
+.form-progress {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
 }
-.contact-form input,
-.contact-form textarea,
-.contact-form select {
-    width: 100%;
-    padding: 14px 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    margin-bottom: 16px;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
 }
-.contact-form input:focus,
-.contact-form textarea:focus,
-.contact-form select:focus {
-    outline: none;
+
+.progress-step.active {
+    background: rgba(204, 166, 0, 0.15);
+    border-color: rgba(204, 166, 0, 0.4);
+}
+
+.progress-step.completed {
+    background: rgba(204, 166, 0, 0.2);
     border-color: #cca600;
 }
-.contact-form .form-row {
+
+.step-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.3s ease;
+}
+
+.progress-step.active .step-number {
+    background: #cca600;
+    color: #000;
+}
+
+.progress-step.completed .step-number {
+    background: #cca600;
+    color: #000;
+}
+
+.progress-step.completed .step-number::after {
+    content: '✓';
+}
+
+.step-label {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+}
+
+.progress-step.active .step-label,
+.progress-step.completed .step-label {
+    color: #fff;
+}
+
+/* Form Steps */
+.form-step {
+    display: none;
+    animation: fadeSlideIn 0.4s ease;
+}
+
+.form-step.active {
+    display: block;
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Inquiry Type Cards */
+.inquiry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.inquiry-card {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.inquiry-card:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(204, 166, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.inquiry-card.selected {
+    background: rgba(204, 166, 0, 0.12);
+    border-color: #cca600;
+    box-shadow: 0 0 20px rgba(204, 166, 0, 0.2);
+}
+
+.inquiry-card input {
+    display: none;
+}
+
+.inquiry-icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.inquiry-label {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: block;
+}
+
+.inquiry-card.selected .inquiry-label {
+    color: #fff;
+}
+
+/* Floating Labels */
+.floating-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.floating-group input,
+.floating-group textarea {
+    width: 100%;
+    padding: 20px 16px 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #fff;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.floating-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.floating-group input:focus,
+.floating-group textarea:focus {
+    outline: none;
+    border-color: #cca600;
+    background: rgba(255,255,255,0.08);
+}
+
+.floating-group label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+.floating-group textarea ~ label {
+    top: 20px;
+    transform: none;
+}
+
+.floating-group input:focus ~ label,
+.floating-group input:not(:placeholder-shown) ~ label,
+.floating-group textarea:focus ~ label,
+.floating-group textarea:not(:placeholder-shown) ~ label {
+    top: 8px;
+    transform: none;
+    font-size: 0.7rem;
+    color: #cca600;
+}
+
+.input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
-@media (max-width: 600px) {
-    .contact-form .form-row { grid-template-columns: 1fr; }
+
+/* Form Navigation */
+.form-nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
 }
-.contact-form button {
-    width: 100%;
-    background: #cca600;
-    color: #fff;
-    border: none;
-    padding: 16px;
-    border-radius: 8px;
-    font-size: 1rem;
+
+.btn-back {
+    flex: 1;
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
 }
-.contact-form button:hover { background: #b89500; }
+
+.btn-back:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-next,
+.btn-submit {
+    flex: 2;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #cca600 0%, #e6bc00 100%);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-next:hover,
+.btn-submit:hover {
+    background: linear-gradient(135deg, #e6bc00 0%, #ffcc00 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(204, 166, 0, 0.3);
+}
+
+.btn-submit {
+    width: 100%;
+}
+
+/* Success State */
+.form-success {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeSlideIn 0.5s ease;
+}
+
+.form-success.active {
+    display: block;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #cca600 0%, #e6bc00 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    animation: successPop 0.5s ease 0.2s both;
+}
+
+@keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.success-icon svg {
+    width: 40px;
+    height: 40px;
+    stroke: #000;
+    stroke-width: 3;
+}
+
+.form-success h3 {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0 0 12px;
+}
+
+.form-success p {
+    color: rgba(255,255,255,0.6);
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+}
+
+.success-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: rgba(204, 166, 0, 0.15);
+    border: 1px solid rgba(204, 166, 0, 0.4);
+    border-radius: 12px;
+    color: #cca600;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.success-cta:hover {
+    background: rgba(204, 166, 0, 0.25);
+}
+
+@media (max-width: 600px) {
+    .form-card { padding: 24px 20px; }
+    .inquiry-grid { grid-template-columns: 1fr; }
+    .input-row { grid-template-columns: 1fr; }
+    .form-progress { flex-wrap: wrap; }
+    .progress-step { padding: 6px 12px; }
+    .form-nav { flex-direction: column; }
+    .btn-back, .btn-next { flex: unset; width: 100%; }
+}
 
 /* Map Section */
 .contact-map {
@@ -1100,37 +1394,218 @@ setInterval(displayOpeningStatus, 60000);
                 </div>
             </div>
 
-            <!-- Right Column: Contact Form -->
+            <!-- Right Column: Dynamic Card Contact Form -->
             <div class="contact-form-section">
-                <h2>Send Us a Message</h2>
-                <p>Fill out the form below and we'll get back to you within 24 hours.</p>
-                <form class="contact-form" action="/get-a-free-estimate" method="get">
-                    <div class="form-row">
-                        <div>
-                            <label for="name">Full Name</label>
-                            <input type="text" id="name" name="name" placeholder="John Smith" required>
+                <div class="form-card" id="contactFormCard">
+                    <div class="form-card-header">
+                        <h2>Send Us a Message</h2>
+                        <p>We'll get back to you within 24 hours</p>
+                    </div>
+
+                    <!-- Progress Steps -->
+                    <div class="form-progress">
+                        <div class="progress-step active" data-step="1">
+                            <span class="step-number">1</span>
+                            <span class="step-label">Inquiry</span>
                         </div>
-                        <div>
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" placeholder="(602) 123-4567" required>
+                        <div class="progress-step" data-step="2">
+                            <span class="step-number">2</span>
+                            <span class="step-label">Details</span>
                         </div>
                     </div>
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="john@example.com" required>
-                    <label for="project">Project Type</label>
-                    <select id="project" name="project">
-                        <option value="">Select a project type</option>
-                        <option value="kitchen">Kitchen Countertops</option>
-                        <option value="bathroom">Bathroom Vanity</option>
-                        <option value="outdoor">Outdoor Kitchen</option>
-                        <option value="commercial">Commercial Project</option>
-                        <option value="other">Other</option>
-                    </select>
-                    <label for="message">Your Message</label>
-                    <textarea id="message" name="message" rows="4" placeholder="Tell us about your project..."></textarea>
-                    <button type="submit">Send Message</button>
-                </form>
+
+                    <form id="contactForm">
+                        <!-- Step 1: Inquiry Type & Contact Info -->
+                        <div class="form-step active" data-step="1">
+                            <div class="inquiry-grid">
+                                <label class="inquiry-card" onclick="selectInquiry(this)">
+                                    <input type="radio" name="inquiry" value="countertops" required>
+                                    <span class="inquiry-icon">🔲</span>
+                                    <span class="inquiry-label">Countertops</span>
+                                </label>
+                                <label class="inquiry-card" onclick="selectInquiry(this)">
+                                    <input type="radio" name="inquiry" value="cabinets">
+                                    <span class="inquiry-icon">🚪</span>
+                                    <span class="inquiry-label">Cabinets</span>
+                                </label>
+                                <label class="inquiry-card" onclick="selectInquiry(this)">
+                                    <input type="radio" name="inquiry" value="remodel">
+                                    <span class="inquiry-icon">🏠</span>
+                                    <span class="inquiry-label">Full Remodel</span>
+                                </label>
+                                <label class="inquiry-card" onclick="selectInquiry(this)">
+                                    <input type="radio" name="inquiry" value="question">
+                                    <span class="inquiry-icon">❓</span>
+                                    <span class="inquiry-label">Question</span>
+                                </label>
+                            </div>
+
+                            <div class="input-row">
+                                <div class="floating-group">
+                                    <input type="text" id="contactName" name="name" placeholder=" " required>
+                                    <label for="contactName">Full Name</label>
+                                </div>
+                                <div class="floating-group">
+                                    <input type="tel" id="contactPhone" name="phone" placeholder=" " required>
+                                    <label for="contactPhone">Phone Number</label>
+                                </div>
+                            </div>
+
+                            <div class="floating-group">
+                                <input type="email" id="contactEmail" name="email" placeholder=" " required>
+                                <label for="contactEmail">Email Address</label>
+                            </div>
+
+                            <div class="form-nav">
+                                <button type="button" class="btn-next" onclick="nextContactStep()">
+                                    Continue
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Message -->
+                        <div class="form-step" data-step="2">
+                            <div class="floating-group">
+                                <textarea id="contactMessage" name="message" placeholder=" " rows="5" required></textarea>
+                                <label for="contactMessage">Your Message</label>
+                            </div>
+
+                            <div class="form-nav">
+                                <button type="button" class="btn-back" onclick="prevContactStep()">Back</button>
+                                <button type="submit" class="btn-submit">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                    </svg>
+                                    Send Message
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Success State -->
+                    <div class="form-success" id="contactSuccess">
+                        <div class="success-icon">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h3>Message Sent!</h3>
+                        <p>Thanks for reaching out. We'll get back to you within 24 hours.</p>
+                        <a href="tel:+16028333189" class="success-cta">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                            </svg>
+                            Call Us Now
+                        </a>
+                    </div>
+                </div>
             </div>
+
+            <script>
+            // Contact Form Multi-Step Logic
+            let contactStep = 1;
+            const totalContactSteps = 2;
+
+            function selectInquiry(card) {
+                document.querySelectorAll('.inquiry-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+
+            function showContactStep(step) {
+                document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+                document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
+
+                document.querySelectorAll('.progress-step').forEach(s => {
+                    const stepNum = parseInt(s.dataset.step);
+                    s.classList.remove('active', 'completed');
+                    if (stepNum === step) s.classList.add('active');
+                    else if (stepNum < step) s.classList.add('completed');
+                });
+            }
+
+            function nextContactStep() {
+                // Validate current step
+                const currentStepEl = document.querySelector(`.form-step[data-step="${contactStep}"]`);
+                const inputs = currentStepEl.querySelectorAll('input[required], textarea[required]');
+                let valid = true;
+
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        valid = false;
+                        input.style.borderColor = '#ff4444';
+                        setTimeout(() => input.style.borderColor = '', 2000);
+                    }
+                });
+
+                // Check if inquiry type selected
+                if (contactStep === 1 && !document.querySelector('.inquiry-card.selected')) {
+                    valid = false;
+                    document.querySelectorAll('.inquiry-card').forEach(c => {
+                        c.style.borderColor = '#ff4444';
+                        setTimeout(() => c.style.borderColor = '', 2000);
+                    });
+                }
+
+                if (!valid) return;
+
+                if (contactStep < totalContactSteps) {
+                    contactStep++;
+                    showContactStep(contactStep);
+                }
+            }
+
+            function prevContactStep() {
+                if (contactStep > 1) {
+                    contactStep--;
+                    showContactStep(contactStep);
+                }
+            }
+
+            // Phone formatting
+            document.getElementById('contactPhone').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 6) {
+                    value = `(${value.slice(0,3)}) ${value.slice(3,6)}-${value.slice(6,10)}`;
+                } else if (value.length >= 3) {
+                    value = `(${value.slice(0,3)}) ${value.slice(3)}`;
+                }
+                e.target.value = value;
+            });
+
+            // Form submission
+            document.getElementById('contactForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = {
+                    inquiry: document.querySelector('input[name="inquiry"]:checked')?.value,
+                    name: document.getElementById('contactName').value,
+                    phone: document.getElementById('contactPhone').value,
+                    email: document.getElementById('contactEmail').value,
+                    message: document.getElementById('contactMessage').value,
+                    source: 'contact_page',
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    // Send to CRM webhook
+                    await fetch('https://voiceflow-crm.onrender.com/api/leads', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                } catch (err) {
+                    console.log('CRM webhook error:', err);
+                }
+
+                // Show success
+                document.getElementById('contactForm').style.display = 'none';
+                document.querySelector('.form-progress').style.display = 'none';
+                document.getElementById('contactSuccess').classList.add('active');
+            });
+            </script>
         </div>
     </div>
 </section>
