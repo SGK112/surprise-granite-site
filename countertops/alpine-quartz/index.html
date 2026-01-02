@@ -1803,6 +1803,22 @@
         case '0': resetZoom(); break;
       }
     });
+
+    // Tab functionality
+    function showTab(tabId) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      // Remove active from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      // Show selected tab content
+      document.getElementById(tabId).classList.add('active');
+      // Set active tab button
+      event.currentTarget.classList.add('active');
+    }
   </script>
 </body>
 </html>
