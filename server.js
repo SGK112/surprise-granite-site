@@ -43,92 +43,144 @@ app.post('/api/send-estimate', async (req, res) => {
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%); color: #fff; padding: 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0; opacity: 0.8; }
-        .logo { color: #f9cb00; }
-        .content { padding: 30px; background: #f8f9fa; }
-        .section { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-        .section h2 { margin: 0 0 15px; font-size: 16px; color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .line-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .line-item:last-child { border-bottom: none; }
-        .line-item .label { color: #666; }
-        .line-item .value { font-weight: bold; color: #1a1a2e; }
-        .price-tier { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
-        .price-tier.popular { background: #fffbeb; border: 2px solid #f9cb00; }
-        .tier-name { font-weight: bold; }
-        .tier-desc { font-size: 12px; color: #888; }
-        .tier-price { font-size: 18px; font-weight: bold; color: #f9cb00; text-align: right; }
-        .cta { text-align: center; padding: 20px; }
-        .cta-btn { display: inline-block; background: #f9cb00; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; }
-        .footer { text-align: center; padding: 20px; color: #888; font-size: 12px; }
-        .disclaimer { font-size: 11px; color: #999; font-style: italic; margin-top: 15px; }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-    <div class="header">
-        <h1>Your Countertop Estimate</h1>
-        <p><span class="logo">Surprise Granite</span> Marble & Quartz</p>
-    </div>
-    <div class="content">
-        <div class="section">
-            <h2>Summary</h2>
-            <div class="line-item">
-                <span class="label">Countertop Area</span>
-                <span class="value">${counterSqft}</span>
-            </div>
-            ${splashSqft && splashSqft !== '0 sqft' && splashSqft !== '0.00 sqft' ? `
-            <div class="line-item">
-                <span class="label">Backsplash Area</span>
-                <span class="value">${splashSqft}</span>
-            </div>
-            ` : ''}
-            <div class="line-item">
-                <span class="label">Total with 10% Waste</span>
-                <span class="value">${totalSqft}</span>
-            </div>
-            <div class="line-item">
-                <span class="label">Edge Profile</span>
-                <span class="value">${edgeProfile}</span>
-            </div>
-            <div class="line-item">
-                <span class="label">Edge Length</span>
-                <span class="value">${edgeLF}</span>
-            </div>
-        </div>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Your Countertop Estimate</h1>
+                            <p style="color: #f9cb00; margin: 10px 0 0; font-size: 18px; font-weight: bold;">Surprise Granite</p>
+                            <p style="color: #cccccc; margin: 5px 0 0; font-size: 14px;">Marble & Quartz</p>
+                        </td>
+                    </tr>
 
-        <div class="section">
-            <h2>Estimated Price Range</h2>
-            <div class="price-tier">
-                <div class="tier-name">Budget-Friendly</div>
-                <div class="tier-desc">Basic granite & quartz</div>
-                <div class="tier-price">${priceBudget}</div>
-            </div>
-            <div class="price-tier popular">
-                <div class="tier-name">Popular Choice</div>
-                <div class="tier-desc">Mid-range selections</div>
-                <div class="tier-price">${pricePopular}</div>
-            </div>
-            <div class="price-tier">
-                <div class="tier-name">Premium</div>
-                <div class="tier-desc">High-end & exotic</div>
-                <div class="tier-price">${pricePremium}</div>
-            </div>
-            <p class="disclaimer">* This is an estimate only. Final pricing depends on material selection, edge profile, cutouts, and layout complexity.</p>
-        </div>
+                    <!-- Summary Section -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 30px 40px;">
+                            <h2 style="color: #1a1a2e; font-size: 20px; margin: 0 0 20px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Project Summary</h2>
 
-        <div class="cta">
-            <p>Ready for an exact quote? Schedule a free in-home estimate!</p>
-            <a href="https://surprisegranite.com/get-a-free-estimate/" class="cta-btn">Schedule Free Estimate</a>
-        </div>
-    </div>
-    <div class="footer">
-        <p>Surprise Granite Marble & Quartz<br>
-        Greater Phoenix, AZ | (602) 833-3189<br>
-        <a href="https://surprisegranite.com">surprisegranite.com</a></p>
-    </div>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee;">
+                                        <span style="color: #666666; font-size: 15px;">Countertop Area</span>
+                                    </td>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right;">
+                                        <strong style="color: #1a1a2e; font-size: 15px;">${counterSqft}</strong>
+                                    </td>
+                                </tr>
+                                ${splashSqft && splashSqft !== '0 sqft' && splashSqft !== '0.00 sqft' ? `
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee;">
+                                        <span style="color: #666666; font-size: 15px;">Backsplash Area</span>
+                                    </td>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right;">
+                                        <strong style="color: #1a1a2e; font-size: 15px;">${splashSqft}</strong>
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee;">
+                                        <span style="color: #666666; font-size: 15px;">Total with 10% Waste</span>
+                                    </td>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right;">
+                                        <strong style="color: #1a1a2e; font-size: 15px;">${totalSqft}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee;">
+                                        <span style="color: #666666; font-size: 15px;">Edge Profile</span>
+                                    </td>
+                                    <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right;">
+                                        <strong style="color: #1a1a2e; font-size: 15px;">${edgeProfile}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 0;">
+                                        <span style="color: #666666; font-size: 15px;">Edge Length</span>
+                                    </td>
+                                    <td style="padding: 12px 0; text-align: right;">
+                                        <strong style="color: #1a1a2e; font-size: 15px;">${edgeLF}</strong>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Price Section -->
+                    <tr>
+                        <td style="background-color: #f9f9f9; padding: 30px 40px;">
+                            <h2 style="color: #1a1a2e; font-size: 20px; margin: 0 0 20px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Estimated Price Range</h2>
+
+                            <!-- Budget Tier -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; color: #1a1a2e; font-size: 16px; font-weight: bold;">Budget-Friendly</p>
+                                        <p style="margin: 4px 0 0; color: #888888; font-size: 13px;">Basic granite & quartz</p>
+                                    </td>
+                                    <td style="padding: 16px 20px; text-align: right;">
+                                        <p style="margin: 0; color: #1a1a2e; font-size: 20px; font-weight: bold;">${priceBudget}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Popular Tier -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fffbeb; border: 2px solid #f9cb00; border-radius: 8px; margin-bottom: 12px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; color: #1a1a2e; font-size: 16px; font-weight: bold;">Popular Choice ★</p>
+                                        <p style="margin: 4px 0 0; color: #888888; font-size: 13px;">Mid-range selections</p>
+                                    </td>
+                                    <td style="padding: 16px 20px; text-align: right;">
+                                        <p style="margin: 0; color: #c9a000; font-size: 22px; font-weight: bold;">${pricePopular}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Premium Tier -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 16px;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; color: #1a1a2e; font-size: 16px; font-weight: bold;">Premium</p>
+                                        <p style="margin: 4px 0 0; color: #888888; font-size: 13px;">High-end & exotic</p>
+                                    </td>
+                                    <td style="padding: 16px 20px; text-align: right;">
+                                        <p style="margin: 0; color: #1a1a2e; font-size: 20px; font-weight: bold;">${pricePremium}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; color: #888888; font-size: 12px; font-style: italic;">* This is an estimate only. Final pricing depends on material selection, edge profile, cutouts, and layout complexity.</p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Section -->
+                    <tr>
+                        <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
+                            <p style="color: #ffffff; font-size: 18px; margin: 0 0 20px;">Ready for an exact quote?</p>
+                            <a href="https://surprisegranite.com/get-a-free-estimate/" style="display: inline-block; background-color: #f9cb00; color: #1a1a2e; padding: 16px 36px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Schedule Free Estimate</a>
+                            <p style="color: #cccccc; font-size: 14px; margin: 20px 0 0;">Or call us: <a href="tel:+16028333189" style="color: #f9cb00; text-decoration: none; font-weight: bold;">(602) 833-3189</a></p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f4f4f4; padding: 20px 40px; text-align: center;">
+                            <p style="color: #888888; font-size: 13px; margin: 0;">Surprise Granite Marble & Quartz</p>
+                            <p style="color: #888888; font-size: 13px; margin: 5px 0;">Greater Phoenix, AZ | We Come to You!</p>
+                            <p style="color: #888888; font-size: 12px; margin: 10px 0 0;"><a href="https://surprisegranite.com" style="color: #1a1a2e;">surprisegranite.com</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
         `;
