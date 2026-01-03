@@ -1431,4 +1431,276 @@ setInterval(displayOpeningStatus, 60000);
 </style>
 
 
+<!-- Ultra-Premium Floating Estimate Widget -->
+<style>
+.sg-widget {
+    --widget-bg: rgba(255, 255, 255, 0.72);
+    --widget-border: rgba(0, 0, 0, 0.06);
+    --widget-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+    --icon-bg: #18181b;
+    --icon-color: #fbbf24;
+    --text-primary: #18181b;
+    --text-secondary: #71717a;
+
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 99998;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.sg-widget-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px;
+    padding-right: 18px;
+    background: var(--widget-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--widget-border);
+    border-radius: 56px;
+    box-shadow: var(--widget-shadow);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sg-widget-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.sg-widget-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Icon */
+.sg-widget-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    background: var(--icon-bg);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sg-widget-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--icon-color);
+}
+
+/* Subtle ping */
+.sg-widget-ping {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--icon-bg);
+    animation: sg-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes sg-ping {
+    75%, 100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Text */
+.sg-widget-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.sg-widget-eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.sg-widget-label {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--text-primary);
+}
+
+/* Indicator dot */
+.sg-widget-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.4);
+}
+
+/* Tooltip card */
+.sg-widget-card {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    width: 220px;
+    padding: 16px;
+    background: var(--icon-bg);
+    border-radius: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.sg-widget-btn:hover .sg-widget-card {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.sg-widget-card::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 24px;
+    width: 10px;
+    height: 10px;
+    background: var(--icon-bg);
+    transform: rotate(45deg);
+}
+
+.sg-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.sg-card-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sg-card-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.sg-card-item svg {
+    width: 12px;
+    height: 12px;
+    color: var(--icon-color);
+    flex-shrink: 0;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .sg-widget {
+        --widget-bg: rgba(39, 39, 42, 0.8);
+        --widget-border: rgba(255, 255, 255, 0.08);
+        --widget-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        --text-primary: #fafafa;
+        --text-secondary: #a1a1aa;
+    }
+
+    .sg-widget-dot {
+        border-color: #27272a;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .sg-widget {
+        bottom: 16px;
+        left: 16px;
+    }
+
+    .sg-widget-content {
+        display: none;
+    }
+
+    .sg-widget-btn {
+        padding: 6px;
+        border-radius: 50%;
+    }
+
+    .sg-widget-card {
+        display: none;
+    }
+}
+
+/* Entrance */
+.sg-widget {
+    animation: sg-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1s both;
+}
+
+@keyframes sg-enter {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.95);
+    }
+}
+</style>
+
+<div class="sg-widget" id="sgWidget">
+    <a href="/tools/countertop-calculator/" class="sg-widget-btn" id="sgWidgetBtn" onclick="sgTrackClick('estimate_widget','click')">
+        <div class="sg-widget-icon">
+            <div class="sg-widget-ping"></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <path d="M8 6h8"/>
+                <path d="M8 10h2v2H8z" fill="currentColor" stroke="none"/>
+                <path d="M14 10h2v2h-2z" fill="currentColor" stroke="none"/>
+                <path d="M8 14h2v2H8z" fill="currentColor" stroke="none"/>
+                <path d="M14 14h2v2h-2z" fill="currentColor" stroke="none"/>
+                <path d="M8 18h2v2H8z" fill="currentColor" stroke="none"/>
+                <path d="M14 18h2v2h-2z" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="sg-widget-dot" id="sgWidgetDot"></span>
+        </div>
+
+        <div class="sg-widget-content">
+            <span class="sg-widget-eyebrow">Free Tool</span>
+            <span class="sg-widget-label">Countertop Calculator</span>
+        </div>
+
+        <div class="sg-widget-card">
+            <p class="sg-card-title">Quick Price Calculator</p>
+            <div class="sg-card-items">
+                <div class="sg-card-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
+                    Enter your dimensions
+                </div>
+                <div class="sg-card-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
+                    Add edges & backsplash
+                </div>
+                <div class="sg-card-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
+                    Get instant pricing
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
+
+<script>
+function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_category:'Calculator Widget',event_label:c,page_path:location.pathname});if(typeof dataLayer!=='undefined')dataLayer.push({event:'calculator_interaction',component:c,action:a,page:location.pathname})}
+(function(){var b=document.getElementById('sgWidgetBtn'),d=document.getElementById('sgWidgetDot');if(sessionStorage.getItem('sg_calc_visited')&&d)d.style.display='none';if(b){b.addEventListener('mouseenter',function(){sgTrackClick('estimate_widget','hover')},{once:true});b.addEventListener('click',function(){sessionStorage.setItem('sg_calc_visited','true')})}})();
+</script>
+
 </body></html>

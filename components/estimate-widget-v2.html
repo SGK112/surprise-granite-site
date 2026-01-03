@@ -1,0 +1,466 @@
+<!-- Premium Floating Estimate Widget - Refined Glassmorphic Design -->
+<style>
+/* Premium Estimate Widget */
+.sg-float-widget {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    z-index: 99998;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Outer glow layer */
+.sg-float-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px 10px 10px;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 100px;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Multi-layer glassmorphism */
+.sg-float-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 255, 0.7) 50%,
+        rgba(255, 255, 255, 0.8) 100%
+    );
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.02),
+        0 8px 16px rgba(0, 0, 0, 0.06),
+        0 24px 48px rgba(0, 0, 0, 0.08),
+        inset 0 2px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+    z-index: -1;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Inner highlight layer */
+.sg-float-btn::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 99px;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0) 40%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sg-float-btn:hover {
+    transform: translateY(-3px);
+}
+
+.sg-float-btn:hover::before {
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.04),
+        0 16px 32px rgba(0, 0, 0, 0.08),
+        0 32px 64px rgba(0, 0, 0, 0.12),
+        inset 0 2px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.sg-float-btn:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+/* Icon container */
+.sg-float-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
+    box-shadow:
+        0 2px 8px rgba(26, 26, 46, 0.3),
+        0 4px 16px rgba(26, 26, 46, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 2;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sg-float-btn:hover .sg-float-icon-wrap {
+    transform: scale(1.05);
+    box-shadow:
+        0 4px 12px rgba(26, 26, 46, 0.4),
+        0 8px 24px rgba(26, 26, 46, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Premium calculator icon */
+.sg-float-icon {
+    width: 22px;
+    height: 22px;
+    color: #f9cb00;
+    stroke-width: 1.75;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Animated ring */
+.sg-float-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(249, 203, 0, 0.4);
+    animation: sg-ring-pulse 3s ease-out infinite;
+    pointer-events: none;
+}
+
+.sg-float-ring:nth-child(2) {
+    animation-delay: 1.5s;
+}
+
+@keyframes sg-ring-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* Text content */
+.sg-float-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    z-index: 2;
+}
+
+.sg-float-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+    line-height: 1;
+}
+
+.sg-float-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #111827;
+    line-height: 1.25;
+}
+
+/* Badge */
+.sg-float-badge {
+    position: absolute;
+    top: -4px;
+    right: 12px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 3px 7px;
+    border-radius: 6px;
+    box-shadow:
+        0 2px 6px rgba(16, 185, 129, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    z-index: 3;
+    animation: sg-badge-float 3s ease-in-out infinite;
+}
+
+@keyframes sg-badge-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+/* Tooltip */
+.sg-float-tooltip {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    left: 0;
+    min-width: 240px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(0.96);
+    transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        0 16px 48px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 10;
+}
+
+.sg-float-btn:hover .sg-float-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.sg-float-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 28px;
+    width: 14px;
+    height: 14px;
+    background: #1a1a2e;
+    border-radius: 2px;
+    transform: rotate(45deg);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sg-tooltip-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f9cb00;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+}
+
+.sg-tooltip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sg-tooltip-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: -0.01em;
+}
+
+.sg-tooltip-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(249, 203, 0, 0.15);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sg-tooltip-check svg {
+    width: 10px;
+    height: 10px;
+    color: #f9cb00;
+    stroke-width: 3;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .sg-float-btn::before {
+        background: linear-gradient(
+            135deg,
+            rgba(38, 38, 58, 0.95) 0%,
+            rgba(30, 30, 48, 0.9) 50%,
+            rgba(35, 35, 55, 0.92) 100%
+        );
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            0 2px 4px rgba(0, 0, 0, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.15),
+            0 24px 48px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .sg-float-btn::after {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0) 40%
+        );
+    }
+
+    .sg-float-label { color: #9ca3af; }
+    .sg-float-title { color: #f9fafb; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sg-float-widget {
+        bottom: 20px;
+        left: 20px;
+    }
+
+    .sg-float-btn {
+        padding: 8px 16px 8px 8px;
+        gap: 10px;
+    }
+
+    .sg-float-icon-wrap {
+        width: 40px;
+        height: 40px;
+    }
+
+    .sg-float-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .sg-float-title {
+        font-size: 14px;
+    }
+
+    .sg-float-tooltip {
+        display: none;
+    }
+
+    .sg-float-ring {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .sg-float-text {
+        display: none;
+    }
+
+    .sg-float-btn {
+        padding: 8px;
+        border-radius: 50%;
+    }
+
+    .sg-float-badge {
+        top: -6px;
+        right: -6px;
+        padding: 2px 5px;
+        font-size: 8px;
+    }
+}
+
+/* Entry animation */
+@keyframes sg-float-enter {
+    0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.sg-float-widget {
+    animation: sg-float-enter 0.7s cubic-bezier(0.23, 1, 0.32, 1) 0.8s both;
+}
+</style>
+
+<div class="sg-float-widget" id="sgFloatWidget">
+    <a href="/tools/countertop-calculator/" class="sg-float-btn" id="sgFloatBtn" onclick="sgTrackClick('estimate_widget', 'click')">
+        <span class="sg-float-badge" id="sgFloatBadge">Free</span>
+
+        <div class="sg-float-icon-wrap">
+            <div class="sg-float-ring"></div>
+            <div class="sg-float-ring"></div>
+            <svg class="sg-float-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="10" y2="10"/>
+                <line x1="14" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="10" y2="14"/>
+                <line x1="14" y1="14" x2="16" y2="14"/>
+                <line x1="8" y1="18" x2="10" y2="18"/>
+                <line x1="14" y1="18" x2="16" y2="18"/>
+            </svg>
+        </div>
+
+        <div class="sg-float-text">
+            <span class="sg-float-label">Instant Tool</span>
+            <span class="sg-float-title">Get Estimate</span>
+        </div>
+
+        <div class="sg-float-tooltip">
+            <p class="sg-tooltip-title">Calculate Your Project</p>
+            <div class="sg-tooltip-list">
+                <div class="sg-tooltip-item">
+                    <span class="sg-tooltip-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg>
+                    </span>
+                    <span>Enter your measurements</span>
+                </div>
+                <div class="sg-tooltip-item">
+                    <span class="sg-tooltip-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg>
+                    </span>
+                    <span>Add edges & backsplash</span>
+                </div>
+                <div class="sg-tooltip-item">
+                    <span class="sg-tooltip-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7"/></svg>
+                    </span>
+                    <span>Get price range instantly</span>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
+
+<script>
+// Analytics tracking
+function sgTrackClick(component, action) {
+    if (typeof gtag === 'function') {
+        gtag('event', action, {
+            'event_category': 'Calculator Widget',
+            'event_label': component,
+            'page_path': window.location.pathname
+        });
+    }
+    if (typeof dataLayer !== 'undefined') {
+        dataLayer.push({
+            'event': 'calculator_interaction',
+            'component': component,
+            'action': action,
+            'page': window.location.pathname
+        });
+    }
+}
+
+(function() {
+    const btn = document.getElementById('sgFloatBtn');
+    const badge = document.getElementById('sgFloatBadge');
+
+    if (sessionStorage.getItem('sg_calc_visited') && badge) {
+        badge.style.display = 'none';
+    }
+
+    if (btn) {
+        btn.addEventListener('mouseenter', function() {
+            sgTrackClick('estimate_widget', 'hover');
+        }, { once: true });
+
+        btn.addEventListener('click', function() {
+            sessionStorage.setItem('sg_calc_visited', 'true');
+        });
+    }
+})();
+</script>

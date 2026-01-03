@@ -1,0 +1,248 @@
+<!-- Recently Viewed Stones - Conversion Booster -->
+<style>
+.sg-recent-views {
+    position: fixed;
+    bottom: 100px;
+    left: 24px;
+    z-index: 99997;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sg-recent-views.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.sg-recent-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    max-width: 280px;
+}
+
+.sg-recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.sg-recent-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.sg-recent-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.sg-recent-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #64748b;
+}
+
+.sg-recent-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sg-recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sg-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sg-recent-item:hover {
+    background: rgba(249, 203, 0, 0.1);
+}
+
+.sg-recent-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sg-recent-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sg-recent-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-recent-type {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.sg-recent-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.sg-recent-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 203, 0, 0.3);
+}
+
+.sg-recent-cta svg {
+    width: 14px;
+    height: 14px;
+}
+
+@media (max-width: 768px) {
+    .sg-recent-views {
+        bottom: 90px;
+        left: 16px;
+        right: 16px;
+    }
+
+    .sg-recent-card {
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .sg-recent-views {
+        display: none;
+    }
+}
+</style>
+
+<div class="sg-recent-views" id="sgRecentViews">
+    <div class="sg-recent-card">
+        <div class="sg-recent-header">
+            <span class="sg-recent-title">Recently Viewed</span>
+            <button class="sg-recent-close" onclick="document.getElementById('sgRecentViews').classList.remove('visible'); sessionStorage.setItem('sg_recent_hidden', 'true');">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="sg-recent-list" id="sgRecentList">
+            <!-- Populated by JS -->
+        </div>
+        <a href="/tools/countertop-calculator/" class="sg-recent-cta" onclick="sgTrackClick && sgTrackClick('recent_views', 'compare_click')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            Compare Prices
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Only run on countertop pages
+    if (!window.location.pathname.includes('/countertops/')) return;
+    if (sessionStorage.getItem('sg_recent_hidden')) return;
+
+    const MAX_RECENT = 3;
+    const STORAGE_KEY = 'sg_recent_stones';
+
+    // Get current stone info from page
+    const titleEl = document.querySelector('.product-title') || document.querySelector('h1');
+    const imageEl = document.querySelector('.main-image') || document.querySelector('img[src*="countertop"], img[src*="marble"], img[src*="quartz"], img[src*="granite"]');
+    const typeEl = document.querySelector('.product-subtitle') || document.querySelector('.stone-type');
+
+    if (!titleEl) return;
+
+    const currentStone = {
+        name: titleEl.textContent.trim(),
+        url: window.location.pathname,
+        image: imageEl ? imageEl.src : '',
+        type: typeEl ? typeEl.textContent.trim() : 'Countertop'
+    };
+
+    // Get existing recent views
+    let recentStones = [];
+    try {
+        recentStones = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch (e) {}
+
+    // Remove current stone if already in list
+    recentStones = recentStones.filter(s => s.url !== currentStone.url);
+
+    // Add current stone to front
+    recentStones.unshift(currentStone);
+
+    // Keep only MAX_RECENT
+    recentStones = recentStones.slice(0, MAX_RECENT + 1);
+
+    // Save
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(recentStones));
+
+    // Show widget if we have more than 1 viewed stone
+    const otherStones = recentStones.filter(s => s.url !== currentStone.url);
+    if (otherStones.length === 0) return;
+
+    const listEl = document.getElementById('sgRecentList');
+    const widgetEl = document.getElementById('sgRecentViews');
+
+    if (!listEl || !widgetEl) return;
+
+    // Render list
+    listEl.innerHTML = otherStones.slice(0, 2).map(stone => `
+        <a href="${stone.url}" class="sg-recent-item" onclick="sgTrackClick && sgTrackClick('recent_views', 'stone_click')">
+            ${stone.image ? `<img src="${stone.image}" alt="${stone.name}" class="sg-recent-thumb" onerror="this.style.display='none'">` : ''}
+            <div class="sg-recent-info">
+                <div class="sg-recent-name">${stone.name}</div>
+                <div class="sg-recent-type">${stone.type}</div>
+            </div>
+        </a>
+    `).join('');
+
+    // Show widget after delay
+    setTimeout(() => {
+        widgetEl.classList.add('visible');
+        sgTrackClick && sgTrackClick('recent_views', 'shown');
+    }, 3000);
+})();
+</script>
