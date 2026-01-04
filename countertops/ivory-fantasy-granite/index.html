@@ -2406,6 +2406,19 @@
     z-index: 99998;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    transform: translateX(-120%);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+.sg-widget.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.sg-widget.hidden {
+    transform: translateX(-120%);
+    opacity: 0;
 }
 
 .sg-widget-btn {
@@ -2615,6 +2628,22 @@
 
 <script>
 function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_category:'Calculator Widget',event_label:c,page_path:location.pathname});if(typeof dataLayer!=='undefined')dataLayer.push({event:'calculator_interaction',component:c,action:a,page:location.pathname})}
+(function(){
+    var w=document.getElementById('sgWidget'),lastY=0,ticking=false;
+    if(!w)return;
+    setTimeout(function(){w.classList.add('visible');},800);
+    window.addEventListener('scroll',function(){
+        if(!ticking){
+            window.requestAnimationFrame(function(){
+                var y=window.scrollY;
+                if(y>100){w.classList.remove('visible');w.classList.add('hidden');}
+                else{w.classList.remove('hidden');w.classList.add('visible');}
+                lastY=y;ticking=false;
+            });
+            ticking=true;
+        }
+    },{passive:true});
+})();
 </script>
 </body>
 </html>
