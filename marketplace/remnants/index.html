@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Stone Remnant Marketplace | Affordable Countertops | Surprise Granite</title>
+    <link rel="canonical" href="https://surprisegranite.com/marketplace/remnants/"/>
+    <meta content="Find affordable stone remnants from local fabricators. Perfect for small countertops, bathroom vanities, and DIY projects. Quartz, granite, marble at discounted prices." name="description"/>
+    <meta content="Stone Remnant Marketplace | Surprise Granite" property="og:title"/>
+    <meta content="Find affordable stone remnants for your countertop project." property="og:description"/>
+    <meta property="og:type" content="website"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: #1a1a2e;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .logo { text-decoration: none; font-size: 1.25rem; font-weight: 700; }
+        .logo .white { color: #fff; }
+        .logo .gold { color: #f9cb00; }
+        .header-nav { display: flex; gap: 24px; }
+        .header-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; }
+        .header-link:hover { color: #f9cb00; }
+        .header-cta {
+            background: #f9cb00;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .header-cta:hover { background: #e6b800; }
+
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+            padding: 60px 24px;
+            text-align: center;
+            color: #fff;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(249, 203, 0, 0.2);
+            color: #f9cb00;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .notify-bar {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 16px 24px;
+        }
+        .notify-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .notify-inner p { font-size: 14px; color: #666; }
+        .notify-form { display: flex; gap: 8px; }
+        .notify-form input {
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 220px;
+        }
+        .notify-form input:focus { outline: none; border-color: #f9cb00; }
+        .notify-form button {
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .notify-form button:hover { background: #2d2d4a; }
+
+        .filters {
+            background: #fff;
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+        }
+        .filters-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: #1a1a2e;
+            color: #fff;
+            border-color: #1a1a2e;
+        }
+
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .section-header h2 { font-size: 1.5rem; }
+        .section-header span { color: #666; font-size: 14px; }
+
+        .remnant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .remnant-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .remnant-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .remnant-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+        .remnant-info { padding: 20px; }
+        .remnant-type {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .remnant-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .remnant-details {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .remnant-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .remnant-location {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+        }
+        .remnant-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+            color: #1a1a2e;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .remnant-btn:hover { opacity: 0.9; }
+
+        .cta-section {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+            padding: 60px 24px;
+            text-align: center;
+            color: #fff;
+            margin-top: 40px;
+            border-radius: 16px;
+        }
+        .cta-section h2 { font-size: 1.75rem; margin-bottom: 12px; }
+        .cta-section p { opacity: 0.9; margin-bottom: 24px; }
+        .cta-btn {
+            display: inline-block;
+            background: #f9cb00;
+            color: #1a1a2e;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .cta-btn:hover { background: #e6b800; }
+
+        .footer {
+            background: #1a1a2e;
+            color: rgba(255,255,255,0.7);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 60px;
+        }
+        .footer a { color: #f9cb00; text-decoration: none; }
+
+        /* Inquiry Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { font-size: 1.25rem; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-body { padding: 24px; }
+        .modal-body .form-group {
+            margin-bottom: 16px;
+        }
+        .modal-body label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .modal-body input,
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .modal-body input:focus,
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #f9cb00;
+        }
+        .modal-body textarea { resize: vertical; min-height: 80px; }
+        .modal-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.75rem; }
+            .header-nav { display: none; }
+            .notify-form { flex-direction: column; width: 100%; }
+            .notify-form input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="logo"><span class="white">Surprise</span><span class="gold">Granite</span></a>
+            <nav class="header-nav">
+                <a href="/" class="header-link">Home</a>
+                <a href="/countertops/" class="header-link">Countertops</a>
+                <a href="/tools/countertop-calculator/" class="header-link">Calculator</a>
+            </nav>
+            <a href="/marketplace/list-remnant/" class="header-cta">List Your Remnants</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <span class="hero-badge">Marketplace</span>
+        <h1>Stone Remnant Marketplace</h1>
+        <p>Find affordable leftover stone pieces from local fabricators. Perfect for bathroom vanities, small countertops, and DIY projects.</p>
+    </section>
+
+    <div class="notify-bar">
+        <div class="notify-inner">
+            <p>Get notified when new remnants are listed:</p>
+            <form class="notify-form" id="notifyForm">
+                <input type="email" placeholder="Enter your email" required>
+                <button type="submit">Notify Me</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="filters">
+        <div class="filters-inner">
+            <button class="filter-btn active" data-filter="all">All Types</button>
+            <button class="filter-btn" data-filter="quartz">Quartz</button>
+            <button class="filter-btn" data-filter="granite">Granite</button>
+            <button class="filter-btn" data-filter="marble">Marble</button>
+            <button class="filter-btn" data-filter="quartzite">Quartzite</button>
+        </div>
+    </div>
+
+    <main class="main">
+        <div class="section-header">
+            <h2>Available Remnants</h2>
+            <span id="resultCount">6 pieces available</span>
+        </div>
+
+        <div class="remnant-grid" id="remnantGrid">
+            <!-- Sample remnants - will be dynamic later -->
+            <div class="remnant-card" data-type="quartz">
+                <img src="https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=400&h=300&fit=crop" alt="Calacatta Laza Quartz" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Quartz</span>
+                    <h3 class="remnant-name">Calacatta Laza</h3>
+                    <div class="remnant-details">
+                        <span>48" x 26"</span>
+                        <span>3cm</span>
+                        <span>8.7 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$175</div>
+                    <div class="remnant-location">Phoenix, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Calacatta Laza Quartz', '$175')">Inquire About This Piece</button>
+            </div>
+
+            <div class="remnant-card" data-type="granite">
+                <img src="https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop" alt="Alaska White Granite" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Granite</span>
+                    <h3 class="remnant-name">Alaska White</h3>
+                    <div class="remnant-details">
+                        <span>36" x 24"</span>
+                        <span>3cm</span>
+                        <span>6 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$120</div>
+                    <div class="remnant-location">Scottsdale, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Alaska White Granite', '$120')">Inquire About This Piece</button>
+            </div>
+
+            <div class="remnant-card" data-type="quartz">
+                <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop" alt="Statuario Quartz" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Quartz</span>
+                    <h3 class="remnant-name">Statuario Nuvo</h3>
+                    <div class="remnant-details">
+                        <span>52" x 30"</span>
+                        <span>3cm</span>
+                        <span>10.8 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$225</div>
+                    <div class="remnant-location">Glendale, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Statuario Nuvo Quartz', '$225')">Inquire About This Piece</button>
+            </div>
+
+            <div class="remnant-card" data-type="marble">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop" alt="Carrara Marble" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Marble</span>
+                    <h3 class="remnant-name">Carrara White</h3>
+                    <div class="remnant-details">
+                        <span>42" x 22"</span>
+                        <span>2cm</span>
+                        <span>6.4 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$195</div>
+                    <div class="remnant-location">Peoria, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Carrara White Marble', '$195')">Inquire About This Piece</button>
+            </div>
+
+            <div class="remnant-card" data-type="quartzite">
+                <img src="https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=400&h=300&fit=crop" alt="Taj Mahal Quartzite" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Quartzite</span>
+                    <h3 class="remnant-name">Taj Mahal</h3>
+                    <div class="remnant-details">
+                        <span>38" x 28"</span>
+                        <span>3cm</span>
+                        <span>7.4 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$285</div>
+                    <div class="remnant-location">Surprise, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Taj Mahal Quartzite', '$285')">Inquire About This Piece</button>
+            </div>
+
+            <div class="remnant-card" data-type="granite">
+                <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop" alt="Black Galaxy Granite" class="remnant-img">
+                <div class="remnant-info">
+                    <span class="remnant-type">Granite</span>
+                    <h3 class="remnant-name">Black Galaxy</h3>
+                    <div class="remnant-details">
+                        <span>44" x 20"</span>
+                        <span>3cm</span>
+                        <span>6.1 sq ft</span>
+                    </div>
+                    <div class="remnant-price">$145</div>
+                    <div class="remnant-location">Mesa, AZ</div>
+                </div>
+                <button class="remnant-btn" onclick="openInquiry('Black Galaxy Granite', '$145')">Inquire About This Piece</button>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Are You a Fabricator?</h2>
+            <p>List your leftover stone pieces for free and reach thousands of local buyers.</p>
+            <a href="/marketplace/list-remnant/" class="cta-btn">List Your Remnants Free</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Surprise Granite. <a href="/">Back to Main Site</a> | <a href="/tools/countertop-calculator/">Countertop Calculator</a></p>
+    </footer>
+
+    <!-- Inquiry Modal -->
+    <div class="modal-overlay" id="inquiryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Inquire About Remnant</h3>
+                <button class="modal-close" onclick="closeInquiry()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: #666;">Interested in <strong id="modalStoneName"></strong>? Fill out the form and we'll connect you with the seller.</p>
+                <form id="inquiryForm">
+                    <input type="hidden" id="inquiryStoneName" name="stoneName">
+                    <div class="form-group">
+                        <label>Your Name *</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone *</label>
+                        <input type="tel" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea name="message" placeholder="I'm interested in this remnant for my bathroom vanity..."></textarea>
+                    </div>
+                    <button type="submit" class="modal-submit">Send Inquiry</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Filter functionality
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+
+            var filter = this.dataset.filter;
+            var cards = document.querySelectorAll('.remnant-card');
+            var count = 0;
+
+            cards.forEach(function(card) {
+                if (filter === 'all' || card.dataset.type === filter) {
+                    card.style.display = 'block';
+                    count++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('resultCount').textContent = count + ' piece' + (count !== 1 ? 's' : '') + ' available';
+        });
+    });
+
+    // Notify form
+    document.getElementById('notifyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var email = this.querySelector('input').value;
+
+        fetch('https://countertop-email-service.onrender.com/api/remnant-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        }).catch(function() {});
+
+        this.innerHTML = '<p style="color: #22c55e; font-weight: 600;">You\'re on the list!</p>';
+    });
+
+    // Inquiry modal
+    function openInquiry(name, price) {
+        document.getElementById('modalStoneName').textContent = name + ' (' + price + ')';
+        document.getElementById('inquiryStoneName').value = name;
+        document.getElementById('inquiryModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeInquiry() {
+        document.getElementById('inquiryModal').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('inquiryModal').addEventListener('click', function(e) {
+        if (e.target === this) closeInquiry();
+    });
+
+    document.getElementById('inquiryForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        var data = {};
+        formData.forEach(function(v, k) { data[k] = v; });
+
+        fetch('https://countertop-email-service.onrender.com/api/remnant-inquiry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).catch(function() {});
+
+        this.innerHTML = '<div style="text-align: center; padding: 20px;"><svg style="width:48px;height:48px;color:#22c55e;margin-bottom:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><h4>Inquiry Sent!</h4><p style="color:#666;margin-top:8px;">We\'ll connect you with the seller shortly.</p></div>';
+
+        setTimeout(closeInquiry, 2500);
+    });
+    </script>
+</body>
+</html>

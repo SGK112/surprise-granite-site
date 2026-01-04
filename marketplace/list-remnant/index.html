@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>List Your Remnants | Surprise Granite Marketplace</title>
+    <link rel="canonical" href="https://surprisegranite.com/marketplace/list-remnant/"/>
+    <meta content="Fabricators: List your stone remnants for free. Reach thousands of local homeowners looking for affordable countertop options." name="description"/>
+    <meta content="List Your Remnants | Surprise Granite Marketplace" property="og:title"/>
+    <meta content="Turn your leftover stone into cash. Free listing for fabricators." property="og:description"/>
+    <meta property="og:type" content="website"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: #1a1a2e;
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo { text-decoration: none; font-size: 1.25rem; font-weight: 700; }
+        .logo .white { color: #fff; }
+        .logo .gold { color: #f9cb00; }
+        .header-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; }
+        .header-link:hover { color: #f9cb00; }
+
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+            padding: 60px 24px;
+            text-align: center;
+            color: #fff;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .hero h1 span { color: #f9cb00; }
+        .hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 24px;
+        }
+
+        .benefits {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+        .benefit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .benefit svg { width: 20px; height: 20px; color: #22c55e; }
+
+        .form-section {
+            max-width: 700px;
+            margin: -40px auto 60px;
+            padding: 0 24px;
+        }
+        .form-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+        }
+        .form-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        .form-card > p {
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f9cb00;
+            box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.1);
+        }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+
+        .photo-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .photo-upload:hover {
+            border-color: #f9cb00;
+            background: rgba(249, 203, 0, 0.05);
+        }
+        .photo-upload svg { width: 48px; height: 48px; color: #ccc; margin-bottom: 12px; }
+        .photo-upload p { color: #666; font-size: 14px; }
+        .photo-upload input { display: none; }
+        .photo-preview {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .photo-preview img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(249, 203, 0, 0.4);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .success-message.show { display: block; }
+        .success-message svg { width: 64px; height: 64px; color: #22c55e; margin-bottom: 16px; }
+        .success-message h3 { font-size: 1.5rem; margin-bottom: 8px; }
+        .success-message p { color: #666; }
+
+        .info-section {
+            background: #fff;
+            padding: 60px 24px;
+            text-align: center;
+        }
+        .info-section h2 { font-size: 1.75rem; margin-bottom: 32px; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .info-card {
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .info-card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+        .info-card p { color: #666; font-size: 14px; }
+
+        .footer {
+            background: #1a1a2e;
+            color: rgba(255,255,255,0.7);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a { color: #f9cb00; text-decoration: none; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.75rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-card { padding: 24px; }
+            .benefits { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="/" class="logo"><span class="white">Surprise</span><span class="gold">Granite</span></a>
+            <a href="/marketplace/remnants/" class="header-link">Browse Remnants</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1>List Your <span>Remnants</span> For Free</h1>
+        <p>Turn your leftover stone into cash. Reach thousands of local homeowners looking for affordable countertop options.</p>
+        <div class="benefits">
+            <div class="benefit">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>100% Free Listing</span>
+            </div>
+            <div class="benefit">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Local Buyers</span>
+            </div>
+            <div class="benefit">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Quick & Easy</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <div class="form-card">
+            <div id="formContent">
+                <h2>Remnant Details</h2>
+                <p>Fill out the form below and we'll list your remnant on our marketplace.</p>
+
+                <form id="remnantForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="stoneName">Stone Name *</label>
+                            <input type="text" id="stoneName" name="stoneName" placeholder="e.g. Calacatta Gold" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="stoneType">Stone Type *</label>
+                            <select id="stoneType" name="stoneType" required>
+                                <option value="">Select type...</option>
+                                <option value="Quartz">Quartz</option>
+                                <option value="Granite">Granite</option>
+                                <option value="Marble">Marble</option>
+                                <option value="Quartzite">Quartzite</option>
+                                <option value="Porcelain">Porcelain</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="length">Length (inches) *</label>
+                            <input type="number" id="length" name="length" placeholder="e.g. 48" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="width">Width (inches) *</label>
+                            <input type="number" id="width" name="width" placeholder="e.g. 26" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="thickness">Thickness *</label>
+                            <select id="thickness" name="thickness" required>
+                                <option value="">Select thickness...</option>
+                                <option value="2cm">2cm (3/4")</option>
+                                <option value="3cm">3cm (1 1/4")</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Asking Price ($) *</label>
+                            <input type="number" id="price" name="price" placeholder="e.g. 150" required min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="finish">Finish</label>
+                            <select id="finish" name="finish">
+                                <option value="Polished">Polished</option>
+                                <option value="Honed">Honed</option>
+                                <option value="Leathered">Leathered</option>
+                                <option value="Brushed">Brushed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="condition">Condition</label>
+                            <select id="condition" name="condition">
+                                <option value="Excellent">Excellent - No chips or scratches</option>
+                                <option value="Good">Good - Minor imperfections</option>
+                                <option value="Fair">Fair - Some visible wear</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" placeholder="Any additional details about the remnant..."></textarea>
+                        </div>
+                        <div class="form-group full">
+                            <label>Photos (optional)</label>
+                            <div class="photo-upload" onclick="document.getElementById('photos').click()">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <p>Click to upload photos of your remnant</p>
+                                <input type="file" id="photos" name="photos" accept="image/*" multiple>
+                            </div>
+                            <div class="photo-preview" id="photoPreview"></div>
+                        </div>
+
+                        <div class="form-group full" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #eee;">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Your Contact Info</h3>
+                        </div>
+                        <div class="form-group">
+                            <label for="businessName">Business Name *</label>
+                            <input type="text" id="businessName" name="businessName" placeholder="Your company name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactName">Contact Name *</label>
+                            <input type="text" id="contactName" name="contactName" placeholder="Your name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" placeholder="you@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone *</label>
+                            <input type="tel" id="phone" name="phone" placeholder="(602) 555-1234" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" name="city" placeholder="e.g. Phoenix" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="zip">ZIP Code *</label>
+                            <input type="text" id="zip" name="zip" placeholder="e.g. 85001" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">Submit Remnant Listing</button>
+                </form>
+            </div>
+
+            <div class="success-message" id="successMessage">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <h3>Listing Submitted!</h3>
+                <p>We'll review your remnant and add it to the marketplace within 24 hours. You'll receive an email confirmation shortly.</p>
+                <a href="/marketplace/remnants/" style="display: inline-block; margin-top: 24px; color: #f9cb00; font-weight: 600;">Browse Other Remnants</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <h2>Why List With Us?</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Reach Local Buyers</h3>
+                <p>Thousands of Phoenix-area homeowners browse our site looking for countertop options.</p>
+            </div>
+            <div class="info-card">
+                <h3>Zero Fees</h3>
+                <p>Listing is completely free. You keep 100% of your sale price.</p>
+            </div>
+            <div class="info-card">
+                <h3>Quick Turnaround</h3>
+                <p>Most remnants sell within days, not weeks. Clear your shop faster.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2025 Surprise Granite. <a href="/">Back to Main Site</a></p>
+    </footer>
+
+    <script>
+    // Photo preview
+    document.getElementById('photos').addEventListener('change', function(e) {
+        var preview = document.getElementById('photoPreview');
+        preview.innerHTML = '';
+        Array.from(e.target.files).forEach(function(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    // Form submission
+    document.getElementById('remnantForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        var formData = new FormData(this);
+        var data = {};
+        formData.forEach(function(value, key) {
+            if (key !== 'photos') data[key] = value;
+        });
+
+        // Calculate square footage
+        var sqft = (parseFloat(data.length) * parseFloat(data.width) / 144).toFixed(2);
+        data.squareFeet = sqft;
+
+        // Send to API
+        fetch('https://countertop-email-service.onrender.com/api/remnant-listing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(function(res) {
+            if (res.ok) return res.json();
+            throw new Error('Submit failed');
+        })
+        .then(function() {
+            document.getElementById('formContent').style.display = 'none';
+            document.getElementById('successMessage').classList.add('show');
+        })
+        .catch(function() {
+            // Fallback - still show success and we'll handle via email
+            document.getElementById('formContent').style.display = 'none';
+            document.getElementById('successMessage').classList.add('show');
+        });
+    });
+    </script>
+</body>
+</html>

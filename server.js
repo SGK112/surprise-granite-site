@@ -222,6 +222,115 @@ app.post('/api/send-estimate', async (req, res) => {
     }
 });
 
+// Remnant listing submission (from fabricators)
+app.post('/api/remnant-listing', async (req, res) => {
+    try {
+        const data = req.body;
+
+        await transporter.sendMail({
+            from: `"Remnant Marketplace" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: `New Remnant Listing: ${data.stoneName} ${data.stoneType}`,
+            html: `
+                <h2>New Remnant Listing Submitted</h2>
+                <h3>Stone Details</h3>
+                <p><strong>Stone Name:</strong> ${data.stoneName}</p>
+                <p><strong>Type:</strong> ${data.stoneType}</p>
+                <p><strong>Dimensions:</strong> ${data.length}" x ${data.width}" (${data.squareFeet} sq ft)</p>
+                <p><strong>Thickness:</strong> ${data.thickness}</p>
+                <p><strong>Finish:</strong> ${data.finish || 'Polished'}</p>
+                <p><strong>Condition:</strong> ${data.condition || 'Excellent'}</p>
+                <p><strong>Asking Price:</strong> $${data.price}</p>
+                <p><strong>Description:</strong> ${data.description || 'None'}</p>
+                <hr>
+                <h3>Fabricator Contact</h3>
+                <p><strong>Business:</strong> ${data.businessName}</p>
+                <p><strong>Contact:</strong> ${data.contactName}</p>
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Phone:</strong> ${data.phone}</p>
+                <p><strong>Location:</strong> ${data.city}, AZ ${data.zip}</p>
+                <hr>
+                <p><em>Submitted: ${new Date().toLocaleString()}</em></p>
+            `
+        });
+
+        // Send confirmation to fabricator
+        await transporter.sendMail({
+            from: `"Surprise Granite Marketplace" <${process.env.EMAIL_USER}>`,
+            to: data.email,
+            subject: 'Your Remnant Listing Has Been Received',
+            html: `
+                <h2>Thanks for listing your remnant!</h2>
+                <p>Hi ${data.contactName},</p>
+                <p>We've received your listing for <strong>${data.stoneName} ${data.stoneType}</strong>.</p>
+                <p>Our team will review it and add it to the marketplace within 24 hours. You'll receive another email once it's live.</p>
+                <h3>Listing Summary</h3>
+                <ul>
+                    <li>Stone: ${data.stoneName} ${data.stoneType}</li>
+                    <li>Size: ${data.length}" x ${data.width}" (${data.squareFeet} sq ft)</li>
+                    <li>Price: $${data.price}</li>
+                </ul>
+                <p>Questions? Reply to this email or call us at (602) 833-3189.</p>
+                <p>Thanks,<br>Surprise Granite Team</p>
+            `
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Remnant listing error:', error);
+        res.status(500).json({ error: 'Failed to submit listing' });
+    }
+});
+
+// Remnant notification signup
+app.post('/api/remnant-notify', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        await transporter.sendMail({
+            from: `"Remnant Marketplace" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: 'New Remnant Notification Signup',
+            html: `<p>New remnant notification signup: <strong>${email}</strong></p><p>Date: ${new Date().toLocaleString()}</p>`
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Notify signup error:', error);
+        res.status(500).json({ error: 'Failed to signup' });
+    }
+});
+
+// Remnant inquiry (from consumers)
+app.post('/api/remnant-inquiry', async (req, res) => {
+    try {
+        const data = req.body;
+
+        await transporter.sendMail({
+            from: `"Remnant Inquiry" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: `Remnant Inquiry: ${data.stoneName}`,
+            html: `
+                <h2>New Remnant Inquiry</h2>
+                <p><strong>Stone:</strong> ${data.stoneName}</p>
+                <hr>
+                <h3>Customer Info</h3>
+                <p><strong>Name:</strong> ${data.name}</p>
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Phone:</strong> ${data.phone}</p>
+                <p><strong>Message:</strong> ${data.message || 'No message'}</p>
+                <hr>
+                <p><em>Submitted: ${new Date().toLocaleString()}</em></p>
+            `
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Remnant inquiry error:', error);
+        res.status(500).json({ error: 'Failed to submit inquiry' });
+    }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
