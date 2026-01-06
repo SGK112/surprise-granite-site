@@ -614,11 +614,11 @@
             }
         }
 
-        /* Enhanced Mobile Measurement Inputs */
+        /* Mobile Measurement Inputs */
         @media (max-width: 500px) {
             .input-row {
                 grid-template-columns: 1fr;
-                gap: 16px;
+                gap: 20px;
             }
 
             .input-group {
@@ -626,75 +626,67 @@
             }
 
             .input-group label {
-                font-size: 0.95rem;
-                font-weight: 600;
-                margin-bottom: 8px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                margin-bottom: 10px;
                 display: block;
             }
 
-            .measurement-inputs {
-                display: grid;
-                grid-template-columns: 1fr auto auto;
-                gap: 10px;
+            .measurement-input-simple {
+                display: flex;
                 align-items: center;
+                gap: 10px;
             }
 
-            .input-wrapper {
-                min-width: 0;
-            }
-
-            .input-wrapper input {
-                width: 100%;
-                min-width: 80px;
-                padding: 16px 14px;
-                font-size: 1.25rem;
-                font-weight: 600;
+            .measurement-input-simple input {
+                flex: 1;
+                min-width: 100px;
+                padding: 18px 16px;
+                font-size: 1.5rem;
+                font-weight: 700;
                 text-align: center;
                 border-radius: 12px;
-                -webkit-appearance: none;
-                -moz-appearance: textfield;
+                border: 2px solid #ddd;
             }
 
-            /* Hide number spinner on mobile */
-            .input-wrapper input::-webkit-outer-spin-button,
-            .input-wrapper input::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
+            .measurement-input-simple input:focus {
+                border-color: #f9cb00;
+                outline: none;
+            }
+
+            .fraction-select {
+                padding: 18px 12px;
+                font-size: 1.4rem;
+                font-weight: 600;
+                min-width: 70px;
+                border-radius: 12px;
+                padding-right: 30px;
+            }
+
+            .measurement-input-simple .unit-label {
+                font-size: 1.2rem;
+                font-weight: 700;
+            }
+
+            /* Larger touch targets for selects */
+            .backsplash-select,
+            .finished-edges-select {
+                padding: 16px 14px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 380px) {
+            .measurement-input-simple input {
+                padding: 16px 12px;
+                font-size: 1.3rem;
             }
 
             .fraction-select {
                 padding: 16px 10px;
-                font-size: 1.1rem;
-                font-weight: 600;
-                min-width: 75px;
-                border-radius: 12px;
-                text-align: center;
-            }
-
-            .input-unit-label {
-                font-size: 1rem;
-                font-weight: 600;
-                color: #666;
-                padding-left: 4px;
-            }
-        }
-
-        /* Extra small screens - stack fraction below */
-        @media (max-width: 380px) {
-            .measurement-inputs {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .input-wrapper {
-                flex: 1 1 60%;
-                min-width: 100px;
-            }
-
-            .fraction-select {
-                flex: 0 0 auto;
-                min-width: 70px;
+                font-size: 1.2rem;
+                min-width: 60px;
             }
 
             .input-unit-label {
