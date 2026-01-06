@@ -503,14 +503,14 @@
 
         if (authError) throw authError;
 
-        // Also store in users table
+        // Store in sg_users table (Surprise Granite specific)
         const { error: profileError } = await supabase
-          .from('users')
+          .from('sg_users')
           .insert([{
             id: authData.user.id,
             email: email,
             full_name: name,
-            phone: phone,
+            phone: phone || null,
             account_type: accountType,
             company_name: company || null,
             license_number: license || null
@@ -534,14 +534,15 @@
     async function loadUserProfile() {
       if (!currentUser) return;
 
-      // Try to load from users table
+      // Load from sg_users table (Surprise Granite specific)
       try {
         const { data: profile } = await supabase
-          .from('users')
+          .from('sg_users')
           .select('*')
           .eq('id', currentUser.id)
           .single();
 
+        // Get data from profile or auth metadata
         const meta = currentUser.user_metadata || {};
         const name = profile?.full_name || meta.full_name || currentUser.email.split('@')[0];
         const accountType = profile?.account_type || meta.account_type || 'homeowner';
