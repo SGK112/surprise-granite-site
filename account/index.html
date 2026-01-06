@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -222,7 +222,7 @@
 </head>
 <body>
   <nav class="navbar">
-    <a href="/"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite"/></a>
+    <a href="/"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb25e9dfbb16b_surprise-granite-transparent-light-wide.svg" alt="Surprise Granite"/></a>
     <a href="/">Back to Site</a>
   </nav>
 
@@ -370,7 +370,9 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabase v2 CDN exposes createClient on the supabase global
+        const { createClient } = window.supabase || supabase;
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
@@ -384,6 +386,7 @@
         }
       } catch (err) {
         console.error('Init error:', err);
+        // Show auth form even on error
         showAuth();
       }
     });
