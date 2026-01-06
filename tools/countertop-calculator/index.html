@@ -536,6 +536,94 @@
             }
         }
 
+        /* Enhanced Mobile Measurement Inputs */
+        @media (max-width: 500px) {
+            .input-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .input-group {
+                width: 100%;
+            }
+
+            .input-group label {
+                font-size: 0.95rem;
+                font-weight: 600;
+                margin-bottom: 8px;
+                display: block;
+            }
+
+            .measurement-inputs {
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .input-wrapper {
+                min-width: 0;
+            }
+
+            .input-wrapper input {
+                width: 100%;
+                min-width: 80px;
+                padding: 16px 14px;
+                font-size: 1.25rem;
+                font-weight: 600;
+                text-align: center;
+                border-radius: 12px;
+                -webkit-appearance: none;
+                -moz-appearance: textfield;
+            }
+
+            /* Hide number spinner on mobile */
+            .input-wrapper input::-webkit-outer-spin-button,
+            .input-wrapper input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .fraction-select {
+                padding: 16px 10px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                min-width: 75px;
+                border-radius: 12px;
+                text-align: center;
+            }
+
+            .input-unit-label {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #666;
+                padding-left: 4px;
+            }
+        }
+
+        /* Extra small screens - stack fraction below */
+        @media (max-width: 380px) {
+            .measurement-inputs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .input-wrapper {
+                flex: 1 1 60%;
+                min-width: 100px;
+            }
+
+            .fraction-select {
+                flex: 0 0 auto;
+                min-width: 70px;
+            }
+
+            .input-unit-label {
+                flex: 0 0 auto;
+            }
+        }
+
         /* Add Section Button */
         .add-section-btn {
             width: 100%;
@@ -1297,7 +1385,7 @@
                                 <label>Length</label>
                                 <div class="measurement-inputs">
                                     <div class="input-wrapper">
-                                        <input type="number" class="length-whole" placeholder="0" min="0" step="1" oninput="calculateAll()">
+                                        <input type="number" class="length-whole" placeholder="0" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
                                     </div>
                                     <select class="fraction-select length-fraction" onchange="calculateAll()">
                                         <option value="0">0</option>
@@ -1324,7 +1412,7 @@
                                 <label>Depth</label>
                                 <div class="measurement-inputs">
                                     <div class="input-wrapper">
-                                        <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
+                                        <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
                                     </div>
                                     <select class="fraction-select depth-fraction" onchange="calculateAll()">
                                         <option value="0">0</option>
@@ -1804,7 +1892,7 @@
                         <label>Length</label>
                         <div class="measurement-inputs">
                             <div class="input-wrapper">
-                                <input type="number" class="length-whole" placeholder="0" min="0" step="1" oninput="calculateAll()">
+                                <input type="number" class="length-whole" placeholder="0" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
                             </div>
                             <select class="fraction-select length-fraction" onchange="calculateAll()">
                                 ${fractionOptions}
@@ -1816,7 +1904,7 @@
                         <label>Depth</label>
                         <div class="measurement-inputs">
                             <div class="input-wrapper">
-                                <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" oninput="calculateAll()">
+                                <input type="number" class="depth-whole" placeholder="25" value="25" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
                             </div>
                             <select class="fraction-select depth-fraction" onchange="calculateAll()">
                                 ${fractionOptions.replace('value="0.5">1/2', 'value="0.5" selected>1/2')}
