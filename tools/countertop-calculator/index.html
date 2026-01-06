@@ -533,26 +533,19 @@
             white-space: nowrap;
         }
 
-        /* Feet + Inches Input Layout */
-        .measurement-inputs-ft-in {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .ft-in-group {
+        /* Simple Measurement Input Layout - inches + fraction */
+        .measurement-input-simple {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .ft-in-group input {
-            width: 70px;
+        .measurement-input-simple input {
+            width: 80px;
             padding: 14px 12px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
             text-align: center;
             background: #fff;
@@ -561,57 +554,52 @@
             -moz-appearance: textfield;
         }
 
-        .ft-in-group input::-webkit-outer-spin-button,
-        .ft-in-group input::-webkit-inner-spin-button {
+        .measurement-input-simple input::-webkit-outer-spin-button,
+        .measurement-input-simple input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
 
-        .ft-in-group input:focus {
+        .measurement-input-simple input:focus {
             outline: none;
             border-color: #f9cb00;
             box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.1);
         }
 
-        .ft-in-group .unit-label {
-            font-size: 0.95rem;
+        .measurement-input-simple .unit-label {
+            font-size: 1rem;
             font-weight: 600;
             color: #666;
-            min-width: 20px;
         }
 
-        .fraction-select-compact {
-            padding: 14px 8px;
+        .fraction-select {
+            padding: 14px 10px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 500;
             background: #fff;
             color: #1a1a2e;
             cursor: pointer;
-            min-width: 55px;
+            min-width: 60px;
             transition: all 0.2s;
             -webkit-appearance: none;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 8px center;
-            padding-right: 24px;
+            padding-right: 28px;
         }
 
-        .fraction-select-compact:focus {
+        .fraction-select:focus {
             outline: none;
             border-color: #f9cb00;
             box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.1);
         }
 
-        /* Depth is just inches, no feet */
-        .input-group-depth .measurement-inputs-ft-in {
-            gap: 8px;
-        }
-
-        .input-group-depth .ft-in-group input {
-            width: 80px;
+        /* Length input - slightly wider for larger numbers */
+        .input-group-length .measurement-input-simple input {
+            width: 90px;
         }
 
         @media (max-width: 700px) {
@@ -1472,45 +1460,37 @@
                         </div>
                         <div class="input-row">
                             <div class="input-group input-group-length">
-                                <label>Length</label>
-                                <div class="measurement-inputs-ft-in">
-                                    <div class="ft-in-group">
-                                        <input type="number" class="length-feet" placeholder="0" min="0" max="50" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                        <span class="unit-label">ft</span>
-                                    </div>
-                                    <div class="ft-in-group">
-                                        <input type="number" class="length-inches" placeholder="0" min="0" max="11" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                        <select class="fraction-select-compact length-fraction" onchange="calculateAll()">
-                                            <option value="0">0</option>
-                                            <option value="0.125">⅛</option>
-                                            <option value="0.25">¼</option>
-                                            <option value="0.375">⅜</option>
-                                            <option value="0.5">½</option>
-                                            <option value="0.625">⅝</option>
-                                            <option value="0.75">¾</option>
-                                            <option value="0.875">⅞</option>
-                                        </select>
-                                        <span class="unit-label">in</span>
-                                    </div>
+                                <label>Length (inches)</label>
+                                <div class="measurement-input-simple">
+                                    <input type="number" class="length-inches" placeholder="110" min="0" max="600" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
+                                    <select class="fraction-select length-fraction" onchange="calculateAll()">
+                                        <option value="0">0</option>
+                                        <option value="0.125">⅛</option>
+                                        <option value="0.25">¼</option>
+                                        <option value="0.375">⅜</option>
+                                        <option value="0.5">½</option>
+                                        <option value="0.625">⅝</option>
+                                        <option value="0.75">¾</option>
+                                        <option value="0.875">⅞</option>
+                                    </select>
+                                    <span class="unit-label">in</span>
                                 </div>
                             </div>
                             <div class="input-group input-group-depth">
-                                <label>Depth</label>
-                                <div class="measurement-inputs-ft-in">
-                                    <div class="ft-in-group">
-                                        <input type="number" class="depth-inches" placeholder="25" value="25" min="0" max="48" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                        <select class="fraction-select-compact depth-fraction" onchange="calculateAll()">
-                                            <option value="0">0</option>
-                                            <option value="0.125">⅛</option>
-                                            <option value="0.25">¼</option>
-                                            <option value="0.375">⅜</option>
-                                            <option value="0.5" selected>½</option>
-                                            <option value="0.625">⅝</option>
-                                            <option value="0.75">¾</option>
-                                            <option value="0.875">⅞</option>
-                                        </select>
-                                        <span class="unit-label">in</span>
-                                    </div>
+                                <label>Depth (inches)</label>
+                                <div class="measurement-input-simple">
+                                    <input type="number" class="depth-inches" placeholder="26" value="26" min="0" max="48" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
+                                    <select class="fraction-select depth-fraction" onchange="calculateAll()">
+                                        <option value="0">0</option>
+                                        <option value="0.125">⅛</option>
+                                        <option value="0.25">¼</option>
+                                        <option value="0.375">⅜</option>
+                                        <option value="0.5" selected>½</option>
+                                        <option value="0.625">⅝</option>
+                                        <option value="0.75">¾</option>
+                                        <option value="0.875">⅞</option>
+                                    </select>
+                                    <span class="unit-label">in</span>
                                 </div>
                             </div>
                             <div class="input-group">
@@ -1959,31 +1939,23 @@
                 </div>
                 <div class="input-row">
                     <div class="input-group input-group-length">
-                        <label>Length</label>
-                        <div class="measurement-inputs-ft-in">
-                            <div class="ft-in-group">
-                                <input type="number" class="length-feet" placeholder="0" min="0" max="50" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                <span class="unit-label">ft</span>
-                            </div>
-                            <div class="ft-in-group">
-                                <input type="number" class="length-inches" placeholder="0" min="0" max="11" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                <select class="fraction-select-compact length-fraction" onchange="calculateAll()">
-                                    ${fractionOptionsCompact}
-                                </select>
-                                <span class="unit-label">in</span>
-                            </div>
+                        <label>Length (inches)</label>
+                        <div class="measurement-input-simple">
+                            <input type="number" class="length-inches" placeholder="110" min="0" max="600" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
+                            <select class="fraction-select length-fraction" onchange="calculateAll()">
+                                ${fractionOptionsCompact}
+                            </select>
+                            <span class="unit-label">in</span>
                         </div>
                     </div>
                     <div class="input-group input-group-depth">
-                        <label>Depth</label>
-                        <div class="measurement-inputs-ft-in">
-                            <div class="ft-in-group">
-                                <input type="number" class="depth-inches" placeholder="25" value="25" min="0" max="48" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
-                                <select class="fraction-select-compact depth-fraction" onchange="calculateAll()">
-                                    ${fractionOptionsCompact.replace('value="0.5">½', 'value="0.5" selected>½')}
-                                </select>
-                                <span class="unit-label">in</span>
-                            </div>
+                        <label>Depth (inches)</label>
+                        <div class="measurement-input-simple">
+                            <input type="number" class="depth-inches" placeholder="26" value="26" min="0" max="48" step="1" inputmode="numeric" pattern="[0-9]*" oninput="calculateAll()">
+                            <select class="fraction-select depth-fraction" onchange="calculateAll()">
+                                ${fractionOptionsCompact.replace('value="0.5">½', 'value="0.5" selected>½')}
+                            </select>
+                            <span class="unit-label">in</span>
                         </div>
                     </div>
                     <div class="input-group">
@@ -2023,7 +1995,7 @@
             calculateAll();
 
             // Focus the new length feet input
-            section.querySelector('.length-feet').focus();
+            section.querySelector('.length-inches').focus();
         }
 
         function removeSection(btn) {
@@ -2059,13 +2031,12 @@
             const edgePricePerLF = edgeTierInput ? parseFloat(edgeTierInput.value) : 0;
 
             sections.forEach(section => {
-                // Get length: feet + inches + fraction
-                const lengthFeet = parseFloat(section.querySelector('.length-feet').value) || 0;
+                // Get length: whole inches + fraction
                 const lengthInches = parseFloat(section.querySelector('.length-inches').value) || 0;
                 const lengthFraction = parseFloat(section.querySelector('.length-fraction').value) || 0;
-                const length = (lengthFeet * 12) + lengthInches + lengthFraction;
+                const length = lengthInches + lengthFraction;
 
-                // Get depth: inches + fraction (depth is typically under 4 feet, so just inches)
+                // Get depth: whole inches + fraction
                 const depthInches = parseFloat(section.querySelector('.depth-inches').value) || 0;
                 const depthFraction = parseFloat(section.querySelector('.depth-fraction').value) || 0;
                 const depth = depthInches + depthFraction;
@@ -2175,13 +2146,12 @@
 
             // Build section details
             sections.forEach((section, index) => {
-                // Get length: feet + inches + fraction
-                const lengthFeet = parseFloat(section.querySelector('.length-feet').value) || 0;
+                // Get length: whole inches + fraction
                 const lengthInches = parseFloat(section.querySelector('.length-inches').value) || 0;
                 const lengthFraction = parseFloat(section.querySelector('.length-fraction').value) || 0;
-                const length = (lengthFeet * 12) + lengthInches + lengthFraction;
+                const length = lengthInches + lengthFraction;
 
-                // Get depth: inches + fraction
+                // Get depth: whole inches + fraction
                 const depthInches = parseFloat(section.querySelector('.depth-inches').value) || 0;
                 const depthFraction = parseFloat(section.querySelector('.depth-fraction').value) || 0;
                 const depth = depthInches + depthFraction;
@@ -2216,19 +2186,10 @@
                 totalEdgeLF += edgeLF;
 
                 // Format dimensions with fractions
-                const fracs = {'0':'', '0.0625':'1/16', '0.125':'1/8', '0.1875':'3/16', '0.25':'1/4', '0.3125':'5/16', '0.375':'3/8', '0.4375':'7/16', '0.5':'1/2', '0.5625':'9/16', '0.625':'5/8', '0.6875':'11/16', '0.75':'3/4', '0.8125':'13/16', '0.875':'7/8', '0.9375':'15/16'};
+                const fracs = {'0':'', '0.125':'1/8', '0.25':'1/4', '0.375':'3/8', '0.5':'1/2', '0.625':'5/8', '0.75':'3/4', '0.875':'7/8'};
 
-                // Format length as feet + inches
-                const formatLength = (feet, inches, frac) => {
-                    const fracStr = fracs[String(frac)] || '';
-                    if (feet > 0) {
-                        return `${feet}' ${inches}${fracStr ? ' ' + fracStr : ''}"`;
-                    }
-                    return `${inches}${fracStr ? ' ' + fracStr : ''}"`;
-                };
-
-                // Format depth as inches only
-                const formatDepth = (inches, frac) => {
+                // Format measurement as inches with fraction
+                const formatMeasurement = (inches, frac) => {
                     const fracStr = fracs[String(frac)] || '';
                     return `${inches}${fracStr ? ' ' + fracStr : ''}"`;
                 };
@@ -2240,7 +2201,7 @@
                     <div class="quote-section-detail">
                         <div class="section-name">Section ${index + 1}</div>
                         <div class="section-dims">
-                            ${formatLength(lengthFeet, lengthInches, lengthFracVal)} × ${formatDepth(depthInches, depthFracVal)} = ${counterSqft.toFixed(2)} sqft
+                            ${formatMeasurement(lengthInches, lengthFracVal)} × ${formatMeasurement(depthInches, depthFracVal)} = ${counterSqft.toFixed(2)} sqft
                             ${backsplashHeight > 0 ? `<br>Backsplash: ${backsplashHeight}" height = ${splashSqft.toFixed(2)} sqft` : ''}
                             <br>Edges: ${edgeLabels[finishedEdges]} (${edgeLF.toFixed(1)} lf)
                         </div>
