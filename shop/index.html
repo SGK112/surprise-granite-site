@@ -1436,9 +1436,40 @@ function expandFilterBar() {
     });
 })();
 
-// Load initial products
+// Load initial products with URL parameter support
 document.addEventListener('DOMContentLoaded', function() {
-    filterProducts('all', document.querySelector('.filter-btn[data-collection="all"]'));
+    var urlParams = new URLSearchParams(window.location.search);
+    var searchParam = urlParams.get('search');
+    var collectionParam = urlParams.get('collection');
+
+    // If search param exists, perform search
+    if (searchParam) {
+        document.getElementById('shopSearch').value = searchParam;
+
+        // Set collection filter if provided
+        if (collectionParam && SHOPIFY_CONFIG.collections[collectionParam]) {
+            var collectionBtn = document.querySelector('.filter-btn[data-collection="' + collectionParam + '"]');
+            if (collectionBtn) {
+                document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+                collectionBtn.classList.add('active');
+                currentFilter = collectionParam;
+            }
+        }
+
+        // Perform search
+        searchProducts();
+    } else if (collectionParam && collectionParam !== 'all') {
+        // Just filter by collection
+        var collectionBtn = document.querySelector('.filter-btn[data-collection="' + collectionParam + '"]');
+        if (collectionBtn) {
+            filterProducts(collectionParam, collectionBtn);
+        } else {
+            filterProducts('all', document.querySelector('.filter-btn[data-collection="all"]'));
+        }
+    } else {
+        // Default: load all products
+        filterProducts('all', document.querySelector('.filter-btn[data-collection="all"]'));
+    }
 });
 </script>
 
