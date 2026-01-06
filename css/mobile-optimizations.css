@@ -367,6 +367,38 @@ html {
   font-weight: 700;
 }
 
+/* ===== FIX: Hide leftover Webflow navbar elements when secondary header is used ===== */
+/* Hide all leftover Webflow navbar/search components on pages with secondary header */
+.page-wrapper:has(.header) .navbar-search_mobile-component,
+.page-wrapper:has(.header) .navbar-fixed_wrapper,
+.page-wrapper:has(.header) .navbar_wrapper,
+.page-wrapper:has(.header) .cart-popup_component,
+.page-wrapper:has(.header) .mobile-search_overlay-trigger {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+/* Also target siblings directly for browsers that don't support :has() */
+.header ~ .navbar-search_mobile-component,
+.mobile-nav ~ .navbar-search_mobile-component,
+.mobile-nav + div:not(.main-wrapper) {
+  display: none !important;
+}
+
+/* Reset main-wrapper padding when secondary header is present */
+.page-wrapper:has(.header) .main-wrapper {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Hide any empty navbar wrapper that wasn't fully removed */
+.navbar-fixed_wrapper:empty,
+.navbar_wrapper:empty {
+  display: none !important;
+}
+
 /* ===== NAVIGATION MOBILE ===== */
 @media (max-width: 991px) {
   /* Hamburger button */
