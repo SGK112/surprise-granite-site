@@ -364,18 +364,18 @@
     const SUPABASE_URL = 'https://cpnqippzgcezidoorwry.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbnFpcHB6Z2Nlemlkb29yd3J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODY4NDQsImV4cCI6MjA4MjU2Mjg0NH0.KGfkqMjkFGnH8sKnc4ghNMSKp82hJm6DEDrabLNKg_w';
 
-    let supabase;
+    let supabaseClient;
     let currentUser = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         // Supabase v2 CDN exposes createClient on the supabase global
-        const { createClient } = window.supabase || supabase;
-        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = window.supabase;
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session) {
           currentUser = session.user;
@@ -457,7 +457,7 @@
       const password = document.getElementById('login-password').value;
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
         if (error) throw error;
 
@@ -490,7 +490,7 @@
 
       try {
         // Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
           email,
           password,
           options: {
@@ -507,7 +507,7 @@
         if (authError) throw authError;
 
         // Store in sg_users table (Surprise Granite specific)
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseClient
           .from('sg_users')
           .insert([{
             id: authData.user.id,
@@ -539,7 +539,7 @@
 
       // Load from sg_users table (Surprise Granite specific)
       try {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseClient
           .from('sg_users')
           .select('*')
           .eq('id', currentUser.id)
@@ -579,7 +579,7 @@
     }
 
     async function handleLogout() {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       currentUser = null;
       showAuth();
     }
