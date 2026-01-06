@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>My Account | Surprise Granite</title>
+  <meta name="description" content="Manage your Surprise Granite account, view projects, and access exclusive resources."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f7;
+      min-height: 100vh;
+      color: #1a1a2e;
+    }
+    .navbar {
+      background: #1a1a2e;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar img { height: 32px; }
+    .navbar a { color: #f9cb00; text-decoration: none; font-weight: 500; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+    .loading { text-align: center; padding: 100px; color: #666; }
+
+    /* Auth Forms */
+    .auth-container {
+      max-width: 420px;
+      margin: 60px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 40px;
+    }
+    .auth-header { text-align: center; margin-bottom: 32px; }
+    .auth-header h1 { font-size: 28px; margin-bottom: 8px; }
+    .auth-header p { color: #666; }
+    .auth-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #e5e5e5;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: #f5f5f5;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .auth-tab.active {
+      background: #f9cb00;
+      color: #1a1a2e;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #333;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #f9cb00;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #f9cb00;
+      color: #1a1a2e;
+    }
+    .btn-primary:hover { background: #e6b800; transform: translateY(-1px); }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .error-msg {
+      background: #fee;
+      color: #c00;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    .success-msg {
+      background: #efe;
+      color: #060;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    .account-type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .account-type-card {
+      border: 2px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .account-type-card:hover { border-color: #f9cb00; }
+    .account-type-card.selected {
+      border-color: #f9cb00;
+      background: #fffef0;
+    }
+    .account-type-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .account-type-card .title { font-weight: 600; font-size: 14px; }
+    .account-type-card .desc { font-size: 12px; color: #666; margin-top: 4px; }
+    .pro-fields { display: none; }
+    .pro-fields.visible { display: block; }
+
+    /* Dashboard */
+    .dashboard { display: none; }
+    .dashboard.visible { display: block; }
+    .dashboard-header {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .user-info { display: flex; align-items: center; gap: 20px; }
+    .user-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #f9cb00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .user-details h2 { font-size: 24px; margin-bottom: 4px; }
+    .user-details .badge {
+      display: inline-block;
+      background: #1a1a2e;
+      color: #f9cb00;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .dash-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .dash-card h3 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #666;
+    }
+    .dash-card .value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .quick-actions { margin-top: 20px; }
+    .quick-actions a {
+      display: block;
+      padding: 12px 16px;
+      background: #f5f5f7;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+      transition: background 0.2s;
+    }
+    .quick-actions a:hover { background: #e5e5e7; }
+    .logout-btn {
+      background: none;
+      border: 2px solid #e5e5e5;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-top: 20px;
+    }
+    .logout-btn:hover { border-color: #c00; color: #c00; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/"><img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite"/></a>
+    <a href="/">Back to Site</a>
+  </nav>
+
+  <div class="container">
+    <div id="loading" class="loading">Loading...</div>
+
+    <!-- Auth Forms -->
+    <div id="auth-section" class="auth-container" style="display:none;">
+      <div class="auth-header">
+        <h1>Welcome</h1>
+        <p>Sign in or create an account</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="showTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="showTab('signup')">Create Account</button>
+      </div>
+
+      <div id="error-msg" class="error-msg"></div>
+      <div id="success-msg" class="success-msg"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" required placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" required placeholder="Your password"/>
+        </div>
+        <button type="submit" class="btn btn-primary" id="login-btn">Sign In</button>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="signup-form" style="display:none;" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signup-name" required placeholder="John Smith"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signup-email" required placeholder="you@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters"/>
+        </div>
+        <div class="form-group">
+          <label>Phone (optional)</label>
+          <input type="tel" id="signup-phone" placeholder="(555) 123-4567"/>
+        </div>
+
+        <label style="font-size:14px;font-weight:500;margin-bottom:12px;display:block;">I am a...</label>
+        <div class="account-type-grid">
+          <div class="account-type-card selected" onclick="selectAccountType('homeowner', this)">
+            <div class="icon">🏠</div>
+            <div class="title">Homeowner</div>
+            <div class="desc">Shopping for my home</div>
+          </div>
+          <div class="account-type-card" onclick="selectAccountType('pro_fabricator', this)">
+            <div class="icon">🔧</div>
+            <div class="title">Fabricator</div>
+            <div class="desc">Stone fabrication</div>
+          </div>
+          <div class="account-type-card" onclick="selectAccountType('pro_contractor', this)">
+            <div class="icon">👷</div>
+            <div class="title">Contractor</div>
+            <div class="desc">General contractor</div>
+          </div>
+          <div class="account-type-card" onclick="selectAccountType('pro_designer', this)">
+            <div class="icon">🎨</div>
+            <div class="title">Designer</div>
+            <div class="desc">Interior design</div>
+          </div>
+        </div>
+        <input type="hidden" id="signup-account-type" value="homeowner"/>
+
+        <div id="pro-fields" class="pro-fields">
+          <div class="form-group">
+            <label>Company Name</label>
+            <input type="text" id="signup-company" placeholder="Your Company LLC"/>
+          </div>
+          <div class="form-group">
+            <label>License Number (optional)</label>
+            <input type="text" id="signup-license" placeholder="ROC #123456"/>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="signup-btn">Create Account</button>
+      </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+      <div class="dashboard-header">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div class="user-details">
+            <h2 id="user-name">Welcome</h2>
+            <span class="badge" id="user-badge">Member</span>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dash-card">
+          <h3>Quick Actions</h3>
+          <div class="quick-actions">
+            <a href="/get-a-free-estimate/">Get Free Estimate</a>
+            <a href="/tools/countertop-calculator/">Countertop Calculator</a>
+            <a href="/materials/all-countertops/">Browse Countertops</a>
+            <a href="/contact-us/">Contact Us</a>
+          </div>
+        </div>
+
+        <div class="dash-card" id="pro-resources" style="display:none;">
+          <h3>Pro Resources</h3>
+          <div class="quick-actions">
+            <a href="/for-pros/fabricators-installers/">Fabricator Portal</a>
+            <a href="/products/arizona-stone-marketplace/">Stone Marketplace</a>
+            <a href="/services/commercial/">Commercial Services</a>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Account Info</h3>
+          <p id="user-email" style="color:#666;margin-bottom:12px;"></p>
+          <p id="user-phone" style="color:#666;margin-bottom:12px;"></p>
+          <p id="user-company" style="color:#666;"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://cpnqippzgcezidoorwry.supabase.co';
+    // Get this from: Supabase Dashboard > Project Settings > API > Project API keys > anon/public
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwbnFpcHB6Z2Nlemlkb29yd3J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODY4NDQsImV4cCI6MjA4MjU2Mjg0NH0.lTwUkK0d_wfLZygYlRXm0vfFEF7A6swVVYfkVqTpHMg';
+
+    let supabase;
+    let currentUser = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          currentUser = session.user;
+          await loadUserProfile();
+          showDashboard();
+        } else {
+          showAuth();
+        }
+      } catch (err) {
+        console.error('Init error:', err);
+        showAuth();
+      }
+    });
+
+    function showAuth() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('auth-section').style.display = 'block';
+      document.getElementById('dashboard').classList.remove('visible');
+    }
+
+    function showDashboard() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('dashboard').classList.add('visible');
+    }
+
+    function showTab(tab) {
+      const tabs = document.querySelectorAll('.auth-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+      hideMessages();
+    }
+
+    function selectAccountType(type, el) {
+      document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('signup-account-type').value = type;
+
+      const proFields = document.getElementById('pro-fields');
+      if (type.startsWith('pro_')) {
+        proFields.classList.add('visible');
+      } else {
+        proFields.classList.remove('visible');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('success-msg').style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      const el = document.getElementById('success-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('error-msg').style.display = 'none';
+    }
+
+    function hideMessages() {
+      document.getElementById('error-msg').style.display = 'none';
+      document.getElementById('success-msg').style.display = 'none';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideMessages();
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) throw error;
+
+        currentUser = data.user;
+        await loadUserProfile();
+        showDashboard();
+      } catch (err) {
+        showError(err.message || 'Failed to sign in');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      hideMessages();
+
+      const btn = document.getElementById('signup-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const phone = document.getElementById('signup-phone').value;
+      const accountType = document.getElementById('signup-account-type').value;
+      const company = document.getElementById('signup-company').value;
+      const license = document.getElementById('signup-license').value;
+
+      try {
+        // Create auth user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              phone: phone,
+              account_type: accountType,
+              company_name: company,
+              license_number: license
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        // Also store in users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([{
+            id: authData.user.id,
+            email: email,
+            full_name: name,
+            phone: phone,
+            account_type: accountType,
+            company_name: company || null,
+            license_number: license || null
+          }]);
+
+        if (profileError) {
+          console.warn('Profile insert warning:', profileError);
+        }
+
+        showSuccess('Account created! Check your email to verify, then sign in.');
+        showTab('login');
+        document.querySelector('.auth-tab').click();
+      } catch (err) {
+        showError(err.message || 'Failed to create account');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    }
+
+    async function loadUserProfile() {
+      if (!currentUser) return;
+
+      // Try to load from users table
+      try {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        const meta = currentUser.user_metadata || {};
+        const name = profile?.full_name || meta.full_name || currentUser.email.split('@')[0];
+        const accountType = profile?.account_type || meta.account_type || 'homeowner';
+        const phone = profile?.phone || meta.phone || '';
+        const company = profile?.company_name || meta.company_name || '';
+
+        // Update UI
+        document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('user-name').textContent = name;
+        document.getElementById('user-email').textContent = currentUser.email;
+        document.getElementById('user-phone').textContent = phone ? `Phone: ${phone}` : '';
+        document.getElementById('user-company').textContent = company ? `Company: ${company}` : '';
+
+        // Badge
+        const badgeText = {
+          'homeowner': 'Homeowner',
+          'pro_fabricator': 'Pro Fabricator',
+          'pro_contractor': 'Pro Contractor',
+          'pro_designer': 'Pro Designer',
+          'admin': 'Admin'
+        };
+        document.getElementById('user-badge').textContent = badgeText[accountType] || 'Member';
+
+        // Show pro resources if pro account
+        if (accountType.startsWith('pro_')) {
+          document.getElementById('pro-resources').style.display = 'block';
+        }
+      } catch (err) {
+        console.warn('Profile load warning:', err);
+      }
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      currentUser = null;
+      showAuth();
+    }
+  </script>
+</body>
+</html>
