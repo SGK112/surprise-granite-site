@@ -456,6 +456,175 @@
       gap: 20px;
     }
 
+    /* Saved Floors Grid */
+    .saved-floors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .saved-floor-item {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .saved-floor-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .saved-floor-image {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+    }
+
+    .saved-floor-content {
+      padding: 12px;
+    }
+
+    .saved-floor-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .saved-floor-material {
+      font-size: 11px;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .saved-floor-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .saved-floor-spec {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .saved-floor-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .saved-floor-actions a,
+    .saved-floor-actions button {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .saved-floor-view {
+      background: var(--primary);
+      color: var(--dark);
+    }
+
+    .saved-floor-remove {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .saved-floor-remove:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    /* Quote Request Modal */
+    .quote-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .quote-modal-content {
+      background: var(--dark-elevated);
+      border-radius: 16px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .quote-modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quote-modal-body {
+      padding: 20px;
+    }
+
+    .quote-items-list {
+      margin-bottom: 20px;
+    }
+
+    .quote-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .quote-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .quote-item-info {
+      flex: 1;
+    }
+
+    .quote-item-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .quote-item-material {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
     /* Leads Table */
     .table-container {
       background: var(--dark-elevated);
@@ -1623,6 +1792,11 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             My Profile
           </a>
+          <a class="nav-item" data-page="saved-floors" onclick="showPage('saved-floors')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            Saved Floors
+            <span class="nav-badge" id="saved-floors-count">0</span>
+          </a>
         </div>
 
         <div class="nav-section" id="admin-nav" style="display: none;">
@@ -1753,6 +1927,36 @@
                   </div>
                 </div>
               </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Saved Floors Page -->
+        <section id="page-saved-floors" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Your Saved Floors</h3>
+              <button class="btn btn-primary" onclick="requestQuoteForFavorites()" id="request-quote-btn" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Request Quote
+              </button>
+            </div>
+            <div class="card-body">
+              <p style="color: #666; margin-bottom: 20px;">Browse flooring on your phone and swipe right to save your favorites. They'll appear here!</p>
+
+              <div id="saved-floors-loading" style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p style="color: #666; margin-top: 12px;">Loading your saved floors...</p>
+              </div>
+
+              <div id="saved-floors-empty" style="display: none; text-align: center; padding: 40px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <h3 style="color: #666; margin: 16px 0 8px;">No Saved Floors Yet</h3>
+                <p style="color: #999; margin-bottom: 20px;">Browse our flooring collection on your phone and swipe right to save your favorites!</p>
+                <a href="/materials/flooring/" class="btn btn-primary">Browse Flooring</a>
+              </div>
+
+              <div id="saved-floors-grid" class="saved-floors-grid" style="display: none;"></div>
             </div>
           </div>
         </section>
@@ -2357,6 +2561,12 @@
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('dashboard-app').style.display = 'block';
       setupDashboard();
+
+      // Handle hash navigation (e.g., /account/#saved-floors)
+      const hash = window.location.hash.replace('#', '');
+      if (hash && ['saved-floors', 'profile', 'leads', 'invoices', 'products'].includes(hash)) {
+        setTimeout(() => showPage(hash), 100);
+      }
     }
 
     function showAuthTab(tab) {
@@ -2492,6 +2702,266 @@
       } catch (err) {
         console.warn('Profile load error:', err);
       }
+
+      // Load saved floors count
+      loadSavedFloorsCount();
+    }
+
+    // ============ SAVED FLOORS FUNCTIONS ============
+
+    let savedFloors = [];
+
+    async function loadSavedFloorsCount() {
+      if (!currentUser) return;
+
+      try {
+        const { count } = await supabaseClient
+          .from('user_favorites')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id)
+          .eq('product_type', 'flooring');
+
+        const countEl = document.getElementById('saved-floors-count');
+        if (countEl) {
+          countEl.textContent = count || 0;
+          countEl.style.display = count > 0 ? 'inline' : 'none';
+        }
+      } catch (err) {
+        console.warn('Error loading saved floors count:', err);
+      }
+    }
+
+    async function loadSavedFloors() {
+      if (!currentUser) return;
+
+      const loadingEl = document.getElementById('saved-floors-loading');
+      const emptyEl = document.getElementById('saved-floors-empty');
+      const gridEl = document.getElementById('saved-floors-grid');
+      const quoteBtn = document.getElementById('request-quote-btn');
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_favorites')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .eq('product_type', 'flooring')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        savedFloors = data || [];
+
+        loadingEl.style.display = 'none';
+
+        if (savedFloors.length === 0) {
+          emptyEl.style.display = 'block';
+          gridEl.style.display = 'none';
+          quoteBtn.style.display = 'none';
+        } else {
+          emptyEl.style.display = 'none';
+          gridEl.style.display = 'grid';
+          quoteBtn.style.display = 'inline-flex';
+          renderSavedFloors();
+        }
+
+        // Update count
+        const countEl = document.getElementById('saved-floors-count');
+        if (countEl) {
+          countEl.textContent = savedFloors.length;
+          countEl.style.display = savedFloors.length > 0 ? 'inline' : 'none';
+        }
+
+      } catch (err) {
+        console.error('Error loading saved floors:', err);
+        loadingEl.innerHTML = '<p style="color: #ef4444;">Error loading saved floors. Please try again.</p>';
+      }
+    }
+
+    function renderSavedFloors() {
+      const gridEl = document.getElementById('saved-floors-grid');
+      if (!gridEl) return;
+
+      gridEl.innerHTML = savedFloors.map(floor => `
+        <div class="saved-floor-item" data-id="${floor.id}">
+          <img class="saved-floor-image" src="${floor.product_image || '/images/placeholder-floor.jpg'}" alt="${floor.product_title}" loading="lazy">
+          <div class="saved-floor-content">
+            <div class="saved-floor-title">${floor.product_title}</div>
+            ${floor.product_material ? `<div class="saved-floor-material">${floor.product_material}</div>` : ''}
+            <div class="saved-floor-specs">
+              ${floor.product_color ? `<span class="saved-floor-spec">${floor.product_color}</span>` : ''}
+              ${floor.product_thickness ? `<span class="saved-floor-spec">${floor.product_thickness}</span>` : ''}
+              ${floor.product_wear_layer ? `<span class="saved-floor-spec">${floor.product_wear_layer}</span>` : ''}
+            </div>
+            <div class="saved-floor-actions">
+              <a href="${floor.product_url}" class="saved-floor-view" target="_blank">View</a>
+              <button class="saved-floor-remove" onclick="removeSavedFloor('${floor.id}')">Remove</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function removeSavedFloor(id) {
+      if (!confirm('Remove this floor from your favorites?')) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('user_favorites')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', currentUser.id);
+
+        if (error) throw error;
+
+        // Remove from local array and re-render
+        savedFloors = savedFloors.filter(f => f.id !== id);
+        renderSavedFloors();
+
+        // Update count
+        const countEl = document.getElementById('saved-floors-count');
+        if (countEl) {
+          countEl.textContent = savedFloors.length;
+          countEl.style.display = savedFloors.length > 0 ? 'inline' : 'none';
+        }
+
+        // Show empty state if no more floors
+        if (savedFloors.length === 0) {
+          document.getElementById('saved-floors-empty').style.display = 'block';
+          document.getElementById('saved-floors-grid').style.display = 'none';
+          document.getElementById('request-quote-btn').style.display = 'none';
+        }
+
+        showToast('Floor removed from favorites', 'success');
+
+      } catch (err) {
+        console.error('Error removing floor:', err);
+        showToast('Error removing floor', 'error');
+      }
+    }
+
+    function requestQuoteForFavorites() {
+      if (savedFloors.length === 0) {
+        showToast('No floors saved yet!', 'error');
+        return;
+      }
+
+      // Build quote modal
+      const modal = document.createElement('div');
+      modal.className = 'quote-modal';
+      modal.id = 'quote-modal';
+      modal.innerHTML = `
+        <div class="quote-modal-content">
+          <div class="quote-modal-header">
+            <h3>Request a Quote</h3>
+            <button onclick="closeQuoteModal()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">&times;</button>
+          </div>
+          <div class="quote-modal-body">
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">We'll prepare a quote for these ${savedFloors.length} flooring options:</p>
+
+            <div class="quote-items-list">
+              ${savedFloors.map(floor => `
+                <div class="quote-item">
+                  <img src="${floor.product_image || '/images/placeholder-floor.jpg'}" alt="${floor.product_title}">
+                  <div class="quote-item-info">
+                    <div class="quote-item-title">${floor.product_title}</div>
+                    <div class="quote-item-material">${floor.product_material || ''} ${floor.product_color ? '- ' + floor.product_color : ''}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 13px;">Additional Notes (Optional)</label>
+              <textarea id="quote-notes" rows="3" placeholder="Tell us about your project, room size, timeline, etc." style="width: 100%; padding: 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--dark); color: var(--text-primary); resize: vertical;"></textarea>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%;" onclick="submitQuoteRequest()">
+              Submit Quote Request
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    function closeQuoteModal() {
+      const modal = document.getElementById('quote-modal');
+      if (modal) modal.remove();
+    }
+
+    async function submitQuoteRequest() {
+      const notes = document.getElementById('quote-notes')?.value || '';
+
+      try {
+        // Create lead/quote request in Supabase
+        const quoteData = {
+          user_id: currentUser.id,
+          email: currentUser.email,
+          full_name: userProfile?.full_name || currentUser.email.split('@')[0],
+          phone: userProfile?.phone || '',
+          status: 'new',
+          source: 'flooring_favorites',
+          notes: `Flooring Quote Request:\n\n${savedFloors.map(f => `- ${f.product_title} (${f.product_material || 'N/A'})`).join('\n')}\n\nAdditional Notes: ${notes || 'None'}`,
+          created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabaseClient
+          .from('leads')
+          .insert(quoteData);
+
+        if (error) {
+          console.warn('Lead insert error (table may not exist):', error);
+        }
+
+        // Send email notification via API
+        try {
+          await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: 'info@surprisegranite.com',
+              counterSqft: 'Flooring Quote Request',
+              splashSqft: '',
+              totalSqft: `${savedFloors.length} flooring options selected`,
+              edgeProfile: `Customer: ${userProfile?.full_name || currentUser.email}`,
+              edgeLF: `Phone: ${userProfile?.phone || 'N/A'}`,
+              priceBudget: savedFloors.map(f => f.product_title).join(', '),
+              pricePopular: notes || 'No additional notes',
+              pricePremium: `Email: ${currentUser.email}`
+            })
+          });
+        } catch (emailErr) {
+          console.warn('Email notification error:', emailErr);
+        }
+
+        closeQuoteModal();
+        showToast('Quote request submitted! We\'ll contact you soon.', 'success');
+
+      } catch (err) {
+        console.error('Quote submit error:', err);
+        showToast('Error submitting quote. Please try again.', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#333'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     function setupDashboard() {
@@ -2626,6 +3096,7 @@
       const titles = {
         'dashboard': 'Dashboard',
         'profile': 'My Profile',
+        'saved-floors': 'Saved Floors',
         'leads': 'Leads',
         'invoices': 'Invoices',
         'wallet': 'Wallet',
@@ -2635,6 +3106,11 @@
         'messages': 'Messages'
       };
       document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
+
+      // Load saved floors when that page is shown
+      if (page === 'saved-floors') {
+        loadSavedFloors();
+      }
 
       // Close mobile sidebar
       document.getElementById('sidebar').classList.remove('open');

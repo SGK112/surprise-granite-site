@@ -1,6 +1,7 @@
 /**
  * Swipe Cards - Tinder-style product browsing
  * "Swipe Right for Your Perfect Floor!"
+ * With Supabase integration for logged-in users
  */
 
 (function() {
@@ -8,6 +9,13 @@
 
   // Only run on mobile
   if (window.innerWidth > 767) return;
+
+  // Supabase config
+  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+  let supabaseClient = null;
+  let currentUser = null;
 
   // Wait for DOM
   document.addEventListener('DOMContentLoaded', init);
@@ -19,9 +27,12 @@
   let startX, startY, currentX, currentY;
   let isDragging = false;
 
-  function init() {
+  async function init() {
     const materialsList = document.querySelector('.materials_list');
     if (!materialsList) return;
+
+    // Initialize Supabase
+    await initSupabase();
 
     // Get all product items
     const items = materialsList.querySelectorAll('.materials_item, .w-dyn-item');
@@ -56,15 +67,151 @@
     // Add swipe-enabled class to hide grid
     materialsList.classList.add('swipe-enabled');
 
+    // Load existing favorites
+    await loadFavorites();
+
     // Create swipe UI
     createSwipeUI();
     renderCards();
     showInstructions();
   }
 
+  async function initSupabase() {
+    try {
+      // Check if Supabase is loaded
+      if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Check for existing session
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+          console.log('Swipe Cards: User logged in', currentUser.email);
+        }
+      }
+    } catch (e) {
+      console.log('Swipe Cards: Supabase not available, using localStorage');
+    }
+  }
+
+  async function loadFavorites() {
+    // Try to load from Supabase first if logged in
+    if (currentUser && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_favorites')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .eq('product_type', 'flooring')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          favorites = data.map(fav => ({
+            dbId: fav.id,
+            id: fav.id,
+            href: fav.product_url,
+            image: fav.product_image,
+            title: fav.product_title,
+            material: fav.product_material,
+            color: fav.product_color,
+            thickness: fav.product_thickness,
+            wearLayer: fav.product_wear_layer,
+            shadeVariations: fav.product_shade_variations
+          }));
+          console.log('Swipe Cards: Loaded', favorites.length, 'favorites from Supabase');
+          return;
+        }
+      } catch (e) {
+        console.log('Error loading from Supabase:', e);
+      }
+    }
+
+    // Fallback to localStorage
+    try {
+      const stored = localStorage.getItem('sg_flooring_favorites');
+      if (stored) {
+        favorites = JSON.parse(stored);
+        console.log('Swipe Cards: Loaded', favorites.length, 'favorites from localStorage');
+      }
+    } catch (e) {
+      console.log('Error loading from localStorage:', e);
+    }
+  }
+
+  async function saveFavoriteToSupabase(card) {
+    if (!currentUser || !supabaseClient) {
+      // Save to localStorage for guests
+      saveToLocalStorage();
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_favorites')
+        .insert({
+          user_id: currentUser.id,
+          product_type: 'flooring',
+          product_title: card.title,
+          product_url: card.href,
+          product_image: card.image,
+          product_material: card.material,
+          product_color: card.color,
+          product_thickness: card.thickness,
+          product_wear_layer: card.wearLayer,
+          product_shade_variations: card.shadeVariations
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        // Update local favorite with DB id
+        const localFav = favorites.find(f => f.title === card.title && f.href === card.href);
+        if (localFav) {
+          localFav.dbId = data.id;
+        }
+        console.log('Swipe Cards: Saved to Supabase');
+      }
+    } catch (e) {
+      console.log('Error saving to Supabase:', e);
+      saveToLocalStorage();
+    }
+  }
+
+  async function removeFavoriteFromSupabase(card) {
+    if (!currentUser || !supabaseClient || !card.dbId) {
+      saveToLocalStorage();
+      return;
+    }
+
+    try {
+      await supabaseClient
+        .from('user_favorites')
+        .delete()
+        .eq('id', card.dbId);
+      console.log('Swipe Cards: Removed from Supabase');
+    } catch (e) {
+      console.log('Error removing from Supabase:', e);
+    }
+  }
+
+  function saveToLocalStorage() {
+    try {
+      localStorage.setItem('sg_flooring_favorites', JSON.stringify(favorites));
+    } catch (e) {
+      console.log('Error saving to localStorage:', e);
+    }
+  }
+
   function createSwipeUI() {
     const container = document.querySelector('.materials_collection-list-wrapper');
     if (!container) return;
+
+    const loginPrompt = !currentUser ? `
+      <div class="swipe-login-prompt" id="login-prompt" style="display: none;">
+        <p>Login to save your favorites to your account!</p>
+        <a href="/account/" class="swipe-login-btn">Login / Sign Up</a>
+      </div>
+    ` : '';
 
     const swipeHTML = `
       <div class="swipe-cards-container">
@@ -92,16 +239,26 @@
         <div class="swipe-counter">
           <strong id="swipe-current">1</strong> of <strong id="swipe-total">${cards.length}</strong> floors
         </div>
+        ${loginPrompt}
       </div>
       <div class="favorites-drawer" id="favorites-drawer">
         <div class="favorites-drawer-handle" onclick="window.toggleFavorites()">
-          <span class="favorites-drawer-title">Your Favorites <span class="favorites-count" id="favorites-count">0</span></span>
+          <span class="favorites-drawer-title">
+            ${currentUser ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/></svg>' : ''}
+            Your Favorites <span class="favorites-count" id="favorites-count">${favorites.length}</span>
+          </span>
         </div>
         <div class="favorites-list" id="favorites-list"></div>
+        ${favorites.length > 0 ? `
+          <div class="favorites-actions">
+            <a href="/account/#saved-floors" class="favorites-view-all">View All in Account</a>
+          </div>
+        ` : ''}
       </div>
     `;
 
     container.insertAdjacentHTML('afterbegin', swipeHTML);
+    updateFavorites();
   }
 
   function renderCards() {
@@ -303,12 +460,12 @@
     }
   }
 
-  function swipeCardOut(cardEl, direction) {
+  async function swipeCardOut(cardEl, direction) {
     const cardId = parseInt(cardEl.dataset.id);
     const card = cards.find(c => c.id === cardId);
 
     // Save to history for undo
-    swipeHistory.push({ index: currentIndex, direction });
+    swipeHistory.push({ index: currentIndex, direction, card: card });
 
     // Add animation class
     cardEl.classList.add(`swipe-out-${direction}`);
@@ -317,6 +474,18 @@
     if (direction === 'right' && card) {
       favorites.push(card);
       updateFavorites();
+
+      // Save to Supabase or localStorage
+      await saveFavoriteToSupabase(card);
+
+      // Show login prompt for guests (first time)
+      if (!currentUser && favorites.length === 1) {
+        const prompt = document.getElementById('login-prompt');
+        if (prompt) {
+          prompt.style.display = 'block';
+          setTimeout(() => prompt.style.display = 'none', 5000);
+        }
+      }
 
       // Haptic feedback
       if (navigator.vibrate) {
@@ -353,18 +522,26 @@
         </a>
       `).join('');
     }
+
+    // Also save to localStorage as backup
+    saveToLocalStorage();
   }
 
   function showEmptyState() {
     const stack = document.querySelector('.swipe-card-stack');
     if (!stack) return;
 
+    const accountLink = currentUser
+      ? `<a href="/account/#saved-floors" class="swipe-view-saved-btn">View Saved Floors</a>`
+      : `<a href="/account/" class="swipe-view-saved-btn">Login to Save Favorites</a>`;
+
     stack.innerHTML = `
       <div class="swipe-empty">
-        <div class="swipe-empty-icon">🎉</div>
+        <div class="swipe-empty-icon">&#127881;</div>
         <h3>You've seen all ${cards.length} floors!</h3>
         <p>You saved ${favorites.length} to your favorites</p>
         <button class="swipe-reset-btn" onclick="window.swipeReset()">Start Over</button>
+        ${favorites.length > 0 ? accountLink : ''}
       </div>
     `;
   }
@@ -375,7 +552,7 @@
 
     const toast = document.createElement('div');
     toast.className = 'swipe-instructions';
-    toast.textContent = '👈 Swipe left to skip • Swipe right to save 👉';
+    toast.innerHTML = '&#128072; Swipe left to skip &bull; Swipe right to save &#128073;';
     container.appendChild(toast);
 
     setTimeout(() => toast.remove(), 4000);
@@ -403,15 +580,18 @@
     }
   };
 
-  window.swipeUndo = function() {
+  window.swipeUndo = async function() {
     if (swipeHistory.length === 0) return;
 
     const last = swipeHistory.pop();
     currentIndex = last.index;
 
     // Remove from favorites if it was liked
-    if (last.direction === 'right') {
-      favorites.pop();
+    if (last.direction === 'right' && last.card) {
+      const removedFav = favorites.pop();
+      if (removedFav) {
+        await removeFavoriteFromSupabase(removedFav);
+      }
       updateFavorites();
     }
 

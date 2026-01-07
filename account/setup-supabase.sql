@@ -57,3 +57,49 @@ GRANT ALL ON public.sg_users TO service_role;
 -- Indexes
 CREATE INDEX IF NOT EXISTS sg_users_email_idx ON public.sg_users(email);
 CREATE INDEX IF NOT EXISTS sg_users_account_type_idx ON public.sg_users(account_type);
+
+-- ============================================================
+-- USER FAVORITES TABLE - For saved flooring/countertop products
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.user_favorites (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  product_type TEXT NOT NULL DEFAULT 'flooring' CHECK (product_type IN ('flooring', 'countertop')),
+  product_title TEXT NOT NULL,
+  product_url TEXT,
+  product_image TEXT,
+  product_material TEXT,
+  product_color TEXT,
+  product_thickness TEXT,
+  product_wear_layer TEXT,
+  product_shade_variations TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view their own favorites
+CREATE POLICY "user_favorites_select_own" ON public.user_favorites
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Policy: Users can insert their own favorites
+CREATE POLICY "user_favorites_insert_own" ON public.user_favorites
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Users can delete their own favorites
+CREATE POLICY "user_favorites_delete_own" ON public.user_favorites
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Service role can do everything
+CREATE POLICY "user_favorites_service_all" ON public.user_favorites
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Grant access
+GRANT ALL ON public.user_favorites TO authenticated;
+GRANT ALL ON public.user_favorites TO service_role;
+
+-- Index for fast lookups
+CREATE INDEX IF NOT EXISTS user_favorites_user_id_idx ON public.user_favorites(user_id);
+CREATE INDEX IF NOT EXISTS user_favorites_product_type_idx ON public.user_favorites(product_type);
