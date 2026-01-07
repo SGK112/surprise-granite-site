@@ -34,6 +34,9 @@
       const title = item.querySelector('[fs-cmsfilter-field="Keyword"]');
       const material = item.querySelector('[fs-cmsfilter-field="material"]');
       const color = item.querySelector('[fs-cmsfilter-field="main-color"]');
+      const thickness = item.querySelector('[fs-cmsfilter-field="thickness"]');
+      const wearLayer = item.querySelector('[fs-cmsfilter-field="wear-layer"]');
+      const shadeVariations = item.querySelector('[fs-cmsfilter-field="shade-variations"]');
 
       cards.push({
         id: index,
@@ -41,7 +44,10 @@
         image: images[1] ? images[1].src : (images[0] ? images[0].src : ''),
         title: title ? title.textContent.trim() : 'Flooring',
         material: material ? material.textContent.trim() : '',
-        color: color ? color.textContent.trim() : ''
+        color: color ? color.textContent.trim() : '',
+        thickness: thickness ? thickness.textContent.trim() : '',
+        wearLayer: wearLayer ? wearLayer.textContent.trim() : '',
+        shadeVariations: shadeVariations ? shadeVariations.textContent.trim() : ''
       });
     });
 
@@ -64,10 +70,24 @@
       <div class="swipe-cards-container">
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
-          <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">↩</button>
-          <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">✕</button>
-          <button class="swipe-btn view" title="View Details" onclick="window.swipeView()">👁</button>
-          <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">♥</button>
+          <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
+              <path d="M3 10l4-4"></path>
+              <path d="M3 10l4 4"></path>
+            </svg>
+          </button>
+          <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
         </div>
         <div class="swipe-counter">
           <strong id="swipe-current">1</strong> of <strong id="swipe-total">${cards.length}</strong> floors
@@ -115,14 +135,57 @@
     div.dataset.id = card.id;
 
     div.innerHTML = `
-      <div class="swipe-indicator like">SAVED!</div>
-      <div class="swipe-indicator nope">SKIP</div>
+      <div class="swipe-indicator like">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+        <span>LOVE IT</span>
+      </div>
+      <div class="swipe-indicator nope">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        <span>NOPE</span>
+      </div>
+      <a href="${card.href}" class="swipe-card-view-btn" title="View Details">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
       <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
       <div class="swipe-card-content">
-        <div class="swipe-card-title">${card.title}</div>
-        <div class="swipe-card-details">
-          ${card.material ? `<span class="swipe-card-tag material">${card.material}</span>` : ''}
-          ${card.color ? `<span class="swipe-card-tag color">${card.color}</span>` : ''}
+        <div class="swipe-card-header">
+          <div class="swipe-card-title">${card.title}</div>
+          ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
+        </div>
+        <div class="swipe-card-specs">
+          ${card.color ? `
+            <div class="swipe-card-spec">
+              <span class="spec-label">Color</span>
+              <span class="spec-value">${card.color}</span>
+            </div>
+          ` : ''}
+          ${card.thickness ? `
+            <div class="swipe-card-spec">
+              <span class="spec-label">Thickness</span>
+              <span class="spec-value">${card.thickness}</span>
+            </div>
+          ` : ''}
+          ${card.wearLayer ? `
+            <div class="swipe-card-spec">
+              <span class="spec-label">Wear Layer</span>
+              <span class="spec-value">${card.wearLayer}</span>
+            </div>
+          ` : ''}
+          ${card.shadeVariations ? `
+            <div class="swipe-card-spec">
+              <span class="spec-label">Variation</span>
+              <span class="spec-value">${card.shadeVariations}</span>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
