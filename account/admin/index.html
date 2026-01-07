@@ -978,8 +978,7 @@
         const adminEmails = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
         const isSuperAdmin = adminEmails.includes(currentUser.email.toLowerCase());
         const isAdmin = isSuperAdmin ||
-                        ['admin', 'super_admin'].includes(profile?.account_type) ||
-                        profile?.is_admin === true;
+                        ['admin', 'super_admin'].includes(profile?.account_type);
 
         if (!isAdmin) {
           document.getElementById('auth-gate').innerHTML = `
@@ -1321,16 +1320,12 @@
         const { data, error } = await supabaseClient
           .from('sg_users')
           .select('*')
-          .or('account_type.eq.admin,account_type.eq.super_admin,is_admin.eq.true')
+          .or('account_type.eq.admin,account_type.eq.super_admin')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         adminUsers = data || [];
-
-        // Add super admin emails if not in list
-        const existingEmails = adminUsers.map(u => u.email?.toLowerCase());
-
         renderAdminUsers();
       } catch (err) {
         console.error('Error loading admin users:', err);
@@ -1422,7 +1417,6 @@
             .from('sg_users')
             .update({
               account_type: 'admin',
-              is_admin: true,
               updated_at: new Date().toISOString()
             })
             .eq('id', existingUser.id);
@@ -1435,7 +1429,6 @@
             .insert([{
               email: email,
               account_type: 'admin',
-              is_admin: true,
               full_name: email.split('@')[0]
             }]);
 
@@ -1462,7 +1455,6 @@
           .from('sg_users')
           .update({
             account_type: 'homeowner',
-            is_admin: false,
             updated_at: new Date().toISOString()
           })
           .eq('id', userId);
