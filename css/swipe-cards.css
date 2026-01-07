@@ -10,7 +10,7 @@
 }
 
 @media (max-width: 767px) {
-  /* FULL SCREEN MODE - Hide header/footer when swiping */
+  /* FULL SCREEN MODE - Hide header/footer/chatbots when swiping */
   body.swipe-mode .navbar_component,
   body.swipe-mode .header,
   body.swipe-mode .nav_component,
@@ -18,7 +18,13 @@
   body.swipe-mode [class*="header"],
   body.swipe-mode .footer,
   body.swipe-mode [class*="footer"],
-  body.swipe-mode .section_header54 {
+  body.swipe-mode .section_header54,
+  body.swipe-mode #chatbase-bubble-button,
+  body.swipe-mode #chatbase-bubble-window,
+  body.swipe-mode [id*="chatbase"],
+  body.swipe-mode [class*="chatbot"],
+  body.swipe-mode [class*="chat-widget"],
+  body.swipe-mode iframe[src*="chatbase"] {
     display: none !important;
   }
 
@@ -52,7 +58,8 @@
     height: 100dvh; /* Dynamic viewport height for iOS */
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
     z-index: 9999;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: 0;
   }
 
   /* Top bar with close button */
@@ -73,17 +80,23 @@
   }
 
   .swipe-close-btn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: none;
-    background: #f3f4f6;
-    color: #666;
+    background: #e5e7eb;
+    color: #333;
     font-size: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .swipe-close-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke: #333 !important;
   }
 
   /* Card stack area - takes remaining space */
@@ -327,8 +340,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    padding: 16px 20px;
+    gap: 16px;
+    padding: 12px 20px;
     background: #fff;
     border-top: 1px solid #e5e7eb;
     flex-shrink: 0;
@@ -352,16 +365,16 @@
   }
 
   .swipe-btn.nope {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     background: #fff;
     color: #ef4444;
-    border: 4px solid #ef4444;
+    border: 3px solid #ef4444;
   }
 
   .swipe-btn.nope svg {
-    width: 36px !important;
-    height: 36px !important;
+    width: 32px !important;
+    height: 32px !important;
     stroke-width: 3;
   }
 
@@ -371,16 +384,16 @@
   }
 
   .swipe-btn.like {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: #fff;
     border: none;
   }
 
   .swipe-btn.like svg {
-    width: 36px !important;
-    height: 36px !important;
+    width: 32px !important;
+    height: 32px !important;
   }
 
   .swipe-btn.like:active {
@@ -388,16 +401,16 @@
   }
 
   .swipe-btn.undo {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     background: #fff;
     color: #f9cb00;
-    border: 3px solid #e5e7eb;
+    border: 2px solid #e5e7eb;
   }
 
   .swipe-btn.undo svg {
-    width: 26px !important;
-    height: 26px !important;
+    width: 22px !important;
+    height: 22px !important;
   }
 
   .swipe-btn.undo:active {
@@ -408,9 +421,10 @@
   /* Counter - below buttons */
   .swipe-counter {
     text-align: center;
-    padding: 8px 20px 16px;
+    padding: 6px 20px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     color: #666;
-    font-size: 15px;
+    font-size: 14px;
     background: #fff;
     flex-shrink: 0;
   }
@@ -460,23 +474,9 @@
     cursor: pointer;
   }
 
-  /* Favorites drawer - slides up from bottom */
+  /* Favorites drawer - HIDDEN by default for cleaner UX */
   .favorites-drawer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-radius: 24px 24px 0 0;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
-    transform: translateY(calc(100% - 70px));
-    transition: transform 0.3s ease;
-    z-index: 10000;
-    max-height: 60vh;
-  }
-
-  .favorites-drawer.open {
-    transform: translateY(0);
+    display: none !important;
   }
 
   .favorites-drawer-handle {
