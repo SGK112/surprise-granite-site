@@ -209,14 +209,6 @@
     // Add swipe mode class (for hiding chatbots)
     document.body.classList.add('swipe-mode');
 
-    // Auto-scroll to swipe area after a short delay
-    setTimeout(() => {
-      const swipeContainer = document.querySelector('.swipe-cards-container');
-      if (swipeContainer) {
-        swipeContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 500);
-
     const loginPrompt = !currentUser ? `
       <div class="swipe-login-prompt" id="login-prompt" style="display: none;">
         <p>Login to save your favorites to your account!</p>
@@ -440,14 +432,16 @@
   }
 
   function updateCardPosition(cardEl, deltaX) {
-    const rotation = deltaX * 0.1;
-    cardEl.style.transform = `translateX(calc(-50% + ${deltaX}px)) rotate(${rotation}deg)`;
+    const rotation = deltaX * 0.08;
+    const centerOffset = -50; // percent
+    cardEl.style.left = '50%';
+    cardEl.style.transform = `translateX(calc(${centerOffset}% + ${deltaX}px)) rotate(${rotation}deg)`;
 
     // Update indicators
-    if (deltaX > 50) {
+    if (deltaX > 40) {
       cardEl.classList.add('swiping-right');
       cardEl.classList.remove('swiping-left');
-    } else if (deltaX < -50) {
+    } else if (deltaX < -40) {
       cardEl.classList.add('swiping-left');
       cardEl.classList.remove('swiping-right');
     } else {
@@ -456,7 +450,7 @@
   }
 
   function finalizeSwipe(cardEl, deltaX) {
-    const threshold = 100;
+    const threshold = 80;
 
     if (deltaX > threshold) {
       // Swipe right - Like/Save
@@ -465,9 +459,13 @@
       // Swipe left - Skip
       swipeCardOut(cardEl, 'left');
     } else {
-      // Return to center
+      // Return to center with smooth animation
+      cardEl.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
       cardEl.style.transform = 'translateX(-50%)';
       cardEl.classList.remove('swiping-left', 'swiping-right');
+      setTimeout(() => {
+        cardEl.style.transition = '';
+      }, 300);
     }
   }
 

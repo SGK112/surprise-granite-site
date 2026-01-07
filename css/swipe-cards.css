@@ -1,85 +1,101 @@
 /**
  * Swipe Cards - Tinder-style product browsing for mobile
- * "Swipe Right for Your Perfect Floor!"
- * Optimized for full-screen mobile experience
+ * Premium mobile-first design with smooth interactions
  */
 
-/* Only show on mobile */
+/* Desktop: Hidden */
 .swipe-cards-container {
   display: none;
 }
 
+/* ============================================
+   MOBILE STYLES (767px and below)
+   ============================================ */
 @media (max-width: 767px) {
-  /* Hide chatbots when swiping */
+
+  /* Hide chatbots during swipe */
   body.swipe-mode #chatbase-bubble-button,
   body.swipe-mode #chatbase-bubble-window,
   body.swipe-mode [id*="chatbase"],
-  body.swipe-mode [class*="chatbot"],
-  body.swipe-mode [class*="chat-widget"],
-  body.swipe-mode iframe[src*="chatbase"] {
+  body.swipe-mode [class*="chat-widget"] {
     display: none !important;
   }
 
-  /* Hide the regular grid on mobile */
+  /* Hide original product grid when swiping */
   .materials_list.swipe-enabled {
     display: none !important;
   }
 
-  /* Show swipe cards container - FILL VIEWPORT in normal flow */
+  /* ==========================================
+     MAIN CONTAINER - Full screen experience
+     ========================================== */
   .swipe-cards-container {
     display: flex;
     flex-direction: column;
-    position: relative;
     width: 100%;
-    min-height: calc(100vh - 60px);
-    min-height: calc(100dvh - 60px);
-    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-    z-index: 10;
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
+    min-height: 500px;
+    background: linear-gradient(160deg, #f0f2f5 0%, #e4e7eb 50%, #d8dce3 100%);
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Card stack area - takes most of the space */
+  /* ==========================================
+     CARD STACK AREA
+     ========================================== */
   .swipe-card-stack {
     flex: 1;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
-    min-height: 400px;
+    padding: 16px 16px 8px;
+    min-height: 0;
   }
 
-  /* Individual card - FILL THE SPACE */
+  /* ==========================================
+     INDIVIDUAL CARDS
+     ========================================== */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 24px);
-    max-width: 380px;
+    width: calc(100% - 32px);
+    max-width: 360px;
     height: 100%;
-    max-height: 520px;
+    max-height: 480px;
     background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-radius: 24px;
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.05),
+      0 10px 20px rgba(0, 0, 0, 0.08),
+      0 20px 40px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     cursor: grab;
     user-select: none;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s ease;
     will-change: transform;
     display: flex;
     flex-direction: column;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .swipe-card:active {
     cursor: grabbing;
   }
 
-  /* Stack effect - cards behind */
+  /* Stacked cards behind */
   .swipe-card:nth-child(2) {
-    transform: scale(0.96) translateY(8px);
+    transform: translateX(-50%) scale(0.95) translateY(12px);
     z-index: -1;
+    opacity: 0.7;
   }
 
   .swipe-card:nth-child(3) {
-    transform: scale(0.92) translateY(16px);
+    transform: translateX(-50%) scale(0.9) translateY(24px);
     z-index: -2;
+    opacity: 0.4;
   }
 
   .swipe-card:nth-child(n+4) {
@@ -89,159 +105,182 @@
   /* Card being dragged */
   .swipe-card.dragging {
     transition: none;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.15),
+      0 30px 60px rgba(0, 0, 0, 0.1);
+    z-index: 100;
   }
 
-  /* Card image - flexible height */
+  /* ==========================================
+     CARD IMAGE
+     ========================================== */
   .swipe-card-image {
     width: 100%;
-    height: 45%;
-    min-height: 160px;
+    height: 50%;
+    min-height: 180px;
     object-fit: cover;
     pointer-events: none;
     flex-shrink: 0;
   }
 
-  /* View button on card - BIGGER for touch */
+  /* ==========================================
+     VIEW BUTTON (on card)
+     ========================================== */
   .swipe-card-view-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 52px;
-    height: 52px;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
     background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #1a1a2e;
     text-decoration: none;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
     z-index: 10;
     transition: transform 0.2s ease, background 0.2s ease;
   }
 
   .swipe-card-view-btn svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
 
   .swipe-card-view-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
     background: #f9cb00;
   }
 
-  /* Card content - show all */
+  /* ==========================================
+     CARD CONTENT
+     ========================================== */
   .swipe-card-content {
     flex: 1;
-    padding: 12px 16px;
-    background: #fff;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .swipe-card-title {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: #1a1a2e;
-    line-height: 1.2;
+    line-height: 1.25;
     flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .swipe-card-material {
-    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
     color: #fff;
     padding: 5px 10px;
-    border-radius: 16px;
+    border-radius: 14px;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
-  /* Specs grid - 2 columns, compact */
+  /* ==========================================
+     SPECS GRID
+     ========================================== */
   .swipe-card-specs {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: 8px;
+    flex: 1;
   }
 
   .swipe-card-spec {
-    background: #f8f9fa;
-    padding: 8px 10px;
-    border-radius: 10px;
+    background: linear-gradient(145deg, #f8f9fa 0%, #f1f3f5 100%);
+    padding: 10px 12px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    justify-content: center;
+    gap: 3px;
+    min-height: 54px;
   }
 
   .spec-label {
     font-size: 10px;
-    color: #888;
+    color: #6b7280;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
     font-weight: 600;
   }
 
   .spec-value {
-    font-size: 13px;
+    font-size: 14px;
     color: #1a1a2e;
     font-weight: 700;
+    line-height: 1.2;
   }
 
-  /* Swipe indicators - BIGGER */
+  /* ==========================================
+     SWIPE INDICATORS (LIKE/NOPE overlays)
+     ========================================== */
   .swipe-indicator {
     position: absolute;
-    top: 45%;
+    top: 50%;
     transform: translateY(-50%);
-    padding: 20px 24px;
-    border-radius: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.15s ease;
     pointer-events: none;
     z-index: 20;
   }
 
   .swipe-indicator svg {
-    width: 48px !important;
-    height: 48px !important;
+    width: 40px;
+    height: 40px;
   }
 
   .swipe-indicator span {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
 
   .swipe-indicator.like {
-    right: 24px;
+    right: 20px;
     background: rgba(34, 197, 94, 0.95);
     color: #fff;
-    border: 4px solid #22c55e;
-    transform: translateY(-50%) rotate(12deg);
+    border: 3px solid #22c55e;
+    transform: translateY(-50%) rotate(15deg);
   }
 
   .swipe-indicator.nope {
-    left: 24px;
+    left: 20px;
     background: rgba(239, 68, 68, 0.95);
     color: #fff;
-    border: 4px solid #ef4444;
-    transform: translateY(-50%) rotate(-12deg);
+    border: 3px solid #ef4444;
+    transform: translateY(-50%) rotate(-15deg);
   }
 
   .swipe-card.swiping-right .swipe-indicator.like,
@@ -249,41 +288,43 @@
     opacity: 1;
   }
 
-  /* Swipe out animations */
+  /* ==========================================
+     SWIPE ANIMATIONS
+     ========================================== */
   .swipe-card.swipe-out-left {
-    animation: swipeOutLeft 0.4s ease forwards;
+    animation: swipeOutLeft 0.35s ease-out forwards;
   }
 
   .swipe-card.swipe-out-right {
-    animation: swipeOutRight 0.4s ease forwards;
+    animation: swipeOutRight 0.35s ease-out forwards;
   }
 
   @keyframes swipeOutLeft {
     to {
-      transform: translateX(-150%) rotate(-30deg);
+      transform: translateX(-150%) rotate(-25deg);
       opacity: 0;
     }
   }
 
   @keyframes swipeOutRight {
     to {
-      transform: translateX(150%) rotate(30deg);
+      transform: translateX(150%) rotate(25deg);
       opacity: 0;
     }
   }
 
-  /* Bottom action bar */
+  /* ==========================================
+     ACTION BUTTONS
+     ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    padding: 16px 20px;
-    background: transparent;
+    gap: 24px;
+    padding: 12px 20px 8px;
     flex-shrink: 0;
   }
 
-  /* Action buttons - MUCH BIGGER */
   .swipe-btn {
     border-radius: 50%;
     border: none;
@@ -291,26 +332,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
   }
 
+  /* NOPE button (X) */
   .swipe-btn.nope {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     background: #fff;
     color: #ef4444;
     border: 3px solid #ef4444;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
   }
 
   .swipe-btn.nope svg {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px;
+    height: 28px;
     stroke-width: 3;
   }
 
@@ -319,34 +362,37 @@
     color: #fff;
   }
 
+  /* LIKE button (heart) */
   .swipe-btn.like {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: #fff;
-    border: none;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35);
   }
 
   .swipe-btn.like svg {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px;
+    height: 28px;
   }
 
   .swipe-btn.like:active {
     background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   }
 
+  /* UNDO button */
   .swipe-btn.undo {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     background: #fff;
     color: #f9cb00;
     border: 2px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
   .swipe-btn.undo svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 20px;
+    height: 20px;
   }
 
   .swipe-btn.undo:active {
@@ -354,13 +400,14 @@
     color: #1a1a2e;
   }
 
-  /* Counter - below buttons */
+  /* ==========================================
+     COUNTER
+     ========================================== */
   .swipe-counter {
     text-align: center;
-    padding: 8px 20px 20px;
-    color: #666;
-    font-size: 14px;
-    background: transparent;
+    padding: 4px 20px 16px;
+    color: #6b7280;
+    font-size: 13px;
     flex-shrink: 0;
   }
 
@@ -369,7 +416,9 @@
     font-weight: 700;
   }
 
-  /* Empty state */
+  /* ==========================================
+     EMPTY STATE
+     ========================================== */
   .swipe-empty {
     text-align: center;
     padding: 40px 24px;
@@ -381,122 +430,71 @@
   }
 
   .swipe-empty-icon {
-    font-size: 72px;
-    margin-bottom: 20px;
+    font-size: 64px;
+    margin-bottom: 16px;
   }
 
   .swipe-empty h3 {
-    font-size: 24px;
+    font-size: 22px;
     color: #1a1a2e;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-weight: 700;
   }
 
   .swipe-empty p {
-    color: #666;
+    color: #6b7280;
     margin-bottom: 24px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .swipe-reset-btn {
-    background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
+    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
     border: none;
-    padding: 16px 32px;
-    border-radius: 30px;
+    padding: 14px 32px;
+    border-radius: 28px;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(249, 203, 0, 0.35);
   }
 
-  /* Favorites drawer - HIDDEN by default for cleaner UX */
-  .favorites-drawer {
-    display: none !important;
-  }
-
-  .favorites-drawer-handle {
-    padding: 20px 20px 16px;
-    text-align: center;
-    cursor: pointer;
-  }
-
-  .favorites-drawer-handle::before {
-    content: '';
-    display: block;
-    width: 48px;
-    height: 5px;
-    background: #ddd;
-    border-radius: 3px;
-    margin: 0 auto 12px;
-  }
-
-  .favorites-drawer-title {
-    font-weight: 700;
-    color: #1a1a2e;
-    font-size: 16px;
-  }
-
-  .favorites-count {
-    background: #22c55e;
+  .swipe-view-saved-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
     color: #fff;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 13px;
+    padding: 14px 28px;
+    border-radius: 28px;
+    text-decoration: none;
     font-weight: 700;
-    margin-left: 8px;
+    font-size: 15px;
+    margin-top: 12px;
   }
 
-  .favorites-list {
-    display: flex;
-    gap: 16px;
-    padding: 0 20px 24px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .favorite-item {
-    flex-shrink: 0;
-    width: 110px;
-    text-align: center;
-  }
-
-  .favorite-item img {
-    width: 110px;
-    height: 110px;
-    object-fit: cover;
-    border-radius: 16px;
-  }
-
-  .favorite-item span {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    margin-top: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Instructions toast */
+  /* ==========================================
+     INSTRUCTIONS TOAST
+     ========================================== */
   .swipe-instructions {
-    position: fixed;
-    bottom: 160px;
+    position: absolute;
+    bottom: 140px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26, 26, 46, 0.95);
+    background: rgba(26, 26, 46, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: #fff;
-    padding: 14px 24px;
-    border-radius: 30px;
-    font-size: 15px;
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 13px;
     white-space: nowrap;
-    animation: fadeInUp 0.5s ease, fadeOut 0.5s ease 3s forwards;
-    z-index: 10001;
+    animation: fadeInUp 0.4s ease, fadeOut 0.4s ease 3s forwards;
+    z-index: 100;
   }
 
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(20px);
+      transform: translateX(-50%) translateY(16px);
     }
     to {
       opacity: 1;
@@ -511,45 +509,47 @@
     }
   }
 
-  /* Login prompt for guests */
+  /* ==========================================
+     LOGIN PROMPT
+     ========================================== */
   .swipe-login-prompt {
-    position: fixed;
-    bottom: 180px;
+    position: absolute;
+    bottom: 160px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
     color: #fff;
-    padding: 20px 28px;
+    padding: 18px 24px;
     border-radius: 20px;
     text-align: center;
-    z-index: 10001;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s ease;
-    max-width: 300px;
+    max-width: 280px;
     width: calc(100% - 48px);
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 16px;
-    font-size: 15px;
+    margin: 0 0 14px;
+    font-size: 14px;
     line-height: 1.4;
   }
 
   .swipe-login-btn {
     display: inline-block;
-    background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
+    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
-    padding: 14px 28px;
-    border-radius: 25px;
+    padding: 12px 24px;
+    border-radius: 22px;
     text-decoration: none;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(20px);
+      transform: translateX(-50%) translateY(16px);
     }
     to {
       opacity: 1;
@@ -557,33 +557,10 @@
     }
   }
 
-  /* View saved floors button */
-  .swipe-view-saved-btn {
-    display: inline-block;
-    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
-    color: #fff;
-    padding: 14px 28px;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 15px;
-    margin-top: 16px;
-  }
-
-  /* Favorites drawer actions */
-  .favorites-actions {
-    padding: 16px 20px 24px;
-    text-align: center;
-  }
-
-  .favorites-view-all {
-    display: inline-block;
-    background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
-    color: #1a1a2e;
-    padding: 14px 24px;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 14px;
+  /* ==========================================
+     FAVORITES DRAWER (Hidden for clean UX)
+     ========================================== */
+  .favorites-drawer {
+    display: none;
   }
 }
