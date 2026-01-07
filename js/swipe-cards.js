@@ -275,8 +275,9 @@
 
     stack.innerHTML = '';
 
-    // Render next 3 cards
-    for (let i = 0; i < 3; i++) {
+    // Render next 10 cards for smooth swiping (no lag)
+    const cardsToRender = Math.min(10, cards.length - currentIndex);
+    for (let i = 0; i < cardsToRender; i++) {
       const cardIndex = currentIndex + i;
       if (cardIndex >= cards.length) break;
 
