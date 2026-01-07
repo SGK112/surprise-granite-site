@@ -264,7 +264,8 @@
       </div>
     `;
 
-    container.insertAdjacentHTML('afterbegin', swipeHTML);
+    // Insert directly into body for full-screen takeover
+    document.body.insertAdjacentHTML('beforeend', swipeHTML);
     updateFavorites();
   }
 
@@ -627,21 +628,18 @@
     // Remove swipe mode class
     document.body.classList.remove('swipe-mode');
 
-    // Hide swipe container
+    // Remove swipe containers from DOM
     const swipeContainer = document.querySelector('.swipe-cards-container');
     const favDrawer = document.getElementById('favorites-drawer');
-    if (swipeContainer) swipeContainer.style.display = 'none';
-    if (favDrawer) favDrawer.style.display = 'none';
+    if (swipeContainer) swipeContainer.remove();
+    if (favDrawer) favDrawer.remove();
 
     // Show the regular grid
     const materialsList = document.querySelector('.materials_list');
     if (materialsList) materialsList.classList.remove('swipe-enabled');
 
-    // Scroll to products section
-    const productsSection = document.querySelector('.section_filters1, .materials_collection-list-wrapper');
-    if (productsSection) {
-      productsSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Scroll to top
+    window.scrollTo(0, 0);
   };
 
   // Reinitialize on resize (for orientation change)

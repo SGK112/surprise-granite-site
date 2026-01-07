@@ -14,15 +14,17 @@
    ============================================ */
 @media (max-width: 767px) {
 
-  /* Hide everything else when app is open */
+  /* FULL SCREEN TAKEOVER */
   body.swipe-mode {
     overflow: hidden !important;
   }
 
-  body.swipe-mode .navbar_component,
-  body.swipe-mode .navbar-fixed_wrapper,
-  body.swipe-mode .simple-footer,
-  body.swipe-mode [class*="footer"],
+  /* Hide the page content behind the swipe UI */
+  body.swipe-mode .page-wrapper {
+    visibility: hidden !important;
+  }
+
+  /* Hide chatbots */
   body.swipe-mode #chatbase-bubble-button,
   body.swipe-mode [id*="chatbase"] {
     display: none !important;
@@ -34,21 +36,23 @@
   }
 
   /* ==========================================
-     FULL SCREEN CONTAINER
+     FULL SCREEN CONTAINER - Above everything
      ========================================== */
   .swipe-cards-container {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    background: #fff;
-    z-index: 9999;
+    display: flex !important;
+    flex-direction: column !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    background: #fff !important;
+    z-index: 999999 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* ==========================================
