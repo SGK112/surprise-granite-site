@@ -23,6 +23,24 @@
   }
 }
 
+/* ===== WEBFLOW CLEANUP: Hide empty dynamic bindings ===== */
+/* Hide images and elements that have no content from Webflow CMS */
+.w-dyn-bind-empty,
+img[src=""],
+img:not([src]) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Hide parent wrapper if all children are empty */
+.inspiration-gallery_image-wrapper:has(> .w-dyn-bind-empty:only-child) {
+  display: none !important;
+}
+
 /* iOS System Font Stack */
 html {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
@@ -166,68 +184,6 @@ html {
   #sg-chat-button svg {
     width: 28px;
     height: 28px;
-  }
-
-  /* Chat window close button */
-  .sg-chat-close {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .sg-chat-close svg {
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
-    min-height: 24px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .sg-chat-close svg line {
-    stroke: #ffffff !important;
-    stroke-width: 2.5 !important;
-  }
-
-  /* Chat send button */
-  .sg-send-btn {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .sg-send-btn svg {
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
-    min-height: 24px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .sg-send-btn svg path {
-    fill: #f9cb00 !important;
-  }
-
-  /* Chat input area spacing */
-  .sg-chat-input-area {
-    padding: 12px 16px !important;
-    gap: 12px !important;
-  }
-
-  .sg-chat-input {
-    height: 48px !important;
-    font-size: 16px !important; /* Prevents iOS zoom */
   }
 }
 
@@ -390,74 +346,6 @@ html {
     max-height: 100vh !important;
     border-radius: 0 !important;
   }
-}
-
-/* ===== SECONDARY HEADER MOBILE NAV ===== */
-/* Hide mobile nav by default - only show when toggled */
-.mobile-nav {
-  display: none;
-  flex-direction: column;
-  background: var(--primary, #1a1a2e);
-  padding: 16px 24px;
-  gap: 12px;
-}
-
-.mobile-nav.open {
-  display: flex;
-}
-
-.mobile-nav a {
-  color: white;
-  text-decoration: none;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-weight: 500;
-}
-
-.mobile-nav a:last-child {
-  border-bottom: none;
-}
-
-.mobile-nav .btn-estimate {
-  text-align: center;
-  margin-top: 8px;
-  border-bottom: none;
-  background: var(--accent, #f9cb00);
-  color: var(--primary, #1a1a2e) !important;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-weight: 700;
-}
-
-/* ===== FIX: Hide leftover Webflow navbar elements when secondary header is used ===== */
-/* Hide all leftover Webflow navbar/search components on pages with secondary header */
-.page-wrapper:has(.header) .navbar-search_mobile-component,
-.page-wrapper:has(.header) .navbar-fixed_wrapper,
-.page-wrapper:has(.header) .navbar_wrapper,
-.page-wrapper:has(.header) .cart-popup_component,
-.page-wrapper:has(.header) .mobile-search_overlay-trigger {
-  display: none !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  visibility: hidden !important;
-}
-
-/* Also target siblings directly for browsers that don't support :has() */
-.header ~ .navbar-search_mobile-component,
-.mobile-nav ~ .navbar-search_mobile-component {
-  display: none !important;
-}
-
-/* Reset main-wrapper padding when secondary header is present */
-.page-wrapper:has(.header) .main-wrapper {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-/* Hide any empty navbar wrapper that wasn't fully removed */
-.navbar-fixed_wrapper:empty,
-.navbar_wrapper:empty {
-  display: none !important;
 }
 
 /* ===== NAVIGATION MOBILE ===== */
@@ -898,38 +786,11 @@ html {
 
 /* ===== SHOP PAGE HERO SECTION ===== */
 .shop-hero,
-.section_header,
-.section_header54 {
+.section_header {
   transition: all 0.3s var(--ios-ease-out);
 }
 
 @media (max-width: 768px) {
-  /* Fix main-wrapper padding for fixed navbar on materials pages */
-  .main-wrapper.is-standard {
-    padding-top: 120px !important;
-  }
-
-  /* Materials page hero sections */
-  .section_header54 {
-    padding-top: 20px !important;
-    margin-top: 0 !important;
-  }
-
-  .section_header54 .padding-global {
-    padding-top: 16px;
-  }
-
-  .section_header54 h1 {
-    font-size: 28px !important;
-    line-height: 1.2 !important;
-    margin-bottom: 12px !important;
-  }
-
-  .section_header54 p {
-    font-size: 16px !important;
-    line-height: 1.5 !important;
-  }
-
   .shop-hero,
   .section_header {
     padding: 24px 16px;
@@ -946,6 +807,50 @@ html {
   .section_header p {
     font-size: 16px;
     line-height: 1.5;
+  }
+}
+
+/* ===== MOBILE FILTER FIXES ===== */
+
+@media (max-width: 768px) {
+  /* Ensure filters are clickable and visible on mobile */
+  .filters_component,
+  .filters_layout,
+  .filters_filters-wrapper,
+  .filters_form-block,
+  .filters_form,
+  .filters2_filter-group,
+  .filters_filter-options,
+  .filters_checkbox-grid,
+  .w-checkbox,
+  .filters_form-checkbox1 {
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Ensure sort dropdown works */
+  .filters_sort-dropdown,
+  .filters_sort-dropdown-toggle,
+  .w-dropdown,
+  .w-dropdown-toggle,
+  .w-dropdown-list {
+    pointer-events: auto !important;
+    z-index: 100 !important;
+  }
+
+  /* Fix filter sidebar on mobile */
+  .filters_filters-wrapper {
+    position: relative !important;
+    z-index: 50 !important;
+  }
+
+  /* Ensure checkboxes are clickable */
+  .filters_form-checkbox1 input[type="checkbox"],
+  .w-checkbox input[type="checkbox"] {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
 }
 
