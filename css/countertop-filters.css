@@ -230,3 +230,247 @@ span.filters_form-checkbox1-label.w-form-label,
 .section_header54 .slider-list_outer-wrapper {
   display: none !important;
 }
+
+/* ================================================================
+   MOBILE RESPONSIVE FIXES - Countertops Filter Page
+   Fixes the issue where filters break the page on portrait mobile
+   ================================================================ */
+
+/* Mobile Filter Toggle Button (hidden on desktop) */
+.mobile-filter-toggle {
+  display: none;
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.mobile-filter-toggle:hover {
+  background: linear-gradient(135deg, #2d2d3d 0%, #3d3d4d 100%);
+  transform: translateY(-2px);
+}
+
+.mobile-filter-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-filter-toggle .filter-count {
+  background: #f9cb00;
+  color: #1a1a2e;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ===== TABLET BREAKPOINT (991px and below) ===== */
+@media (max-width: 991px) {
+  /* Adjust filter layout for tablet */
+  .filters_layout {
+    flex-direction: column !important;
+    display: flex !important;
+  }
+
+  .filters_filters-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+    border-right: none !important;
+    border-radius: 16px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .filters_content-wrapper {
+    width: 100% !important;
+  }
+
+  /* Product grid - 3 columns on tablet */
+  .materials_list {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
+/* ===== MOBILE LANDSCAPE BREAKPOINT (767px and below) ===== */
+@media (max-width: 767px) {
+  /* SIMPLE FIX: Hide filters entirely on mobile */
+  .filters_filters-wrapper,
+  .filters_filters-wrapper[data-w-id],
+  [data-w-id="90e7635a-343f-5afd-1314-efe078517166"] {
+    display: none !important;
+  }
+
+  /* Hide mobile filter toggle button too */
+  .mobile-filter-toggle {
+    display: none !important;
+  }
+
+  /* Hide the non-functional Filters and Sort by buttons on mobile */
+  .filters_tablet-filters-button,
+  .filters_sort-dropdown,
+  .filters_feed-header-top {
+    display: none !important;
+  }
+
+  /* Also hide the entire filter feed header bar */
+  .filters_feed-header {
+    display: none !important;
+  }
+
+  /* Stack layout vertically */
+  .filters_layout {
+    flex-direction: column !important;
+    display: flex !important;
+  }
+
+  /* Full width content area */
+  .filters_content-wrapper {
+    width: 100% !important;
+  }
+
+  /* Product grid - 2 columns on mobile landscape */
+  .materials_list {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Reduce section padding */
+  .section_materials2 {
+    padding: 16px !important;
+  }
+
+  /* Remove negative margins that cause overflow */
+  .filters_component {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Fix filter component container */
+  .section_filters1 {
+    overflow-x: hidden !important;
+  }
+
+  .section_filters1 .padding-global {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* ===== MOBILE PORTRAIT BREAKPOINT (479px and below) ===== */
+@media (max-width: 479px) {
+  /* Ensure no horizontal overflow */
+  .filters_component,
+  .filters_layout,
+  .section_filters1,
+  .section_materials2 {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Single column product grid on small phones */
+  .materials_list {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Smaller product cards */
+  .product-thumb_item {
+    padding: 8px !important;
+  }
+
+  /* Compact filter toggle */
+  .mobile-filter-toggle {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  /* Reduce filter wrapper padding */
+  .filters_filters-wrapper.mobile-expanded {
+    padding: 12px 10px !important;
+  }
+
+  /* Smaller filter headings */
+  .filters2_filter-group-heading {
+    padding: 10px 4px !important;
+  }
+
+  .filters2_filter-group-heading .heading-style-h6 {
+    font-size: 13px !important;
+  }
+
+  /* Compact checkboxes */
+  .filters_form-checkbox1 {
+    padding: 6px 4px !important;
+  }
+
+  /* Results badge - full width */
+  .filters_results-wrapper {
+    display: block !important;
+    text-align: center !important;
+    margin: 8px 0 !important;
+  }
+
+  /* Section padding */
+  .section_materials2 {
+    padding: 12px !important;
+  }
+
+  .section_filters1 .padding-global {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Product details - smaller text */
+  .product1_details-header .text-weight-bold {
+    font-size: 14px !important;
+  }
+
+  .product1_details-body .text-color-grey {
+    font-size: 12px !important;
+  }
+}
+
+/* ===== PREVENT HORIZONTAL SCROLL GLOBALLY ===== */
+@media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  .page-wrapper,
+  .main-wrapper,
+  main {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ===== ACTIVE FILTER INDICATOR ===== */
+.filters_filters-wrapper.has-active-filters .filters_heading::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #f9cb00;
+  border-radius: 50%;
+  margin-left: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}

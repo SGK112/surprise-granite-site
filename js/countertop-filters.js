@@ -469,10 +469,118 @@
     observer.observe(sentinel);
   }
 
+  // ================================================================
+  // MOBILE FILTER TOGGLE FUNCTIONALITY
+  // ================================================================
+
+  function setupMobileFilterToggle() {
+    const filterWrapper = document.querySelector(CONFIG.filterFormSelector);
+    const filterLayout = document.querySelector('.filters_layout');
+
+    if (!filterWrapper || !filterLayout) {
+      console.log('Filter elements not found for mobile toggle');
+      return;
+    }
+
+    // Check if toggle already exists
+    if (document.querySelector('.mobile-filter-toggle')) {
+      return;
+    }
+
+    // Create mobile filter toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'mobile-filter-toggle';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.setAttribute('aria-controls', 'filter-sidebar');
+    toggleBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      </svg>
+      <span class="filter-text">Show Filters</span>
+      <span class="filter-count" style="display: none;">0</span>
+    `;
+
+    // Insert toggle before filter layout
+    filterLayout.parentNode.insertBefore(toggleBtn, filterLayout);
+
+    // Give filter wrapper an ID for accessibility
+    filterWrapper.id = 'filter-sidebar';
+
+    // Toggle functionality
+    toggleBtn.addEventListener('click', function() {
+      const isExpanded = filterWrapper.classList.toggle('mobile-expanded');
+      this.setAttribute('aria-expanded', isExpanded);
+
+      const filterText = this.querySelector('.filter-text');
+      filterText.textContent = isExpanded ? 'Hide Filters' : 'Show Filters';
+
+      // Scroll to filters when opening
+      if (isExpanded) {
+        filterWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Update filter count badge
+    function updateFilterCount() {
+      const activeCount = Object.values(activeFilters).reduce((count, val) => {
+        if (Array.isArray(val)) return count + val.length;
+        if (typeof val === 'string' && val.trim()) return count + 1;
+        return count;
+      }, 0);
+
+      const badge = toggleBtn.querySelector('.filter-count');
+      if (activeCount > 0) {
+        badge.textContent = activeCount;
+        badge.style.display = 'inline-block';
+        filterWrapper.classList.add('has-active-filters');
+      } else {
+        badge.style.display = 'none';
+        filterWrapper.classList.remove('has-active-filters');
+      }
+    }
+
+    // Expose updateFilterCount globally for use after filter changes
+    window.updateMobileFilterCount = updateFilterCount;
+
+    // Auto-collapse filters after selection on mobile
+    document.querySelectorAll('.filters_form-checkbox1 input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        setTimeout(updateFilterCount, 100);
+      });
+    });
+
+    // Initial count update
+    setTimeout(updateFilterCount, 500);
+
+    console.log('Mobile filter toggle initialized');
+  }
+
+  // Check for mobile viewport
+  function isMobileViewport() {
+    return window.innerWidth <= 767;
+  }
+
+  // Handle resize
+  function handleResize() {
+    const filterWrapper = document.querySelector(CONFIG.filterFormSelector);
+    if (!filterWrapper) return;
+
+    if (!isMobileViewport()) {
+      // On desktop, always show filters
+      filterWrapper.classList.remove('mobile-expanded');
+    }
+  }
+
   // Start when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      setupMobileFilterToggle();
+      window.addEventListener('resize', handleResize);
+    });
   } else {
     init();
+    setupMobileFilterToggle();
+    window.addEventListener('resize', handleResize);
   }
 })();
