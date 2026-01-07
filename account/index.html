@@ -1093,6 +1093,151 @@
       background: rgba(255, 255, 255, 0.02);
     }
 
+    /* Wallet Balance Cards */
+    .wallet-balance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .balance-card {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .balance-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .balance-card.available::before {
+      background: linear-gradient(90deg, var(--success), #2dd4bf);
+    }
+
+    .balance-card.pending::before {
+      background: linear-gradient(90deg, var(--warning), #fb923c);
+    }
+
+    .balance-card.total::before {
+      background: linear-gradient(90deg, var(--gold-primary), var(--gold-dark));
+    }
+
+    .balance-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .balance-card.available .balance-amount {
+      color: var(--success);
+    }
+
+    .balance-card.pending .balance-amount {
+      color: var(--warning);
+    }
+
+    .balance-card.total .balance-amount {
+      color: var(--gold-primary);
+    }
+
+    .balance-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .transaction-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .transaction-row:last-child {
+      border-bottom: none;
+    }
+
+    .transaction-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .transaction-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .transaction-icon.income {
+      background: rgba(77, 255, 130, 0.15);
+      color: var(--success);
+    }
+
+    .transaction-icon.payout {
+      background: rgba(77, 166, 255, 0.15);
+      color: var(--info);
+    }
+
+    .transaction-icon.fee {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--error);
+    }
+
+    .transaction-details h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .transaction-details p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .transaction-amount {
+      text-align: right;
+    }
+
+    .transaction-amount .amount {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .transaction-amount .amount.positive {
+      color: var(--success);
+    }
+
+    .transaction-amount .amount.negative {
+      color: var(--error);
+    }
+
+    .transaction-amount .date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .sidebar {
@@ -1249,6 +1394,10 @@
           <a class="nav-item" data-page="invoices" onclick="showPage('invoices')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Invoices
+          </a>
+          <a class="nav-item" data-page="wallet" onclick="showPage('wallet')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            Wallet
           </a>
           <a class="nav-item" data-page="admin-users" onclick="showPage('admin-users')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -1412,6 +1561,69 @@
                 <button class="filter-btn" data-invoice-status="void" onclick="filterInvoices('void')">Voided</button>
               </div>
               <div id="invoices-list">
+                <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Wallet Page (Admin Only) -->
+        <section id="page-wallet" class="page-section">
+          <!-- Balance Cards -->
+          <div class="wallet-balance-grid">
+            <div class="balance-card available">
+              <div class="balance-label">Available Balance</div>
+              <div class="balance-amount" id="available-balance">$0.00</div>
+              <div class="balance-sub">Ready to withdraw</div>
+            </div>
+            <div class="balance-card pending">
+              <div class="balance-label">Pending Balance</div>
+              <div class="balance-amount" id="pending-balance">$0.00</div>
+              <div class="balance-sub">Processing payments</div>
+            </div>
+            <div class="balance-card total">
+              <div class="balance-label">Total Revenue</div>
+              <div class="balance-amount" id="total-revenue">$0.00</div>
+              <div class="balance-sub">All time</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Quick Actions</h3>
+            </div>
+            <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <a href="https://dashboard.stripe.com" target="_blank" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Open Stripe Dashboard
+              </a>
+              <button class="btn btn-secondary" onclick="loadWalletData()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Transactions</h3>
+            </div>
+            <div class="card-body">
+              <div id="transactions-list">
+                <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Payouts -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Payouts to Your Bank</h3>
+            </div>
+            <div class="card-body">
+              <div id="payouts-list">
                 <div class="spinner" style="margin: 40px auto;"></div>
               </div>
             </div>
@@ -2007,6 +2219,7 @@
         'profile': 'My Profile',
         'leads': 'Leads',
         'invoices': 'Invoices',
+        'wallet': 'Wallet',
         'admin-users': 'Manage Admins',
         'products': 'Products',
         'orders': 'Orders',
@@ -2810,14 +3023,158 @@
       if (e.target === e.currentTarget) closeInvoiceModal();
     });
 
-    // Update showPage to load invoices
+    // Update showPage to load invoices and wallet
     const _originalShowPage = showPage;
     showPage = function(page) {
       _originalShowPage(page);
       if (page === 'invoices' && isAdmin) {
         loadInvoices();
       }
+      if (page === 'wallet' && isAdmin) {
+        loadWalletData();
+      }
     };
+
+    // ============ WALLET MANAGEMENT ============
+    let totalRevenue = 0;
+
+    async function loadWalletData() {
+      await Promise.all([
+        loadBalance(),
+        loadTransactions(),
+        loadPayouts()
+      ]);
+    }
+
+    async function loadBalance() {
+      try {
+        const response = await fetch(`${API_URL}/api/balance`);
+        if (!response.ok) throw new Error('Failed to load balance');
+
+        const data = await response.json();
+
+        document.getElementById('available-balance').textContent = `$${data.total_available.toFixed(2)}`;
+        document.getElementById('pending-balance').textContent = `$${data.total_pending.toFixed(2)}`;
+
+      } catch (err) {
+        console.error('Balance error:', err);
+        document.getElementById('available-balance').textContent = '$--.--';
+        document.getElementById('pending-balance').textContent = '$--.--';
+      }
+    }
+
+    async function loadTransactions() {
+      const container = document.getElementById('transactions-list');
+      if (!container) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/balance-transactions?limit=15`);
+        if (!response.ok) throw new Error('Failed to load transactions');
+
+        const data = await response.json();
+
+        if (data.transactions.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <p>No transactions yet</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Calculate total revenue from charges
+        totalRevenue = data.transactions
+          .filter(t => t.type === 'charge' && t.amount > 0)
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+
+        container.innerHTML = data.transactions.map(t => {
+          const isPositive = t.amount > 0 && t.type !== 'payout' && t.type !== 'stripe_fee';
+          const iconClass = t.type === 'payout' ? 'payout' : (t.type === 'stripe_fee' ? 'fee' : 'income');
+          const icon = t.type === 'payout'
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>'
+            : t.type === 'stripe_fee'
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>';
+
+          return `
+            <div class="transaction-row">
+              <div class="transaction-info">
+                <div class="transaction-icon ${iconClass}">${icon}</div>
+                <div class="transaction-details">
+                  <h4>${t.description || t.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                  <p>${t.type} ${t.fee > 0 ? `• Fee: $${t.fee.toFixed(2)}` : ''}</p>
+                </div>
+              </div>
+              <div class="transaction-amount">
+                <div class="amount ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}$${Math.abs(t.amount).toFixed(2)}</div>
+                <div class="date">${new Date(t.created).toLocaleDateString()}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Transactions error:', err);
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>Unable to load transactions</p>
+          </div>
+        `;
+      }
+    }
+
+    async function loadPayouts() {
+      const container = document.getElementById('payouts-list');
+      if (!container) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/payouts?limit=10`);
+        if (!response.ok) throw new Error('Failed to load payouts');
+
+        const data = await response.json();
+
+        if (data.payouts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <p>No payouts yet. Funds are automatically transferred to your bank account.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = data.payouts.map(p => {
+          const statusColor = p.status === 'paid' ? 'var(--success)' : (p.status === 'pending' ? 'var(--warning)' : 'var(--text-muted)');
+
+          return `
+            <div class="transaction-row">
+              <div class="transaction-info">
+                <div class="transaction-icon payout">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                </div>
+                <div class="transaction-details">
+                  <h4>Bank Transfer</h4>
+                  <p style="color: ${statusColor};">${p.status.charAt(0).toUpperCase() + p.status.slice(1)} • Arrives ${new Date(p.arrival_date).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div class="transaction-amount">
+                <div class="amount">$${p.amount.toFixed(2)}</div>
+                <div class="date">${new Date(p.created).toLocaleDateString()}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Payouts error:', err);
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>Unable to load payouts</p>
+          </div>
+        `;
+      }
+    }
   </script>
 </body>
 </html>

@@ -464,6 +464,137 @@ app.post('/api/payment-links', async (req, res) => {
   }
 });
 
+// ============ WALLET / BALANCE ============
+
+// Get Stripe account balance
+app.get('/api/balance', async (req, res) => {
+  try {
+    const balance = await stripe.balance.retrieve();
+
+    res.json({
+      available: balance.available.map(b => ({
+        amount: b.amount / 100,
+        currency: b.currency
+      })),
+      pending: balance.pending.map(b => ({
+        amount: b.amount / 100,
+        currency: b.currency
+      })),
+      total_available: balance.available.reduce((sum, b) => sum + b.amount, 0) / 100,
+      total_pending: balance.pending.reduce((sum, b) => sum + b.amount, 0) / 100
+    });
+  } catch (error) {
+    console.error('Balance error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get recent payouts
+app.get('/api/payouts', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const payouts = await stripe.payouts.list({ limit: parseInt(limit) });
+
+    res.json({
+      payouts: payouts.data.map(p => ({
+        id: p.id,
+        amount: p.amount / 100,
+        currency: p.currency,
+        status: p.status,
+        arrival_date: new Date(p.arrival_date * 1000).toISOString(),
+        created: new Date(p.created * 1000).toISOString(),
+        method: p.method,
+        description: p.description
+      }))
+    });
+  } catch (error) {
+    console.error('Payouts error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get recent transactions/charges
+app.get('/api/transactions', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const charges = await stripe.charges.list({ limit: parseInt(limit) });
+
+    res.json({
+      transactions: charges.data.map(c => ({
+        id: c.id,
+        amount: c.amount / 100,
+        currency: c.currency,
+        status: c.status,
+        description: c.description,
+        customer_email: c.billing_details?.email || c.receipt_email,
+        created: new Date(c.created * 1000).toISOString(),
+        receipt_url: c.receipt_url,
+        paid: c.paid,
+        refunded: c.refunded
+      }))
+    });
+  } catch (error) {
+    console.error('Transactions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get balance transactions (detailed)
+app.get('/api/balance-transactions', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const transactions = await stripe.balanceTransactions.list({ limit: parseInt(limit) });
+
+    res.json({
+      transactions: transactions.data.map(t => ({
+        id: t.id,
+        amount: t.amount / 100,
+        net: t.net / 100,
+        fee: t.fee / 100,
+        currency: t.currency,
+        type: t.type,
+        description: t.description,
+        created: new Date(t.created * 1000).toISOString(),
+        status: t.status,
+        available_on: new Date(t.available_on * 1000).toISOString()
+      }))
+    });
+  } catch (error) {
+    console.error('Balance transactions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Initiate a payout
+app.post('/api/payouts', async (req, res) => {
+  try {
+    const { amount, description } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount required' });
+    }
+
+    const payout = await stripe.payouts.create({
+      amount: Math.round(amount * 100),
+      currency: 'usd',
+      description: description || 'Manual payout from dashboard'
+    });
+
+    res.json({
+      success: true,
+      payout: {
+        id: payout.id,
+        amount: payout.amount / 100,
+        status: payout.status,
+        arrival_date: new Date(payout.arrival_date * 1000).toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Payout error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ STRIPE CONNECT (for vendor payouts) ============
 
 // Create a Connect Express account for vendors
