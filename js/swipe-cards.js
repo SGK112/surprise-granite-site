@@ -218,6 +218,10 @@
 
     const swipeHTML = `
       <div class="swipe-cards-container">
+        <div class="swipe-topbar">
+          <span class="swipe-topbar-title">Find Your Floor</span>
+          <button class="swipe-exit-btn" onclick="window.exitSwipeMode()">View Grid</button>
+        </div>
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
