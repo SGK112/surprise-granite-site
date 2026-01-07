@@ -206,6 +206,9 @@
     const container = document.querySelector('.materials_collection-list-wrapper');
     if (!container) return;
 
+    // Enable full-screen swipe mode
+    document.body.classList.add('swipe-mode');
+
     const loginPrompt = !currentUser ? `
       <div class="swipe-login-prompt" id="login-prompt" style="display: none;">
         <p>Login to save your favorites to your account!</p>
@@ -215,23 +218,32 @@
 
     const swipeHTML = `
       <div class="swipe-cards-container">
+        <div class="swipe-topbar">
+          <span class="swipe-topbar-title">Find Your Floor</span>
+          <button class="swipe-close-btn" onclick="window.exitSwipeMode()" title="Exit">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
               <path d="M3 10l4-4"></path>
               <path d="M3 10l4 4"></path>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           </button>
@@ -608,6 +620,24 @@
   window.toggleFavorites = function() {
     const drawer = document.getElementById('favorites-drawer');
     if (drawer) drawer.classList.toggle('open');
+  };
+
+  window.exitSwipeMode = function() {
+    // Remove swipe mode class
+    document.body.classList.remove('swipe-mode');
+
+    // Hide swipe container
+    const swipeContainer = document.querySelector('.swipe-cards-container');
+    const favDrawer = document.getElementById('favorites-drawer');
+    if (swipeContainer) swipeContainer.style.display = 'none';
+    if (favDrawer) favDrawer.style.display = 'none';
+
+    // Show the regular grid
+    const materialsList = document.querySelector('.materials_list');
+    if (materialsList) materialsList.classList.remove('swipe-enabled');
+
+    // Scroll to top
+    window.scrollTo(0, 0);
   };
 
   // Reinitialize on resize (for orientation change)

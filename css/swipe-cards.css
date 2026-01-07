@@ -1,6 +1,7 @@
 /**
  * Swipe Cards - Tinder-style product browsing for mobile
  * "Swipe Right for Your Perfect Floor!"
+ * Optimized for full-screen mobile experience
  */
 
 /* Only show on mobile */
@@ -9,45 +10,111 @@
 }
 
 @media (max-width: 767px) {
+  /* FULL SCREEN MODE - Hide header/footer when swiping */
+  body.swipe-mode .navbar_component,
+  body.swipe-mode .header,
+  body.swipe-mode .nav_component,
+  body.swipe-mode [class*="navbar"],
+  body.swipe-mode [class*="header"],
+  body.swipe-mode .footer,
+  body.swipe-mode [class*="footer"],
+  body.swipe-mode .section_header54 {
+    display: none !important;
+  }
+
+  body.swipe-mode {
+    padding-top: 0 !important;
+    overflow: hidden;
+  }
+
+  body.swipe-mode .page-wrapper,
+  body.swipe-mode .main-wrapper {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
   /* Hide the regular grid on mobile */
   .materials_list.swipe-enabled {
     display: none !important;
   }
 
-  /* Show swipe cards container */
+  /* Show swipe cards container - FULL VIEWPORT */
   .swipe-cards-container {
-    display: block;
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    height: 480px;
-    margin: 0 auto;
-    perspective: 1000px;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for iOS */
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    z-index: 9999;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  /* Card stack */
+  /* Top bar with close button */
+  .swipe-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  .swipe-topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .swipe-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    color: #666;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Card stack area - takes remaining space */
   .swipe-card-stack {
+    flex: 1;
     position: relative;
-    width: 100%;
-    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    min-height: 0;
+    overflow: hidden;
   }
 
-  /* Individual card */
+  /* Individual card - FILL THE SPACE */
   .swipe-card {
     position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 32px);
-    max-width: 350px;
-    height: 450px;
+    width: calc(100% - 24px);
+    max-width: 400px;
+    height: calc(100% - 16px);
+    max-height: 580px;
     background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     cursor: grab;
     user-select: none;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     will-change: transform;
+    display: flex;
+    flex-direction: column;
   }
 
   .swipe-card:active {
@@ -56,12 +123,12 @@
 
   /* Stack effect - cards behind */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) scale(0.95) translateY(10px);
+    transform: scale(0.96) translateY(8px);
     z-index: -1;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) scale(0.9) translateY(20px);
+    transform: scale(0.92) translateY(16px);
     z-index: -2;
   }
 
@@ -72,24 +139,26 @@
   /* Card being dragged */
   .swipe-card.dragging {
     transition: none;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   }
 
-  /* Card image */
+  /* Card image - flexible height */
   .swipe-card-image {
     width: 100%;
-    height: 280px;
+    height: 55%;
+    min-height: 200px;
     object-fit: cover;
     pointer-events: none;
+    flex-shrink: 0;
   }
 
-  /* View button on card */
+  /* View button on card - BIGGER for touch */
   .swipe-card-view-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
+    top: 16px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;
     display: flex;
@@ -97,114 +166,131 @@
     justify-content: center;
     color: #1a1a2e;
     text-decoration: none;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     z-index: 10;
     transition: transform 0.2s ease, background 0.2s ease;
   }
 
-  .swipe-card-view-btn:hover,
+  .swipe-card-view-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
   .swipe-card-view-btn:active {
-    transform: scale(1.1);
+    transform: scale(0.95);
     background: #f9cb00;
   }
 
-  /* Card content */
+  /* Card content - scrollable if needed */
   .swipe-card-content {
+    flex: 1;
     padding: 16px 20px;
     background: #fff;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 12px;
   }
 
   .swipe-card-title {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #1a1a2e;
+    line-height: 1.2;
+    flex: 1;
   }
 
   .swipe-card-material {
     background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
     color: #fff;
-    padding: 4px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  /* Specs grid */
+  /* Specs grid - 2 columns, compact */
   .swipe-card-specs {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 10px;
   }
 
   .swipe-card-spec {
     background: #f8f9fa;
-    padding: 10px 12px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .spec-label {
-    font-size: 10px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-  }
-
-  .spec-value {
-    font-size: 14px;
-    color: #1a1a2e;
-    font-weight: 600;
-  }
-
-  /* Swipe indicators */
-  .swipe-indicator {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 16px 20px;
+    padding: 12px 14px;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 4px;
+  }
+
+  .spec-label {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .spec-value {
+    font-size: 15px;
+    color: #1a1a2e;
+    font-weight: 700;
+  }
+
+  /* Swipe indicators - BIGGER */
+  .swipe-indicator {
+    position: absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    padding: 20px 24px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
     z-index: 20;
   }
 
+  .swipe-indicator svg {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
   .swipe-indicator span {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
 
   .swipe-indicator.like {
-    right: 20px;
+    right: 24px;
     background: rgba(34, 197, 94, 0.95);
     color: #fff;
-    border: 3px solid #22c55e;
+    border: 4px solid #22c55e;
     transform: translateY(-50%) rotate(12deg);
   }
 
   .swipe-indicator.nope {
-    left: 20px;
+    left: 24px;
     background: rgba(239, 68, 68, 0.95);
     color: #fff;
-    border: 3px solid #ef4444;
+    border: 4px solid #ef4444;
     transform: translateY(-50%) rotate(-12deg);
   }
 
@@ -236,16 +322,19 @@
     }
   }
 
-  /* Action buttons */
+  /* Bottom action bar - FIXED at bottom */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 16px;
-    margin-top: 20px;
-    padding: 0 20px;
+    gap: 20px;
+    padding: 16px 20px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
   }
 
+  /* Action buttons - MUCH BIGGER */
   .swipe-btn {
     border-radius: 50%;
     border: none;
@@ -253,24 +342,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-
-  .swipe-btn:hover {
-    transform: scale(1.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
 
   .swipe-btn.nope {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     background: #fff;
     color: #ef4444;
-    border: 3px solid #ef4444;
+    border: 4px solid #ef4444;
+  }
+
+  .swipe-btn.nope svg {
+    width: 36px !important;
+    height: 36px !important;
+    stroke-width: 3;
   }
 
   .swipe-btn.nope:active {
@@ -279,11 +371,16 @@
   }
 
   .swipe-btn.like {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: #fff;
     border: none;
+  }
+
+  .swipe-btn.like svg {
+    width: 36px !important;
+    height: 36px !important;
   }
 
   .swipe-btn.like:active {
@@ -291,11 +388,16 @@
   }
 
   .swipe-btn.undo {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     background: #fff;
     color: #f9cb00;
-    border: 2px solid #e5e7eb;
+    border: 3px solid #e5e7eb;
+  }
+
+  .swipe-btn.undo svg {
+    width: 26px !important;
+    height: 26px !important;
   }
 
   .swipe-btn.undo:active {
@@ -303,63 +405,74 @@
     color: #1a1a2e;
   }
 
-  /* Counter */
+  /* Counter - below buttons */
   .swipe-counter {
     text-align: center;
-    margin-top: 16px;
+    padding: 8px 20px 16px;
     color: #666;
-    font-size: 14px;
+    font-size: 15px;
+    background: #fff;
+    flex-shrink: 0;
   }
 
   .swipe-counter strong {
     color: #1a1a2e;
+    font-weight: 700;
   }
 
   /* Empty state */
   .swipe-empty {
     text-align: center;
-    padding: 60px 20px;
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
   }
 
   .swipe-empty-icon {
-    font-size: 60px;
-    margin-bottom: 16px;
+    font-size: 72px;
+    margin-bottom: 20px;
   }
 
   .swipe-empty h3 {
-    font-size: 20px;
+    font-size: 24px;
     color: #1a1a2e;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    font-weight: 700;
   }
 
   .swipe-empty p {
     color: #666;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    font-size: 16px;
   }
 
   .swipe-reset-btn {
     background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
     color: #1a1a2e;
     border: none;
-    padding: 12px 24px;
+    padding: 16px 32px;
     border-radius: 30px;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
     cursor: pointer;
   }
 
-  /* Favorites drawer */
+  /* Favorites drawer - slides up from bottom */
   .favorites-drawer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: #fff;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
-    transform: translateY(calc(100% - 60px));
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+    transform: translateY(calc(100% - 70px));
     transition: transform 0.3s ease;
-    z-index: 100;
-    max-height: 70vh;
+    z-index: 10000;
+    max-height: 60vh;
   }
 
   .favorites-drawer.open {
@@ -367,7 +480,7 @@
   }
 
   .favorites-drawer-handle {
-    padding: 16px;
+    padding: 20px 20px 16px;
     text-align: center;
     cursor: pointer;
   }
@@ -375,53 +488,55 @@
   .favorites-drawer-handle::before {
     content: '';
     display: block;
-    width: 40px;
-    height: 4px;
+    width: 48px;
+    height: 5px;
     background: #ddd;
-    border-radius: 2px;
-    margin: 0 auto 8px;
+    border-radius: 3px;
+    margin: 0 auto 12px;
   }
 
   .favorites-drawer-title {
-    font-weight: 600;
+    font-weight: 700;
     color: #1a1a2e;
+    font-size: 16px;
   }
 
   .favorites-count {
     background: #22c55e;
     color: #fff;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
     margin-left: 8px;
   }
 
   .favorites-list {
     display: flex;
-    gap: 12px;
-    padding: 0 16px 20px;
+    gap: 16px;
+    padding: 0 20px 24px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .favorite-item {
     flex-shrink: 0;
-    width: 100px;
+    width: 110px;
     text-align: center;
   }
 
   .favorite-item img {
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
     object-fit: cover;
-    border-radius: 12px;
+    border-radius: 16px;
   }
 
   .favorite-item span {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: #666;
-    margin-top: 4px;
+    margin-top: 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -430,17 +545,17 @@
   /* Instructions toast */
   .swipe-instructions {
     position: fixed;
-    bottom: 80px;
+    bottom: 160px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26, 26, 46, 0.9);
+    background: rgba(26, 26, 46, 0.95);
     color: #fff;
-    padding: 12px 20px;
+    padding: 14px 24px;
     border-radius: 30px;
-    font-size: 14px;
+    font-size: 15px;
     white-space: nowrap;
     animation: fadeInUp 0.5s ease, fadeOut 0.5s ease 3s forwards;
-    z-index: 50;
+    z-index: 10001;
   }
 
   @keyframes fadeInUp {
@@ -457,40 +572,43 @@
   @keyframes fadeOut {
     to {
       opacity: 0;
+      visibility: hidden;
     }
   }
 
   /* Login prompt for guests */
   .swipe-login-prompt {
     position: fixed;
-    bottom: 140px;
+    bottom: 180px;
     left: 50%;
     transform: translateX(-50%);
     background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
     color: #fff;
-    padding: 16px 24px;
-    border-radius: 16px;
+    padding: 20px 28px;
+    border-radius: 20px;
     text-align: center;
-    z-index: 60;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 10001;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s ease;
-    max-width: 280px;
+    max-width: 300px;
+    width: calc(100% - 48px);
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 12px;
-    font-size: 14px;
+    margin: 0 0 16px;
+    font-size: 15px;
+    line-height: 1.4;
   }
 
   .swipe-login-btn {
     display: inline-block;
     background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
     color: #1a1a2e;
-    padding: 10px 24px;
+    padding: 14px 28px;
     border-radius: 25px;
     text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 15px;
   }
 
   @keyframes slideUp {
@@ -509,17 +627,17 @@
     display: inline-block;
     background: linear-gradient(135deg, #1a1a2e 0%, #2d2d3d 100%);
     color: #fff;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border-radius: 25px;
     text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    margin-top: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 16px;
   }
 
   /* Favorites drawer actions */
   .favorites-actions {
-    padding: 12px 16px 20px;
+    padding: 16px 20px 24px;
     text-align: center;
   }
 
@@ -527,10 +645,10 @@
     display: inline-block;
     background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
     color: #1a1a2e;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 14px 24px;
+    border-radius: 25px;
     text-decoration: none;
-    font-weight: 600;
-    font-size: 13px;
+    font-weight: 700;
+    font-size: 14px;
   }
 }
