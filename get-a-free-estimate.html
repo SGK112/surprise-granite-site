@@ -928,6 +928,35 @@
         console.log('CRM webhook error, but lead captured locally');
       }
 
+      // Submit to Supabase for admin panel
+      try {
+        await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            project_type: formData.projectType,
+            timeline: formData.timeline,
+            budget: formData.budget,
+            message: formData.message,
+            source: formData.source,
+            form_name: 'estimate-form',
+            page_url: window.location.href,
+            raw_data: formData
+          })
+        });
+      } catch (error) {
+        console.log('Supabase error:', error);
+      }
+
       // Store locally as backup
       const leads = JSON.parse(localStorage.getItem('sg_leads') || '[]');
       leads.push(formData);

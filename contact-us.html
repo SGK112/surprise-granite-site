@@ -1552,6 +1552,31 @@ setInterval(displayOpeningStatus, 60000);
                     console.log('CRM webhook error:', err);
                 }
 
+                // Submit to Supabase for admin panel
+                try {
+                    await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({
+                            full_name: formData.name,
+                            email: formData.email,
+                            phone: formData.phone,
+                            project_type: formData.inquiry,
+                            message: formData.message,
+                            source: formData.source,
+                            form_name: 'contact-form',
+                            page_url: window.location.href,
+                            raw_data: formData
+                        })
+                    });
+                } catch (err) {
+                    console.log('Supabase error:', err);
+                }
+
                 // Show success
                 document.getElementById('contactForm').style.display = 'none';
                 document.querySelector('.form-progress').style.display = 'none';
@@ -2091,6 +2116,27 @@ setInterval(displayOpeningStatus, 60000);
                     },
                     body: JSON.stringify(formData)
                 });
+
+                // Also submit to Supabase for admin panel
+                await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        full_name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                        project_type: formData.projectType,
+                        message: formData.message,
+                        source: 'contact-page-v2',
+                        form_name: 'contact-form-alt',
+                        page_url: window.location.href,
+                        raw_data: formData
+                    })
+                }).catch(err => console.log('Supabase error:', err));
 
                 if (response.ok) {
                     alert.className = 'alert success';
