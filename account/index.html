@@ -735,6 +735,21 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Admin Card Styles */
+    .admin-card {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.1) 0%, rgba(204, 166, 0, 0.05) 100%);
+      border: 1px solid var(--gold-primary);
+    }
+
+    .admin-card h3 {
+      color: var(--gold-primary);
+    }
+
+    .admin-badge {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
     /* Mobile Responsive */
     @media (max-width: 600px) {
       .header-nav a:not(.btn-cta) { display: none; }
@@ -997,6 +1012,14 @@
             </div>
           </div>
 
+          <div class="dash-card admin-card" id="admin-panel-card" style="display:none;">
+            <h3>Admin Panel</h3>
+            <div class="quick-actions">
+              <a href="/account/admin/">View Leads Dashboard</a>
+              <a href="/account/admin/#user-management" onclick="localStorage.setItem('adminTab', 'users')">Manage Admin Users</a>
+            </div>
+          </div>
+
           <div class="dash-card">
             <h3>Account Info</h3>
             <div class="account-info-item" id="user-email-row">
@@ -1237,13 +1260,30 @@
           'pro_fabricator': 'Pro Fabricator',
           'pro_contractor': 'Pro Contractor',
           'pro_designer': 'Pro Designer',
-          'admin': 'Admin'
+          'admin': 'Admin',
+          'super_admin': 'Super Admin'
         };
         document.getElementById('user-badge').textContent = badgeText[accountType] || 'Member';
 
         // Show pro resources if pro account
         if (accountType.startsWith('pro_')) {
           document.getElementById('pro-resources').style.display = 'block';
+        }
+
+        // Check admin access - by email or account_type
+        const adminEmails = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+        const isAdmin = adminEmails.includes(currentUser.email.toLowerCase()) ||
+                        accountType === 'admin' ||
+                        accountType === 'super_admin' ||
+                        profile?.is_admin === true;
+
+        if (isAdmin) {
+          document.getElementById('admin-panel-card').style.display = 'block';
+          // Update badge if admin
+          if (adminEmails.includes(currentUser.email.toLowerCase())) {
+            document.getElementById('user-badge').textContent = 'Super Admin';
+            document.getElementById('user-badge').classList.add('admin-badge');
+          }
         }
       } catch (err) {
         console.warn('Profile load warning:', err);

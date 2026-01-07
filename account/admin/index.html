@@ -782,6 +782,14 @@
           </a>
         </div>
 
+        <div class="nav-section" id="user-management-nav" style="display: none;">
+          <div class="nav-section-title">Admin</div>
+          <a class="nav-item" data-page="users" onclick="showUserManagement()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            Manage Admin Users
+          </a>
+        </div>
+
         <div class="nav-section">
           <div class="nav-section-title">Quick Links</div>
           <a class="nav-item" href="/" target="_blank">
@@ -903,6 +911,35 @@
     </div>
   </div>
 
+  <!-- User Management Modal -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Manage Admin Users</h2>
+        <button class="modal-close" onclick="closeUserModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 24px;">
+          <p style="color: var(--text-muted); margin-bottom: 16px;">Add or remove admin access for users. Super admins (joshb@surprisegranite.com, info@surprisegranite.com) always have access.</p>
+
+          <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+            <input type="email" id="new-admin-email" placeholder="Enter email address" style="flex: 1; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+            <button class="btn btn-primary" onclick="addAdminUser()">Add Admin</button>
+          </div>
+
+          <div id="admin-users-list">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeUserModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Supabase config
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
@@ -937,7 +974,14 @@
           .eq('id', currentUser.id)
           .single();
 
-        if (!profile || !['admin', 'super_admin'].includes(profile.account_type)) {
+// Check admin access - by email or account_type
+        const adminEmails = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+        const isSuperAdmin = adminEmails.includes(currentUser.email.toLowerCase());
+        const isAdmin = isSuperAdmin ||
+                        ['admin', 'super_admin'].includes(profile?.account_type) ||
+                        profile?.is_admin === true;
+
+        if (!isAdmin) {
           document.getElementById('auth-gate').innerHTML = `
             <div>
               <h1>Access Denied</h1>
@@ -948,12 +992,20 @@
           return;
         }
 
+        // Store super admin status
+        window.isSuperAdmin = isSuperAdmin;
+
         userProfile = profile;
 
         // Update UI with user info
-        document.getElementById('admin-avatar').textContent = profile.full_name?.charAt(0) || '?';
-        document.getElementById('admin-name').textContent = profile.full_name || 'Admin';
-        document.getElementById('admin-role').textContent = profile.account_type === 'super_admin' ? 'Super Admin' : 'Admin';
+        document.getElementById('admin-avatar').textContent = profile?.full_name?.charAt(0) || currentUser.email.charAt(0).toUpperCase();
+        document.getElementById('admin-name').textContent = profile?.full_name || currentUser.email.split('@')[0];
+        document.getElementById('admin-role').textContent = isSuperAdmin ? 'Super Admin' : 'Admin';
+
+        // Show user management for super admins
+        if (isSuperAdmin) {
+          document.getElementById('user-management-nav').style.display = 'block';
+        }
 
         // Show admin app
         document.getElementById('auth-gate').style.display = 'none';
@@ -1245,6 +1297,192 @@
     document.getElementById('lead-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeModal();
     });
+
+    document.getElementById('user-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeUserModal();
+    });
+
+    // User Management Functions
+    let adminUsers = [];
+    const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+
+    function showUserManagement() {
+      document.getElementById('user-modal').classList.add('active');
+      loadAdminUsers();
+    }
+
+    function closeUserModal() {
+      document.getElementById('user-modal').classList.remove('active');
+    }
+
+    async function loadAdminUsers() {
+      try {
+        // Get all users with admin access
+        const { data, error } = await supabaseClient
+          .from('sg_users')
+          .select('*')
+          .or('account_type.eq.admin,account_type.eq.super_admin,is_admin.eq.true')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        adminUsers = data || [];
+
+        // Add super admin emails if not in list
+        const existingEmails = adminUsers.map(u => u.email?.toLowerCase());
+
+        renderAdminUsers();
+      } catch (err) {
+        console.error('Error loading admin users:', err);
+        document.getElementById('admin-users-list').innerHTML = `
+          <p style="color: var(--error);">Error loading users: ${err.message}</p>
+        `;
+      }
+    }
+
+    function renderAdminUsers() {
+      const container = document.getElementById('admin-users-list');
+
+      // Combine hardcoded super admins with database admins
+      const allAdmins = [
+        ...SUPER_ADMIN_EMAILS.map(email => ({
+          email,
+          full_name: email.split('@')[0],
+          account_type: 'super_admin',
+          isSuperAdmin: true
+        })),
+        ...adminUsers.filter(u => !SUPER_ADMIN_EMAILS.includes(u.email?.toLowerCase()))
+      ];
+
+      if (allAdmins.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted);">No admin users found.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 12px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);">Email</th>
+              <th style="text-align: left; padding: 12px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);">Name</th>
+              <th style="text-align: left; padding: 12px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);">Role</th>
+              <th style="text-align: right; padding: 12px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allAdmins.map(user => `
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border-subtle);">${user.email}</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border-subtle);">${user.full_name || '-'}</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border-subtle);">
+                  <span class="status-badge ${user.isSuperAdmin ? 'status-won' : 'status-qualified'}">${user.isSuperAdmin ? 'Super Admin' : 'Admin'}</span>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border-subtle); text-align: right;">
+                  ${user.isSuperAdmin ? '<span style="color: var(--text-muted); font-size: 12px;">Protected</span>' :
+                    `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="removeAdminUser('${user.id}', '${user.email}')">Remove</button>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function addAdminUser() {
+      const emailInput = document.getElementById('new-admin-email');
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!email) {
+        alert('Please enter an email address');
+        return;
+      }
+
+      if (!email.includes('@')) {
+        alert('Please enter a valid email address');
+        return;
+      }
+
+      if (SUPER_ADMIN_EMAILS.includes(email)) {
+        alert('This email is already a super admin');
+        emailInput.value = '';
+        return;
+      }
+
+      try {
+        // Check if user exists in sg_users
+        const { data: existingUser, error: fetchError } = await supabaseClient
+          .from('sg_users')
+          .select('*')
+          .eq('email', email)
+          .single();
+
+        if (existingUser) {
+          // Update existing user to admin
+          const { error: updateError } = await supabaseClient
+            .from('sg_users')
+            .update({
+              account_type: 'admin',
+              is_admin: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingUser.id);
+
+          if (updateError) throw updateError;
+        } else {
+          // Create a placeholder entry for the admin
+          const { error: insertError } = await supabaseClient
+            .from('sg_users')
+            .insert([{
+              email: email,
+              account_type: 'admin',
+              is_admin: true,
+              full_name: email.split('@')[0]
+            }]);
+
+          if (insertError) throw insertError;
+        }
+
+        emailInput.value = '';
+        await loadAdminUsers();
+        alert(`Admin access granted to ${email}`);
+
+      } catch (err) {
+        console.error('Error adding admin:', err);
+        alert('Error adding admin: ' + err.message);
+      }
+    }
+
+    async function removeAdminUser(userId, email) {
+      if (!confirm(`Remove admin access for ${email}?`)) {
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('sg_users')
+          .update({
+            account_type: 'homeowner',
+            is_admin: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+
+        if (error) throw error;
+
+        await loadAdminUsers();
+        alert(`Admin access removed for ${email}`);
+
+      } catch (err) {
+        console.error('Error removing admin:', err);
+        alert('Error removing admin: ' + err.message);
+      }
+    }
+
+    // Check if we should show user management on load (from account page link)
+    if (localStorage.getItem('adminTab') === 'users') {
+      localStorage.removeItem('adminTab');
+      setTimeout(() => showUserManagement(), 500);
+    }
   </script>
 </body>
 </html>
