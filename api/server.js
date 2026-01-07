@@ -11,13 +11,16 @@ const PORT = process.env.PORT || 3001;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Email configuration - using Gmail SMTP or configure your own
+const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: process.env.SMTP_PORT || 587,
   secure: false,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+    user: SMTP_USER,
+    pass: SMTP_PASS
   }
 });
 
@@ -27,13 +30,13 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@surprisegranite.com';
 // Send email notification
 async function sendNotification(to, subject, html) {
   try {
-    if (!process.env.SMTP_USER) {
+    if (!SMTP_USER) {
       console.log('Email notification (SMTP not configured):', { to, subject });
       return { success: false, reason: 'SMTP not configured' };
     }
 
     await transporter.sendMail({
-      from: `"Surprise Granite" <${process.env.SMTP_USER}>`,
+      from: `"Surprise Granite" <${SMTP_USER}>`,
       to,
       subject,
       html
