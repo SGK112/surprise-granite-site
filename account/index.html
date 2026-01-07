@@ -983,6 +983,116 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Product Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .product-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .product-image {
+      height: 180px;
+      background: rgba(255, 255, 255, 0.02);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+
+    .product-placeholder svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .product-info {
+      padding: 16px;
+    }
+
+    .product-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .product-status.status-active {
+      background: rgba(77, 255, 130, 0.15);
+      color: var(--success);
+    }
+
+    .product-status.status-draft {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .product-status.status-sold {
+      background: rgba(168, 85, 247, 0.15);
+      color: #a855f7;
+    }
+
+    .product-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .product-category {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+
+    .product-dims {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .sidebar {
@@ -1136,6 +1246,10 @@
             Leads
             <span class="nav-badge" id="leads-count">0</span>
           </a>
+          <a class="nav-item" data-page="invoices" onclick="showPage('invoices')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Invoices
+          </a>
           <a class="nav-item" data-page="admin-users" onclick="showPage('admin-users')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             Manage Admins
@@ -1279,6 +1393,31 @@
           </div>
         </section>
 
+        <!-- Invoices Page (Admin Only) -->
+        <section id="page-invoices" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Invoices</h3>
+              <button class="btn btn-primary" onclick="openInvoiceModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Create Invoice
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="table-filters" style="margin-bottom: 20px;">
+                <button class="filter-btn active" data-invoice-status="all" onclick="filterInvoices('all')">All</button>
+                <button class="filter-btn" data-invoice-status="draft" onclick="filterInvoices('draft')">Draft</button>
+                <button class="filter-btn" data-invoice-status="open" onclick="filterInvoices('open')">Open</button>
+                <button class="filter-btn" data-invoice-status="paid" onclick="filterInvoices('paid')">Paid</button>
+                <button class="filter-btn" data-invoice-status="void" onclick="filterInvoices('void')">Voided</button>
+              </div>
+              <div id="invoices-list">
+                <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Admin Users Page -->
         <section id="page-admin-users" class="page-section">
           <div class="card">
@@ -1298,17 +1437,26 @@
           </div>
         </section>
 
-        <!-- Products Page (Coming Soon) -->
+        <!-- Products Page -->
         <section id="page-products" class="page-section">
-          <div class="coming-soon">
-            <div class="coming-soon-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">My Products</h3>
+              <button class="btn btn-primary" onclick="openProductModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add Product
+              </button>
             </div>
-            <h2>Product Management Coming Soon</h2>
-            <p>Manage your countertop inventory, pricing, slabs, remnants, and featured products all from this dashboard.</p>
-            <div style="margin-top: 24px;">
-              <a href="/shop/" target="_blank" class="btn btn-secondary" style="margin-right: 12px;">View Current Shop</a>
-              <a href="/materials/all-countertops/" target="_blank" class="btn btn-primary">Browse Materials</a>
+            <div class="card-body">
+              <div class="table-filters" style="margin-bottom: 20px;">
+                <button class="filter-btn active" data-product-status="all" onclick="filterProducts('all')">All</button>
+                <button class="filter-btn" data-product-status="active" onclick="filterProducts('active')">Active</button>
+                <button class="filter-btn" data-product-status="draft" onclick="filterProducts('draft')">Draft</button>
+                <button class="filter-btn" data-product-status="sold" onclick="filterProducts('sold')">Sold</button>
+              </div>
+              <div id="products-grid" class="products-grid">
+                <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1360,6 +1508,183 @@
         <button class="btn btn-secondary" onclick="closeLeadModal()">Close</button>
         <button class="btn btn-primary" onclick="updateLeadStatus()">Update Status</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal-overlay" id="product-modal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="product-modal-title">Add New Product</h2>
+        <button class="modal-close" onclick="closeProductModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="product-form" onsubmit="saveProduct(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Product Name *</label>
+              <input type="text" id="product-name" required placeholder="e.g., Calacatta Gold Marble Slab"/>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="product-category">
+                <option value="">Select Category</option>
+                <option value="granite">Granite</option>
+                <option value="marble">Marble</option>
+                <option value="quartz">Quartz</option>
+                <option value="quartzite">Quartzite</option>
+                <option value="porcelain">Porcelain</option>
+                <option value="soapstone">Soapstone</option>
+                <option value="remnant">Remnant</option>
+                <option value="tile">Tile</option>
+                <option value="sink">Sink</option>
+                <option value="faucet">Faucet</option>
+                <option value="accessory">Accessory</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="product-description" rows="3" placeholder="Describe your product..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price ($) *</label>
+              <input type="number" id="product-price" required min="0" step="0.01" placeholder="0.00"/>
+            </div>
+            <div class="form-group">
+              <label>Dimensions</label>
+              <input type="text" id="product-dimensions" placeholder='e.g., 120" x 60" x 3cm'/>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Material Type</label>
+              <input type="text" id="product-material" placeholder="e.g., Natural Stone"/>
+            </div>
+            <div class="form-group">
+              <label>Color</label>
+              <input type="text" id="product-color" placeholder="e.g., White with Gold Veining"/>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Stock Quantity</label>
+              <input type="number" id="product-stock" min="0" value="1" placeholder="1"/>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="product-status">
+                <option value="draft">Draft (Not Listed)</option>
+                <option value="active">Active (Listed for Sale)</option>
+                <option value="sold">Sold</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Image URL</label>
+            <input type="url" id="product-image-url" placeholder="https://example.com/image.jpg"/>
+            <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+              Paste a direct link to your product image. Tip: Upload images to Imgur or similar service.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="product-save-btn">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div class="modal-overlay" id="invoice-modal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Create New Invoice</h2>
+        <button class="modal-close" onclick="closeInvoiceModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="invoice-form" onsubmit="createInvoice(event)">
+        <div class="modal-body">
+          <h4 style="margin-bottom: 16px; color: var(--text-secondary);">Customer Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer Email *</label>
+              <input type="email" id="invoice-email" required placeholder="customer@example.com"/>
+            </div>
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" id="invoice-name" placeholder="John Smith"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Customer Phone</label>
+            <input type="tel" id="invoice-phone" placeholder="(555) 123-4567"/>
+          </div>
+
+          <h4 style="margin: 24px 0 16px; color: var(--text-secondary);">Invoice Items</h4>
+          <div id="invoice-items">
+            <div class="invoice-item" data-index="0">
+              <div class="form-row" style="align-items: flex-end;">
+                <div class="form-group" style="flex: 3;">
+                  <label>Description *</label>
+                  <input type="text" class="item-description" required placeholder="e.g., Kitchen Countertop Installation"/>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label>Qty</label>
+                  <input type="number" class="item-qty" value="1" min="1"/>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label>Amount ($) *</label>
+                  <input type="number" class="item-amount" required min="0" step="0.01" placeholder="0.00"/>
+                </div>
+                <button type="button" class="btn btn-secondary" style="margin-bottom: 20px; padding: 10px;" onclick="removeInvoiceItem(this)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="addInvoiceItem()" style="margin-bottom: 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Line Item
+          </button>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Due In (Days)</label>
+              <select id="invoice-due-days">
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+                <option value="30" selected>30 days</option>
+                <option value="60">60 days</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Invoice Total</label>
+              <div style="font-size: 24px; font-weight: 700; color: var(--gold-primary); padding: 10px 0;" id="invoice-total">$0.00</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <textarea id="invoice-notes" rows="2" placeholder="Add any additional notes for the customer..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="invoice-send-btn">Create & Send Invoice</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1681,6 +2006,7 @@
         'dashboard': 'Dashboard',
         'profile': 'My Profile',
         'leads': 'Leads',
+        'invoices': 'Invoices',
         'admin-users': 'Manage Admins',
         'products': 'Products',
         'orders': 'Orders',
@@ -1995,12 +2321,503 @@
 
     // Close modal on escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeLeadModal();
+      if (e.key === 'Escape') {
+        closeLeadModal();
+        closeProductModal();
+        closeInvoiceModal();
+      }
     });
 
     document.getElementById('lead-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeLeadModal();
     });
+
+    // ============ PRODUCT MANAGEMENT ============
+    let allProducts = [];
+    let productFilter = 'all';
+    let editingProduct = null;
+
+    async function loadProducts() {
+      const productsGrid = document.getElementById('products-grid');
+      if (!productsGrid) return;
+
+      try {
+        let query = supabaseClient
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // Non-super admins only see their own products
+        if (!isSuperAdmin) {
+          query = query.eq('vendor_id', currentUser.id);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          // Table might not exist yet
+          if (error.code === '42P01') {
+            productsGrid.innerHTML = `
+              <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <h3>Products Table Not Set Up</h3>
+                <p>The products table needs to be created in Supabase. Contact your administrator.</p>
+              </div>
+            `;
+            return;
+          }
+          throw error;
+        }
+
+        allProducts = data || [];
+        renderProducts();
+      } catch (err) {
+        console.error('Error loading products:', err);
+        productsGrid.innerHTML = `
+          <div class="empty-state">
+            <h3>Error loading products</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function filterProducts(status) {
+      productFilter = status;
+      document.querySelectorAll('[data-product-status]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.productStatus === status);
+      });
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const productsGrid = document.getElementById('products-grid');
+      if (!productsGrid) return;
+
+      let filtered = allProducts;
+      if (productFilter !== 'all') {
+        filtered = filtered.filter(p => p.status === productFilter);
+      }
+
+      if (filtered.length === 0) {
+        productsGrid.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <h3>No products found</h3>
+            <p>${productFilter !== 'all' ? 'No products with this status.' : 'Add your first product to get started.'}</p>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openProductModal()">Add Product</button>
+          </div>
+        `;
+        return;
+      }
+
+      productsGrid.innerHTML = filtered.map(product => `
+        <div class="product-card" data-id="${product.id}">
+          <div class="product-image">
+            ${product.image_url ?
+              `<img src="${product.image_url}" alt="${product.name}" onerror="this.style.display='none';this.parentElement.querySelector('.product-placeholder').style.display='flex';">
+               <div class="product-placeholder" style="display:none;">` :
+              `<div class="product-placeholder">`}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+          </div>
+          <div class="product-info">
+            <div class="product-status status-${product.status}">${product.status}</div>
+            <h4 class="product-name">${product.name}</h4>
+            <p class="product-category">${product.category || 'Uncategorized'}</p>
+            <div class="product-price">$${parseFloat(product.price || 0).toFixed(2)}</div>
+            ${product.dimensions ? `<p class="product-dims">${product.dimensions}</p>` : ''}
+          </div>
+          <div class="product-actions">
+            <button class="action-btn" onclick="editProduct('${product.id}')" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button class="action-btn" onclick="deleteProduct('${product.id}')" title="Delete" style="color: var(--error);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openProductModal(product = null) {
+      editingProduct = product;
+      const modal = document.getElementById('product-modal');
+      const title = document.getElementById('product-modal-title');
+      const form = document.getElementById('product-form');
+
+      title.textContent = product ? 'Edit Product' : 'Add New Product';
+      form.reset();
+
+      if (product) {
+        document.getElementById('product-name').value = product.name || '';
+        document.getElementById('product-description').value = product.description || '';
+        document.getElementById('product-category').value = product.category || '';
+        document.getElementById('product-price').value = product.price || '';
+        document.getElementById('product-dimensions').value = product.dimensions || '';
+        document.getElementById('product-image-url').value = product.image_url || '';
+        document.getElementById('product-status').value = product.status || 'draft';
+        document.getElementById('product-material').value = product.material_type || '';
+        document.getElementById('product-color').value = product.color || '';
+        document.getElementById('product-stock').value = product.stock_quantity || 1;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeProductModal() {
+      document.getElementById('product-modal').classList.remove('active');
+      editingProduct = null;
+    }
+
+    async function editProduct(id) {
+      const product = allProducts.find(p => p.id === id);
+      if (product) {
+        openProductModal(product);
+      }
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const btn = document.getElementById('product-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const productData = {
+        name: document.getElementById('product-name').value,
+        description: document.getElementById('product-description').value,
+        category: document.getElementById('product-category').value,
+        price: parseFloat(document.getElementById('product-price').value) || 0,
+        dimensions: document.getElementById('product-dimensions').value,
+        image_url: document.getElementById('product-image-url').value,
+        status: document.getElementById('product-status').value,
+        material_type: document.getElementById('product-material').value,
+        color: document.getElementById('product-color').value,
+        stock_quantity: parseInt(document.getElementById('product-stock').value) || 1,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        if (editingProduct) {
+          // Update existing
+          const { error } = await supabaseClient
+            .from('products')
+            .update(productData)
+            .eq('id', editingProduct.id);
+          if (error) throw error;
+        } else {
+          // Create new
+          productData.vendor_id = currentUser.id;
+          productData.vendor_email = currentUser.email;
+          productData.created_at = new Date().toISOString();
+
+          const { error } = await supabaseClient
+            .from('products')
+            .insert([productData]);
+          if (error) throw error;
+        }
+
+        closeProductModal();
+        loadProducts();
+        alert(editingProduct ? 'Product updated!' : 'Product added!');
+      } catch (err) {
+        alert('Error saving product: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Product';
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Are you sure you want to delete this product?')) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('products')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+
+        allProducts = allProducts.filter(p => p.id !== id);
+        renderProducts();
+        alert('Product deleted.');
+      } catch (err) {
+        alert('Error deleting product: ' + err.message);
+      }
+    }
+
+    // Load products when showing products page
+    const originalShowPage = showPage;
+    showPage = function(page) {
+      originalShowPage(page);
+      if (page === 'products' && (isAdmin || userProfile?.account_type?.startsWith('pro_'))) {
+        loadProducts();
+      }
+    };
+
+    // Product modal click-outside to close
+    document.getElementById('product-modal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeProductModal();
+    });
+
+    // ============ INVOICE MANAGEMENT ============
+    const API_URL = 'https://surprise-granite-email-api.onrender.com';
+
+    let allInvoices = [];
+    let invoiceFilter = 'all';
+    let invoiceItemCount = 1;
+
+    async function loadInvoices() {
+      const invoicesList = document.getElementById('invoices-list');
+      if (!invoicesList) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/invoices?limit=50`);
+
+        if (!response.ok) {
+          throw new Error('API not available. Please deploy the Stripe API backend first.');
+        }
+
+        const data = await response.json();
+        allInvoices = data.invoices || [];
+        renderInvoices();
+      } catch (err) {
+        console.error('Error loading invoices:', err);
+        invoicesList.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <h3>Invoice API Not Connected</h3>
+            <p>The Stripe invoice API needs to be deployed. See /api folder for setup instructions.</p>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice Anyway</button>
+          </div>
+        `;
+      }
+    }
+
+    function filterInvoices(status) {
+      invoiceFilter = status;
+      document.querySelectorAll('[data-invoice-status]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.invoiceStatus === status);
+      });
+      renderInvoices();
+    }
+
+    function renderInvoices() {
+      const invoicesList = document.getElementById('invoices-list');
+      if (!invoicesList) return;
+
+      let filtered = allInvoices;
+      if (invoiceFilter !== 'all') {
+        filtered = filtered.filter(inv => inv.status === invoiceFilter);
+      }
+
+      if (filtered.length === 0) {
+        invoicesList.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <h3>No invoices found</h3>
+            <p>${invoiceFilter !== 'all' ? 'No invoices with this status.' : 'Create your first invoice to get started.'}</p>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice</button>
+          </div>
+        `;
+        return;
+      }
+
+      invoicesList.innerHTML = `
+        <table style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Customer</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Due Date</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(inv => `
+              <tr>
+                <td><strong>${inv.number || inv.id.slice(-8)}</strong></td>
+                <td>
+                  <div>${inv.customer_name || 'N/A'}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${inv.customer_email}</div>
+                </td>
+                <td style="font-weight: 600; color: var(--gold-primary);">$${inv.amount_due.toFixed(2)}</td>
+                <td><span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : inv.status === 'void' ? 'lost' : 'qualified'}">${inv.status}</span></td>
+                <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'N/A'}</td>
+                <td style="text-align: right;">
+                  <div class="lead-actions" style="justify-content: flex-end;">
+                    ${inv.hosted_invoice_url ? `<a class="action-btn" href="${inv.hosted_invoice_url}" target="_blank" title="View Invoice"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>` : ''}
+                    ${inv.pdf ? `<a class="action-btn" href="${inv.pdf}" target="_blank" title="Download PDF"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>` : ''}
+                    ${inv.status === 'open' ? `<button class="action-btn" onclick="sendReminder('${inv.id}')" title="Send Reminder"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>` : ''}
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function openInvoiceModal() {
+      document.getElementById('invoice-modal').classList.add('active');
+      document.getElementById('invoice-form').reset();
+      document.getElementById('invoice-items').innerHTML = `
+        <div class="invoice-item" data-index="0">
+          <div class="form-row" style="align-items: flex-end;">
+            <div class="form-group" style="flex: 3;">
+              <label>Description *</label>
+              <input type="text" class="item-description" required placeholder="e.g., Kitchen Countertop Installation"/>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Qty</label>
+              <input type="number" class="item-qty" value="1" min="1" onchange="updateInvoiceTotal()"/>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Amount ($) *</label>
+              <input type="number" class="item-amount" required min="0" step="0.01" placeholder="0.00" onchange="updateInvoiceTotal()"/>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-bottom: 20px; padding: 10px;" onclick="removeInvoiceItem(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+      invoiceItemCount = 1;
+      updateInvoiceTotal();
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('invoice-modal').classList.remove('active');
+    }
+
+    function addInvoiceItem() {
+      const container = document.getElementById('invoice-items');
+      const itemHTML = `
+        <div class="invoice-item" data-index="${invoiceItemCount}">
+          <div class="form-row" style="align-items: flex-end;">
+            <div class="form-group" style="flex: 3;">
+              <label>Description *</label>
+              <input type="text" class="item-description" required placeholder="e.g., Installation Labor"/>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Qty</label>
+              <input type="number" class="item-qty" value="1" min="1" onchange="updateInvoiceTotal()"/>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Amount ($) *</label>
+              <input type="number" class="item-amount" required min="0" step="0.01" placeholder="0.00" onchange="updateInvoiceTotal()"/>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-bottom: 20px; padding: 10px;" onclick="removeInvoiceItem(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', itemHTML);
+      invoiceItemCount++;
+    }
+
+    function removeInvoiceItem(btn) {
+      const items = document.querySelectorAll('.invoice-item');
+      if (items.length > 1) {
+        btn.closest('.invoice-item').remove();
+        updateInvoiceTotal();
+      }
+    }
+
+    function updateInvoiceTotal() {
+      const items = document.querySelectorAll('.invoice-item');
+      let total = 0;
+      items.forEach(item => {
+        const qty = parseFloat(item.querySelector('.item-qty').value) || 1;
+        const amount = parseFloat(item.querySelector('.item-amount').value) || 0;
+        total += qty * amount;
+      });
+      document.getElementById('invoice-total').textContent = `$${total.toFixed(2)}`;
+    }
+
+    async function createInvoice(e) {
+      e.preventDefault();
+      const btn = document.getElementById('invoice-send-btn');
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      const items = [];
+      document.querySelectorAll('.invoice-item').forEach(item => {
+        items.push({
+          description: item.querySelector('.item-description').value,
+          quantity: parseInt(item.querySelector('.item-qty').value) || 1,
+          amount: parseFloat(item.querySelector('.item-amount').value) || 0
+        });
+      });
+
+      const invoiceData = {
+        customer_email: document.getElementById('invoice-email').value,
+        customer_name: document.getElementById('invoice-name').value,
+        customer_phone: document.getElementById('invoice-phone').value,
+        items,
+        due_days: parseInt(document.getElementById('invoice-due-days').value),
+        notes: document.getElementById('invoice-notes').value,
+        auto_send: true
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/api/invoices`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invoiceData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create invoice');
+        }
+
+        closeInvoiceModal();
+        loadInvoices();
+        alert(`Invoice #${data.invoice.number} created and sent to ${invoiceData.customer_email}!`);
+      } catch (err) {
+        alert('Error creating invoice: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create & Send Invoice';
+      }
+    }
+
+    async function sendReminder(invoiceId) {
+      if (!confirm('Send payment reminder for this invoice?')) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/remind`, {
+          method: 'POST'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send reminder');
+        }
+
+        alert('Payment reminder sent!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Invoice modal click-outside to close
+    document.getElementById('invoice-modal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeInvoiceModal();
+    });
+
+    // Update showPage to load invoices
+    const _originalShowPage = showPage;
+    showPage = function(page) {
+      _originalShowPage(page);
+      if (page === 'invoices' && isAdmin) {
+        loadInvoices();
+      }
+    };
   </script>
 </body>
 </html>
