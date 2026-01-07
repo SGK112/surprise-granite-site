@@ -1,6 +1,6 @@
 /**
- * Swipe Cards - Full Screen App Mode
- * Clean, minimal, app-like experience
+ * Swipe Cards - Dark Mode Full Screen App
+ * Large touch targets, dark contrast UI
  */
 
 /* Desktop: Hidden */
@@ -10,7 +10,7 @@
 }
 
 /* ============================================
-   MOBILE - FULL SCREEN APP
+   MOBILE - FULL SCREEN DARK APP
    ============================================ */
 @media (max-width: 767px) {
 
@@ -19,24 +19,21 @@
     overflow: hidden !important;
   }
 
-  /* Hide the page content behind the swipe UI */
   body.swipe-mode .page-wrapper {
     visibility: hidden !important;
   }
 
-  /* Hide chatbots */
   body.swipe-mode #chatbase-bubble-button,
   body.swipe-mode [id*="chatbase"] {
     display: none !important;
   }
 
-  /* Hide product grid */
   .materials_list.swipe-enabled {
     display: none !important;
   }
 
   /* ==========================================
-     FULL SCREEN CONTAINER - Above everything
+     FULL SCREEN CONTAINER - Dark Theme
      ========================================== */
   .swipe-cards-container {
     display: flex !important;
@@ -49,49 +46,87 @@
     width: 100vw !important;
     height: 100vh !important;
     height: 100dvh !important;
-    background: #fff !important;
+    background: #0a0a0a !important;
     z-index: 999999 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
   /* ==========================================
-     TOP BAR
+     TOP BAR - Dark Glass
      ========================================== */
   .swipe-topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    background: #fff;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 20px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
   }
 
   .swipe-topbar-title {
-    font-size: 17px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+
+  .swipe-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Favorites Button in Top Bar */
+  .swipe-favorites-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    border: none;
+    border-radius: 24px;
+    font-size: 14px;
     font-weight: 600;
-    color: #1d1d1f;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  }
+
+  .swipe-favorites-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: #fff;
+  }
+
+  .swipe-favorites-btn .fav-count {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
   }
 
   .swipe-exit-btn {
-    padding: 8px 16px;
-    background: #f5f5f7;
-    border: none;
-    border-radius: 20px;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
     font-size: 14px;
     font-weight: 600;
-    color: #007aff;
+    color: #fff;
     cursor: pointer;
   }
 
   .swipe-exit-btn:active {
-    background: #e8e8ed;
+    background: rgba(255, 255, 255, 0.2);
   }
 
   /* ==========================================
-     CARD STACK
+     CARD STACK AREA
      ========================================== */
   .swipe-card-stack {
     flex: 1;
@@ -99,26 +134,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
-    background: #f5f5f7;
+    padding: 20px;
+    background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
     min-height: 0;
     overflow: hidden;
   }
 
   /* ==========================================
-     GLASS CARDS
+     CARDS - Floating White
      ========================================== */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 32px);
-    max-width: 360px;
+    width: calc(100% - 40px);
+    max-width: 380px;
     background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-radius: 24px;
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      0 8px 25px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     cursor: grab;
     user-select: none;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     left: 50%;
@@ -130,20 +167,19 @@
   }
 
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) scale(0.95) translateY(10px);
+    transform: translateX(-50%) scale(0.94) translateY(12px);
     z-index: -1;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) scale(0.9) translateY(20px);
+    transform: translateX(-50%) scale(0.88) translateY(24px);
     z-index: -2;
-    opacity: 0.3;
+    opacity: 0.25;
   }
 
-  /* Hide visually but keep loaded for instant swipe */
   .swipe-card:nth-child(n+4) {
-    transform: translateX(-50%) scale(0.85) translateY(30px);
+    transform: translateX(-50%) scale(0.82) translateY(36px);
     z-index: -3;
     opacity: 0;
     pointer-events: none;
@@ -159,35 +195,35 @@
      ========================================== */
   .swipe-card-image {
     width: 100%;
-    height: 220px;
+    height: 240px;
     object-fit: cover;
     pointer-events: none;
   }
 
   /* ==========================================
-     VIEW BUTTON
+     VIEW BUTTON ON CARD
      ========================================== */
   .swipe-card-view-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.9);
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     z-index: 10;
   }
 
   .swipe-card-view-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     stroke: #1d1d1f;
-    stroke-width: 2;
+    stroke-width: 2.5;
     fill: none;
   }
 
@@ -195,33 +231,35 @@
      CARD CONTENT
      ========================================== */
   .swipe-card-content {
-    padding: 16px;
+    padding: 18px;
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     margin-bottom: 14px;
   }
 
   .swipe-card-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: #1d1d1f;
     line-height: 1.2;
     flex: 1;
+    letter-spacing: -0.3px;
   }
 
   .swipe-card-material {
-    background: #1d1d1f;
+    background: linear-gradient(135deg, #1d1d1f 0%, #333 100%);
     color: #fff;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   /* ==========================================
@@ -230,21 +268,22 @@
   .swipe-card-specs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 
   .swipe-card-spec {
     background: #f5f5f7;
-    padding: 12px;
-    border-radius: 12px;
+    padding: 14px;
+    border-radius: 14px;
   }
 
   .spec-label {
-    font-size: 11px;
+    font-size: 10px;
     color: #86868b;
     text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: 3px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
 
   .spec-value {
@@ -259,12 +298,12 @@
   .swipe-indicator {
     position: absolute;
     top: 50%;
-    padding: 14px 18px;
-    border-radius: 12px;
+    padding: 16px 22px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     opacity: 0;
     transition: opacity 0.15s;
     pointer-events: none;
@@ -272,37 +311,42 @@
   }
 
   .swipe-indicator svg {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
   }
 
   .swipe-indicator span {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   .swipe-indicator.like {
-    right: 16px;
+    right: 20px;
     background: #34c759;
     color: #fff;
     transform: translateY(-50%) rotate(12deg);
+    box-shadow: 0 8px 25px rgba(52, 199, 89, 0.5);
   }
 
   .swipe-indicator.like svg {
     stroke: #fff;
+    stroke-width: 3;
     fill: none;
   }
 
   .swipe-indicator.nope {
-    left: 16px;
+    left: 20px;
     background: #ff3b30;
     color: #fff;
     transform: translateY(-50%) rotate(-12deg);
+    box-shadow: 0 8px 25px rgba(255, 59, 48, 0.5);
   }
 
   .swipe-indicator.nope svg {
     stroke: #fff;
+    stroke-width: 3;
     fill: none;
   }
 
@@ -315,31 +359,34 @@
      SWIPE ANIMATIONS
      ========================================== */
   .swipe-card.swipe-out-left {
-    animation: swipeLeft 0.3s ease forwards;
+    animation: swipeLeft 0.35s ease forwards;
   }
 
   .swipe-card.swipe-out-right {
-    animation: swipeRight 0.3s ease forwards;
+    animation: swipeRight 0.35s ease forwards;
   }
 
   @keyframes swipeLeft {
-    to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+    to { transform: translateX(-150%) rotate(-25deg); opacity: 0; }
   }
 
   @keyframes swipeRight {
-    to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+    to { transform: translateX(150%) rotate(25deg); opacity: 0; }
   }
 
   /* ==========================================
-     ACTION BUTTONS
+     ACTION BUTTONS - EXTRA LARGE
      ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 24px;
-    padding: 16px 20px;
-    background: #fff;
+    gap: 28px;
+    padding: 24px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 1) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     flex-shrink: 0;
   }
 
@@ -350,111 +397,140 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.88);
   }
 
-  /* Undo */
+  /* Undo - Medium */
   .swipe-btn.undo {
-    width: 48px;
-    height: 48px;
-    background: #f5f5f7;
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Nope */
+  .swipe-btn.undo svg {
+    width: 26px;
+    height: 26px;
+    stroke: #fff;
+    stroke-width: 2.5;
+    fill: none;
+  }
+
+  /* NOPE - EXTRA LARGE */
   .swipe-btn.nope {
-    width: 64px;
-    height: 64px;
-    background: #fff;
-    border: 3px solid #ff3b30;
-    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #ff4757 0%, #ff3b30 100%);
+    box-shadow:
+      0 8px 30px rgba(255, 59, 48, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .swipe-btn.nope svg {
+    width: 40px;
+    height: 40px;
+    stroke: #fff;
+    stroke-width: 3;
+    fill: none;
   }
 
   .swipe-btn.nope:active {
-    background: #ff3b30;
+    background: linear-gradient(135deg, #ff6b7a 0%, #ff4d44 100%);
   }
 
-  .swipe-btn.nope:active svg {
-    stroke: #fff !important;
-  }
-
-  /* Like */
+  /* LIKE - EXTRA LARGE */
   .swipe-btn.like {
-    width: 64px;
-    height: 64px;
-    background: #34c759;
-    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #2ed573 0%, #34c759 100%);
+    box-shadow:
+      0 8px 30px rgba(52, 199, 89, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .swipe-btn.like svg {
+    width: 40px;
+    height: 40px;
+    stroke: #fff;
+    stroke-width: 3;
+    fill: none;
   }
 
   .swipe-btn.like:active {
-    background: #30b855;
+    background: linear-gradient(135deg, #4ade80 0%, #45d968 100%);
   }
 
   /* ==========================================
-     COUNTER
+     COUNTER - Dark Theme
      ========================================== */
   .swipe-counter {
     text-align: center;
-    padding: 8px 20px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    color: #86868b;
-    font-size: 14px;
-    background: #fff;
+    padding: 10px 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    background: transparent;
     flex-shrink: 0;
+    position: absolute;
+    bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
   }
 
   .swipe-counter strong {
-    color: #1d1d1f;
+    color: #fff;
     font-weight: 600;
   }
 
   /* ==========================================
-     LOGIN PROMPT
+     LOGIN PROMPT - Dark
      ========================================== */
   .swipe-login-prompt {
     position: fixed;
-    bottom: 120px;
+    bottom: 200px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1d1d1f;
-    color: #fff;
-    padding: 16px 20px;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1d1d1f;
+    padding: 20px 24px;
+    border-radius: 20px;
     text-align: center;
     z-index: 10000;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    max-width: 280px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    max-width: 300px;
     width: calc(100% - 40px);
     animation: slideUp 0.3s ease;
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 12px;
-    font-size: 14px;
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 500;
   }
 
   .swipe-login-btn {
     display: inline-block;
-    background: #007aff;
+    background: linear-gradient(135deg, #007aff 0%, #0055cc 100%);
     color: #fff;
-    padding: 10px 24px;
-    border-radius: 20px;
+    padding: 12px 28px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    from { opacity: 0; transform: translateX(-50%) translateY(30px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
   /* ==========================================
-     FAVORITES DRAWER
+     FAVORITES DRAWER - Dark Glass
      ========================================== */
   .favorites-drawer {
     display: block;
@@ -462,13 +538,15 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: #fff;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    transform: translateY(calc(100% - 56px));
-    transition: transform 0.3s ease;
-    z-index: 10001;
-    max-height: 50vh;
+    background: rgba(30, 30, 30, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000001;
+    max-height: 70vh;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
@@ -477,7 +555,7 @@
   }
 
   .favorites-drawer-handle {
-    padding: 14px;
+    padding: 18px;
     text-align: center;
     cursor: pointer;
   }
@@ -485,33 +563,40 @@
   .favorites-drawer-handle::before {
     content: '';
     display: block;
-    width: 36px;
-    height: 4px;
-    background: #ddd;
-    border-radius: 2px;
-    margin: 0 auto 10px;
+    width: 40px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    margin: 0 auto 14px;
   }
 
   .favorites-drawer-title {
-    font-weight: 600;
-    color: #1d1d1f;
-    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    font-size: 18px;
   }
 
   .favorites-count {
-    background: #34c759;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
     color: #fff;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-left: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  .favorites-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 15px;
   }
 
   .favorites-list {
     display: flex;
-    gap: 12px;
-    padding: 0 14px 14px;
+    gap: 14px;
+    padding: 0 18px 18px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -522,113 +607,133 @@
 
   .favorite-item {
     flex-shrink: 0;
-    width: 80px;
+    width: 100px;
     text-align: center;
     text-decoration: none;
   }
 
   .favorite-item img {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 12px;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
   }
 
   .favorite-item span {
     display: block;
-    font-size: 11px;
-    color: #86868b;
-    margin-top: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .favorites-actions {
-    padding: 12px 14px 16px;
-    text-align: center;
+    padding: 14px 18px 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
   }
 
   .favorites-view-all {
     display: inline-block;
-    background: #007aff;
+    background: linear-gradient(135deg, #007aff 0%, #0055cc 100%);
     color: #fff;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 14px 28px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
   }
 
-  /* ==========================================
-     EMPTY STATE
-     ========================================== */
-  .swipe-empty {
-    text-align: center;
-    padding: 40px 24px;
-  }
-
-  .swipe-empty-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-  }
-
-  .swipe-empty h3 {
-    font-size: 20px;
-    color: #1d1d1f;
-    margin-bottom: 8px;
-    font-weight: 600;
-  }
-
-  .swipe-empty p {
-    color: #86868b;
-    margin-bottom: 20px;
-  }
-
-  .swipe-reset-btn {
-    background: #007aff;
+  .favorites-close-btn {
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
     color: #fff;
-    border: none;
-    padding: 12px 28px;
-    border-radius: 20px;
     font-weight: 600;
     font-size: 15px;
     cursor: pointer;
   }
 
+  /* ==========================================
+     EMPTY STATE - Dark
+     ========================================== */
+  .swipe-empty {
+    text-align: center;
+    padding: 50px 30px;
+  }
+
+  .swipe-empty-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+
+  .swipe-empty h3 {
+    font-size: 22px;
+    color: #fff;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .swipe-empty p {
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 24px;
+    font-size: 15px;
+  }
+
+  .swipe-reset-btn {
+    background: linear-gradient(135deg, #007aff 0%, #0055cc 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+  }
+
   .swipe-view-saved-btn {
     display: inline-block;
-    background: #f5f5f7;
-    color: #007aff;
-    padding: 12px 28px;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 15px;
-    margin-top: 10px;
+    font-size: 16px;
+    margin-top: 12px;
   }
 
   /* ==========================================
-     INSTRUCTIONS
+     INSTRUCTIONS - Floating
      ========================================== */
   .swipe-instructions {
     position: fixed;
-    bottom: 160px;
+    bottom: 220px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 20px;
-    font-size: 13px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1d1d1f;
+    padding: 14px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
     white-space: nowrap;
     z-index: 10000;
-    animation: fadeIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
   @keyframes fadeOut {
