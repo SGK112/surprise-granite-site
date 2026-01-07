@@ -2324,7 +2324,30 @@ form.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formInputs)
     });
-    
+
+    // Also submit to Supabase for admin panel
+    fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        full_name: formInputs.name,
+        email: formInputs.email,
+        phone: formInputs.phone,
+        project_type: formInputs.projectType,
+        timeline: formInputs.timeline,
+        budget: formInputs.budget,
+        message: formInputs.message,
+        source: 'website',
+        form_name: 'hero-quote-form',
+        page_url: window.location.href,
+        raw_data: formInputs
+      })
+    }).catch(err => console.log('Supabase error:', err));
+
     if (response.ok) {
       closeModal();
       alert('Thank you! We\'ll contact you within 24 hours.');
@@ -4432,6 +4455,30 @@ form.addEventListener('submit', async (e) => {
       }).catch(function(error) {
         console.error('Submission error:', error);
       });
+
+      // Also submit to Supabase for admin panel
+      fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          project_type: data.project_type,
+          timeline: data.timeline,
+          message: data.message + ' [Promo: ' + data.promo_type + ' - ' + data.promo_value + ']',
+          source: 'promo_page',
+          form_name: 'promo-form',
+          page_url: window.location.href,
+          raw_data: data
+        })
+      }).catch(function(err) { console.log('Supabase error:', err); });
       
       // Auto-close modal after 10 seconds
       setTimeout(function() {

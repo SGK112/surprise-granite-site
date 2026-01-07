@@ -1894,14 +1894,36 @@ setInterval(displayOpeningStatus, 60000);
                     body: JSON.stringify(formData)
                 });
 
+                // Also submit to Supabase for admin panel
+                fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        full_name: formData.contact,
+                        email: formData.email,
+                        phone: formData.phone,
+                        project_type: formData.projectType,
+                        timeline: formData.timeline,
+                        message: formData.message + ' [Company: ' + formData.company + ', SqFt: ' + formData.sqft + ']',
+                        source: 'commercial',
+                        form_name: 'commercial-services-form',
+                        page_url: window.location.href,
+                        raw_data: formData
+                    })
+                }).catch(err => console.log('Supabase error:', err));
+
                 if (response.ok) {
                     localStorage.setItem('lastFormSubmit', Date.now().toString());
                     successMessage.style.display = 'block';
-                    
+
                     setTimeout(() => {
                         window.location.href = 'https://surprisegranite.com/thank-you';
                     }, 1500);
-                    
+
                 } else {
                     throw new Error('Request failed');
                 }

@@ -898,7 +898,27 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
                     },
                     body: JSON.stringify(data)
                 });
-                
+
+                // Also submit to Supabase for admin panel
+                fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        full_name: data.name,
+                        email: data.email,
+                        phone: data.phone,
+                        message: '[Special Offer: ' + data.offer + ']',
+                        source: 'special_offers',
+                        form_name: 'special-offers-form',
+                        page_url: window.location.href,
+                        raw_data: data
+                    })
+                }).catch(err => console.log('Supabase error:', err));
+
                 if (response.ok) {
                     // Show success message
                     document.getElementById('formContainer').style.display = 'none';
@@ -906,7 +926,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
                     document.getElementById('successOffer').textContent = offer;
                     document.getElementById('successName').textContent = name.split(' ')[0];
                     document.getElementById('successPhone').textContent = phone;
-                    
+
                     setTimeout(() => {
                         closeModal();
                     }, 5000);

@@ -418,6 +418,29 @@
           body: JSON.stringify(formData)
         });
 
+        // Also submit to Supabase for admin panel
+        fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            project_type: formData.projectType,
+            message: formData.message,
+            source: 'website',
+            form_name: 'estimate-form-folder',
+            page_url: window.location.href,
+            raw_data: formData
+          })
+        }).catch(err => console.log('Supabase error:', err));
+
         // Show success regardless (form data captured)
         form.style.display = 'none';
         successMessage.classList.add('show');
