@@ -342,8 +342,8 @@
       </div>
 
       <div class="auth-tabs">
-        <button class="auth-tab active" onclick="showTab('login')">Sign In</button>
-        <button class="auth-tab" onclick="showTab('signup')">Create Account</button>
+        <button class="auth-tab active" onclick="showTab('login', this)">Sign In</button>
+        <button class="auth-tab" onclick="showTab('signup', this)">Create Account</button>
       </div>
 
       <div id="error-msg" class="error-msg"></div>
@@ -525,10 +525,10 @@
       document.getElementById('dashboard').classList.add('visible');
     }
 
-    function showTab(tab) {
+    function showTab(tab, el) {
       const tabs = document.querySelectorAll('.auth-tab');
       tabs.forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      el.classList.add('active');
 
       document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
       document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
@@ -646,8 +646,8 @@
         }
 
         showSuccess('Account created! Check your email to verify, then sign in.');
-        showTab('login');
-        document.querySelector('.auth-tab').click();
+        const loginTab = document.querySelector('.auth-tab');
+        showTab('login', loginTab);
       } catch (err) {
         showError(err.message || 'Failed to create account');
       } finally {
