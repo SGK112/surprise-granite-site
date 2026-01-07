@@ -49,93 +49,570 @@ async function sendNotification(to, subject, html) {
   }
 }
 
-// Email templates
+// Company Branding
+const COMPANY = {
+  name: 'Surprise Granite Marble & Quartz',
+  shortName: 'Surprise Granite',
+  email: 'info@surprisegranite.com',
+  phone: '(623) 466-2424',
+  address: '14155 W. Bell Road, Suite 100, Surprise, AZ 85374',
+  website: 'https://www.surprisegranite.com',
+  logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg',
+  tagline: 'Premium Countertops & Expert Installation'
+};
+
+// Professional Invoice Templates
+const invoiceTemplates = {
+  // TEMPLATE 1: Classic Professional
+  classic: (invoice, items, customerName) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">${COMPANY.tagline}</p>
+            </td>
+          </tr>
+
+          <!-- Invoice Title -->
+          <tr>
+            <td style="padding: 40px 40px 20px; border-bottom: 2px solid #f9cb00;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <h2 style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 300;">INVOICE</h2>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">#${invoice.number || invoice.id?.slice(-8)}</p>
+                  </td>
+                  <td align="right">
+                    <p style="margin: 0; color: #1a1a2e; font-size: 14px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p style="margin: 5px 0 0; color: #1a1a2e; font-size: 14px;"><strong>Due:</strong> ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Bill To -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="50%" valign="top">
+                    <p style="margin: 0 0 5px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Bill To</p>
+                    <p style="margin: 0; color: #1a1a2e; font-size: 16px; font-weight: 600;">${customerName || 'Valued Customer'}</p>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">${invoice.customer_email}</p>
+                  </td>
+                  <td width="50%" valign="top" align="right">
+                    <p style="margin: 0 0 5px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">From</p>
+                    <p style="margin: 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">${COMPANY.name}</p>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 13px;">${COMPANY.address}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Items Table -->
+          <tr>
+            <td style="padding: 0 40px 30px;">
+              <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                <tr style="background-color: #1a1a2e;">
+                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Description</td>
+                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Qty</td>
+                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: right;">Amount</td>
+                </tr>
+                ${items.map((item, i) => `
+                <tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : '#ffffff'};">
+                  <td style="padding: 15px; color: #333; font-size: 14px; border-bottom: 1px solid #eee;">${item.description}</td>
+                  <td style="padding: 15px; color: #333; font-size: 14px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 1}</td>
+                  <td style="padding: 15px; color: #333; font-size: 14px; border-bottom: 1px solid #eee; text-align: right;">$${(item.amount).toFixed(2)}</td>
+                </tr>
+                `).join('')}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Total -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td></td>
+                  <td width="200" style="background-color: #1a1a2e; padding: 20px; border-radius: 8px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: rgba(255,255,255,0.7); font-size: 14px;">Subtotal</td>
+                        <td style="color: #fff; font-size: 14px; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding: 10px 0;"><hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 0;"></td>
+                      </tr>
+                      <tr>
+                        <td style="color: #f9cb00; font-size: 18px; font-weight: 700;">TOTAL</td>
+                        <td style="color: #f9cb00; font-size: 18px; font-weight: 700; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Pay Button -->
+          <tr>
+            <td style="padding: 0 40px 40px; text-align: center;">
+              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 18px 50px; border-radius: 50px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(249, 203, 0, 0.4);">Pay Now</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9f9f9; padding: 30px 40px; text-align: center; border-top: 1px solid #eee;">
+              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions? Contact us at <a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a></p>
+              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">or call <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none;">${COMPANY.phone}</a></p>
+              <p style="margin: 20px 0 0; color: #999; font-size: 12px;">${COMPANY.name}<br>${COMPANY.address}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`,
+
+  // TEMPLATE 2: Modern Minimal
+  modern: (invoice, items, customerName) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center" style="padding: 60px 20px;">
+        <table role="presentation" width="550" cellspacing="0" cellpadding="0">
+          <!-- Logo & Invoice Number -->
+          <tr>
+            <td style="padding-bottom: 40px; border-bottom: 1px solid #eee;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0; color: #000; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">SURPRISE<span style="color: #f9cb00;">GRANITE</span></h1>
+                    <p style="margin: 4px 0 0; color: #888; font-size: 12px; letter-spacing: 2px;">MARBLE & QUARTZ</p>
+                  </td>
+                  <td align="right">
+                    <p style="margin: 0; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Invoice</p>
+                    <p style="margin: 4px 0 0; color: #f9cb00; font-size: 20px; font-weight: 700;">#${invoice.number || invoice.id?.slice(-8)}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Date & Customer -->
+          <tr>
+            <td style="padding: 40px 0;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="50%">
+                    <p style="margin: 0; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Billed To</p>
+                    <p style="margin: 10px 0 0; color: #000; font-size: 18px; font-weight: 600;">${customerName || 'Valued Customer'}</p>
+                    <p style="margin: 4px 0 0; color: #666; font-size: 14px;">${invoice.customer_email}</p>
+                  </td>
+                  <td width="50%" align="right">
+                    <p style="margin: 0; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Invoice Date</p>
+                    <p style="margin: 10px 0 0; color: #000; font-size: 16px;">${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                    <p style="margin: 20px 0 0; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Due Date</p>
+                    <p style="margin: 10px 0 0; color: #000; font-size: 16px;">${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Upon Receipt'}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Items -->
+          <tr>
+            <td>
+              ${items.map((item, i) => `
+              <table width="100%" cellspacing="0" cellpadding="0" style="border-bottom: 1px solid #f0f0f0;">
+                <tr>
+                  <td style="padding: 20px 0;">
+                    <p style="margin: 0; color: #000; font-size: 16px; font-weight: 500;">${item.description}</p>
+                    <p style="margin: 4px 0 0; color: #888; font-size: 13px;">Qty: ${item.quantity || 1}</p>
+                  </td>
+                  <td align="right" style="padding: 20px 0;">
+                    <p style="margin: 0; color: #000; font-size: 16px; font-weight: 600;">$${(item.amount).toFixed(2)}</p>
+                  </td>
+                </tr>
+              </table>
+              `).join('')}
+            </td>
+          </tr>
+
+          <!-- Total -->
+          <tr>
+            <td style="padding: 30px 0;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td></td>
+                  <td width="200" align="right">
+                    <table cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 8px 20px 8px 0; color: #888; font-size: 14px;">Subtotal</td>
+                        <td style="padding: 8px 0; color: #000; font-size: 14px; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 15px 20px 15px 0; color: #000; font-size: 20px; font-weight: 700;">Total</td>
+                        <td style="padding: 15px 0; color: #000; font-size: 24px; font-weight: 700; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Pay Button -->
+          <tr>
+            <td style="padding: 20px 0 50px; text-align: center;">
+              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background-color: #000; color: #fff; text-decoration: none; padding: 16px 60px; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Pay Invoice →</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 40px 0; border-top: 1px solid #eee; text-align: center;">
+              <p style="margin: 0; color: #888; font-size: 13px;">${COMPANY.name}</p>
+              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;">${COMPANY.address}</p>
+              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;"><a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none;">${COMPANY.phone}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`,
+
+  // TEMPLATE 3: Premium Luxury
+  premium: (invoice, items, customerName) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0a12; font-family: 'Georgia', 'Times New Roman', serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0a0a12;">
+    <tr>
+      <td align="center" style="padding: 50px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0">
+          <!-- Gold Accent Line -->
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, transparent, #f9cb00, transparent);"></td>
+          </tr>
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #12121a; padding: 50px; text-align: center;">
+              <p style="margin: 0; color: #f9cb00; font-size: 12px; letter-spacing: 4px; text-transform: uppercase;">Premium Quality</p>
+              <h1 style="margin: 15px 0 0; color: #ffffff; font-size: 36px; font-weight: 400; letter-spacing: 3px;">SURPRISE GRANITE</h1>
+              <p style="margin: 10px 0 0; color: #888; font-size: 14px; letter-spacing: 2px;">MARBLE & QUARTZ</p>
+            </td>
+          </tr>
+
+          <!-- Invoice Header -->
+          <tr>
+            <td style="background-color: #1a1a2e; padding: 40px 50px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Invoice Number</p>
+                    <p style="margin: 8px 0 0; color: #ffffff; font-size: 24px; font-weight: 300;">#${invoice.number || invoice.id?.slice(-8)}</p>
+                  </td>
+                  <td align="right">
+                    <p style="margin: 0; color: #888; font-size: 13px;">Issue Date: ${new Date().toLocaleDateString()}</p>
+                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">Due: ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Bill To Section -->
+          <tr>
+            <td style="background-color: #12121a; padding: 40px 50px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td width="50%" valign="top">
+                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">Bill To</p>
+                    <p style="margin: 15px 0 0; color: #ffffff; font-size: 20px; font-weight: 400;">${customerName || 'Valued Client'}</p>
+                    <p style="margin: 8px 0 0; color: #888; font-size: 14px;">${invoice.customer_email}</p>
+                  </td>
+                  <td width="50%" valign="top" align="right">
+                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">From</p>
+                    <p style="margin: 15px 0 0; color: #ffffff; font-size: 14px;">${COMPANY.name}</p>
+                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">${COMPANY.phone}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Items -->
+          <tr>
+            <td style="background-color: #1a1a2e; padding: 0;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding: 20px 50px; border-bottom: 1px solid rgba(249, 203, 0, 0.2);">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">Description</td>
+                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: center;" width="80">Qty</td>
+                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: right;" width="120">Amount</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                ${items.map(item => `
+                <tr>
+                  <td style="padding: 25px 50px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #ffffff; font-size: 16px;">${item.description}</td>
+                        <td style="color: #888; font-size: 14px; text-align: center;" width="80">${item.quantity || 1}</td>
+                        <td style="color: #ffffff; font-size: 16px; text-align: right;" width="120">$${(item.amount).toFixed(2)}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                `).join('')}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Total -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #f9cb00 0%, #d4a800 100%); padding: 30px 50px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="color: #1a1a2e; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Total Amount</td>
+                  <td align="right" style="color: #1a1a2e; font-size: 32px; font-weight: 700;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Pay Button -->
+          <tr>
+            <td style="background-color: #12121a; padding: 50px; text-align: center;">
+              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; border: 2px solid #f9cb00; color: #f9cb00; text-decoration: none; padding: 18px 60px; font-size: 13px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s;">PAY INVOICE</a>
+              <p style="margin: 30px 0 0; color: #666; font-size: 13px;">Secure payment powered by Stripe</p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0a0a12; padding: 40px 50px; text-align: center;">
+              <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 2px;">${COMPANY.name}</p>
+              <p style="margin: 15px 0 0; color: #666; font-size: 12px;">${COMPANY.address}</p>
+              <p style="margin: 10px 0 0; color: #666; font-size: 12px;">${COMPANY.email} • ${COMPANY.phone}</p>
+              <p style="margin: 20px 0 0; color: #444; font-size: 11px;">Thank you for choosing Surprise Granite for your project.</p>
+            </td>
+          </tr>
+
+          <!-- Gold Accent Line -->
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, transparent, #f9cb00, transparent);"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+};
+
+// Admin notification templates
 const emailTemplates = {
-  invoiceSent: (invoice) => ({
-    subject: `Invoice #${invoice.number} Sent - Surprise Granite`,
+  invoiceSent: (invoice, template = 'classic') => ({
+    subject: `Invoice #${invoice.number} Sent - ${COMPANY.shortName}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1a1a2e; padding: 20px; text-align: center;">
-          <h1 style="color: #f9cb00; margin: 0;">Surprise Granite</h1>
-        </div>
-        <div style="padding: 30px; background: #f5f5f5;">
-          <h2 style="color: #333;">Invoice Sent</h2>
-          <p>Invoice <strong>#${invoice.number}</strong> has been sent to <strong>${invoice.customer_email}</strong></p>
-          <p><strong>Amount:</strong> $${(invoice.amount_due / 100).toFixed(2)}</p>
-          <p><a href="${invoice.hosted_invoice_url}" style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">View Invoice</a></p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-          <p>Surprise Granite | info@surprisegranite.com</p>
-        </div>
-      </div>
-    `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                <p style="margin: 0; color: #2e7d32; font-weight: 600;">✓ Invoice Sent Successfully</p>
+              </div>
+              <p style="margin: 0 0 20px; color: #333; font-size: 15px;">Invoice <strong>#${invoice.number}</strong> has been sent to:</p>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0 0 8px; color: #666; font-size: 13px;">Customer Email</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 16px; font-weight: 600;">${invoice.customer_email}</p>
+              </div>
+              <table width="100%" style="margin-bottom: 25px;">
+                <tr>
+                  <td style="background: #fff8e1; padding: 20px; border-radius: 8px; text-align: center;">
+                    <p style="margin: 0 0 5px; color: #f57c00; font-size: 12px; text-transform: uppercase;">Amount Due</p>
+                    <p style="margin: 0; color: #e65100; font-size: 28px; font-weight: 700;">$${(invoice.amount_due / 100).toFixed(2)}</p>
+                  </td>
+                </tr>
+              </table>
+              <a href="${invoice.hosted_invoice_url}" style="display: block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 15px; border-radius: 8px; text-align: center; font-weight: 600;">View Invoice</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f9fa; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #888; font-size: 12px;">${COMPANY.name}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
   }),
 
   paymentReceived: (invoice) => ({
-    subject: `Payment Received - Invoice #${invoice.number}`,
+    subject: `💰 Payment Received - Invoice #${invoice.number}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1a1a2e; padding: 20px; text-align: center;">
-          <h1 style="color: #f9cb00; margin: 0;">Surprise Granite</h1>
-        </div>
-        <div style="padding: 30px; background: #f5f5f5;">
-          <h2 style="color: #4dff82;">Payment Received!</h2>
-          <p>Great news! Payment for Invoice <strong>#${invoice.number}</strong> has been received.</p>
-          <p><strong>Customer:</strong> ${invoice.customer_email}</p>
-          <p><strong>Amount Paid:</strong> $${(invoice.amount_paid / 100).toFixed(2)}</p>
-          <p><a href="${invoice.hosted_invoice_url}" style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">View Receipt</a></p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-          <p>Surprise Granite | info@surprisegranite.com</p>
-        </div>
-      </div>
-    `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px; text-align: center;">
+              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 40px;">✓</span>
+              </div>
+              <h2 style="margin: 0 0 10px; color: #2e7d32; font-size: 24px;">Payment Received!</h2>
+              <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Invoice #${invoice.number} has been paid</p>
+              <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 30px; border-radius: 12px; margin-bottom: 25px;">
+                <p style="margin: 0 0 5px; color: #388e3c; font-size: 12px; text-transform: uppercase;">Amount Received</p>
+                <p style="margin: 0; color: #1b5e20; font-size: 36px; font-weight: 700;">$${(invoice.amount_paid / 100).toFixed(2)}</p>
+              </div>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: left;">
+                <p style="margin: 0 0 8px; color: #666; font-size: 13px;">Customer</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 15px; font-weight: 600;">${invoice.customer_email}</p>
+              </div>
+              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-size: 14px;">View Receipt</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f9fa; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #888; font-size: 12px;">${COMPANY.name} • ${COMPANY.phone}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
   }),
 
   paymentFailed: (invoice) => ({
-    subject: `Payment Failed - Invoice #${invoice.number}`,
+    subject: `⚠️ Payment Failed - Invoice #${invoice.number}`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1a1a2e; padding: 20px; text-align: center;">
-          <h1 style="color: #f9cb00; margin: 0;">Surprise Granite</h1>
-        </div>
-        <div style="padding: 30px; background: #f5f5f5;">
-          <h2 style="color: #ff6b6b;">Payment Failed</h2>
-          <p>Payment for Invoice <strong>#${invoice.number}</strong> has failed.</p>
-          <p><strong>Customer:</strong> ${invoice.customer_email}</p>
-          <p><strong>Amount:</strong> $${(invoice.amount_due / 100).toFixed(2)}</p>
-          <p>Please follow up with the customer to arrange an alternative payment method.</p>
-          <p><a href="${invoice.hosted_invoice_url}" style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">View Invoice</a></p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-          <p>Surprise Granite | info@surprisegranite.com</p>
-        </div>
-      </div>
-    `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px;">
+              <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                <p style="margin: 0; color: #c62828; font-weight: 600;">⚠️ Payment Failed</p>
+              </div>
+              <p style="margin: 0 0 20px; color: #333; font-size: 15px;">The payment for Invoice <strong>#${invoice.number}</strong> was declined.</p>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <table width="100%">
+                  <tr>
+                    <td style="color: #666; font-size: 13px; padding: 5px 0;">Customer:</td>
+                    <td style="color: #1a1a2e; font-size: 14px; font-weight: 600; text-align: right;">${invoice.customer_email}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #666; font-size: 13px; padding: 5px 0;">Amount:</td>
+                    <td style="color: #c62828; font-size: 14px; font-weight: 600; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                  </tr>
+                </table>
+              </div>
+              <p style="margin: 0 0 20px; color: #666; font-size: 14px;">Please follow up with the customer to arrange an alternative payment method.</p>
+              <a href="${invoice.hosted_invoice_url}" style="display: block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 15px; border-radius: 8px; text-align: center; font-weight: 600;">View Invoice</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f9fa; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #888; font-size: 12px;">${COMPANY.name}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
   }),
 
-  invoiceCustomer: (invoice) => ({
-    subject: `Your Invoice from Surprise Granite - #${invoice.number}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1a1a2e; padding: 20px; text-align: center;">
-          <h1 style="color: #f9cb00; margin: 0;">Surprise Granite</h1>
-        </div>
-        <div style="padding: 30px; background: #f5f5f5;">
-          <h2 style="color: #333;">Invoice #${invoice.number}</h2>
-          <p>Thank you for choosing Surprise Granite! Here's your invoice:</p>
-          <p><strong>Amount Due:</strong> $${(invoice.amount_due / 100).toFixed(2)}</p>
-          <p><strong>Due Date:</strong> ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
-          <p><a href="${invoice.hosted_invoice_url}" style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;">Pay Invoice</a></p>
-          <p style="margin-top: 20px; color: #666;">If you have any questions, please contact us at info@surprisegranite.com</p>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-          <p>Surprise Granite | Surprise, AZ | info@surprisegranite.com</p>
-        </div>
-      </div>
-    `
+  // Customer invoice email - uses selected template
+  invoiceCustomer: (invoice, items, customerName, templateName = 'classic') => ({
+    subject: `Invoice #${invoice.number} from ${COMPANY.name}`,
+    html: getInvoiceTemplate(templateName, invoice, items, customerName)
   })
 };
+
+// Get invoice template by name
+function getInvoiceTemplate(templateName, invoice, items, customerName) {
+  const template = invoiceTemplates[templateName] || invoiceTemplates.classic;
+  return template(invoice, items, customerName);
+}
 
 // Middleware
 app.use(cors({
@@ -233,7 +710,8 @@ app.post('/api/invoices', async (req, res) => {
       description,
       notes,
       due_days = 30,
-      auto_send = true
+      auto_send = true,
+      template = 'classic'  // classic, modern, or premium
     } = req.body;
 
     if (!customer_email || !items || items.length === 0) {
@@ -285,13 +763,18 @@ app.post('/api/invoices', async (req, res) => {
     if (auto_send) {
       await stripe.invoices.sendInvoice(invoice.id);
 
-      // Send email notifications
-      const emailData = emailTemplates.invoiceSent(finalizedInvoice);
+      // Send email notifications to admin
+      const emailData = emailTemplates.invoiceSent(finalizedInvoice, template);
       await sendNotification(ADMIN_EMAIL, emailData.subject, emailData.html);
 
-      // Send invoice email to customer
-      const customerEmail = emailTemplates.invoiceCustomer(finalizedInvoice);
-      await sendNotification(customer_email, customerEmail.subject, customerEmail.html);
+      // Send branded invoice email to customer using selected template
+      const customerEmailData = emailTemplates.invoiceCustomer(
+        finalizedInvoice,
+        items,
+        customer_name,
+        template
+      );
+      await sendNotification(customer_email, customerEmailData.subject, customerEmailData.html);
     }
 
     res.json({

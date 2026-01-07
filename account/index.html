@@ -814,6 +814,93 @@
       justify-content: flex-end;
     }
 
+    /* Invoice Template Selector */
+    .template-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .template-option {
+      cursor: pointer;
+    }
+
+    .template-option input {
+      display: none;
+    }
+
+    .template-preview {
+      border: 2px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      transition: all 0.3s;
+      background: var(--dark-surface);
+    }
+
+    .template-option input:checked + .template-preview {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .template-preview:hover {
+      border-color: var(--border-light);
+    }
+
+    .template-header-preview {
+      height: 24px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .template-body-preview {
+      height: 40px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .classic-preview .template-header-preview {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+    }
+    .classic-preview .template-body-preview {
+      background: #f4f4f4;
+    }
+
+    .modern-preview .template-header-preview {
+      background: linear-gradient(90deg, #000, #333);
+    }
+    .modern-preview .template-body-preview {
+      background: #ffffff;
+      border: 1px solid #eee;
+    }
+
+    .premium-preview .template-header-preview {
+      background: linear-gradient(135deg, #0a0a12, #12121a);
+    }
+    .premium-preview .template-body-preview {
+      background: linear-gradient(135deg, #f9cb00, #d4a800);
+    }
+
+    .template-name {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .template-desc {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .template-selector {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .status-select {
       padding: 8px 16px;
       border-radius: 8px;
@@ -2030,6 +2117,39 @@
           </div>
 
           <div class="form-group">
+            <label>Email Template</label>
+            <div class="template-selector">
+              <label class="template-option">
+                <input type="radio" name="invoice-template" value="classic" checked>
+                <div class="template-preview classic-preview">
+                  <div class="template-header-preview"></div>
+                  <div class="template-body-preview"></div>
+                  <span class="template-name">Classic</span>
+                  <span class="template-desc">Professional & Clean</span>
+                </div>
+              </label>
+              <label class="template-option">
+                <input type="radio" name="invoice-template" value="modern">
+                <div class="template-preview modern-preview">
+                  <div class="template-header-preview"></div>
+                  <div class="template-body-preview"></div>
+                  <span class="template-name">Modern</span>
+                  <span class="template-desc">Minimal & Elegant</span>
+                </div>
+              </label>
+              <label class="template-option">
+                <input type="radio" name="invoice-template" value="premium">
+                <div class="template-preview premium-preview">
+                  <div class="template-header-preview"></div>
+                  <div class="template-body-preview"></div>
+                  <span class="template-name">Premium</span>
+                  <span class="template-desc">Luxury Dark Theme</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
             <label>Notes (Optional)</label>
             <textarea id="invoice-notes" rows="2" placeholder="Add any additional notes for the customer..."></textarea>
           </div>
@@ -3108,6 +3228,9 @@
         });
       });
 
+      // Get selected template
+      const selectedTemplate = document.querySelector('input[name="invoice-template"]:checked')?.value || 'classic';
+
       const invoiceData = {
         customer_email: document.getElementById('invoice-email').value,
         customer_name: document.getElementById('invoice-name').value,
@@ -3115,7 +3238,8 @@
         items,
         due_days: parseInt(document.getElementById('invoice-due-days').value),
         notes: document.getElementById('invoice-notes').value,
-        auto_send: true
+        auto_send: true,
+        template: selectedTemplate
       };
 
       try {
