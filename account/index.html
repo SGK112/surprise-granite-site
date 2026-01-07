@@ -1238,6 +1238,68 @@
       color: var(--text-muted);
     }
 
+    /* Fees Grid */
+    .fees-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .fee-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .fee-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .fee-header svg {
+      color: var(--gold-primary);
+    }
+
+    .fee-rate {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .fee-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .fee-note {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      background: rgba(249, 203, 0, 0.05);
+      border: 1px solid rgba(249, 203, 0, 0.2);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .fee-note svg {
+      flex-shrink: 0;
+      color: var(--gold-primary);
+      margin-top: 2px;
+    }
+
+    .fee-note strong {
+      color: var(--text-primary);
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .sidebar {
@@ -1625,6 +1687,86 @@
             <div class="card-body">
               <div id="payouts-list">
                 <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fees & Rates Disclosure -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Processing Fees & Rates</h3>
+            </div>
+            <div class="card-body">
+              <div class="fees-grid">
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    <span>Credit/Debit Cards</span>
+                  </div>
+                  <div class="fee-rate">2.9% + $0.30</div>
+                  <div class="fee-desc">Per successful transaction</div>
+                </div>
+
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Invoices (Card Payment)</span>
+                  </div>
+                  <div class="fee-rate">2.9% + $0.30</div>
+                  <div class="fee-desc">When customer pays by card</div>
+                </div>
+
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+                    <span>ACH Bank Transfer</span>
+                  </div>
+                  <div class="fee-rate">0.8% (max $5)</div>
+                  <div class="fee-desc">Direct bank payments</div>
+                </div>
+
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Payouts to Bank</span>
+                  </div>
+                  <div class="fee-rate">Free</div>
+                  <div class="fee-desc">Standard 2-day transfer</div>
+                </div>
+
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span>Instant Payouts</span>
+                  </div>
+                  <div class="fee-rate">1.5% (min $0.50)</div>
+                  <div class="fee-desc">Funds in minutes to debit card</div>
+                </div>
+
+                <div class="fee-item">
+                  <div class="fee-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Vendor Payouts</span>
+                  </div>
+                  <div class="fee-rate">0.25% + $0.25</div>
+                  <div class="fee-desc">Per transfer to vendor accounts</div>
+                </div>
+              </div>
+
+              <div class="fee-note">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>
+                  <strong>How Vendor Payouts Work:</strong>
+                  All customer payments are collected through Surprise Granite's Stripe account. Vendors receive payouts after their sales are processed, minus applicable platform and processing fees. Payouts are processed weekly or upon request.
+                </div>
+              </div>
+
+              <div class="fee-note" style="margin-top: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <div>
+                  <strong>Secure Payments:</strong>
+                  All transactions are processed securely through Stripe. We never store credit card numbers on our servers.
+                </div>
               </div>
             </div>
           </div>
