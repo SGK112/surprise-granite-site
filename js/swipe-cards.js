@@ -221,20 +221,20 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 10h10a5 5 0 0 1 5 5v2"></path>
               <path d="M3 10l4-4"></path>
               <path d="M3 10l4 4"></path>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           </button>
