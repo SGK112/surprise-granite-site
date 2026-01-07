@@ -10,20 +10,7 @@
 }
 
 @media (max-width: 767px) {
-  /* FULL SCREEN MODE - Hide EVERYTHING except swipe UI */
-  body.swipe-mode .navbar_component,
-  body.swipe-mode .navbar-fixed_wrapper,
-  body.swipe-mode .navbar_wrapper,
-  body.swipe-mode .header,
-  body.swipe-mode .nav_component,
-  body.swipe-mode [class*="navbar"],
-  body.swipe-mode [class*="header"],
-  body.swipe-mode .footer,
-  body.swipe-mode .simple-footer,
-  body.swipe-mode .footer-cta,
-  body.swipe-mode [class*="footer"],
-  body.swipe-mode .section_header54,
-  body.swipe-mode .fixed-footer_left-content,
+  /* Hide chatbots when swiping */
   body.swipe-mode #chatbase-bubble-button,
   body.swipe-mode #chatbase-bubble-window,
   body.swipe-mode [id*="chatbase"],
@@ -31,20 +18,6 @@
   body.swipe-mode [class*="chat-widget"],
   body.swipe-mode iframe[src*="chatbase"] {
     display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  body.swipe-mode {
-    padding-top: 0 !important;
-    overflow: hidden !important;
-  }
-
-  body.swipe-mode .page-wrapper,
-  body.swipe-mode .main-wrapper {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
   }
 
   /* Hide the regular grid on mobile */
@@ -52,79 +25,36 @@
     display: none !important;
   }
 
-  /* Show swipe cards container - FULL VIEWPORT */
+  /* Show swipe cards container - FILL VIEWPORT in normal flow */
   .swipe-cards-container {
     display: flex;
     flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: relative;
     width: 100%;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for iOS */
+    min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-    z-index: 9999;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: 0;
+    z-index: 10;
   }
 
-  /* Top bar with close button */
-  .swipe-topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    flex-shrink: 0;
-  }
-
-  .swipe-topbar-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a1a2e;
-  }
-
-  .swipe-close-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: #e5e7eb;
-    color: #333;
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .swipe-close-btn svg {
-    width: 20px !important;
-    height: 20px !important;
-    stroke: #333 !important;
-  }
-
-  /* Card stack area - takes remaining space */
+  /* Card stack area - takes most of the space */
   .swipe-card-stack {
     flex: 1;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
-    min-height: 0;
-    overflow: hidden;
+    padding: 12px;
+    min-height: 400px;
   }
 
   /* Individual card - FILL THE SPACE */
   .swipe-card {
     position: absolute;
     width: calc(100% - 24px);
-    max-width: 400px;
-    height: calc(100% - 8px);
+    max-width: 380px;
+    height: 100%;
+    max-height: 520px;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -342,15 +272,14 @@
     }
   }
 
-  /* Bottom action bar - FIXED at bottom */
+  /* Bottom action bar */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 16px;
-    padding: 12px 20px;
-    background: #fff;
-    border-top: 1px solid #e5e7eb;
+    gap: 20px;
+    padding: 16px 20px;
+    background: transparent;
     flex-shrink: 0;
   }
 
@@ -428,11 +357,10 @@
   /* Counter - below buttons */
   .swipe-counter {
     text-align: center;
-    padding: 6px 20px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 20px 20px;
     color: #666;
     font-size: 14px;
-    background: #fff;
+    background: transparent;
     flex-shrink: 0;
   }
 

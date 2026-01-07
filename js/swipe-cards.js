@@ -206,8 +206,16 @@
     const container = document.querySelector('.materials_collection-list-wrapper');
     if (!container) return;
 
-    // Enable full-screen swipe mode
+    // Add swipe mode class (for hiding chatbots)
     document.body.classList.add('swipe-mode');
+
+    // Auto-scroll to swipe area after a short delay
+    setTimeout(() => {
+      const swipeContainer = document.querySelector('.swipe-cards-container');
+      if (swipeContainer) {
+        swipeContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 500);
 
     const loginPrompt = !currentUser ? `
       <div class="swipe-login-prompt" id="login-prompt" style="display: none;">
@@ -218,15 +226,6 @@
 
     const swipeHTML = `
       <div class="swipe-cards-container">
-        <div class="swipe-topbar">
-          <span class="swipe-topbar-title">Find Your Floor</span>
-          <button class="swipe-close-btn" onclick="window.exitSwipeMode()" title="Exit">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
@@ -636,8 +635,11 @@
     const materialsList = document.querySelector('.materials_list');
     if (materialsList) materialsList.classList.remove('swipe-enabled');
 
-    // Scroll to top
-    window.scrollTo(0, 0);
+    // Scroll to products section
+    const productsSection = document.querySelector('.section_filters1, .materials_collection-list-wrapper');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   // Reinitialize on resize (for orientation change)
