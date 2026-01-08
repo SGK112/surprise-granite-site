@@ -116,9 +116,108 @@
     const overlay = document.querySelector('.swipe-intro-overlay');
     if (overlay) overlay.remove();
 
-    // Grid is already visible, nothing else needed
+    // Add heart icons to grid cards
+    addHeartIconsToGrid();
+
     console.log('Swipe Cards: User chose scroll mode');
   };
+
+  function addHeartIconsToGrid() {
+    const items = document.querySelectorAll('.materials_item, .w-dyn-item');
+
+    items.forEach((item, index) => {
+      // Skip if already has heart
+      if (item.querySelector('.grid-heart-btn')) return;
+
+      const imageWrapper = item.querySelector('.materials_image-wrapper');
+      if (!imageWrapper) return;
+
+      // Get card data
+      const card = cards[index];
+      if (!card) return;
+
+      // Check if already favorited
+      const isFavorited = favorites.some(f => f.title === card.title);
+
+      // Create heart button
+      const heartBtn = document.createElement('button');
+      heartBtn.className = 'grid-heart-btn' + (isFavorited ? ' is-favorited' : '');
+      heartBtn.innerHTML = '♥';
+      heartBtn.dataset.cardIndex = index;
+      heartBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleGridFavorite(index, this);
+      };
+
+      imageWrapper.style.position = 'relative';
+      imageWrapper.appendChild(heartBtn);
+
+      // Add double-tap detection to images
+      let lastTap = 0;
+      imageWrapper.addEventListener('touchend', function(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          // Double tap detected
+          e.preventDefault();
+          toggleGridFavorite(index, heartBtn);
+          showDoubleTapHeart(imageWrapper);
+        }
+        lastTap = currentTime;
+      });
+    });
+  }
+
+  function showDoubleTapHeart(container) {
+    const heart = document.createElement('div');
+    heart.className = 'double-tap-heart';
+    heart.innerHTML = '♥';
+    container.appendChild(heart);
+    setTimeout(() => heart.remove(), 800);
+  }
+
+  async function toggleGridFavorite(cardIndex, btnElement) {
+    const card = cards[cardIndex];
+    if (!card) return;
+
+    const existingIndex = favorites.findIndex(f => f.title === card.title);
+
+    if (existingIndex >= 0) {
+      // Remove from favorites
+      const removed = favorites.splice(existingIndex, 1)[0];
+      if (removed) await removeFavoriteFromSupabase(removed);
+      btnElement.classList.remove('is-favorited');
+
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(30);
+    } else {
+      // Add to favorites
+      favorites.push(card);
+      await saveFavoriteToSupabase(card);
+      btnElement.classList.add('is-favorited');
+
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    }
+
+    saveToLocalStorage();
+  }
+
+  // Also add hearts when on desktop (no overlay shown)
+  function initDesktopHearts() {
+    if (window.innerWidth > 767) {
+      // On desktop, just add hearts to grid
+      setTimeout(addHeartIconsToGrid, 500);
+    }
+  }
+
+  // Run on desktop after cards are loaded
+  if (window.innerWidth > 767) {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(initDesktopHearts, 1000);
+    });
+  }
 
   async function initSupabase() {
     try {
