@@ -115,7 +115,7 @@
 @media (max-width: 767px) {
 
   /* ==========================================
-     INTRO OVERLAY - Clean Minimal
+     INTRO OVERLAY - Glassmorphic
      ========================================== */
   .swipe-intro-overlay {
     display: flex !important;
@@ -124,12 +124,14 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 999999;
     align-items: center;
     justify-content: center;
     padding: 24px;
-    animation: introFadeIn 0.25s ease-out;
+    animation: introFadeIn 0.3s ease-out;
   }
 
   @keyframes introFadeIn {
@@ -139,25 +141,32 @@
 
   .swipe-intro-content {
     text-align: center;
-    max-width: 300px;
+    max-width: 320px;
     width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 40px 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   }
 
   .swipe-intro-title {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 600;
     color: #fff;
-    margin: 0 0 8px;
-    letter-spacing: -0.5px;
+    margin: 0 0 6px;
+    letter-spacing: -0.3px;
   }
 
   .swipe-intro-subtitle {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 15px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.5);
-    margin: 0 0 48px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0 36px;
   }
 
   .swipe-intro-options {
@@ -172,10 +181,10 @@
     justify-content: center;
     width: 100%;
     padding: 16px 24px;
-    border-radius: 14px;
+    border-radius: 16px;
     border: none;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -185,6 +194,7 @@
 
   .swipe-mode-btn {
     background: var(--sg-primary);
+    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
   }
 
   .swipe-mode-btn:active {
@@ -193,24 +203,25 @@
 
   .swipe-mode-btn .intro-btn-text {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     color: #1a1a2e;
   }
 
   .scroll-mode-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .scroll-mode-btn:active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.25);
   }
 
   .scroll-mode-btn .intro-btn-text {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: #fff;
   }
 
   body.swipe-mode {
@@ -251,7 +262,7 @@
   }
 
   /* ==========================================
-     TOP BAR - Clean Header
+     TOP BAR - Glassmorphic Header
      ========================================== */
   .swipe-topbar {
     position: fixed;
@@ -263,7 +274,10 @@
     align-items: center;
     padding: 12px 16px;
     padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    background: transparent;
+    background: rgba(10, 10, 15, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 100;
   }
 
@@ -282,39 +296,41 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: #fff;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-favorites-btn:active {
     transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   .swipe-favorites-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     fill: var(--sg-primary);
   }
 
   .swipe-favorites-btn .fav-count {
-    min-width: 18px;
-    height: 18px;
+    min-width: 20px;
+    height: 20px;
     background: var(--sg-primary);
     color: var(--sg-dark);
-    padding: 0 5px;
-    border-radius: 9px;
-    font-size: 11px;
-    font-weight: 600;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -335,7 +351,7 @@
   }
 
   /* ==========================================
-     CARDS - Premium Design
+     CARDS - Glassmorphic Premium Design
      ========================================== */
   .swipe-card {
     position: absolute;
@@ -343,12 +359,15 @@
     max-width: 380px;
     height: auto;
     max-height: calc(100vh - 200px);
-    background: #fff;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.08),
-      0 8px 24px rgba(0, 0, 0, 0.12),
-      0 24px 48px rgba(0, 0, 0, 0.16);
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      0 24px 64px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
     overflow: hidden;
     cursor: grab;
     user-select: none;
@@ -363,21 +382,23 @@
     cursor: grabbing;
   }
 
-  /* STACK - Subtle depth */
+  /* STACK - Subtle depth with glass effect */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) translateY(6px) scale(0.98);
+    transform: translateX(-50%) translateY(8px) scale(0.97);
     z-index: -1;
-    filter: brightness(0.97);
+    filter: brightness(0.95);
+    opacity: 0.9;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) translateY(12px) scale(0.96);
+    transform: translateX(-50%) translateY(16px) scale(0.94);
     z-index: -2;
-    filter: brightness(0.94);
+    filter: brightness(0.9);
+    opacity: 0.7;
   }
 
   .swipe-card:nth-child(n+4) {
-    transform: translateX(-50%) translateY(18px) scale(0.94);
+    transform: translateX(-50%) translateY(24px) scale(0.91);
     z-index: -3;
     visibility: hidden;
   }
@@ -386,9 +407,9 @@
     transition: none !important;
     z-index: 100;
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.1),
-      0 16px 32px rgba(0, 0, 0, 0.15),
-      0 32px 64px rgba(0, 0, 0, 0.2);
+      0 12px 40px rgba(0, 0, 0, 0.25),
+      0 32px 80px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
   /* ==========================================
@@ -403,33 +424,36 @@
   }
 
   /* ==========================================
-     VIEW BUTTON - Pill Style
+     VIEW BUTTON - Glassmorphic Pill
      ========================================== */
   .swipe-card-view-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 8px 14px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
+    top: 14px;
+    right: 14px;
+    padding: 10px 16px;
+    background: rgba(26, 26, 46, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     gap: 6px;
     text-decoration: none;
     z-index: 10;
-    transition: background 0.15s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   }
 
   .swipe-card-view-btn:active {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(26, 26, 46, 0.9);
+    transform: scale(0.95);
   }
 
   .swipe-card-view-btn svg {
     width: 14px;
     height: 14px;
-    stroke: #fff;
+    stroke: var(--sg-primary);
     stroke-width: 2;
     fill: none;
   }
@@ -437,65 +461,68 @@
   .swipe-card-view-btn::after {
     content: 'View';
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: #fff;
   }
 
   /* ==========================================
-     CARD CONTENT - Clean Modern
+     CARD CONTENT - Glassmorphic Modern
      ========================================== */
   .swipe-card-content {
-    padding: 16px 18px 20px;
-    background: #fff;
+    padding: 18px 20px 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,248,252,0.95) 100%);
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
 
   .swipe-card-title {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 19px;
+    font-weight: 700;
     color: #1a1a2e;
-    line-height: 1.3;
+    line-height: 1.25;
     flex: 1;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.4px;
   }
 
   .swipe-card-material {
-    background: #1a1a2e;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 6px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+    color: var(--sg-primary);
+    padding: 6px 12px;
+    border-radius: 8px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(26, 26, 46, 0.2);
   }
 
   /* ==========================================
-     SPECS GRID - Minimal Tags
+     SPECS GRID - Glassmorphic Tags
      ========================================== */
   .swipe-card-specs {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   .swipe-card-spec {
     display: inline-flex;
     flex-direction: column;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: #f5f5f7;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.06) 0%, rgba(26, 26, 46, 0.03) 100%);
+    border: 1px solid rgba(26, 26, 46, 0.08);
   }
 
   .spec-label {
@@ -503,95 +530,111 @@
     font-size: 9px;
     color: #86868b;
     text-transform: uppercase;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    margin-bottom: 2px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    margin-bottom: 3px;
   }
 
   .spec-value {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 13px;
-    color: #1d1d1f;
-    font-weight: 500;
+    font-size: 14px;
+    color: #1a1a2e;
+    font-weight: 600;
   }
 
   /* ==========================================
-     SWIPE INDICATORS - Clean Icons
+     SWIPE INDICATORS - Glassmorphic Icons
      ========================================== */
   .swipe-indicator {
     position: absolute;
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: var(--sg-radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: none;
     z-index: 20;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .swipe-indicator svg {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
   }
 
   /* Like - Heart on right */
   .swipe-indicator.like {
-    right: 20px;
+    right: 24px;
     top: 50%;
-    transform: translateY(-50%) scale(0.8);
-    background: var(--sg-primary);
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
+    transform: translateY(-50%) scale(0.7);
+    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
+    box-shadow:
+      0 4px 24px rgba(249, 203, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .swipe-indicator.like svg {
     fill: var(--sg-dark);
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
   }
 
   /* Nope - X on left */
   .swipe-indicator.nope {
-    left: 20px;
+    left: 24px;
     top: 50%;
-    transform: translateY(-50%) scale(0.8);
-    background: var(--sg-accent);
-    box-shadow: 0 4px 20px rgba(255, 107, 122, 0.4);
+    transform: translateY(-50%) scale(0.7);
+    background: linear-gradient(135deg, var(--sg-accent) 0%, #e85566 100%);
+    box-shadow:
+      0 4px 24px rgba(255, 107, 122, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
   .swipe-indicator.nope svg {
     stroke: #fff;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
   }
 
   /* Super - Arrow up at top */
   .swipe-indicator.super {
-    top: 30%;
+    top: 28%;
     left: 50%;
-    transform: translateX(-50%) translateY(-20px) scale(0.8);
-    background: linear-gradient(135deg, var(--sg-primary), #e5b800);
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.5);
+    transform: translateX(-50%) translateY(-20px) scale(0.7);
+    background: linear-gradient(135deg, var(--sg-primary) 0%, #ffdb4d 100%);
+    box-shadow:
+      0 4px 24px rgba(249, 203, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.25);
   }
 
   .swipe-indicator.super svg {
     stroke: var(--sg-dark);
+    stroke-width: 2.5;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
   }
 
-  /* Active states */
+  /* Active states with bounce effect */
   .swipe-card.swiping-right .swipe-indicator.like {
     opacity: 1;
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.15);
   }
 
   .swipe-card.swiping-left .swipe-indicator.nope {
     opacity: 1;
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.15);
   }
 
   .swipe-card.swiping-up .swipe-indicator.super {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1.1);
+    transform: translateX(-50%) translateY(0) scale(1.15);
   }
 
   /* ==========================================
@@ -614,7 +657,7 @@
   }
 
   /* ==========================================
-     BOTTOM BAR - Minimal Floating
+     BOTTOM BAR - Glassmorphic
      ========================================== */
   .swipe-bottom-bar {
     position: fixed;
@@ -624,9 +667,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
+    padding: 16px 20px;
     padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    background: linear-gradient(to top, rgba(13, 13, 21, 0.95), transparent);
+    background: rgba(10, 10, 15, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 10;
   }
 
@@ -635,50 +681,50 @@
     align-items: baseline;
     gap: 4px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
-    color: var(--sg-text-muted);
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .swipe-counter .current {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    color: var(--sg-primary);
+    color: #fff;
   }
 
   .swipe-counter .divider {
-    opacity: 0.4;
+    opacity: 0.5;
+    margin: 0 2px;
   }
 
   .swipe-counter .total {
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
   .swipe-undo-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--sg-radius-full);
-    border: 1.5px solid var(--sg-border);
-    background: var(--sg-glass-light);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--sg-transition);
+    transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-undo-btn svg {
-    width: 20px;
-    height: 20px;
-    stroke: var(--sg-text-muted);
-    transition: stroke var(--sg-transition);
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
   }
 
   .swipe-undo-btn:active {
     transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   .swipe-undo-btn:active svg {
@@ -686,31 +732,33 @@
   }
 
   /* ==========================================
-     BACK BUTTON
+     BACK BUTTON - Glassmorphic
      ========================================== */
   .swipe-back-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-back-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     stroke: #fff;
   }
 
   .swipe-back-btn:active {
     transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.2);
   }
 
   /* ==========================================
@@ -756,57 +804,61 @@
   }
 
   /* ==========================================
-     SWIPE INSTRUCTIONS - Three Direction Hints
+     SWIPE INSTRUCTIONS - Glassmorphic Hints
      ========================================== */
   .swipe-instructions {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: var(--sg-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    padding: 20px 28px;
-    border-radius: var(--sg-radius-lg);
+    background: rgba(26, 26, 46, 0.85);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    padding: 24px 32px;
+    border-radius: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 28px;
     z-index: 10000;
-    border: 1px solid var(--sg-border);
-    box-shadow: var(--sg-shadow-lg);
-    animation: hintFadeIn 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 16px 64px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    animation: hintFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .swipe-instructions.fade-out {
-    animation: hintFadeOut 0.4s ease forwards;
+    animation: hintFadeOut 0.35s ease-out forwards;
   }
 
   .swipe-hint {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    padding: 8px;
   }
 
   .swipe-hint svg {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     transition: transform 0.3s ease;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
   }
 
   .swipe-hint span {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.8;
+    letter-spacing: 0.8px;
   }
 
   .swipe-hint.left svg {
     stroke: var(--sg-accent);
-    animation: hintLeft 1.5s ease infinite;
+    stroke-width: 2.5;
+    animation: hintLeft 1.8s ease-in-out infinite;
   }
 
   .swipe-hint.left span {
@@ -815,7 +867,8 @@
 
   .swipe-hint.up svg {
     stroke: var(--sg-primary);
-    animation: hintUp 1.5s ease infinite;
+    stroke-width: 2.5;
+    animation: hintUp 1.8s ease-in-out infinite;
   }
 
   .swipe-hint.up span {
@@ -824,7 +877,7 @@
 
   .swipe-hint.right svg {
     fill: var(--sg-primary);
-    animation: hintRight 1.5s ease infinite;
+    animation: hintRight 1.8s ease-in-out infinite;
   }
 
   .swipe-hint.right span {
@@ -833,74 +886,85 @@
 
   @keyframes hintLeft {
     0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(-6px); }
+    50% { transform: translateX(-8px); }
   }
 
   @keyframes hintUp {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+    50% { transform: translateY(-8px); }
   }
 
   @keyframes hintRight {
     0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(6px); }
+    50% { transform: translateX(8px); }
   }
 
   @keyframes hintFadeIn {
     from {
       opacity: 0;
-      transform: translate(-50%, -45%);
+      transform: translate(-50%, -45%) scale(0.9);
     }
     to {
       opacity: 1;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(1);
     }
   }
 
   @keyframes hintFadeOut {
     to {
       opacity: 0;
-      transform: translate(-50%, -55%);
+      transform: translate(-50%, -55%) scale(0.95);
     }
   }
 
   /* ==========================================
-     LOGIN PROMPT
+     LOGIN PROMPT - Glassmorphic
      ========================================== */
   .swipe-login-prompt {
     position: fixed;
     bottom: 220px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    color: #1a1a2e;
-    padding: 20px 24px;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    color: #fff;
+    padding: 24px 28px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     text-align: center;
     z-index: 10000;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
     max-width: 300px;
     width: calc(100% - 40px);
-    animation: fadeInUp 0.3s ease;
+    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 14px;
+    margin: 0 0 16px;
     font-size: 15px;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .swipe-login-btn {
     display: inline-block;
-    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
     color: #1a1a2e;
-    padding: 12px 28px;
-    border-radius: 24px;
+    padding: 14px 32px;
+    border-radius: 28px;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 15px;
+    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.35);
+    transition: all 0.2s ease;
+  }
+
+  .swipe-login-btn:active {
+    transform: scale(0.96);
+    box-shadow: 0 2px 12px rgba(249, 203, 0, 0.4);
   }
 
   /* ==========================================
@@ -1056,72 +1120,83 @@
   }
 
   /* ==========================================
-     EMPTY STATE
+     EMPTY STATE - Glassmorphic
      ========================================== */
   .swipe-empty {
     text-align: center;
-    padding: 60px 32px;
+    padding: 48px 32px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   }
 
   .swipe-empty-icon {
-    font-size: 48px;
+    font-size: 56px;
     margin-bottom: 20px;
-    opacity: 0.9;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
   }
 
   .swipe-empty h3 {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 24px;
+    font-size: 26px;
     color: #fff;
-    margin: 0 0 8px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
+    margin: 0 0 10px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
   }
 
   .swipe-empty p {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.6);
     margin: 0 0 32px;
     font-size: 15px;
+    line-height: 1.5;
   }
 
   .swipe-reset-btn {
-    background: var(--sg-primary);
+    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
     color: #1a1a2e;
     border: none;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 16px 32px;
+    border-radius: 16px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 15px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
   }
 
   .swipe-reset-btn:active {
-    transform: scale(0.97);
-    background: var(--sg-primary-hover);
+    transform: scale(0.96);
+    background: linear-gradient(135deg, var(--sg-primary-hover) 0%, #f0c200 100%);
   }
 
   .swipe-view-saved-btn {
     display: inline-block;
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: #fff;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 16px 32px;
+    border-radius: 16px;
     text-decoration: none;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 15px;
-    margin-top: 12px;
+    margin-top: 14px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
   }
 
   .swipe-view-saved-btn:active {
-    transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.15);
   }
 
   /* Expanded drawer for local favorites */
@@ -1137,7 +1212,7 @@
 
 /* ============================================
    LOCAL FAVORITES FULLSCREEN OVERLAY
-   For non-logged-in users
+   Glassmorphic design for all users
    ============================================ */
 .local-favorites-overlay {
   position: fixed;
@@ -1145,7 +1220,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 1000000;
   display: flex;
   align-items: flex-start;
@@ -1157,74 +1234,95 @@
 .local-favorites-content {
   width: 100%;
   max-width: 600px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #0d0d15 100%);
-  border-radius: 20px;
-  padding: 24px;
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 28px;
   margin-top: 20px;
   margin-bottom: 20px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .local-favorites-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .local-favorites-header h2 {
   color: #fff;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .local-favorites-close {
   background: rgba(255, 255, 255, 0.1);
-  border: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-size: 28px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.local-favorites-close:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .local-favorites-note {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 14px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: rgba(249, 203, 0, 0.1);
-  border-radius: 10px;
-  border-left: 3px solid #f9cb00;
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  background: rgba(249, 203, 0, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  border-left: 4px solid #f9cb00;
+  line-height: 1.5;
 }
 
 .local-favorites-note a {
   color: #f9cb00;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
 }
 
 .local-favorites-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .local-favorite-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   text-decoration: none;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.local-favorite-card:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.08);
+.local-favorite-card:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .local-favorite-card img {
@@ -1234,13 +1332,13 @@
 }
 
 .local-favorite-info {
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .local-favorite-title {
   display: block;
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   margin-bottom: 4px;
   white-space: nowrap;
@@ -1251,5 +1349,5 @@
 .local-favorite-material {
   display: block;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
+  font-size: 12px;
 }
