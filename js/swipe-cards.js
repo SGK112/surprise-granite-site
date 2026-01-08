@@ -240,19 +240,19 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 4v6h6"/>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="#1a1a2e">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="#1a1a2e">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
@@ -285,15 +285,18 @@
 
     stack.innerHTML = '';
 
-    // Render next 10 cards for smooth swiping (no lag)
-    const cardsToRender = Math.min(10, cards.length - currentIndex);
-    for (let i = 0; i < cardsToRender; i++) {
-      const cardIndex = currentIndex + i;
-      if (cardIndex >= cards.length) break;
+    // Show loading placeholder if transitioning
+    if (cards.length > 0 && currentIndex < cards.length) {
+      // Render next 10 cards for smooth swiping (no lag)
+      const cardsToRender = Math.min(10, cards.length - currentIndex);
+      for (let i = 0; i < cardsToRender; i++) {
+        const cardIndex = currentIndex + i;
+        if (cardIndex >= cards.length) break;
 
-      const card = cards[cardIndex];
-      const cardEl = createCardElement(card, i === 0);
-      stack.appendChild(cardEl);
+        const card = cards[cardIndex];
+        const cardEl = createCardElement(card, i === 0);
+        stack.appendChild(cardEl);
+      }
     }
 
     // Update counter
@@ -303,6 +306,17 @@
     if (currentIndex >= cards.length) {
       showEmptyState();
     }
+  }
+
+  function showLoadingState() {
+    const stack = document.querySelector('.swipe-card-stack');
+    if (!stack) return;
+
+    // Add loading spinner behind current cards
+    const loader = document.createElement('div');
+    loader.className = 'swipe-card-loading';
+    loader.innerHTML = '<div class="swipe-spinner"></div>';
+    stack.appendChild(loader);
   }
 
   function createCardElement(card, isActive) {
