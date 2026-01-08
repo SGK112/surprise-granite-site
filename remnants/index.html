@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Stone Remnants Marketplace | Surprise Granite</title>
+  <meta name="description" content="Browse stone remnants from local sellers. Find granite, marble, quartz, and more at great prices."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.15);
+      --success: #4dff82;
+      --error: #ff6b6b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    /* Header */
+    .header {
+      background: var(--dark-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .logo {
+      height: 36px;
+      width: auto;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-dark);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-elevated) 100%);
+      padding: 48px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .page-header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Main Layout */
+    .main-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Filters Sidebar */
+    .filters-sidebar {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    @media (max-width: 900px) {
+      .filters-sidebar {
+        position: static;
+      }
+    }
+
+    .filters-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .filters-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .clear-filters {
+      font-size: 12px;
+      color: var(--gold-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .filter-section {
+      margin-bottom: 24px;
+    }
+
+    .filter-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+
+    .filter-option:hover {
+      color: var(--text-primary);
+    }
+
+    .filter-option input[type="checkbox"] {
+      accent-color: var(--gold-primary);
+    }
+
+    .filter-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .filter-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    /* Search Bar */
+    .search-section {
+      margin-bottom: 24px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    /* Results Header */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .results-count {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .sort-select {
+      padding: 8px 12px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Listings Grid */
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .listing-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    .listing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .listing-image {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      background: var(--dark-elevated);
+    }
+
+    .listing-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .listing-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .listing-content {
+      padding: 16px;
+    }
+
+    .listing-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .listing-stone {
+      font-size: 13px;
+      color: var(--gold-primary);
+      margin-bottom: 8px;
+    }
+
+    .listing-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .listing-meta-item {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .listing-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .listing-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+
+    .listing-price.contact {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .listing-location {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      stroke: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    /* Listing Detail Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      background: var(--dark-surface);
+      z-index: 1;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .detail-images {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .detail-main-image {
+      width: 100%;
+      height: 300px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: var(--dark-elevated);
+    }
+
+    .detail-thumbnails {
+      display: flex;
+      gap: 8px;
+    }
+
+    .detail-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .detail-thumb:hover,
+    .detail-thumb.active {
+      border-color: var(--gold-primary);
+    }
+
+    .detail-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .detail-info {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .detail-section {
+      margin-bottom: 20px;
+    }
+
+    .detail-section h4 {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .detail-section p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .detail-price {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      margin-bottom: 16px;
+    }
+
+    .detail-price.contact {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .seller-info {
+      background: var(--dark-elevated);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .seller-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .seller-badge {
+      font-size: 11px;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+    }
+
+    .seller-contact {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Inquiry Form */
+    .inquiry-form {
+      background: var(--dark-elevated);
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .inquiry-form h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 32px;
+    }
+
+    .pagination-btn {
+      padding: 8px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+    }
+
+    .pagination-btn.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border-color: var(--gold-primary);
+    }
+
+    /* Mobile Filter Toggle */
+    .mobile-filter-toggle {
+      display: none;
+      width: 100%;
+      padding: 12px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .mobile-filter-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .filters-sidebar {
+        display: none;
+      }
+
+      .filters-sidebar.active {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="logo">
+      </a>
+      <div class="header-actions">
+        <a href="/account/#listings" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          List Your Remnant
+        </a>
+        <a href="/account/" class="btn btn-secondary">My Account</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Stone Remnants Marketplace</h1>
+    <p>Find granite, marble, quartz, and other stone remnants from local sellers at great prices.</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Filters Sidebar -->
+    <aside class="filters-sidebar" id="filters-sidebar">
+      <div class="filters-header">
+        <span class="filters-title">Filters</span>
+        <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">Material Type</div>
+        <div class="filter-options" id="material-filters">
+          <label class="filter-option">
+            <input type="checkbox" value="Granite" onchange="applyFilters()"> Granite
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Marble" onchange="applyFilters()"> Marble
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Quartz" onchange="applyFilters()"> Quartz
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Quartzite" onchange="applyFilters()"> Quartzite
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Porcelain" onchange="applyFilters()"> Porcelain
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">Color</div>
+        <div class="filter-options" id="color-filters">
+          <label class="filter-option">
+            <input type="checkbox" value="White" onchange="applyFilters()"> White
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Black" onchange="applyFilters()"> Black
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Gray" onchange="applyFilters()"> Gray
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Brown" onchange="applyFilters()"> Brown
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Beige" onchange="applyFilters()"> Beige
+          </label>
+          <label class="filter-option">
+            <input type="checkbox" value="Blue" onchange="applyFilters()"> Blue
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">Location</div>
+        <select class="filter-input" id="state-filter" onchange="applyFilters()">
+          <option value="">All States</option>
+          <option value="AZ">Arizona</option>
+          <option value="CA">California</option>
+          <option value="CO">Colorado</option>
+          <option value="NV">Nevada</option>
+          <option value="NM">New Mexico</option>
+          <option value="TX">Texas</option>
+          <option value="UT">Utah</option>
+        </select>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">Price Range</div>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" class="filter-input" id="price-min" placeholder="Min" onchange="applyFilters()">
+          <input type="number" class="filter-input" id="price-max" placeholder="Max" onchange="applyFilters()">
+        </div>
+      </div>
+    </aside>
+
+    <!-- Results Area -->
+    <main class="results-area">
+      <button class="mobile-filter-toggle" onclick="toggleMobileFilters()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        Filters
+      </button>
+
+      <div class="search-section">
+        <div class="search-bar">
+          <input type="text" class="search-input" id="search-input" placeholder="Search by stone name, brand, or keyword..." oninput="handleSearch()">
+          <button class="btn btn-primary" onclick="applyFilters()">Search</button>
+        </div>
+      </div>
+
+      <div class="results-header">
+        <span class="results-count" id="results-count">Loading...</span>
+        <select class="sort-select" id="sort-select" onchange="applyFilters()">
+          <option value="newest">Newest First</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+        </select>
+      </div>
+
+      <div id="loading-state" class="loading-state">
+        <div class="spinner" style="margin: 0 auto;"></div>
+        <p style="color: var(--text-muted); margin-top: 12px;">Loading listings...</p>
+      </div>
+
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <h3>No Listings Found</h3>
+        <p>Try adjusting your filters or search terms</p>
+      </div>
+
+      <div id="listings-grid" class="listings-grid" style="display: none;"></div>
+
+      <div id="pagination" class="pagination" style="display: none;"></div>
+    </main>
+  </div>
+
+  <!-- Listing Detail Modal -->
+  <div id="listing-modal" class="modal-overlay" onclick="if(event.target === this) closeListingModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Listing Details</h2>
+        <button class="modal-close" onclick="closeListingModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-images">
+          <img id="modal-main-image" class="detail-main-image" src="" alt="">
+          <div id="modal-thumbnails" class="detail-thumbnails"></div>
+        </div>
+        <div class="detail-info">
+          <div>
+            <div class="detail-price" id="modal-price"></div>
+            <div class="detail-section">
+              <h4>Stone</h4>
+              <p id="modal-stone"></p>
+            </div>
+            <div class="detail-section">
+              <h4>Dimensions</h4>
+              <p id="modal-dimensions"></p>
+            </div>
+            <div class="detail-section">
+              <h4>Description</h4>
+              <p id="modal-description"></p>
+            </div>
+          </div>
+          <div>
+            <div class="seller-info">
+              <div class="seller-name" id="modal-seller-name"></div>
+              <div class="seller-badge" id="modal-seller-badge"></div>
+              <div class="seller-contact" id="modal-seller-contact"></div>
+            </div>
+            <div id="inquiry-form-container" class="inquiry-form">
+              <h4>Send Inquiry</h4>
+              <form id="inquiry-form" onsubmit="return submitInquiry(event)">
+                <input type="hidden" id="inquiry-listing-id">
+                <div class="form-group">
+                  <label>Your Name *</label>
+                  <input type="text" id="inquiry-name" required>
+                </div>
+                <div class="form-group">
+                  <label>Email *</label>
+                  <input type="email" id="inquiry-email" required>
+                </div>
+                <div class="form-group">
+                  <label>Phone (optional)</label>
+                  <input type="tel" id="inquiry-phone">
+                </div>
+                <div class="form-group">
+                  <label>Message *</label>
+                  <textarea id="inquiry-message" rows="4" required placeholder="I'm interested in this remnant..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Send Message</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allListings = [];
+    let filteredListings = [];
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 12;
+    let currentListing = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check for stone filter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const stoneSlug = urlParams.get('stone');
+      if (stoneSlug) {
+        document.getElementById('search-input').value = stoneSlug.replace(/-/g, ' ');
+      }
+      loadListings();
+    });
+
+    async function loadListings() {
+      const loadingEl = document.getElementById('loading-state');
+      const emptyEl = document.getElementById('empty-state');
+      const gridEl = document.getElementById('listings-grid');
+
+      try {
+        const { data: listings, error } = await supabaseClient
+          .from('stone_listings')
+          .select(`
+            *,
+            sg_users(full_name, account_type, email, phone)
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        loadingEl.style.display = 'none';
+
+        if (error) throw error;
+
+        allListings = listings || [];
+        applyFilters();
+
+      } catch (err) {
+        console.error('Load listings error:', err);
+        loadingEl.innerHTML = '<p style="color: var(--error);">Failed to load listings</p>';
+      }
+    }
+
+    function applyFilters() {
+      const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      const stateFilter = document.getElementById('state-filter').value;
+      const priceMin = parseFloat(document.getElementById('price-min').value) || 0;
+      const priceMax = parseFloat(document.getElementById('price-max').value) || Infinity;
+      const sortBy = document.getElementById('sort-select').value;
+
+      // Get selected materials
+      const materialCheckboxes = document.querySelectorAll('#material-filters input:checked');
+      const selectedMaterials = Array.from(materialCheckboxes).map(cb => cb.value.toLowerCase());
+
+      // Get selected colors
+      const colorCheckboxes = document.querySelectorAll('#color-filters input:checked');
+      const selectedColors = Array.from(colorCheckboxes).map(cb => cb.value.toLowerCase());
+
+      filteredListings = allListings.filter(listing => {
+        // Search filter
+        if (searchQuery) {
+          const searchFields = [
+            listing.title,
+            listing.stone_name,
+            listing.brand,
+            listing.material_type,
+            listing.color,
+            listing.description
+          ].filter(Boolean).map(s => s.toLowerCase()).join(' ');
+          if (!searchFields.includes(searchQuery)) return false;
+        }
+
+        // State filter
+        if (stateFilter && listing.state !== stateFilter) return false;
+
+        // Price filter
+        if (listing.price !== null) {
+          if (listing.price < priceMin || listing.price > priceMax) return false;
+        }
+
+        // Material filter
+        if (selectedMaterials.length > 0) {
+          const listingMaterial = (listing.material_type || '').toLowerCase();
+          if (!selectedMaterials.some(m => listingMaterial.includes(m))) return false;
+        }
+
+        // Color filter
+        if (selectedColors.length > 0) {
+          const listingColor = (listing.color || '').toLowerCase();
+          if (!selectedColors.some(c => listingColor.includes(c))) return false;
+        }
+
+        return true;
+      });
+
+      // Sort
+      filteredListings.sort((a, b) => {
+        switch (sortBy) {
+          case 'price-low':
+            return (a.price || 99999) - (b.price || 99999);
+          case 'price-high':
+            return (b.price || 0) - (a.price || 0);
+          case 'newest':
+          default:
+            return new Date(b.created_at) - new Date(a.created_at);
+        }
+      });
+
+      currentPage = 1;
+      renderListings();
+    }
+
+    function renderListings() {
+      const emptyEl = document.getElementById('empty-state');
+      const gridEl = document.getElementById('listings-grid');
+      const countEl = document.getElementById('results-count');
+      const paginationEl = document.getElementById('pagination');
+
+      countEl.textContent = `${filteredListings.length} listing${filteredListings.length !== 1 ? 's' : ''} found`;
+
+      if (filteredListings.length === 0) {
+        emptyEl.style.display = 'block';
+        gridEl.style.display = 'none';
+        paginationEl.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      gridEl.style.display = 'grid';
+
+      // Pagination
+      const totalPages = Math.ceil(filteredListings.length / ITEMS_PER_PAGE);
+      const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+      const pageListings = filteredListings.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+      gridEl.innerHTML = pageListings.map(listing => `
+        <div class="listing-card" onclick="openListingModal('${listing.id}')">
+          <div class="listing-image">
+            ${listing.image_url ?
+              `<img src="${listing.image_url}" alt="${listing.title}" loading="lazy">` :
+              '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No Image</div>'
+            }
+            ${listing.material_type ? `<span class="listing-badge">${listing.material_type}</span>` : ''}
+          </div>
+          <div class="listing-content">
+            <div class="listing-title">${listing.title}</div>
+            <div class="listing-stone">${listing.stone_name}</div>
+            <div class="listing-meta">
+              ${listing.dimensions ? `<span class="listing-meta-item">${listing.dimensions}</span>` : ''}
+              ${listing.thickness ? `<span class="listing-meta-item">${listing.thickness}</span>` : ''}
+              ${listing.brand ? `<span class="listing-meta-item">${listing.brand}</span>` : ''}
+            </div>
+            <div class="listing-footer">
+              <div class="listing-price ${listing.price === null ? 'contact' : ''}">
+                ${listing.price !== null ? '$' + listing.price.toFixed(2) : 'Contact for price'}
+              </div>
+              ${listing.city || listing.state ?
+                `<div class="listing-location">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  ${listing.city ? listing.city + ', ' : ''}${listing.state || ''}
+                </div>` : ''
+              }
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Render pagination
+      if (totalPages > 1) {
+        paginationEl.style.display = 'flex';
+        let paginationHTML = '';
+
+        if (currentPage > 1) {
+          paginationHTML += `<button class="pagination-btn" onclick="goToPage(${currentPage - 1})">Prev</button>`;
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            paginationHTML += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+          } else if (i === currentPage - 3 || i === currentPage + 3) {
+            paginationHTML += `<span style="color: var(--text-muted);">...</span>`;
+          }
+        }
+
+        if (currentPage < totalPages) {
+          paginationHTML += `<button class="pagination-btn" onclick="goToPage(${currentPage + 1})">Next</button>`;
+        }
+
+        paginationEl.innerHTML = paginationHTML;
+      } else {
+        paginationEl.style.display = 'none';
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderListings();
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    }
+
+    function clearAllFilters() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('state-filter').value = '';
+      document.getElementById('price-min').value = '';
+      document.getElementById('price-max').value = '';
+      document.querySelectorAll('#material-filters input, #color-filters input').forEach(cb => cb.checked = false);
+      applyFilters();
+    }
+
+    let searchTimeout;
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 300);
+    }
+
+    function toggleMobileFilters() {
+      document.getElementById('filters-sidebar').classList.toggle('active');
+    }
+
+    // Modal functions
+    function openListingModal(id) {
+      currentListing = allListings.find(l => l.id === id);
+      if (!currentListing) return;
+
+      document.getElementById('modal-title').textContent = currentListing.title;
+
+      // Images
+      const mainImg = document.getElementById('modal-main-image');
+      const images = [currentListing.image_url, currentListing.image_url_2, currentListing.image_url_3, currentListing.image_url_4].filter(Boolean);
+      mainImg.src = images[0] || '/images/placeholder.jpg';
+
+      const thumbsEl = document.getElementById('modal-thumbnails');
+      if (images.length > 1) {
+        thumbsEl.innerHTML = images.map((img, i) => `
+          <img src="${img}" class="detail-thumb ${i === 0 ? 'active' : ''}" onclick="setMainImage('${img}', this)">
+        `).join('');
+      } else {
+        thumbsEl.innerHTML = '';
+      }
+
+      // Details
+      document.getElementById('modal-price').textContent = currentListing.price !== null ? '$' + currentListing.price.toFixed(2) : 'Contact for price';
+      document.getElementById('modal-price').className = 'detail-price' + (currentListing.price === null ? ' contact' : '');
+      document.getElementById('modal-stone').textContent = `${currentListing.stone_name} ${currentListing.brand ? '• ' + currentListing.brand : ''} ${currentListing.material_type ? '• ' + currentListing.material_type : ''}`;
+      document.getElementById('modal-dimensions').textContent = [currentListing.dimensions, currentListing.thickness, `Qty: ${currentListing.quantity || 1}`].filter(Boolean).join(' • ');
+      document.getElementById('modal-description').textContent = currentListing.description || 'No description provided.';
+
+      // Seller info
+      const seller = currentListing.sg_users || {};
+      document.getElementById('modal-seller-name').textContent = seller.full_name || 'Seller';
+      document.getElementById('modal-seller-badge').textContent = formatAccountType(seller.account_type);
+
+      // Contact info
+      let contactHTML = '';
+      if (currentListing.show_email && seller.email) {
+        contactHTML += `<div>Email: <a href="mailto:${seller.email}" style="color: var(--gold-primary);">${seller.email}</a></div>`;
+      }
+      if (currentListing.show_phone && seller.phone) {
+        contactHTML += `<div>Phone: <a href="tel:${seller.phone}" style="color: var(--gold-primary);">${seller.phone}</a></div>`;
+      }
+      document.getElementById('modal-seller-contact').innerHTML = contactHTML || 'Contact via inquiry form below';
+
+      // Show/hide inquiry form
+      document.getElementById('inquiry-form-container').style.display = currentListing.contact_form_only ? 'block' : 'none';
+      document.getElementById('inquiry-listing-id').value = currentListing.id;
+
+      // Increment view count
+      incrementViewCount(currentListing.id);
+
+      document.getElementById('listing-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeListingModal() {
+      document.getElementById('listing-modal').classList.remove('active');
+      document.body.style.overflow = '';
+      currentListing = null;
+    }
+
+    function setMainImage(src, thumb) {
+      document.getElementById('modal-main-image').src = src;
+      document.querySelectorAll('.detail-thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    }
+
+    function formatAccountType(type) {
+      if (!type) return 'Member';
+      switch (type) {
+        case 'pro_fabricator': return 'Pro Fabricator';
+        case 'pro_contractor': return 'Pro Contractor';
+        case 'pro_designer': return 'Pro Designer';
+        case 'admin': return 'Admin';
+        default: return 'Member';
+      }
+    }
+
+    async function incrementViewCount(id) {
+      try {
+        await supabaseClient.rpc('increment_listing_views', { listing_id: id });
+      } catch (err) {
+        // Silent fail - not critical
+      }
+    }
+
+    async function submitInquiry(event) {
+      event.preventDefault();
+
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      try {
+        const user = await supabaseClient.auth.getUser();
+
+        const inquiryData = {
+          listing_id: document.getElementById('inquiry-listing-id').value,
+          sender_id: user.data.user?.id || null,
+          sender_name: document.getElementById('inquiry-name').value,
+          sender_email: document.getElementById('inquiry-email').value,
+          sender_phone: document.getElementById('inquiry-phone').value || null,
+          message: document.getElementById('inquiry-message').value
+        };
+
+        const { error } = await supabaseClient
+          .from('listing_inquiries')
+          .insert([inquiryData]);
+
+        if (error) throw error;
+
+        // Increment inquiry count
+        await supabaseClient.rpc('increment_listing_inquiries', { listing_id: inquiryData.listing_id });
+
+        // Send email notification to seller
+        if (currentListing?.sg_users?.email) {
+          try {
+            await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: currentListing.sg_users.email,
+                counterSqft: 'Stone Remnant Inquiry',
+                splashSqft: currentListing.title,
+                totalSqft: currentListing.stone_name,
+                edgeProfile: `From: ${inquiryData.sender_name}`,
+                edgeLF: `Email: ${inquiryData.sender_email}`,
+                priceBudget: inquiryData.sender_phone ? `Phone: ${inquiryData.sender_phone}` : 'No phone provided',
+                pricePopular: inquiryData.message,
+                pricePremium: `View in your account: https://www.surprisegranite.com/account/#listings`
+              })
+            });
+          } catch (emailErr) {
+            console.warn('Email notification error:', emailErr);
+            // Don't fail the whole request if email fails
+          }
+        }
+
+        alert('Your inquiry has been sent! The seller will contact you soon.');
+        document.getElementById('inquiry-form').reset();
+        closeListingModal();
+
+      } catch (err) {
+        console.error('Inquiry error:', err);
+        alert('Failed to send inquiry. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -101,19 +101,46 @@
   }
 
   .swipe-intro-logo {
-    width: 200px;
-    height: auto;
-    margin-bottom: 16px;
-    filter: brightness(0) invert(1);
-    opacity: 0.95;
+    display: none;
+  }
+
+  .swipe-intro-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .swipe-intro-brand .intro-brand-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .swipe-intro-brand .intro-brand-text {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
   }
 
   .swipe-intro-subtitle {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.5);
-    margin: 0 0 40px;
-    font-weight: 400;
+    margin: 0 0 36px;
+    font-weight: 500;
+  }
+
+  .swipe-intro-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .swipe-intro-btn svg {
+    flex-shrink: 0;
   }
 
   .swipe-intro-options {
@@ -233,13 +260,30 @@
   }
 
   .swipe-topbar-logo {
+    display: none;
+  }
+
+  /* Branded Logo in Header */
+  .swipe-topbar-brand {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    height: 28px;
-    width: auto;
-    filter: brightness(0) invert(1);
-    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swipe-topbar-brand .brand-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .swipe-topbar-brand .brand-text {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
   }
 
   /* FAVORITES BUTTON - Thumbnail with heart badge */
@@ -575,52 +619,93 @@
     transform: scale(0.9);
   }
 
-  /* Undo button - Branded Yellow/Gold, medium size */
+  /* Action buttons - base styles */
+  .swipe-action-btn {
+    position: relative;
+  }
+
+  /* Tooltip styles */
+  .swipe-action-btn .btn-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.8);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+  }
+
+  .swipe-action-btn:active .btn-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+
+  /* Undo button - Branded Yellow/Gold */
   .swipe-action-btn.undo {
-    width: 56px;
-    height: 56px;
-    border-radius: 28px;
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
     background: var(--sg-gold);
     border: none;
-    box-shadow: 0 6px 24px var(--sg-gold-glow);
+    box-shadow: 0 4px 20px var(--sg-gold-glow);
   }
 
   .swipe-action-btn.undo svg {
-    width: 26px;
-    height: 26px;
-    stroke: #1a1a2e;
-    stroke-width: 2.5;
-    fill: none;
+    width: 24px;
+    height: 24px;
+    color: #1a1a2e;
   }
 
-  /* Nope button - Red, large */
+  .swipe-action-btn.undo:active {
+    background: #e6b800;
+  }
+
+  /* Nope button - Solid Red */
   .swipe-action-btn.nope {
     width: 64px;
     height: 64px;
     border-radius: 32px;
-    background: linear-gradient(135deg, rgba(255, 59, 92, 0.15) 0%, rgba(255, 59, 92, 0.08) 100%);
-    border: 2px solid var(--sg-red);
+    background: var(--sg-red);
+    border: none;
+    box-shadow: 0 4px 20px rgba(255, 59, 92, 0.4);
   }
 
   .swipe-action-btn.nope svg {
     width: 28px;
     height: 28px;
-    stroke: var(--sg-red);
+    color: #fff;
   }
 
-  /* Like button - Pink/Red gradient, large */
+  .swipe-action-btn.nope:active {
+    background: #e6325a;
+  }
+
+  /* Like button - Solid Pink/Coral */
   .swipe-action-btn.like {
     width: 64px;
     height: 64px;
     border-radius: 32px;
-    background: linear-gradient(135deg, rgba(255, 105, 129, 0.2) 0%, rgba(254, 88, 111, 0.1) 100%);
-    border: 2px solid #fe587f;
+    background: linear-gradient(135deg, #ff6b81 0%, #fe587f 100%);
+    border: none;
+    box-shadow: 0 4px 20px rgba(254, 88, 127, 0.4);
   }
 
   .swipe-action-btn.like svg {
     width: 28px;
     height: 28px;
-    fill: #fe587f;
+    color: #fff;
+  }
+
+  .swipe-action-btn.like:active {
+    background: linear-gradient(135deg, #ff5570 0%, #e84a6f 100%);
   }
 
   /* Hide old elements */

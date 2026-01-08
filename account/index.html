@@ -1704,6 +1704,422 @@
         padding: 12px 16px;
       }
     }
+
+    /* ============================================
+       LISTINGS GRID & CARDS
+       ============================================ */
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .listing-card {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .listing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .listing-image {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      background: var(--dark-surface);
+    }
+
+    .listing-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .listing-status-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .listing-status-badge.active {
+      background: rgba(77, 255, 130, 0.2);
+      color: var(--success);
+    }
+
+    .listing-status-badge.sold {
+      background: rgba(255, 71, 87, 0.2);
+      color: var(--error);
+    }
+
+    .listing-status-badge.expired {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .listing-content {
+      padding: 16px;
+    }
+
+    .listing-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .listing-stone {
+      font-size: 12px;
+      color: var(--gold-primary);
+      margin-bottom: 10px;
+    }
+
+    .listing-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .listing-meta-item {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .listing-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      margin-bottom: 12px;
+    }
+
+    .listing-price.contact {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .listing-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .listing-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .listing-actions button {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .listing-actions .btn-edit {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text-primary);
+    }
+
+    .listing-actions .btn-edit:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .listing-actions .btn-delete {
+      background: transparent;
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    .listing-actions .btn-delete:hover {
+      background: rgba(255, 71, 87, 0.1);
+    }
+
+    /* Inquiry Items */
+    .inquiry-item {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: background 0.2s;
+    }
+
+    .inquiry-item.unread {
+      border-left: 3px solid var(--gold-primary);
+    }
+
+    .inquiry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .inquiry-listing {
+      font-size: 13px;
+      color: var(--gold-primary);
+      margin-bottom: 4px;
+    }
+
+    .inquiry-sender {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .inquiry-contact {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .inquiry-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .inquiry-message {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Create Listing Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      background: var(--dark-surface);
+      z-index: 1;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .form-section {
+      margin-bottom: 24px;
+    }
+
+    .form-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gold-primary);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stone Autocomplete */
+    .stone-autocomplete {
+      position: relative;
+    }
+
+    .stone-autocomplete-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+
+    .stone-autocomplete-results.active {
+      display: block;
+    }
+
+    .stone-result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .stone-result-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stone-result-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .stone-result-info {
+      flex: 1;
+    }
+
+    .stone-result-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stone-result-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Image preview */
+    .image-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .image-preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--dark-elevated);
+      border: 1px dashed var(--border-light);
+    }
+
+    .image-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-preview-item .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 71, 87, 0.9);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -1796,6 +2212,11 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
             Favorites
             <span class="nav-badge" id="favorites-count">0</span>
+          </a>
+          <a class="nav-item" data-page="listings" onclick="showPage('listings')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            My Listings
+            <span class="nav-badge" id="listings-count">0</span>
           </a>
         </div>
 
@@ -1978,6 +2399,62 @@
                 </h4>
                 <div id="favorites-flooring-grid" class="saved-floors-grid"></div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- My Listings Page (Remnants Marketplace) -->
+        <section id="page-listings" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">My Stone Listings</h3>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="listing-limit-indicator" style="font-size: 13px; color: var(--text-muted);"></span>
+                <button class="btn btn-primary" onclick="openCreateListingModal()" id="create-listing-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Create Listing
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <p style="color: var(--text-muted); margin-bottom: 20px;">
+                List your stone remnants here. Other users can find and contact you about materials you have available.
+                <a href="/remnants/" style="color: var(--gold-primary);">Browse the marketplace →</a>
+              </p>
+
+              <div id="listings-loading" style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p style="color: var(--text-muted); margin-top: 12px;">Loading your listings...</p>
+              </div>
+
+              <div id="listings-empty" style="display: none; text-align: center; padding: 40px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <h3 style="color: var(--text-secondary); margin: 16px 0 8px;">No Listings Yet</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Have stone remnants to sell? Create your first listing!</p>
+                <button class="btn btn-primary" onclick="openCreateListingModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Create Your First Listing
+                </button>
+              </div>
+
+              <div id="listings-grid" class="listings-grid" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Inquiries Section -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Incoming Inquiries</h3>
+              <span class="nav-badge" id="inquiries-badge" style="display: none;">0</span>
+            </div>
+            <div class="card-body">
+              <div id="inquiries-loading" style="text-align: center; padding: 20px;">
+                <div class="spinner"></div>
+              </div>
+              <div id="inquiries-empty" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
+                <p>No inquiries yet. When someone contacts you about a listing, it will appear here.</p>
+              </div>
+              <div id="inquiries-list" style="display: none;"></div>
             </div>
           </div>
         </section>
@@ -2529,6 +3006,162 @@
         <button class="btn btn-primary" onclick="closeTemplatePreview(); openInvoiceModal();">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
           Create New Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Listing Modal -->
+  <div id="create-listing-modal" class="modal-overlay" onclick="if(event.target === this) closeCreateListingModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Stone Listing</h2>
+        <button class="modal-close" onclick="closeCreateListingModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="create-listing-form" onsubmit="return handleCreateListing(event)">
+          <!-- Stone Selection -->
+          <div class="form-section">
+            <div class="form-section-title">Select Stone</div>
+            <div class="form-group stone-autocomplete">
+              <label>Search for a stone from our catalog</label>
+              <input type="text" id="listing-stone-search" placeholder="Start typing stone name..." autocomplete="off">
+              <div id="stone-autocomplete-results" class="stone-autocomplete-results"></div>
+              <input type="hidden" id="listing-stone-slug">
+              <input type="hidden" id="listing-stone-name">
+              <input type="hidden" id="listing-material-type">
+              <input type="hidden" id="listing-brand">
+              <input type="hidden" id="listing-color">
+            </div>
+            <div id="selected-stone-preview" style="display: none; margin-top: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img id="selected-stone-img" src="" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">
+                <div>
+                  <div id="selected-stone-name" style="font-weight: 600; color: var(--text-primary);"></div>
+                  <div id="selected-stone-meta" style="font-size: 12px; color: var(--text-muted);"></div>
+                </div>
+                <button type="button" onclick="clearSelectedStone()" style="margin-left: auto; background: none; border: none; color: var(--error); cursor: pointer;">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Listing Details -->
+          <div class="form-section">
+            <div class="form-section-title">Listing Details</div>
+            <div class="form-group">
+              <label>Title *</label>
+              <input type="text" id="listing-title" placeholder="e.g., Calacatta Gold Remnant - 24x36" required>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="listing-description" rows="3" placeholder="Describe your remnant (condition, where it's from, etc.)"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Dimensions</label>
+                <input type="text" id="listing-dimensions" placeholder="e.g., 24 x 36 inches">
+              </div>
+              <div class="form-group">
+                <label>Thickness</label>
+                <select id="listing-thickness">
+                  <option value="">Select...</option>
+                  <option value="2cm">2cm (3/4")</option>
+                  <option value="3cm">3cm (1 1/4")</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" id="listing-quantity" value="1" min="1">
+              </div>
+              <div class="form-group">
+                <label>Price</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="number" id="listing-price" placeholder="0.00" step="0.01" min="0" style="flex: 1;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;">
+                    <input type="checkbox" id="listing-price-contact" onchange="togglePriceField()">
+                    Contact for price
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Images -->
+          <div class="form-section">
+            <div class="form-section-title">Images (up to 4)</div>
+            <div class="form-group">
+              <label>Image URLs (paste Imgur or other image links)</label>
+              <input type="url" id="listing-image-1" placeholder="https://i.imgur.com/..." oninput="updateImagePreviews()">
+              <input type="url" id="listing-image-2" placeholder="Image 2 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
+              <input type="url" id="listing-image-3" placeholder="Image 3 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
+              <input type="url" id="listing-image-4" placeholder="Image 4 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
+              <div id="image-preview-grid" class="image-preview-grid"></div>
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div class="form-section">
+            <div class="form-section-title">Location</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" id="listing-city" placeholder="Phoenix">
+              </div>
+              <div class="form-group">
+                <label>State</label>
+                <select id="listing-state">
+                  <option value="">Select State...</option>
+                  <option value="AZ">Arizona</option>
+                  <option value="CA">California</option>
+                  <option value="CO">Colorado</option>
+                  <option value="NV">Nevada</option>
+                  <option value="NM">New Mexico</option>
+                  <option value="TX">Texas</option>
+                  <option value="UT">Utah</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>ZIP Code</label>
+              <input type="text" id="listing-zip" placeholder="85374" maxlength="10">
+            </div>
+          </div>
+
+          <!-- Contact Preferences -->
+          <div class="form-section">
+            <div class="form-section-title">Contact Preferences</div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">How should interested buyers contact you?</p>
+            <div class="form-group">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="listing-show-email">
+                Show my email address
+              </label>
+            </div>
+            <div class="form-group">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="listing-show-phone">
+                Show my phone number
+              </label>
+            </div>
+            <div class="form-group">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="listing-contact-form" checked>
+                Allow contact through inquiry form
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateListingModal()">Cancel</button>
+        <button type="submit" form="create-listing-form" class="btn btn-primary" id="submit-listing-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Create Listing
         </button>
       </div>
     </div>
@@ -3168,6 +3801,7 @@
         'dashboard': 'Dashboard',
         'profile': 'My Profile',
         'favorites': 'My Favorites',
+        'listings': 'My Listings',
         'leads': 'Leads',
         'invoices': 'Invoices',
         'wallet': 'Wallet',
@@ -3181,6 +3815,11 @@
       // Load favorites when that page is shown
       if (page === 'favorites') {
         loadFavorites();
+      }
+
+      // Load listings when that page is shown
+      if (page === 'listings') {
+        loadMyListings();
       }
 
       // Close mobile sidebar
@@ -4516,6 +5155,461 @@
           </div>
         `;
       }
+    }
+
+    // ============================================
+    // STONE LISTINGS - Remnants Marketplace
+    // ============================================
+
+    let countertopsData = [];
+    const MAX_FREE_LISTINGS = 3;
+
+    // Load countertops data for autocomplete
+    async function loadCountertopsData() {
+      try {
+        const response = await fetch('/data/countertops.json');
+        countertopsData = await response.json();
+      } catch (err) {
+        console.error('Failed to load countertops data:', err);
+      }
+    }
+
+    // Initialize listings functionality
+    loadCountertopsData();
+
+    // Stone autocomplete
+    const stoneSearchInput = document.getElementById('listing-stone-search');
+    const autocompleteResults = document.getElementById('stone-autocomplete-results');
+
+    if (stoneSearchInput) {
+      stoneSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        if (query.length < 2) {
+          autocompleteResults.classList.remove('active');
+          return;
+        }
+
+        const matches = countertopsData
+          .filter(stone =>
+            stone.name.toLowerCase().includes(query) ||
+            (stone.brand && stone.brand.toLowerCase().includes(query)) ||
+            (stone.color && stone.color.toLowerCase().includes(query))
+          )
+          .slice(0, 8);
+
+        if (matches.length === 0) {
+          autocompleteResults.innerHTML = '<div style="padding: 12px; color: var(--text-muted);">No matching stones found</div>';
+        } else {
+          autocompleteResults.innerHTML = matches.map(stone => `
+            <div class="stone-result-item" onclick="selectStone(${JSON.stringify(stone).replace(/"/g, '&quot;')})">
+              <img src="${stone.image || '/images/placeholder.jpg'}" alt="" class="stone-result-thumb">
+              <div class="stone-result-info">
+                <div class="stone-result-name">${stone.name}</div>
+                <div class="stone-result-meta">${stone.brand || ''} • ${stone.type || ''} • ${stone.color || ''}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+        autocompleteResults.classList.add('active');
+      });
+
+      // Close autocomplete when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.stone-autocomplete')) {
+          autocompleteResults.classList.remove('active');
+        }
+      });
+    }
+
+    function selectStone(stone) {
+      document.getElementById('listing-stone-slug').value = stone.slug || '';
+      document.getElementById('listing-stone-name').value = stone.name || '';
+      document.getElementById('listing-material-type').value = stone.type || '';
+      document.getElementById('listing-brand').value = stone.brand || '';
+      document.getElementById('listing-color').value = stone.color || '';
+      document.getElementById('listing-stone-search').value = stone.name;
+
+      // Update preview
+      document.getElementById('selected-stone-preview').style.display = 'block';
+      document.getElementById('selected-stone-img').src = stone.image || '/images/placeholder.jpg';
+      document.getElementById('selected-stone-name').textContent = stone.name;
+      document.getElementById('selected-stone-meta').textContent = `${stone.brand || ''} • ${stone.type || ''} • ${stone.color || ''}`;
+
+      // Auto-fill title if empty
+      const titleInput = document.getElementById('listing-title');
+      if (!titleInput.value) {
+        titleInput.value = `${stone.name} Remnant`;
+      }
+
+      autocompleteResults.classList.remove('active');
+    }
+
+    function clearSelectedStone() {
+      document.getElementById('listing-stone-slug').value = '';
+      document.getElementById('listing-stone-name').value = '';
+      document.getElementById('listing-material-type').value = '';
+      document.getElementById('listing-brand').value = '';
+      document.getElementById('listing-color').value = '';
+      document.getElementById('listing-stone-search').value = '';
+      document.getElementById('selected-stone-preview').style.display = 'none';
+    }
+
+    function togglePriceField() {
+      const priceInput = document.getElementById('listing-price');
+      const contactCheckbox = document.getElementById('listing-price-contact');
+      priceInput.disabled = contactCheckbox.checked;
+      if (contactCheckbox.checked) {
+        priceInput.value = '';
+        priceInput.placeholder = 'Contact for price';
+      } else {
+        priceInput.placeholder = '0.00';
+      }
+    }
+
+    function updateImagePreviews() {
+      const previewGrid = document.getElementById('image-preview-grid');
+      const images = [
+        document.getElementById('listing-image-1').value,
+        document.getElementById('listing-image-2').value,
+        document.getElementById('listing-image-3').value,
+        document.getElementById('listing-image-4').value
+      ].filter(url => url);
+
+      previewGrid.innerHTML = images.map((url, i) => `
+        <div class="image-preview-item">
+          <img src="${url}" alt="Preview ${i + 1}" onerror="this.src='/images/placeholder.jpg'">
+        </div>
+      `).join('');
+    }
+
+    // Modal functions
+    async function openCreateListingModal() {
+      // Check listing limit first
+      const canCreate = await checkListingLimit();
+      if (!canCreate.allowed) {
+        alert(`You've reached your limit of ${canCreate.max} free listings. Upgrade to Pro for unlimited listings!`);
+        return;
+      }
+
+      document.getElementById('create-listing-modal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCreateListingModal() {
+      document.getElementById('create-listing-modal').classList.remove('active');
+      document.body.style.overflow = '';
+      // Reset form
+      document.getElementById('create-listing-form').reset();
+      clearSelectedStone();
+      document.getElementById('image-preview-grid').innerHTML = '';
+    }
+
+    async function checkListingLimit() {
+      const user = await supabaseClient.auth.getUser();
+      if (!user.data.user) return { allowed: false, remaining: 0 };
+
+      // Check if pro account
+      const { data: profile } = await supabaseClient
+        .from('sg_users')
+        .select('account_type')
+        .eq('id', user.data.user.id)
+        .single();
+
+      const accountType = profile?.account_type || 'homeowner';
+      if (accountType.startsWith('pro_') || accountType === 'admin') {
+        return { allowed: true, remaining: Infinity, isPro: true };
+      }
+
+      // Count active listings
+      const { count } = await supabaseClient
+        .from('stone_listings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.data.user.id)
+        .eq('status', 'active');
+
+      return {
+        allowed: (count || 0) < MAX_FREE_LISTINGS,
+        remaining: MAX_FREE_LISTINGS - (count || 0),
+        current: count || 0,
+        max: MAX_FREE_LISTINGS,
+        isPro: false
+      };
+    }
+
+    async function handleCreateListing(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('submit-listing-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Creating...';
+
+      try {
+        const user = await supabaseClient.auth.getUser();
+        if (!user.data.user) {
+          throw new Error('Please sign in to create a listing');
+        }
+
+        const listingData = {
+          user_id: user.data.user.id,
+          stone_name: document.getElementById('listing-stone-name').value || document.getElementById('listing-title').value,
+          stone_slug: document.getElementById('listing-stone-slug').value || null,
+          material_type: document.getElementById('listing-material-type').value || null,
+          brand: document.getElementById('listing-brand').value || null,
+          color: document.getElementById('listing-color').value || null,
+          title: document.getElementById('listing-title').value,
+          description: document.getElementById('listing-description').value || null,
+          dimensions: document.getElementById('listing-dimensions').value || null,
+          thickness: document.getElementById('listing-thickness').value || null,
+          quantity: parseInt(document.getElementById('listing-quantity').value) || 1,
+          price: document.getElementById('listing-price-contact').checked ? null : (parseFloat(document.getElementById('listing-price').value) || null),
+          image_url: document.getElementById('listing-image-1').value || null,
+          image_url_2: document.getElementById('listing-image-2').value || null,
+          image_url_3: document.getElementById('listing-image-3').value || null,
+          image_url_4: document.getElementById('listing-image-4').value || null,
+          city: document.getElementById('listing-city').value || null,
+          state: document.getElementById('listing-state').value || null,
+          zip_code: document.getElementById('listing-zip').value || null,
+          show_email: document.getElementById('listing-show-email').checked,
+          show_phone: document.getElementById('listing-show-phone').checked,
+          contact_form_only: document.getElementById('listing-contact-form').checked,
+          status: 'active'
+        };
+
+        const { data, error } = await supabaseClient
+          .from('stone_listings')
+          .insert([listingData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        closeCreateListingModal();
+        await loadMyListings();
+        alert('Listing created successfully!');
+
+      } catch (err) {
+        console.error('Create listing error:', err);
+        alert('Failed to create listing: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Create Listing
+        `;
+      }
+    }
+
+    async function loadMyListings() {
+      const loadingEl = document.getElementById('listings-loading');
+      const emptyEl = document.getElementById('listings-empty');
+      const gridEl = document.getElementById('listings-grid');
+      const limitIndicator = document.getElementById('listing-limit-indicator');
+
+      loadingEl.style.display = 'block';
+      emptyEl.style.display = 'none';
+      gridEl.style.display = 'none';
+
+      try {
+        const user = await supabaseClient.auth.getUser();
+        if (!user.data.user) {
+          loadingEl.innerHTML = '<p style="color: var(--text-muted);">Please sign in to view your listings</p>';
+          return;
+        }
+
+        // Update listing count and limit indicator
+        const limitInfo = await checkListingLimit();
+        if (limitInfo.isPro) {
+          limitIndicator.textContent = 'Unlimited listings (Pro)';
+          limitIndicator.style.color = 'var(--gold-primary)';
+        } else {
+          limitIndicator.textContent = `${limitInfo.current}/${limitInfo.max} listings used`;
+          limitIndicator.style.color = limitInfo.remaining === 0 ? 'var(--error)' : 'var(--text-muted)';
+        }
+
+        // Update nav badge
+        document.getElementById('listings-count').textContent = limitInfo.current || 0;
+
+        const { data: listings, error } = await supabaseClient
+          .from('stone_listings')
+          .select('*')
+          .eq('user_id', user.data.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        loadingEl.style.display = 'none';
+
+        if (!listings || listings.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+
+        gridEl.style.display = 'grid';
+        gridEl.innerHTML = listings.map(listing => `
+          <div class="listing-card">
+            <div class="listing-image">
+              ${listing.image_url ? `<img src="${listing.image_url}" alt="${listing.title}">` : '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No Image</div>'}
+              <span class="listing-status-badge ${listing.status}">${listing.status}</span>
+            </div>
+            <div class="listing-content">
+              <div class="listing-title">${listing.title}</div>
+              <div class="listing-stone">${listing.stone_name}</div>
+              <div class="listing-meta">
+                ${listing.dimensions ? `<span class="listing-meta-item">${listing.dimensions}</span>` : ''}
+                ${listing.thickness ? `<span class="listing-meta-item">${listing.thickness}</span>` : ''}
+                ${listing.material_type ? `<span class="listing-meta-item">${listing.material_type}</span>` : ''}
+              </div>
+              <div class="listing-price ${listing.price === null ? 'contact' : ''}">
+                ${listing.price !== null ? '$' + listing.price.toFixed(2) : 'Contact for price'}
+              </div>
+              <div class="listing-stats">
+                <span>${listing.views || 0} views</span>
+                <span>${listing.inquiries || 0} inquiries</span>
+              </div>
+              <div class="listing-actions">
+                <button class="btn-edit" onclick="editListing('${listing.id}')">Edit</button>
+                ${listing.status === 'active' ?
+                  `<button class="btn-edit" onclick="markListingSold('${listing.id}')">Mark Sold</button>` :
+                  `<button class="btn-edit" onclick="reactivateListing('${listing.id}')">Reactivate</button>`
+                }
+                <button class="btn-delete" onclick="deleteListing('${listing.id}')">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        // Also load inquiries
+        await loadMyInquiries();
+
+      } catch (err) {
+        console.error('Load listings error:', err);
+        loadingEl.innerHTML = '<p style="color: var(--error);">Failed to load listings</p>';
+      }
+    }
+
+    async function loadMyInquiries() {
+      const loadingEl = document.getElementById('inquiries-loading');
+      const emptyEl = document.getElementById('inquiries-empty');
+      const listEl = document.getElementById('inquiries-list');
+      const badgeEl = document.getElementById('inquiries-badge');
+
+      try {
+        const user = await supabaseClient.auth.getUser();
+        if (!user.data.user) return;
+
+        // Get all inquiries for user's listings
+        const { data: inquiries, error } = await supabaseClient
+          .from('listing_inquiries')
+          .select(`
+            *,
+            stone_listings!inner(title, user_id)
+          `)
+          .eq('stone_listings.user_id', user.data.user.id)
+          .order('created_at', { ascending: false });
+
+        loadingEl.style.display = 'none';
+
+        if (error || !inquiries || inquiries.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+
+        const unreadCount = inquiries.filter(i => !i.read).length;
+        if (unreadCount > 0) {
+          badgeEl.textContent = unreadCount;
+          badgeEl.style.display = 'flex';
+        } else {
+          badgeEl.style.display = 'none';
+        }
+
+        listEl.style.display = 'block';
+        listEl.innerHTML = inquiries.map(inquiry => `
+          <div class="inquiry-item ${inquiry.read ? '' : 'unread'}" onclick="markInquiryRead('${inquiry.id}')">
+            <div class="inquiry-header">
+              <div>
+                <div class="inquiry-listing">Re: ${inquiry.stone_listings.title}</div>
+                <div class="inquiry-sender">${inquiry.sender_name}</div>
+                <div class="inquiry-contact">
+                  ${inquiry.sender_email}
+                  ${inquiry.sender_phone ? ` • ${inquiry.sender_phone}` : ''}
+                </div>
+              </div>
+              <div class="inquiry-date">${new Date(inquiry.created_at).toLocaleDateString()}</div>
+            </div>
+            <div class="inquiry-message">${inquiry.message}</div>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error('Load inquiries error:', err);
+      }
+    }
+
+    async function markInquiryRead(id) {
+      try {
+        await supabaseClient
+          .from('listing_inquiries')
+          .update({ read: true })
+          .eq('id', id);
+        await loadMyInquiries();
+      } catch (err) {
+        console.error('Mark read error:', err);
+      }
+    }
+
+    async function deleteListing(id) {
+      if (!confirm('Are you sure you want to delete this listing?')) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('stone_listings')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        await loadMyListings();
+      } catch (err) {
+        console.error('Delete listing error:', err);
+        alert('Failed to delete listing');
+      }
+    }
+
+    async function markListingSold(id) {
+      try {
+        const { error } = await supabaseClient
+          .from('stone_listings')
+          .update({ status: 'sold' })
+          .eq('id', id);
+
+        if (error) throw error;
+        await loadMyListings();
+      } catch (err) {
+        console.error('Mark sold error:', err);
+        alert('Failed to update listing');
+      }
+    }
+
+    async function reactivateListing(id) {
+      try {
+        const { error } = await supabaseClient
+          .from('stone_listings')
+          .update({
+            status: 'active',
+            expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+        await loadMyListings();
+      } catch (err) {
+        console.error('Reactivate error:', err);
+        alert('Failed to reactivate listing');
+      }
+    }
+
+    function editListing(id) {
+      // TODO: Implement edit listing modal
+      alert('Edit functionality coming soon!');
     }
   </script>
 </body>

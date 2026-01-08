@@ -170,14 +170,30 @@
     overlay.className = 'swipe-intro-overlay';
     overlay.innerHTML = `
       <div class="swipe-intro-content">
-        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="swipe-intro-logo">
+        <div class="swipe-intro-brand">
+          <svg class="intro-brand-icon" viewBox="0 0 24 24" fill="none" width="48" height="48">
+            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="#f9cb00"/>
+            <path d="M12 22V12M2 7l10 5 10-5" stroke="#1a1a2e" stroke-width="1.5"/>
+          </svg>
+          <span class="intro-brand-text">Surprise Granite</span>
+        </div>
         <p class="swipe-intro-subtitle">${cards.length} ${productLabel}</p>
         <div class="swipe-intro-options">
           <button class="swipe-intro-btn swipe-mode-btn" onclick="window.startSwipeMode()">
-            <span class="intro-btn-text">Swipe</span>
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="margin-right: 8px;">
+              <path d="M19 14l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M5 10l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="intro-btn-text">Swipe Mode</span>
           </button>
           <button class="swipe-intro-btn scroll-mode-btn" onclick="window.startScrollMode()">
-            <span class="intro-btn-text">Browse</span>
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="margin-right: 8px;">
+              <rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+              <rect x="14" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+              <rect x="3" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+              <rect x="14" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="intro-btn-text">Browse Grid</span>
           </button>
         </div>
       </div>
@@ -214,12 +230,18 @@
       <div class="swipe-topbar">
         <button class="swipe-scroll-btn" onclick="window.exitSwipeMode()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/>
+            <rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>
           </svg>
           <span>Scroll</span>
         </button>
-        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="swipe-topbar-logo">
+        <div class="swipe-topbar-brand">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="#f9cb00"/>
+            <path d="M12 22V12M2 7l10 5 10-5" stroke="#1a1a2e" stroke-width="1.5"/>
+          </svg>
+          <span class="brand-text">Surprise Granite</span>
+        </div>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
           <div class="fav-thumb-wrap">
             ${lastFav ? `<img src="${lastFav.image}" alt="" class="fav-thumb-img">` : '<div class="fav-thumb-empty"></div>'}
@@ -230,14 +252,25 @@
       </div>
       <div class="swipe-card-stack"></div>
       <div class="swipe-action-buttons">
-        <button class="swipe-action-btn undo" onclick="window.undoSwipe()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 10h10a5 5 0 0 1 5 5v2"/><polyline points="3 10 8 5"/><polyline points="3 10 8 15"/></svg>
+        <button class="swipe-action-btn undo" onclick="window.undoSwipe()" title="Undo">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M9 14L4 9l5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v.5a5.5 5.5 0 0 1-5.5 5.5H12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="btn-tooltip">Undo</span>
         </button>
-        <button class="swipe-action-btn nope" onclick="window.swipeNope()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <button class="swipe-action-btn nope" onclick="window.swipeNope()" title="Skip">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span class="btn-tooltip">Nope</span>
         </button>
-        <button class="swipe-action-btn like" onclick="window.swipeLike()">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <button class="swipe-action-btn like" onclick="window.swipeLike()" title="Love">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+          </svg>
+          <span class="btn-tooltip">Love</span>
         </button>
       </div>
     `;
