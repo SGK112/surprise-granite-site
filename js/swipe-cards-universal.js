@@ -245,24 +245,19 @@
       <div class="swipe-card-stack"></div>
       <div class="swipe-action-buttons">
         <button class="swipe-action-btn undo" onclick="window.undoSwipe()" title="Undo">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M9 14L4 9l5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v.5a5.5 5.5 0 0 1-5.5 5.5H12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg viewBox="0 0 24 24" fill="none" class="action-icon-lg">
+            <path d="M3 9l6-6M3 9l6 6M3 9h12a6 6 0 0 1 0 12h-3" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="btn-tooltip">Undo</span>
         </button>
         <button class="swipe-action-btn nope" onclick="window.swipeNope()" title="Skip">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <svg viewBox="0 0 24 24" fill="none" class="action-icon-lg">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
           </svg>
-          <span class="btn-tooltip">Nope</span>
         </button>
         <button class="swipe-action-btn like" onclick="window.swipeLike()" title="Love">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/>
+          <svg viewBox="0 0 24 24" class="action-icon-lg">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor"/>
           </svg>
-          <span class="btn-tooltip">Love</span>
         </button>
       </div>
     `;
