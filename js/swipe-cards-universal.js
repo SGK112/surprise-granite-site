@@ -171,11 +171,7 @@
     overlay.innerHTML = `
       <div class="swipe-intro-content">
         <div class="swipe-intro-brand">
-          <svg class="intro-brand-icon" viewBox="0 0 24 24" fill="none" width="48" height="48">
-            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="#f9cb00"/>
-            <path d="M12 22V12M2 7l10 5 10-5" stroke="#1a1a2e" stroke-width="1.5"/>
-          </svg>
-          <span class="intro-brand-text">Surprise Granite</span>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="intro-brand-logo">
         </div>
         <p class="swipe-intro-subtitle">${cards.length} ${productLabel}</p>
         <div class="swipe-intro-options">
@@ -236,11 +232,7 @@
           <span>Scroll</span>
         </button>
         <div class="swipe-topbar-brand">
-          <svg class="brand-icon" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="#f9cb00"/>
-            <path d="M12 22V12M2 7l10 5 10-5" stroke="#1a1a2e" stroke-width="1.5"/>
-          </svg>
-          <span class="brand-text">Surprise Granite</span>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="brand-logo">
         </div>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
           <div class="fav-thumb-wrap">

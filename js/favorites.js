@@ -49,11 +49,100 @@
     // Add heart buttons to product cards
     addHeartButtonsToProducts();
 
+    // Add heart to individual product detail pages
+    addHeartToProductDetailPage();
+
     // Add floating favorites badge
     addFavoritesBadge();
 
     // Re-run when DOM changes (for dynamically loaded content)
     observeDOMChanges();
+  }
+
+  // Add heart button to individual product detail pages (countertops, tile, flooring)
+  function addHeartToProductDetailPage() {
+    const path = window.location.pathname.toLowerCase();
+
+    // Check if this is a product detail page
+    const isDetailPage = (
+      (path.includes('/countertops/') && path.split('/').filter(Boolean).length >= 2) ||
+      (path.includes('/tile/') && path.split('/').filter(Boolean).length >= 2) ||
+      (path.includes('/flooring/') && path.split('/').filter(Boolean).length >= 2)
+    );
+
+    if (!isDetailPage) return;
+
+    // Find the main image container
+    const imageContainer = document.querySelector('.main-image-container') ||
+                          document.querySelector('.product-image') ||
+                          document.querySelector('.gallery') ||
+                          document.querySelector('.product-grid > div:first-child');
+
+    if (!imageContainer) return;
+
+    // Skip if already has heart button
+    if (imageContainer.querySelector('.sg-favorite-btn')) return;
+
+    // Extract product data from the page
+    const product = extractProductDataFromDetailPage();
+    if (!product.title) return;
+
+    const productType = detectProductType();
+
+    // Check if already favorited
+    const typeList = favorites[productType] || [];
+    const isFavorited = typeList.some(f =>
+      f.title === product.title || f.url === product.url
+    );
+
+    // Create heart button
+    const heartBtn = document.createElement('button');
+    heartBtn.className = 'sg-favorite-btn sg-detail-page-heart' + (isFavorited ? ' is-favorited' : '');
+    heartBtn.setAttribute('aria-label', isFavorited ? 'Remove from favorites' : 'Add to favorites');
+    heartBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" class="heart-icon">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    `;
+
+    // Store product data on button
+    heartBtn.dataset.product = JSON.stringify(product);
+    heartBtn.dataset.productType = productType;
+
+    // Click handler
+    heartBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      await toggleFavorite(this, product, productType);
+    });
+
+    // Position wrapper
+    imageContainer.style.position = 'relative';
+    imageContainer.appendChild(heartBtn);
+
+    console.log('Favorites: Added heart to product detail page');
+  }
+
+  // Extract product data from detail page (h1, meta tags, images)
+  function extractProductDataFromDetailPage() {
+    const title = document.querySelector('h1')?.textContent?.trim() ||
+                  document.querySelector('meta[property="og:title"]')?.content ||
+                  document.title.split('|')[0].trim();
+
+    const url = window.location.href;
+
+    const image = document.querySelector('.main-image')?.src ||
+                  document.querySelector('.product-image img')?.src ||
+                  document.querySelector('meta[property="og:image"]')?.content ||
+                  '';
+
+    const material = document.querySelector('[data-material]')?.textContent?.trim() ||
+                     document.querySelector('.material-badge')?.textContent?.trim() ||
+                     '';
+
+    const color = document.querySelector('[data-color]')?.textContent?.trim() || '';
+
+    return { title, url, image, material, color };
   }
 
   async function initSupabase() {
@@ -82,6 +171,11 @@
           .order('created_at', { ascending: false });
 
         if (!error && data) {
+          // Reset favorites before loading from database
+          Object.keys(favorites).forEach(key => {
+            favorites[key] = [];
+          });
+
           // Group by product type
           data.forEach(fav => {
             const type = fav.product_type || 'general';
@@ -95,7 +189,10 @@
               color: fav.product_color
             });
           });
-          console.log('Favorites: Loaded from Supabase');
+          console.log('Favorites: Loaded', data.length, 'items from Supabase');
+
+          // Sync localStorage with database data
+          saveToLocalStorage();
           return;
         }
       } catch (e) {
@@ -103,7 +200,7 @@
       }
     }
 
-    // Fallback to localStorage
+    // Fallback to localStorage (when not logged in)
     try {
       const stored = localStorage.getItem('sg_all_favorites');
       if (stored) {
@@ -276,6 +373,7 @@
 
       // Find the image wrapper to position the heart
       const imageWrapper = card.querySelector('.materials_image-wrapper') ||
+                          card.querySelector('.shop-product-image-wrapper') ||
                           card.querySelector('.product-image-wrapper') ||
                           card.querySelector('img')?.parentElement;
 
