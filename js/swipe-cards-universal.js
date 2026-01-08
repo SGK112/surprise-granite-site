@@ -212,24 +212,46 @@
         <div class="swipe-intro-brand">
           <img src="/images/sg-house-icon-gold.svg" alt="Surprise Granite" class="intro-brand-icon">
         </div>
-        <p class="swipe-intro-subtitle">${cards.length} ${productLabel}</p>
+        <h2 class="swipe-intro-title">Explore ${cards.length} ${productLabel}</h2>
+        <p class="swipe-intro-subtitle">Choose how you'd like to browse</p>
         <div class="swipe-intro-options">
-          <button class="swipe-intro-btn swipe-mode-btn" onclick="window.startSwipeMode()">
-            <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="margin-right: 8px;">
-              <path d="M19 14l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M5 10l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span class="intro-btn-text">Swipe Mode</span>
-          </button>
-          <button class="swipe-intro-btn scroll-mode-btn" onclick="window.startScrollMode()">
-            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="margin-right: 8px;">
-              <rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
-              <rect x="14" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
-              <rect x="3" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
-              <rect x="14" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            <span class="intro-btn-text">Browse Grid</span>
-          </button>
+          <div class="swipe-option-card" onclick="window.startSwipeMode()">
+            <div class="option-icon swipe-icon">
+              <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                <path d="M12 2L4 7l8 5 8-5-8-5z" fill="currentColor" opacity="0.3"/>
+                <path d="M4 12l8 5 8-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4 17l8 5 8-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <h3 class="option-title">Swipe Mode</h3>
+              <p class="option-desc">Swipe right to save favorites, left to skip. Discover products one at a time.</p>
+            </div>
+            <div class="option-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="swipe-option-card" onclick="window.startScrollMode()">
+            <div class="option-icon grid-icon">
+              <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="option-content">
+              <h3 class="option-title">Browse Grid</h3>
+              <p class="option-desc">View all products in a scrollable grid. Filter and compare side by side.</p>
+            </div>
+            <div class="option-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     `;
