@@ -319,35 +319,20 @@
     container.className = 'swipe-cards-container';
     container.innerHTML = `
       <div class="swipe-topbar">
+        <button class="swipe-back-btn" onclick="window.exitSwipeMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
         <span class="swipe-topbar-title">${productLabel}</span>
-        <div class="swipe-topbar-right">
-          <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
-            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <span class="fav-count">${favorites.length}</span>
-          </button>
-          <button class="swipe-exit-btn" onclick="window.exitSwipeMode()">Exit</button>
-        </div>
+        <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="fav-count">${favorites.length}</span>
+        </button>
       </div>
       <div class="swipe-card-stack"></div>
-      <div class="swipe-counter"><strong>${currentIndex + 1}</strong> / ${cards.length}</div>
-      <div class="swipe-actions">
-        <button class="swipe-btn undo" onclick="window.undoSwipe()">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 10h10a5 5 0 0 1 5 5v2"/>
-            <polyline points="3 10 8 5"/>
-            <polyline points="3 10 8 15"/>
-          </svg>
-        </button>
-        <button class="swipe-btn nope" onclick="window.swipeNope()">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        <button class="swipe-btn like" onclick="window.swipeLike()">
-          <svg class="btn-icon" viewBox="0 0 24 24">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
+      <div class="swipe-bottom-bar">
+        <div class="swipe-counter"><span class="current">${currentIndex + 1}</span><span class="divider">/</span><span class="total">${cards.length}</span></div>
+        <button class="swipe-undo-btn" onclick="window.undoSwipe()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a5 5 0 0 1 5 5v2"/><polyline points="3 10 8 5"/><polyline points="3 10 8 15"/></svg>
         </button>
       </div>
     `;
@@ -411,13 +396,16 @@
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
         <div class="swipe-indicator like">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
         <div class="swipe-indicator nope">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <div class="swipe-indicator super">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
           </svg>
         </div>
         <div class="swipe-card-content">
@@ -454,36 +442,71 @@
     });
   }
 
+  let velocityX = 0;
+  let velocityY = 0;
+  let lastMoveTime = 0;
+  let lastX = 0;
+  let lastY = 0;
+
   function handleTouchStart(e) {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    currentX = startX;
+    currentY = startY;
+    lastX = startX;
+    lastY = startY;
+    lastMoveTime = Date.now();
+    velocityX = 0;
+    velocityY = 0;
     isDragging = true;
     this.classList.add('dragging');
+    this.style.transition = 'none';
   }
 
   function handleTouchMove(e) {
     if (!isDragging) return;
+
+    const now = Date.now();
+    const dt = now - lastMoveTime;
+
     currentX = e.touches[0].clientX;
     currentY = e.touches[0].clientY;
+
+    // Calculate velocity for fluid feel
+    if (dt > 0) {
+      velocityX = (currentX - lastX) / dt * 16;
+      velocityY = (currentY - lastY) / dt * 16;
+    }
+
+    lastX = currentX;
+    lastY = currentY;
+    lastMoveTime = now;
 
     const deltaX = currentX - startX;
     const deltaY = currentY - startY;
 
-    // Only swipe horizontally
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      e.preventDefault();
-      const rotation = deltaX * 0.05;
-      this.style.transform = `translateX(calc(-50% + ${deltaX}px)) rotate(${rotation}deg)`;
+    e.preventDefault();
 
-      if (deltaX > 50) {
-        this.classList.add('swiping-right');
-        this.classList.remove('swiping-left');
-      } else if (deltaX < -50) {
-        this.classList.add('swiping-left');
-        this.classList.remove('swiping-right');
-      } else {
-        this.classList.remove('swiping-left', 'swiping-right');
-      }
+    // Smooth rotation based on drag distance
+    const rotation = deltaX * 0.08;
+    const tiltY = deltaY * 0.03;
+    const scale = 1 - Math.min(Math.abs(deltaX) * 0.0005, 0.05);
+
+    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(${deltaY * 0.3}px) rotate(${rotation}deg) scale(${scale})`;
+
+    // Update indicators based on direction
+    const threshold = 40;
+    if (deltaX > threshold) {
+      this.classList.add('swiping-right');
+      this.classList.remove('swiping-left', 'swiping-up');
+    } else if (deltaX < -threshold) {
+      this.classList.add('swiping-left');
+      this.classList.remove('swiping-right', 'swiping-up');
+    } else if (deltaY < -threshold) {
+      this.classList.add('swiping-up');
+      this.classList.remove('swiping-left', 'swiping-right');
+    } else {
+      this.classList.remove('swiping-left', 'swiping-right', 'swiping-up');
     }
   }
 
@@ -493,18 +516,50 @@
     this.classList.remove('dragging');
 
     const deltaX = currentX - startX;
-    const threshold = 100;
+    const deltaY = currentY - startY;
 
-    if (deltaX > threshold) {
-      this.classList.add('swipe-out-right');
-      setTimeout(() => handleLike(), 200);
-    } else if (deltaX < -threshold) {
-      this.classList.add('swipe-out-left');
-      setTimeout(() => handleNope(), 200);
-    } else {
-      this.style.transform = 'translateX(-50%)';
-      this.classList.remove('swiping-left', 'swiping-right');
+    // Use velocity for more natural feel
+    const projectedX = deltaX + velocityX * 5;
+    const projectedY = deltaY + velocityY * 5;
+
+    const threshold = 80;
+    const velocityThreshold = 3;
+
+    // Swipe right = like
+    if (projectedX > threshold || velocityX > velocityThreshold) {
+      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.style.transform = `translateX(120vw) rotate(20deg)`;
+      setTimeout(() => handleLike(), 250);
     }
+    // Swipe left = nope
+    else if (projectedX < -threshold || velocityX < -velocityThreshold) {
+      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.style.transform = `translateX(-120vw) rotate(-20deg)`;
+      setTimeout(() => handleNope(), 250);
+    }
+    // Swipe up = super like (adds to favorites + view)
+    else if (projectedY < -threshold || velocityY < -velocityThreshold) {
+      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.style.transform = `translateY(-120vh) scale(0.8)`;
+      setTimeout(() => handleSuperLike(), 250);
+    }
+    // Return to center
+    else {
+      this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      this.style.transform = 'translateX(-50%)';
+      this.classList.remove('swiping-left', 'swiping-right', 'swiping-up');
+    }
+  }
+
+  function handleSuperLike() {
+    const card = cards[currentIndex];
+    swipeHistory.push({ index: currentIndex, action: 'superlike' });
+    addFavorite(card);
+    // Open product link
+    window.open(card.href, '_blank');
+    currentIndex++;
+    renderCards();
+    updateCounter();
   }
 
   function handleLike() {
@@ -555,10 +610,10 @@
   };
 
   function updateCounter() {
-    const counter = document.querySelector('.swipe-counter');
-    if (counter) {
-      counter.innerHTML = `<strong>${currentIndex + 1}</strong> / ${cards.length}`;
-    }
+    const current = document.querySelector('.swipe-counter .current');
+    const total = document.querySelector('.swipe-counter .total');
+    if (current) current.textContent = currentIndex + 1;
+    if (total) total.textContent = cards.length;
   }
 
   function updateFavoritesCount() {
@@ -580,15 +635,30 @@
     const toast = document.createElement('div');
     toast.className = 'swipe-instructions';
     toast.innerHTML = `
-      <svg class="swipe-arrow left" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      <svg class="swipe-arrow right" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
+      <div class="swipe-hint left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        <span>Skip</span>
+      </div>
+      <div class="swipe-hint up">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+        <span>View</span>
+      </div>
+      <div class="swipe-hint right">
+        <svg viewBox="0 0 24 24">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <span>Save</span>
+      </div>
     `;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
   }
 
   function showEmptyState() {
