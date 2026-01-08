@@ -219,9 +219,12 @@
           </svg>
           <span>Scroll</span>
         </button>
-        <span class="swipe-topbar-title">${productLabel}</span>
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="swipe-topbar-logo">
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
-          <div class="fav-thumb">${lastFav ? `<img src="${lastFav.image}" alt="">` : ''}</div>
+          <div class="fav-thumb-wrap">
+            ${lastFav ? `<img src="${lastFav.image}" alt="" class="fav-thumb-img">` : '<div class="fav-thumb-empty"></div>'}
+            <svg class="fav-thumb-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
           <span class="fav-count">${favs.length}</span>
         </button>
       </div>
@@ -491,18 +494,18 @@
   function updateFavoritesUI() {
     const favs = getFavorites();
     const countEl = document.querySelector('.fav-count');
-    const thumbEl = document.querySelector('.fav-thumb');
+    const thumbWrap = document.querySelector('.fav-thumb-wrap');
 
     if (countEl) {
       countEl.textContent = favs.length;
     }
 
-    if (thumbEl) {
-      if (favs.length > 0) {
-        thumbEl.innerHTML = `<img src="${favs[favs.length - 1].image}" alt="">`;
-      } else {
-        thumbEl.innerHTML = '';
-      }
+    if (thumbWrap) {
+      const lastFav = favs.length > 0 ? favs[favs.length - 1] : null;
+      thumbWrap.innerHTML = `
+        ${lastFav ? `<img src="${lastFav.image}" alt="" class="fav-thumb-img">` : '<div class="fav-thumb-empty"></div>'}
+        <svg class="fav-thumb-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      `;
     }
 
     // Update drawer if open

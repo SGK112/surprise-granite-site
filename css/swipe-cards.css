@@ -229,26 +229,26 @@
   }
 
   .swipe-topbar-title {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    color: #fff;
-    letter-spacing: -0.2px;
+    display: none;
+  }
+
+  .swipe-topbar-logo {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    height: 28px;
+    width: auto;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
   }
 
-  /* FAVORITES BUTTON - With thumbnail preview */
+  /* FAVORITES BUTTON - Thumbnail with heart badge */
   .swipe-favorites-btn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px;
-    background: rgba(255, 255, 255, 0.12);
+    padding: 0;
+    background: none;
     border: none;
-    border-radius: 100px;
-    color: #fff;
     cursor: pointer;
     transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
@@ -259,50 +259,52 @@
     transform: scale(0.95);
   }
 
-  .swipe-favorites-btn .fav-thumb {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+  .fav-thumb-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     overflow: hidden;
+    position: relative;
     background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 2px solid rgba(249, 203, 0, 0.4);
   }
 
-  .swipe-favorites-btn .fav-thumb:empty {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .swipe-favorites-btn .fav-thumb:empty::after {
-    content: '';
-    width: 18px;
-    height: 18px;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='%23f9cb00' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
-
-  .swipe-favorites-btn .fav-thumb img {
+  .fav-thumb-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
+  .fav-thumb-empty {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .fav-thumb-heart {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    fill: var(--sg-red);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  }
+
   .swipe-favorites-btn .fav-count {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -6px;
+    right: -6px;
     background: var(--sg-gold);
     color: #000;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: 100px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    min-width: 18px;
+    min-width: 20px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   }
 
   /* CARD STACK - PERFECTLY CENTERED */
@@ -573,20 +575,22 @@
     transform: scale(0.9);
   }
 
-  /* Undo button - Branded Yellow/Gold, smaller */
+  /* Undo button - Branded Yellow/Gold, medium size */
   .swipe-action-btn.undo {
-    width: 48px;
-    height: 48px;
-    border-radius: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
     background: var(--sg-gold);
     border: none;
-    box-shadow: 0 4px 20px var(--sg-gold-glow);
+    box-shadow: 0 6px 24px var(--sg-gold-glow);
   }
 
   .swipe-action-btn.undo svg {
-    width: 22px;
-    height: 22px;
-    stroke: #000;
+    width: 26px;
+    height: 26px;
+    stroke: #1a1a2e;
+    stroke-width: 2.5;
+    fill: none;
   }
 
   /* Nope button - Red, large */
