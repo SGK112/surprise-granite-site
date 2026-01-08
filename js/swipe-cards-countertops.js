@@ -34,14 +34,21 @@
     // Initialize Supabase
     await initSupabase();
 
-    // Get all product items - countertops use w-dyn-item directly
-    const items = materialsList.querySelectorAll('[role="listitem"].w-dyn-item');
+    // Get all product items - only direct children with product-thumb_item
+    const items = materialsList.querySelectorAll(':scope > .w-dyn-item');
     if (items.length === 0) return;
 
     console.log('Swipe Cards: Found', items.length, 'countertop items');
 
+    // Filter to only items that have the product structure
+    const productItems = Array.from(items).filter(item =>
+      item.querySelector('.product-thumb_item') !== null
+    );
+
+    console.log('Swipe Cards: Filtered to', productItems.length, 'actual products');
+
     // Build cards data - countertops have different structure
-    items.forEach((item, index) => {
+    productItems.forEach((item, index) => {
       // Link
       const link = item.querySelector('a.materials_item-link');
 
@@ -367,7 +374,10 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <span class="undo-icon">↺</span>
+            <svg class="undo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
             <span class="nope-icon">✕</span>
