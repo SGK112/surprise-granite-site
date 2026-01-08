@@ -371,16 +371,21 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <svg class="undo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
               <path d="M3 3v5h5"/>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <span class="nope-icon">✕</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <span class="like-icon">♥</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
           </button>
         </div>
         ${loginPrompt}
@@ -395,7 +400,7 @@
         <div class="favorites-list" id="favorites-list"></div>
         <div class="favorites-actions">
           <button class="favorites-close-btn" onclick="window.toggleFavorites()">Close</button>
-          ${favorites.length > 0 ? `<a href="/account/#saved-floors" class="favorites-view-all">View All</a>` : ''}
+          ${favorites.length > 0 ? (currentUser ? `<a href="/account/#favorites" class="favorites-view-all">View All</a>` : `<button class="favorites-view-all" onclick="window.expandLocalFavorites()">View All</button>`) : ''}
         </div>
       </div>
     `;
@@ -452,17 +457,14 @@
 
     div.innerHTML = `
       <div class="swipe-indicator like">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
         </svg>
-        <span>LOVE IT</span>
       </div>
       <div class="swipe-indicator nope">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
         </svg>
-        <span>NOPE</span>
       </div>
       <a href="${card.href}" class="swipe-card-view-btn" title="View Details">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -703,8 +705,8 @@
     if (!stack) return;
 
     const accountLink = currentUser
-      ? `<a href="/account/#saved-floors" class="swipe-view-saved-btn">View Saved Floors</a>`
-      : `<a href="/account/" class="swipe-view-saved-btn">Login to Save Favorites</a>`;
+      ? `<a href="/account/#favorites" class="swipe-view-saved-btn">View Saved Floors</a>`
+      : `<button class="swipe-view-saved-btn" onclick="window.showLocalFavoritesFullscreen()">View Your Favorites</button>`;
 
     stack.innerHTML = `
       <div class="swipe-empty">
@@ -723,7 +725,14 @@
 
     const toast = document.createElement('div');
     toast.className = 'swipe-instructions';
-    toast.innerHTML = '<span class="swipe-hint-left">👈 NOPE</span><span class="swipe-hint-text">Swipe</span><span class="swipe-hint-right">LOVE 👉</span>';
+    toast.innerHTML = `
+      <svg class="swipe-arrow left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      <svg class="swipe-arrow right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    `;
     container.appendChild(toast);
 
     setTimeout(() => toast.remove(), 4500);
@@ -800,6 +809,42 @@
 
     // Scroll to top
     window.scrollTo(0, 0);
+  };
+
+  // Expand local favorites drawer for non-logged-in users
+  window.expandLocalFavorites = function() {
+    const drawer = document.getElementById('favorites-drawer');
+    if (drawer) {
+      drawer.classList.add('open', 'expanded');
+    }
+  };
+
+  // Show fullscreen local favorites view for non-logged-in users
+  window.showLocalFavoritesFullscreen = function() {
+    // Create fullscreen favorites overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'local-favorites-overlay';
+    overlay.innerHTML = `
+      <div class="local-favorites-content">
+        <div class="local-favorites-header">
+          <h2>Your Saved Floors</h2>
+          <button class="local-favorites-close" onclick="this.closest('.local-favorites-overlay').remove()">&times;</button>
+        </div>
+        <p class="local-favorites-note">These favorites are saved on this device. <a href="/account/">Sign in</a> to save them to your account!</p>
+        <div class="local-favorites-grid">
+          ${favorites.map(fav => `
+            <a href="${fav.href}" class="local-favorite-card">
+              <img src="${fav.image}" alt="${fav.title}" loading="lazy">
+              <div class="local-favorite-info">
+                <span class="local-favorite-title">${fav.title}</span>
+                ${fav.material ? `<span class="local-favorite-material">${fav.material}</span>` : ''}
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
   };
 
   // Handle resize (for orientation change) - don't re-trigger if user exited

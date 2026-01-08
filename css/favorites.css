@@ -1,0 +1,254 @@
+/**
+ * Surprise Granite - Unified Favorites Styles
+ * Heart buttons on product cards + floating badge
+ */
+
+/* ============================================
+   HEART BUTTON ON PRODUCT CARDS
+   ============================================ */
+.sg-favorite-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  padding: 0;
+}
+
+.sg-favorite-btn:hover {
+  transform: scale(1.1);
+  background: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.sg-favorite-btn:active {
+  transform: scale(0.95);
+}
+
+.sg-favorite-btn .heart-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2;
+  transition: all 0.2s ease;
+}
+
+.sg-favorite-btn:hover .heart-icon {
+  stroke: #ff4757;
+}
+
+/* Favorited state */
+.sg-favorite-btn.is-favorited .heart-icon {
+  fill: #ff4757;
+  stroke: #ff4757;
+}
+
+.sg-favorite-btn.is-favorited:hover .heart-icon {
+  fill: #ff6b7a;
+  stroke: #ff6b7a;
+}
+
+/* ============================================
+   DOUBLE TAP HEART ANIMATION
+   ============================================ */
+.sg-double-tap-heart {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: 100;
+  animation: sgHeartPop 0.6s ease forwards;
+}
+
+.sg-double-tap-heart svg {
+  width: 80px;
+  height: 80px;
+  fill: #ff4757;
+  filter: drop-shadow(0 4px 20px rgba(255, 71, 87, 0.5));
+}
+
+@keyframes sgHeartPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   FLOATING FAVORITES BADGE
+   ============================================ */
+.sg-favorites-badge {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+
+.sg-favorites-badge.has-items {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.sg-favorites-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+.sg-favorites-badge .badge-heart {
+  width: 26px;
+  height: 26px;
+  fill: #f9cb00;
+  transition: transform 0.2s ease;
+}
+
+.sg-favorites-badge:hover .badge-heart {
+  transform: scale(1.1);
+}
+
+.sg-favorites-badge .badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: #ff4757;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+}
+
+/* ============================================
+   MOBILE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 767px) {
+  .sg-favorite-btn {
+    width: 36px;
+    height: 36px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .sg-favorite-btn .heart-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sg-favorites-badge {
+    bottom: 80px;
+    right: 16px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .sg-favorites-badge .badge-heart {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sg-favorites-badge .badge-count {
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+
+  .sg-double-tap-heart svg {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* ============================================
+   HIDE BADGE IN SWIPE MODE
+   ============================================ */
+body.swipe-mode .sg-favorites-badge {
+  display: none;
+}
+
+/* ============================================
+   SHOP PAGE SPECIFIC
+   ============================================ */
+.shop-product-card {
+  position: relative;
+}
+
+.shop-product-card .sg-favorite-btn {
+  top: 8px;
+  right: 8px;
+}
+
+/* ============================================
+   TILE PAGE SPECIFIC
+   ============================================ */
+.tile-card,
+[class*="tile"] .w-dyn-item {
+  position: relative;
+}
+
+/* ============================================
+   ENSURE PROPER Z-INDEX STACKING
+   ============================================ */
+.materials_image-wrapper,
+.product-image-wrapper,
+.shop-product-card {
+  position: relative !important;
+}
+
+/* ============================================
+   DARK THEME VARIANT (for dark backgrounds)
+   ============================================ */
+.dark-theme .sg-favorite-btn,
+[data-theme="dark"] .sg-favorite-btn {
+  background: rgba(30, 30, 40, 0.9);
+}
+
+.dark-theme .sg-favorite-btn .heart-icon,
+[data-theme="dark"] .sg-favorite-btn .heart-icon {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+.dark-theme .sg-favorite-btn:hover .heart-icon,
+[data-theme="dark"] .sg-favorite-btn:hover .heart-icon {
+  stroke: #ff4757;
+}
