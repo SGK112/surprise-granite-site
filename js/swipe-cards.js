@@ -76,19 +76,14 @@
     overlay.className = 'swipe-intro-overlay';
     overlay.innerHTML = `
       <div class="swipe-intro-content">
-        <div class="swipe-intro-icon">🏠</div>
-        <h2 class="swipe-intro-title">Browse Flooring</h2>
-        <p class="swipe-intro-subtitle">${cards.length} floors to explore</p>
+        <h2 class="swipe-intro-title">find your floor</h2>
+        <p class="swipe-intro-subtitle">${cards.length} options</p>
         <div class="swipe-intro-options">
           <button class="swipe-intro-btn swipe-mode-btn" onclick="window.startSwipeMode()">
-            <span class="intro-btn-icon">👆</span>
-            <span class="intro-btn-text">Swipe Mode</span>
-            <span class="intro-btn-desc">Tinder-style browsing</span>
+            <span class="intro-btn-text">Swipe</span>
           </button>
           <button class="swipe-intro-btn scroll-mode-btn" onclick="window.startScrollMode()">
-            <span class="intro-btn-icon">📜</span>
-            <span class="intro-btn-text">Scroll Mode</span>
-            <span class="intro-btn-desc">Classic grid view</span>
+            <span class="intro-btn-text">Browse</span>
           </button>
         </div>
       </div>
