@@ -229,79 +229,82 @@
     width: 100vw !important;
     height: 100vh !important;
     height: 100dvh !important;
-    background: linear-gradient(170deg, #1a1a2e 0%, #16213e 100%) !important;
+    background: rgba(10, 10, 20, 0.95) !important;
     z-index: 999999 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
   /* ==========================================
-     TOP BAR - Glassmorphic
+     TOP BAR - Minimal
      ========================================== */
   .swipe-topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px 20px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    background: transparent;
     flex-shrink: 0;
   }
 
   .swipe-topbar-title {
+    font-family: 'Georgia', serif;
     font-size: 18px;
-    font-weight: 700;
-    color: #fff;
+    font-weight: 400;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.5px;
   }
 
   .swipe-topbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
 
   .swipe-favorites-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
-    border: none;
-    border-radius: 24px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a2e;
+    background: rgba(249, 203, 0, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(249, 203, 0, 0.25);
+    border-radius: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #f9cb00;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(249, 203, 0, 0.3);
   }
 
   .swipe-favorites-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: #1a1a2e;
+    width: 16px;
+    height: 16px;
+    fill: #f9cb00;
   }
 
   .swipe-favorites-btn .fav-count {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(249, 203, 0, 0.2);
     padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 700;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
   }
 
   .swipe-exit-btn {
     padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 24px;
-    font-size: 14px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
     font-weight: 500;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
   }
 
@@ -320,15 +323,15 @@
   }
 
   /* ==========================================
-     CARDS - LARGE, No Flash
+     CARDS - Minimal Glassmorphic
      ========================================== */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 24px);
+    width: calc(100% - 32px);
     max-width: 100%;
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     cursor: grab;
     user-select: none;
@@ -336,8 +339,7 @@
     flex-direction: column;
     left: 50%;
     transform: translateX(-50%);
-    /* Smooth transform only, no opacity transition to prevent flash */
-    transition: transform 0.25s ease-out;
+    transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1);
     will-change: transform;
   }
 
@@ -347,22 +349,22 @@
 
   /* STACK - Cards offset to show edges */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) translateY(6px) scale(0.98);
+    transform: translateX(-50%) translateY(8px) scale(0.97);
     z-index: -1;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) translateY(12px) scale(0.96);
+    transform: translateX(-50%) translateY(16px) scale(0.94);
     z-index: -2;
   }
 
   .swipe-card:nth-child(4) {
-    transform: translateX(-50%) translateY(18px) scale(0.94);
+    transform: translateX(-50%) translateY(24px) scale(0.91);
     z-index: -3;
   }
 
   .swipe-card:nth-child(n+5) {
-    transform: translateX(-50%) translateY(22px) scale(0.92);
+    transform: translateX(-50%) translateY(28px) scale(0.88);
     z-index: -4;
     visibility: hidden;
   }
@@ -370,183 +372,188 @@
   .swipe-card.dragging {
     transition: none !important;
     z-index: 100;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   }
 
   /* ==========================================
-     CARD IMAGE - Larger
+     CARD IMAGE
      ========================================== */
   .swipe-card-image {
     width: 100%;
-    height: 320px;
+    height: 300px;
     object-fit: cover;
     pointer-events: none;
-    background: #e8e8e8;
+    background: #f0f0f0;
   }
 
   /* ==========================================
-     VIEW BUTTON
+     VIEW BUTTON - Minimal
      ========================================== */
   .swipe-card-view-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
-    border-radius: 50%;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 10;
   }
 
   .swipe-card-view-btn svg {
-    width: 22px;
-    height: 22px;
-    stroke: #1a1a2e;
-    stroke-width: 2.5;
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+    stroke-width: 2;
     fill: none;
   }
 
   /* ==========================================
-     CARD CONTENT
+     CARD CONTENT - Clean
      ========================================== */
   .swipe-card-content {
-    padding: 16px;
+    padding: 20px;
     background: #fff;
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .swipe-card-title {
-    font-size: 20px;
-    font-weight: 700;
+    font-family: 'Georgia', serif;
+    font-size: 22px;
+    font-weight: 400;
+    font-style: italic;
     color: #1a1a2e;
     line-height: 1.2;
     flex: 1;
   }
 
   .swipe-card-material {
-    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
-    color: #f9cb00;
-    padding: 6px 14px;
-    border-radius: 16px;
+    background: rgba(249, 203, 0, 0.15);
+    color: #1a1a2e;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
+    letter-spacing: 1px;
+    border: 1px solid rgba(249, 203, 0, 0.3);
   }
 
   /* ==========================================
-     SPECS GRID - Gradient Cards
+     SPECS GRID - Subtle
      ========================================== */
   .swipe-card-specs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .swipe-card-spec {
-    padding: 14px;
-    border-radius: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
     border: 1px solid rgba(0, 0, 0, 0.05);
   }
 
-  .swipe-card-spec:nth-child(1) {
-    background: linear-gradient(145deg, #fffde7 0%, #fff9c4 100%);
-  }
-
-  .swipe-card-spec:nth-child(2) {
-    background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%);
-  }
-
-  .swipe-card-spec:nth-child(3) {
-    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
-  }
-
+  .swipe-card-spec:nth-child(1),
+  .swipe-card-spec:nth-child(2),
+  .swipe-card-spec:nth-child(3),
   .swipe-card-spec:nth-child(4) {
-    background: linear-gradient(145deg, #fce4ec 0%, #f8bbd0 100%);
+    background: rgba(249, 203, 0, 0.06);
+    border-color: rgba(249, 203, 0, 0.1);
   }
 
   .spec-label {
-    font-size: 10px;
-    color: #666;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 9px;
+    color: rgba(0, 0, 0, 0.4);
     text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    font-weight: 600;
+    letter-spacing: 1px;
     margin-bottom: 4px;
+    display: block;
   }
 
   .spec-value {
-    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
     color: #1a1a2e;
-    font-weight: 600;
+    font-weight: 500;
+    display: block;
   }
 
   /* ==========================================
-     SWIPE INDICATORS
+     SWIPE INDICATORS - Minimal
      ========================================== */
   .swipe-indicator {
     position: absolute;
     top: 50%;
-    padding: 16px 22px;
-    border-radius: 16px;
+    padding: 14px 20px;
+    border-radius: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     opacity: 0;
     transition: opacity 0.15s;
     pointer-events: none;
     z-index: 20;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .swipe-indicator svg {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
   }
 
   .swipe-indicator span {
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-family: 'Georgia', serif;
+    font-size: 13px;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.5px;
   }
 
   .swipe-indicator.like {
-    right: 16px;
-    background: linear-gradient(135deg, #f9cb00 0%, #ffd633 100%);
-    color: #1a1a2e;
-    transform: translateY(-50%) rotate(12deg);
-    box-shadow: 0 8px 25px rgba(249, 203, 0, 0.5);
+    right: 20px;
+    background: rgba(249, 203, 0, 0.2);
+    border: 1px solid rgba(249, 203, 0, 0.4);
+    color: #f9cb00;
+    transform: translateY(-50%) rotate(8deg);
   }
 
   .swipe-indicator.like svg {
-    fill: #1a1a2e;
+    fill: #f9cb00;
     stroke: none;
   }
 
   .swipe-indicator.nope {
-    left: 16px;
-    background: linear-gradient(135deg, #ff4757 0%, #ff6b7a 100%);
-    color: #fff;
-    transform: translateY(-50%) rotate(-12deg);
-    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.5);
+    left: 20px;
+    background: rgba(255, 107, 122, 0.2);
+    border: 1px solid rgba(255, 107, 122, 0.4);
+    color: #ff6b7a;
+    transform: translateY(-50%) rotate(-8deg);
   }
 
   .swipe-indicator.nope svg {
-    stroke: #fff;
-    stroke-width: 3;
+    stroke: #ff6b7a;
+    stroke-width: 2.5;
     fill: none;
   }
 
@@ -575,80 +582,76 @@
   }
 
   /* ==========================================
-     ACTION BUTTONS - Compact
+     ACTION BUTTONS - Glassmorphic Minimal
      ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    padding: 16px 20px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 16px;
+    padding: 24px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    background: transparent;
     flex-shrink: 0;
   }
 
   .swipe-btn {
-    border-radius: 50%;
+    border-radius: 16px;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
     -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .swipe-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.94);
   }
 
-  /* UNDO - Glassmorphic */
+  /* UNDO - Subtle */
   .swipe-btn.undo {
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(249, 203, 0, 0.6);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 52px;
+    height: 52px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .undo-icon {
-    font-size: 28px;
-    color: #f9cb00;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1;
   }
 
-  /* NOPE - Solid Red */
+  /* NOPE - Glassmorphic with subtle red */
   .swipe-btn.nope {
     width: 64px;
     height: 64px;
-    background: linear-gradient(145deg, #ff4d5a 0%, #e8414f 100%);
-    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+    background: rgba(255, 77, 90, 0.15);
+    border: 1px solid rgba(255, 77, 90, 0.3);
   }
 
   .nope-icon {
-    font-size: 32px;
-    color: #fff;
+    font-size: 28px;
+    color: #ff6b7a;
     font-weight: 300;
     line-height: 1;
   }
 
-  /* LIKE - Solid Yellow */
+  /* LIKE - Glassmorphic with brand yellow */
   .swipe-btn.like {
     width: 64px;
     height: 64px;
-    background: linear-gradient(145deg, #f9cb00 0%, #e5b800 100%);
-    box-shadow: 0 6px 20px rgba(249, 203, 0, 0.4);
+    background: rgba(249, 203, 0, 0.15);
+    border: 1px solid rgba(249, 203, 0, 0.35);
   }
 
   .like-icon {
-    font-size: 32px;
-    color: #1a1a2e;
+    font-size: 28px;
+    color: #f9cb00;
     line-height: 1;
   }
 

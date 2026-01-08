@@ -357,7 +357,7 @@
     const swipeHTML = `
       <div class="swipe-cards-container">
         <div class="swipe-topbar">
-          <span class="swipe-topbar-title">Find Your Floor</span>
+          <span class="swipe-topbar-title">find your floor</span>
           <div class="swipe-topbar-right">
             <button class="swipe-favorites-btn" onclick="window.toggleFavorites()">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="#ffffff">
