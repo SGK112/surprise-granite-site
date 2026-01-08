@@ -457,6 +457,368 @@
     });
   }
 
+  // Generate share text
+  function generateShareText() {
+    const total = getTotalFavoritesCount();
+    if (total === 0) return null;
+
+    let text = `Check out my favorites from Surprise Granite:\n\n`;
+    let itemCount = 0;
+
+    Object.keys(favorites).forEach(type => {
+      const items = favorites[type] || [];
+      if (items.length > 0) {
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+        text += `${typeLabel}:\n`;
+        items.slice(0, 5).forEach(item => {
+          text += `• ${item.title}\n`;
+          itemCount++;
+        });
+        if (items.length > 5) {
+          text += `  ...and ${items.length - 5} more\n`;
+        }
+        text += '\n';
+      }
+    });
+
+    return { text, count: total };
+  }
+
+  // Share favorites using Web Share API or clipboard
+  async function shareFavorites() {
+    const shareData = generateShareText();
+    if (!shareData) {
+      showToast('No favorites to share');
+      return;
+    }
+
+    const shareUrl = window.location.origin + '/account/#favorites';
+    const shareText = shareData.text + `\nView more at: ${shareUrl}`;
+
+    // Try Web Share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `My Favorites (${shareData.count} items) - Surprise Granite`,
+          text: shareData.text,
+          url: shareUrl
+        });
+        return true;
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          // Fall through to clipboard
+        } else {
+          return false;
+        }
+      }
+    }
+
+    // Fall back to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      showToast('Favorites copied to clipboard!');
+      return true;
+    } catch (e) {
+      // Last resort: show modal with text
+      showShareModal(shareText);
+      return true;
+    }
+  }
+
+  function showToast(message) {
+    const existing = document.querySelector('.sg-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'sg-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26, 26, 46, 0.95);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 100000;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      animation: toastIn 0.3s ease;
+    `;
+
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'toastOut 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  function showShareModal(text) {
+    const modal = document.createElement('div');
+    modal.className = 'sg-share-modal';
+    modal.innerHTML = `
+      <div class="sg-share-modal-content">
+        <div class="sg-share-modal-header">
+          <h3>Share Your Favorites</h3>
+          <button class="sg-share-modal-close" onclick="this.closest('.sg-share-modal').remove()">&times;</button>
+        </div>
+        <textarea readonly onclick="this.select()">${text}</textarea>
+        <button class="sg-share-copy-btn" onclick="
+          this.previousElementSibling.select();
+          document.execCommand('copy');
+          this.textContent = 'Copied!';
+          setTimeout(() => this.textContent = 'Copy to Clipboard', 2000);
+        ">Copy to Clipboard</button>
+      </div>
+    `;
+
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+      padding: 20px;
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  // Request quote for all favorites
+  async function requestQuote() {
+    const total = getTotalFavoritesCount();
+    if (total === 0) {
+      showToast('No favorites to quote');
+      return;
+    }
+
+    // Build items list
+    const items = [];
+    Object.keys(favorites).forEach(type => {
+      (favorites[type] || []).forEach(item => {
+        items.push({
+          type: type,
+          title: item.title,
+          material: item.material || '',
+          color: item.color || '',
+          url: item.url || ''
+        });
+      });
+    });
+
+    // If logged in, pre-fill user info
+    let userInfo = { name: '', email: '', phone: '' };
+    if (currentUser) {
+      userInfo.email = currentUser.email;
+      // Try to get profile info
+      try {
+        const { data } = await supabaseClient
+          .from('sg_users')
+          .select('first_name, last_name, phone')
+          .eq('id', currentUser.id)
+          .single();
+        if (data) {
+          userInfo.name = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+          userInfo.phone = data.phone || '';
+        }
+      } catch (e) {}
+    }
+
+    // Show quote modal
+    showQuoteModal(items, userInfo);
+  }
+
+  function showQuoteModal(items, userInfo) {
+    const modal = document.createElement('div');
+    modal.className = 'sg-quote-modal';
+    modal.innerHTML = `
+      <div class="sg-quote-modal-content">
+        <div class="sg-quote-modal-header">
+          <h3>Request a Quote</h3>
+          <button class="sg-quote-modal-close" onclick="this.closest('.sg-quote-modal').remove()">&times;</button>
+        </div>
+        <p class="sg-quote-summary">${items.length} item${items.length !== 1 ? 's' : ''} selected</p>
+        <form id="sg-quote-form">
+          <input type="text" name="name" placeholder="Your Name" value="${userInfo.name}" required>
+          <input type="email" name="email" placeholder="Email Address" value="${userInfo.email}" required>
+          <input type="tel" name="phone" placeholder="Phone Number" value="${userInfo.phone}">
+          <textarea name="notes" placeholder="Additional notes or project details..."></textarea>
+          <button type="submit" class="sg-quote-submit">Submit Quote Request</button>
+        </form>
+      </div>
+    `;
+
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+      padding: 20px;
+      overflow-y: auto;
+    `;
+
+    document.body.appendChild(modal);
+
+    // Handle form submission
+    modal.querySelector('#sg-quote-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const submitBtn = form.querySelector('.sg-quote-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      try {
+        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name.value,
+            email: form.email.value,
+            phone: form.phone.value,
+            notes: form.notes.value,
+            favorites: items,
+            source: 'favorites-quote'
+          })
+        });
+
+        if (response.ok) {
+          modal.innerHTML = `
+            <div class="sg-quote-modal-content" style="text-align: center; padding: 40px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
+              <h3>Quote Request Sent!</h3>
+              <p style="color: rgba(255,255,255,0.7); margin: 16px 0;">We'll get back to you within 24 hours.</p>
+              <button onclick="this.closest('.sg-quote-modal').remove()" style="background: #f9cb00; color: #1a1a2e; border: none; padding: 12px 28px; border-radius: 12px; font-weight: 600; cursor: pointer;">Done</button>
+            </div>
+          `;
+        } else {
+          throw new Error('Failed to send');
+        }
+      } catch (e) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Quote Request';
+        showToast('Failed to send. Please try again.');
+      }
+    });
+  }
+
+  // Add CSS for modals and toasts
+  const styles = document.createElement('style');
+  styles.textContent = `
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes toastOut {
+      to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    }
+    .sg-share-modal-content,
+    .sg-quote-modal-content {
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d15 100%);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      color: #fff;
+    }
+    .sg-share-modal-header,
+    .sg-quote-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .sg-share-modal-header h3,
+    .sg-quote-modal-header h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .sg-share-modal-close,
+    .sg-quote-modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .sg-share-modal-content textarea {
+      width: 100%;
+      height: 200px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px;
+      color: #fff;
+      font-size: 13px;
+      resize: none;
+      margin-bottom: 16px;
+    }
+    .sg-share-copy-btn {
+      width: 100%;
+      background: #f9cb00;
+      color: #1a1a2e;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sg-quote-summary {
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 20px;
+    }
+    #sg-quote-form input,
+    #sg-quote-form textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    #sg-quote-form input:focus,
+    #sg-quote-form textarea:focus {
+      border-color: rgba(249, 203, 0, 0.5);
+    }
+    #sg-quote-form textarea {
+      height: 100px;
+      resize: none;
+    }
+    .sg-quote-submit {
+      width: 100%;
+      background: #f9cb00;
+      color: #1a1a2e;
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .sg-quote-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  `;
+  document.head.appendChild(styles);
+
   // Expose functions globally for other scripts
   window.SGFavorites = {
     add: async (product, type) => {
@@ -479,7 +841,9 @@
     getAll: () => favorites,
     getByType: (type) => favorites[type] || [],
     getCount: getTotalFavoritesCount,
-    refresh: addHeartButtonsToProducts
+    refresh: addHeartButtonsToProducts,
+    share: shareFavorites,
+    requestQuote: requestQuote
   };
 
 })();
