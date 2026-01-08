@@ -1,6 +1,6 @@
 /**
- * Swipe Cards - Premium Stack Design
- * Gradient accents, visible card stack
+ * Swipe Cards - Clean Stack Design
+ * Visible card edges, large icons, glassmorphic tooltip
  */
 
 /* Desktop: Hidden */
@@ -14,7 +14,6 @@
    ============================================ */
 @media (max-width: 767px) {
 
-  /* FULL SCREEN TAKEOVER */
   body.swipe-mode {
     overflow: hidden !important;
   }
@@ -46,7 +45,7 @@
     width: 100vw !important;
     height: 100vh !important;
     height: 100dvh !important;
-    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%) !important;
+    background: linear-gradient(165deg, #1e1e2f 0%, #15152a 100%) !important;
     z-index: 999999 !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -59,18 +58,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 16px;
-    padding-top: calc(14px + env(safe-area-inset-top, 0px));
-    background: rgba(26, 26, 46, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(249, 203, 0, 0.15);
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    background: transparent;
     flex-shrink: 0;
   }
 
   .swipe-topbar-title {
-    font-size: 17px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: #fff;
   }
 
@@ -84,37 +80,39 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 10px 16px;
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     border: none;
-    border-radius: 20px;
-    font-size: 13px;
+    border-radius: 24px;
+    font-size: 14px;
     font-weight: 600;
     color: #1a1a2e;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(249, 203, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(249, 203, 0, 0.3);
   }
 
   .swipe-favorites-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     fill: #1a1a2e;
   }
 
   .swipe-favorites-btn .fav-count {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 2px 7px;
-    border-radius: 10px;
-    font-size: 11px;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
     font-weight: 700;
   }
 
   .swipe-exit-btn {
-    padding: 8px 14px;
+    padding: 10px 16px;
     background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    font-size: 13px;
+    border-radius: 24px;
+    font-size: 14px;
     font-weight: 500;
     color: #fff;
     cursor: pointer;
@@ -129,60 +127,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: 20px 16px;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   /* ==========================================
-     LOADING PLACEHOLDER
-     ========================================== */
-  .swipe-card-loading {
-    position: absolute;
-    width: calc(100% - 32px);
-    max-width: 400px;
-    height: 420px;
-    background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .swipe-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(249, 203, 0, 0.2);
-    border-top-color: #f9cb00;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* ==========================================
-     CARD STACK - Visible layers
+     CARDS - Visible Stack with Edges
      ========================================== */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 32px);
-    max-width: 400px;
+    width: calc(100% - 40px);
+    max-width: 380px;
     background: #fff;
-    border-radius: 24px;
-    box-shadow:
-      0 25px 50px rgba(0, 0, 0, 0.4),
-      0 10px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     cursor: grab;
     user-select: none;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease,
-                box-shadow 0.35s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
     display: flex;
     flex-direction: column;
     left: 50%;
@@ -193,31 +157,34 @@
     cursor: grabbing;
   }
 
-  /* STACK EFFECT - More visible cards behind */
+  /* STACK - Cards offset to show edges */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) translateY(12px) scale(0.95);
+    transform: translateX(-50%) translateY(8px) scale(0.97);
     z-index: -1;
-    opacity: 0.85;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    opacity: 1;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) translateY(24px) scale(0.90);
+    transform: translateX(-50%) translateY(16px) scale(0.94);
     z-index: -2;
-    opacity: 0.7;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+    opacity: 1;
   }
 
   .swipe-card:nth-child(4) {
-    transform: translateX(-50%) translateY(36px) scale(0.85);
+    transform: translateX(-50%) translateY(24px) scale(0.91);
     z-index: -3;
-    opacity: 0.5;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
   }
 
-  .swipe-card:nth-child(n+5) {
-    transform: translateX(-50%) translateY(44px) scale(0.82);
+  .swipe-card:nth-child(5) {
+    transform: translateX(-50%) translateY(32px) scale(0.88);
     z-index: -4;
+    opacity: 0.7;
+  }
+
+  .swipe-card:nth-child(n+6) {
+    transform: translateX(-50%) translateY(36px) scale(0.86);
+    z-index: -5;
     opacity: 0;
     pointer-events: none;
   }
@@ -225,7 +192,7 @@
   .swipe-card.dragging {
     transition: none;
     z-index: 100;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
   }
 
   /* ==========================================
@@ -233,10 +200,10 @@
      ========================================== */
   .swipe-card-image {
     width: 100%;
-    height: 240px;
+    height: 220px;
     object-fit: cover;
     pointer-events: none;
-    background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%);
+    background: #f0f0f0;
   }
 
   /* ==========================================
@@ -246,21 +213,21 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     z-index: 10;
   }
 
   .swipe-card-view-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     stroke: #1a1a2e;
     stroke-width: 2.5;
     fill: none;
@@ -278,12 +245,12 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 14px;
   }
 
   .swipe-card-title {
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
     color: #1a1a2e;
     line-height: 1.2;
@@ -295,10 +262,11 @@
     color: #f9cb00;
     padding: 6px 14px;
     border-radius: 16px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
   }
 
   /* ==========================================
@@ -311,35 +279,29 @@
   }
 
   .swipe-card-spec {
-    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
     padding: 14px;
     border-radius: 14px;
-    border: 1px solid rgba(26, 26, 46, 0.06);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   .swipe-card-spec:nth-child(1) {
-    background: linear-gradient(145deg, #fff8e1 0%, #ffecb3 100%);
-    border-color: rgba(249, 203, 0, 0.15);
+    background: linear-gradient(145deg, #fffde7 0%, #fff9c4 100%);
   }
 
   .swipe-card-spec:nth-child(2) {
-    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
-    border-color: rgba(33, 150, 243, 0.15);
+    background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%);
   }
 
   .swipe-card-spec:nth-child(3) {
-    background: linear-gradient(145deg, #f3e5f5 0%, #e1bee7 100%);
-    border-color: rgba(156, 39, 176, 0.15);
+    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
   }
 
   .swipe-card-spec:nth-child(4) {
-    background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%);
-    border-color: rgba(76, 175, 80, 0.15);
+    background: linear-gradient(145deg, #fce4ec 0%, #f8bbd9 100%);
   }
 
   .spec-label {
-    font-size: 9px;
+    font-size: 10px;
     color: #666;
     text-transform: uppercase;
     font-weight: 700;
@@ -348,7 +310,7 @@
   }
 
   .spec-value {
-    font-size: 14px;
+    font-size: 15px;
     color: #1a1a2e;
     font-weight: 600;
   }
@@ -359,7 +321,7 @@
   .swipe-indicator {
     position: absolute;
     top: 50%;
-    padding: 16px 20px;
+    padding: 16px 22px;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
@@ -372,12 +334,12 @@
   }
 
   .swipe-indicator svg {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
   }
 
   .swipe-indicator span {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -385,7 +347,7 @@
 
   .swipe-indicator.like {
     right: 16px;
-    background: linear-gradient(135deg, #f9cb00 0%, #ffdb4d 100%);
+    background: linear-gradient(135deg, #f9cb00 0%, #ffd633 100%);
     color: #1a1a2e;
     transform: translateY(-50%) rotate(12deg);
     box-shadow: 0 8px 25px rgba(249, 203, 0, 0.5);
@@ -419,11 +381,11 @@
      SWIPE ANIMATIONS
      ========================================== */
   .swipe-card.swipe-out-left {
-    animation: swipeLeft 0.35s ease forwards;
+    animation: swipeLeft 0.3s ease forwards;
   }
 
   .swipe-card.swipe-out-right {
-    animation: swipeRight 0.35s ease forwards;
+    animation: swipeRight 0.3s ease forwards;
   }
 
   @keyframes swipeLeft {
@@ -435,18 +397,16 @@
   }
 
   /* ==========================================
-     ACTION BUTTONS - BIG ICONS
+     ACTION BUTTONS - Large Icons, Glass BG
      ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 24px;
-    padding: 20px 20px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    background: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    gap: 28px;
+    padding: 24px 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    background: transparent;
     flex-shrink: 0;
   }
 
@@ -457,71 +417,61 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-btn:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
   }
 
-  /* Undo */
+  /* Undo - Glass */
   .swipe-btn.undo {
-    width: 52px;
-    height: 52px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 2px solid rgba(249, 203, 0, 0.4);
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(249, 203, 0, 0.5);
   }
 
   .swipe-btn.undo svg {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     stroke: #f9cb00;
     stroke-width: 2.5;
     fill: none;
   }
 
-  /* NOPE - Big X inside */
+  /* NOPE - Solid Red, BIG X */
   .swipe-btn.nope {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(145deg, #ff4757 0%, #e8414f 100%);
-    box-shadow:
-      0 8px 25px rgba(255, 71, 87, 0.4),
-      inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    width: 76px;
+    height: 76px;
+    background: linear-gradient(145deg, #ff4d5a 0%, #e8414f 100%);
+    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
   }
 
   .swipe-btn.nope svg {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     stroke: #fff;
     stroke-width: 4;
     fill: none;
   }
 
-  .swipe-btn.nope:active {
-    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.5);
-  }
-
-  /* LIKE - Big Heart inside */
+  /* LIKE - Yellow, BIG Heart */
   .swipe-btn.like {
-    width: 72px;
-    height: 72px;
+    width: 76px;
+    height: 76px;
     background: linear-gradient(145deg, #f9cb00 0%, #e5b800 100%);
-    box-shadow:
-      0 8px 25px rgba(249, 203, 0, 0.4),
-      inset 0 2px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 25px rgba(249, 203, 0, 0.4);
   }
 
   .swipe-btn.like svg {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     fill: #1a1a2e;
     stroke: none;
-  }
-
-  .swipe-btn.like:active {
-    box-shadow: 0 4px 15px rgba(249, 203, 0, 0.5);
   }
 
   /* ==========================================
@@ -530,12 +480,12 @@
   .swipe-counter {
     text-align: center;
     padding: 8px 16px;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
     background: transparent;
     flex-shrink: 0;
     position: absolute;
-    bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(130px + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
   }
@@ -546,29 +496,68 @@
   }
 
   /* ==========================================
+     SWIPE INSTRUCTIONS - Glassmorphic
+     ========================================== */
+  .swipe-instructions {
+    position: fixed;
+    bottom: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 10000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.4s ease, fadeOut 0.4s ease 4s forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  /* ==========================================
      LOGIN PROMPT
      ========================================== */
   .swipe-login-prompt {
     position: fixed;
-    bottom: 200px;
+    bottom: 220px;
     left: 50%;
     transform: translateX(-50%);
     background: #fff;
     color: #1a1a2e;
-    padding: 18px 22px;
-    border-radius: 18px;
+    padding: 20px 24px;
+    border-radius: 20px;
     text-align: center;
     z-index: 10000;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    max-width: 280px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+    max-width: 300px;
     width: calc(100% - 40px);
-    animation: slideUp 0.3s ease;
-    border: 2px solid rgba(249, 203, 0, 0.3);
+    animation: fadeInUp 0.3s ease;
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 12px;
-    font-size: 14px;
+    margin: 0 0 14px;
+    font-size: 15px;
     font-weight: 500;
   }
 
@@ -576,16 +565,11 @@
     display: inline-block;
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
-    padding: 10px 24px;
-    border-radius: 20px;
+    padding: 12px 28px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
-  }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    font-size: 15px;
   }
 
   /* ==========================================
@@ -597,17 +581,17 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(26, 26, 46, 0.98);
+    background: rgba(20, 20, 35, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 24px 24px 0 0;
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.4);
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000001;
-    max-height: 65vh;
+    max-height: 60vh;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    border-top: 2px solid rgba(249, 203, 0, 0.2);
+    border-top: 1px solid rgba(249, 203, 0, 0.2);
   }
 
   .favorites-drawer.open {
@@ -615,7 +599,7 @@
   }
 
   .favorites-drawer-handle {
-    padding: 16px;
+    padding: 18px;
     text-align: center;
     cursor: pointer;
   }
@@ -625,38 +609,38 @@
     display: block;
     width: 40px;
     height: 5px;
-    background: linear-gradient(90deg, #f9cb00 0%, #e5b800 100%);
+    background: rgba(249, 203, 0, 0.6);
     border-radius: 3px;
-    margin: 0 auto 12px;
+    margin: 0 auto 14px;
   }
 
   .favorites-drawer-title {
     font-weight: 600;
     color: #fff;
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .favorites-count {
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
     font-weight: 700;
-    margin-left: 6px;
+    margin-left: 8px;
   }
 
   .favorites-empty {
     text-align: center;
-    padding: 24px 20px;
+    padding: 30px 20px;
     color: rgba(255, 255, 255, 0.5);
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .favorites-list {
     display: flex;
-    gap: 12px;
-    padding: 0 16px 16px;
+    gap: 14px;
+    padding: 0 18px 18px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -667,33 +651,33 @@
 
   .favorite-item {
     flex-shrink: 0;
-    width: 90px;
+    width: 100px;
     text-align: center;
     text-decoration: none;
   }
 
   .favorite-item img {
-    width: 90px;
-    height: 90px;
+    width: 100px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 14px;
-    border: 2px solid rgba(249, 203, 0, 0.25);
+    border-radius: 16px;
+    border: 2px solid rgba(249, 203, 0, 0.3);
   }
 
   .favorite-item span {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
-    margin-top: 6px;
+    margin-top: 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .favorites-actions {
-    padding: 12px 16px 18px;
+    padding: 14px 18px 20px;
     display: flex;
-    gap: 10px;
+    gap: 12px;
     justify-content: center;
   }
 
@@ -701,21 +685,21 @@
     display: inline-block;
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
-    padding: 12px 24px;
-    border-radius: 20px;
+    padding: 14px 28px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .favorites-close-btn {
-    padding: 12px 18px;
+    padding: 14px 20px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
+    border-radius: 24px;
     color: #fff;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
   }
 
@@ -724,35 +708,35 @@
      ========================================== */
   .swipe-empty {
     text-align: center;
-    padding: 40px 24px;
+    padding: 50px 30px;
   }
 
   .swipe-empty-icon {
-    font-size: 48px;
-    margin-bottom: 14px;
+    font-size: 56px;
+    margin-bottom: 16px;
   }
 
   .swipe-empty h3 {
-    font-size: 20px;
+    font-size: 22px;
     color: #fff;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 700;
   }
 
   .swipe-empty p {
     color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 20px;
-    font-size: 14px;
+    margin-bottom: 24px;
+    font-size: 15px;
   }
 
   .swipe-reset-btn {
     background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
     color: #1a1a2e;
     border: none;
-    padding: 12px 28px;
-    border-radius: 20px;
+    padding: 14px 32px;
+    border-radius: 24px;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
     cursor: pointer;
   }
 
@@ -761,40 +745,11 @@
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #fff;
-    padding: 12px 28px;
-    border-radius: 20px;
+    padding: 14px 32px;
+    border-radius: 24px;
     text-decoration: none;
     font-weight: 500;
-    font-size: 15px;
-    margin-top: 10px;
-  }
-
-  /* ==========================================
-     INSTRUCTIONS
-     ========================================== */
-  .swipe-instructions {
-    position: fixed;
-    bottom: 200px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fff;
-    color: #1a1a2e;
-    padding: 12px 20px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 10000;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-    animation: fadeIn 0.3s ease, fadeOut 0.3s ease 3s forwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-
-  @keyframes fadeOut {
-    to { opacity: 0; visibility: hidden; }
+    font-size: 16px;
+    margin-top: 12px;
   }
 }

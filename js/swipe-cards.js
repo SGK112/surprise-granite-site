@@ -240,19 +240,19 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 4v6h6"/>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+            <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg viewBox="0 0 24 24" width="36" height="36" fill="#1a1a2e">
+            <svg viewBox="0 0 24 24" width="42" height="42" fill="#1a1a2e">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
@@ -597,10 +597,10 @@
 
     const toast = document.createElement('div');
     toast.className = 'swipe-instructions';
-    toast.innerHTML = '&#128072; Swipe left to skip &bull; Swipe right to save &#128073;';
+    toast.textContent = '👈 Swipe to browse 👉';
     container.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => toast.remove(), 4500);
   }
 
   // Global functions for buttons
