@@ -280,8 +280,8 @@
     overlay.className = 'swipe-intro-overlay';
     overlay.innerHTML = `
       <div class="swipe-intro-content">
-        <h2 class="swipe-intro-title">find your ${productLabel.toLowerCase().slice(0, -1)}</h2>
-        <p class="swipe-intro-subtitle">${cards.length} options</p>
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="swipe-intro-logo">
+        <p class="swipe-intro-subtitle">${cards.length} ${productLabel}</p>
         <div class="swipe-intro-options">
           <button class="swipe-intro-btn swipe-mode-btn" onclick="window.startSwipeMode()">
             <span class="intro-btn-text">Swipe</span>
@@ -319,20 +319,29 @@
     container.className = 'swipe-cards-container';
     container.innerHTML = `
       <div class="swipe-topbar">
-        <button class="swipe-back-btn" onclick="window.exitSwipeMode()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+        <button class="swipe-scroll-btn" onclick="window.exitSwipeMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span>Scroll</span>
         </button>
         <span class="swipe-topbar-title">${productLabel}</span>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div class="fav-thumb">${favorites.length > 0 ? `<img src="${favorites[favorites.length - 1].image}" alt="">` : ''}</div>
           <span class="fav-count">${favorites.length}</span>
         </button>
       </div>
       <div class="swipe-card-stack"></div>
-      <div class="swipe-bottom-bar">
-        <div class="swipe-counter"><span class="current">${currentIndex + 1}</span><span class="divider">/</span><span class="total">${cards.length}</span></div>
-        <button class="swipe-undo-btn" onclick="window.undoSwipe()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a5 5 0 0 1 5 5v2"/><polyline points="3 10 8 5"/><polyline points="3 10 8 15"/></svg>
+      <div class="swipe-action-buttons">
+        <button class="swipe-action-btn undo" onclick="window.undoSwipe()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 10h10a5 5 0 0 1 5 5v2"/><polyline points="3 10 8 5"/><polyline points="3 10 8 15"/></svg>
+        </button>
+        <button class="swipe-action-btn nope" onclick="window.swipeNope()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <button class="swipe-action-btn like" onclick="window.swipeLike()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
     `;
@@ -494,19 +503,16 @@
 
     this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(${deltaY * 0.3}px) rotate(${rotation}deg) scale(${scale})`;
 
-    // Update indicators based on direction
+    // Update indicators based on direction (left/right only)
     const threshold = 40;
     if (deltaX > threshold) {
       this.classList.add('swiping-right');
-      this.classList.remove('swiping-left', 'swiping-up');
+      this.classList.remove('swiping-left');
     } else if (deltaX < -threshold) {
       this.classList.add('swiping-left');
-      this.classList.remove('swiping-right', 'swiping-up');
-    } else if (deltaY < -threshold) {
-      this.classList.add('swiping-up');
-      this.classList.remove('swiping-left', 'swiping-right');
+      this.classList.remove('swiping-right');
     } else {
-      this.classList.remove('swiping-left', 'swiping-right', 'swiping-up');
+      this.classList.remove('swiping-left', 'swiping-right');
     }
   }
 
@@ -516,11 +522,9 @@
     this.classList.remove('dragging');
 
     const deltaX = currentX - startX;
-    const deltaY = currentY - startY;
 
     // Use velocity for more natural feel
     const projectedX = deltaX + velocityX * 5;
-    const projectedY = deltaY + velocityY * 5;
 
     const threshold = 80;
     const velocityThreshold = 3;
@@ -537,17 +541,11 @@
       this.style.transform = `translateX(-120vw) rotate(-20deg)`;
       setTimeout(() => handleNope(), 250);
     }
-    // Swipe up = super like (adds to favorites + view)
-    else if (projectedY < -threshold || velocityY < -velocityThreshold) {
-      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateY(-120vh) scale(0.8)`;
-      setTimeout(() => handleSuperLike(), 250);
-    }
     // Return to center
     else {
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
       this.style.transform = 'translateX(-50%)';
-      this.classList.remove('swiping-left', 'swiping-right', 'swiping-up');
+      this.classList.remove('swiping-left', 'swiping-right');
     }
   }
 
@@ -618,8 +616,16 @@
 
   function updateFavoritesCount() {
     const countEl = document.querySelector('.fav-count');
+    const thumbEl = document.querySelector('.fav-thumb');
     if (countEl) {
       countEl.textContent = favorites.length;
+    }
+    if (thumbEl) {
+      if (favorites.length > 0) {
+        thumbEl.innerHTML = `<img src="${favorites[favorites.length - 1].image}" alt="">`;
+      } else {
+        thumbEl.innerHTML = '';
+      }
     }
   }
 
@@ -641,12 +647,6 @@
         </svg>
         <span>Skip</span>
       </div>
-      <div class="swipe-hint up">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M12 19V5M5 12l7-7 7 7"/>
-        </svg>
-        <span>View</span>
-      </div>
       <div class="swipe-hint right">
         <svg viewBox="0 0 24 24">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -658,7 +658,7 @@
     setTimeout(() => {
       toast.classList.add('fade-out');
       setTimeout(() => toast.remove(), 400);
-    }, 3000);
+    }, 2500);
   }
 
   function showEmptyState() {
@@ -698,16 +698,50 @@
     const drawer = document.createElement('div');
     drawer.className = 'favorites-drawer';
     drawer.innerHTML = `
-      <div class="favorites-drawer-handle" onclick="window.toggleFavoritesDrawer()">
+      <div class="favorites-drawer-handle">
         <span class="favorites-drawer-title">Favorites <span class="favorites-count">${favorites.length}</span></span>
       </div>
       <div class="favorites-content"></div>
       <div class="favorites-actions">
         ${currentUser ? `<a href="/account/#favorites" class="favorites-view-all">View All</a>` : `<button class="favorites-view-all" onclick="window.showLocalFavoritesFullscreen()">View All</button>`}
-        <button class="favorites-close-btn" onclick="window.toggleFavoritesDrawer()">Close</button>
       </div>
     `;
     document.body.appendChild(drawer);
+
+    // Drag to close functionality
+    const handle = drawer.querySelector('.favorites-drawer-handle');
+    let drawerStartY = 0;
+    let drawerCurrentY = 0;
+    let isDraggingDrawer = false;
+
+    handle.addEventListener('touchstart', (e) => {
+      drawerStartY = e.touches[0].clientY;
+      isDraggingDrawer = true;
+      drawer.style.transition = 'none';
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', (e) => {
+      if (!isDraggingDrawer) return;
+      drawerCurrentY = e.touches[0].clientY;
+      const deltaY = drawerCurrentY - drawerStartY;
+      if (deltaY > 0) {
+        drawer.style.transform = `translateY(${deltaY}px)`;
+      }
+    }, { passive: true });
+
+    handle.addEventListener('touchend', () => {
+      if (!isDraggingDrawer) return;
+      isDraggingDrawer = false;
+      drawer.style.transition = 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)';
+      const deltaY = drawerCurrentY - drawerStartY;
+      if (deltaY > 80) {
+        drawer.classList.remove('open');
+        drawer.style.transform = '';
+      } else {
+        drawer.style.transform = 'translateY(0)';
+      }
+    });
+
     updateFavoritesDrawer();
   }
 
