@@ -2522,13 +2522,33 @@
               </div>
 
               <!-- Flooring Section -->
-              <div id="favorites-flooring" style="display: none;">
+              <div id="favorites-flooring" style="display: none; margin-bottom: 32px;">
                 <h4 style="color: #1a1a2e; margin-bottom: 16px; font-size: 18px; display: flex; align-items: center; gap: 8px;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   Flooring
                   <span id="flooring-section-count" style="background: #f9cb00; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                 </h4>
                 <div id="favorites-flooring-grid" class="saved-floors-grid"></div>
+              </div>
+
+              <!-- Tile Section -->
+              <div id="favorites-tile" style="display: none; margin-bottom: 32px;">
+                <h4 style="color: #1a1a2e; margin-bottom: 16px; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="2"><path d="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"/></svg>
+                  Tile
+                  <span id="tile-section-count" style="background: #f9cb00; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                </h4>
+                <div id="favorites-tile-grid" class="saved-floors-grid"></div>
+              </div>
+
+              <!-- Shop Section -->
+              <div id="favorites-shop" style="display: none;">
+                <h4 style="color: #1a1a2e; margin-bottom: 16px; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                  Shop Products
+                  <span id="shop-section-count" style="background: #f9cb00; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                </h4>
+                <div id="favorites-shop-grid" class="saved-floors-grid"></div>
               </div>
             </div>
           </div>
@@ -3572,6 +3592,8 @@
       const emptyEl = document.getElementById('favorites-empty');
       const flooringSection = document.getElementById('favorites-flooring');
       const countertopsSection = document.getElementById('favorites-countertops');
+      const tileSection = document.getElementById('favorites-tile');
+      const shopSection = document.getElementById('favorites-shop');
       const quoteBtn = document.getElementById('request-quote-btn');
 
       try {
@@ -3586,6 +3608,8 @@
         allFavorites = data || [];
         flooringFavorites = allFavorites.filter(f => f.product_type === 'flooring');
         countertopFavorites = allFavorites.filter(f => f.product_type === 'countertop');
+        const tileFavorites = allFavorites.filter(f => f.product_type === 'tile');
+        const shopFavorites = allFavorites.filter(f => f.product_type === 'shop');
 
         loadingEl.style.display = 'none';
 
@@ -3593,6 +3617,8 @@
           emptyEl.style.display = 'block';
           flooringSection.style.display = 'none';
           countertopsSection.style.display = 'none';
+          if (tileSection) tileSection.style.display = 'none';
+          if (shopSection) shopSection.style.display = 'none';
           quoteBtn.style.display = 'none';
         } else {
           emptyEl.style.display = 'none';
@@ -3614,6 +3640,24 @@
             renderFavoritesGrid('favorites-flooring-grid', flooringFavorites);
           } else {
             flooringSection.style.display = 'none';
+          }
+
+          // Show/render tile section
+          if (tileFavorites.length > 0 && tileSection) {
+            tileSection.style.display = 'block';
+            document.getElementById('tile-section-count').textContent = tileFavorites.length;
+            renderFavoritesGrid('favorites-tile-grid', tileFavorites);
+          } else if (tileSection) {
+            tileSection.style.display = 'none';
+          }
+
+          // Show/render shop section
+          if (shopFavorites.length > 0 && shopSection) {
+            shopSection.style.display = 'block';
+            document.getElementById('shop-section-count').textContent = shopFavorites.length;
+            renderFavoritesGrid('favorites-shop-grid', shopFavorites);
+          } else if (shopSection) {
+            shopSection.style.display = 'none';
           }
         }
 
