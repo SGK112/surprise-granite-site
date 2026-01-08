@@ -120,7 +120,8 @@
   .swipe-intro-brand .intro-brand-logo {
     height: 48px;
     width: auto;
-    filter: brightness(0) invert(1);
+    /* Yellow/gold tint for dark background */
+    filter: brightness(0) saturate(100%) invert(78%) sepia(68%) saturate(725%) hue-rotate(6deg) brightness(103%) contrast(101%);
   }
 
   .swipe-intro-brand .intro-brand-text {
@@ -288,10 +289,11 @@
   }
 
   .swipe-topbar-brand .brand-logo {
-    height: 24px;
+    height: 28px;
     width: auto;
-    max-width: 140px;
-    filter: brightness(0) invert(1);
+    max-width: 160px;
+    /* Yellow/gold tint for dark background */
+    filter: brightness(0) saturate(100%) invert(78%) sepia(68%) saturate(725%) hue-rotate(6deg) brightness(103%) contrast(101%);
     object-fit: contain;
   }
 
@@ -321,44 +323,74 @@
   }
 
   .fav-thumb-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    overflow: hidden;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    overflow: visible;
     position: relative;
     background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(249, 203, 0, 0.4);
+    border: 2px solid rgba(249, 203, 0, 0.5);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   }
 
   .fav-thumb-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 12px;
   }
 
   .fav-thumb-empty {
     width: 100%;
     height: 100%;
     background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fav-thumb-empty::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='%23ff4757' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E");
+    opacity: 0.4;
   }
 
   .fav-thumb-heart {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 22px;
-    height: 22px;
+    bottom: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
     fill: var(--sg-red);
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-    background: var(--sg-dark);
+    z-index: 5;
+    background: #1a1a2e;
     border-radius: 50%;
-    padding: 3px;
+    padding: 4px;
     box-sizing: content-box;
   }
 
-  /* Counter badge hidden - just showing heart */
+  /* Counter badge - small pill showing total favorites */
   .swipe-favorites-btn .fav-count {
-    display: none;
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--sg-gold);
+    color: #1a1a2e;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   /* CARD STACK - PERFECTLY CENTERED */
@@ -658,64 +690,70 @@
     transform: translateX(-50%) scale(1);
   }
 
-  /* Undo button - Branded Yellow/Gold */
+  /* Undo button - Yellow/Gold with dark icon */
   .swipe-action-btn.undo {
-    width: 52px;
-    height: 52px;
-    border-radius: 26px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     background: var(--sg-gold);
-    border: none;
-    box-shadow: 0 4px 20px var(--sg-gold-glow);
+    border: 3px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 20px var(--sg-gold-glow), inset 0 2px 0 rgba(255,255,255,0.2);
   }
 
   .swipe-action-btn.undo svg {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     color: #1a1a2e;
+    stroke-width: 2.5;
   }
 
   .swipe-action-btn.undo:active {
     background: #e6b800;
+    transform: scale(0.92);
   }
 
-  /* Nope button - Solid Red */
+  /* Nope button - Solid Red with white X */
   .swipe-action-btn.nope {
-    width: 64px;
-    height: 64px;
-    border-radius: 32px;
-    background: var(--sg-red);
-    border: none;
-    box-shadow: 0 4px 20px rgba(255, 59, 92, 0.4);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff4757 0%, #ff3b5c 100%);
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 24px rgba(255, 59, 92, 0.5), inset 0 2px 0 rgba(255,255,255,0.2);
   }
 
   .swipe-action-btn.nope svg {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     color: #fff;
+    stroke-width: 3;
   }
 
   .swipe-action-btn.nope:active {
-    background: #e6325a;
+    background: linear-gradient(135deg, #e6325a 0%, #d42d4f 100%);
+    transform: scale(0.92);
   }
 
-  /* Like button - Solid Pink/Coral */
+  /* Like button - Bright Green with white heart */
   .swipe-action-btn.like {
-    width: 64px;
-    height: 64px;
-    border-radius: 32px;
-    background: linear-gradient(135deg, #ff6b81 0%, #fe587f 100%);
-    border: none;
-    box-shadow: 0 4px 20px rgba(254, 88, 127, 0.4);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2ed573 0%, #26c666 100%);
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 24px rgba(46, 213, 115, 0.5), inset 0 2px 0 rgba(255,255,255,0.2);
   }
 
   .swipe-action-btn.like svg {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     color: #fff;
+    fill: #fff;
   }
 
   .swipe-action-btn.like:active {
-    background: linear-gradient(135deg, #ff5570 0%, #e84a6f 100%);
+    background: linear-gradient(135deg, #26b365 0%, #1fa855 100%);
+    transform: scale(0.92);
   }
 
   /* Hide old elements */

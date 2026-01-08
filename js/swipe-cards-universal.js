@@ -239,6 +239,7 @@
             ${lastFav ? `<img src="${lastFav.image}" alt="" class="fav-thumb-img">` : '<div class="fav-thumb-empty"></div>'}
             <svg class="fav-thumb-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </div>
+          ${favs.length > 0 ? `<span class="fav-count">${favs.length}</span>` : ''}
         </button>
       </div>
       <div class="swipe-card-stack"></div>
@@ -513,6 +514,7 @@
   function updateFavoritesUI() {
     const favs = getFavorites();
     const thumbWrap = document.querySelector('.fav-thumb-wrap');
+    const favBtn = document.querySelector('.swipe-favorites-btn');
 
     if (thumbWrap) {
       const lastFav = favs.length > 0 ? favs[favs.length - 1] : null;
@@ -520,6 +522,21 @@
         ${lastFav ? `<img src="${lastFav.image}" alt="" class="fav-thumb-img">` : '<div class="fav-thumb-empty"></div>'}
         <svg class="fav-thumb-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       `;
+    }
+
+    // Update count badge
+    if (favBtn) {
+      let countEl = favBtn.querySelector('.fav-count');
+      if (favs.length > 0) {
+        if (!countEl) {
+          countEl = document.createElement('span');
+          countEl.className = 'fav-count';
+          favBtn.appendChild(countEl);
+        }
+        countEl.textContent = favs.length;
+      } else if (countEl) {
+        countEl.remove();
+      }
     }
 
     // Update drawer if open
