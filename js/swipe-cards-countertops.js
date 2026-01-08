@@ -34,33 +34,53 @@
     // Initialize Supabase
     await initSupabase();
 
-    // Get all product items
-    const items = materialsList.querySelectorAll('.materials_item, .w-dyn-item');
+    // Get all product items - countertops use w-dyn-item directly
+    const items = materialsList.querySelectorAll('[role="listitem"].w-dyn-item');
     if (items.length === 0) return;
 
-    // Build cards data
+    console.log('Swipe Cards: Found', items.length, 'countertop items');
+
+    // Build cards data - countertops have different structure
     items.forEach((item, index) => {
-      const link = item.querySelector('a');
-      const images = item.querySelectorAll('img');
+      // Link
+      const link = item.querySelector('a.materials_item-link');
+
+      // Images
+      const images = item.querySelectorAll('.materials_image-wrapper img');
+
+      // Title - first Keyword field found
       const title = item.querySelector('[fs-cmsfilter-field="Keyword"]');
-      const material = item.querySelector('[fs-cmsfilter-field="material"], [fs-cmsfilter-field="Material"]');
-      const color = item.querySelector('[fs-cmsfilter-field="Main Color"]');
+
+      // Material and Brand - search anywhere in item
+      const material = item.querySelector('[fs-cmsfilter-field="Material"]');
       const brand = item.querySelector('[fs-cmsfilter-field="Brand"]');
+
+      // Style and Color - in hidden div or anywhere
       const style = item.querySelector('[fs-cmsfilter-field="Style"]');
+      const color = item.querySelector('[fs-cmsfilter-field="Main Color"]');
+
+      // Get the best image (primary or first)
+      let imageUrl = '';
+      if (images.length > 0) {
+        const primaryImg = Array.from(images).find(img => img.classList.contains('is-primary'));
+        imageUrl = primaryImg ? primaryImg.src : images[0].src;
+      }
 
       cards.push({
         id: index,
         href: link ? link.href : '#',
-        image: images[1] ? images[1].src : (images[0] ? images[0].src : ''),
+        image: imageUrl,
         title: title ? title.textContent.trim() : 'Countertop',
         material: material ? material.textContent.trim() : '',
-        color: color ? color.textContent.trim() : '',
         brand: brand ? brand.textContent.trim() : '',
+        color: color ? color.textContent.trim() : '',
         style: style ? style.textContent.trim() : ''
       });
     });
 
     if (cards.length === 0) return;
+
+    console.log('Swipe Cards: Built', cards.length, 'cards');
 
     // Load existing favorites
     await loadFavorites();
@@ -116,7 +136,7 @@
   };
 
   function addHeartIconsToGrid() {
-    const items = document.querySelectorAll('.materials_item, .w-dyn-item');
+    const items = document.querySelectorAll('.materials_list [role="listitem"].w-dyn-item');
 
     items.forEach((item, index) => {
       // Skip if already has heart
@@ -195,21 +215,6 @@
     }
 
     saveToLocalStorage();
-  }
-
-  // Also add hearts when on desktop (no overlay shown)
-  function initDesktopHearts() {
-    if (window.innerWidth > 767) {
-      // On desktop, just add hearts to grid
-      setTimeout(addHeartIconsToGrid, 500);
-    }
-  }
-
-  // Run on desktop after cards are loaded
-  if (window.innerWidth > 767) {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initDesktopHearts, 1000);
-    });
   }
 
   async function initSupabase() {
@@ -335,9 +340,6 @@
   }
 
   function createSwipeUI() {
-    const container = document.querySelector('.materials_collection-list-wrapper');
-    if (!container) return;
-
     // Add swipe mode class (for hiding chatbots)
     document.body.classList.add('swipe-mode');
 
@@ -502,6 +504,8 @@
   function handleTouchStart(e) {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    currentX = startX;
+    currentY = startY;
     isDragging = true;
     this.classList.add('dragging');
   }
@@ -515,7 +519,7 @@
     const deltaX = currentX - startX;
     const deltaY = currentY - startY;
 
-    // Only allow horizontal swipe
+    // Only allow horizontal swipe if mostly horizontal
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
       updateCardPosition(this, deltaX);
@@ -534,6 +538,8 @@
   function handleMouseDown(e) {
     startX = e.clientX;
     startY = e.clientY;
+    currentX = startX;
+    currentY = startY;
     isDragging = true;
     this.classList.add('dragging');
   }
