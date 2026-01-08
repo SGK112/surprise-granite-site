@@ -2584,9 +2584,17 @@
       setupDashboard();
 
       // Handle hash navigation (e.g., /account/#favorites)
+      handleHashNavigation();
+
+      // Listen for hash changes
+      window.addEventListener('hashchange', handleHashNavigation);
+    }
+
+    function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['favorites', 'profile', 'leads', 'invoices', 'products'].includes(hash)) {
-        setTimeout(() => showPage(hash), 100);
+      const validPages = ['favorites', 'profile', 'leads', 'invoices', 'products', 'dashboard', 'wallet', 'orders', 'messages'];
+      if (hash && validPages.includes(hash)) {
+        showPage(hash);
       }
     }
 
@@ -3140,6 +3148,11 @@
     }
 
     function showPage(page) {
+      // Update URL hash without triggering hashchange
+      if (window.location.hash !== `#${page}`) {
+        history.replaceState(null, '', `#${page}`);
+      }
+
       // Update nav
       document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.page === page);
@@ -3154,7 +3167,7 @@
       const titles = {
         'dashboard': 'Dashboard',
         'profile': 'My Profile',
-        'favorites': 'Favorites',
+        'favorites': 'My Favorites',
         'leads': 'Leads',
         'invoices': 'Invoices',
         'wallet': 'Wallet',
