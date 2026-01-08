@@ -407,7 +407,7 @@
     const rotation = deltaX * 0.08;
     const scale = 1 - Math.min(Math.abs(deltaX) * 0.0005, 0.05);
 
-    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(${deltaY * 0.3}px) rotate(${rotation}deg) scale(${scale})`;
+    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(-50%) rotate(${rotation}deg) scale(${scale})`;
 
     const threshold = 40;
     if (deltaX > threshold) {
@@ -441,7 +441,7 @@
       setTimeout(() => handleNope(), 250);
     } else {
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.style.transform = 'translateX(-50%)';
+      this.style.transform = 'translate(-50%, -50%)';
       this.classList.remove('swiping-left', 'swiping-right');
     }
   }
