@@ -10,13 +10,6 @@
   // Only run on mobile
   if (window.innerWidth > 767) return;
 
-  // Check if user already exited swipe mode this session
-  const SWIPE_EXITED_KEY = 'sg_swipe_exited';
-  if (sessionStorage.getItem(SWIPE_EXITED_KEY) === 'true') {
-    console.log('Swipe Cards: User exited this session, showing grid');
-    return;
-  }
-
   // Supabase config
   const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
@@ -71,17 +64,61 @@
 
     if (cards.length === 0) return;
 
-    // Add swipe-enabled class to hide grid
-    materialsList.classList.add('swipe-enabled');
-
     // Load existing favorites
     await loadFavorites();
+
+    // Show intro overlay for user to choose
+    showIntroOverlay();
+  }
+
+  function showIntroOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'swipe-intro-overlay';
+    overlay.innerHTML = `
+      <div class="swipe-intro-content">
+        <div class="swipe-intro-icon">🏠</div>
+        <h2 class="swipe-intro-title">Browse Flooring</h2>
+        <p class="swipe-intro-subtitle">${cards.length} floors to explore</p>
+        <div class="swipe-intro-options">
+          <button class="swipe-intro-btn swipe-mode-btn" onclick="window.startSwipeMode()">
+            <span class="intro-btn-icon">👆</span>
+            <span class="intro-btn-text">Swipe Mode</span>
+            <span class="intro-btn-desc">Tinder-style browsing</span>
+          </button>
+          <button class="swipe-intro-btn scroll-mode-btn" onclick="window.startScrollMode()">
+            <span class="intro-btn-icon">📜</span>
+            <span class="intro-btn-text">Scroll Mode</span>
+            <span class="intro-btn-desc">Classic grid view</span>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  window.startSwipeMode = function() {
+    // Remove intro overlay
+    const overlay = document.querySelector('.swipe-intro-overlay');
+    if (overlay) overlay.remove();
+
+    // Hide grid, show swipe UI
+    const materialsList = document.querySelector('.materials_list');
+    if (materialsList) materialsList.classList.add('swipe-enabled');
 
     // Create swipe UI
     createSwipeUI();
     renderCards();
     showInstructions();
-  }
+  };
+
+  window.startScrollMode = function() {
+    // Remove intro overlay
+    const overlay = document.querySelector('.swipe-intro-overlay');
+    if (overlay) overlay.remove();
+
+    // Grid is already visible, nothing else needed
+    console.log('Swipe Cards: User chose scroll mode');
+  };
 
   async function initSupabase() {
     try {
