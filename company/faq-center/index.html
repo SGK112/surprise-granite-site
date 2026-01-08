@@ -120,7 +120,113 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 <script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3c1613b6372611b29b3%2Fbold_scroll_animations-2.0.0.js"></script>
 <script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3cb282ad3bfc564547a%2Fbold_navbar_effect-2.0.0.js"></script><!-- [Attributes by Finsweet] CMS Filter -->
 <script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsfilter@1/cmsfilter.js"></script><script type="text/javascript">window.__WEBFLOW_CURRENCY_SETTINGS = {"currencyCode":"USD","symbol":"$","decimal":".","fractionDigits":2,"group":",","template":"{{wf {\"path\":\"symbol\",\"type\":\"PlainText\"} }} {{wf {\"path\":\"amount\",\"type\":\"CommercePrice\"} }} {{wf {\"path\":\"currencyCode\",\"type\":\"PlainText\"} }}","hideDecimalForWholeNumbers":false};</script><link rel="stylesheet" href="/css/mobile-optimizations.css">
-</head><body><div class="page-wrapper"><div class="global-styles w-embed w-iframe"><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3XFDN8"
+<!-- Custom Mobile Menu Styles -->
+<style>
+.sg-mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  z-index: 100000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.sg-mobile-menu-overlay.open { display: flex; flex-direction: column; }
+.sg-mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sg-mobile-menu-logo { height: 32px; filter: brightness(0) invert(1); }
+.sg-mobile-menu-close {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+.sg-mobile-menu-close svg { width: 28px; height: 28px; color: #fff; }
+.sg-mobile-menu-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  flex: 1;
+}
+.sg-mobile-menu-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  text-decoration: none;
+  padding: 16px 0;
+  font-size: 18px;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  transition: color 0.2s ease;
+}
+.sg-mobile-menu-nav a:hover { color: #f9cb00; }
+.sg-mobile-menu-nav a svg { width: 22px; height: 22px; opacity: 0.7; }
+.sg-mobile-menu-nav a.highlight {
+  background: #f9cb00;
+  color: #1a1a2e;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-top: 16px;
+  justify-content: center;
+  font-weight: 600;
+  border-bottom: none;
+}
+.sg-mobile-menu-nav a.highlight:hover { background: #e6b800; }
+.sg-mobile-menu-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sg-mobile-menu-footer a {
+  display: block;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.sg-mobile-menu-phone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f9cb00 !important;
+  font-weight: 600;
+  font-size: 18px !important;
+  padding: 16px 0 !important;
+}
+.sg-mobile-menu-phone svg { width: 22px; height: 22px; }
+@media (min-width: 992px) { .sg-mobile-menu-overlay { display: none !important; } }
+</style>
+</head><body><!-- Custom Mobile Menu Overlay -->
+<div class="sg-mobile-menu-overlay" id="sgMobileMenu">
+  <div class="sg-mobile-menu-header">
+    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="sg-mobile-menu-logo">
+    <button class="sg-mobile-menu-close" onclick="closeSgMobileMenu()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <nav class="sg-mobile-menu-nav">
+    <a href="/materials/all-countertops"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/></svg>Countertops</a>
+    <a href="/materials/flooring"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4h16v16H4z M4 10h16 M10 4v16"/></svg>Flooring</a>
+    <a href="/materials/all-tile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"/></svg>Tile</a>
+    <a href="/shop"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>Shop</a>
+    <a href="/company/project-gallery"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Gallery</a>
+    <a href="/tools"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>Tools</a>
+    <a href="/contact-us"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Contact</a>
+    <a href="tel:+16028333189" class="sg-mobile-menu-phone"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>(602) 833-3189</a>
+    <a href="/get-a-free-estimate" class="highlight">Get Free Estimate</a>
+  </nav>
+  <div class="sg-mobile-menu-footer">
+    <a href="/account/">Client Portal</a>
+    <a href="/sign-up/">Create Account</a>
+    <a href="/blog">Blog</a>
+  </div>
+</div>
+<div class="page-wrapper"><div class="global-styles w-embed w-iframe"><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3XFDN8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <style>
@@ -1885,6 +1991,45 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
             ticking=true;
         }
     },{passive:true});
+})();
+</script>
+<!-- Custom Mobile Menu Script -->
+<script>
+(function() {
+  function openSgMobileMenu() {
+    var menu = document.getElementById('sgMobileMenu');
+    if (menu) {
+      menu.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  window.openSgMobileMenu = openSgMobileMenu;
+
+  function closeSgMobileMenu() {
+    var menu = document.getElementById('sgMobileMenu');
+    if (menu) {
+      menu.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+  window.closeSgMobileMenu = closeSgMobileMenu;
+
+  // Intercept Webflow hamburger click
+  document.addEventListener('DOMContentLoaded', function() {
+    var hamburger = document.querySelector('.navbar_menu-button');
+    if (hamburger && window.innerWidth < 992) {
+      hamburger.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openSgMobileMenu();
+      });
+    }
+  });
+
+  // Close on escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSgMobileMenu();
+  });
 })();
 </script>
 </body></html>
