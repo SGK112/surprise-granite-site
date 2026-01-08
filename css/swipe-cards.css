@@ -391,15 +391,15 @@
   }
 
   /* ==========================================
-     ACTION BUTTONS - Glassmorphic
+     ACTION BUTTONS - Compact
      ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 24px;
-    padding: 20px 20px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    gap: 20px;
+    padding: 16px 20px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -422,10 +422,10 @@
     transform: scale(0.92);
   }
 
-  /* UNDO - Glassmorphic with visible icon */
+  /* UNDO - Glassmorphic */
   .swipe-btn.undo {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -433,28 +433,39 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
 
-  .swipe-btn.undo svg {
-    width: 36px !important;
-    height: 36px !important;
-    stroke: #f9cb00 !important;
-    stroke-width: 3 !important;
-    fill: none !important;
+  .undo-icon {
+    font-size: 28px;
+    color: #f9cb00;
+    line-height: 1;
   }
 
   /* NOPE - Solid Red */
   .swipe-btn.nope {
-    width: 76px;
-    height: 76px;
+    width: 64px;
+    height: 64px;
     background: linear-gradient(145deg, #ff4d5a 0%, #e8414f 100%);
-    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+  }
+
+  .nope-icon {
+    font-size: 32px;
+    color: #fff;
+    font-weight: 300;
+    line-height: 1;
   }
 
   /* LIKE - Solid Yellow */
   .swipe-btn.like {
-    width: 76px;
-    height: 76px;
+    width: 64px;
+    height: 64px;
     background: linear-gradient(145deg, #f9cb00 0%, #e5b800 100%);
-    box-shadow: 0 8px 25px rgba(249, 203, 0, 0.4);
+    box-shadow: 0 6px 20px rgba(249, 203, 0, 0.4);
+  }
+
+  .like-icon {
+    font-size: 32px;
+    color: #1a1a2e;
+    line-height: 1;
   }
 
   /* ==========================================
@@ -479,35 +490,61 @@
   }
 
   /* ==========================================
-     SWIPE INSTRUCTIONS - Glassmorphic
+     SWIPE INSTRUCTIONS - Glassmorphic & Higher
      ========================================== */
   .swipe-instructions {
     position: fixed;
-    bottom: 220px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: #fff;
-    padding: 14px 24px;
-    border-radius: 30px;
-    font-size: 16px;
-    font-weight: 500;
-    white-space: nowrap;
+    padding: 18px 28px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
     z-index: 10000;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(249, 203, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     animation: fadeInUp 0.4s ease, fadeOut 0.4s ease 4s forwards;
+  }
+
+  .swipe-hint-left {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ff6b7a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .swipe-hint-text {
+    font-size: 20px;
+    font-weight: 800;
+    color: #f9cb00;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-style: italic;
+  }
+
+  .swipe-hint-right {
+    font-size: 14px;
+    font-weight: 700;
+    color: #4ade80;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(20px);
+      transform: translate(-50%, -40%);
     }
     to {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translate(-50%, -50%);
     }
   }
 

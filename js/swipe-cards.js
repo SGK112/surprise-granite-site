@@ -240,21 +240,13 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#f9cb00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="1 4 1 10 7 10"/>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-            </svg>
+            <span class="undo-icon">↩</span>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+            <span class="nope-icon">✕</span>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg viewBox="0 0 24 24" width="42" height="42" fill="#1a1a2e">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
+            <span class="like-icon">♥</span>
           </button>
         </div>
         ${loginPrompt}
@@ -597,7 +589,7 @@
 
     const toast = document.createElement('div');
     toast.className = 'swipe-instructions';
-    toast.textContent = '👈 Swipe to browse 👉';
+    toast.innerHTML = '<span class="swipe-hint-left">👈 NOPE</span><span class="swipe-hint-text">Swipe</span><span class="swipe-hint-right">LOVE 👉</span>';
     container.appendChild(toast);
 
     setTimeout(() => toast.remove(), 4500);
