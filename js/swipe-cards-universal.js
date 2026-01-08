@@ -43,12 +43,51 @@
   let startX, startY, currentX, currentY;
   let isDragging = false;
 
-  // Get favorites from unified system
+  // Get ALL favorites combined from unified system
   function getFavorites() {
+    if (window.SGFavorites) {
+      // Get ALL favorites from ALL product types for unified display
+      const allFavs = window.SGFavorites.getAll();
+      const combined = [];
+      Object.keys(allFavs).forEach(type => {
+        const items = allFavs[type] || [];
+        items.forEach(item => {
+          combined.push({ ...item, productType: type });
+        });
+      });
+      return combined;
+    }
+    // Fallback to localStorage - try to get from all types
+    const types = ['countertop', 'flooring', 'tile', 'cabinet', 'sink', 'shop'];
+    const combined = [];
+    types.forEach(type => {
+      try {
+        const items = JSON.parse(localStorage.getItem(`sg_favorites_${type}`)) || [];
+        items.forEach(item => {
+          combined.push({ ...item, productType: type });
+        });
+      } catch (e) {}
+    });
+    // Also check unified storage
+    try {
+      const unified = JSON.parse(localStorage.getItem('sg_all_favorites')) || {};
+      Object.keys(unified).forEach(type => {
+        (unified[type] || []).forEach(item => {
+          // Only add if not already present
+          if (!combined.some(c => c.title === item.title)) {
+            combined.push({ ...item, productType: type });
+          }
+        });
+      });
+    } catch (e) {}
+    return combined;
+  }
+
+  // Get favorites for current product type only (for checking if item is favorited)
+  function getFavoritesByType() {
     if (window.SGFavorites) {
       return window.SGFavorites.getByType(productType) || [];
     }
-    // Fallback to localStorage
     try {
       return JSON.parse(localStorage.getItem(`sg_favorites_${productType}`)) || [];
     } catch (e) {
@@ -171,7 +210,7 @@
     overlay.innerHTML = `
       <div class="swipe-intro-content">
         <div class="swipe-intro-brand">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="intro-brand-logo">
+          <img src="/images/sg-house-icon-gold.svg" alt="Surprise Granite" class="intro-brand-icon">
         </div>
         <p class="swipe-intro-subtitle">${cards.length} ${productLabel}</p>
         <div class="swipe-intro-options">
@@ -232,7 +271,8 @@
           <span>Scroll</span>
         </button>
         <div class="swipe-topbar-brand">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="brand-logo">
+          <img src="/images/sg-house-icon-gold.svg" alt="SG" class="brand-icon">
+          <span class="brand-text">Surprise Granite</span>
         </div>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
           <div class="fav-thumb-wrap">
