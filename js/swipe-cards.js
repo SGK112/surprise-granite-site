@@ -240,8 +240,8 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 4v6h6"/>
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#f9cb00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
           </button>

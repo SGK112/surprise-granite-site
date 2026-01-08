@@ -1,6 +1,6 @@
 /**
- * Swipe Cards - Clean Stack Design
- * Visible card edges, large icons, glassmorphic tooltip
+ * Swipe Cards - Glassmorphic Design
+ * Large cards, smooth transitions, no flashing
  */
 
 /* Desktop: Hidden */
@@ -45,14 +45,14 @@
     width: 100vw !important;
     height: 100vh !important;
     height: 100dvh !important;
-    background: linear-gradient(165deg, #1e1e2f 0%, #15152a 100%) !important;
+    background: linear-gradient(170deg, #1a1a2e 0%, #16213e 100%) !important;
     z-index: 999999 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
   /* ==========================================
-     TOP BAR
+     TOP BAR - Glassmorphic
      ========================================== */
   .swipe-topbar {
     display: flex;
@@ -60,7 +60,10 @@
     align-items: center;
     padding: 12px 16px;
     padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
   }
 
@@ -127,30 +130,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 16px;
+    padding: 12px;
     min-height: 0;
     overflow: visible;
   }
 
   /* ==========================================
-     CARDS - Visible Stack with Edges
+     CARDS - LARGE, No Flash
      ========================================== */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 40px);
-    max-width: 380px;
+    width: calc(100% - 24px);
+    max-width: 100%;
     background: #fff;
     border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     cursor: grab;
     user-select: none;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
     display: flex;
     flex-direction: column;
     left: 50%;
     transform: translateX(-50%);
+    /* Smooth transform only, no opacity transition to prevent flash */
+    transition: transform 0.25s ease-out;
+    will-change: transform;
   }
 
   .swipe-card:active {
@@ -159,51 +163,41 @@
 
   /* STACK - Cards offset to show edges */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) translateY(8px) scale(0.97);
+    transform: translateX(-50%) translateY(6px) scale(0.98);
     z-index: -1;
-    opacity: 1;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) translateY(16px) scale(0.94);
+    transform: translateX(-50%) translateY(12px) scale(0.96);
     z-index: -2;
-    opacity: 1;
   }
 
   .swipe-card:nth-child(4) {
-    transform: translateX(-50%) translateY(24px) scale(0.91);
+    transform: translateX(-50%) translateY(18px) scale(0.94);
     z-index: -3;
-    opacity: 0.9;
   }
 
-  .swipe-card:nth-child(5) {
-    transform: translateX(-50%) translateY(32px) scale(0.88);
+  .swipe-card:nth-child(n+5) {
+    transform: translateX(-50%) translateY(22px) scale(0.92);
     z-index: -4;
-    opacity: 0.7;
-  }
-
-  .swipe-card:nth-child(n+6) {
-    transform: translateX(-50%) translateY(36px) scale(0.86);
-    z-index: -5;
-    opacity: 0;
-    pointer-events: none;
+    visibility: hidden;
   }
 
   .swipe-card.dragging {
-    transition: none;
+    transition: none !important;
     z-index: 100;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   }
 
   /* ==========================================
-     CARD IMAGE
+     CARD IMAGE - Larger
      ========================================== */
   .swipe-card-image {
     width: 100%;
-    height: 220px;
+    height: 320px;
     object-fit: cover;
     pointer-events: none;
-    background: #f0f0f0;
+    background: #e8e8e8;
   }
 
   /* ==========================================
@@ -297,7 +291,7 @@
   }
 
   .swipe-card-spec:nth-child(4) {
-    background: linear-gradient(145deg, #fce4ec 0%, #f8bbd9 100%);
+    background: linear-gradient(145deg, #fce4ec 0%, #f8bbd0 100%);
   }
 
   .spec-label {
@@ -378,35 +372,38 @@
   }
 
   /* ==========================================
-     SWIPE ANIMATIONS
+     SWIPE ANIMATIONS - No flash
      ========================================== */
   .swipe-card.swipe-out-left {
-    animation: swipeLeft 0.3s ease forwards;
+    animation: swipeLeft 0.28s ease-out forwards;
   }
 
   .swipe-card.swipe-out-right {
-    animation: swipeRight 0.3s ease forwards;
+    animation: swipeRight 0.28s ease-out forwards;
   }
 
   @keyframes swipeLeft {
-    to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+    to { transform: translateX(-120%) rotate(-15deg); }
   }
 
   @keyframes swipeRight {
-    to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+    to { transform: translateX(120%) rotate(15deg); }
   }
 
   /* ==========================================
-     ACTION BUTTONS - Large Icons, Glass BG
+     ACTION BUTTONS - Glassmorphic
      ========================================== */
   .swipe-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 28px;
-    padding: 24px 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    background: transparent;
+    gap: 24px;
+    padding: 20px 20px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
   }
 
@@ -422,28 +419,29 @@
   }
 
   .swipe-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
 
-  /* Undo - Glass */
+  /* UNDO - Glassmorphic with visible icon */
   .swipe-btn.undo {
-    width: 56px;
-    height: 56px;
-    background: rgba(255, 255, 255, 0.1);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 2px solid rgba(249, 203, 0, 0.5);
+    border: 2px solid rgba(249, 203, 0, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
 
   .swipe-btn.undo svg {
-    width: 28px;
-    height: 28px;
-    stroke: #f9cb00;
-    stroke-width: 2.5;
-    fill: none;
+    width: 36px !important;
+    height: 36px !important;
+    stroke: #f9cb00 !important;
+    stroke-width: 3 !important;
+    fill: none !important;
   }
 
-  /* NOPE - Solid Red, BIG X */
+  /* NOPE - Solid Red */
   .swipe-btn.nope {
     width: 76px;
     height: 76px;
@@ -451,27 +449,12 @@
     box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
   }
 
-  .swipe-btn.nope svg {
-    width: 42px;
-    height: 42px;
-    stroke: #fff;
-    stroke-width: 4;
-    fill: none;
-  }
-
-  /* LIKE - Yellow, BIG Heart */
+  /* LIKE - Solid Yellow */
   .swipe-btn.like {
     width: 76px;
     height: 76px;
     background: linear-gradient(145deg, #f9cb00 0%, #e5b800 100%);
     box-shadow: 0 8px 25px rgba(249, 203, 0, 0.4);
-  }
-
-  .swipe-btn.like svg {
-    width: 42px;
-    height: 42px;
-    fill: #1a1a2e;
-    stroke: none;
   }
 
   /* ==========================================
@@ -503,13 +486,13 @@
     bottom: 220px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: #fff;
     padding: 14px 24px;
     border-radius: 30px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     white-space: nowrap;
     z-index: 10000;
@@ -543,13 +526,15 @@
     bottom: 220px;
     left: 50%;
     transform: translateX(-50%);
-    background: #fff;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     color: #1a1a2e;
     padding: 20px 24px;
     border-radius: 20px;
     text-align: center;
     z-index: 10000;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
     max-width: 300px;
     width: calc(100% - 40px);
     animation: fadeInUp 0.3s ease;
@@ -573,7 +558,7 @@
   }
 
   /* ==========================================
-     FAVORITES DRAWER
+     FAVORITES DRAWER - Glassmorphic
      ========================================== */
   .favorites-drawer {
     display: block;
@@ -581,9 +566,9 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(20, 20, 35, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(26, 26, 46, 0.95);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
     border-radius: 24px 24px 0 0;
     box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.4);
     transform: translateY(100%);
