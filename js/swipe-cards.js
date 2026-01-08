@@ -371,7 +371,7 @@
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
           <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
-            <span class="undo-icon">↩</span>
+            <span class="undo-icon">↺</span>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
             <span class="nope-icon">✕</span>
