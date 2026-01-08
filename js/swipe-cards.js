@@ -10,6 +10,13 @@
   // Only run on mobile
   if (window.innerWidth > 767) return;
 
+  // Check if user already exited swipe mode this session
+  const SWIPE_EXITED_KEY = 'sg_swipe_exited';
+  if (sessionStorage.getItem(SWIPE_EXITED_KEY) === 'true') {
+    console.log('Swipe Cards: User exited this session, showing grid');
+    return;
+  }
+
   // Supabase config
   const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
@@ -232,21 +239,20 @@
         </div>
         <div class="swipe-card-stack"></div>
         <div class="swipe-actions">
-          <button class="swipe-btn undo" title="Undo" onclick="window.swipeUndo()">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 10h10a5 5 0 0 1 5 5v2"/>
-              <path d="M3 10l4-4"/>
-              <path d="M3 10l4 4"/>
+          <button class="swipe-btn undo" title="Undo Last" onclick="window.swipeUndo()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f9cb00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 4v6h6"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
             </svg>
           </button>
           <button class="swipe-btn nope" title="Skip" onclick="window.swipeLeft()">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
           <button class="swipe-btn like" title="Save" onclick="window.swipeRight()">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="#ffffff">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="#1a1a2e">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
@@ -636,6 +642,9 @@
   };
 
   window.exitSwipeMode = function() {
+    // Mark that user exited - don't show swipe mode again this session
+    sessionStorage.setItem('sg_swipe_exited', 'true');
+
     // Remove swipe mode class
     document.body.classList.remove('swipe-mode');
 
@@ -653,23 +662,19 @@
     window.scrollTo(0, 0);
   };
 
-  // Reinitialize on resize (for orientation change)
+  // Handle resize (for orientation change) - don't re-trigger if user exited
   let resizeTimeout;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(function() {
-      if (window.innerWidth <= 767) {
-        const container = document.querySelector('.swipe-cards-container');
-        if (!container) {
-          location.reload();
-        }
-      } else {
+      if (window.innerWidth > 767) {
         // On desktop, show regular grid
         const materialsList = document.querySelector('.materials_list');
         if (materialsList) materialsList.classList.remove('swipe-enabled');
         const swipeContainer = document.querySelector('.swipe-cards-container');
         if (swipeContainer) swipeContainer.style.display = 'none';
       }
+      // Don't reload on mobile - respect user's exit choice
     }, 250);
   });
 
