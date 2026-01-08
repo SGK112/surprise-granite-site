@@ -1,32 +1,16 @@
 /**
- * Swipe Cards - Modern Minimal Design
- * Clean, robust UI with smooth animations
+ * Swipe Cards - Clean Centered Design
+ * Simple, centered, grid-like layout
  */
 
 /* ============================================
-   CSS VARIABLES - Design Tokens
+   CSS VARIABLES
    ============================================ */
 :root {
   --sg-primary: #f9cb00;
-  --sg-primary-hover: #ffdb4d;
-  --sg-accent: #ff6b7a;
-  --sg-accent-hover: #ff8a96;
+  --sg-accent: #ff4757;
   --sg-dark: #1a1a2e;
-  --sg-darker: #0d0d15;
   --sg-text: #fff;
-  --sg-text-muted: rgba(255, 255, 255, 0.6);
-  --sg-glass: rgba(26, 26, 46, 0.85);
-  --sg-glass-light: rgba(255, 255, 255, 0.08);
-  --sg-border: rgba(255, 255, 255, 0.1);
-  --sg-border-accent: rgba(249, 203, 0, 0.25);
-  --sg-radius-sm: 10px;
-  --sg-radius-md: 16px;
-  --sg-radius-lg: 24px;
-  --sg-radius-full: 50%;
-  --sg-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --sg-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
-  --sg-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --sg-transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Desktop: Hidden */
@@ -37,50 +21,37 @@
 }
 
 /* ============================================
-   GRID HEART ICONS - All screen sizes
+   GRID HEART BUTTONS - All screens
    ============================================ */
 .grid-heart-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--sg-radius-full);
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  font-size: 22px;
+  background: #fff;
+  font-size: 20px;
   color: #ccc;
   cursor: pointer;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--sg-transition);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.grid-heart-btn:hover {
-  transform: scale(1.08);
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
 }
 
 .grid-heart-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .grid-heart-btn.is-favorited {
   color: var(--sg-accent);
-  background: #fff;
 }
 
-.grid-heart-btn.is-favorited:hover {
-  color: var(--sg-accent-hover);
-}
-
-/* Double-tap heart animation */
+/* Double-tap heart */
 .double-tap-heart {
   position: absolute;
   top: 50%;
@@ -90,83 +61,52 @@
   color: #ff4757;
   pointer-events: none;
   z-index: 100;
-  animation: doubleTapPop 0.6s ease forwards;
-  text-shadow: 0 4px 20px rgba(255, 71, 87, 0.5);
+  animation: heartPop 0.6s ease forwards;
 }
 
-@keyframes doubleTapPop {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
+@keyframes heartPop {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
 /* ============================================
-   MOBILE - FULL SCREEN APP
+   MOBILE STYLES
    ============================================ */
 @media (max-width: 767px) {
 
-  /* ==========================================
-     INTRO OVERLAY - Glassmorphic
-     ========================================== */
+  /* INTRO OVERLAY */
   .swipe-intro-overlay {
     display: flex !important;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
     z-index: 999999;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    animation: introFadeIn 0.3s ease-out;
-  }
-
-  @keyframes introFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    padding: 20px;
   }
 
   .swipe-intro-content {
     text-align: center;
-    max-width: 320px;
+    max-width: 300px;
     width: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 40px 28px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    background: var(--sg-dark);
+    border-radius: 20px;
+    padding: 32px 24px;
   }
 
   .swipe-intro-title {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
     color: #fff;
-    margin: 0 0 6px;
-    letter-spacing: -0.3px;
+    margin: 0 0 8px;
   }
 
   .swipe-intro-subtitle {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0 0 36px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin: 0 0 28px;
   }
 
   .swipe-intro-options {
@@ -176,60 +116,37 @@
   }
 
   .swipe-intro-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 100%;
-    padding: 16px 24px;
-    border-radius: 16px;
+    padding: 14px 20px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .swipe-intro-btn:active {
-    transform: scale(0.97);
+    font-size: 16px;
+    font-weight: 600;
   }
 
   .swipe-mode-btn {
     background: var(--sg-primary);
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
-  }
-
-  .swipe-mode-btn:active {
-    background: var(--sg-primary-hover);
-  }
-
-  .swipe-mode-btn .intro-btn-text {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    color: #1a1a2e;
+    color: var(--sg-dark);
   }
 
   .scroll-mode-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .scroll-mode-btn:active {
-    background: rgba(255, 255, 255, 0.25);
-  }
-
-  .scroll-mode-btn .intro-btn-text {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 17px;
-    font-weight: 500;
+    background: rgba(255,255,255,0.1);
     color: #fff;
   }
 
+  .intro-btn-text {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* HIDE PAGE IN SWIPE MODE */
   body.swipe-mode {
     overflow: hidden !important;
   }
 
   body.swipe-mode .page-wrapper {
-    visibility: hidden !important;
+    display: none !important;
   }
 
   body.swipe-mode #chatbase-bubble-button,
@@ -237,56 +154,49 @@
     display: none !important;
   }
 
-  .materials_list.swipe-enabled {
-    display: none !important;
-  }
-
-  /* ==========================================
-     FULL SCREEN CONTAINER
-     ========================================== */
+  /* MAIN CONTAINER */
   .swipe-cards-container {
     display: flex !important;
-    flex-direction: column !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    background: #0a0a0f !important;
-    z-index: 999999 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    background: #0a0a0f;
+    z-index: 999999;
   }
 
-  /* ==========================================
-     TOP BAR - Glassmorphic Header
-     ========================================== */
+  /* TOP BAR */
   .swipe-topbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    background: rgba(10, 10, 15, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 100;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    background: var(--sg-dark);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .swipe-back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .swipe-back-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: #fff;
   }
 
   .swipe-topbar-title {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
     color: #fff;
-    letter-spacing: -0.2px;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -296,697 +206,394 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
     font-size: 13px;
     font-weight: 500;
-    color: #fff;
     cursor: pointer;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .swipe-favorites-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.2);
   }
 
   .swipe-favorites-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: var(--sg-primary);
   }
 
   .swipe-favorites-btn .fav-count {
-    min-width: 20px;
-    height: 20px;
     background: var(--sg-primary);
     color: var(--sg-dark);
-    padding: 0 6px;
-    border-radius: 10px;
-    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 11px;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  /* ==========================================
-     CARD STACK AREA
-     ========================================== */
+  /* CARD STACK - CENTERED */
   .swipe-card-stack {
     flex: 1;
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
-    min-height: 0;
-    overflow: visible;
+    padding: 16px;
+    position: relative;
   }
 
-  /* ==========================================
-     CARDS - Glassmorphic Premium Design
-     ========================================== */
+  /* CARDS - CENTERED & CLEAN */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 24px);
-    max-width: 380px;
-    height: auto;
-    max-height: calc(100vh - 200px);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.2),
-      0 24px 64px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    width: calc(100% - 32px);
+    max-width: 340px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
     overflow: hidden;
     cursor: grab;
     user-select: none;
-    display: flex;
-    flex-direction: column;
     left: 50%;
-    transform: translateX(-50%);
-    will-change: transform;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .swipe-card:active {
     cursor: grabbing;
   }
 
-  /* STACK - Subtle depth with glass effect */
+  /* Stack effect */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) translateY(8px) scale(0.97);
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
     z-index: -1;
-    filter: brightness(0.95);
-    opacity: 0.9;
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) translateY(16px) scale(0.94);
+    transform: translate(-50%, calc(-50% + 16px)) scale(0.92);
     z-index: -2;
-    filter: brightness(0.9);
-    opacity: 0.7;
   }
 
   .swipe-card:nth-child(n+4) {
-    transform: translateX(-50%) translateY(24px) scale(0.91);
-    z-index: -3;
     visibility: hidden;
   }
 
   .swipe-card.dragging {
     transition: none !important;
     z-index: 100;
-    box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.25),
-      0 32px 80px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
-  /* ==========================================
-     CARD IMAGE
-     ========================================== */
+  /* CARD IMAGE */
   .swipe-card-image {
     width: 100%;
-    height: 280px;
+    height: 260px;
     object-fit: cover;
-    pointer-events: none;
-    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    display: block;
+    background: #eee;
   }
 
-  /* ==========================================
-     VIEW BUTTON - Glassmorphic Pill
-     ========================================== */
+  /* VIEW BUTTON */
   .swipe-card-view-btn {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    padding: 10px 16px;
-    background: rgba(26, 26, 46, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    top: 12px;
+    right: 12px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 20px;
+    text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    z-index: 10;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  }
-
-  .swipe-card-view-btn:active {
-    background: rgba(26, 26, 46, 0.9);
-    transform: scale(0.95);
+    gap: 4px;
   }
 
   .swipe-card-view-btn svg {
     width: 14px;
     height: 14px;
-    stroke: var(--sg-primary);
-    stroke-width: 2;
-    fill: none;
+    stroke: #fff;
   }
 
   .swipe-card-view-btn::after {
     content: 'View';
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     color: #fff;
   }
 
-  /* ==========================================
-     CARD CONTENT - Glassmorphic Modern
-     ========================================== */
+  /* CARD CONTENT */
   .swipe-card-content {
-    padding: 18px 20px 22px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,248,252,0.95) 100%);
-    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    padding: 16px;
+    background: #fff;
   }
 
   .swipe-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .swipe-card-title {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 19px;
-    font-weight: 700;
+    font-size: 17px;
+    font-weight: 600;
     color: #1a1a2e;
-    line-height: 1.25;
+    line-height: 1.3;
     flex: 1;
-    letter-spacing: -0.4px;
   }
 
   .swipe-card-material {
-    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+    background: var(--sg-dark);
     color: var(--sg-primary);
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 4px 8px;
+    border-radius: 6px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(26, 26, 46, 0.2);
   }
 
-  /* ==========================================
-     SPECS GRID - Glassmorphic Tags
-     ========================================== */
+  /* SPECS - GRID STYLE */
   .swipe-card-specs {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
   }
 
   .swipe-card-spec {
-    display: inline-flex;
-    flex-direction: column;
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(26, 26, 46, 0.06) 0%, rgba(26, 26, 46, 0.03) 100%);
-    border: 1px solid rgba(26, 26, 46, 0.08);
+    padding: 8px 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
   }
 
   .spec-label {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 9px;
-    color: #86868b;
+    color: #888;
     text-transform: uppercase;
     font-weight: 600;
-    letter-spacing: 0.4px;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
 
   .spec-value {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     color: #1a1a2e;
-    font-weight: 600;
+    font-weight: 500;
   }
 
-  /* ==========================================
-     SWIPE INDICATORS - Glassmorphic Icons
-     ========================================== */
+  /* SWIPE INDICATORS */
   .swipe-indicator {
     position: absolute;
-    width: 64px;
-    height: 64px;
-    border-radius: var(--sg-radius-full);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 0.2s, transform 0.2s;
     pointer-events: none;
     z-index: 20;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
   .swipe-indicator svg {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
   }
 
-  /* Like - Heart on right */
   .swipe-indicator.like {
-    right: 24px;
+    right: 16px;
     top: 50%;
-    transform: translateY(-50%) scale(0.7);
-    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
-    box-shadow:
-      0 4px 24px rgba(249, 203, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%);
+    background: var(--sg-primary);
   }
 
   .swipe-indicator.like svg {
     fill: var(--sg-dark);
-    width: 28px;
-    height: 28px;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
   }
 
-  /* Nope - X on left */
   .swipe-indicator.nope {
-    left: 24px;
+    left: 16px;
     top: 50%;
-    transform: translateY(-50%) scale(0.7);
-    background: linear-gradient(135deg, var(--sg-accent) 0%, #e85566 100%);
-    box-shadow:
-      0 4px 24px rgba(255, 107, 122, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%);
+    background: var(--sg-accent);
   }
 
   .swipe-indicator.nope svg {
     stroke: #fff;
-    stroke-width: 2.5;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+    stroke-width: 3;
   }
 
-  /* Super - Arrow up at top */
   .swipe-indicator.super {
-    top: 28%;
+    top: 20%;
     left: 50%;
-    transform: translateX(-50%) translateY(-20px) scale(0.7);
-    background: linear-gradient(135deg, var(--sg-primary) 0%, #ffdb4d 100%);
-    box-shadow:
-      0 4px 24px rgba(249, 203, 0, 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    transform: translateX(-50%);
+    background: var(--sg-primary);
   }
 
   .swipe-indicator.super svg {
     stroke: var(--sg-dark);
-    stroke-width: 2.5;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+    stroke-width: 3;
   }
 
-  /* Active states with bounce effect */
-  .swipe-card.swiping-right .swipe-indicator.like {
-    opacity: 1;
-    transform: translateY(-50%) scale(1.15);
-  }
-
-  .swipe-card.swiping-left .swipe-indicator.nope {
-    opacity: 1;
-    transform: translateY(-50%) scale(1.15);
-  }
-
+  .swipe-card.swiping-right .swipe-indicator.like,
+  .swipe-card.swiping-left .swipe-indicator.nope,
   .swipe-card.swiping-up .swipe-indicator.super {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1.15);
   }
 
-  /* ==========================================
-     SWIPE ANIMATIONS - No flash
-     ========================================== */
+  /* SWIPE ANIMATIONS */
   .swipe-card.swipe-out-left {
-    animation: swipeLeft 0.28s ease-out forwards;
+    animation: swipeLeft 0.3s ease-out forwards;
   }
 
   .swipe-card.swipe-out-right {
-    animation: swipeRight 0.28s ease-out forwards;
+    animation: swipeRight 0.3s ease-out forwards;
   }
 
   @keyframes swipeLeft {
-    to { transform: translateX(-120%) rotate(-15deg); }
+    to { transform: translate(-150%, -50%) rotate(-20deg); }
   }
 
   @keyframes swipeRight {
-    to { transform: translateX(120%) rotate(15deg); }
+    to { transform: translate(50%, -50%) rotate(20deg); }
   }
 
-  /* ==========================================
-     BOTTOM BAR - Glassmorphic
-     ========================================== */
+  /* BOTTOM BAR */
   .swipe-bottom-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    background: rgba(10, 10, 15, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 10;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    background: var(--sg-dark);
+    border-top: 1px solid rgba(255,255,255,0.1);
   }
 
   .swipe-counter {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
   }
 
-  .swipe-counter .current {
-    font-size: 20px;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .swipe-counter .divider {
-    opacity: 0.5;
-    margin: 0 2px;
-  }
-
-  .swipe-counter .total {
-    opacity: 0.7;
+  .swipe-counter strong {
+    color: var(--sg-primary);
   }
 
   .swipe-undo-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255,255,255,0.1);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
   }
 
   .swipe-undo-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     stroke: #fff;
   }
 
   .swipe-undo-btn:active {
-    transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255,255,255,0.2);
   }
 
-  .swipe-undo-btn:active svg {
-    stroke: var(--sg-primary);
-  }
-
-  /* ==========================================
-     BACK BUTTON - Glassmorphic
-     ========================================== */
-  .swipe-back-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .swipe-back-btn svg {
-    width: 22px;
-    height: 22px;
-    stroke: #fff;
-  }
-
-  .swipe-back-btn:active {
-    transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  /* ==========================================
-     SWIPE UP INDICATOR
-     ========================================== */
-  .swipe-indicator.super {
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: linear-gradient(135deg, var(--sg-primary), #e5b800);
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
-  }
-
-  .swipe-indicator.super svg {
-    stroke: var(--sg-dark);
-    transform: rotate(-90deg);
-  }
-
-  .swipe-card.swiping-up .swipe-indicator.super {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1.1);
-  }
-
-  /* ==========================================
-     COUNTER
-     ========================================== */
-  .swipe-counter {
-    text-align: center;
-    padding: 8px 16px;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 13px;
-    background: transparent;
-    flex-shrink: 0;
-    position: absolute;
-    bottom: calc(130px + env(safe-area-inset-bottom, 0px));
-    left: 0;
-    right: 0;
-  }
-
-  .swipe-counter strong {
-    color: #f9cb00;
-    font-weight: 600;
-  }
-
-  /* ==========================================
-     SWIPE INSTRUCTIONS - Glassmorphic Hints
-     ========================================== */
+  /* SWIPE HINTS */
   .swipe-instructions {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(26, 26, 46, 0.85);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    padding: 24px 32px;
-    border-radius: 28px;
+    background: var(--sg-dark);
+    padding: 20px 28px;
+    border-radius: 16px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 28px;
+    gap: 24px;
     z-index: 10000;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow:
-      0 16px 64px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    animation: hintFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
 
   .swipe-instructions.fade-out {
-    animation: hintFadeOut 0.35s ease-out forwards;
+    animation: fadeOut 0.3s ease forwards;
+  }
+
+  @keyframes fadeOut {
+    to { opacity: 0; transform: translate(-50%, -55%); }
   }
 
   .swipe-hint {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 8px;
+    gap: 8px;
   }
 
   .swipe-hint svg {
-    width: 36px;
-    height: 36px;
-    transition: transform 0.3s ease;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+    width: 28px;
+    height: 28px;
   }
 
   .swipe-hint span {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
   }
 
-  .swipe-hint.left svg {
-    stroke: var(--sg-accent);
-    stroke-width: 2.5;
-    animation: hintLeft 1.8s ease-in-out infinite;
-  }
+  .swipe-hint.left svg { stroke: var(--sg-accent); }
+  .swipe-hint.left span { color: var(--sg-accent); }
 
-  .swipe-hint.left span {
-    color: var(--sg-accent);
-  }
+  .swipe-hint.up svg { stroke: var(--sg-primary); }
+  .swipe-hint.up span { color: var(--sg-primary); }
 
-  .swipe-hint.up svg {
-    stroke: var(--sg-primary);
-    stroke-width: 2.5;
-    animation: hintUp 1.8s ease-in-out infinite;
-  }
+  .swipe-hint.right svg { fill: var(--sg-primary); }
+  .swipe-hint.right span { color: var(--sg-primary); }
 
-  .swipe-hint.up span {
-    color: var(--sg-primary);
-  }
-
-  .swipe-hint.right svg {
-    fill: var(--sg-primary);
-    animation: hintRight 1.8s ease-in-out infinite;
-  }
-
-  .swipe-hint.right span {
-    color: var(--sg-primary);
-  }
-
-  @keyframes hintLeft {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(-8px); }
-  }
-
-  @keyframes hintUp {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
-  @keyframes hintRight {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(8px); }
-  }
-
-  @keyframes hintFadeIn {
-    from {
-      opacity: 0;
-      transform: translate(-50%, -45%) scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-  }
-
-  @keyframes hintFadeOut {
-    to {
-      opacity: 0;
-      transform: translate(-50%, -55%) scale(0.95);
-    }
-  }
-
-  /* ==========================================
-     LOGIN PROMPT - Glassmorphic
-     ========================================== */
+  /* LOGIN PROMPT */
   .swipe-login-prompt {
     position: fixed;
-    bottom: 220px;
+    bottom: 180px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    background: var(--sg-dark);
     color: #fff;
-    padding: 24px 28px;
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 20px 24px;
+    border-radius: 16px;
     text-align: center;
     z-index: 10000;
-    box-shadow:
-      0 20px 60px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    max-width: 300px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    max-width: 280px;
     width: calc(100% - 40px);
-    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .swipe-login-prompt p {
-    margin: 0 0 16px;
-    font-size: 15px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 14px;
+    font-size: 14px;
   }
 
   .swipe-login-btn {
     display: inline-block;
-    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
-    color: #1a1a2e;
-    padding: 14px 32px;
-    border-radius: 28px;
+    background: var(--sg-primary);
+    color: var(--sg-dark);
+    padding: 12px 24px;
+    border-radius: 10px;
     text-decoration: none;
-    font-weight: 700;
-    font-size: 15px;
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.35);
-    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 14px;
   }
 
-  .swipe-login-btn:active {
-    transform: scale(0.96);
-    box-shadow: 0 2px 12px rgba(249, 203, 0, 0.4);
-  }
-
-  /* ==========================================
-     FAVORITES DRAWER - Modern Sheet
-     ========================================== */
+  /* FAVORITES DRAWER */
   .favorites-drawer {
     display: block;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--sg-glass);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border-radius: var(--sg-radius-lg) var(--sg-radius-lg) 0 0;
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+    background: var(--sg-dark);
+    border-radius: 20px 20px 0 0;
     transform: translateY(100%);
-    transition: transform var(--sg-transition-slow);
+    transition: transform 0.3s ease;
     z-index: 1000001;
-    max-height: 65vh;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    border-top: 1px solid var(--sg-border-accent);
+    max-height: 60vh;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .favorites-drawer.open {
@@ -994,7 +601,7 @@
   }
 
   .favorites-drawer-handle {
-    padding: 16px 20px;
+    padding: 14px 20px;
     text-align: center;
     cursor: pointer;
   }
@@ -1004,23 +611,22 @@
     display: block;
     width: 36px;
     height: 4px;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255,255,255,0.3);
     border-radius: 2px;
     margin: 0 auto 12px;
   }
 
   .favorites-drawer-title {
     font-weight: 600;
-    color: var(--sg-text);
+    color: #fff;
     font-size: 16px;
-    letter-spacing: 0.2px;
   }
 
   .favorites-count {
     background: var(--sg-primary);
     color: var(--sg-dark);
-    padding: 3px 10px;
-    border-radius: var(--sg-radius-sm);
+    padding: 2px 8px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 700;
     margin-left: 8px;
@@ -1028,8 +634,8 @@
 
   .favorites-empty {
     text-align: center;
-    padding: 32px 20px;
-    color: var(--sg-text-muted);
+    padding: 30px 20px;
+    color: rgba(255,255,255,0.5);
     font-size: 14px;
   }
 
@@ -1039,7 +645,6 @@
     padding: 0 20px 16px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
   }
 
   .favorites-list::-webkit-scrollbar {
@@ -1048,28 +653,23 @@
 
   .favorite-item {
     flex-shrink: 0;
-    width: 96px;
+    width: 90px;
     text-align: center;
     text-decoration: none;
-    transition: transform var(--sg-transition);
-  }
-
-  .favorite-item:active {
-    transform: scale(0.96);
   }
 
   .favorite-item img {
-    width: 96px;
-    height: 96px;
+    width: 90px;
+    height: 90px;
     object-fit: cover;
-    border-radius: var(--sg-radius-md);
-    border: 2px solid var(--sg-border-accent);
+    border-radius: 12px;
+    border: 2px solid rgba(249,203,0,0.3);
   }
 
   .favorite-item span {
     display: block;
     font-size: 11px;
-    color: var(--sg-text-muted);
+    color: rgba(255,255,255,0.6);
     margin-top: 6px;
     white-space: nowrap;
     overflow: hidden;
@@ -1084,145 +684,83 @@
   }
 
   .favorites-view-all {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     background: var(--sg-primary);
     color: var(--sg-dark);
-    padding: 14px 24px;
-    border-radius: var(--sg-radius-md);
+    padding: 12px 20px;
+    border-radius: 10px;
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
-    transition: all var(--sg-transition);
-  }
-
-  .favorites-view-all:active {
-    transform: scale(0.97);
-    background: var(--sg-primary-hover);
   }
 
   .favorites-close-btn {
-    padding: 14px 18px;
-    background: var(--sg-glass-light);
-    border: 1px solid var(--sg-border);
-    border-radius: var(--sg-radius-md);
-    color: var(--sg-text);
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
     font-weight: 500;
     font-size: 14px;
     cursor: pointer;
-    transition: all var(--sg-transition);
   }
 
-  .favorites-close-btn:active {
-    transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  /* ==========================================
-     EMPTY STATE - Glassmorphic
-     ========================================== */
+  /* EMPTY STATE */
   .swipe-empty {
     text-align: center;
-    padding: 48px 32px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    padding: 40px 24px;
   }
 
   .swipe-empty-icon {
-    font-size: 56px;
-    margin-bottom: 20px;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+    font-size: 48px;
+    margin-bottom: 16px;
   }
 
   .swipe-empty h3 {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 26px;
+    font-size: 22px;
     color: #fff;
-    margin: 0 0 10px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
+    margin: 0 0 8px;
+    font-weight: 600;
   }
 
   .swipe-empty p {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0 0 32px;
-    font-size: 15px;
-    line-height: 1.5;
+    color: rgba(255,255,255,0.5);
+    margin: 0 0 24px;
+    font-size: 14px;
   }
 
   .swipe-reset-btn {
-    background: linear-gradient(135deg, var(--sg-primary) 0%, #e5b800 100%);
-    color: #1a1a2e;
+    background: var(--sg-primary);
+    color: var(--sg-dark);
     border: none;
-    padding: 16px 32px;
-    border-radius: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 600;
     font-size: 15px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
-  }
-
-  .swipe-reset-btn:active {
-    transform: scale(0.96);
-    background: linear-gradient(135deg, var(--sg-primary-hover) 0%, #f0c200 100%);
   }
 
   .swipe-view-saved-btn {
     display: inline-block;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255,255,255,0.1);
+    border: none;
     color: #fff;
-    padding: 16px 32px;
-    border-radius: 16px;
+    padding: 14px 28px;
+    border-radius: 10px;
     text-decoration: none;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 15px;
-    margin-top: 14px;
+    margin-top: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .swipe-view-saved-btn:active {
-    transform: scale(0.96);
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  /* Expanded drawer for local favorites */
-  .favorites-drawer.expanded {
-    height: 80vh !important;
-  }
-
-  .favorites-drawer.expanded .favorites-list {
-    max-height: calc(80vh - 140px);
-    overflow-y: auto;
   }
 }
 
 /* ============================================
-   LOCAL FAVORITES FULLSCREEN OVERLAY
-   Glassmorphic design for all users
+   LOCAL FAVORITES OVERLAY
    ============================================ */
 .local-favorites-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 10, 15, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
   z-index: 1000000;
   display: flex;
   align-items: flex-start;
@@ -1233,112 +771,89 @@
 
 .local-favorites-content {
   width: 100%;
-  max-width: 600px;
-  background: rgba(26, 26, 46, 0.8);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 28px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 500px;
+  background: var(--sg-dark);
+  border-radius: 20px;
+  padding: 24px;
+  margin: 20px 0;
 }
 
 .local-favorites-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .local-favorites-header h2 {
   color: #fff;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   margin: 0;
-  letter-spacing: -0.3px;
 }
 
 .local-favorites-close {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255,255,255,0.1);
+  border: none;
   color: #fff;
   font-size: 24px;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.local-favorites-close:active {
-  transform: scale(0.92);
-  background: rgba(255, 255, 255, 0.15);
 }
 
 .local-favorites-note {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
-  margin-bottom: 24px;
-  padding: 16px 18px;
-  background: rgba(249, 203, 0, 0.12);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 14px;
-  border-left: 4px solid #f9cb00;
-  line-height: 1.5;
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: rgba(249,203,0,0.1);
+  border-radius: 10px;
+  border-left: 3px solid var(--sg-primary);
 }
 
 .local-favorites-note a {
-  color: #f9cb00;
-  font-weight: 700;
+  color: var(--sg-primary);
+  font-weight: 600;
   text-decoration: none;
 }
 
+/* GRID LAYOUT FOR FAVORITES */
 .local-favorites-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  gap: 12px;
 }
 
 .local-favorite-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
-  transition: all 0.2s ease;
 }
 
 .local-favorite-card:active {
-  transform: scale(0.97);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.1);
 }
 
 .local-favorite-card img {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1;
   object-fit: cover;
 }
 
 .local-favorite-info {
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .local-favorite-title {
   display: block;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 4px;
   white-space: nowrap;
@@ -1348,6 +863,6 @@
 
 .local-favorite-material {
   display: block;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
 }
