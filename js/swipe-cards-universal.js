@@ -1,6 +1,6 @@
 /**
  * Universal Swipe Cards - Works across all product pages
- * Detects product type from URL and adapts accordingly
+ * Uses the unified SGFavorites system from favorites.js
  */
 
 (function() {
@@ -9,16 +9,9 @@
   // Only run on mobile
   if (window.innerWidth > 767) return;
 
-  // Supabase config
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-
-  let supabaseClient = null;
-  let currentUser = null;
-
   // Detect product type from URL
   const path = window.location.pathname.toLowerCase();
-  let productType = 'product';
+  let productType = 'general';
   let productLabel = 'Products';
 
   if (path.includes('flooring')) {
@@ -46,22 +39,34 @@
 
   let cards = [];
   let currentIndex = 0;
-  let favorites = [];
   let swipeHistory = [];
   let startX, startY, currentX, currentY;
   let isDragging = false;
 
-  async function init() {
-    // Find product container
+  // Get favorites from unified system
+  function getFavorites() {
+    if (window.SGFavorites) {
+      return window.SGFavorites.getByType(productType) || [];
+    }
+    // Fallback to localStorage
+    try {
+      return JSON.parse(localStorage.getItem(`sg_favorites_${productType}`)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isFavorited(product) {
+    const favs = getFavorites();
+    return favs.some(f => f.title === product.title || f.url === product.href);
+  }
+
+  function init() {
     const materialsList = document.querySelector('.materials_list');
     const shopGrid = document.querySelector('.shop-product-grid');
 
     if (!materialsList && !shopGrid) return;
 
-    // Initialize Supabase
-    await initSupabase();
-
-    // Parse products based on page type
     if (materialsList) {
       parseWebflowProducts(materialsList);
     } else if (shopGrid) {
@@ -71,11 +76,6 @@
     if (cards.length === 0) return;
 
     console.log('Swipe Cards:', cards.length, productLabel, 'found');
-
-    // Load existing favorites
-    await loadFavorites();
-
-    // Show intro overlay
     showIntroOverlay();
   }
 
@@ -83,19 +83,16 @@
     const items = container.querySelectorAll('.w-dyn-item, .materials_item');
 
     items.forEach((item, index) => {
-      // Skip if no actual product content
       if (!item.querySelector('img')) return;
 
       const link = item.querySelector('a[href]');
       const images = item.querySelectorAll('img');
 
-      // Get title - try multiple selectors
       let title = item.querySelector('[fs-cmsfilter-field="Keyword"]') ||
                   item.querySelector('.materials_name') ||
                   item.querySelector('h3') ||
                   item.querySelector('h4');
 
-      // Get specs based on product type
       let specs = {};
 
       if (productType === 'flooring') {
@@ -121,7 +118,6 @@
           finish: getText(item, '[fs-cmsfilter-field="Finish"]') || getText(item, '[fs-cmsfilter-field="finish"]')
         };
       } else {
-        // Generic specs
         specs = {
           material: getText(item, '[fs-cmsfilter-field="Material"]') || getText(item, '[fs-cmsfilter-field="material"]'),
           color: getText(item, '[fs-cmsfilter-field="Main Color"]') || getText(item, '[fs-cmsfilter-field="color"]'),
@@ -129,7 +125,6 @@
         };
       }
 
-      // Get best image
       let imageUrl = '';
       if (images.length > 0) {
         const primaryImg = Array.from(images).find(img => img.classList.contains('is-primary'));
@@ -168,111 +163,6 @@
   function getText(container, selector) {
     const el = container.querySelector(selector);
     return el ? el.textContent.trim() : '';
-  }
-
-  async function initSupabase() {
-    if (typeof window.supabase !== 'undefined') {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      currentUser = user;
-    }
-  }
-
-  async function loadFavorites() {
-    if (currentUser && supabaseClient) {
-      try {
-        const { data, error } = await supabaseClient
-          .from('user_favorites')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .eq('product_type', productType);
-
-        if (!error && data) {
-          favorites = data.map(f => ({
-            title: f.product_title,
-            href: f.product_url,
-            image: f.product_image,
-            material: f.product_material,
-            color: f.product_color
-          }));
-        }
-      } catch (e) {
-        console.log('Using local storage for favorites');
-        loadLocalFavorites();
-      }
-    } else {
-      loadLocalFavorites();
-    }
-  }
-
-  function loadLocalFavorites() {
-    const stored = localStorage.getItem(`sg_favorites_${productType}`);
-    if (stored) {
-      try {
-        favorites = JSON.parse(stored);
-      } catch (e) {
-        favorites = [];
-      }
-    }
-  }
-
-  function saveFavorites() {
-    localStorage.setItem(`sg_favorites_${productType}`, JSON.stringify(favorites));
-  }
-
-  async function addFavorite(card) {
-    // Check if already favorited
-    if (favorites.some(f => f.title === card.title)) return;
-
-    favorites.push(card);
-    saveFavorites();
-
-    // Save to Supabase if logged in
-    if (currentUser && supabaseClient) {
-      try {
-        await supabaseClient.from('user_favorites').insert({
-          user_id: currentUser.id,
-          product_type: productType,
-          product_title: card.title,
-          product_url: card.href,
-          product_image: card.image,
-          product_material: card.material || '',
-          product_color: card.color || ''
-        });
-      } catch (e) {
-        console.log('Saved locally');
-      }
-    }
-
-    updateFavoritesCount();
-
-    // Sync with unified favorites system
-    if (window.SGFavorites) {
-      window.SGFavorites.add(card, productType);
-    }
-  }
-
-  async function removeFavorite(title) {
-    favorites = favorites.filter(f => f.title !== title);
-    saveFavorites();
-
-    if (currentUser && supabaseClient) {
-      try {
-        await supabaseClient
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('product_title', title);
-      } catch (e) {
-        console.log('Removed locally');
-      }
-    }
-
-    updateFavoritesCount();
-
-    if (window.SGFavorites) {
-      window.SGFavorites.remove(title, productType);
-    }
   }
 
   function showIntroOverlay() {
@@ -315,6 +205,9 @@
   };
 
   function createSwipeUI() {
+    const favs = getFavorites();
+    const lastFav = favs.length > 0 ? favs[favs.length - 1] : null;
+
     const container = document.createElement('div');
     container.className = 'swipe-cards-container';
     container.innerHTML = `
@@ -328,8 +221,8 @@
         </button>
         <span class="swipe-topbar-title">${productLabel}</span>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
-          <div class="fav-thumb">${favorites.length > 0 ? `<img src="${favorites[favorites.length - 1].image}" alt="">` : ''}</div>
-          <span class="fav-count">${favorites.length}</span>
+          <div class="fav-thumb">${lastFav ? `<img src="${lastFav.image}" alt="">` : ''}</div>
+          <span class="fav-count">${favs.length}</span>
         </button>
       </div>
       <div class="swipe-card-stack"></div>
@@ -369,7 +262,6 @@
       cardEl.className = 'swipe-card';
       cardEl.dataset.index = currentIndex + i;
 
-      // Build specs HTML
       let specsHtml = '';
       if (productType === 'flooring') {
         specsHtml = `
@@ -412,11 +304,6 @@
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </div>
-        <div class="swipe-indicator super">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
-        </div>
         <div class="swipe-card-content">
           <div class="swipe-card-header">
             <h3 class="swipe-card-title">${card.title}</h3>
@@ -452,10 +339,8 @@
   }
 
   let velocityX = 0;
-  let velocityY = 0;
   let lastMoveTime = 0;
   let lastX = 0;
-  let lastY = 0;
 
   function handleTouchStart(e) {
     startX = e.touches[0].clientX;
@@ -463,10 +348,8 @@
     currentX = startX;
     currentY = startY;
     lastX = startX;
-    lastY = startY;
     lastMoveTime = Date.now();
     velocityX = 0;
-    velocityY = 0;
     isDragging = true;
     this.classList.add('dragging');
     this.style.transition = 'none';
@@ -481,14 +364,11 @@
     currentX = e.touches[0].clientX;
     currentY = e.touches[0].clientY;
 
-    // Calculate velocity for fluid feel
     if (dt > 0) {
       velocityX = (currentX - lastX) / dt * 16;
-      velocityY = (currentY - lastY) / dt * 16;
     }
 
     lastX = currentX;
-    lastY = currentY;
     lastMoveTime = now;
 
     const deltaX = currentX - startX;
@@ -496,14 +376,11 @@
 
     e.preventDefault();
 
-    // Smooth rotation based on drag distance
     const rotation = deltaX * 0.08;
-    const tiltY = deltaY * 0.03;
     const scale = 1 - Math.min(Math.abs(deltaX) * 0.0005, 0.05);
 
     this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(${deltaY * 0.3}px) rotate(${rotation}deg) scale(${scale})`;
 
-    // Update indicators based on direction (left/right only)
     const threshold = 40;
     if (deltaX > threshold) {
       this.classList.add('swiping-right');
@@ -522,58 +399,56 @@
     this.classList.remove('dragging');
 
     const deltaX = currentX - startX;
-
-    // Use velocity for more natural feel
     const projectedX = deltaX + velocityX * 5;
-
     const threshold = 80;
     const velocityThreshold = 3;
 
-    // Swipe right = like
     if (projectedX > threshold || velocityX > velocityThreshold) {
       this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
       this.style.transform = `translateX(120vw) rotate(20deg)`;
       setTimeout(() => handleLike(), 250);
-    }
-    // Swipe left = nope
-    else if (projectedX < -threshold || velocityX < -velocityThreshold) {
+    } else if (projectedX < -threshold || velocityX < -velocityThreshold) {
       this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
       this.style.transform = `translateX(-120vw) rotate(-20deg)`;
       setTimeout(() => handleNope(), 250);
-    }
-    // Return to center
-    else {
+    } else {
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
       this.style.transform = 'translateX(-50%)';
       this.classList.remove('swiping-left', 'swiping-right');
     }
   }
 
-  function handleSuperLike() {
-    const card = cards[currentIndex];
-    swipeHistory.push({ index: currentIndex, action: 'superlike' });
-    addFavorite(card);
-    // Open product link
-    window.open(card.href, '_blank');
-    currentIndex++;
-    renderCards();
-    updateCounter();
-  }
-
   function handleLike() {
     const card = cards[currentIndex];
     swipeHistory.push({ index: currentIndex, action: 'like' });
-    addFavorite(card);
+
+    // Use unified favorites system
+    if (window.SGFavorites) {
+      window.SGFavorites.add({
+        title: card.title,
+        url: card.href,
+        image: card.image,
+        material: card.material || '',
+        color: card.color || ''
+      }, productType);
+    } else {
+      // Fallback to localStorage
+      const favs = getFavorites();
+      if (!favs.some(f => f.title === card.title)) {
+        favs.push(card);
+        localStorage.setItem(`sg_favorites_${productType}`, JSON.stringify(favs));
+      }
+    }
+
     currentIndex++;
     renderCards();
-    updateCounter();
+    updateFavoritesUI();
   }
 
   function handleNope() {
     swipeHistory.push({ index: currentIndex, action: 'nope' });
     currentIndex++;
     renderCards();
-    updateCounter();
   }
 
   window.swipeLike = function() {
@@ -600,33 +475,38 @@
 
     if (last.action === 'like') {
       const card = cards[currentIndex];
-      removeFavorite(card.title);
+      if (window.SGFavorites) {
+        window.SGFavorites.remove(card.title, productType);
+      } else {
+        let favs = getFavorites();
+        favs = favs.filter(f => f.title !== card.title);
+        localStorage.setItem(`sg_favorites_${productType}`, JSON.stringify(favs));
+      }
     }
 
     renderCards();
-    updateCounter();
+    updateFavoritesUI();
   };
 
-  function updateCounter() {
-    const current = document.querySelector('.swipe-counter .current');
-    const total = document.querySelector('.swipe-counter .total');
-    if (current) current.textContent = currentIndex + 1;
-    if (total) total.textContent = cards.length;
-  }
-
-  function updateFavoritesCount() {
+  function updateFavoritesUI() {
+    const favs = getFavorites();
     const countEl = document.querySelector('.fav-count');
     const thumbEl = document.querySelector('.fav-thumb');
+
     if (countEl) {
-      countEl.textContent = favorites.length;
+      countEl.textContent = favs.length;
     }
+
     if (thumbEl) {
-      if (favorites.length > 0) {
-        thumbEl.innerHTML = `<img src="${favorites[favorites.length - 1].image}" alt="">`;
+      if (favs.length > 0) {
+        thumbEl.innerHTML = `<img src="${favs[favs.length - 1].image}" alt="">`;
       } else {
         thumbEl.innerHTML = '';
       }
     }
+
+    // Update drawer if open
+    updateFavoritesDrawer();
   }
 
   function showDoubleTapHeart(cardEl) {
@@ -665,12 +545,13 @@
     const stack = document.querySelector('.swipe-card-stack');
     if (!stack) return;
 
+    const favs = getFavorites();
     stack.innerHTML = `
       <div class="swipe-empty">
-        <div class="swipe-empty-icon">${favorites.length > 0 ? '🎉' : '📦'}</div>
-        <h3>${favorites.length > 0 ? 'All done!' : 'No more items'}</h3>
-        <p>${favorites.length > 0 ? `You liked ${favorites.length} ${productLabel.toLowerCase()}` : 'Check back later for new arrivals'}</p>
-        ${favorites.length > 0 ? `<button class="swipe-view-saved-btn" onclick="window.toggleFavoritesDrawer()">View Saved</button>` : ''}
+        <div class="swipe-empty-icon">${favs.length > 0 ? '🎉' : '📦'}</div>
+        <h3>${favs.length > 0 ? 'All done!' : 'No more items'}</h3>
+        <p>${favs.length > 0 ? `You saved ${favs.length} ${productLabel.toLowerCase()}` : 'Check back later for new arrivals'}</p>
+        ${favs.length > 0 ? `<button class="swipe-view-saved-btn" onclick="window.toggleFavoritesDrawer()">View Saved</button>` : ''}
         <button class="swipe-reset-btn" onclick="window.resetSwipe()">Start Over</button>
       </div>
     `;
@@ -680,7 +561,6 @@
     currentIndex = 0;
     swipeHistory = [];
     renderCards();
-    updateCounter();
   };
 
   window.exitSwipeMode = function() {
@@ -699,11 +579,11 @@
     drawer.className = 'favorites-drawer';
     drawer.innerHTML = `
       <div class="favorites-drawer-handle">
-        <span class="favorites-drawer-title">Favorites <span class="favorites-count">${favorites.length}</span></span>
+        <span class="favorites-drawer-title">Favorites <span class="favorites-count">${getFavorites().length}</span></span>
       </div>
       <div class="favorites-content"></div>
       <div class="favorites-actions">
-        ${currentUser ? `<a href="/account/#favorites" class="favorites-view-all">View All</a>` : `<button class="favorites-view-all" onclick="window.showLocalFavoritesFullscreen()">View All</button>`}
+        <button class="favorites-view-all" onclick="window.location.href='/account/#favorites'">View All</button>
       </div>
     `;
     document.body.appendChild(drawer);
@@ -742,32 +622,52 @@
       }
     });
 
+    // Also allow tap on handle to toggle
+    handle.addEventListener('click', () => {
+      window.toggleFavoritesDrawer();
+    });
+
     updateFavoritesDrawer();
   }
 
   function updateFavoritesDrawer() {
+    const favs = getFavorites();
     const content = document.querySelector('.favorites-drawer .favorites-content');
-    const countEl = document.querySelector('.favorites-count');
+    const countEl = document.querySelector('.favorites-drawer .favorites-count');
 
-    if (countEl) countEl.textContent = favorites.length;
+    if (countEl) countEl.textContent = favs.length;
 
     if (!content) return;
 
-    if (favorites.length === 0) {
+    if (favs.length === 0) {
       content.innerHTML = '<p class="favorites-empty">Swipe right to save favorites</p>';
     } else {
       content.innerHTML = `
         <div class="favorites-list">
-          ${favorites.map(f => `
-            <a href="${f.href}" class="favorite-item" target="_blank">
-              <img src="${f.image}" alt="${f.title}" loading="lazy">
+          ${favs.map(f => `
+            <div class="favorite-item" data-title="${f.title}">
+              <a href="${f.url || f.href}" target="_blank">
+                <img src="${f.image}" alt="${f.title}" loading="lazy">
+              </a>
               <span>${f.title}</span>
-            </a>
+              <button class="favorite-remove" onclick="window.removeFavoriteItem('${f.title.replace(/'/g, "\\'")}')">×</button>
+            </div>
           `).join('')}
         </div>
       `;
     }
   }
+
+  window.removeFavoriteItem = function(title) {
+    if (window.SGFavorites) {
+      window.SGFavorites.remove(title, productType);
+    } else {
+      let favs = getFavorites();
+      favs = favs.filter(f => f.title !== title);
+      localStorage.setItem(`sg_favorites_${productType}`, JSON.stringify(favs));
+    }
+    updateFavoritesUI();
+  };
 
   window.toggleFavoritesDrawer = function() {
     const drawer = document.querySelector('.favorites-drawer');
@@ -775,48 +675,6 @@
       drawer.classList.toggle('open');
       updateFavoritesDrawer();
     }
-  };
-
-  window.showLocalFavoritesFullscreen = function() {
-    // Close drawer first
-    const drawer = document.querySelector('.favorites-drawer');
-    if (drawer) drawer.classList.remove('open');
-
-    // Create fullscreen overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'local-favorites-overlay';
-    overlay.innerHTML = `
-      <div class="local-favorites-content">
-        <div class="local-favorites-header">
-          <h2>My ${productLabel}</h2>
-          <button class="local-favorites-close" onclick="this.closest('.local-favorites-overlay').remove()">&times;</button>
-        </div>
-        <p class="local-favorites-note">
-          <a href="/account/">Sign in</a> to save favorites across devices
-        </p>
-        <div class="local-favorites-grid">
-          ${favorites.map(f => `
-            <a href="${f.href}" class="local-favorite-card" target="_blank">
-              <img src="${f.image}" alt="${f.title}" loading="lazy">
-              <div class="local-favorite-info">
-                <span class="local-favorite-title">${f.title}</span>
-                ${f.material ? `<span class="local-favorite-material">${f.material}</span>` : ''}
-              </div>
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  };
-
-  // Expose favorites for external access
-  window.getSwipeFavorites = function() {
-    return favorites;
-  };
-
-  window.getSwipeProductType = function() {
-    return productType;
   };
 
 })();
