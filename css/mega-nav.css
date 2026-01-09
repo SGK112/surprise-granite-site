@@ -475,11 +475,11 @@ body.mega-nav-active {
 
 @media (max-width: 768px) {
   body {
-    padding-top: 70px;
+    padding-top: 60px;
   }
 
   body.mega-nav-active {
-    padding-top: 70px !important;
+    padding-top: 60px !important;
   }
 
   .mega-nav-top {
@@ -487,26 +487,29 @@ body.mega-nav-active {
   }
 
   .mega-nav-main {
-    padding: 10px 0;
+    padding: 8px 0;
   }
 
   .mega-nav-main .container {
-    padding: 10px 15px;
+    padding: 8px 12px;
+    gap: 10px;
   }
 
   .mega-nav-logo img {
-    height: 28px;
+    height: 26px;
   }
 
   .mega-nav-logo span {
-    font-size: 8px;
-    letter-spacing: 1px;
+    font-size: 7px;
+    letter-spacing: 0.8px;
+    margin-top: 1px;
   }
 
-  /* Show mobile actions */
+  /* Show mobile actions - all on same row */
   .mega-nav-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
   }
 
   .mega-nav-actions a:not(.btn-estimate) {
@@ -514,27 +517,54 @@ body.mega-nav-active {
   }
 
   .mega-nav-actions .btn-estimate {
-    padding: 8px 14px;
-    font-size: 12px;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-radius: 6px;
   }
 
   .mega-nav-mobile-toggle {
-    display: block;
-    margin-left: 10px;
+    display: flex;
+    margin-left: 6px;
+    padding: 8px;
   }
 
   .mega-nav-mobile-toggle span {
     background: #1a2b3c;
+    width: 20px;
+    height: 2px;
+    margin: 4px 0;
   }
 
   .mega-nav-bottom {
     display: none;
   }
 
+  /* CRITICAL: Hide the Webflow navbar completely on mobile */
+  .navbar-fixed_wrapper,
+  .navbar_wrapper,
+  .navbar_component,
+  .navbar_container,
+  .navbar_top-row,
+  .navbar_menu-button,
+  .w-nav-button {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
+  }
+
+  /* Ensure mega-nav is shown */
+  .mega-nav {
+    display: block !important;
+    visibility: visible !important;
+  }
+
   .mega-nav-bottom.mobile-open {
     display: block;
     position: fixed;
-    top: 70px;
+    top: 60px;
     left: 0;
     right: 0;
     bottom: 0;
