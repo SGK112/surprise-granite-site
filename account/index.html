@@ -4014,34 +4014,50 @@
 
     // Initialize with timeout fallback
     document.addEventListener('DOMContentLoaded', async () => {
-      // Fallback timer - show auth if things take too long
+      // Fallback timer - show dashboard/auth if things take too long
       const fallbackTimer = setTimeout(() => {
-        console.warn('Init timeout - showing auth screen');
-        showAuth();
+        console.warn('Init timeout - forcing display');
+        // Check if we have a cached session indicator
+        const hasSession = localStorage.getItem('sb-ypeypgwsycxcagncgdur-auth-token');
+        if (hasSession) {
+          showDashboard();
+        } else {
+          showAuth();
+        }
       }, 5000);
 
       try {
-        // Wait for Supabase to be available
+        // Wait for Supabase to be available (max 3 seconds)
         let attempts = 0;
-        while (!window.supabase && attempts < 50) {
+        while (!window.supabase && attempts < 30) {
           await new Promise(r => setTimeout(r, 100));
           attempts++;
         }
 
         if (!window.supabase) {
-          throw new Error('Supabase library failed to load');
+          console.error('Supabase library failed to load after', attempts * 100, 'ms');
+          clearTimeout(fallbackTimer);
+          showAuth();
+          return;
         }
 
         const { createClient } = window.supabase;
         supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
         clearTimeout(fallbackTimer);
 
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          showAuth();
+          return;
+        }
+
         if (session) {
           currentUser = session.user;
-          await loadUserProfile();
+          // Load profile but don't block on it
+          loadUserProfile().catch(err => console.warn('Profile load failed:', err));
           showDashboard();
         } else {
           showAuth();
@@ -4260,49 +4276,65 @@
       if (!currentUser) return;
 
       try {
-        const { data: profile } = await supabaseClient
+        // Use maybeSingle() to handle missing profiles gracefully
+        const { data: profile, error } = await supabaseClient
           .from('sg_users')
           .select('*')
           .eq('id', currentUser.id)
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Profile query error:', error);
+        }
 
         userProfile = profile;
 
         const meta = currentUser.user_metadata || {};
-        const name = profile?.full_name || meta.full_name || currentUser.email.split('@')[0];
+        const name = profile?.full_name || meta.full_name || currentUser.email?.split('@')[0] || 'User';
         const accountType = profile?.account_type || 'homeowner';
 
         // Check admin status
-        isSuperAdmin = SUPER_ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+        isSuperAdmin = SUPER_ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
         isAdmin = isSuperAdmin || ['admin', 'super_admin'].includes(accountType);
 
-        // Update sidebar user info
-        document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
-        document.getElementById('user-name').textContent = name;
-        document.getElementById('user-role').textContent = isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (accountType === 'homeowner' ? 'Member' : accountType.replace('pro_', 'Pro ')));
+        // Safely update sidebar user info
+        const avatarEl = document.getElementById('user-avatar');
+        const nameEl = document.getElementById('user-name');
+        const roleEl = document.getElementById('user-role');
 
-        // Update profile form
-        document.getElementById('profile-name').value = name;
-        document.getElementById('profile-email').value = currentUser.email;
-        document.getElementById('profile-phone').value = profile?.phone || meta.phone || '';
-        document.getElementById('profile-company').value = profile?.company_name || '';
+        if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
+        if (nameEl) nameEl.textContent = name;
+        if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (accountType === 'homeowner' ? 'Member' : accountType.replace('pro_', 'Pro ')));
+
+        // Safely update profile form
+        const profileNameEl = document.getElementById('profile-name');
+        const profileEmailEl = document.getElementById('profile-email');
+        const profilePhoneEl = document.getElementById('profile-phone');
+        const profileCompanyEl = document.getElementById('profile-company');
+
+        if (profileNameEl) profileNameEl.value = name;
+        if (profileEmailEl) profileEmailEl.value = currentUser.email || '';
+        if (profilePhoneEl) profilePhoneEl.value = profile?.phone || meta.phone || '';
+        if (profileCompanyEl) profileCompanyEl.value = profile?.company_name || '';
 
         // Show admin nav if admin
-        if (isAdmin) {
-          document.getElementById('admin-nav').style.display = 'block';
+        const adminNavEl = document.getElementById('admin-nav');
+        if (isAdmin && adminNavEl) {
+          adminNavEl.style.display = 'block';
         }
 
         // Show store/vendor nav for admins and pro accounts
-        if (isAdmin || accountType.startsWith('pro_')) {
-          document.getElementById('vendor-nav').style.display = 'block';
+        const vendorNavEl = document.getElementById('vendor-nav');
+        if ((isAdmin || accountType.startsWith('pro_')) && vendorNavEl) {
+          vendorNavEl.style.display = 'block';
         }
 
       } catch (err) {
         console.warn('Profile load error:', err);
       }
 
-      // Load favorites count
-      loadFavoritesCount();
+      // Load favorites count (non-blocking)
+      loadFavoritesCount().catch(err => console.warn('Favorites count error:', err));
     }
 
     // ============ FAVORITES FUNCTIONS ============

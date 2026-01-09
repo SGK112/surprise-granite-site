@@ -145,18 +145,18 @@ showLoggedOutState();
         align-items: center;
         gap: 8px;
         padding: 8px 16px;
-        background: rgba(249, 203, 0, 0.1);
-        border: 1px solid rgba(249, 203, 0, 0.3);
+        background: rgba(249, 203, 0, 0.15);
+        border: 1px solid rgba(249, 203, 0, 0.4);
         border-radius: 8px;
-        color: #1e3a5f;
+        color: #ffffff;
         text-decoration: none;
         font-size: 14px;
         font-weight: 600;
         transition: all 0.2s;
       `;
       userBtn.innerHTML = `
-        <span style="width: 28px; height: 28px; background: linear-gradient(135deg, #f9cb00, #cca600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #1a1a2e;">${initial}</span>
-        <span>${displayName}</span>
+        <span style="width: 28px; height: 28px; background: linear-gradient(135deg, #f9cb00, #e6b800); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #1a1a2e;">${initial}</span>
+        <span style="color: #ffffff;">${displayName}</span>
       `;
 
       if (estimateBtn) {
