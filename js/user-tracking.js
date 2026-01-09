@@ -199,31 +199,7 @@ if (event === 'SIGNED_IN' && session) {
     views.push(pageData);
     sessionStorage.setItem('sg_page_views', JSON.stringify(views.slice(-50)));
 
-    // If logged in, track to database
-    if (currentUser && supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('user_activity')
-          .insert({
-            user_id: currentUser.id,
-            activity_type: 'page_view',
-            page_url: pageData.path,
-            page_title: pageData.title,
-            referrer: pageData.referrer,
-            device_info: {
-              width: pageData.screen_width,
-              height: pageData.screen_height,
-              userAgent: pageData.user_agent
-            }
-          })
-          .select()
-          .single();
-
-        if (data) pageViewId = data.id;
-      } catch (e) {
-        // Activity table might not exist, that's ok
-      }
-    }
+    // Note: user_activity table not yet created - tracking locally only for now
   }
 
   function setupBehaviorTracking() {
@@ -326,22 +302,7 @@ if (event === 'SIGNED_IN' && session) {
     // Keep last 20
     localStorage.setItem('sg_recently_viewed', JSON.stringify(filtered.slice(0, 20)));
 
-    // If logged in, track to database
-    if (currentUser && supabase) {
-      try {
-        await supabase.from('user_activity').insert({
-          user_id: currentUser.id,
-          activity_type: 'product_view',
-          page_url: path,
-          page_title: productTitle,
-          metadata: {
-            product_type: detectProductType(path)
-          }
-        });
-      } catch (e) {
-        // Activity table might not exist
-      }
-    }
+    // Note: user_activity table not yet created - tracking locally only for now
   }
 
   async function trackEvent(eventType, data) {
@@ -354,30 +315,20 @@ if (event === 'SIGNED_IN' && session) {
     });
     sessionStorage.setItem('sg_events', JSON.stringify(events.slice(-100)));
 
-    // If logged in, track to database
-    if (currentUser && supabase) {
-      try {
-        await supabase.from('user_activity').insert({
-          user_id: currentUser.id,
-          activity_type: eventType,
-          metadata: data
-        });
-      } catch (e) {
-        // Silently fail
-      }
-    }
+    // Note: user_activity table not yet created - tracking locally only for now
   }
 
   async function updateUserActivity() {
     if (!currentUser || !supabase) return;
 
     try {
+      // Update last_seen in sg_users table
       await supabase
-        .from('profiles')
-        .update({ last_seen: new Date().toISOString() })
+        .from('sg_users')
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', currentUser.id);
     } catch (e) {
-      // Profiles table might not have last_seen column
+      // Silently fail if column doesn't exist
     }
   }
 
