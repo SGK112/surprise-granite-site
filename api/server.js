@@ -697,6 +697,70 @@ app.get('/api/customers/:email', async (req, res) => {
   }
 });
 
+// ============ CHECKOUT SESSION ============
+
+// Create a Stripe Checkout Session for cart purchases
+app.post('/api/create-checkout-session', async (req, res) => {
+  try {
+    const { items, success_url, cancel_url, customer_email } = req.body;
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: 'No items provided' });
+    }
+
+    // Build line items for Stripe
+    const lineItems = items.map(item => ({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: item.name,
+          images: item.image ? [item.image] : [],
+          metadata: {
+            product_id: item.id || ''
+          }
+        },
+        unit_amount: item.price // Price should already be in cents
+      },
+      quantity: item.quantity || 1
+    }));
+
+    // Create checkout session config
+    const sessionConfig = {
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: success_url || `${process.env.SITE_URL || 'https://surprisegranite.com'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancel_url || `${process.env.SITE_URL || 'https://surprisegranite.com'}/cart/`,
+      billing_address_collection: 'required',
+      shipping_address_collection: {
+        allowed_countries: ['US']
+      },
+      metadata: {
+        order_source: 'website_cart'
+      }
+    };
+
+    // Add customer email if provided
+    if (customer_email) {
+      sessionConfig.customer_email = customer_email;
+    }
+
+    // Create the session
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    console.log('Checkout session created:', session.id);
+
+    res.json({
+      sessionId: session.id,
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error('Checkout session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ INVOICE MANAGEMENT ============
 
 // Create and send an invoice
