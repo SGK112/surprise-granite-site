@@ -350,11 +350,12 @@
   }
 
   .swipe-topbar-brand .brand-logo {
-    height: 22px;
+    height: 24px;
     width: auto;
-    max-width: 140px;
-    filter: brightness(0) invert(1);
+    max-width: 150px;
     object-fit: contain;
+    /* Gold/yellow tint for dark background */
+    filter: brightness(0) saturate(100%) invert(83%) sepia(50%) saturate(1000%) hue-rotate(360deg) brightness(105%) contrast(102%);
   }
 
   .swipe-topbar-brand .brand-tagline {
@@ -1289,25 +1290,28 @@
 
   .favorite-remove {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 26px;
-    height: 26px;
+    top: -6px;
+    right: -6px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ff4757 0%, #e8424f 100%);
-    border: 2px solid var(--sg-dark);
+    background: #ff4757;
+    border: 2px solid #1a1a2e;
     color: #fff;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 400;
+    font-family: Arial, sans-serif;
     line-height: 1;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    box-shadow: 0 3px 10px rgba(255, 71, 87, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
-    opacity: 0.9;
+    aspect-ratio: 1;
   }
 
   .favorite-remove:hover {
@@ -1492,17 +1496,42 @@
 }
 
 .local-favorites-close {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   border: none;
   color: #fff;
-  font-size: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
+  padding: 0;
+}
+
+.local-favorites-close::before,
+.local-favorites-close::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+.local-favorites-close::before {
+  transform: rotate(45deg);
+}
+
+.local-favorites-close::after {
+  transform: rotate(-45deg);
+}
+
+.local-favorites-close {
+  position: relative;
 }
 
 .local-favorites-note {
