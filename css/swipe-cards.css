@@ -343,24 +343,32 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 2px;
+  }
+
+  .swipe-topbar-brand .brand-logo {
+    height: 22px;
+    width: auto;
+    max-width: 140px;
+    filter: brightness(0) invert(1);
+    object-fit: contain;
+  }
+
+  .swipe-topbar-brand .brand-tagline {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sg-gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
   }
 
   .swipe-topbar-brand .brand-icon {
     width: 28px;
     height: 28px;
-    /* Icon is already gold */
-  }
-
-  .swipe-topbar-brand .brand-logo {
-    height: 28px;
-    width: auto;
-    max-width: 160px;
-    /* Yellow/gold tint for dark background */
-    filter: brightness(0) saturate(100%) invert(78%) sepia(68%) saturate(725%) hue-rotate(6deg) brightness(103%) contrast(101%);
-    object-fit: contain;
   }
 
   .swipe-topbar-brand .brand-text {
@@ -473,11 +481,11 @@
   /* CARDS - Centered with proper transform */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 40px);
-    max-width: 360px;
+    width: calc(100% - 56px);
+    max-width: 280px;
     background: #fff;
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     cursor: grab;
     user-select: none;
@@ -516,7 +524,7 @@
   /* CARD IMAGE */
   .swipe-card-image {
     width: 100%;
-    height: 320px;
+    height: 200px;
     object-fit: cover;
     display: block;
     background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
@@ -616,7 +624,7 @@
 
   /* CARD CONTENT */
   .swipe-card-content {
-    padding: 24px 24px 28px;
+    padding: 18px 20px 22px;
     background: #fff;
   }
 
@@ -624,18 +632,18 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 14px;
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: 14px;
   }
 
   .swipe-card-title {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--sg-dark);
     line-height: 1.25;
     flex: 1;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.3px;
   }
 
   .swipe-card-material {
@@ -656,18 +664,18 @@
   .swipe-card-specs {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .swipe-card-spec {
     display: inline-flex;
     flex-direction: column;
-    padding: 14px 20px;
+    padding: 10px 14px;
     background: #f5f5f7;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid #e8e8ed;
-    min-width: 90px;
+    min-width: 80px;
   }
 
   .swipe-card-spec.full-width {
@@ -677,17 +685,17 @@
 
   .spec-label {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 11px;
+    font-size: 10px;
     color: #8e8e93;
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   .spec-value {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
+    font-size: 14px;
     color: var(--sg-dark);
     font-weight: 600;
     letter-spacing: -0.2px;
@@ -696,8 +704,8 @@
   /* QUICK ACTIONS ROW */
   .swipe-card-actions {
     display: flex;
-    gap: 10px;
-    padding-top: 16px;
+    gap: 8px;
+    padding-top: 12px;
     border-top: 1px solid #f0f0f2;
   }
 
@@ -706,11 +714,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 16px;
-    border-radius: 12px;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 10px;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     text-decoration: none;
     border: none;
@@ -848,15 +856,23 @@
     justify-content: center;
     transition: all 0.15s ease;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
   }
 
   .swipe-action-btn:active {
     transform: scale(0.9);
   }
 
-  /* Action buttons - base styles */
-  .swipe-action-btn {
-    position: relative;
+  /* Override Webflow global SVG styles */
+  .swipe-action-buttons svg {
+    height: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    display: block !important;
+  }
+
+  .swipe-action-btn svg {
+    flex-shrink: 0;
   }
 
   /* Tooltip styles */
@@ -885,19 +901,19 @@
 
   /* Undo button - Yellow/Gold with dark icon */
   .swipe-action-btn.undo {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: var(--sg-gold);
-    border: 3px solid rgba(0, 0, 0, 0.15);
-    box-shadow: 0 4px 20px var(--sg-gold-glow), inset 0 2px 0 rgba(255,255,255,0.2);
+    border: none;
+    box-shadow: 0 4px 16px var(--sg-gold-glow);
   }
 
   .swipe-action-btn.undo svg {
-    width: 30px;
-    height: 30px;
-    color: #1a1a2e;
-    stroke-width: 2.5;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    min-height: 28px;
   }
 
   .swipe-action-btn.undo:active {
@@ -907,19 +923,19 @@
 
   /* Nope button - Solid Red with white X */
   .swipe-action-btn.nope {
-    width: 70px;
-    height: 70px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, #ff4757 0%, #ff3b5c 100%);
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 6px 24px rgba(255, 59, 92, 0.5), inset 0 2px 0 rgba(255,255,255,0.2);
+    border: none;
+    box-shadow: 0 6px 20px rgba(255, 59, 92, 0.5);
   }
 
   .swipe-action-btn.nope svg {
-    width: 38px;
-    height: 38px;
-    color: #fff;
-    stroke-width: 3;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+    min-height: 36px;
   }
 
   .swipe-action-btn.nope:active {
@@ -929,19 +945,19 @@
 
   /* Like button - Bright Green with white heart */
   .swipe-action-btn.like {
-    width: 70px;
-    height: 70px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, #2ed573 0%, #26c666 100%);
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 6px 24px rgba(46, 213, 115, 0.5), inset 0 2px 0 rgba(255,255,255,0.2);
+    border: none;
+    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.5);
   }
 
   .swipe-action-btn.like svg {
-    width: 38px;
-    height: 38px;
-    color: #fff;
-    fill: #fff;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+    min-height: 36px;
   }
 
   .swipe-action-btn.like:active {

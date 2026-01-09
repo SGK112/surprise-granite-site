@@ -293,8 +293,8 @@
           <span>Scroll</span>
         </button>
         <div class="swipe-topbar-brand">
-          <img src="/images/sg-house-icon-gold.svg" alt="SG" class="brand-icon">
-          <span class="brand-text">Surprise Granite</span>
+          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="brand-logo">
+          <span class="brand-tagline">Marble & Quartz</span>
         </div>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">
           <div class="fav-thumb-wrap">
@@ -307,18 +307,18 @@
       <div class="swipe-card-stack"></div>
       <div class="swipe-action-buttons">
         <button class="swipe-action-btn undo" onclick="window.undoSwipe()" title="Undo">
-          <svg viewBox="0 0 24 24" fill="none" class="action-icon-lg">
-            <path d="M3 9l6-6M3 9l6 6M3 9h12a6 6 0 0 1 0 12h-3" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;width:28px!important;height:28px!important;min-width:28px;min-height:28px;">
+            <path d="M3 9l6-6M3 9l6 6M3 9h12a6 6 0 0 1 0 12h-3"/>
           </svg>
         </button>
         <button class="swipe-action-btn nope" onclick="window.swipeNope()" title="Skip">
-          <svg viewBox="0 0 24 24" fill="none" class="action-icon-lg">
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" style="display:block;width:36px!important;height:36px!important;min-width:36px;min-height:36px;">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
         <button class="swipe-action-btn like" onclick="window.swipeLike()" title="Love">
-          <svg viewBox="0 0 24 24" class="action-icon-lg">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#fff" style="display:block;width:36px!important;height:36px!important;min-width:36px;min-height:36px;">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
       </div>
