@@ -4425,7 +4425,7 @@
 
       gridEl.innerHTML = items.map(item => `
         <div class="saved-floor-item" data-id="${item.id}">
-          <img class="saved-floor-image" src="${item.product_image || '/images/placeholder.jpg'}" alt="${item.product_title}" loading="lazy">
+          <img class="saved-floor-image" src="${item.product_image || '/images/placeholder.svg'}" alt="${item.product_title}" loading="lazy">
           <div class="saved-floor-content">
             <div class="saved-floor-title">${item.product_title}</div>
             ${item.product_material ? `<div class="saved-floor-material">${item.product_material}</div>` : ''}
@@ -4520,7 +4520,7 @@
             <div class="quote-items-list">
               ${savedFloors.map(floor => `
                 <div class="quote-item">
-                  <img src="${floor.product_image || '/images/placeholder-floor.jpg'}" alt="${floor.product_title}">
+                  <img src="${floor.product_image || '/images/placeholder.svg'}" alt="${floor.product_title}">
                   <div class="quote-item-info">
                     <div class="quote-item-title">${floor.product_title}</div>
                     <div class="quote-item-material">${floor.product_material || ''} ${floor.product_color ? '- ' + floor.product_color : ''}</div>
@@ -6203,7 +6203,7 @@
         } else {
           autocompleteResults.innerHTML = matches.map(stone => `
             <div class="stone-result-item" onclick="selectStone(${JSON.stringify(stone).replace(/"/g, '&quot;')})">
-              <img src="${stone.image || '/images/placeholder.jpg'}" alt="" class="stone-result-thumb">
+              <img src="${stone.image || '/images/placeholder.svg'}" alt="" class="stone-result-thumb">
               <div class="stone-result-info">
                 <div class="stone-result-name">${stone.name}</div>
                 <div class="stone-result-meta">${stone.brand || ''} • ${stone.type || ''} • ${stone.color || ''}</div>
@@ -6232,7 +6232,7 @@
 
       // Update preview
       document.getElementById('selected-stone-preview').style.display = 'block';
-      document.getElementById('selected-stone-img').src = stone.image || '/images/placeholder.jpg';
+      document.getElementById('selected-stone-img').src = stone.image || '/images/placeholder.svg';
       document.getElementById('selected-stone-name').textContent = stone.name;
       document.getElementById('selected-stone-meta').textContent = `${stone.brand || ''} • ${stone.type || ''} • ${stone.color || ''}`;
 
@@ -6437,7 +6437,7 @@
 
       previewGrid.innerHTML = images.map((url, i) => `
         <div class="image-preview-item">
-          <img src="${url}" alt="Preview ${i + 1}" onerror="this.src='/images/placeholder.jpg'">
+          <img src="${url}" alt="Preview ${i + 1}" onerror="this.src='/images/placeholder.svg'">
         </div>
       `).join('');
     }

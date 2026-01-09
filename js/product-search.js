@@ -508,7 +508,7 @@ searchIndex = [];
 
     searchResults.innerHTML = results.map((product, i) => `
       <a href="/${product.category}/${product.slug}/" class="sg-search-result${i === 0 ? ' selected' : ''}">
-        <img src="${product.primaryImage || '/images/placeholder.jpg'}" alt="${product.name}" class="sg-search-result-image" loading="lazy" onerror="this.src='/images/placeholder.jpg'">
+        <img src="${product.primaryImage || '/images/placeholder.svg'}" alt="${product.name}" class="sg-search-result-image" loading="lazy" onerror="this.src='/images/placeholder.svg'">
         <div class="sg-search-result-info">
           <div class="sg-search-result-title">${highlightMatch(product.name, query)}</div>
           <div class="sg-search-result-meta">

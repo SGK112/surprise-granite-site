@@ -169,7 +169,7 @@
     for (const product of products) {
       const slug = product.slug || product.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       const url = `/${category}/${slug}/`;
-      const img = product.primaryImage || product.image || '/images/placeholder.webp';
+      const img = product.primaryImage || product.image || '/images/placeholder.svg';
       const type = product.type || category;
 
       html += `
