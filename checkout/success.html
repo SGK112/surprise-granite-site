@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed | Surprise Granite</title>
+  <meta name="description" content="Thank you for your order! Your purchase has been confirmed.">
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Unified Navigation -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260109e">
+  <script defer src="/js/unified-nav.js?v=20260109e"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .success-page {
+      padding: 60px 20px;
+      padding-top: 200px;
+      min-height: calc(100vh - 100px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-container {
+      max-width: 600px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 50px 40px;
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 25px;
+      animation: scaleIn 0.5s ease;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #fff;
+    }
+
+    .success-container h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a2b3c;
+      margin-bottom: 12px;
+    }
+
+    .success-container .subtitle {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .order-details {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .order-details h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 15px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row .label {
+      color: #666;
+    }
+
+    .detail-row .value {
+      font-weight: 600;
+      color: #1a2b3c;
+    }
+
+    .next-steps {
+      text-align: left;
+      margin-bottom: 30px;
+    }
+
+    .next-steps h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a2b3c;
+      margin-bottom: 15px;
+    }
+
+    .next-steps ul {
+      list-style: none;
+    }
+
+    .next-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+      color: #555;
+    }
+
+    .next-steps li svg {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      color: #f9cb00;
+      margin-top: 2px;
+    }
+
+    .btn-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+      color: #1a2b3c;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(249, 203, 0, 0.4);
+    }
+
+    .btn-secondary {
+      background: #1a2b3c;
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: #2d4a5e;
+    }
+
+    .support-note {
+      margin-top: 30px;
+      padding-top: 25px;
+      border-top: 1px solid #e5e5e5;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .support-note a {
+      color: #f9cb00;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .support-note a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .success-page {
+        padding-top: 140px;
+      }
+
+      .success-container {
+        padding: 35px 25px;
+      }
+
+      .success-container h1 {
+        font-size: 24px;
+      }
+
+      .btn-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation injected by unified-nav.js -->
+
+  <main class="success-page">
+    <div class="success-container">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+
+      <h1>Order Confirmed!</h1>
+      <p class="subtitle">Thank you for your purchase. We're getting your order ready.</p>
+
+      <div class="order-details">
+        <h3>Order Information</h3>
+        <div class="detail-row">
+          <span class="label">Order Number</span>
+          <span class="value" id="orderNumber">Loading...</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Date</span>
+          <span class="value" id="orderDate">-</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Status</span>
+          <span class="value" style="color: #22c55e;">Confirmed</span>
+        </div>
+      </div>
+
+      <div class="next-steps">
+        <h3>What Happens Next?</h3>
+        <ul>
+          <li>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span>You'll receive a confirmation email with your order details and receipt.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+            <span>Our team will prepare your items for shipping or pickup.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            <span>You'll receive tracking information once your order ships.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="btn-actions">
+        <a href="/shop" class="btn btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          Continue Shopping
+        </a>
+        <a href="/account" class="btn btn-secondary">
+          View My Orders
+        </a>
+      </div>
+
+      <div class="support-note">
+        Questions about your order? <a href="/contact-us">Contact our support team</a> or call <a href="tel:+16028333189">(602) 833-3189</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get session ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('session_id');
+
+      // Display order info
+      const orderNumber = document.getElementById('orderNumber');
+      const orderDate = document.getElementById('orderDate');
+
+      if (sessionId) {
+        // Create a readable order number from session ID
+        orderNumber.textContent = '#SG-' + sessionId.slice(-8).toUpperCase();
+      } else {
+        orderNumber.textContent = '#SG-' + Math.random().toString(36).slice(-8).toUpperCase();
+      }
+
+      // Display current date
+      const now = new Date();
+      orderDate.textContent = now.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Clear the cart after successful checkout
+      localStorage.removeItem('sg_cart');
+      localStorage.removeItem('sf-cart');
+      localStorage.removeItem('cart');
+
+      // Trigger cart badge update
+      if (window.updateUnifiedNavCartBadge) {
+        window.updateUnifiedNavCartBadge();
+      }
+    });
+  </script>
+</body>
+</html>
