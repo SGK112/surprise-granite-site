@@ -20,16 +20,35 @@
 /* ===========================================
    HIDE ALL OTHER NAVIGATION SYSTEMS
    =========================================== */
+
+/* Webflow navbar - high specificity */
+nav.navbar_wrapper,
 .navbar_wrapper,
+.navbar_component,
+.navbar_component.w-nav,
 .navbar-fixed_wrapper,
+.navbar-banner_component,
+.navbar_container,
+.navbar_menu,
+.navbar_logo-wrapper,
+.navbar_top-row,
+.navbar_bottom-row,
+
+/* Generic nav elements */
 .w-nav,
+.w-nav-menu,
+.w-nav-brand,
+.w-nav-link,
+.w-nav-button,
+.w-nav-overlay,
+
+/* Custom nav elements */
 header.header,
 .header,
 .header-content,
 .header-nav,
 .mobile-nav,
 .mobile-nav#mobileNav,
-.navbar_component,
 .nav-simple,
 #webflowNav,
 .mega-nav,
@@ -37,7 +56,6 @@ header.header,
 #sgMobileNav,
 .secondary-header,
 .page-header,
-.navbar_container,
 .navigation_component,
 .navigation-component,
 .nav_component,
@@ -48,19 +66,25 @@ header.header,
 .nav-wrapper,
 .nav_wrapper,
 .navbar-container,
-.w-nav-menu,
-.w-nav-brand,
-.w-nav-link,
 .menu-button,
-.w-nav-button,
-.w-nav-overlay,
 div[data-nav-menu-open],
 [data-animation="default"],
-[class*="navbar"]:not(.unified-nav):not(.unified-nav *),
-[class*="nav_"]:not(.unified-nav):not(.unified-nav *):not([class*="unified-nav"]),
-[class*="nav-"]:not(.unified-nav):not(.unified-nav *):not([class*="unified-nav"]):not(.unified-nav-links):not(.unified-nav-drawer):not(.unified-nav-overlay):not(.unified-nav-search):not(.unified-nav-actions):not(.unified-nav-toggle):not(.unified-nav-main):not(.unified-nav-top):not(.unified-nav-bottom):not(.unified-nav-mobile):not(.unified-nav-logo):not(.unified-nav-estimate):not(.unified-nav-phone):not(.unified-nav-promo),
+
+/* Header element */
 header:not(.unified-nav):not(.unified-nav *) {
   display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Extra safety for any navbar classes not in unified-nav */
+body.unified-nav-active nav:not(.unified-nav),
+body.unified-nav-active [class*="navbar_"]:not(.unified-nav *),
+body.unified-nav-active [class*="navbar-"]:not(.unified-nav *) {
+  display: none !important;
+  visibility: hidden !important;
 }
 
 /* ===========================================
