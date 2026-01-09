@@ -45,9 +45,10 @@
           </button>
           <a href="/" class="sg-mnav-logo">
             <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" />
+            <span class="sg-mnav-tagline">Marble & Quartz</span>
           </a>
           <a href="tel:+16028333189" class="sg-mnav-phone" aria-label="Call us">
-            <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+            <svg viewBox="0 0 24 24"><path fill="#1a2b3c" d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
           </a>
         </div>
 
@@ -57,7 +58,7 @@
           <div class="sg-mnav-drawer-header">
             <span class="sg-mnav-drawer-title">Menu</span>
             <button class="sg-mnav-close" id="sgMnavClose" aria-label="Close menu">
-              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              <svg viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#fff"/></svg>
             </button>
           </div>
           <nav class="sg-mnav-items">
@@ -68,7 +69,7 @@
               Get Free Estimate
             </a>
             <a href="tel:+16028333189" class="sg-mnav-call">
-              <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+              <svg viewBox="0 0 24 24"><path fill="#1a2b3c" d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
               (602) 833-3189
             </a>
           </div>
@@ -164,13 +165,24 @@
         .sg-mnav-logo {
           flex: 1;
           display: flex;
+          flex-direction: column;
+          align-items: center;
           justify-content: center;
           text-decoration: none;
+          gap: 2px;
         }
 
         .sg-mnav-logo img {
-          height: 28px;
+          height: 24px;
           width: auto;
+        }
+
+        .sg-mnav-tagline {
+          font-size: 8px;
+          color: #cca600;
+          letter-spacing: 1.5px;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         /* Phone Icon */
