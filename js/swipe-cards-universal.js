@@ -376,7 +376,23 @@
         `;
       }
 
+      // Generate badges
+      let badgesHtml = '';
+      const isRadianz = card.title && card.title.toLowerCase().includes('radianz');
+      const isPremiumBrand = card.brand && ['Cambria', 'Caesarstone', 'Silestone'].some(b => card.brand.includes(b));
+      const isNew = Math.random() < 0.15; // 15% chance of "new" badge for demo
+
+      if (isRadianz) {
+        badgesHtml += '<span class="swipe-card-badge badge-unavailable">Not Available</span>';
+      } else if (isPremiumBrand) {
+        badgesHtml += '<span class="swipe-card-badge badge-premium">Premium</span>';
+      }
+      if (isNew && !isRadianz) {
+        badgesHtml += '<span class="swipe-card-badge badge-new">New</span>';
+      }
+
       cardEl.innerHTML = `
+        ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
         <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
         <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -395,6 +411,16 @@
             ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
           <div class="swipe-card-specs">${specsHtml}</div>
+          <div class="swipe-card-actions">
+            <a href="${card.href}" class="swipe-card-action-btn primary" target="_blank">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View Details
+            </a>
+            <button class="swipe-card-action-btn secondary" onclick="window.requestSampleForCard('${card.title.replace(/'/g, "\\'")}', '${card.image}')">
+              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Sample
+            </button>
+          </div>
         </div>
       `;
 
@@ -772,5 +798,94 @@
       updateFavoritesDrawer();
     }
   };
+
+  // Request sample for a card (integrates with cart system)
+  window.requestSampleForCard = function(title, imageUrl) {
+    const SAMPLE_PRICE = 25.00;
+    const sampleName = title + ' - Sample';
+    const sampleId = sampleName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    // Try to use SgCart if available
+    if (window.SgCart && typeof window.SgCart.addToCart === 'function') {
+      window.SgCart.addToCart({
+        id: sampleId,
+        name: sampleName,
+        price: SAMPLE_PRICE,
+        image: imageUrl || 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif',
+        quantity: 1,
+        category: 'samples'
+      });
+
+      // Open cart drawer if available
+      if (window.openCartDrawer) {
+        window.openCartDrawer();
+      }
+
+      // Show success notification
+      showSampleAddedNotification(sampleName);
+    } else {
+      // Fallback: redirect to shop
+      window.location.href = '/shop/?collection=countertop-samples';
+    }
+  };
+
+  function showSampleAddedNotification(name) {
+    // Remove existing notification
+    const existing = document.querySelector('.sample-added-notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'sample-added-notification';
+    notification.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+        <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+        <path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>${name} added to cart!</span>
+    `;
+
+    // Add styles inline
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 180px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c1c1e;
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000000;
+      animation: slideUp 0.3s ease-out;
+    `;
+
+    document.body.appendChild(notification);
+
+    // Add animation keyframes
+    if (!document.querySelector('#sample-notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'sample-notification-styles';
+      style.textContent = `
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
 
 })();
