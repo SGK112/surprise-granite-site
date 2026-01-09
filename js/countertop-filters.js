@@ -48,7 +48,9 @@
 
   // Initialize
   async function init() {
-try {
+    console.log('Countertop Filter System initializing...');
+
+    try {
       const response = await fetch(CONFIG.jsonPath);
       if (!response.ok) throw new Error('Failed to load JSON');
 
@@ -56,7 +58,10 @@ try {
       allCountertops = data.countertops;
       filters = data.filters;
 
-// Build filter UI
+      console.log(`Loaded ${allCountertops.length} countertops`);
+      console.log('Filters:', filters);
+
+      // Build filter UI
       buildFilterUI();
 
       // Setup search
@@ -69,18 +74,25 @@ try {
       setupInfiniteScroll();
 
     } catch (error) {
-}
+      console.error('Failed to initialize filter system:', error);
+    }
   }
 
   // Build filter UI by populating existing filter groups
   function buildFilterUI() {
     const filterWrapper = document.querySelector(CONFIG.filterFormSelector);
     if (!filterWrapper) {
-return;
+      console.error('Filter wrapper not found');
+      return;
     }
-// Find all filter groups
+
+    console.log('Building filter UI...');
+
+    // Find all filter groups
     const filterGroups = filterWrapper.querySelectorAll('.filters2_filter-group');
-filterGroups.forEach((group, index) => {
+    console.log(`Found ${filterGroups.length} filter groups`);
+
+    filterGroups.forEach((group, index) => {
       const headingEl = group.querySelector('.heading-style-h6');
       if (!headingEl) return;
 
@@ -94,8 +106,12 @@ filterGroups.forEach((group, index) => {
       if (!checkboxGrid) {
         checkboxGrid = group.querySelector('.filters_filter-options');
       }
-if (!checkboxGrid) {
-return;
+
+      console.log(`Group ${index}: "${headingText}"`);
+
+      if (!checkboxGrid) {
+        console.log(`  No checkbox container found`);
+        return;
       }
 
       let filterData = [];
@@ -123,7 +139,9 @@ return;
       }
 
       if (filterData.length && filterKey) {
-// Clear existing checkboxes
+        console.log(`  Populating ${filterKey} with ${filterData.length} options`);
+
+        // Clear existing checkboxes
         checkboxGrid.innerHTML = '';
 
         // Create new checkboxes
@@ -156,7 +174,8 @@ return;
     // Add change listener
     const input = label.querySelector('input');
     input.addEventListener('change', function() {
-handleFilterChange(filterKey, value, this.checked);
+      console.log(`Filter changed: ${filterKey} = ${value}, checked = ${this.checked}`);
+      handleFilterChange(filterKey, value, this.checked);
     });
 
     return label;
@@ -191,7 +210,10 @@ handleFilterChange(filterKey, value, this.checked);
         label.classList.remove('sg-label-checked');
       }
     }
-currentPage = 1;
+
+    console.log('Active filters:', activeFilters);
+
+    currentPage = 1;
     applyFilters();
   }
 
@@ -234,7 +256,9 @@ currentPage = 1;
 
   // Apply filters to countertops
   function applyFilters() {
-filteredCountertops = allCountertops.filter(item => {
+    console.log('Applying filters...');
+
+    filteredCountertops = allCountertops.filter(item => {
       // Page category filter
       if (PAGE_CATEGORY && item.type !== PAGE_CATEGORY) {
         return false;
@@ -290,7 +314,10 @@ filteredCountertops = allCountertops.filter(item => {
 
       return true;
     });
-// Update results count
+
+    console.log(`Filtered to ${filteredCountertops.length} items`);
+
+    // Update results count
     updateResultsCount();
 
     // Render products
@@ -324,7 +351,8 @@ filteredCountertops = allCountertops.filter(item => {
   function renderProducts(reset = false) {
     const grid = document.querySelector(CONFIG.gridSelector);
     if (!grid) {
-return;
+      console.error('Grid not found:', CONFIG.gridSelector);
+      return;
     }
 
     if (reset) {
@@ -335,7 +363,10 @@ return;
     const startIndex = (currentPage - 1) * CONFIG.itemsPerPage;
     const endIndex = startIndex + CONFIG.itemsPerPage;
     const itemsToRender = filteredCountertops.slice(startIndex, endIndex);
-itemsToRender.forEach(item => {
+
+    console.log(`Rendering ${itemsToRender.length} items (page ${currentPage})`);
+
+    itemsToRender.forEach(item => {
       const card = createProductCard(item);
       grid.appendChild(card);
     });
@@ -397,7 +428,8 @@ itemsToRender.forEach(item => {
   function setupSearch() {
     const searchInput = document.querySelector(CONFIG.searchInputSelector);
     if (!searchInput) {
-return;
+      console.log('Search input not found');
+      return;
     }
 
     let debounceTimer;
@@ -446,7 +478,8 @@ return;
     const filterLayout = document.querySelector('.filters_layout');
 
     if (!filterWrapper || !filterLayout) {
-return;
+      console.log('Filter elements not found for mobile toggle');
+      return;
     }
 
     // Check if toggle already exists
@@ -518,7 +551,9 @@ return;
 
     // Initial count update
     setTimeout(updateFilterCount, 500);
-}
+
+    console.log('Mobile filter toggle initialized');
+  }
 
   // Check for mobile viewport
   function isMobileViewport() {

@@ -386,7 +386,8 @@
     initQuickAddAnimation();
 
     // Log initialization
-}
+    console.log('[Shop Optimizations] Initialized for', isTouchDevice() ? 'touch' : 'desktop', 'device');
+  }
 
   // Run initialization
   init();

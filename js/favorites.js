@@ -119,7 +119,9 @@
     // Position wrapper
     imageContainer.style.position = 'relative';
     imageContainer.appendChild(heartBtn);
-}
+
+    console.log('Favorites: Added heart to product detail page');
+  }
 
   // Extract product data from detail page (h1, meta tags, images)
   function extractProductDataFromDetailPage() {
@@ -150,10 +152,12 @@
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
           currentUser = session.user;
-}
+          console.log('Favorites: User logged in', currentUser.email);
+        }
       }
     } catch (e) {
-}
+      console.log('Favorites: Supabase not available');
+    }
   }
 
   async function loadAllFavorites() {
@@ -185,12 +189,15 @@
               color: fav.product_color
             });
           });
-// Sync localStorage with database data
+          console.log('Favorites: Loaded', data.length, 'items from Supabase');
+
+          // Sync localStorage with database data
           saveToLocalStorage();
           return;
         }
       } catch (e) {
-}
+        console.log('Favorites: Error loading from Supabase', e);
+      }
     }
 
     // Fallback to localStorage (when not logged in)
@@ -211,8 +218,11 @@
       if (legacyCountertop) {
         favorites.countertop = JSON.parse(legacyCountertop);
       }
-} catch (e) {
-}
+
+      console.log('Favorites: Loaded from localStorage');
+    } catch (e) {
+      console.log('Favorites: Error loading from localStorage', e);
+    }
   }
 
   function saveToLocalStorage() {
@@ -223,7 +233,8 @@
       localStorage.setItem('sg_flooring_favorites', JSON.stringify(favorites.flooring || []));
       localStorage.setItem('sg_countertop_favorites', JSON.stringify(favorites.countertop || []));
     } catch (e) {
-}
+      console.log('Favorites: Error saving to localStorage', e);
+    }
   }
 
   async function saveFavoriteToSupabase(product, productType) {
@@ -251,7 +262,8 @@
         return data.id;
       }
     } catch (e) {
-}
+      console.log('Favorites: Error saving to Supabase', e);
+    }
 
     saveToLocalStorage();
     return null;
@@ -269,7 +281,8 @@
         .delete()
         .eq('id', dbId);
     } catch (e) {
-}
+      console.log('Favorites: Error removing from Supabase', e);
+    }
   }
 
   // Find all product cards on the page
@@ -415,7 +428,9 @@
         lastTap = currentTime;
       });
     });
-}
+
+    console.log(`Favorites: Added hearts to ${cards.length} products`);
+  }
 
   async function toggleFavorite(btnElement, product, productType) {
     if (!favorites[productType]) favorites[productType] = [];
