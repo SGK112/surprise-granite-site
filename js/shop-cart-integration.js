@@ -44,11 +44,16 @@
         z-index: 10;
       }
 
+      /* Always visible - not just on hover */
+      .quick-add-btn {
+        opacity: 1 !important;
+        transform: scale(1) translateY(0) !important;
+      }
+
       .product-card:hover .quick-add-btn,
       .shop-product:hover .quick-add-btn,
       [sf-data-product]:hover .quick-add-btn {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: scale(1.1) translateY(0) !important;
       }
 
       .quick-add-btn:hover {
@@ -571,6 +576,213 @@
     });
   }
 
+  // Intercept Shopify links and redirect to internal cart
+  function interceptShopifyLinks() {
+    document.addEventListener('click', function(e) {
+      const link = e.target.closest('a');
+      if (!link) return;
+
+      const href = link.href || '';
+
+      // Intercept Shopify checkout and cart links
+      if (href.includes('shopify.com') ||
+          href.includes('/cart') && href.includes('shopify') ||
+          href.includes('checkout.shopify') ||
+          link.classList.contains('sf-add-to-cart') ||
+          link.hasAttribute('sf-add-to-cart')) {
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Try to extract product info from the link's parent card
+        const card = link.closest('[sf-data-product], .product-card, .shop-product');
+        if (card) {
+          const nameEl = card.querySelector('.product-name, .shop-product-name, h3, h4');
+          const priceEl = card.querySelector('.product-price, .shop-product-price, [class*="price"]');
+          const imgEl = card.querySelector('img');
+
+          if (nameEl) {
+            const name = nameEl.textContent.trim();
+            const priceText = priceEl ? priceEl.textContent.trim() : '';
+            const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+            const image = imgEl ? imgEl.src : '';
+
+            window.SgCart.addToCart({
+              id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              name: name,
+              price: price,
+              image: image,
+              quantity: 1
+            });
+
+            window.openCartDrawer();
+            updateFloatingCount();
+            return;
+          }
+        }
+
+        // Fallback: open cart drawer
+        window.openCartDrawer();
+      }
+    }, true);
+  }
+
+  // Add full "Add to Cart" button bars to product cards
+  function addCartButtonBars() {
+    const products = document.querySelectorAll('[sf-data-product], .product-card, .shop-product, .collection-item');
+
+    products.forEach(product => {
+      if (product.querySelector('.sg-add-to-cart-bar')) return;
+
+      const nameEl = product.querySelector('.product-name, .shop-product-name, h3, h4, [class*="name"]');
+      const priceEl = product.querySelector('.product-price, .shop-product-price, [class*="price"]');
+      const imgEl = product.querySelector('img');
+
+      if (!nameEl) return;
+
+      const name = nameEl.textContent.trim();
+      const priceText = priceEl ? priceEl.textContent.trim() : '';
+      const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+      const image = imgEl ? imgEl.src : '';
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      // Create button bar
+      const bar = document.createElement('div');
+      bar.className = 'sg-add-to-cart-bar';
+      bar.innerHTML = `
+        <button class="sg-add-btn" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${image}">
+          <svg viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>
+          Add to Cart
+        </button>
+        <button class="sg-buy-btn" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${image}">
+          Buy Now
+        </button>
+      `;
+
+      // Insert after price or at end of content area
+      const contentArea = product.querySelector('.product-content, .shop-product-content, [class*="content"]') || product;
+      contentArea.appendChild(bar);
+
+      // Bind click handlers
+      bar.querySelector('.sg-add-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (price <= 0) {
+          window.SgCart.showNotification('Price not available - contact us for quote', 'error');
+          return;
+        }
+
+        window.SgCart.addToCart({
+          id: this.dataset.id,
+          name: this.dataset.name,
+          price: parseFloat(this.dataset.price),
+          image: this.dataset.image,
+          quantity: 1
+        });
+
+        this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Added!';
+        this.style.background = '#22c55e';
+        setTimeout(() => {
+          this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg> Add to Cart';
+          this.style.background = '';
+        }, 2000);
+
+        window.openCartDrawer();
+        updateFloatingCount();
+      });
+
+      bar.querySelector('.sg-buy-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (price <= 0) {
+          window.SgCart.showNotification('Price not available - contact us for quote', 'error');
+          return;
+        }
+
+        // Clear cart and add this item
+        window.SgCart.clearCart();
+        window.SgCart.addToCart({
+          id: this.dataset.id,
+          name: this.dataset.name,
+          price: parseFloat(this.dataset.price),
+          image: this.dataset.image,
+          quantity: 1
+        });
+
+        // Go directly to cart
+        window.location.href = '/cart/';
+      });
+    });
+  }
+
+  // Add cart button bar styles
+  function addButtonBarStyles() {
+    const style = document.createElement('style');
+    style.id = 'sg-cart-bar-styles';
+    style.textContent = `
+      .sg-add-to-cart-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .sg-add-btn, .sg-buy-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+      }
+
+      .sg-add-btn {
+        background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+        color: #1a2b3c;
+      }
+
+      .sg-add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(249, 203, 0, 0.4);
+      }
+
+      .sg-add-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      .sg-buy-btn {
+        background: #1a2b3c;
+        color: #fff;
+      }
+
+      .sg-buy-btn:hover {
+        background: #2d4a5e;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(26, 43, 60, 0.3);
+      }
+
+      /* Hide original Shopyflow buttons */
+      .sf-add-to-cart,
+      [sf-add-to-cart],
+      .shopyflow-add,
+      .add-to-cart-btn:not(.sg-add-btn) {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   // Initialize
   function init() {
     // Wait for cart.js to load
@@ -580,13 +792,17 @@
     }
 
     injectStyles();
+    addButtonBarStyles();
     createCartDrawer();
     addQuickAddButtons();
+    addCartButtonBars();
+    interceptShopifyLinks();
     updateFloatingCount();
 
     // Re-run when new products are loaded (for infinite scroll, etc.)
     const observer = new MutationObserver(() => {
       addQuickAddButtons();
+      addCartButtonBars();
     });
 
     const productsContainer = document.querySelector('.shop-products, .collection-list, [data-products]');
