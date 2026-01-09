@@ -155,8 +155,7 @@
       }
 
     } catch (err) {
-      console.error('Remnant count error:', err);
-    }
+}
   }
 
   // Initialize when DOM is ready

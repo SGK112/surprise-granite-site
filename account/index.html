@@ -146,12 +146,75 @@
 
     .nav-badge {
       margin-left: auto;
-      background: var(--gold-primary);
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
       color: var(--dark-primary);
       font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 100px;
+      box-shadow: 0 2px 8px rgba(249, 203, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .nav-badge.empty {
+      background: var(--border-subtle);
+      color: var(--text-muted);
+      box-shadow: none;
+      border: none;
+    }
+
+    /* Account type badges */
+    .account-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .account-badge.homeowner {
+      background: rgba(77, 255, 130, 0.15);
+      color: var(--success);
+    }
+
+    .account-badge.pro {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+      box-shadow: 0 2px 8px rgba(249, 203, 0, 0.3);
+    }
+
+    .account-badge.pro::before {
+      content: '\2605';
+      font-size: 10px;
+    }
+
+    .account-badge.admin {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    .account-badge.admin::before {
+      content: '\2699';
+      font-size: 10px;
+    }
+
+    /* Stat value styling */
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold-primary);
+      text-shadow: 0 0 20px rgba(249, 203, 0, 0.3);
+    }
+
+    .stat-card:hover .stat-value {
+      text-shadow: 0 0 30px rgba(249, 203, 0, 0.5);
     }
 
     .sidebar-footer {
@@ -383,6 +446,18 @@
       transform: translateY(-2px);
     }
 
+    /* Highlighted Action Card */
+    .action-card.action-highlight {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.15) 0%, rgba(249, 203, 0, 0.08) 100%);
+      border-color: var(--gold-primary);
+    }
+
+    .action-card.action-highlight:hover {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.25) 0%, rgba(249, 203, 0, 0.15) 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(249, 203, 0, 0.2);
+    }
+
     .action-icon {
       width: 48px;
       height: 48px;
@@ -392,6 +467,12 @@
       align-items: center;
       justify-content: center;
       color: var(--gold-primary);
+      flex-shrink: 0;
+    }
+
+    .action-icon.action-icon-gold {
+      background: var(--gold-primary);
+      color: #1a1a2e;
     }
 
     .action-icon svg {
@@ -408,6 +489,26 @@
     .action-text p {
       font-size: 12px;
       color: var(--text-muted);
+    }
+
+    /* Stat Cards with icons */
+    .stat-card {
+      position: relative;
+    }
+
+    .stat-card.clickable {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card.clickable:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.08);
+    }
+
+    .stat-icon {
+      margin-bottom: 8px;
     }
 
     /* Profile Form */
@@ -1308,6 +1409,254 @@
       transform: none;
     }
 
+    /* Signup Steps */
+    .signup-step {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .step-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 8px 0;
+    }
+
+    .step-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .step-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-bottom: 16px;
+      transition: color 0.2s;
+    }
+
+    .step-back:hover {
+      color: var(--gold-primary);
+    }
+
+    .step-back svg {
+      color: inherit;
+    }
+
+    /* Account Type Cards */
+    .account-type-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .account-type-card {
+      position: relative;
+      background: var(--dark-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .account-type-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .account-type-card.selected {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .account-type-card.selected::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      background: var(--gold-primary);
+      border-radius: 50%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231a1a2e'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-size: 16px;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .type-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .type-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--text-secondary);
+    }
+
+    .type-icon.pro {
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .type-icon.pro svg {
+      color: var(--gold-primary);
+    }
+
+    .type-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .type-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .type-features {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .type-features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .type-features .check-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--success);
+    }
+
+    .type-features .check-icon.gold {
+      color: var(--gold-primary);
+    }
+
+    .type-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .type-badge.free {
+      background: rgba(77, 255, 130, 0.15);
+      color: var(--success);
+    }
+
+    .type-badge.pro {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    /* Signup Terms */
+    .signup-terms {
+      margin-bottom: 20px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--gold-primary);
+      flex-shrink: 0;
+    }
+
+    .checkbox-label a {
+      color: var(--gold-primary);
+      text-decoration: none;
+    }
+
+    .checkbox-label a:hover {
+      text-decoration: underline;
+    }
+
+    /* Pro Note */
+    .pro-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(249, 203, 0, 0.1);
+      border: 1px solid rgba(249, 203, 0, 0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .pro-note svg {
+      color: var(--gold-primary);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 600px) {
+      .account-type-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .account-type-card {
+        padding: 24px 20px;
+      }
+    }
+
     /* Loading */
     .loading-screen {
       min-height: 100vh;
@@ -2204,7 +2553,126 @@
       color: var(--text-muted);
     }
 
-    /* Image preview */
+    /* Image Upload Grid */
+    .image-upload-section {
+      margin-top: 8px;
+    }
+
+    .image-upload-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .image-upload-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .image-upload-slot {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--dark-elevated);
+      border: 2px dashed var(--border-light);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .image-upload-slot:first-child {
+      aspect-ratio: 4/3;
+    }
+
+    @media (max-width: 600px) {
+      .image-upload-slot:first-child {
+        grid-column: span 2;
+      }
+    }
+
+    .image-upload-slot:hover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .image-upload-slot.has-image {
+      border-style: solid;
+      border-color: var(--gold-primary);
+    }
+
+    .upload-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .upload-placeholder svg {
+      color: var(--gold-primary);
+      opacity: 0.7;
+    }
+
+    .upload-placeholder span {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .upload-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 71, 87, 0.95);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+      z-index: 10;
+    }
+
+    .remove-image-btn:hover {
+      background: #ff4747;
+      transform: scale(1.1);
+    }
+
+    .upload-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .upload-progress-bar {
+      height: 100%;
+      background: var(--gold-primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Legacy image preview for backward compatibility */
     .image-preview-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -2291,23 +2759,127 @@
 
       <!-- Signup Form -->
       <form id="signup-form" class="auth-form" onsubmit="handleSignup(event)">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" id="signup-name" required placeholder="John Smith"/>
+        <!-- Step 1: Account Type Selection -->
+        <div class="signup-step" id="signup-step-1">
+          <div class="step-header">
+            <h3 class="step-title">Choose Your Account Type</h3>
+            <p class="step-subtitle">Select the option that best describes you</p>
+          </div>
+
+          <div class="account-type-grid">
+            <div class="account-type-card" data-type="homeowner" onclick="selectAccountType('homeowner')">
+              <div class="type-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+              </div>
+              <div class="type-name">Homeowner</div>
+              <div class="type-desc">Shopping for countertops, tile, or flooring for your home</div>
+              <ul class="type-features">
+                <li><svg class="check-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Save favorite materials</li>
+                <li><svg class="check-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Get free estimates</li>
+                <li><svg class="check-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> List up to 3 remnants</li>
+              </ul>
+              <div class="type-badge free">Free</div>
+            </div>
+
+            <div class="account-type-card" data-type="pro_fabricator" onclick="selectAccountType('pro_fabricator')">
+              <div class="type-icon pro">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
+              </div>
+              <div class="type-name">Pro Fabricator</div>
+              <div class="type-desc">Countertop fabricators, installers, and stone professionals</div>
+              <ul class="type-features">
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> <strong>Unlimited</strong> remnant listings</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Pro verified badge</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Priority in marketplace</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Business profile page</li>
+              </ul>
+              <div class="type-badge pro">Pro</div>
+            </div>
+
+            <div class="account-type-card" data-type="pro_designer" onclick="selectAccountType('pro_designer')">
+              <div class="type-icon pro">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z"/>
+                </svg>
+              </div>
+              <div class="type-name">Designer / Architect</div>
+              <div class="type-desc">Interior designers, architects, and design professionals</div>
+              <ul class="type-features">
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Create client mood boards</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Trade pricing access</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Designer verified badge</li>
+                <li><svg class="check-icon gold" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Project management tools</li>
+              </ul>
+              <div class="type-badge pro">Pro</div>
+            </div>
+          </div>
+
+          <input type="hidden" id="signup-account-type" value="homeowner"/>
+          <button type="button" class="auth-submit" id="continue-to-details" onclick="goToSignupStep(2)">Continue</button>
         </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="signup-email" required placeholder="you@example.com"/>
+
+        <!-- Step 2: Account Details -->
+        <div class="signup-step" id="signup-step-2" style="display: none;">
+          <div class="step-header">
+            <button type="button" class="step-back" onclick="goToSignupStep(1)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back
+            </button>
+            <h3 class="step-title">Create Your Account</h3>
+            <p class="step-subtitle" id="selected-type-label">Homeowner Account</p>
+          </div>
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="signup-name" required placeholder="John Smith"/>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="signup-email" required placeholder="you@example.com"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters"/>
+          </div>
+          <div class="form-group">
+            <label>Phone (Optional)</label>
+            <input type="tel" id="signup-phone" placeholder="(555) 123-4567"/>
+          </div>
+
+          <!-- Pro account fields -->
+          <div id="pro-fields" style="display: none;">
+            <div class="form-group">
+              <label>Business Name</label>
+              <input type="text" id="signup-business-name" placeholder="Your Company Name"/>
+            </div>
+            <div class="form-group">
+              <label>Business Location</label>
+              <input type="text" id="signup-business-location" placeholder="City, State"/>
+            </div>
+          </div>
+
+          <div class="signup-terms">
+            <label class="checkbox-label">
+              <input type="checkbox" id="signup-terms" required/>
+              <span>I agree to the <a href="/terms/" target="_blank">Terms of Service</a> and <a href="/privacy/" target="_blank">Privacy Policy</a></span>
+            </label>
+          </div>
+
+          <button type="submit" class="auth-submit" id="signup-btn">Create Account</button>
+
+          <div class="pro-note" id="pro-upgrade-note" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Pro accounts require verification. You'll receive an email to complete your business verification.</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters"/>
-        </div>
-        <div class="form-group">
-          <label>Phone (Optional)</label>
-          <input type="tel" id="signup-phone" placeholder="(555) 123-4567"/>
-        </div>
-        <button type="submit" class="auth-submit" id="signup-btn">Create Account</button>
       </form>
     </div>
   </div>
@@ -3245,13 +3817,79 @@
           <!-- Images -->
           <div class="form-section">
             <div class="form-section-title">Images (up to 4)</div>
-            <div class="form-group">
-              <label>Image URLs (paste Imgur or other image links)</label>
-              <input type="url" id="listing-image-1" placeholder="https://i.imgur.com/..." oninput="updateImagePreviews()">
-              <input type="url" id="listing-image-2" placeholder="Image 2 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
-              <input type="url" id="listing-image-3" placeholder="Image 3 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
-              <input type="url" id="listing-image-4" placeholder="Image 4 (optional)" oninput="updateImagePreviews()" style="margin-top: 8px;">
-              <div id="image-preview-grid" class="image-preview-grid"></div>
+
+            <!-- Image Upload Area -->
+            <div class="image-upload-section">
+              <div class="image-upload-grid" id="image-upload-grid">
+                <!-- Image Slot 1 -->
+                <div class="image-upload-slot" id="image-slot-1" onclick="triggerImageUpload(1)">
+                  <input type="file" id="image-file-1" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(1, this)">
+                  <input type="hidden" id="listing-image-1">
+                  <div class="upload-placeholder" id="upload-placeholder-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>Add Photo</span>
+                  </div>
+                  <img id="image-preview-1" class="upload-preview" src="" style="display: none;">
+                  <button type="button" class="remove-image-btn" id="remove-btn-1" onclick="removeImage(event, 1)" style="display: none;">&times;</button>
+                  <div class="upload-progress" id="upload-progress-1" style="display: none;">
+                    <div class="upload-progress-bar" id="upload-bar-1"></div>
+                  </div>
+                </div>
+
+                <!-- Image Slot 2 -->
+                <div class="image-upload-slot" id="image-slot-2" onclick="triggerImageUpload(2)">
+                  <input type="file" id="image-file-2" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(2, this)">
+                  <input type="hidden" id="listing-image-2">
+                  <div class="upload-placeholder" id="upload-placeholder-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </div>
+                  <img id="image-preview-2" class="upload-preview" src="" style="display: none;">
+                  <button type="button" class="remove-image-btn" id="remove-btn-2" onclick="removeImage(event, 2)" style="display: none;">&times;</button>
+                  <div class="upload-progress" id="upload-progress-2" style="display: none;">
+                    <div class="upload-progress-bar" id="upload-bar-2"></div>
+                  </div>
+                </div>
+
+                <!-- Image Slot 3 -->
+                <div class="image-upload-slot" id="image-slot-3" onclick="triggerImageUpload(3)">
+                  <input type="file" id="image-file-3" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(3, this)">
+                  <input type="hidden" id="listing-image-3">
+                  <div class="upload-placeholder" id="upload-placeholder-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </div>
+                  <img id="image-preview-3" class="upload-preview" src="" style="display: none;">
+                  <button type="button" class="remove-image-btn" id="remove-btn-3" onclick="removeImage(event, 3)" style="display: none;">&times;</button>
+                  <div class="upload-progress" id="upload-progress-3" style="display: none;">
+                    <div class="upload-progress-bar" id="upload-bar-3"></div>
+                  </div>
+                </div>
+
+                <!-- Image Slot 4 -->
+                <div class="image-upload-slot" id="image-slot-4" onclick="triggerImageUpload(4)">
+                  <input type="file" id="image-file-4" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(4, this)">
+                  <input type="hidden" id="listing-image-4">
+                  <div class="upload-placeholder" id="upload-placeholder-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </div>
+                  <img id="image-preview-4" class="upload-preview" src="" style="display: none;">
+                  <button type="button" class="remove-image-btn" id="remove-btn-4" onclick="removeImage(event, 4)" style="display: none;">&times;</button>
+                  <div class="upload-progress" id="upload-progress-4" style="display: none;">
+                    <div class="upload-progress-bar" id="upload-bar-4"></div>
+                  </div>
+                </div>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center;">
+                Tap to take a photo or upload from your gallery. First image will be the main photo.
+              </p>
             </div>
           </div>
 
@@ -3432,7 +4070,74 @@
       document.getElementById('auth-title').textContent = tab === 'login' ? 'Welcome Back' : 'Create Account';
       document.getElementById('auth-subtitle').textContent = tab === 'login' ? 'Sign in to access your account' : 'Join us to get started';
       hideAuthMessage();
+
+      // Reset signup to step 1 when switching tabs
+      if (tab === 'signup') {
+        goToSignupStep(1);
+        selectAccountType('homeowner');
+      }
     }
+
+    // Signup step functions
+    function selectAccountType(type) {
+      // Update hidden input
+      document.getElementById('signup-account-type').value = type;
+
+      // Update card selection UI
+      document.querySelectorAll('.account-type-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      document.querySelector(`.account-type-card[data-type="${type}"]`).classList.add('selected');
+    }
+
+    function goToSignupStep(step) {
+      const step1 = document.getElementById('signup-step-1');
+      const step2 = document.getElementById('signup-step-2');
+      const accountType = document.getElementById('signup-account-type').value;
+
+      if (step === 1) {
+        step1.style.display = 'block';
+        step2.style.display = 'none';
+        document.getElementById('auth-title').textContent = 'Create Account';
+        document.getElementById('auth-subtitle').textContent = 'Join us to get started';
+      } else {
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+
+        // Update labels based on account type
+        const typeLabels = {
+          'homeowner': 'Homeowner Account',
+          'pro_fabricator': 'Pro Fabricator Account',
+          'pro_designer': 'Designer / Architect Account'
+        };
+        document.getElementById('selected-type-label').textContent = typeLabels[accountType] || 'Your Account';
+
+        // Show/hide pro fields
+        const proFields = document.getElementById('pro-fields');
+        const proNote = document.getElementById('pro-upgrade-note');
+        const isPro = accountType.startsWith('pro_');
+
+        proFields.style.display = isPro ? 'block' : 'none';
+        proNote.style.display = isPro ? 'flex' : 'none';
+
+        // Update header for pro accounts
+        if (isPro) {
+          document.getElementById('auth-title').textContent = 'Pro Account Setup';
+          document.getElementById('auth-subtitle').textContent = 'Unlock unlimited features';
+        } else {
+          document.getElementById('auth-title').textContent = 'Create Account';
+          document.getElementById('auth-subtitle').textContent = 'Almost there!';
+        }
+      }
+    }
+
+    // Initialize account type selection on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const homeownerCard = document.querySelector('.account-type-card[data-type="homeowner"]');
+      if (homeownerCard) {
+        homeownerCard.classList.add('selected');
+      }
+    });
 
     function showAuthMessage(msg, type) {
       const el = document.getElementById('auth-message');
@@ -3483,11 +4188,22 @@
         const email = document.getElementById('signup-email').value;
         const password = document.getElementById('signup-password').value;
         const phone = document.getElementById('signup-phone').value;
+        const accountType = document.getElementById('signup-account-type').value;
+        const businessName = document.getElementById('signup-business-name')?.value || null;
+        const businessLocation = document.getElementById('signup-business-location')?.value || null;
 
         const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name, phone } }
+          options: {
+            data: {
+              full_name: name,
+              phone,
+              account_type: accountType,
+              business_name: businessName,
+              business_location: businessLocation
+            }
+          }
         });
 
         if (error) throw error;
@@ -3498,10 +4214,19 @@
           email,
           full_name: name,
           phone: phone || null,
-          account_type: 'homeowner'
+          account_type: accountType,
+          business_name: businessName,
+          business_location: businessLocation,
+          verified: accountType === 'homeowner' // Homeowners auto-verified, pros need verification
         }]);
 
-        showAuthMessage('Account created! Check your email to verify, then sign in.', 'success');
+        // Show success message based on account type
+        const isPro = accountType.startsWith('pro_');
+        const successMsg = isPro
+          ? 'Pro account created! Check your email to verify. Our team will review your business details.'
+          : 'Account created! Check your email to verify, then sign in.';
+
+        showAuthMessage(successMsg, 'success');
         showAuthTab('login');
       } catch (err) {
         showAuthMessage(err.message || 'Failed to create account', 'error');
@@ -3933,15 +4658,68 @@
           </a>
         `;
       } else {
-        statsEl.innerHTML = '';
+        // Enhanced user stats
+        statsEl.innerHTML = `
+          <div class="stat-card clickable" onclick="showPage('favorites')">
+            <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div>
+            <div class="stat-label">My Favorites</div>
+            <div class="stat-value" id="stat-favorites">0</div>
+          </div>
+          <div class="stat-card clickable" onclick="showPage('listings')">
+            <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
+            <div class="stat-label">My Listings</div>
+            <div class="stat-value" id="stat-listings">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+            <div class="stat-label">Quotes Sent</div>
+            <div class="stat-value" id="stat-quotes">0</div>
+          </div>
+        `;
         actionsEl.innerHTML = `
-          <a href="/get-a-free-estimate/" class="action-card">
-            <div class="action-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <a href="/get-a-free-estimate/" class="action-card action-highlight">
+            <div class="action-icon action-icon-gold">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
             <div class="action-text">
               <h4>Get Free Estimate</h4>
               <p>Request a quote for your project</p>
+            </div>
+          </a>
+          <a href="#" onclick="showPage('favorites'); return false;" class="action-card">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>My Favorites</h4>
+              <p>View saved materials</p>
+            </div>
+          </a>
+          <a href="/remnants/" class="action-card">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Stone Marketplace</h4>
+              <p>Buy & sell remnants</p>
+            </div>
+          </a>
+          <a href="/materials/all-countertops/" class="action-card">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Browse Countertops</h4>
+              <p>Granite, quartz, marble</p>
+            </div>
+          </a>
+          <a href="/materials/flooring/" class="action-card">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-width="2" d="M4 4h16v16H4z M4 10h16 M10 4v16"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Browse Flooring</h4>
+              <p>LVP, hardwood, tile</p>
             </div>
           </a>
           <a href="/tools/countertop-calculator/" class="action-card">
@@ -3949,26 +4727,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
             <div class="action-text">
-              <h4>Countertop Calculator</h4>
-              <p>Calculate costs for your countertops</p>
-            </div>
-          </a>
-          <a href="/materials/all-countertops/" class="action-card">
-            <div class="action-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            </div>
-            <div class="action-text">
-              <h4>Browse Materials</h4>
-              <p>Explore our countertop selection</p>
-            </div>
-          </a>
-          <a href="/contact-us/" class="action-card">
-            <div class="action-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            </div>
-            <div class="action-text">
-              <h4>Contact Us</h4>
-              <p>Get in touch with our team</p>
+              <h4>Calculator</h4>
+              <p>Estimate your project</p>
             </div>
           </a>
         `;
@@ -4822,6 +5582,8 @@
       </td>
     </tr>
   </table>
+<script src="/js/user-tracking.js"></script>
+<script src="/js/site-search.js"></script>
 </body>
 </html>`,
       modern: `
@@ -4926,6 +5688,8 @@
       </td>
     </tr>
   </table>
+<script src="/js/user-tracking.js"></script>
+<script src="/js/site-search.js"></script>
 </body>
 </html>`,
       premium: `
@@ -5054,6 +5818,8 @@
       </td>
     </tr>
   </table>
+<script src="/js/user-tracking.js"></script>
+<script src="/js/site-search.js"></script>
 </body>
 </html>`
     };
@@ -5479,6 +6245,165 @@
       } else {
         priceInput.placeholder = '0.00';
       }
+    }
+
+    // Image Upload Functions
+    function triggerImageUpload(slotNum) {
+      const fileInput = document.getElementById(`image-file-${slotNum}`);
+      fileInput.click();
+    }
+
+    async function handleImageUpload(slotNum, input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image must be less than 5MB');
+        return;
+      }
+
+      const slot = document.getElementById(`image-slot-${slotNum}`);
+      const placeholder = document.getElementById(`upload-placeholder-${slotNum}`);
+      const preview = document.getElementById(`image-preview-${slotNum}`);
+      const removeBtn = document.getElementById(`remove-btn-${slotNum}`);
+      const progress = document.getElementById(`upload-progress-${slotNum}`);
+      const progressBar = document.getElementById(`upload-bar-${slotNum}`);
+      const hiddenInput = document.getElementById(`listing-image-${slotNum}`);
+
+      // Show progress
+      progress.style.display = 'block';
+      progressBar.style.width = '10%';
+
+      try {
+        // Get current user
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          alert('Please log in to upload images');
+          return;
+        }
+
+        // Generate unique filename
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        progressBar.style.width = '30%';
+
+        // Compress image if needed
+        const compressedFile = await compressImage(file, 1200, 0.8);
+
+        progressBar.style.width = '50%';
+
+        // Upload to Supabase Storage
+        const { data, error } = await supabaseClient.storage
+          .from('listing-images')
+          .upload(fileName, compressedFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        progressBar.style.width = '80%';
+
+        if (error) {
+          // Fallback: use data URL for preview and let user know to use URL input
+          console.warn('Storage upload failed, using local preview:', error);
+          const dataUrl = await readFileAsDataUrl(file);
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          removeBtn.style.display = 'flex';
+          slot.classList.add('has-image');
+          // Store data URL temporarily (won't persist to DB, but shows preview)
+          hiddenInput.value = dataUrl;
+          progressBar.style.width = '100%';
+          setTimeout(() => { progress.style.display = 'none'; }, 500);
+          return;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+          .from('listing-images')
+          .getPublicUrl(fileName);
+
+        progressBar.style.width = '100%';
+
+        // Update UI
+        preview.src = urlData.publicUrl;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        removeBtn.style.display = 'flex';
+        slot.classList.add('has-image');
+        hiddenInput.value = urlData.publicUrl;
+
+        setTimeout(() => { progress.style.display = 'none'; }, 500);
+
+      } catch (err) {
+        console.error('Upload error:', err);
+        alert('Failed to upload image. Please try again or paste an image URL.');
+        progress.style.display = 'none';
+      }
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function compressImage(file, maxWidth, quality) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          }, 'image/jpeg', quality);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function removeImage(event, slotNum) {
+      event.stopPropagation();
+
+      const slot = document.getElementById(`image-slot-${slotNum}`);
+      const placeholder = document.getElementById(`upload-placeholder-${slotNum}`);
+      const preview = document.getElementById(`image-preview-${slotNum}`);
+      const removeBtn = document.getElementById(`remove-btn-${slotNum}`);
+      const hiddenInput = document.getElementById(`listing-image-${slotNum}`);
+      const fileInput = document.getElementById(`image-file-${slotNum}`);
+
+      // Reset UI
+      preview.src = '';
+      preview.style.display = 'none';
+      placeholder.style.display = 'flex';
+      removeBtn.style.display = 'none';
+      slot.classList.remove('has-image');
+      hiddenInput.value = '';
+      fileInput.value = '';
     }
 
     function updateImagePreviews() {
@@ -5950,5 +6875,7 @@
       alert('Edit functionality coming soon!');
     }
   </script>
+<script src="/js/user-tracking.js"></script>
+<script src="/js/site-search.js"></script>
 </body>
 </html>

@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Flooring Square Footage Calculator | Surprise Granite</title>
+    <link rel="canonical" href="https://surprisegranite.com/tools/flooring-calculator/"/>
+    <meta content="Calculate your flooring square footage instantly. Add multiple rooms and get accurate measurements for hardwood, laminate, vinyl, or tile flooring projects." name="description"/>
+    <meta content="Flooring Square Footage Calculator | Surprise Granite" property="og:title"/>
+    <meta content="Calculate your flooring square footage instantly. Free tool for all flooring projects." property="og:description"/>
+    <meta content="Flooring Square Footage Calculator | Surprise Granite" property="twitter:title"/>
+    <meta content="Calculate your flooring square footage instantly. Free tool for all flooring projects." property="twitter:description"/>
+    <meta property="og:type" content="website"/>
+    <meta content="summary_large_image" name="twitter:card"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/css/surprisegranite.webflow.shared.06fa25eb8.min.css" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+    <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png" rel="apple-touch-icon"/>
+    <link rel="stylesheet" href="/css/mobile-optimizations.css">
+
+    <style>
+        :root {
+            --gold-primary: #f9cb00;
+            --gold-dark: #cca600;
+            --dark-primary: #1a1a2e;
+            --dark-deep: #0f0f18;
+            --dark-surface: #16161f;
+            --dark-elevated: #1e1e2d;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.75);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-deep);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+            color: var(--text-primary);
+        }
+
+        .app-container {
+            max-width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--dark-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover { color: var(--gold-primary); }
+
+        .btn-estimate {
+            background: var(--gold-primary) !important;
+            color: var(--dark-primary) !important;
+            padding: 8px 16px !important;
+            border-radius: 8px;
+            font-weight: 600 !important;
+            font-size: 13px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .header-nav { display: none; }
+            .mobile-menu-btn { display: block; }
+            .header-content { padding: 10px 16px; }
+            .logo-text { font-size: 14px; }
+            .logo-icon { width: 28px; height: 28px; }
+            .logo-link { gap: 10px; }
+        }
+
+        .mobile-nav {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--dark-surface);
+            padding: 16px 20px;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 999;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .mobile-nav.open { display: flex; }
+
+        .mobile-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .mobile-nav a:last-child { border-bottom: none; }
+        .mobile-nav a:hover { color: var(--gold-primary); }
+
+        .mobile-nav .btn-estimate {
+            background: var(--gold-primary);
+            color: var(--dark-primary) !important;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .page-content {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 20px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .breadcrumb { display: none; }
+        }
+
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb a:hover { color: var(--gold-primary); }
+        .breadcrumb span { color: var(--text-muted); }
+        .breadcrumb .current { color: var(--text-secondary); font-weight: 500; }
+
+        .calc-hero {
+            text-align: center;
+            padding: 32px 20px;
+            background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-elevated) 100%);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .calc-hero h1 {
+            color: var(--text-primary);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .calc-hero h1 span { color: var(--gold-primary); }
+
+        .calc-hero p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin: 0 auto;
+            max-width: 400px;
+        }
+
+        @media (max-width: 600px) {
+            .calc-hero { padding: 24px 16px; }
+            .calc-hero h1 { font-size: 1.4rem; }
+            .calc-hero p { font-size: 0.85rem; }
+        }
+
+        .calculator-card {
+            background: var(--dark-surface);
+            overflow: hidden;
+        }
+
+        .calc-section {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .calc-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calc-section-title svg {
+            width: 20px;
+            height: 20px;
+            color: var(--gold-primary);
+        }
+
+        /* Flooring Type Selection */
+        .flooring-type-selection {
+            background: var(--dark-elevated);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .flooring-type-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .flooring-type-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .flooring-type-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .flooring-type-option {
+            cursor: pointer;
+        }
+
+        .flooring-type-option input {
+            display: none;
+        }
+
+        .flooring-type-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+            background: var(--dark-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .flooring-type-option input:checked + .flooring-type-card {
+            border-color: var(--gold-primary);
+            background: rgba(249, 203, 0, 0.1);
+        }
+
+        .flooring-type-card:hover {
+            border-color: var(--text-muted);
+        }
+
+        .flooring-type-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .flooring-type-price {
+            font-size: 0.75rem;
+            color: var(--gold-primary);
+        }
+
+        /* Room Sections */
+        .room-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .room-section {
+            background: var(--dark-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .room-section:hover,
+        .room-section:focus-within {
+            border-color: var(--gold-primary);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            background: rgba(255, 107, 107, 0.15);
+        }
+
+        .remove-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        @media (max-width: 600px) {
+            .input-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .input-row .input-group:nth-child(3) {
+                grid-column: span 2;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .measurement-inputs {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            min-width: 80px;
+            padding: 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .input-unit-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .room-name-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .room-name-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+        }
+
+        .section-results {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .section-sqft {
+            background: var(--dark-surface);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+        }
+
+        .section-sqft span {
+            color: var(--gold-primary);
+        }
+
+        /* Add Section Button */
+        .add-section-btn {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 2px dashed var(--gold-primary);
+            border-radius: 10px;
+            color: var(--gold-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .add-section-btn:hover {
+            background: rgba(249, 203, 0, 0.1);
+            border-style: solid;
+        }
+
+        .add-section-btn svg {
+            width: 18px;
+            height: 18px;
+            color: var(--gold-primary);
+        }
+
+        /* Waste Factor */
+        .waste-section {
+            background: var(--dark-elevated);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .waste-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .waste-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .waste-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .waste-option {
+            cursor: pointer;
+        }
+
+        .waste-option input {
+            display: none;
+        }
+
+        .waste-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            background: var(--dark-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .waste-option input:checked + .waste-card {
+            border-color: var(--gold-primary);
+            background: rgba(249, 203, 0, 0.1);
+        }
+
+        .waste-card:hover {
+            border-color: var(--text-muted);
+        }
+
+        .waste-percent {
+            font-weight: 700;
+            color: var(--gold-primary);
+            font-size: 1rem;
+        }
+
+        .waste-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            background: var(--dark-elevated);
+            padding: 24px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .results-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .results-panel {
+                padding: 20px 16px;
+            }
+        }
+
+        .result-card {
+            background: var(--dark-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .result-card.highlight {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border: none;
+            grid-column: span 1;
+        }
+
+        @media (max-width: 600px) {
+            .result-card.highlight {
+                grid-column: span 2;
+            }
+        }
+
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-card.highlight .result-label {
+            color: rgba(26, 26, 46, 0.7);
+        }
+
+        .result-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .result-card.highlight .result-value {
+            color: var(--dark-primary);
+        }
+
+        .result-value small {
+            font-size: 0.75rem;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        /* Estimate Section */
+        .estimate-section {
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 20px;
+        }
+
+        .estimate-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .estimate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .estimate-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .estimate-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .estimate-item.tier-budget {
+            border-color: rgba(76, 175, 80, 0.3);
+        }
+
+        .estimate-item.tier-popular {
+            border-color: rgba(249, 203, 0, 0.5);
+            background: rgba(249, 203, 0, 0.1);
+        }
+
+        .estimate-item.tier-premium {
+            border-color: rgba(156, 39, 176, 0.3);
+        }
+
+        .estimate-material {
+            font-size: 0.9rem;
+            color: #fff;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .estimate-desc {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 10px;
+        }
+
+        .estimate-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f9cb00;
+            margin-bottom: 4px;
+        }
+
+        .estimate-rate {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .estimate-disclaimer {
+            margin-top: 16px;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 32px 20px;
+            background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-elevated) 100%);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .cta-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin: 0 0 20px 0;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            color: var(--dark-primary);
+            padding: 16px 32px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(249, 203, 0, 0.25);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(249, 203, 0, 0.35);
+        }
+
+        .cta-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .cta-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .generate-quote-btn {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .cta-btn-secondary {
+            background: var(--dark-elevated);
+            color: var(--gold-primary);
+            border: 2px solid var(--gold-primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-btn-secondary:hover {
+            background: rgba(249, 203, 0, 0.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Quote Modal */
+        .quote-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .quote-modal-overlay.active {
+            display: flex;
+        }
+
+        .quote-modal {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .quote-modal-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+            padding: 24px;
+            color: #fff;
+            position: relative;
+        }
+
+        .quote-modal-header h2 {
+            margin: 0 0 4px 0;
+            font-size: 1.5rem;
+        }
+
+        .quote-modal-header p {
+            margin: 0;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .quote-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .quote-modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .quote-modal-body {
+            padding: 24px;
+        }
+
+        .quote-summary-section {
+            margin-bottom: 20px;
+        }
+
+        .quote-summary-section h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .quote-line-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quote-line-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .quote-line-item .label {
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .quote-line-item .value {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .quote-room-detail {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .quote-room-detail .room-name {
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+
+        .quote-room-detail .room-dims {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .quote-price-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 2px solid transparent;
+        }
+
+        .quote-price-tier.popular {
+            background: #fffbeb;
+            border-color: #f9cb00;
+        }
+
+        .quote-price-tier .tier-name {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .quote-price-tier .tier-desc {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .quote-price-tier .tier-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f9cb00;
+        }
+
+        .quote-modal-actions {
+            padding: 20px 24px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quote-action-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+        }
+
+        .quote-action-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .quote-action-btn.primary {
+            background: #f9cb00;
+            color: #1a1a2e;
+        }
+
+        .quote-action-btn.primary:hover {
+            background: #e6b800;
+        }
+
+        .quote-action-btn.secondary {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .quote-action-btn.secondary:hover {
+            background: #2d2d4a;
+        }
+
+        .quote-action-btn.outline {
+            background: #fff;
+            color: #1a1a2e;
+            border: 2px solid #e0e0e0;
+        }
+
+        .quote-action-btn.outline:hover {
+            border-color: #1a1a2e;
+        }
+
+        .quote-date {
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .quote-disclaimer {
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .quote-modal, .quote-modal * { visibility: visible; }
+            .quote-modal { position: absolute; left: 0; top: 0; max-height: none; box-shadow: none; }
+            .quote-modal-actions, .quote-modal-close { display: none !important; }
+        }
+
+        /* Tips Section */
+        .tips-section {
+            margin: 0;
+            background: var(--dark-surface);
+            padding: 28px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .tips-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tips-title svg {
+            width: 22px;
+            height: 22px;
+            color: var(--gold-primary);
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+            .tips-section {
+                padding: 24px 16px;
+            }
+        }
+
+        .tip-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 16px;
+            background: var(--dark-elevated);
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+        }
+
+        .tip-item:hover {
+            border-color: var(--gold-primary);
+        }
+
+        .tip-icon {
+            width: 28px;
+            height: 28px;
+            background: #f9cb00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #1a1a2e;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .tip-content h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+        }
+
+        .tip-content p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* Other Tools Section */
+        .other-tools {
+            margin: 0;
+            padding: 28px 20px;
+            background: var(--dark-elevated);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .other-tools h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 500px) {
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            .other-tools {
+                padding: 24px 16px;
+            }
+        }
+
+        .tool-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--dark-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tool-link:hover {
+            border-color: var(--gold-primary);
+            transform: translateX(4px);
+        }
+
+        .tool-link svg {
+            width: 20px;
+            height: 20px;
+            color: var(--gold-primary);
+        }
+
+        /* Footer */
+        .site-footer {
+            background: var(--dark-deep);
+            border-top: 1px solid var(--border-subtle);
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--gold-primary);
+        }
+
+        .footer-copyright {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .footer-copyright a {
+            color: var(--gold-primary);
+            text-decoration: none;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .room-section {
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .result-value {
+            transition: all 0.3s ease;
+        }
+
+        .result-card.highlight {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Focus visible for accessibility */
+        *:focus-visible {
+            outline: 2px solid var(--gold-primary);
+            outline-offset: 2px;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 121.073 124.824" class="logo-icon">
+                    <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
+                    <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
+                    <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
+                    <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
+                </svg>
+                <span class="logo-text">Surprise Granite</span>
+            </a>
+            <nav class="header-nav">
+                <a href="/materials/all-countertops">Countertops</a>
+                <a href="/materials/flooring">Flooring</a>
+                <a href="/shop">Shop</a>
+                <a href="/company/project-gallery">Gallery</a>
+                <a href="/contact-us">Contact</a>
+                <a href="/get-a-free-estimate" class="btn-estimate">Free Estimate</a>
+            </nav>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+        </div>
+    </header>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="/materials/all-countertops">Countertops</a>
+        <a href="/materials/flooring">Flooring</a>
+        <a href="/shop">Shop</a>
+        <a href="/company/project-gallery">Gallery</a>
+        <a href="/contact-us">Contact</a>
+        <a href="/get-a-free-estimate" class="btn-estimate">Free Estimate</a>
+    </div>
+
+    <div class="page-content">
+        <nav class="breadcrumb">
+            <a href="/">Home</a>
+            <span>/</span>
+            <a href="/tools/virtual-kitchen-design-tool/">Tools</a>
+            <span>/</span>
+            <span class="current">Flooring Calculator</span>
+        </nav>
+
+        <div class="calc-hero">
+            <h1>Flooring <span>Calculator</span></h1>
+            <p>Calculate your flooring square footage instantly for accurate project estimates</p>
+        </div>
+
+        <div class="calculator-card">
+            <div class="calc-section">
+                <h2 class="calc-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                    </svg>
+                    Room Measurements
+                </h2>
+
+                <!-- Flooring Type Selection -->
+                <div class="flooring-type-selection">
+                    <label class="flooring-type-label">Flooring Type</label>
+                    <div class="flooring-type-options">
+                        <label class="flooring-type-option">
+                            <input type="radio" name="flooring-type" value="hardwood" checked onchange="calculateAll()">
+                            <span class="flooring-type-card">
+                                <span class="flooring-type-name">Hardwood</span>
+                                <span class="flooring-type-price">$8-15/sqft</span>
+                            </span>
+                        </label>
+                        <label class="flooring-type-option">
+                            <input type="radio" name="flooring-type" value="laminate" onchange="calculateAll()">
+                            <span class="flooring-type-card">
+                                <span class="flooring-type-name">Laminate</span>
+                                <span class="flooring-type-price">$3-8/sqft</span>
+                            </span>
+                        </label>
+                        <label class="flooring-type-option">
+                            <input type="radio" name="flooring-type" value="vinyl" onchange="calculateAll()">
+                            <span class="flooring-type-card">
+                                <span class="flooring-type-name">Vinyl/LVP</span>
+                                <span class="flooring-type-price">$4-10/sqft</span>
+                            </span>
+                        </label>
+                        <label class="flooring-type-option">
+                            <input type="radio" name="flooring-type" value="tile" onchange="calculateAll()">
+                            <span class="flooring-type-card">
+                                <span class="flooring-type-name">Tile</span>
+                                <span class="flooring-type-price">$6-15/sqft</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="room-sections" id="sections">
+                    <div class="room-section" data-index="0">
+                        <div class="section-header">
+                            <span class="section-label">Room 1</span>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Room Name (Optional)</label>
+                                <input type="text" class="room-name-input" placeholder="e.g., Living Room">
+                            </div>
+                            <div class="input-group">
+                                <label>Length</label>
+                                <div class="measurement-inputs">
+                                    <div class="input-wrapper">
+                                        <input type="number" class="length-input" placeholder="0" min="0" step="0.5" oninput="calculateAll()">
+                                    </div>
+                                    <span class="input-unit-label">ft</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Width</label>
+                                <div class="measurement-inputs">
+                                    <div class="input-wrapper">
+                                        <input type="number" class="width-input" placeholder="0" min="0" step="0.5" oninput="calculateAll()">
+                                    </div>
+                                    <span class="input-unit-label">ft</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-results">
+                            <div class="section-sqft">
+                                <span class="room-sqft">0</span> sqft
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-section-btn" onclick="addRoom()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Another Room
+                </button>
+
+                <!-- Waste Factor -->
+                <div class="waste-section">
+                    <label class="waste-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Waste Factor (for cuts & mistakes)
+                    </label>
+                    <div class="waste-options">
+                        <label class="waste-option">
+                            <input type="radio" name="waste-factor" value="5" onchange="calculateAll()">
+                            <span class="waste-card">
+                                <span class="waste-percent">5%</span>
+                                <span class="waste-desc">Simple rooms</span>
+                            </span>
+                        </label>
+                        <label class="waste-option">
+                            <input type="radio" name="waste-factor" value="10" checked onchange="calculateAll()">
+                            <span class="waste-card">
+                                <span class="waste-percent">10%</span>
+                                <span class="waste-desc">Standard</span>
+                            </span>
+                        </label>
+                        <label class="waste-option">
+                            <input type="radio" name="waste-factor" value="15" onchange="calculateAll()">
+                            <span class="waste-card">
+                                <span class="waste-percent">15%</span>
+                                <span class="waste-desc">Complex layouts</span>
+                            </span>
+                        </label>
+                        <label class="waste-option">
+                            <input type="radio" name="waste-factor" value="20" onchange="calculateAll()">
+                            <span class="waste-card">
+                                <span class="waste-percent">20%</span>
+                                <span class="waste-desc">Diagonal/Pattern</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <div class="results-grid">
+                    <div class="result-card highlight">
+                        <div class="result-label">Total to Order</div>
+                        <div class="result-value"><span id="totalToOrder">0</span> <small>sqft</small></div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Room Area</div>
+                        <div class="result-value"><span id="roomArea">0</span> <small>sqft</small></div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Waste Added</div>
+                        <div class="result-value"><span id="wasteAdded">0</span> <small>sqft</small></div>
+                    </div>
+                </div>
+                <div class="results-grid" style="margin-top: 12px;">
+                    <div class="result-card">
+                        <div class="result-label">Rooms</div>
+                        <div class="result-value"><span id="roomCount">1</span></div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Flooring Type</div>
+                        <div class="result-value" style="font-size: 1rem;"><span id="flooringType">Hardwood</span></div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Boxes Needed*</div>
+                        <div class="result-value"><span id="boxesNeeded">0</span></div>
+                    </div>
+                </div>
+
+                <div class="estimate-section">
+                    <div class="estimate-title">Estimated Installed Price</div>
+                    <div class="estimate-grid">
+                        <div class="estimate-item tier-budget">
+                            <div class="estimate-material">Budget</div>
+                            <div class="estimate-desc">Basic options</div>
+                            <div class="estimate-price" id="priceBudget">$0 - $0</div>
+                            <div class="estimate-rate" id="rateBudget">$0-0/sqft</div>
+                        </div>
+                        <div class="estimate-item tier-popular">
+                            <div class="estimate-material">Mid-Range</div>
+                            <div class="estimate-desc">Popular choices</div>
+                            <div class="estimate-price" id="pricePopular">$0 - $0</div>
+                            <div class="estimate-rate" id="ratePopular">$0-0/sqft</div>
+                        </div>
+                        <div class="estimate-item tier-premium">
+                            <div class="estimate-material">Premium</div>
+                            <div class="estimate-desc">High-end options</div>
+                            <div class="estimate-price" id="pricePremium">$0 - $0</div>
+                            <div class="estimate-rate" id="ratePremium">$0-0/sqft</div>
+                        </div>
+                    </div>
+                    <div class="estimate-disclaimer">* Boxes typically contain 20-25 sqft. Actual coverage varies by product. Estimates include installation.</div>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <p class="cta-text">Ready to get started? Get a personalized quote!</p>
+                <div class="cta-buttons">
+                    <button class="cta-btn generate-quote-btn" onclick="generateQuote()">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Generate Estimate
+                    </button>
+                    <a href="/get-a-free-estimate/" class="cta-btn cta-btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Schedule Free Estimate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-section">
+            <h3 class="tips-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                Measuring Tips
+            </h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <div class="tip-icon">1</div>
+                    <div class="tip-content">
+                        <h4>Measure in Feet</h4>
+                        <p>Measure the length and width of each room in feet. Round up to the nearest half foot.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon">2</div>
+                    <div class="tip-content">
+                        <h4>Add Each Room Separately</h4>
+                        <p>For connected spaces, add each room as a separate section for accuracy.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon">3</div>
+                    <div class="tip-content">
+                        <h4>Include Closets</h4>
+                        <p>Don't forget closets and alcoves - add them as separate rooms or include in main room.</p>
+                    </div>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon">4</div>
+                    <div class="tip-content">
+                        <h4>Account for Waste</h4>
+                        <p>Always order extra for cuts, mistakes, and future repairs. 10% is standard.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="other-tools">
+            <h3>Explore More Design Tools</h3>
+            <div class="tools-grid">
+                <a href="/tools/countertop-calculator/" class="tool-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    Countertop Calculator
+                </a>
+                <a href="/tools/tile-calculator/" class="tool-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                    </svg>
+                    Tile Calculator
+                </a>
+                <a href="/tools/virtual-kitchen-design-tool/" class="tool-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Virtual Kitchen Designer
+                </a>
+                <a href="/tools/multi-surface-room-visualizer/" class="tool-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                    </svg>
+                    Room Visualizer
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estimate Modal -->
+    <div class="quote-modal-overlay" id="quoteModal">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <h2>Your Flooring Estimate</h2>
+                <p>Surprise Granite Marble & Quartz</p>
+                <button class="quote-modal-close" onclick="closeQuoteModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" style="stroke:#ffffff;stroke-width:2.5"></line>
+                        <line x1="6" y1="6" x2="18" y2="18" style="stroke:#ffffff;stroke-width:2.5"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="quote-modal-body">
+                <div class="quote-summary-section">
+                    <h3>Room Breakdown</h3>
+                    <div id="quoteRooms"></div>
+                </div>
+                <div class="quote-summary-section">
+                    <h3>Summary</h3>
+                    <div class="quote-line-items">
+                        <div class="quote-line-item">
+                            <span class="label">Flooring Type</span>
+                            <span class="value" id="quoteFlooringType">Hardwood</span>
+                        </div>
+                        <div class="quote-line-item">
+                            <span class="label">Total Room Area</span>
+                            <span class="value" id="quoteRoomArea">0 sqft</span>
+                        </div>
+                        <div class="quote-line-item">
+                            <span class="label">Waste Factor</span>
+                            <span class="value" id="quoteWasteFactor">10%</span>
+                        </div>
+                        <div class="quote-line-item">
+                            <span class="label">Total to Order</span>
+                            <span class="value" id="quoteTotalSqft">0 sqft</span>
+                        </div>
+                        <div class="quote-line-item">
+                            <span class="label">Est. Boxes Needed</span>
+                            <span class="value" id="quoteBoxes">0 boxes</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="quote-summary-section">
+                    <h3>Estimated Price Range</h3>
+                    <div class="quote-price-tier">
+                        <div>
+                            <div class="tier-name">Budget</div>
+                            <div class="tier-desc">Basic options</div>
+                        </div>
+                        <div class="tier-price" id="quotePriceBudget">$0 - $0</div>
+                    </div>
+                    <div class="quote-price-tier popular">
+                        <div>
+                            <div class="tier-name">Mid-Range</div>
+                            <div class="tier-desc">Popular choices</div>
+                        </div>
+                        <div class="tier-price" id="quotePricePopular">$0 - $0</div>
+                    </div>
+                    <div class="quote-price-tier">
+                        <div>
+                            <div class="tier-name">Premium</div>
+                            <div class="tier-desc">High-end options</div>
+                        </div>
+                        <div class="tier-price" id="quotePricePremium">$0 - $0</div>
+                    </div>
+                </div>
+                <div class="quote-date" id="quoteDate"></div>
+                <div class="quote-disclaimer">* This is an estimate only. Final pricing depends on material selection, subfloor condition, and layout complexity. Schedule a free in-home estimate for exact pricing.</div>
+            </div>
+            <div class="quote-modal-actions">
+                <button class="quote-action-btn outline" onclick="window.print()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    Print
+                </button>
+                <a href="/get-a-free-estimate/" class="quote-action-btn primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Get Exact Quote
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="simple-footer">
+        <div class="footer-cta">
+            <h2>Ready to Start Your Project?</h2>
+            <p>Free estimates for Phoenix metro homeowners</p>
+            <div class="footer-cta-btns">
+                <a href="/get-a-free-estimate" class="footer-btn-primary">Get Free Estimate</a>
+                <a href="tel:+16028333189" class="footer-btn-secondary">(602) 833-3189</a>
+            </div>
+        </div>
+
+        <div class="footer-main">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Products</h4>
+                    <a href="/materials/all-countertops">Countertops</a>
+                    <a href="/materials/all-cabinets">Cabinets</a>
+                    <a href="/materials/flooring">Flooring</a>
+                    <a href="/materials/all-tile">Tile & Backsplash</a>
+                    <a href="https://store.surprisegranite.com" target="_blank">Online Store</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Services</h4>
+                    <a href="/services/home/kitchen-remodeling-arizona">Kitchen Remodeling</a>
+                    <a href="/services/home/bathroom-remodeling-arizona">Bathroom Remodeling</a>
+                    <a href="/get-a-free-estimate">Free Estimate</a>
+                    <a href="/tools/virtual-kitchen-design-tool">Design Tools</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <a href="/company/about-us">About Us</a>
+                    <a href="/company/project-gallery">Gallery</a>
+                    <a href="/company/reviews">Reviews</a>
+                    <a href="/blog">Blog</a>
+                    <a href="/contact-us">Contact</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Connect</h4>
+                    <div class="footer-contact">
+                        <p><strong>Service Area:</strong><br>Greater Phoenix, AZ<br>We Come to You!</p>
+                        <p><strong>Hours:</strong><br>Mon-Fri 8am-5pm<br>Sat 9am-2pm</p>
+                    </div>
+                    <div class="footer-socials">
+                        <a href="https://www.facebook.com/surprisegranitetops" target="_blank" aria-label="Facebook">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6H13.5C12.9477 6 12.5 6.44772 12.5 7V10H16.5C16.6137 9.99748 16.7216 10.0504 16.7892 10.1419C16.8568 10.2334 16.8758 10.352 16.84 10.46L16.1 12.66C16.0318 12.8619 15.8431 12.9984 15.63 13H12.5V20.5C12.5 20.7761 12.2761 21 12 21H9.5C9.22386 21 9 20.7761 9 20.5V13H7.5C7.22386 13 7 12.7761 7 12.5V10.5C7 10.2239 7.22386 10 7.5 10H9V7C9 4.79086 10.7909 3 13 3H16.5C16.7761 3 17 3.22386 17 3.5V5.5C17 5.77614 16.7761 6 16.5 6Z"/></svg>
+                        </a>
+                        <a href="https://www.instagram.com/surprisegranite/" target="_blank" aria-label="Instagram">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3H8C5.23858 3 3 5.23858 3 8V16C3 18.7614 5.23858 21 8 21H16C18.7614 21 21 18.7614 21 16V8C21 5.23858 18.7614 3 16 3ZM19.25 16C19.2445 17.7926 17.7926 19.2445 16 19.25H8C6.20735 19.2445 4.75549 17.7926 4.75 16V8C4.75549 6.20735 6.20735 4.75549 8 4.75H16C17.7926 4.75549 19.2445 6.20735 19.25 8V16ZM16.75 8.25C17.3023 8.25 17.75 7.80228 17.75 7.25C17.75 6.69772 17.3023 6.25 16.75 6.25C16.1977 6.25 15.75 6.69772 15.75 7.25C15.75 7.80228 16.1977 8.25 16.75 8.25ZM12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5ZM9.25 12C9.25 13.5188 10.4812 14.75 12 14.75C13.5188 14.75 14.75 13.5188 14.75 12C14.75 10.4812 13.5188 9.25 12 9.25C10.4812 9.25 9.25 10.4812 9.25 12Z"/></svg>
+                        </a>
+                        <a href="https://www.youtube.com/@surprisegranite6491" target="_blank" aria-label="YouTube">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.9999 4.48992C21.7284 4.68529 23.0264 6.16064 22.9999 7.89992V16.0999C23.0264 17.8392 21.7284 19.3146 19.9999 19.5099L18.5999 19.6599C14.2315 20.1099 9.82835 20.1099 5.45991 19.6599L3.99991 19.5099C2.27143 19.3146 0.973464 17.8392 0.999909 16.0999V7.89992C0.973464 6.16064 2.27143 4.68529 3.99991 4.48992L5.39991 4.33992C9.76835 3.88995 14.1715 3.88995 18.5399 4.33992L19.9999 4.48992ZM11.1099 15.2199L14.9999 12.6199C15.2695 12.4833 15.3959 12.2501 15.3959 11.9999C15.3959 11.7497 15.2695 11.5165 15.0599 11.3799L11.1699 8.77992C10.9402 8.62469 10.6437 8.60879 10.3987 8.73859C10.1538 8.86839 10.0004 9.12271 9.99991 9.39992V14.5999C10.0128 14.858 10.1576 15.0913 10.3832 15.2173C10.6088 15.3433 10.8834 15.3443 11.1099 15.2199Z"/></svg>
+                        </a>
+                        <a href="https://www.pinterest.com/surprisegranite1/" target="_blank" aria-label="Pinterest">
+                            <svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2a14 14 0 0 0-5.1 27a13.24 13.24 0 0 1 0-4l1.65-7a5.05 5.05 0 0 1-.38-2c0-1.94 1.13-3.4 2.53-3.4a1.76 1.76 0 0 1 1.77 2c0 1.2-.76 3-1.16 4.66a2 2 0 0 0 2.08 2.53c2.48 0 4.4-2.63 4.4-6.41a5.53 5.53 0 0 0-5.85-5.7a6.06 6.06 0 0 0-6.32 6.08a5.42 5.42 0 0 0 1 3.19a.44.44 0 0 1 .1.4c-.11.44-.35 1.4-.39 1.59s-.21.31-.47.19c-1.75-.82-2.84-3.37-2.84-5.43c0-4.41 3.21-8.47 9.25-8.47c4.85 0 8.63 3.46 8.63 8.09c0 4.82-3 8.7-7.27 8.7a3.76 3.76 0 0 1-3.21-1.6l-.87 3.33a15.55 15.55 0 0 1-1.74 3.67A14.17 14.17 0 0 0 16 30a14 14 0 0 0 0-28"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <div class="footer-legal">
+                    <a href="/legal/privacy-policy">Privacy</a>
+                    <a href="/legal/terms-of-use">Terms</a>
+                    <a href="/legal/lifetime-warranty">Warranty</a>
+                    <a href="https://azroc.my.site.com/AZRoc/s/contractor-search?licenseId=a0o8y000000OAdvAAG" target="_blank">ROC #341113</a>
+                </div>
+                <div class="footer-copy">&copy; 2025 Surprise Granite Marble & Quartz</div>
+                <div class="footer-payments">
+                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2ee83fbb125_visa.png" alt="Visa" width="32">
+                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb26f2bfbb121_mastercard.png" alt="Mastercard" width="32">
+                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb280abfbb124_discover.png" alt="Discover" width="32">
+                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2b84cfbb122_amex.png" alt="Amex" width="32">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+    .simple-footer { background: #1a1a2e; color: #fff; }
+    .footer-cta { background: linear-gradient(135deg, #f9cb00, #e6b800); padding: 48px 24px; text-align: center; }
+    .footer-cta h2 { color: #1a1a2e; font-size: 28px; margin: 0 0 8px 0; font-weight: 700; }
+    .footer-cta p { color: rgba(26,26,46,0.8); font-size: 16px; margin: 0 0 24px 0; }
+    .footer-cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .footer-btn-primary { background: #1a1a2e; color: #f9cb00; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.2s; }
+    .footer-btn-primary:hover { background: #0f0f1a; }
+    .footer-btn-secondary { background: transparent; border: 2px solid #1a1a2e; color: #1a1a2e; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; transition: all 0.2s; }
+    .footer-btn-secondary:hover { background: rgba(26,26,46,0.1); }
+    .footer-main { padding: 48px 24px; max-width: 1100px; margin: 0 auto; }
+    .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
+    @media (max-width: 800px) { .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; } }
+    @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
+    .footer-col h4 { color: #f9cb00; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 16px 0; font-weight: 600; }
+    .footer-col a { display: block; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; padding: 6px 0; transition: color 0.2s; }
+    .footer-col a:hover { color: #f9cb00; }
+    .footer-contact { margin-bottom: 16px; }
+    .footer-contact p { font-size: 13px; color: rgba(255,255,255,0.7); margin: 0 0 12px 0; line-height: 1.5; }
+    .footer-contact strong { color: rgba(255,255,255,0.9); }
+    .footer-socials { display: flex; gap: 12px; }
+    .footer-socials a { color: rgba(255,255,255,0.6); transition: color 0.2s; padding: 0; }
+    .footer-socials a:hover { color: #f9cb00; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding: 20px 24px; }
+    .footer-bottom-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .footer-legal { display: flex; gap: 16px; }
+    .footer-legal a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 12px; }
+    .footer-legal a:hover { color: #f9cb00; }
+    .footer-copy { color: rgba(255,255,255,0.4); font-size: 12px; }
+    .footer-payments { display: flex; gap: 8px; }
+    .footer-payments img { height: 20px; width: auto; opacity: 0.7; }
+    @media (max-width: 700px) { .footer-bottom-inner { flex-direction: column; text-align: center; } }
+    </style>
+
+    <script>
+        let roomCount = 1;
+
+        // Price tiers per sqft (installed) by flooring type
+        const flooringPrices = {
+            hardwood: { budget: { min: 8, max: 12 }, popular: { min: 12, max: 18 }, premium: { min: 18, max: 25 } },
+            laminate: { budget: { min: 3, max: 5 }, popular: { min: 5, max: 8 }, premium: { min: 8, max: 12 } },
+            vinyl: { budget: { min: 4, max: 6 }, popular: { min: 6, max: 10 }, premium: { min: 10, max: 15 } },
+            tile: { budget: { min: 6, max: 10 }, popular: { min: 10, max: 15 }, premium: { min: 15, max: 25 } }
+        };
+
+        const flooringNames = {
+            hardwood: 'Hardwood',
+            laminate: 'Laminate',
+            vinyl: 'Vinyl/LVP',
+            tile: 'Tile'
+        };
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileNav').classList.toggle('open');
+        }
+
+        function addRoom() {
+            roomCount++;
+            const container = document.getElementById('sections');
+            const section = document.createElement('div');
+            section.className = 'room-section';
+            section.dataset.index = roomCount - 1;
+            section.innerHTML = `
+                <div class="section-header">
+                    <span class="section-label">Room ${roomCount}</span>
+                    <button class="remove-btn" onclick="removeRoom(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Room Name (Optional)</label>
+                        <input type="text" class="room-name-input" placeholder="e.g., Bedroom">
+                    </div>
+                    <div class="input-group">
+                        <label>Length</label>
+                        <div class="measurement-inputs">
+                            <div class="input-wrapper">
+                                <input type="number" class="length-input" placeholder="0" min="0" step="0.5" oninput="calculateAll()">
+                            </div>
+                            <span class="input-unit-label">ft</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Width</label>
+                        <div class="measurement-inputs">
+                            <div class="input-wrapper">
+                                <input type="number" class="width-input" placeholder="0" min="0" step="0.5" oninput="calculateAll()">
+                            </div>
+                            <span class="input-unit-label">ft</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-results">
+                    <div class="section-sqft">
+                        <span class="room-sqft">0</span> sqft
+                    </div>
+                </div>
+            `;
+            container.appendChild(section);
+            calculateAll();
+            section.querySelector('.length-input').focus();
+        }
+
+        function removeRoom(btn) {
+            const section = btn.closest('.room-section');
+            section.remove();
+            renumberRooms();
+            calculateAll();
+        }
+
+        function renumberRooms() {
+            const sections = document.querySelectorAll('.room-section');
+            sections.forEach((section, index) => {
+                section.querySelector('.section-label').textContent = `Room ${index + 1}`;
+                section.dataset.index = index;
+            });
+            roomCount = sections.length;
+        }
+
+        function calculateAll() {
+            const sections = document.querySelectorAll('.room-section');
+            let totalRoomArea = 0;
+
+            // Get flooring type
+            const flooringTypeInput = document.querySelector('input[name="flooring-type"]:checked');
+            const flooringType = flooringTypeInput ? flooringTypeInput.value : 'hardwood';
+
+            // Get waste factor
+            const wasteFactorInput = document.querySelector('input[name="waste-factor"]:checked');
+            const wasteFactor = wasteFactorInput ? parseFloat(wasteFactorInput.value) / 100 : 0.10;
+
+            sections.forEach(section => {
+                const length = parseFloat(section.querySelector('.length-input').value) || 0;
+                const width = parseFloat(section.querySelector('.width-input').value) || 0;
+                const roomSqft = length * width;
+
+                section.querySelector('.room-sqft').textContent = roomSqft.toFixed(1);
+                totalRoomArea += roomSqft;
+            });
+
+            // Calculate totals
+            const wasteAdded = totalRoomArea * wasteFactor;
+            const totalToOrder = totalRoomArea + wasteAdded;
+            const boxesNeeded = Math.ceil(totalToOrder / 22); // Assume ~22 sqft per box
+
+            // Update display
+            document.getElementById('roomArea').textContent = totalRoomArea.toFixed(1);
+            document.getElementById('wasteAdded').textContent = wasteAdded.toFixed(1);
+            document.getElementById('totalToOrder').textContent = totalToOrder.toFixed(1);
+            document.getElementById('roomCount').textContent = sections.length;
+            document.getElementById('flooringType').textContent = flooringNames[flooringType];
+            document.getElementById('boxesNeeded').textContent = boxesNeeded;
+
+            // Update price estimates
+            const prices = flooringPrices[flooringType];
+
+            const budgetMin = Math.round(totalToOrder * prices.budget.min);
+            const budgetMax = Math.round(totalToOrder * prices.budget.max);
+            document.getElementById('priceBudget').textContent = '$' + budgetMin.toLocaleString() + ' - $' + budgetMax.toLocaleString();
+            document.getElementById('rateBudget').textContent = '$' + prices.budget.min + '-' + prices.budget.max + '/sqft';
+
+            const popularMin = Math.round(totalToOrder * prices.popular.min);
+            const popularMax = Math.round(totalToOrder * prices.popular.max);
+            document.getElementById('pricePopular').textContent = '$' + popularMin.toLocaleString() + ' - $' + popularMax.toLocaleString();
+            document.getElementById('ratePopular').textContent = '$' + prices.popular.min + '-' + prices.popular.max + '/sqft';
+
+            const premiumMin = Math.round(totalToOrder * prices.premium.min);
+            const premiumMax = Math.round(totalToOrder * prices.premium.max);
+            document.getElementById('pricePremium').textContent = '$' + premiumMin.toLocaleString() + ' - $' + premiumMax.toLocaleString();
+            document.getElementById('ratePremium').textContent = '$' + prices.premium.min + '-' + prices.premium.max + '/sqft';
+        }
+
+        // Quote Modal Functions
+        function generateQuote() {
+            const sections = document.querySelectorAll('.room-section');
+            const quoteRoomsEl = document.getElementById('quoteRooms');
+            quoteRoomsEl.innerHTML = '';
+
+            let totalRoomArea = 0;
+
+            // Get flooring type
+            const flooringTypeInput = document.querySelector('input[name="flooring-type"]:checked');
+            const flooringType = flooringTypeInput ? flooringTypeInput.value : 'hardwood';
+
+            // Get waste factor
+            const wasteFactorInput = document.querySelector('input[name="waste-factor"]:checked');
+            const wasteFactor = wasteFactorInput ? parseFloat(wasteFactorInput.value) : 10;
+
+            sections.forEach((section, index) => {
+                const roomName = section.querySelector('.room-name-input').value || `Room ${index + 1}`;
+                const length = parseFloat(section.querySelector('.length-input').value) || 0;
+                const width = parseFloat(section.querySelector('.width-input').value) || 0;
+                const roomSqft = length * width;
+
+                totalRoomArea += roomSqft;
+
+                const roomHtml = `
+                    <div class="quote-room-detail">
+                        <div class="room-name">${roomName}</div>
+                        <div class="room-dims">${length} ft × ${width} ft = ${roomSqft.toFixed(1)} sqft</div>
+                    </div>
+                `;
+                quoteRoomsEl.innerHTML += roomHtml;
+            });
+
+            const wasteDecimal = wasteFactor / 100;
+            const totalToOrder = totalRoomArea * (1 + wasteDecimal);
+            const boxesNeeded = Math.ceil(totalToOrder / 22);
+
+            // Update modal summary
+            document.getElementById('quoteFlooringType').textContent = flooringNames[flooringType];
+            document.getElementById('quoteRoomArea').textContent = totalRoomArea.toFixed(1) + ' sqft';
+            document.getElementById('quoteWasteFactor').textContent = wasteFactor + '%';
+            document.getElementById('quoteTotalSqft').textContent = totalToOrder.toFixed(1) + ' sqft';
+            document.getElementById('quoteBoxes').textContent = boxesNeeded + ' boxes';
+
+            // Update price tiers
+            document.getElementById('quotePriceBudget').textContent = document.getElementById('priceBudget').textContent;
+            document.getElementById('quotePricePopular').textContent = document.getElementById('pricePopular').textContent;
+            document.getElementById('quotePricePremium').textContent = document.getElementById('pricePremium').textContent;
+
+            // Set date
+            const today = new Date();
+            document.getElementById('quoteDate').textContent = 'Estimate generated on ' + today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            // Show modal
+            document.getElementById('quoteModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuoteModal() {
+            document.getElementById('quoteModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('quoteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeQuoteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeQuoteModal();
+            }
+        });
+
+        // Initialize
+        calculateAll();
+    </script>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="/materials/all-countertops">Countertops</a>
+                <a href="/materials/flooring">Flooring</a>
+                <a href="/tools">All Tools</a>
+                <a href="/contact-us">Contact</a>
+                <a href="/get-a-free-estimate">Free Estimate</a>
+            </div>
+            <p class="footer-copyright">
+                &copy; 2024 <a href="/">Surprise Granite</a>. All rights reserved.
+            </p>
+        </div>
+    </footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/auth-state.js"></script>
+<script src="/js/user-tracking.js"></script>
+<script src="/js/site-search.js"></script>
+</body>
+</html>

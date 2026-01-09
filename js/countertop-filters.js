@@ -48,9 +48,7 @@
 
   // Initialize
   async function init() {
-    console.log('Countertop Filter System initializing...');
-
-    try {
+try {
       const response = await fetch(CONFIG.jsonPath);
       if (!response.ok) throw new Error('Failed to load JSON');
 
@@ -58,10 +56,7 @@
       allCountertops = data.countertops;
       filters = data.filters;
 
-      console.log(`Loaded ${allCountertops.length} countertops`);
-      console.log('Filters:', filters);
-
-      // Build filter UI
+// Build filter UI
       buildFilterUI();
 
       // Setup search
@@ -74,25 +69,18 @@
       setupInfiniteScroll();
 
     } catch (error) {
-      console.error('Failed to initialize filter system:', error);
-    }
+}
   }
 
   // Build filter UI by populating existing filter groups
   function buildFilterUI() {
     const filterWrapper = document.querySelector(CONFIG.filterFormSelector);
     if (!filterWrapper) {
-      console.error('Filter wrapper not found');
-      return;
+return;
     }
-
-    console.log('Building filter UI...');
-
-    // Find all filter groups
+// Find all filter groups
     const filterGroups = filterWrapper.querySelectorAll('.filters2_filter-group');
-    console.log(`Found ${filterGroups.length} filter groups`);
-
-    filterGroups.forEach((group, index) => {
+filterGroups.forEach((group, index) => {
       const headingEl = group.querySelector('.heading-style-h6');
       if (!headingEl) return;
 
@@ -106,12 +94,8 @@
       if (!checkboxGrid) {
         checkboxGrid = group.querySelector('.filters_filter-options');
       }
-
-      console.log(`Group ${index}: "${headingText}"`);
-
-      if (!checkboxGrid) {
-        console.log(`  No checkbox container found`);
-        return;
+if (!checkboxGrid) {
+return;
       }
 
       let filterData = [];
@@ -139,9 +123,7 @@
       }
 
       if (filterData.length && filterKey) {
-        console.log(`  Populating ${filterKey} with ${filterData.length} options`);
-
-        // Clear existing checkboxes
+// Clear existing checkboxes
         checkboxGrid.innerHTML = '';
 
         // Create new checkboxes
@@ -174,8 +156,7 @@
     // Add change listener
     const input = label.querySelector('input');
     input.addEventListener('change', function() {
-      console.log(`Filter changed: ${filterKey} = ${value}, checked = ${this.checked}`);
-      handleFilterChange(filterKey, value, this.checked);
+handleFilterChange(filterKey, value, this.checked);
     });
 
     return label;
@@ -210,10 +191,7 @@
         label.classList.remove('sg-label-checked');
       }
     }
-
-    console.log('Active filters:', activeFilters);
-
-    currentPage = 1;
+currentPage = 1;
     applyFilters();
   }
 
@@ -256,9 +234,7 @@
 
   // Apply filters to countertops
   function applyFilters() {
-    console.log('Applying filters...');
-
-    filteredCountertops = allCountertops.filter(item => {
+filteredCountertops = allCountertops.filter(item => {
       // Page category filter
       if (PAGE_CATEGORY && item.type !== PAGE_CATEGORY) {
         return false;
@@ -314,10 +290,7 @@
 
       return true;
     });
-
-    console.log(`Filtered to ${filteredCountertops.length} items`);
-
-    // Update results count
+// Update results count
     updateResultsCount();
 
     // Render products
@@ -351,8 +324,7 @@
   function renderProducts(reset = false) {
     const grid = document.querySelector(CONFIG.gridSelector);
     if (!grid) {
-      console.error('Grid not found:', CONFIG.gridSelector);
-      return;
+return;
     }
 
     if (reset) {
@@ -363,10 +335,7 @@
     const startIndex = (currentPage - 1) * CONFIG.itemsPerPage;
     const endIndex = startIndex + CONFIG.itemsPerPage;
     const itemsToRender = filteredCountertops.slice(startIndex, endIndex);
-
-    console.log(`Rendering ${itemsToRender.length} items (page ${currentPage})`);
-
-    itemsToRender.forEach(item => {
+itemsToRender.forEach(item => {
       const card = createProductCard(item);
       grid.appendChild(card);
     });
@@ -428,8 +397,7 @@
   function setupSearch() {
     const searchInput = document.querySelector(CONFIG.searchInputSelector);
     if (!searchInput) {
-      console.log('Search input not found');
-      return;
+return;
     }
 
     let debounceTimer;
@@ -478,8 +446,7 @@
     const filterLayout = document.querySelector('.filters_layout');
 
     if (!filterWrapper || !filterLayout) {
-      console.log('Filter elements not found for mobile toggle');
-      return;
+return;
     }
 
     // Check if toggle already exists
@@ -551,9 +518,7 @@
 
     // Initial count update
     setTimeout(updateFilterCount, 500);
-
-    console.log('Mobile filter toggle initialized');
-  }
+}
 
   // Check for mobile viewport
   function isMobileViewport() {

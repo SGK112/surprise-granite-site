@@ -113,9 +113,7 @@
     }
 
     if (cards.length === 0) return;
-
-    console.log('Swipe Cards:', cards.length, productLabel, 'found');
-    showIntroOverlay();
+showIntroOverlay();
   }
 
   function parseWebflowProducts(container) {
@@ -680,8 +678,20 @@
       <div class="favorites-content"></div>
       <div class="favorites-actions">
         <button class="favorites-view-all" onclick="window.location.href='/account/#favorites'">View All</button>
+        <button class="favorites-request-quote" onclick="window.requestQuoteWithFavorites()">Request Quote</button>
       </div>
     `;
+
+    // Request quote with favorites
+    window.requestQuoteWithFavorites = function() {
+      const favs = getFavorites();
+      const favNames = favs.map(f => f.title).join(', ');
+      // Store favorites in sessionStorage for the estimate form
+      sessionStorage.setItem('sg_quote_favorites', JSON.stringify(favs));
+      sessionStorage.setItem('sg_quote_favorites_text', favNames);
+      // Navigate to estimate form
+      window.location.href = '/get-a-free-estimate/?favorites=' + encodeURIComponent(favNames.slice(0, 200));
+    };
     document.body.appendChild(drawer);
 
     // Drag to close functionality

@@ -296,3 +296,47 @@ GRANT EXECUTE ON FUNCTION public.increment_listing_views(UUID) TO anon;
 GRANT EXECUTE ON FUNCTION public.increment_listing_views(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_listing_inquiries(UUID) TO anon;
 GRANT EXECUTE ON FUNCTION public.increment_listing_inquiries(UUID) TO authenticated;
+
+-- ============================================================
+-- USER ACTIVITY TABLE - Track user behavior and engagement
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.user_activity (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL,  -- page_view, product_view, cta_click, favorite_add, etc.
+  page_url TEXT,
+  page_title TEXT,
+  referrer TEXT,
+  device_info JSONB,
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view their own activity
+CREATE POLICY "user_activity_select_own" ON public.user_activity
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Policy: Users can insert their own activity
+CREATE POLICY "user_activity_insert_own" ON public.user_activity
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Service role can do everything (for analytics)
+CREATE POLICY "user_activity_service_all" ON public.user_activity
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Grant access
+GRANT ALL ON public.user_activity TO authenticated;
+GRANT ALL ON public.user_activity TO service_role;
+
+-- Indexes for analytics queries
+CREATE INDEX IF NOT EXISTS user_activity_user_id_idx ON public.user_activity(user_id);
+CREATE INDEX IF NOT EXISTS user_activity_type_idx ON public.user_activity(activity_type);
+CREATE INDEX IF NOT EXISTS user_activity_created_idx ON public.user_activity(created_at DESC);
+CREATE INDEX IF NOT EXISTS user_activity_page_url_idx ON public.user_activity(page_url);
+
+-- Add last_seen column to sg_users if not exists
+ALTER TABLE public.sg_users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;

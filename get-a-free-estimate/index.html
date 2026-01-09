@@ -246,6 +246,133 @@
       font-weight: 600;
       margin-top: 20px;
     }
+
+    /* Image Upload Styles */
+    .image-upload-section {
+      margin-top: 10px;
+    }
+
+    .image-upload-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .image-upload-label .optional {
+      font-size: 0.8rem;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .image-upload-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 500px) {
+      .image-upload-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .image-upload-slot {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .image-upload-slot:hover {
+      border-color: #f9cb00;
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .upload-placeholder svg {
+      opacity: 0.5;
+    }
+
+    .upload-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 71, 87, 0.9);
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.2s ease;
+    }
+
+    .remove-image-btn:hover {
+      transform: scale(1.1);
+      background: #ff4757;
+    }
+
+    .upload-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+    }
+
+    .upload-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #f9cb00, #e6b800);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .image-upload-hint {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .image-upload-hint svg {
+      flex-shrink: 0;
+    }
   </style>
 
   <!-- Open Graph / Facebook -->
@@ -353,6 +480,79 @@
           <textarea class="form-textarea" name="message" placeholder="Describe your project, timeline, budget, or any questions you have..." aria-label="Describe your project, timeline, budget, or any questions you have..."></textarea>
         </div>
 
+        <!-- Image Upload Section -->
+        <div class="form-group image-upload-section">
+          <div class="image-upload-label">
+            <label class="form-label" style="margin-bottom: 0;">Project Photos</label>
+            <span class="optional">(optional)</span>
+          </div>
+          <div class="image-upload-grid" id="image-upload-grid">
+            <div class="image-upload-slot" id="image-slot-1" onclick="triggerImageUpload(1)">
+              <input type="file" id="image-file-1" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(1, this)">
+              <input type="hidden" name="image1" id="image-data-1">
+              <div class="upload-placeholder" id="upload-placeholder-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Add Photo</span>
+              </div>
+              <img id="image-preview-1" class="upload-preview" src="" style="display: none;">
+              <button type="button" class="remove-image-btn" id="remove-btn-1" onclick="removeImage(event, 1)" style="display: none;">&times;</button>
+            </div>
+            <div class="image-upload-slot" id="image-slot-2" onclick="triggerImageUpload(2)">
+              <input type="file" id="image-file-2" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(2, this)">
+              <input type="hidden" name="image2" id="image-data-2">
+              <div class="upload-placeholder" id="upload-placeholder-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Add Photo</span>
+              </div>
+              <img id="image-preview-2" class="upload-preview" src="" style="display: none;">
+              <button type="button" class="remove-image-btn" id="remove-btn-2" onclick="removeImage(event, 2)" style="display: none;">&times;</button>
+            </div>
+            <div class="image-upload-slot" id="image-slot-3" onclick="triggerImageUpload(3)">
+              <input type="file" id="image-file-3" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(3, this)">
+              <input type="hidden" name="image3" id="image-data-3">
+              <div class="upload-placeholder" id="upload-placeholder-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Add Photo</span>
+              </div>
+              <img id="image-preview-3" class="upload-preview" src="" style="display: none;">
+              <button type="button" class="remove-image-btn" id="remove-btn-3" onclick="removeImage(event, 3)" style="display: none;">&times;</button>
+            </div>
+            <div class="image-upload-slot" id="image-slot-4" onclick="triggerImageUpload(4)">
+              <input type="file" id="image-file-4" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(4, this)">
+              <input type="hidden" name="image4" id="image-data-4">
+              <div class="upload-placeholder" id="upload-placeholder-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Add Photo</span>
+              </div>
+              <img id="image-preview-4" class="upload-preview" src="" style="display: none;">
+              <button type="button" class="remove-image-btn" id="remove-btn-4" onclick="removeImage(event, 4)" style="display: none;">&times;</button>
+            </div>
+          </div>
+          <div class="image-upload-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4M12 8h.01"></path>
+            </svg>
+            <span>Upload photos of your current space or inspiration images to help us better understand your project.</span>
+          </div>
+        </div>
+
         <button type="submit" class="submit-btn" id="submitBtn">
           Get My Free Estimate
         </button>
@@ -395,6 +595,7 @@
       errorMessage.style.display = 'none';
 
       // Gather form data
+      const images = getImageData();
       const formData = {
         firstName: form.firstName.value.trim(),
         lastName: form.lastName.value.trim(),
@@ -404,6 +605,8 @@
         projectType: form.projectType.value,
         contactMethod: form.contactMethod.value,
         message: form.message.value.trim(),
+        images: images,
+        imageCount: images.length,
         source: 'website-estimate-form',
         timestamp: new Date().toISOString()
       };
@@ -474,6 +677,122 @@
       }
       e.target.value = value;
     });
+
+    // Image Upload Functions
+    function triggerImageUpload(slotNumber) {
+      document.getElementById('image-file-' + slotNumber).click();
+    }
+
+    function handleImageUpload(slotNumber, input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Image must be less than 10MB');
+        return;
+      }
+
+      // Compress and preview image
+      compressImage(file, function(compressedDataUrl) {
+        const preview = document.getElementById('image-preview-' + slotNumber);
+        const placeholder = document.getElementById('upload-placeholder-' + slotNumber);
+        const removeBtn = document.getElementById('remove-btn-' + slotNumber);
+        const dataInput = document.getElementById('image-data-' + slotNumber);
+        const slot = document.getElementById('image-slot-' + slotNumber);
+
+        // Show preview
+        preview.src = compressedDataUrl;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        removeBtn.style.display = 'flex';
+        slot.style.borderStyle = 'solid';
+        slot.style.borderColor = '#f9cb00';
+
+        // Store data URL for form submission
+        dataInput.value = compressedDataUrl;
+      });
+    }
+
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Max dimensions
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with quality 0.7
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          callback(compressedDataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeImage(event, slotNumber) {
+      event.stopPropagation();
+
+      const preview = document.getElementById('image-preview-' + slotNumber);
+      const placeholder = document.getElementById('upload-placeholder-' + slotNumber);
+      const removeBtn = document.getElementById('remove-btn-' + slotNumber);
+      const dataInput = document.getElementById('image-data-' + slotNumber);
+      const fileInput = document.getElementById('image-file-' + slotNumber);
+      const slot = document.getElementById('image-slot-' + slotNumber);
+
+      // Reset slot
+      preview.src = '';
+      preview.style.display = 'none';
+      placeholder.style.display = 'flex';
+      removeBtn.style.display = 'none';
+      dataInput.value = '';
+      fileInput.value = '';
+      slot.style.borderStyle = 'dashed';
+      slot.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+    }
+
+    // Get all image data for form submission
+    function getImageData() {
+      const images = [];
+      for (let i = 1; i <= 4; i++) {
+        const dataInput = document.getElementById('image-data-' + i);
+        if (dataInput && dataInput.value) {
+          images.push(dataInput.value);
+        }
+      }
+      return images;
+    }
   </script>
 
   
@@ -1308,4 +1627,5 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
     },{passive:true});
 })();
 </script>
+<script src="/js/site-search.js"></script>
 </body></html>
