@@ -1,9 +1,17 @@
 /* Mega Navigation - Modern Image-Rich Design */
 /* Brand Colors: Dark Blue #1a2b3c, Gold/Yellow #f9cb00, Light Blue #2d4a5e */
 
-/* Hide old Webflow navigation on DESKTOP ONLY - show on mobile */
+/* Hide Webflow navigation on desktop - mobile-nav.js handles mobile */
 @media (min-width: 769px) {
+  .navbar-fixed_wrapper,
   .navbar-fixed_wrapper .navbar_wrapper {
+    display: none !important;
+  }
+}
+
+/* Hide mega-nav on mobile - mobile-nav.js handles mobile */
+@media (max-width: 768px) {
+  .mega-nav {
     display: none !important;
   }
 }
@@ -450,10 +458,7 @@ body.mega-nav-active {
   padding-top: 140px !important;
 }
 
-/* Ensure old nav is completely hidden */
-.navbar-fixed_wrapper {
-  display: none !important;
-}
+/* Note: Webflow navbar hiding is now at top of file in media query */
 
 /* Mobile Styles */
 @media (max-width: 1024px) {
@@ -475,184 +480,15 @@ body.mega-nav-active {
   }
 }
 
+/* Mobile: Hide mega-nav - mobile-nav.js handles mobile navigation completely */
 @media (max-width: 768px) {
-  /* Hide mega-nav completely on mobile - use Webflow navbar instead */
   .mega-nav {
     display: none !important;
   }
 
-  /* Show Webflow navbar on mobile */
-  .navbar-fixed_wrapper {
-    display: block !important;
-    visibility: visible !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 9999 !important;
-  }
-
+  /* Hide Webflow navbar on mobile too - mobile-nav.js is the only mobile nav */
+  .navbar-fixed_wrapper,
   .navbar-fixed_wrapper .navbar_wrapper {
-    display: block !important;
-  }
-
-  /* Hide the dark banner on mobile for cleaner look */
-  .navbar-banner_component {
-    display: none !important;
-  }
-
-  /* Compact mobile navbar */
-  .navbar_component {
-    padding: 8px 0 !important;
-  }
-
-  .navbar_container {
-    padding: 0 12px !important;
-  }
-
-  .navbar_top-row {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 8px !important;
-    padding: 0 !important;
-  }
-
-  /* Hamburger menu button - make it visible and aligned */
-  .navbar_menu-button,
-  .w-nav-button {
-    display: flex !important;
-    visibility: visible !important;
-    position: relative !important;
-    height: auto !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
-    order: -1 !important;
-    margin-right: 8px !important;
-  }
-
-  /* Logo sizing */
-  .navbar_logo-link {
-    flex: 1 !important;
-  }
-
-  .navbar_logo {
-    height: 28px !important;
-  }
-
-  .navbar_logo-wrapper span {
-    font-size: 7px !important;
-  }
-
-  /* Body padding */
-  body {
-    padding-top: 56px;
-  }
-
-  body.mega-nav-active {
-    padding-top: 56px !important;
-  }
-
-  .mega-nav-bottom.mobile-open {
-    display: block;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #1a2b3c;
-    overflow-y: auto;
-    z-index: 9998;
-    padding-bottom: 100px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-nav-links {
-    flex-direction: column;
-    padding: 0;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-nav-links > li > a {
-    padding: 16px 20px;
-    font-size: 16px;
-    color: #fff;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-nav-links > li > a:hover,
-  .mega-nav-bottom.mobile-open .mega-nav-links > li.active > a {
-    background: rgba(249, 203, 0, 0.1);
-    border-bottom-color: transparent;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-nav-links > li > a svg {
-    fill: #f9cb00;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu {
-    position: static;
-    min-width: auto;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    display: none;
-    background: rgba(0,0,0,0.2);
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-nav-links > li.active .mega-menu {
-    display: block;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-inner {
-    padding: 16px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom-color: rgba(255,255,255,0.1);
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-header h3 {
-    color: #fff;
-    font-size: 14px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-item {
-    background: rgba(255,255,255,0.05);
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-item img {
-    height: 80px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-item h4 {
-    color: #fff;
-    font-size: 12px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-item p {
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-  }
-
-  .mega-nav-bottom.mobile-open .mega-menu-featured {
-    display: none;
-  }
-
-  /* Hide old search widgets on mobile */
-  .search-widget,
-  .w-search,
-  .search_component,
-  [data-search-widget] {
     display: none !important;
   }
 }
