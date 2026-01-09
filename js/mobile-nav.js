@@ -58,7 +58,7 @@
           <div class="sg-mnav-drawer-header">
             <span class="sg-mnav-drawer-title">Menu</span>
             <button class="sg-mnav-close" id="sgMnavClose" aria-label="Close menu">
-              <svg viewBox="0 0 24 24" fill="#fff"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#fff"/></svg>
+              <span class="sg-mnav-close-x"></span>
             </button>
           </div>
           <nav class="sg-mnav-items">
@@ -263,19 +263,40 @@
         .sg-mnav-close {
           width: 36px;
           height: 36px;
-          background: rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.15);
           border: none;
           border-radius: 50%;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
+          position: relative;
         }
 
-        .sg-mnav-close svg {
-          width: 20px;
-          height: 20px;
-          fill: #fff;
+        .sg-mnav-close-x {
+          position: relative;
+          width: 18px;
+          height: 18px;
+        }
+
+        .sg-mnav-close-x::before,
+        .sg-mnav-close-x::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 18px;
+          height: 2px;
+          background: #fff;
+          border-radius: 1px;
+        }
+
+        .sg-mnav-close-x::before {
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .sg-mnav-close-x::after {
+          transform: translate(-50%, -50%) rotate(-45deg);
         }
 
         /* Menu Items */
