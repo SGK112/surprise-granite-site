@@ -151,10 +151,10 @@
         };
       } else if (productType === 'tile') {
         specs = {
-          material: getText(item, '[fs-cmsfilter-field="Material"]') || getText(item, '[fs-cmsfilter-field="material"]'),
+          material: getText(item, '[fs-cmsfilter-field="material"]') || getText(item, '[fs-cmsfilter-field="Material"]'),
           color: getText(item, '[fs-cmsfilter-field="Main Color"]') || getText(item, '[fs-cmsfilter-field="color"]'),
-          size: getText(item, '[fs-cmsfilter-field="Size"]') || getText(item, '[fs-cmsfilter-field="size"]'),
-          finish: getText(item, '[fs-cmsfilter-field="Finish"]') || getText(item, '[fs-cmsfilter-field="finish"]')
+          style: getText(item, '[fs-cmsfilter-field="style"]') || getText(item, '[fs-cmsfilter-field="Style"]'),
+          finish: getText(item, '[fs-cmsfilter-field="finish"]') || getText(item, '[fs-cmsfilter-field="Finish"]')
         };
       } else {
         specs = {
@@ -371,7 +371,8 @@
         `;
       } else if (productType === 'tile') {
         specsHtml = `
-          ${card.size ? `<div class="swipe-card-spec"><span class="spec-label">Size</span><span class="spec-value">${card.size}</span></div>` : ''}
+          ${card.material ? `<div class="swipe-card-spec"><span class="spec-label">Material</span><span class="spec-value">${card.material}</span></div>` : ''}
+          ${card.style ? `<div class="swipe-card-spec"><span class="spec-label">Style</span><span class="spec-value">${card.style}</span></div>` : ''}
           ${card.finish ? `<div class="swipe-card-spec"><span class="spec-label">Finish</span><span class="spec-value">${card.finish}</span></div>` : ''}
           ${card.color ? `<div class="swipe-card-spec"><span class="spec-label">Color</span><span class="spec-value">${card.color}</span></div>` : ''}
         `;
@@ -419,16 +420,6 @@
             ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
           <div class="swipe-card-specs">${specsHtml}</div>
-          <div class="swipe-card-actions">
-            <a href="${card.href}" class="swipe-card-action-btn primary" target="_blank">
-              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              View Details
-            </a>
-            <button class="swipe-card-action-btn secondary" onclick="window.requestSampleForCard('${card.title.replace(/'/g, "\\'")}', '${card.image}')">
-              <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-              Sample
-            </button>
-          </div>
         </div>
       `;
 
