@@ -196,6 +196,71 @@
       margin-top: 4px;
     }
 
+    .account-type-option .type-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .account-type-option .type-badge.free {
+      background: rgba(77, 255, 130, 0.15);
+      color: var(--success);
+    }
+
+    .account-type-option .type-badge.pro {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: var(--dark-primary);
+    }
+
+    .account-type-option {
+      position: relative;
+    }
+
+    .pro-fields {
+      display: none;
+      background: rgba(249, 203, 0, 0.05);
+      border: 1px solid rgba(249, 203, 0, 0.2);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .pro-fields.show {
+      display: block;
+    }
+
+    .pro-fields-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold-primary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pro-note {
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .pro-note svg {
+      flex-shrink: 0;
+      color: var(--gold-primary);
+    }
+
     .terms-checkbox {
       display: flex;
       align-items: flex-start;
@@ -504,27 +569,31 @@
             <div class="account-type-grid">
               <label class="account-type-option selected" id="type-homeowner">
                 <input type="radio" name="account_type" value="homeowner" checked/>
+                <div class="type-badge free">FREE</div>
                 <div class="type-icon">🏠</div>
                 <div class="type-name">Homeowner</div>
                 <div class="type-desc">Shopping for my home</div>
               </label>
-              <label class="account-type-option" id="type-contractor">
-                <input type="radio" name="account_type" value="contractor"/>
-                <div class="type-icon">🔧</div>
-                <div class="type-name">Contractor</div>
-                <div class="type-desc">Building for clients</div>
+              <label class="account-type-option" id="type-pro_fabricator">
+                <input type="radio" name="account_type" value="pro_fabricator"/>
+                <div class="type-badge pro">PRO</div>
+                <div class="type-icon">⚒️</div>
+                <div class="type-name">Fabricator</div>
+                <div class="type-desc">Stone fabrication pro</div>
               </label>
-              <label class="account-type-option" id="type-designer">
-                <input type="radio" name="account_type" value="designer"/>
+              <label class="account-type-option" id="type-pro_designer">
+                <input type="radio" name="account_type" value="pro_designer"/>
+                <div class="type-badge pro">PRO</div>
                 <div class="type-icon">🎨</div>
                 <div class="type-name">Designer</div>
                 <div class="type-desc">Interior design pro</div>
               </label>
-              <label class="account-type-option" id="type-fabricator">
-                <input type="radio" name="account_type" value="fabricator"/>
-                <div class="type-icon">⚒️</div>
-                <div class="type-name">Fabricator</div>
-                <div class="type-desc">Stone fabrication</div>
+              <label class="account-type-option" id="type-contractor">
+                <input type="radio" name="account_type" value="contractor"/>
+                <div class="type-badge free">FREE</div>
+                <div class="type-icon">🔧</div>
+                <div class="type-name">Contractor</div>
+                <div class="type-desc">Building for clients</div>
               </label>
             </div>
 
@@ -547,6 +616,19 @@
             <div class="form-group">
               <label for="phone">Phone (optional)</label>
               <input type="tel" id="phone" name="phone" placeholder="(602) 555-1234"/>
+            </div>
+
+            <!-- Pro Account Fields -->
+            <div class="pro-fields" id="pro-fields">
+              <div class="pro-fields-title">Business Information</div>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label for="business_name">Business Name</label>
+                <input type="text" id="business_name" name="business_name" placeholder="Your Company Name"/>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="business_location">Business Location</label>
+                <input type="text" id="business_location" name="business_location" placeholder="City, State"/>
+              </div>
             </div>
 
             <div class="form-group">
@@ -630,15 +712,32 @@
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
-        window.location.href = '/account/';
+        const redirect = new URLSearchParams(window.location.search).get('redirect') || '/account/';
+        window.location.href = redirect;
         return;
       }
 
-      // Account type selection
+      // Store redirect for after signup
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        sessionStorage.setItem('auth_redirect', redirect);
+      }
+
+      // Account type selection with pro fields toggle
       document.querySelectorAll('.account-type-option').forEach(option => {
         option.addEventListener('click', () => {
           document.querySelectorAll('.account-type-option').forEach(o => o.classList.remove('selected'));
           option.classList.add('selected');
+
+          // Show/hide pro fields
+          const accountType = option.querySelector('input').value;
+          const proFields = document.getElementById('pro-fields');
+          if (accountType.startsWith('pro_')) {
+            proFields.classList.add('show');
+          } else {
+            proFields.classList.remove('show');
+          }
         });
       });
     });
@@ -672,6 +771,8 @@
       const phone = document.getElementById('phone').value;
       const password = document.getElementById('password').value;
       const accountType = document.querySelector('input[name="account_type"]:checked').value;
+      const businessName = document.getElementById('business_name')?.value || null;
+      const businessLocation = document.getElementById('business_location')?.value || null;
       const signupBtn = document.getElementById('signup-btn');
 
       if (!document.getElementById('terms').checked) {
@@ -682,19 +783,24 @@
       signupBtn.disabled = true;
       signupBtn.innerHTML = '<div class="spinner"></div>';
 
+      // Get redirect URL
+      const redirect = sessionStorage.getItem('auth_redirect') || '/account/';
+
       try {
         // Sign up with Supabase
         const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + '/account/',
+            emailRedirectTo: window.location.origin + redirect,
             data: {
               first_name: firstName,
               last_name: lastName,
               full_name: `${firstName} ${lastName}`,
               phone: phone || null,
-              account_type: accountType
+              account_type: accountType,
+              business_name: businessName,
+              business_location: businessLocation
             }
           }
         });
@@ -711,7 +817,8 @@
           showSuccess(email);
         } else if (data.session) {
           // Direct login (no email confirmation)
-          window.location.href = '/account/';
+          sessionStorage.removeItem('auth_redirect');
+          window.location.href = redirect;
         }
 
       } catch (err) {
@@ -727,10 +834,11 @@
       hideMessages();
 
       try {
+        const redirect = sessionStorage.getItem('auth_redirect') || '/account/';
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + '/account/'
+            redirectTo: window.location.origin + redirect
           }
         });
 

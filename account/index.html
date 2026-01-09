@@ -1491,7 +1491,7 @@
       content: '';
       position: absolute;
       top: 12px;
-      right: 12px;
+      right: 70px;
       width: 24px;
       height: 24px;
       background: var(--gold-primary);
@@ -2207,6 +2207,92 @@
       background: rgba(255, 71, 87, 0.1);
     }
 
+    /* Listing Category Grid */
+    .listing-category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .listing-category-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .listing-category-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 12px;
+      background: var(--dark-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .listing-category-option:hover {
+      border-color: var(--text-muted);
+      background: var(--dark-surface);
+    }
+
+    .listing-category-option.selected {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .listing-category-option svg {
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+
+    .listing-category-option.selected svg {
+      color: var(--gold-primary);
+    }
+
+    .listing-category-option span {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .listing-category-option small {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
+    .listing-category-option.selected span {
+      color: var(--gold-primary);
+    }
+
+    /* Category badge on listing cards */
+    .listing-category-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-primary);
+      backdrop-filter: blur(4px);
+    }
+
+    .listing-category-badge.countertops { color: #60a5fa; }
+    .listing-category-badge.tile { color: #f472b6; }
+    .listing-category-badge.flooring { color: #4ade80; }
+    .listing-category-badge.cabinets { color: #fb923c; }
+    .listing-category-badge.supplies { color: #a78bfa; }
+    .listing-category-badge.other { color: #94a3b8; }
+
     /* Inquiry Items */
     .inquiry-item {
       background: var(--dark-elevated);
@@ -2724,8 +2810,13 @@
 <body>
   <!-- Loading Screen -->
   <div id="loading-screen" class="loading-screen">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f9cb00, #cca600); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; color: #1a1a2e; margin: 0 auto 16px;">SG</div>
+      <h1 style="color: #f9cb00; font-size: 24px; font-weight: 700; margin: 0;">Surprise Granite</h1>
+      <p style="color: rgba(255,255,255,0.75); font-size: 14px; margin: 4px 0 0;">Client Portal</p>
+    </div>
     <div class="spinner"></div>
-    <p style="color: var(--text-muted);">Loading your account...</p>
+    <p style="color: rgba(255,255,255,0.75);">Loading your account...</p>
   </div>
 
   <!-- Auth Screen -->
@@ -3068,9 +3159,9 @@
             <div class="card-body">
               <p style="color: #666; margin-bottom: 20px;">Browse materials on your phone and swipe right to save your favorites. They'll appear here!</p>
 
-              <div id="favorites-loading" style="text-align: center; padding: 40px;">
+              <div id="favorites-loading" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px;">
                 <div class="spinner"></div>
-                <p style="color: #666; margin-top: 12px;">Loading your favorites...</p>
+                <p style="color: var(--text-muted); margin-top: 12px;">Loading your favorites...</p>
               </div>
 
               <div id="favorites-empty" style="display: none; text-align: center; padding: 40px;">
@@ -3130,7 +3221,7 @@
         <section id="page-listings" class="page-section">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">My Stone Listings</h3>
+              <h3 class="card-title">My Listings</h3>
               <div style="display: flex; align-items: center; gap: 12px;">
                 <span id="listing-limit-indicator" style="font-size: 13px; color: var(--text-muted);"></span>
                 <button class="btn btn-primary" onclick="openCreateListingModal()" id="create-listing-btn">
@@ -3145,7 +3236,7 @@
                 <a href="/remnants/" style="color: var(--gold-primary);">Browse the marketplace →</a>
               </p>
 
-              <div id="listings-loading" style="text-align: center; padding: 40px;">
+              <div id="listings-loading" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px;">
                 <div class="spinner"></div>
                 <p style="color: var(--text-muted); margin-top: 12px;">Loading your listings...</p>
               </div>
@@ -3153,7 +3244,7 @@
               <div id="listings-empty" style="display: none; text-align: center; padding: 40px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 <h3 style="color: var(--text-secondary); margin: 16px 0 8px;">No Listings Yet</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Have stone remnants to sell? Create your first listing!</p>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Have materials to sell? List countertops, tile, flooring, cabinets, or supplies!</p>
                 <button class="btn btn-primary" onclick="openCreateListingModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                   Create Your First Listing
@@ -3171,11 +3262,14 @@
               <span class="nav-badge" id="inquiries-badge" style="display: none;">0</span>
             </div>
             <div class="card-body">
-              <div id="inquiries-loading" style="text-align: center; padding: 20px;">
+              <div id="inquiries-loading" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px;">
                 <div class="spinner"></div>
+                <p style="color: var(--text-muted); margin-top: 12px;">Loading inquiries...</p>
               </div>
-              <div id="inquiries-empty" style="display: none; text-align: center; padding: 20px; color: var(--text-muted);">
-                <p>No inquiries yet. When someone contacts you about a listing, it will appear here.</p>
+              <div id="inquiries-empty" style="display: none; text-align: center; padding: 40px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                <h3 style="color: var(--text-secondary); margin: 16px 0 8px;">No Inquiries Yet</h3>
+                <p style="color: var(--text-muted); margin-bottom: 0;">When someone contacts you about a listing, it will appear here.</p>
               </div>
               <div id="inquiries-list" style="display: none;"></div>
             </div>
@@ -3738,19 +3832,57 @@
   <div id="create-listing-modal" class="modal-overlay" onclick="if(event.target === this) closeCreateListingModal()">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Create Stone Listing</h2>
+        <h2 class="modal-title">Create Listing</h2>
         <button class="modal-close" onclick="closeCreateListingModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <div class="modal-body">
         <form id="create-listing-form" onsubmit="return handleCreateListing(event)">
-          <!-- Stone Selection -->
+          <!-- Category Selection -->
           <div class="form-section">
-            <div class="form-section-title">Select Stone</div>
+            <div class="form-section-title">What are you listing?</div>
+            <div class="listing-category-grid" id="listing-category-grid">
+              <div class="listing-category-option selected" data-category="countertops" onclick="selectListingCategory('countertops')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v6M19 12v6M8 8V5a1 1 0 011-1h6a1 1 0 011 1v3"/></svg>
+                <span>Countertops</span>
+                <small>Granite, Marble, Quartz</small>
+              </div>
+              <div class="listing-category-option" data-category="tile" onclick="selectListingCategory('tile')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                <span>Tile</span>
+                <small>Ceramic, Porcelain, Natural</small>
+              </div>
+              <div class="listing-category-option" data-category="flooring" onclick="selectListingCategory('flooring')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M3 21V8l4-4h10l4 4v13M7 21v-8h10v8M7 13h10"/></svg>
+                <span>Flooring</span>
+                <small>Hardwood, LVP, Laminate</small>
+              </div>
+              <div class="listing-category-option" data-category="cabinets" onclick="selectListingCategory('cabinets')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="3" y1="12" x2="21" y2="12"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/></svg>
+                <span>Cabinets</span>
+                <small>Kitchen, Bath, Storage</small>
+              </div>
+              <div class="listing-category-option" data-category="supplies" onclick="selectListingCategory('supplies')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span>Supplies</span>
+                <small>Tools, Adhesives, Sealers</small>
+              </div>
+              <div class="listing-category-option" data-category="other" onclick="selectListingCategory('other')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+                <span>Other</span>
+                <small>Fixtures, Hardware, etc.</small>
+              </div>
+            </div>
+            <input type="hidden" id="listing-category" value="countertops">
+          </div>
+
+          <!-- Product Selection (dynamic based on category) -->
+          <div class="form-section" id="product-selection-section">
+            <div class="form-section-title" id="product-selection-title">Select Product</div>
             <div class="form-group stone-autocomplete">
-              <label>Search for a stone from our catalog</label>
-              <input type="text" id="listing-stone-search" placeholder="Start typing stone name..." autocomplete="off">
+              <label id="product-search-label">Search our catalog (optional)</label>
+              <input type="text" id="listing-stone-search" placeholder="Start typing product name..." autocomplete="off">
               <div id="stone-autocomplete-results" class="stone-autocomplete-results"></div>
               <input type="hidden" id="listing-stone-slug">
               <input type="hidden" id="listing-stone-name">
@@ -3758,6 +3890,7 @@
               <input type="hidden" id="listing-brand">
               <input type="hidden" id="listing-color">
             </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Link to our catalog so buyers can see the full product details, or skip to create a custom listing.</p>
             <div id="selected-stone-preview" style="display: none; margin-top: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px;">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <img id="selected-stone-img" src="" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">
@@ -3775,23 +3908,40 @@
             <div class="form-section-title">Listing Details</div>
             <div class="form-group">
               <label>Title *</label>
-              <input type="text" id="listing-title" placeholder="e.g., Calacatta Gold Remnant - 24x36" required>
+              <input type="text" id="listing-title" placeholder="e.g., Calacatta Gold Remnant 24x36, White Subway Tile 200 sqft" required>
             </div>
             <div class="form-group">
               <label>Description</label>
-              <textarea id="listing-description" rows="3" placeholder="Describe your remnant (condition, where it's from, etc.)"></textarea>
+              <textarea id="listing-description" rows="3" placeholder="Describe your item - condition, origin, why selling, any defects, etc."></textarea>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>Dimensions</label>
-                <input type="text" id="listing-dimensions" placeholder="e.g., 24 x 36 inches">
+                <label>Condition</label>
+                <select id="listing-condition">
+                  <option value="new">New / Unused</option>
+                  <option value="remnant">Remnant / Leftover</option>
+                  <option value="overstock">Overstock</option>
+                  <option value="used">Used / Reclaimed</option>
+                  <option value="refurbished">Refurbished</option>
+                </select>
               </div>
               <div class="form-group">
+                <label>Brand (optional)</label>
+                <input type="text" id="listing-brand-input" placeholder="e.g., MSI, Daltile, Shaw">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Dimensions / Size</label>
+                <input type="text" id="listing-dimensions" placeholder="e.g., 24x36 in, 200 sqft, 10x20 cm">
+              </div>
+              <div class="form-group" id="thickness-group">
                 <label>Thickness</label>
                 <select id="listing-thickness">
                   <option value="">Select...</option>
                   <option value="2cm">2cm (3/4")</option>
                   <option value="3cm">3cm (1 1/4")</option>
+                  <option value="1cm">1cm (3/8")</option>
                   <option value="other">Other</option>
                 </select>
               </div>
@@ -3802,7 +3952,7 @@
                 <input type="number" id="listing-quantity" value="1" min="1">
               </div>
               <div class="form-group">
-                <label>Price</label>
+                <label>Price ($)</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
                   <input type="number" id="listing-price" placeholder="0.00" step="0.01" min="0" style="flex: 1;">
                   <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;">
@@ -4070,9 +4220,8 @@
     });
 
     function showAuth() {
-      document.getElementById('loading-screen').style.display = 'none';
-      document.getElementById('auth-screen').style.display = 'flex';
-      document.getElementById('dashboard-app').style.display = 'none';
+      // Redirect to unified login page instead of showing embedded auth
+      window.location.href = '/log-in/?redirect=' + encodeURIComponent(window.location.pathname + window.location.hash);
     }
 
     function showDashboard() {
@@ -4531,8 +4680,8 @@
     }
 
     function requestQuoteForFavorites() {
-      if (savedFloors.length === 0) {
-        showToast('No floors saved yet!', 'error');
+      if (allFavorites.length === 0) {
+        showToast('No favorites saved yet!', 'error');
         return;
       }
 
@@ -4547,15 +4696,15 @@
             <button onclick="closeQuoteModal()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer;">&times;</button>
           </div>
           <div class="quote-modal-body">
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">We'll prepare a quote for these ${savedFloors.length} flooring options:</p>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">We'll prepare a quote for these ${allFavorites.length} items:</p>
 
             <div class="quote-items-list">
-              ${savedFloors.map(floor => `
+              ${allFavorites.map(item => `
                 <div class="quote-item">
-                  <img src="${floor.product_image || '/images/placeholder.svg'}" alt="${floor.product_title}">
+                  <img src="${item.product_image || '/images/placeholder.svg'}" alt="${item.product_title}">
                   <div class="quote-item-info">
-                    <div class="quote-item-title">${floor.product_title}</div>
-                    <div class="quote-item-material">${floor.product_material || ''} ${floor.product_color ? '- ' + floor.product_color : ''}</div>
+                    <div class="quote-item-title">${item.product_title}</div>
+                    <div class="quote-item-material">${item.product_type || ''} ${item.product_material ? '- ' + item.product_material : ''} ${item.product_color ? '- ' + item.product_color : ''}</div>
                   </div>
                 </div>
               `).join('')}
@@ -4584,6 +4733,19 @@
     async function submitQuoteRequest() {
       const notes = document.getElementById('quote-notes')?.value || '';
 
+      // Group favorites by type for the quote
+      const groupedFavorites = allFavorites.reduce((acc, f) => {
+        const type = f.product_type || 'other';
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(f);
+        return acc;
+      }, {});
+
+      // Build formatted list
+      const itemsList = Object.entries(groupedFavorites).map(([type, items]) => {
+        return `${type.charAt(0).toUpperCase() + type.slice(1)}:\n${items.map(f => `  - ${f.product_title} (${f.product_material || 'N/A'})`).join('\n')}`;
+      }).join('\n\n');
+
       try {
         // Create lead/quote request in Supabase
         const quoteData = {
@@ -4592,8 +4754,8 @@
           full_name: userProfile?.full_name || currentUser.email.split('@')[0],
           phone: userProfile?.phone || '',
           status: 'new',
-          source: 'flooring_favorites',
-          notes: `Flooring Quote Request:\n\n${savedFloors.map(f => `- ${f.product_title} (${f.product_material || 'N/A'})`).join('\n')}\n\nAdditional Notes: ${notes || 'None'}`,
+          source: 'favorites_quote',
+          notes: `Quote Request from Favorites:\n\n${itemsList}\n\nAdditional Notes: ${notes || 'None'}`,
           created_at: new Date().toISOString()
         };
 
@@ -4612,12 +4774,12 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: 'info@surprisegranite.com',
-              counterSqft: 'Flooring Quote Request',
+              counterSqft: 'Quote Request from Favorites',
               splashSqft: '',
-              totalSqft: `${savedFloors.length} flooring options selected`,
+              totalSqft: `${allFavorites.length} items selected`,
               edgeProfile: `Customer: ${userProfile?.full_name || currentUser.email}`,
               edgeLF: `Phone: ${userProfile?.phone || 'N/A'}`,
-              priceBudget: savedFloors.map(f => f.product_title).join(', '),
+              priceBudget: allFavorites.map(f => f.product_title).join(', '),
               pricePopular: notes || 'No additional notes',
               pricePremium: `Email: ${currentUser.email}`
             })
@@ -6487,7 +6649,78 @@
       // Reset form
       document.getElementById('create-listing-form').reset();
       clearSelectedStone();
-      document.getElementById('image-preview-grid').innerHTML = '';
+      // Reset category to default
+      selectListingCategory('countertops');
+    }
+
+    function selectListingCategory(category) {
+      // Update hidden input
+      document.getElementById('listing-category').value = category;
+
+      // Update visual selection
+      document.querySelectorAll('.listing-category-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.category === category);
+      });
+
+      // Update product selection section based on category
+      const productSection = document.getElementById('product-selection-section');
+      const titleEl = document.getElementById('product-selection-title');
+      const labelEl = document.getElementById('product-search-label');
+      const searchInput = document.getElementById('listing-stone-search');
+
+      // Category-specific labels
+      const categoryConfig = {
+        countertops: {
+          title: 'Select Stone',
+          label: 'Search countertops catalog (optional)',
+          placeholder: 'Start typing stone name...',
+          showCatalog: true
+        },
+        tile: {
+          title: 'Select Tile',
+          label: 'Search tile catalog (optional)',
+          placeholder: 'Start typing tile name...',
+          showCatalog: true
+        },
+        flooring: {
+          title: 'Select Flooring',
+          label: 'Search flooring catalog (optional)',
+          placeholder: 'Start typing flooring name...',
+          showCatalog: true
+        },
+        cabinets: {
+          title: 'Cabinet Details',
+          label: 'Describe your cabinets',
+          placeholder: 'e.g., Shaker White 36" Base Cabinet',
+          showCatalog: false
+        },
+        supplies: {
+          title: 'Product Details',
+          label: 'Describe your product',
+          placeholder: 'e.g., Mapei Kerabond Thinset 50lb',
+          showCatalog: false
+        },
+        other: {
+          title: 'Product Details',
+          label: 'Describe your item',
+          placeholder: 'e.g., Delta Faucet, Cabinet Hardware',
+          showCatalog: false
+        }
+      };
+
+      const config = categoryConfig[category] || categoryConfig.other;
+      titleEl.textContent = config.title;
+      labelEl.textContent = config.label;
+      searchInput.placeholder = config.placeholder;
+
+      // Show/hide autocomplete for categories without catalog
+      const autocompleteResults = document.getElementById('stone-autocomplete-results');
+      if (!config.showCatalog) {
+        autocompleteResults.style.display = 'none';
+      }
+
+      // Clear previous selection when switching categories
+      clearSelectedStone();
     }
 
     async function checkListingLimit() {
@@ -6535,12 +6768,19 @@
           throw new Error('Please sign in to create a listing');
         }
 
+        // Get category and determine product name
+        const category = document.getElementById('listing-category').value;
+        const catalogStoneName = document.getElementById('listing-stone-name').value;
+        const userBrandInput = document.getElementById('listing-brand-input').value;
+
         const listingData = {
           user_id: user.data.user.id,
-          stone_name: document.getElementById('listing-stone-name').value || document.getElementById('listing-title').value,
+          category: category,
+          condition: document.getElementById('listing-condition').value || 'new',
+          stone_name: catalogStoneName || document.getElementById('listing-title').value,
           stone_slug: document.getElementById('listing-stone-slug').value || null,
-          material_type: document.getElementById('listing-material-type').value || null,
-          brand: document.getElementById('listing-brand').value || null,
+          material_type: document.getElementById('listing-material-type').value || category,
+          brand: document.getElementById('listing-brand').value || userBrandInput || null,
           color: document.getElementById('listing-color').value || null,
           title: document.getElementById('listing-title').value,
           description: document.getElementById('listing-description').value || null,
@@ -6631,19 +6871,24 @@
         }
 
         gridEl.style.display = 'grid';
-        gridEl.innerHTML = listings.map(listing => `
+        gridEl.innerHTML = listings.map(listing => {
+          const category = listing.category || 'countertops';
+          const categoryLabels = { countertops: 'Countertops', tile: 'Tile', flooring: 'Flooring', cabinets: 'Cabinets', supplies: 'Supplies', other: 'Other' };
+          const conditionLabels = { new: 'New', remnant: 'Remnant', overstock: 'Overstock', used: 'Used', refurbished: 'Refurb' };
+          return `
           <div class="listing-card">
             <div class="listing-image">
               ${listing.image_url ? `<img src="${listing.image_url}" alt="${listing.title}">` : '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No Image</div>'}
+              <span class="listing-category-badge ${category}">${categoryLabels[category] || category}</span>
               <span class="listing-status-badge ${listing.status}">${listing.status}</span>
             </div>
             <div class="listing-content">
               <div class="listing-title">${listing.title}</div>
-              <div class="listing-stone">${listing.stone_name}</div>
+              <div class="listing-stone">${listing.stone_name || listing.brand || ''}</div>
               <div class="listing-meta">
+                ${listing.condition ? `<span class="listing-meta-item">${conditionLabels[listing.condition] || listing.condition}</span>` : ''}
                 ${listing.dimensions ? `<span class="listing-meta-item">${listing.dimensions}</span>` : ''}
                 ${listing.thickness ? `<span class="listing-meta-item">${listing.thickness}</span>` : ''}
-                ${listing.material_type ? `<span class="listing-meta-item">${listing.material_type}</span>` : ''}
               </div>
               <div class="listing-price ${listing.price === null ? 'contact' : ''}">
                 ${listing.price !== null ? '$' + listing.price.toFixed(2) : 'Contact for price'}
@@ -6662,14 +6907,15 @@
               </div>
             </div>
           </div>
-        `).join('');
+        `}).join('');
 
         // Also load inquiries
         await loadMyInquiries();
 
       } catch (err) {
         console.error('Load listings error:', err);
-        loadingEl.innerHTML = '<p style="color: var(--error);">Failed to load listings</p>';
+        loadingEl.style.display = 'none';
+        emptyEl.style.display = 'block';
       }
     }
 
@@ -6738,6 +6984,8 @@
 
       } catch (err) {
         console.error('Load inquiries error:', err);
+        loadingEl.style.display = 'none';
+        emptyEl.style.display = 'block';
       }
     }
 

@@ -115,7 +115,7 @@ searchIndex = [];
         color: #1a1a2e;
       }
       @media (max-width: 768px) {
-        .site-search-fab { display: flex; }
+        .site-search-fab { display: none !important; }
         .site-search-trigger .shortcut { display: none; }
       }
 

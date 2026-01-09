@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopping Cart | Surprise Granite</title>
+  <meta name="description" content="Review your cart and checkout securely with Stripe.">
+  <link rel="canonical" href="https://surprisegranite.com/cart/">
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/mega-nav.css">
+  <link rel="stylesheet" href="/css/cart.css">
+
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <!-- Navigation will be injected by mega-nav.js -->
+
+  <main class="cart-page">
+    <div class="cart-container">
+      <!-- Cart Header -->
+      <div class="cart-header">
+        <h1>Shopping Cart</h1>
+        <a href="/shop" class="continue-shopping">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Continue Shopping
+        </a>
+      </div>
+
+      <!-- Cart Content -->
+      <div class="cart-content">
+        <!-- Cart Items -->
+        <div class="cart-items-section">
+          <!-- Empty Cart State -->
+          <div class="cart-empty" id="cartEmpty">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <h2>Your cart is empty</h2>
+            <p>Looks like you haven't added any items to your cart yet.</p>
+            <a href="/shop" class="btn-primary">Browse Products</a>
+          </div>
+
+          <!-- Cart Items List -->
+          <div class="cart-items" id="cartItems" style="display: none;">
+            <!-- Items will be rendered here by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary" id="cartSummary" style="display: none;">
+          <h2>Order Summary</h2>
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="cartSubtotal">$0.00</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Shipping</span>
+            <span id="cartShipping">Calculated at checkout</span>
+          </div>
+
+          <div class="summary-row">
+            <span>Tax</span>
+            <span id="cartTax">Calculated at checkout</span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row total">
+            <span>Total</span>
+            <span id="cartTotal">$0.00</span>
+          </div>
+
+          <!-- Promo Code -->
+          <div class="promo-section">
+            <div class="promo-input">
+              <input type="text" id="promoCode" placeholder="Promo code">
+              <button type="button" id="applyPromo">Apply</button>
+            </div>
+            <p class="promo-message" id="promoMessage"></p>
+          </div>
+
+          <!-- Checkout Button -->
+          <button type="button" class="btn-checkout" id="checkoutBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Proceed to Checkout
+          </button>
+
+          <!-- Security Badge -->
+          <div class="security-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span>Secure checkout powered by Stripe</span>
+          </div>
+
+          <!-- Payment Methods -->
+          <div class="payment-methods">
+            <img src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-static-assets@main/images/visa.svg" alt="Visa" height="24">
+            <img src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-static-assets@main/images/mastercard.svg" alt="Mastercard" height="24">
+            <img src="https://cdn.jsdelivr.net/gh/nicepay-dev/nicepay-static-assets@main/images/amex.svg" alt="Amex" height="24">
+            <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@develop/icons/applepay.svg" alt="Apple Pay" height="24">
+          </div>
+        </div>
+      </div>
+
+      <!-- Recently Viewed -->
+      <div class="recently-viewed" id="recentlyViewed" style="display: none;">
+        <h3>Recently Viewed</h3>
+        <div class="recently-viewed-grid" id="recentlyViewedGrid">
+          <!-- Will be populated by JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="cart-footer">
+    <div class="footer-container">
+      <div class="footer-links">
+        <a href="/contact-us">Contact Us</a>
+        <a href="/company/about">About</a>
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+      </div>
+      <p>&copy; 2025 Surprise Granite. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/mega-nav.js"></script>
+  <script src="/js/cart.js"></script>
+</body>
+</html>

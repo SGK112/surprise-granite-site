@@ -27,13 +27,14 @@
 
 
 
-<!-- Finsweet scripts disabled - using swipe cards system -->
-<!--
+<!-- Finsweet scripts for filter system -->
 <script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsfilter@1/cmsfilter.js"></script>
 <script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsload@1/cmsload.js"></script>
 <script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmssort@1/cmssort.js"></script>
 <script async src="https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmscombine@1/cmscombine.js"></script>
--->
+
+<!-- Custom Filter Styling (matching countertops page) -->
+<link rel="stylesheet" href="/css/countertop-filters.css?v=20260108">
 
 <!-- Sygnal Attributes 5 | Forms --> 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/css/webflow-form.css">
@@ -124,24 +125,26 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
     display: none; /* for Chrome, Safari, and Opera */
 }
 </style><script type="text/javascript">window.__WEBFLOW_CURRENCY_SETTINGS = {"currencyCode":"USD","symbol":"$","decimal":".","fractionDigits":2,"group":",","template":"{{wf {\"path\":\"symbol\",\"type\":\"PlainText\"} }} {{wf {\"path\":\"amount\",\"type\":\"CommercePrice\"} }} {{wf {\"path\":\"currencyCode\",\"type\":\"PlainText\"} }}","hideDecimalForWholeNumbers":false};</script><link rel="stylesheet" href="/css/swipe-cards.css?v=20260107x"><link rel="stylesheet" href="/css/favorites.css?v=20260107w"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script defer src="/js/favorites.js?v=20260107w"></script>
-<!-- Hide PC Filters - Use Swipe Cards UI -->
+<!-- Hide Filters on Mobile Only - Use Swipe Cards UI -->
 <style>
-/* Hide the filters sidebar */
-.filters2_sidebar,
-.filters_sidebar,
-.filters2_filter-group,
-.filters_form,
-.section_header54 .slider-list_outer-wrapper,
-[fs-cmsfilter-element="filters"] {
-  display: none !important;
-}
+/* Hide the filters sidebar on mobile only */
+@media (max-width: 991px) {
+  .filters2_sidebar,
+  .filters_sidebar,
+  .filters2_filter-group,
+  .filters_form,
+  .section_header54 .slider-list_outer-wrapper,
+  [fs-cmsfilter-element="filters"] {
+    display: none !important;
+  }
 
-/* Adjust content wrapper to full width */
-.filters_content-wrapper,
-.filters2_content-wrapper {
-  margin-left: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  /* Adjust content wrapper to full width on mobile */
+  .filters_content-wrapper,
+  .filters2_content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 /* Clean grid layout for products */
@@ -2062,7 +2065,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/auth-state.js"></script>
+<script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/shopify-products.js"></script>
 <script src="/js/site-search.js"></script>
