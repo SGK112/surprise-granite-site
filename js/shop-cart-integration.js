@@ -298,13 +298,13 @@
         color: #1a2b3c;
       }
 
-      /* Floating Cart Button */
+      /* Floating Cart Button - Properly spaced from chat widget and favorites */
       .floating-cart-btn {
         position: fixed;
-        bottom: 80px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
+        bottom: 100px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
         background: #1a2b3c;
         border: none;
         border-radius: 50%;
@@ -323,29 +323,51 @@
       }
 
       .floating-cart-btn svg {
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         fill: #f9cb00;
       }
 
       .floating-cart-btn .cart-count {
         position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 24px;
-        height: 24px;
+        top: -4px;
+        right: -4px;
+        width: 22px;
+        height: 22px;
         background: #ef4444;
         color: #fff;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
       }
 
       .floating-cart-btn .cart-count:empty {
         display: none;
+      }
+
+      /* Mobile spacing for floating cart */
+      @media (max-width: 768px) {
+        .floating-cart-btn {
+          bottom: 100px;
+          right: 20px;
+          width: 52px;
+          height: 52px;
+        }
+
+        .floating-cart-btn svg {
+          width: 22px;
+          height: 22px;
+        }
+
+        .floating-cart-btn .cart-count {
+          width: 20px;
+          height: 20px;
+          font-size: 10px;
+        }
       }
 
       /* Product card relative positioning */
