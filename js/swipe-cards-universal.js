@@ -293,7 +293,15 @@
           <span>Scroll</span>
         </button>
         <div class="swipe-topbar-brand">
-          <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" class="brand-logo">
+          <div class="brand-logo-row">
+            <svg class="brand-house-icon" viewBox="0 0 122 125" fill="#f9cb00" width="24" height="24">
+              <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z"/>
+              <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)"/>
+              <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)"/>
+              <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)"/>
+            </svg>
+            <span class="brand-text-white">Surprise Granite</span>
+          </div>
           <span class="brand-tagline">Marble & Quartz</span>
         </div>
         <button class="swipe-favorites-btn" onclick="window.toggleFavoritesDrawer()">

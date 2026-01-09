@@ -24,12 +24,42 @@
 .navbar-fixed_wrapper,
 .w-nav,
 header.header,
+.header,
 .header-content,
 .header-nav,
+.mobile-nav,
 .mobile-nav#mobileNav,
 .navbar_component,
 .nav-simple,
-#webflowNav {
+#webflowNav,
+.mega-nav,
+.sg-mnav,
+#sgMobileNav,
+.secondary-header,
+.page-header,
+.navbar_container,
+.navigation_component,
+.navigation-component,
+.nav_component,
+.nav-component,
+.site-header,
+.header-wrapper,
+.header_wrapper,
+.nav-wrapper,
+.nav_wrapper,
+.navbar-container,
+.w-nav-menu,
+.w-nav-brand,
+.w-nav-link,
+.menu-button,
+.w-nav-button,
+.w-nav-overlay,
+div[data-nav-menu-open],
+[data-animation="default"],
+[class*="navbar"]:not(.unified-nav):not(.unified-nav *),
+[class*="nav_"]:not(.unified-nav):not(.unified-nav *):not([class*="unified-nav"]),
+[class*="nav-"]:not(.unified-nav):not(.unified-nav *):not([class*="unified-nav"]):not(.unified-nav-links):not(.unified-nav-drawer):not(.unified-nav-overlay):not(.unified-nav-search):not(.unified-nav-actions):not(.unified-nav-toggle):not(.unified-nav-main):not(.unified-nav-top):not(.unified-nav-bottom):not(.unified-nav-mobile):not(.unified-nav-logo):not(.unified-nav-estimate):not(.unified-nav-phone):not(.unified-nav-promo),
+header:not(.unified-nav):not(.unified-nav *) {
   display: none !important;
 }
 
@@ -473,6 +503,46 @@ body.unified-nav-active {
     display: none;
   }
 
+  /* Mobile cart button */
+  .unified-nav-mobile-cart {
+    display: flex;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    position: relative;
+    text-decoration: none;
+  }
+
+  .unified-nav-mobile-cart svg {
+    width: 22px;
+    height: 22px;
+    fill: var(--nav-dark);
+  }
+
+  .unified-nav-cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--nav-gold);
+    color: var(--nav-dark);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--nav-white);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  }
+
   /* Mobile phone button */
   .unified-nav-mobile-phone {
     display: flex;
@@ -482,7 +552,6 @@ body.unified-nav-active {
     border-radius: 50%;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
     margin-right: 12px;
   }
 
@@ -493,9 +562,13 @@ body.unified-nav-active {
   }
 }
 
-/* Desktop: show phone in header */
+/* Desktop: hide mobile elements */
 @media (min-width: 992px) {
   .unified-nav-mobile-phone {
+    display: none;
+  }
+
+  .unified-nav-mobile-cart {
     display: none;
   }
 }

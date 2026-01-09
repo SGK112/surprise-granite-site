@@ -323,8 +323,8 @@
       }
 
       .floating-cart-btn svg {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         fill: #f9cb00;
       }
 
@@ -332,17 +332,20 @@
         position: absolute;
         top: -4px;
         right: -4px;
-        width: 22px;
+        min-width: 22px;
         height: 22px;
-        background: #ef4444;
-        color: #fff;
+        padding: 0 6px;
+        background: #f9cb00;
+        color: #1a2b3c;
         font-size: 11px;
         font-weight: 700;
-        border-radius: 50%;
+        border-radius: 11px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        border: 2px solid #fff;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
       }
 
       .floating-cart-btn .cart-count:empty {
@@ -359,14 +362,18 @@
         }
 
         .floating-cart-btn svg {
-          width: 22px;
-          height: 22px;
+          width: 26px;
+          height: 26px;
         }
 
         .floating-cart-btn .cart-count {
-          width: 20px;
+          min-width: 20px;
           height: 20px;
+          padding: 0 5px;
           font-size: 10px;
+          border-radius: 10px;
+          top: -3px;
+          right: -3px;
         }
       }
 
