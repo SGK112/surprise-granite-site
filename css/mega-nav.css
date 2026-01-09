@@ -1,22 +1,45 @@
-/* Mega Navigation - Modern Image-Rich Design */
-/* Brand Colors: Dark Blue #1a2b3c, Gold/Yellow #f9cb00, Light Blue #2d4a5e */
+/**
+ * Mega Navigation - Surprise Granite
+ * Desktop: Mega nav with dropdowns
+ * Mobile: Hidden (mobile-nav.js handles mobile)
+ *
+ * Brand Colors:
+ * - Dark Blue: #1a2b3c
+ * - Gold/Yellow: #f9cb00
+ * - Light Blue: #2d4a5e
+ */
 
-/* Hide Webflow navigation on desktop - mobile-nav.js handles mobile */
+/* ===========================================
+   VISIBILITY RULES
+   =========================================== */
+
+/* Desktop: Hide Webflow navbar, show mega-nav */
 @media (min-width: 769px) {
+  .navbar-fixed_wrapper,
+  .navbar-fixed_wrapper .navbar_wrapper {
+    display: none !important;
+  }
+
+  body.mega-nav-active {
+    padding-top: 140px !important;
+  }
+}
+
+/* Mobile: Hide both mega-nav and Webflow navbar (mobile-nav.js handles it) */
+@media (max-width: 768px) {
+  .mega-nav {
+    display: none !important;
+  }
+
   .navbar-fixed_wrapper,
   .navbar-fixed_wrapper .navbar_wrapper {
     display: none !important;
   }
 }
 
-/* Hide mega-nav on mobile - mobile-nav.js handles mobile */
-@media (max-width: 768px) {
-  .mega-nav {
-    display: none !important;
-  }
-}
-
-/* New Mega Navigation Container */
+/* ===========================================
+   MEGA NAV CONTAINER
+   =========================================== */
 .mega-nav {
   position: fixed;
   top: 0;
@@ -27,7 +50,9 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-/* Top Bar - Dark branded blue */
+/* ===========================================
+   TOP BAR
+   =========================================== */
 .mega-nav-top {
   background: #1a2b3c;
   padding: 8px 0;
@@ -75,16 +100,17 @@
 
 .mega-nav-top-right a {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 }
 
-/* Main Navigation - White background so logo stands out */
+/* ===========================================
+   MAIN NAV BAR
+   =========================================== */
 .mega-nav-main {
   padding: 15px 0;
-  background: #ffffff !important;
+  background: #fff;
   border-bottom: 1px solid #e5e5e5;
 }
 
@@ -121,7 +147,7 @@
   margin-top: 3px;
 }
 
-/* Search Bar - Clean modern design */
+/* Search Bar */
 .mega-nav-search {
   flex: 1;
   max-width: 550px;
@@ -227,7 +253,9 @@
   color: #f9cb00;
 }
 
-/* Bottom Navigation with Mega Menus - Light gray */
+/* ===========================================
+   BOTTOM NAV WITH MEGA MENUS
+   =========================================== */
 .mega-nav-bottom {
   background: #f5f5f5;
   border-top: 1px solid #e0e0e0;
@@ -269,10 +297,9 @@
 .mega-nav-links > li:hover > a {
   background: #fff;
   border-bottom-color: #f9cb00;
-  color: #1a2b3c;
 }
 
-/* Dividing dots between nav items */
+/* Dividing dots */
 .mega-nav-links > li:not(:last-child)::after {
   content: '';
   position: absolute;
@@ -289,7 +316,9 @@
   opacity: 0;
 }
 
-/* Mega Menu Dropdown */
+/* ===========================================
+   MEGA MENU DROPDOWN
+   =========================================== */
 .mega-menu {
   position: absolute;
   top: 100%;
@@ -385,7 +414,7 @@
   color: #666;
 }
 
-/* Featured Banner in Mega Menu */
+/* Featured Banner */
 .mega-menu-featured {
   background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
   border-radius: 10px;
@@ -435,34 +464,9 @@
   background: #e5b800;
 }
 
-/* Mobile Menu Toggle */
-.mega-nav-mobile-toggle {
-  display: none;
-  background: none;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-}
-
-.mega-nav-mobile-toggle span {
-  display: block;
-  width: 24px;
-  height: 2px;
-  background: #fff;
-  margin: 5px 0;
-  transition: all 0.3s;
-}
-
-/* Body padding to account for fixed nav - DESKTOP ONLY */
-@media (min-width: 769px) {
-  body.mega-nav-active {
-    padding-top: 140px !important;
-  }
-}
-
-/* Note: Webflow navbar hiding is now at top of file in media query */
-
-/* Mobile Styles */
+/* ===========================================
+   TABLET ADJUSTMENTS
+   =========================================== */
 @media (max-width: 1024px) {
   .mega-nav-search {
     display: none;
@@ -479,26 +483,5 @@
 
   .mega-menu-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Mobile: Hide mega-nav - mobile-nav.js handles mobile navigation completely */
-@media (max-width: 768px) {
-  .mega-nav {
-    display: none !important;
-  }
-
-  /* Hide Webflow navbar on mobile too - mobile-nav.js is the only mobile nav */
-  .navbar-fixed_wrapper,
-  .navbar-fixed_wrapper .navbar_wrapper {
-    display: none !important;
-  }
-}
-
-/* Utility: Hide old navbar on DESKTOP only */
-@media (min-width: 769px) {
-  .navbar-fixed_wrapper > .navbar_wrapper,
-  .navbar-fixed_wrapper > nav.navbar_wrapper {
-    display: none !important;
   }
 }
