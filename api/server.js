@@ -614,7 +614,7 @@ function getInvoiceTemplate(templateName, invoice, items, customerName) {
   return template(invoice, items, customerName);
 }
 
-// Middleware
+// CORS Middleware
 app.use(cors({
   origin: [
     'https://www.surprisegranite.com',
@@ -625,6 +625,160 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// ============ WEBHOOK HANDLER (MUST BE BEFORE express.json()) ============
+// Stripe webhooks require raw body for signature verification
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    if (webhookSecret) {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } else {
+      // Dev mode without signature verification
+      event = JSON.parse(req.body.toString());
+    }
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  console.log('Webhook event received:', event.type);
+
+  // Handle the event
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        // Cart checkout completed successfully
+        const session = event.data.object;
+        console.log('Checkout session completed:', session.id);
+        console.log('Customer email:', session.customer_details?.email);
+        console.log('Amount total:', session.amount_total / 100);
+
+        // Send order confirmation to customer
+        if (session.customer_details?.email) {
+          const orderEmail = {
+            subject: `Order Confirmed - Surprise Granite #SG-${session.id.slice(-8).toUpperCase()}`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px; text-align: center;">
+              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; line-height: 80px;">
+                <span style="font-size: 40px; color: #fff;">✓</span>
+              </div>
+              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Order Confirmed!</h2>
+              <p style="margin: 0 0 5px; color: #666; font-size: 15px;">Order #SG-${session.id.slice(-8).toUpperCase()}</p>
+              <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Thank you for your purchase!</p>
+              <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase;">Order Total</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${(session.amount_total / 100).toFixed(2)}</p>
+              </div>
+              <p style="margin: 0 0 20px; color: #666; font-size: 14px;">We're preparing your order and will send you shipping information once it's on its way.</p>
+              <a href="https://www.surprisegranite.com/shop" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 15px 35px; border-radius: 8px; font-weight: 600;">Continue Shopping</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f9fa; padding: 25px; text-align: center;">
+              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions about your order?</p>
+              <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none;">${COMPANY.phone}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+          };
+          await sendNotification(session.customer_details.email, orderEmail.subject, orderEmail.html);
+        }
+
+        // Notify admin of new order
+        const adminOrderEmail = {
+          subject: `New Order Received - #SG-${session.id.slice(-8).toUpperCase()} - $${(session.amount_total / 100).toFixed(2)}`,
+          html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #1a1a2e;">New Order Received!</h2>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p><strong>Order ID:</strong> #SG-${session.id.slice(-8).toUpperCase()}</p>
+    <p><strong>Session ID:</strong> ${session.id}</p>
+    <p><strong>Customer:</strong> ${session.customer_details?.name || 'N/A'}</p>
+    <p><strong>Email:</strong> ${session.customer_details?.email || 'N/A'}</p>
+    <p><strong>Amount:</strong> $${(session.amount_total / 100).toFixed(2)}</p>
+    <p><strong>Payment Status:</strong> ${session.payment_status}</p>
+  </div>
+  <p>View details in your <a href="https://dashboard.stripe.com/payments/${session.payment_intent}">Stripe Dashboard</a></p>
+</body>
+</html>`
+        };
+        await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
+        break;
+      }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object;
+        console.log('Invoice paid:', invoice.id);
+        const paidEmail = emailTemplates.paymentReceived(invoice);
+        await sendNotification(ADMIN_EMAIL, paidEmail.subject, paidEmail.html);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        console.log('Invoice payment failed:', invoice.id);
+        const failedEmail = emailTemplates.paymentFailed(invoice);
+        await sendNotification(ADMIN_EMAIL, failedEmail.subject, failedEmail.html);
+        break;
+      }
+
+      case 'invoice.sent':
+        console.log('Invoice sent:', event.data.object.id);
+        break;
+
+      case 'invoice.finalized':
+        console.log('Invoice finalized:', event.data.object.id);
+        break;
+
+      case 'account.updated':
+        console.log('Connect account updated:', event.data.object.id);
+        break;
+
+      case 'payment_intent.succeeded':
+        console.log('Payment intent succeeded:', event.data.object.id);
+        break;
+
+      case 'payment_intent.payment_failed':
+        console.log('Payment intent failed:', event.data.object.id);
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+  } catch (err) {
+    console.error('Error processing webhook event:', err);
+  }
+
+  res.json({ received: true });
+});
+
+// JSON body parser - AFTER webhook route
 app.use(express.json());
 
 // Health check
@@ -1248,63 +1402,6 @@ app.post('/api/connect/payouts', async (req, res) => {
     console.error('Payout error:', error);
     res.status(500).json({ error: error.message });
   }
-});
-
-// ============ WEBHOOK HANDLER ============
-
-// Stripe webhooks (raw body needed)
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
-  try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(req.body.toString());
-    }
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  const invoice = event.data.object;
-
-  switch (event.type) {
-    case 'invoice.paid':
-      console.log('Invoice paid:', invoice.id);
-      // Send payment received notification to admin
-      const paidEmail = emailTemplates.paymentReceived(invoice);
-      await sendNotification(ADMIN_EMAIL, paidEmail.subject, paidEmail.html);
-      break;
-
-    case 'invoice.payment_failed':
-      console.log('Invoice payment failed:', invoice.id);
-      // Send payment failed notification to admin
-      const failedEmail = emailTemplates.paymentFailed(invoice);
-      await sendNotification(ADMIN_EMAIL, failedEmail.subject, failedEmail.html);
-      break;
-
-    case 'invoice.sent':
-      console.log('Invoice sent:', invoice.id);
-      break;
-
-    case 'invoice.finalized':
-      console.log('Invoice finalized:', invoice.id);
-      break;
-
-    case 'account.updated':
-      console.log('Connect account updated:', event.data.object.id);
-      break;
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-
-  res.json({ received: true });
 });
 
 // Start server
