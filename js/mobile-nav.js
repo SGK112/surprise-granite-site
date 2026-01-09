@@ -112,9 +112,9 @@
           align-items: center;
           justify-content: space-between;
           background: #fff;
-          padding: 10px 12px;
+          padding: 8px 12px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          height: 56px;
+          height: 64px;
           box-sizing: border-box;
         }
 
@@ -173,16 +173,17 @@
         }
 
         .sg-mnav-logo img {
-          height: 24px;
+          height: 32px;
           width: auto;
         }
 
         .sg-mnav-tagline {
-          font-size: 8px;
+          font-size: 9px;
           color: #cca600;
-          letter-spacing: 1.5px;
+          letter-spacing: 2px;
           font-weight: 600;
           text-transform: uppercase;
+          margin-top: 1px;
         }
 
         /* Phone Icon */
@@ -352,7 +353,7 @@
 
         /* Body padding for fixed nav */
         body {
-          padding-top: 56px !important;
+          padding-top: 64px !important;
         }
       }
 
