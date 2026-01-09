@@ -1,7 +1,8 @@
 /**
  * SURPRISE GRANITE - UNIFIED NAVIGATION
  * Single navigation system for desktop and mobile
- * Version: 2.0
+ * Includes authentication integration
+ * Version: 2.1
  */
 
 (function() {
@@ -10,6 +11,28 @@
   // Prevent multiple initializations
   if (window.unifiedNavInitialized) return;
   window.unifiedNavInitialized = true;
+
+  // Load authentication dependencies
+  function loadAuthDependencies() {
+    // Load Supabase if not already loaded
+    if (!window.supabase && !document.querySelector('script[src*="supabase"]')) {
+      const supabaseScript = document.createElement('script');
+      supabaseScript.src = 'https://unpkg.com/@supabase/supabase-js@2';
+      supabaseScript.async = true;
+      document.head.appendChild(supabaseScript);
+    }
+
+    // Load sg-auth.js if not already loaded
+    if (!window.SgAuth && !document.querySelector('script[src*="sg-auth"]')) {
+      const authScript = document.createElement('script');
+      authScript.src = '/js/sg-auth.js?v=20260109f';
+      authScript.async = true;
+      document.head.appendChild(authScript);
+    }
+  }
+
+  // Load auth dependencies immediately
+  loadAuthDependencies();
 
   // Configuration
   const CONFIG = {
@@ -153,9 +176,11 @@
               <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
               ${CONFIG.phone}
             </a>
-            <a href="/account">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              Account
+            <a href="/account" class="unified-nav-account" id="unifiedNavAccount">
+              <span class="unified-nav-account-avatar" id="unifiedNavAvatar">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </span>
+              <span class="unified-nav-account-text" id="unifiedNavAccountText">Account</span>
             </a>
           </div>
         </div>
@@ -417,11 +442,83 @@
   // Expose updateCartBadge globally
   window.updateUnifiedNavCartBadge = updateCartBadge;
 
+  // ============ AUTH INTEGRATION ============
+
+  // Update account link based on auth state
+  function updateAuthUI() {
+    const accountLink = document.getElementById('unifiedNavAccount');
+    const accountText = document.getElementById('unifiedNavAccountText');
+    const accountAvatar = document.getElementById('unifiedNavAvatar');
+
+    if (!accountLink) return;
+
+    // Check if SgAuth is available and user is logged in
+    if (window.SgAuth && window.SgAuth.isLoggedIn()) {
+      const user = window.SgAuth.getUser();
+      const profile = window.SgAuth.getProfile();
+
+      // Get display name
+      const displayName = profile?.full_name?.split(' ')[0] ||
+                         profile?.first_name ||
+                         user?.user_metadata?.full_name?.split(' ')[0] ||
+                         user?.email?.split('@')[0] ||
+                         'Account';
+
+      // Get initial for avatar
+      const initial = displayName.charAt(0).toUpperCase();
+
+      // Update UI
+      accountLink.classList.add('logged-in');
+      accountText.textContent = displayName;
+      accountAvatar.innerHTML = `<span class="avatar-initial">${initial}</span>`;
+      accountAvatar.classList.add('has-user');
+      accountLink.title = user.email;
+
+    } else {
+      // Not logged in
+      accountLink.classList.remove('logged-in');
+      accountText.textContent = 'Account';
+      accountAvatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+      accountAvatar.classList.remove('has-user');
+      accountLink.removeAttribute('title');
+    }
+  }
+
+  // Listen for auth changes
+  function initAuthListener() {
+    // Check for SgAuth after a short delay (to allow it to initialize)
+    const checkAuth = () => {
+      if (window.SgAuth) {
+        window.SgAuth.onAuthChange((event, data) => {
+          console.log('Unified Nav: Auth event', event);
+          updateAuthUI();
+        });
+        updateAuthUI();
+      } else {
+        // Retry
+        setTimeout(checkAuth, 200);
+      }
+    };
+
+    // Start checking after init
+    setTimeout(checkAuth, 100);
+
+    // Also listen for custom auth change event
+    window.addEventListener('sg-auth-change', updateAuthUI);
+  }
+
+  // Expose functions globally
+  window.updateUnifiedNavAuthUI = updateAuthUI;
+
   // Run on DOM ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      initAuthListener();
+    });
   } else {
     init();
+    initAuthListener();
   }
 
   // Run cleanup again after delays to catch dynamically loaded navbars

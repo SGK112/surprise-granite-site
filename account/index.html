@@ -4985,6 +4985,56 @@
       if (isSuperAdmin) {
         loadAdminUsers();
       }
+
+      // Load user stats from database
+      if (!isAdmin) {
+        loadUserStats();
+      }
+    }
+
+    // Load real user stats from database
+    async function loadUserStats() {
+      if (!currentUser) return;
+
+      try {
+        // Load favorites count
+        const { count: favCount, error: favError } = await supabaseClient
+          .from('user_favorites')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id);
+
+        if (!favError) {
+          const favEl = document.getElementById('stat-favorites');
+          if (favEl) favEl.textContent = favCount || 0;
+        }
+
+        // Load listings count
+        const { count: listCount, error: listError } = await supabaseClient
+          .from('marketplace_listings')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id);
+
+        if (!listError) {
+          const listEl = document.getElementById('stat-listings');
+          if (listEl) listEl.textContent = listCount || 0;
+        }
+
+        // Load quotes count
+        const { count: quoteCount, error: quoteError } = await supabaseClient
+          .from('quote_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id);
+
+        if (!quoteError) {
+          const quoteEl = document.getElementById('stat-quotes');
+          if (quoteEl) quoteEl.textContent = quoteCount || 0;
+        }
+
+        console.log('Dashboard: Loaded user stats', { favorites: favCount, listings: listCount, quotes: quoteCount });
+
+      } catch (error) {
+        console.error('Error loading user stats:', error);
+      }
     }
 
     function showPage(page) {

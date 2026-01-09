@@ -146,18 +146,74 @@
   }
 
   async function initSupabase() {
+    // Wait for SgAuth if it's being loaded
+    await waitForSgAuth();
+
+    // Use SgAuth if available (preferred - unified auth state)
+    if (window.SgAuth) {
+      try {
+        await window.SgAuth.init();
+        if (window.SgAuth.isLoggedIn()) {
+          currentUser = window.SgAuth.getUser();
+          supabaseClient = window.SgAuth.getClient();
+          console.log('Favorites: Using SgAuth, user:', currentUser.email);
+
+          // Listen for auth changes
+          window.SgAuth.onAuthChange((event, data) => {
+            if (event === 'login') {
+              currentUser = data.user;
+              loadAllFavorites();
+              updateAllHeartButtons();
+              updateFavoritesBadge();
+            } else if (event === 'logout') {
+              currentUser = null;
+              loadAllFavorites();
+              updateAllHeartButtons();
+              updateFavoritesBadge();
+            }
+          });
+          return;
+        }
+      } catch (e) {
+        console.log('Favorites: SgAuth init error', e);
+      }
+    }
+
+    // Fallback to direct Supabase initialization
     try {
       if (window.supabase && window.supabase.createClient) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
           currentUser = session.user;
-          console.log('Favorites: User logged in', currentUser.email);
+          console.log('Favorites: User logged in (direct)', currentUser.email);
         }
       }
     } catch (e) {
       console.log('Favorites: Supabase not available');
     }
+  }
+
+  // Wait for SgAuth to be available
+  function waitForSgAuth() {
+    return new Promise((resolve) => {
+      if (window.SgAuth) {
+        resolve();
+        return;
+      }
+
+      let attempts = 0;
+      const check = setInterval(() => {
+        attempts++;
+        if (window.SgAuth) {
+          clearInterval(check);
+          resolve();
+        } else if (attempts > 20) {
+          clearInterval(check);
+          resolve(); // Continue without SgAuth
+        }
+      }, 100);
+    });
   }
 
   async function loadAllFavorites() {
