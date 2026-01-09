@@ -314,8 +314,9 @@
   // Intercept Webflow hamburger button clicks and redirect to unified nav
   function interceptWebflowHamburger() {
     document.addEventListener('click', function(e) {
-      const hamburger = e.target.closest('.navbar_menu-button, .w-nav-button, .menu-icon, [data-w-id]');
-      if (hamburger && !hamburger.closest('.unified-nav')) {
+      // Only intercept actual hamburger/menu buttons, not general data-w-id elements
+      const hamburger = e.target.closest('.navbar_menu-button, .w-nav-button, .menu-icon, .hamburger-menu');
+      if (hamburger && !hamburger.closest('.unified-nav') && !hamburger.closest('.filters_filters-wrapper')) {
         e.preventDefault();
         e.stopPropagation();
         // Open unified nav instead
