@@ -483,6 +483,73 @@
     init();
   }
 
+  /**
+   * Buy Now - Clear cart, add item, and go to checkout
+   */
+  async function buyNow(item) {
+    // Clear existing cart
+    clearCart();
+
+    // Add the item
+    addToCart(item);
+
+    // Show quick feedback
+    showNotification(`Proceeding to checkout with ${item.name}...`);
+
+    // Small delay for user feedback, then checkout
+    setTimeout(() => {
+      checkout();
+    }, 500);
+  }
+
+  /**
+   * Quick Add to Cart from any page
+   */
+  function quickAddToCart(productData) {
+    const item = {
+      id: productData.id || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name: productData.name,
+      price: parseFloat(productData.price) || 0,
+      image: productData.image || '',
+      variant: productData.variant || '',
+      quantity: productData.quantity || 1,
+      category: productData.category || 'product',
+      href: productData.href || window.location.href
+    };
+
+    if (item.price <= 0) {
+      showNotification('Please contact us for pricing on this item', 'error');
+      return false;
+    }
+
+    addToCart(item);
+    return true;
+  }
+
+  /**
+   * Quick Buy Now from any page
+   */
+  function quickBuyNow(productData) {
+    const item = {
+      id: productData.id || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name: productData.name,
+      price: parseFloat(productData.price) || 0,
+      image: productData.image || '',
+      variant: productData.variant || '',
+      quantity: productData.quantity || 1,
+      category: productData.category || 'product',
+      href: productData.href || window.location.href
+    };
+
+    if (item.price <= 0) {
+      showNotification('Please contact us for pricing on this item', 'error');
+      return false;
+    }
+
+    buyNow(item);
+    return true;
+  }
+
   // Expose cart API globally
   window.SgCart = {
     addToCart,
@@ -492,7 +559,10 @@
     getCart,
     getCartTotals,
     checkout,
-    showNotification
+    showNotification,
+    buyNow,
+    quickAddToCart,
+    quickBuyNow
   };
 
 })();

@@ -170,11 +170,16 @@
         imageUrl = primaryImg ? primaryImg.src : (images[1] || images[0]).src;
       }
 
+      // Extract price if available
+      const priceEl = item.querySelector('[fs-cmsfilter-field="price"], .materials_item-pricing, .product-price');
+      const priceText = priceEl ? priceEl.textContent.trim() : '';
+
       cards.push({
         id: index,
         href: link ? link.href : '#',
         image: imageUrl,
         title: title ? title.textContent.trim() : productLabel.slice(0, -1),
+        price: priceText,
         ...specs
       });
     });
@@ -420,6 +425,14 @@
             ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
           <div class="swipe-card-specs">${specsHtml}</div>
+          ${card.price ? `
+          <div class="swipe-card-buy">
+            <button class="swipe-buy-now-btn" onclick="event.stopPropagation(); window.SgCart && window.SgCart.quickBuyNow({name:'${card.title.replace(/'/g, "\\'")}', price:${parseFloat(card.price.replace(/[^0-9.]/g,''))||0}, image:'${card.image}', href:'${card.href}'})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+              Buy Now
+            </button>
+          </div>
+          ` : ''}
         </div>
       `;
 
