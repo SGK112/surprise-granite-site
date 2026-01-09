@@ -1,0 +1,187 @@
+/**
+ * Native Components CSS
+ * Styles for Webflow-replacement components
+ * Version: 1.0.0
+ */
+
+/* ===========================================
+   TABS - Native Implementation
+   =========================================== */
+
+/* Ensure tab panes have proper display states */
+.w-tabs .w-tab-pane {
+  display: none;
+}
+
+.w-tabs .w-tab-pane.w--tab-active {
+  display: block;
+}
+
+/* Tab links cursor and interaction */
+.w-tab-link {
+  cursor: pointer;
+  user-select: none;
+}
+
+.w-tab-link:focus {
+  outline: 2px solid #f9cb00;
+  outline-offset: 2px;
+}
+
+/* ===========================================
+   DROPDOWNS - Native Implementation
+   =========================================== */
+
+.w-dropdown {
+  position: relative;
+}
+
+.w-dropdown-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.w-dropdown-list {
+  position: absolute;
+  z-index: 900;
+  min-width: 100%;
+}
+
+.w-dropdown.w--open .w-dropdown-list {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+.w-dropdown-toggle:focus {
+  outline: 2px solid #f9cb00;
+  outline-offset: 2px;
+}
+
+/* ===========================================
+   ACCORDIONS / FAQ - Native Implementation
+   =========================================== */
+
+.faq6_question,
+.faq_question,
+[class*="faq"][class*="question"] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.faq6_question:focus,
+.faq_question:focus {
+  outline: 2px solid #f9cb00;
+  outline-offset: 2px;
+}
+
+/* Icon rotation for open state */
+.faq6_accordion.is-open .faq6_icon,
+.faq_accordion.is-open .faq_icon {
+  transform: rotate(45deg);
+}
+
+.faq6_icon,
+.faq_icon {
+  transition: transform 0.3s ease;
+}
+
+/* Answer wrapper animation */
+.faq6_answer-wrapper,
+.faq_answer-wrapper {
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+
+/* ===========================================
+   SLIDERS - Native Implementation
+   =========================================== */
+
+.w-slider {
+  position: relative;
+  overflow: hidden;
+}
+
+.w-slider-mask {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.w-slide {
+  position: relative;
+  width: 100%;
+}
+
+/* Slider arrows */
+.w-slider-arrow-left,
+.w-slider-arrow-right {
+  cursor: pointer;
+  user-select: none;
+  z-index: 10;
+}
+
+.w-slider-arrow-left:hover,
+.w-slider-arrow-right:hover {
+  opacity: 0.8;
+}
+
+.w-slider-arrow-left:focus,
+.w-slider-arrow-right:focus {
+  outline: 2px solid #f9cb00;
+  outline-offset: 2px;
+}
+
+/* Slider navigation dots */
+.w-slider-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0;
+}
+
+.w-slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.w-slider-dot:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.w-slider-dot.w-active {
+  background: #f9cb00;
+}
+
+/* ===========================================
+   UTILITY CLASSES
+   =========================================== */
+
+/* Hide element visually but keep accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .w-tab-pane,
+  .w-dropdown-list,
+  .faq6_answer-wrapper,
+  .faq_answer-wrapper,
+  .faq6_icon,
+  .faq_icon,
+  .w-slide {
+    transition: none !important;
+  }
+}

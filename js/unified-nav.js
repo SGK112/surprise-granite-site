@@ -83,14 +83,14 @@
     countertops: [
       { name: 'Quartz', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
       { name: 'Granite', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
-      { name: 'Marble', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb25831fbb345_Cambria_Surprise_Granite_Oakleigh_Slab.avif' },
-      { name: 'Porcelain', desc: 'Ultra-compact surfaces', href: '/materials/countertops/porcelain-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.avif' }
+      { name: 'Marble', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
+      { name: 'Porcelain', desc: 'Ultra-compact surfaces', href: '/materials/countertops/porcelain-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
     ],
     tile: [
-      { name: 'Porcelain Tile', desc: 'Durable & versatile', href: '/materials/all-tile', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
-      { name: 'Ceramic Tile', desc: 'Classic & affordable', href: '/materials/all-tile', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2a6cdfbc46c_Radianz-quartz-surprise-granite-calacatta-victory-close-up.avif' },
-      { name: 'Mosaic Tile', desc: 'Decorative accents', href: '/materials/all-tile', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2af91fbc4ad_Radianz-quartz-surprise-granite-alluring-close-up.avif' },
-      { name: 'Backsplash', desc: 'Kitchen & bath', href: '/materials/all-tile', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.avif' }
+      { name: 'Porcelain Tile', desc: 'Durable & versatile', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
+      { name: 'Ceramic Tile', desc: 'Classic & affordable', href: '/materials/all-tile', img: '/images/tiles/adella-white-ceramic-modern-tile.jpg' },
+      { name: 'Mosaic Tile', desc: 'Decorative accents', href: '/materials/all-tile', img: '/images/tiles/angora-hexagon-mosaic-marble-tile.webp' },
+      { name: 'Backsplash', desc: 'Kitchen & bath', href: '/materials/all-tile', img: '/images/tiles/abani-marble-encaustic-subway-tile.webp' }
     ],
     flooring: [
       { name: 'Luxury Vinyl', desc: 'Waterproof & stylish', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
