@@ -70,6 +70,11 @@ header.header,
 div[data-nav-menu-open],
 [data-animation="default"],
 
+/* SG Mobile Menu Overlay */
+.sg-mobile-menu-overlay,
+.sg-mobile-menu-overlay.open,
+#sgMobileMenu,
+
 /* Header element */
 header:not(.unified-nav):not(.unified-nav *) {
   display: none !important;
@@ -77,6 +82,29 @@ header:not(.unified-nav):not(.unified-nav *) {
   height: 0 !important;
   overflow: hidden !important;
   pointer-events: none !important;
+}
+
+/* CRITICAL: Force hide Webflow nav overlay even with inline styles */
+.w-nav-overlay,
+.w-nav-overlay[style],
+.w-nav-menu,
+.w-nav-menu[style],
+.w--open.w-nav-overlay,
+.w--nav-menu-open .w-nav-menu,
+.w--nav-menu-open .w-nav-overlay,
+[data-nav-menu-open],
+nav[data-animation="over-left"] .w-nav-overlay,
+nav[data-animation="over-left"] .w-nav-menu {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  pointer-events: none !important;
+  transform: translateX(-200%) !important;
 }
 
 /* Extra safety for any navbar classes not in unified-nav */

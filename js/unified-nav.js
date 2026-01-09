@@ -247,16 +247,23 @@
       '.navbar_component',
       '.navbar-banner_component',
       '.w-nav',
+      '.w-nav-menu',
+      '.w-nav-overlay',
+      '.w-nav-button',
+      '.navbar_menu-button',
       'header.header',
       '.header:not(.unified-nav *)',
       '.sg-header',
       '.sg-mobile-nav',
+      '.sg-mobile-menu-overlay',
+      '#sgMobileMenu',
       '.mobile-nav',
       '#mobileNav',
       '#sgMobileNav',
       '.mega-nav',
       '.nav-simple',
-      '#webflowNav'
+      '#webflowNav',
+      '[data-nav-menu-open]'
     ];
 
     selectorsToRemove.forEach(selector => {
@@ -270,13 +277,36 @@
       } catch (e) {}
     });
 
+    // Also forcefully close any open Webflow nav overlays
+    document.querySelectorAll('.w--open, [data-nav-menu-open]').forEach(el => {
+      el.classList.remove('w--open');
+      el.removeAttribute('data-nav-menu-open');
+    });
+
     console.log('Old navigation elements removed');
+  }
+
+  // Intercept Webflow hamburger button clicks and redirect to unified nav
+  function interceptWebflowHamburger() {
+    document.addEventListener('click', function(e) {
+      const hamburger = e.target.closest('.navbar_menu-button, .w-nav-button, .menu-icon, [data-w-id]');
+      if (hamburger && !hamburger.closest('.unified-nav')) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Open unified nav instead
+        const toggle = document.getElementById('unifiedNavToggle');
+        if (toggle) toggle.click();
+      }
+    }, true);
   }
 
   // Initialize navigation
   function init() {
     // Remove old navigation first
     removeOldNavigation();
+
+    // Intercept Webflow hamburger clicks
+    interceptWebflowHamburger();
 
     // Add body class for padding
     document.body.classList.add('unified-nav-active');

@@ -15,11 +15,15 @@
 
   <!-- Styles -->
   <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260109">
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260109e">
+  <script defer src="/js/unified-nav.js?v=20260109e"></script>
   <link rel="stylesheet" href="/css/cart.css">
 
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Supabase for auth check -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <!-- Navigation will be injected by mega-nav.js -->
@@ -94,6 +98,41 @@
             <p class="promo-message" id="promoMessage"></p>
           </div>
 
+          <!-- Account Signup Encouragement -->
+          <div class="account-prompt" id="accountPrompt">
+            <div class="account-prompt-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span>Save time on future orders</span>
+            </div>
+            <p>Sign in or create a free account to:</p>
+            <ul class="account-benefits">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Track your orders in real-time
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Save your favorite products
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Faster checkout next time
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Exclusive member discounts
+              </li>
+            </ul>
+            <div class="account-prompt-actions">
+              <a href="/log-in/?redirect=/cart/" class="btn-signin">Sign In</a>
+              <a href="/log-in/?redirect=/cart/#signup" class="btn-create">Create Account</a>
+            </div>
+            <p class="guest-note">Or continue as <button type="button" class="guest-link" id="continueAsGuest">guest</button></p>
+          </div>
+
           <!-- Checkout Button -->
           <button type="button" class="btn-checkout" id="checkoutBtn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -145,7 +184,37 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/mega-nav.js"></script>
   <script src="/js/cart.js"></script>
+  <script>
+    // Check authentication and manage account prompt
+    document.addEventListener('DOMContentLoaded', async function() {
+      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+      try {
+        if (window.supabase) {
+          const { createClient } = window.supabase;
+          const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data: { session } } = await supabaseClient.auth.getSession();
+
+          if (session) {
+            // User is logged in - hide prompt
+            document.body.classList.add('user-logged-in');
+          }
+        }
+      } catch (err) {
+        console.log('Auth check skipped');
+      }
+
+      // Continue as guest - just hide the prompt
+      const guestBtn = document.getElementById('continueAsGuest');
+      if (guestBtn) {
+        guestBtn.addEventListener('click', function() {
+          const prompt = document.getElementById('accountPrompt');
+          if (prompt) prompt.style.display = 'none';
+        });
+      }
+    });
+  </script>
 </body>
 </html>
