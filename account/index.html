@@ -36,11 +36,16 @@
       color: var(--text-primary);
     }
 
+    /* Unified Nav Offset - account for fixed header */
+    :root {
+      --unified-nav-height: 164px; /* Top banner + main header + bottom menu */
+    }
+
     /* Sidebar */
     .sidebar {
       position: fixed;
       left: 0;
-      top: 0;
+      top: var(--unified-nav-height);
       bottom: 0;
       width: 260px;
       background: var(--dark-surface);
@@ -279,6 +284,7 @@
     .main-content {
       margin-left: 260px;
       min-height: 100vh;
+      padding-top: var(--unified-nav-height);
     }
 
     .topbar {
@@ -1999,8 +2005,13 @@
 
     /* Responsive */
     @media (max-width: 1024px) {
+      :root {
+        --unified-nav-height: 130px; /* Smaller on mobile - no bottom menu */
+      }
+
       .sidebar {
         transform: translateX(-100%);
+        top: var(--unified-nav-height);
       }
 
       .sidebar.open {
@@ -2018,7 +2029,10 @@
       .sidebar-overlay {
         display: none;
         position: fixed;
-        inset: 0;
+        top: var(--unified-nav-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: rgba(0, 0, 0, 0.5);
         z-index: 99;
       }
@@ -2807,8 +2821,8 @@
     }
   </style>
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260109">
-<script defer src="/js/unified-nav.js?v=20260109"></script>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260109e">
+<script defer src="/js/unified-nav.js?v=20260109e"></script>
 
 </head>
 <body>
