@@ -701,8 +701,11 @@ body.unified-nav-active {
 /* Drawer Links */
 .unified-nav-drawer-links {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 8px 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .unified-nav-drawer-item {
@@ -763,4 +766,63 @@ body.unified-nav-active {
   width: 18px;
   height: 18px;
   fill: var(--nav-dark);
+}
+
+/* ===========================================
+   CRITICAL: FINAL OVERRIDE - HIGHEST PRIORITY
+   This section must remain at the END of the file
+   =========================================== */
+
+/* Force hide ALL non-unified nav elements with maximum specificity */
+html body nav:not(.unified-nav):not([class*="unified-nav"]),
+html body .navbar_wrapper,
+html body .navbar_component,
+html body .navbar-banner_component,
+html body .w-nav,
+html body header:not(.unified-nav),
+html body .header,
+html body .sg-header,
+html body .sg-mobile-nav,
+html body [class*="navbar_"]:not([class*="unified"]),
+html body [class*="navbar-"]:not([class*="unified"]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Ensure unified-nav is ALWAYS visible and on top */
+.unified-nav,
+#unifiedNav {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999999 !important;
+}
+
+/* Ensure drawer is scrollable and on top when open */
+.unified-nav-drawer {
+  z-index: 9999999 !important;
+}
+
+.unified-nav-drawer.is-open {
+  transform: translateX(0) !important;
+}
+
+.unified-nav-overlay {
+  z-index: 9999998 !important;
+}
+
+.unified-nav-overlay.is-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
 }

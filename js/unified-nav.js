@@ -31,17 +31,27 @@
     { label: 'Contact', href: '/contact-us' }
   ];
 
-  // Mobile menu items (expanded)
+  // Mobile menu items (expanded with all key pages)
   const MOBILE_MENU_ITEMS = [
+    { label: 'Home', href: '/' },
     { label: 'Countertops', href: '/materials/all-countertops' },
+    { label: 'Quartz Countertops', href: '/materials/countertops/quartz-countertops' },
+    { label: 'Granite Countertops', href: '/materials/countertops/granite-countertops' },
+    { label: 'Marble Countertops', href: '/materials/countertops/marble-countertops' },
+    { label: 'Porcelain Countertops', href: '/materials/countertops/porcelain-countertops' },
     { label: 'Tile', href: '/materials/all-tile' },
     { label: 'Flooring', href: '/materials/flooring' },
+    { label: 'Cabinets', href: '/materials/all-cabinets' },
     { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
     { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
     { label: 'Shop', href: '/shop' },
     { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
+    { label: 'About Us', href: '/company/about-us' },
+    { label: 'Reviews', href: '/company/reviews' },
+    { label: 'FAQ', href: '/company/faq-center' },
     { label: 'Contact', href: '/contact-us' },
+    { label: 'Financing', href: '/services/home-remodeling-financing-options-in-arizona' },
     { label: 'My Account', href: '/account' }
   ];
 
@@ -229,8 +239,45 @@
     }
   }
 
+  // Remove old navigation elements from DOM
+  function removeOldNavigation() {
+    const selectorsToRemove = [
+      'nav.navbar_wrapper',
+      '.navbar_wrapper',
+      '.navbar_component',
+      '.navbar-banner_component',
+      '.w-nav',
+      'header.header',
+      '.header:not(.unified-nav *)',
+      '.sg-header',
+      '.sg-mobile-nav',
+      '.mobile-nav',
+      '#mobileNav',
+      '#sgMobileNav',
+      '.mega-nav',
+      '.nav-simple',
+      '#webflowNav'
+    ];
+
+    selectorsToRemove.forEach(selector => {
+      try {
+        document.querySelectorAll(selector).forEach(el => {
+          // Don't remove our unified nav
+          if (!el.classList.contains('unified-nav') && !el.closest('.unified-nav')) {
+            el.remove();
+          }
+        });
+      } catch (e) {}
+    });
+
+    console.log('Old navigation elements removed');
+  }
+
   // Initialize navigation
   function init() {
+    // Remove old navigation first
+    removeOldNavigation();
+
     // Add body class for padding
     document.body.classList.add('unified-nav-active');
 
@@ -345,5 +392,24 @@
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
+  }
+
+  // Run cleanup again after delays to catch dynamically loaded navbars
+  setTimeout(removeOldNavigation, 500);
+  setTimeout(removeOldNavigation, 1500);
+  setTimeout(removeOldNavigation, 3000);
+
+  // Also clean up on any DOM changes
+  const cleanupObserver = new MutationObserver(() => {
+    removeOldNavigation();
+  });
+
+  // Start observing after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      cleanupObserver.observe(document.body, { childList: true, subtree: false });
+    });
+  } else {
+    cleanupObserver.observe(document.body, { childList: true, subtree: false });
   }
 })();
