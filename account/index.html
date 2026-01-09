@@ -96,14 +96,38 @@
       letter-spacing: 1px;
     }
 
-    .sidebar-nav {
+    /* FORCE SIDEBAR NAV VISIBILITY - Override any interference */
+    .sidebar-nav,
+    nav.sidebar-nav,
+    .sidebar .sidebar-nav,
+    #sidebar .sidebar-nav {
       flex: 1;
       padding: 0 12px;
       overflow-y: auto;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      height: auto !important;
+      max-height: none !important;
+      position: relative !important;
+      transform: none !important;
+      left: auto !important;
+      top: auto !important;
     }
 
-    .nav-section {
+    .nav-section,
+    .sidebar-nav .nav-section {
       margin-bottom: 24px;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .nav-item,
+    .sidebar-nav .nav-item {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     .nav-section-title {
@@ -2821,8 +2845,8 @@
     }
   </style>
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260109f">
-<script defer src="/js/unified-nav.js?v=20260109f"></script>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260110b">
+<script defer src="/js/unified-nav.js?v=20260110b"></script>
 
 </head>
 <body>
@@ -4257,7 +4281,7 @@
 
     function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
-      const validPages = ['favorites', 'profile', 'leads', 'invoices', 'products', 'dashboard', 'wallet', 'orders', 'messages'];
+      const validPages = ['favorites', 'profile', 'leads', 'invoices', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users'];
       if (hash && validPages.includes(hash)) {
         showPage(hash);
       }
