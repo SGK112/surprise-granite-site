@@ -282,6 +282,10 @@
       '.w-nav-overlay',
       '.w-nav-button',
       '.navbar_menu-button',
+      '.navbar_menu',
+      'nav.navbar_menu',
+      'nav[role="navigation"].navbar_menu',
+      'nav[role="navigation"].w-nav-menu',
       'header.header',
       '.header:not(.unified-nav *)',
       '.sg-header',
@@ -589,15 +593,32 @@
   setTimeout(overrideCustomMenus, 100);
   setTimeout(overrideCustomMenus, 500);
 
-  // Force close Webflow nav menu if it opens
+  // Force close and remove Webflow nav menu completely
   function forceCloseWebflowNav() {
-    // Remove w--open class from any Webflow menus
-    document.querySelectorAll('.w--open, .w-nav-menu.w--open, .navbar_menu.w--open, .w-nav-overlay.w--open').forEach(el => {
-      el.classList.remove('w--open');
-      el.style.display = 'none';
-      el.style.visibility = 'hidden';
-      el.style.height = '0';
-      el.style.width = '0';
+    // Completely remove Webflow nav menu elements from DOM
+    const webflowMenuSelectors = [
+      'nav.navbar_menu.w-nav-menu',
+      'nav[role="navigation"].navbar_menu',
+      'nav[role="navigation"].w-nav-menu',
+      '.navbar_menu.w-nav-menu',
+      '.w-nav-overlay'
+    ];
+
+    webflowMenuSelectors.forEach(selector => {
+      document.querySelectorAll(selector).forEach(el => {
+        // Don't remove if it's part of our unified nav
+        if (!el.closest('.unified-nav')) {
+          el.remove();
+        }
+      });
+    });
+
+    // Remove w--open class from any remaining elements
+    document.querySelectorAll('.w--open').forEach(el => {
+      if (!el.closest('.unified-nav')) {
+        el.classList.remove('w--open');
+        el.style.cssText = 'display:none!important;visibility:hidden!important;height:0!important;width:0!important;position:absolute!important;left:-9999px!important;';
+      }
     });
 
     // Remove body class that Webflow adds
@@ -630,8 +651,12 @@
     });
   }, 100);
 
-  // Run force close periodically just in case
-  setInterval(forceCloseWebflowNav, 500);
+  // Run force close immediately and periodically
+  forceCloseWebflowNav();
+  setTimeout(forceCloseWebflowNav, 50);
+  setTimeout(forceCloseWebflowNav, 150);
+  setTimeout(forceCloseWebflowNav, 300);
+  setInterval(forceCloseWebflowNav, 200);
 
   // Also clean up on any DOM changes
   const cleanupObserver = new MutationObserver(() => {

@@ -55,7 +55,7 @@ const COMPANY = {
   shortName: 'Surprise Granite',
   email: 'info@surprisegranite.com',
   phone: '(623) 466-2424',
-  address: '14155 W. Bell Road, Suite 100, Surprise, AZ 85374',
+  address: '15464 W Aster Dr, Surprise, AZ 85379',
   website: 'https://www.surprisegranite.com',
   logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg',
   tagline: 'Premium Countertops & Expert Installation'
@@ -510,82 +510,96 @@ const emailTemplates = {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f7;">
+<body style="margin: 0; padding: 0; background-color: #f8f8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f8f8;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <!-- Main Container -->
-        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
 
-          <!-- Header with Logo -->
+          <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1a2b3c 0%, #2d4a5e 100%); padding: 32px 40px; text-align: center;">
+            <td style="background-color: #1a2b3c; padding: 30px 40px;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td align="center">
-                    <h1 style="color: #f9cb00; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">SURPRISE GRANITE</h1>
-                    <p style="color: rgba(255,255,255,0.6); margin: 6px 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Premium Countertops & Remodeling</p>
+                  <td style="vertical-align: middle;">
+                    <table cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 14px;">
+                          <svg viewBox="0 0 122 125" width="42" height="42" style="display: block;">
+                            <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
+                            <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
+                            <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
+                            <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
+                          </svg>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">SURPRISE GRANITE</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="vertical-align: middle; text-align: right;">
+                    <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 12px;">Payment Receipt</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Success Banner -->
+          <!-- Status Bar -->
           <tr>
-            <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 20px 40px; text-align: center;">
-              <table width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
-                      <span style="font-size: 20px; margin-right: 8px;">&#10003;</span>
-                      Payment Successfully Received
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td style="background-color: #16a34a; padding: 14px 40px;">
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 500;">
+                <span style="margin-right: 8px;">&#10003;</span>
+                Payment successfully received
+              </p>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding: 48px 40px;">
+            <td style="padding: 40px;">
+
               <!-- Invoice Info -->
               <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
                 <tr>
                   <td>
-                    <p style="margin: 0 0 8px; color: #86868b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Invoice Number</p>
-                    <p style="margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 700;">#${invoice.number}</p>
+                    <p style="margin: 0 0 4px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Invoice Number</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 18px; font-weight: 600; font-family: 'SF Mono', Monaco, 'Courier New', monospace;">#${invoice.number}</p>
                   </td>
                 </tr>
               </table>
 
-              <!-- Amount Box -->
+              <!-- Divider -->
               <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
-                <tr>
-                  <td style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 32px; border-radius: 12px; text-align: center; border: 1px solid #bbf7d0;">
-                    <p style="margin: 0 0 8px; color: #166534; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Received</p>
-                    <p style="margin: 0; color: #15803d; font-size: 42px; font-weight: 700; letter-spacing: -1px;">$${(invoice.amount_paid / 100).toFixed(2)}</p>
-                  </td>
-                </tr>
+                <tr><td style="border-bottom: 1px solid #e5e7eb;"></td></tr>
               </table>
 
-              <!-- Customer Details -->
+              <!-- Amount -->
               <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
                 <tr>
-                  <td style="background: #f8fafc; padding: 24px; border-radius: 12px;">
+                  <td style="background-color: #f0fdf4; padding: 28px; border-radius: 6px; border: 1px solid #bbf7d0;">
                     <table width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
-                          <p style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Customer Email</p>
+                        <td>
+                          <p style="margin: 0 0 4px; color: #166534; font-size: 13px;">Amount Received</p>
+                          <p style="margin: 0; color: #15803d; font-size: 36px; font-weight: 700;">$${(invoice.amount_paid / 100).toFixed(2)}</p>
                         </td>
-                      </tr>
-                      <tr>
-                        <td style="padding-top: 12px;">
-                          <p style="margin: 0; color: #1d1d1f; font-size: 16px; font-weight: 600;">${invoice.customer_email}</p>
+                        <td style="text-align: right; vertical-align: bottom;">
+                          <p style="margin: 0; color: #16a34a; font-size: 13px; font-weight: 500;">Received</p>
                         </td>
                       </tr>
                     </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Customer -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 12px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Customer</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 15px;">${invoice.customer_email}</p>
                   </td>
                 </tr>
               </table>
@@ -594,7 +608,7 @@ const emailTemplates = {
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background: linear-gradient(180deg, #f9cb00 0%, #e6b800 100%); color: #1a2b3c; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 14px rgba(249, 203, 0, 0.35);">View Receipt</a>
+                    <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background-color: #1a2b3c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-size: 14px; font-weight: 500;">View Full Receipt</a>
                   </td>
                 </tr>
               </table>
@@ -603,16 +617,15 @@ const emailTemplates = {
 
           <!-- Footer -->
           <tr>
-            <td style="background: #f8fafc; padding: 28px 40px; border-top: 1px solid #e2e8f0;">
+            <td style="background-color: #f9fafb; padding: 28px 40px; border-top: 1px solid #e5e7eb;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td align="center">
-                    <p style="margin: 0 0 8px; color: #1d1d1f; font-size: 14px; font-weight: 600;">${COMPANY.name}</p>
-                    <p style="margin: 0 0 4px; color: #64748b; font-size: 13px;">Greater Phoenix, AZ</p>
-                    <p style="margin: 0; color: #64748b; font-size: 13px;">
-                      <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none; font-weight: 600;">${COMPANY.phone}</a>
-                      &nbsp;•&nbsp;
-                      <a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a>
+                  <td>
+                    <p style="margin: 0 0 4px; color: #1a2b3c; font-size: 14px; font-weight: 600;">Questions about this payment?</p>
+                    <p style="margin: 0; color: #6b7280; font-size: 13px;">
+                      <a href="mailto:${COMPANY.email}" style="color: #1a2b3c; text-decoration: none;">${COMPANY.email}</a>
+                      <span style="color: #d1d5db; margin: 0 8px;">|</span>
+                      <a href="tel:${COMPANY.phone}" style="color: #1a2b3c; text-decoration: none;">${COMPANY.phone}</a>
                     </p>
                   </td>
                 </tr>
@@ -622,11 +635,29 @@ const emailTemplates = {
 
           <!-- Legal Footer -->
           <tr>
-            <td style="background: #1a2b3c; padding: 20px 40px; text-align: center;">
-              <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">
-                © ${new Date().getFullYear()} Surprise Granite Marble & Quartz. All rights reserved.<br>
-                ROC #341113 | Licensed, Bonded & Insured
-              </p>
+            <td style="background-color: #1a2b3c; padding: 20px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 4px; color: rgba(255,255,255,0.8); font-size: 12px;">${COMPANY.shortName}</p>
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
+                  </td>
+                  <td style="text-align: right;">
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 341113</p>
+                    <p style="margin: 4px 0 0; color: rgba(255,255,255,0.4); font-size: 10px;">Licensed & Insured</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Bottom Note -->
+        <table width="600" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 20px 0; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated receipt from Surprise Granite. Please keep for your records.</p>
             </td>
           </tr>
         </table>
@@ -859,6 +890,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email;
 
         if (receiptEmail) {
+          const orderDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
           const orderEmail = {
             subject: `Order Confirmed - Surprise Granite #SG-${paymentIntent.id.slice(-8).toUpperCase()}`,
             html: `
@@ -868,118 +900,155 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #f5f5f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f0;">
+<body style="margin: 0; padding: 0; background-color: #f8f8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f8f8;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
 
-          <!-- Premium Header -->
+          <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1a2b3c 0%, #2d4a5e 50%, #1a2b3c 100%); padding: 35px 40px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 28px; font-weight: 700; font-family: 'Georgia', serif; letter-spacing: 1px;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 3px;">Premium Stone & Countertops</p>
-            </td>
-          </tr>
-
-          <!-- Success Banner -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 20px; text-align: center;">
-              <table cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+            <td style="background-color: #1a2b3c; padding: 30px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="width: 36px; height: 36px; background: rgba(255,255,255,0.25); border-radius: 50%; text-align: center; line-height: 36px;">
-                    <span style="font-size: 20px; color: #fff;">&#10003;</span>
+                  <td style="vertical-align: middle;">
+                    <table cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 14px;">
+                          <svg viewBox="0 0 122 125" width="42" height="42" style="display: block;">
+                            <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
+                            <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
+                            <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
+                            <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
+                          </svg>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">SURPRISE GRANITE</p>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
-                  <td style="padding-left: 15px;">
-                    <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700;">Order Confirmed!</p>
-                    <p style="margin: 4px 0 0; color: rgba(255,255,255,0.9); font-size: 13px;">Thank you for choosing Surprise Granite</p>
+                  <td style="vertical-align: middle; text-align: right;">
+                    <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 12px;">Order Confirmation</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Order Details -->
+          <!-- Status Bar -->
           <tr>
-            <td style="padding: 40px;">
-
-              <!-- Order Number -->
-              <div style="text-align: center; margin-bottom: 30px;">
-                <p style="margin: 0 0 5px; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Order Number</p>
-                <p style="margin: 0; color: #1a2b3c; font-size: 20px; font-weight: 700; font-family: monospace; letter-spacing: 2px;">#SG-${paymentIntent.id.slice(-8).toUpperCase()}</p>
-              </div>
-
-              <!-- Order Total Box -->
-              <div style="background: linear-gradient(135deg, #fafaf5 0%, #f0efe6 100%); border: 2px solid #e8e6d9; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
-                <p style="margin: 0 0 8px; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order Total</p>
-                <p style="margin: 0; color: #1a2b3c; font-size: 42px; font-weight: 700;">$${(paymentIntent.amount / 100).toFixed(2)}</p>
-              </div>
-
-              ${shipping ? `
-              <!-- Shipping Address -->
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
-                <table cellspacing="0" cellpadding="0" width="100%">
-                  <tr>
-                    <td style="vertical-align: top; width: 40px;">
-                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f9cb00, #d4aa00); border-radius: 8px; text-align: center; line-height: 32px;">
-                        <span style="font-size: 16px;">&#128230;</span>
-                      </div>
-                    </td>
-                    <td style="vertical-align: top; padding-left: 12px;">
-                      <p style="margin: 0 0 8px; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Shipping To</p>
-                      <p style="margin: 0; color: #1a2b3c; font-size: 15px; font-weight: 600;">${shipping.name}</p>
-                      <p style="margin: 6px 0 0; color: #64748b; font-size: 14px; line-height: 1.5;">${shipping.address?.line1}${shipping.address?.line2 ? '<br>' + shipping.address.line2 : ''}<br>${shipping.address?.city}, ${shipping.address?.state} ${shipping.address?.postal_code}</p>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-              ` : ''}
-
-              <!-- What's Next -->
-              <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-                <p style="margin: 0 0 10px; color: #92400e; font-size: 14px; font-weight: 700;">What happens next?</p>
-                <table cellspacing="0" cellpadding="0" width="100%">
-                  <tr>
-                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
-                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">1.</span> We're preparing your order with care
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
-                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">2.</span> You'll receive tracking info once shipped
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
-                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">3.</span> Questions? We're here to help!
-                    </td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- CTA Button -->
-              <div style="text-align: center;">
-                <a href="https://www.surprisegranite.com/shop" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #d4aa00 100%); color: #1a2b3c; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(249, 203, 0, 0.3);">Continue Shopping</a>
-              </div>
+            <td style="background-color: #16a34a; padding: 14px 40px;">
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 500;">
+                <span style="margin-right: 8px;">&#10003;</span>
+                Payment successful - Thank you for your order
+              </p>
             </td>
           </tr>
 
-          <!-- Trust Badges -->
+          <!-- Content -->
           <tr>
-            <td style="background: #f8fafc; padding: 25px 40px; border-top: 1px solid #e2e8f0;">
-              <table cellspacing="0" cellpadding="0" width="100%">
+            <td style="padding: 40px;">
+
+              <!-- Order Info -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
                 <tr>
-                  <td width="33%" style="text-align: center; padding: 10px;">
-                    <p style="margin: 0 0 5px; font-size: 20px;">&#128737;</p>
-                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Secure Payment</p>
+                  <td>
+                    <p style="margin: 0 0 4px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Order Number</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 18px; font-weight: 600; font-family: 'SF Mono', Monaco, 'Courier New', monospace;">#SG-${paymentIntent.id.slice(-8).toUpperCase()}</p>
                   </td>
-                  <td width="33%" style="text-align: center; padding: 10px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
-                    <p style="margin: 0 0 5px; font-size: 20px;">&#9733;</p>
-                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Premium Quality</p>
+                  <td style="text-align: right;">
+                    <p style="margin: 0 0 4px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 14px;">${orderDate}</p>
                   </td>
-                  <td width="33%" style="text-align: center; padding: 10px;">
-                    <p style="margin: 0 0 5px; font-size: 20px;">&#128222;</p>
-                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Expert Support</p>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr><td style="border-bottom: 1px solid #e5e7eb;"></td></tr>
+              </table>
+
+              <!-- Amount -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="background-color: #f9fafb; padding: 28px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td>
+                          <p style="margin: 0 0 4px; color: #6b7280; font-size: 13px;">Amount Paid</p>
+                          <p style="margin: 0; color: #1a2b3c; font-size: 32px; font-weight: 700;">$${(paymentIntent.amount / 100).toFixed(2)}</p>
+                        </td>
+                        <td style="text-align: right; vertical-align: bottom;">
+                          <p style="margin: 0; color: #16a34a; font-size: 13px; font-weight: 500;">Paid</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              ${shipping ? `
+              <!-- Shipping Address -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 12px; color: #6b7280; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Shipping Address</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 15px; line-height: 1.6;">
+                      <strong>${shipping.name}</strong><br>
+                      ${shipping.address?.line1}${shipping.address?.line2 ? '<br>' + shipping.address.line2 : ''}<br>
+                      ${shipping.address?.city}, ${shipping.address?.state} ${shipping.address?.postal_code}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr><td style="border-bottom: 1px solid #e5e7eb;"></td></tr>
+              </table>
+              ` : ''}
+
+              <!-- Next Steps -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 16px; color: #1a2b3c; font-size: 15px; font-weight: 600;">What's Next</p>
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 10px 0; vertical-align: top; width: 28px;">
+                          <div style="width: 20px; height: 20px; background-color: #f9cb00; border-radius: 50%; text-align: center; line-height: 20px; font-size: 11px; font-weight: 600; color: #1a2b3c;">1</div>
+                        </td>
+                        <td style="padding: 10px 0; padding-left: 12px;">
+                          <p style="margin: 0; color: #374151; font-size: 14px;">We're preparing your order</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; vertical-align: top; width: 28px;">
+                          <div style="width: 20px; height: 20px; background-color: #e5e7eb; border-radius: 50%; text-align: center; line-height: 20px; font-size: 11px; font-weight: 600; color: #6b7280;">2</div>
+                        </td>
+                        <td style="padding: 10px 0; padding-left: 12px;">
+                          <p style="margin: 0; color: #374151; font-size: 14px;">You'll receive tracking information via email</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; vertical-align: top; width: 28px;">
+                          <div style="width: 20px; height: 20px; background-color: #e5e7eb; border-radius: 50%; text-align: center; line-height: 20px; font-size: 11px; font-weight: 600; color: #6b7280;">3</div>
+                        </td>
+                        <td style="padding: 10px 0; padding-left: 12px;">
+                          <p style="margin: 0; color: #374151; font-size: 14px;">Your order will arrive within 5-7 business days</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <a href="https://www.surprisegranite.com/shop" style="display: inline-block; background-color: #1a2b3c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-size: 14px; font-weight: 500;">Continue Shopping</a>
                   </td>
                 </tr>
               </table>
@@ -988,29 +1057,50 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
           <!-- Footer -->
           <tr>
-            <td style="background: #1a2b3c; padding: 30px 40px; text-align: center;">
-              <p style="margin: 0 0 15px; color: #f9cb00; font-size: 16px; font-weight: 700;">Need Help With Your Order?</p>
-              <p style="margin: 0 0 8px; color: rgba(255,255,255,0.9); font-size: 14px;">
-                <a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a>
-              </p>
-              <p style="margin: 0 0 20px; color: rgba(255,255,255,0.9); font-size: 14px;">
-                <a href="tel:${COMPANY.phone}" style="color: #ffffff; text-decoration: none;">${COMPANY.phone}</a>
-              </p>
-              <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 10px;">
-                <p style="margin: 0 0 5px; color: rgba(255,255,255,0.6); font-size: 12px;">${COMPANY.name}</p>
-                <p style="margin: 0 0 5px; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
-                <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 10px;">AZ ROC# 329666 | Licensed, Bonded & Insured</p>
-              </div>
+            <td style="background-color: #f9fafb; padding: 28px 40px; border-top: 1px solid #e5e7eb;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 4px; color: #1a2b3c; font-size: 14px; font-weight: 600;">Questions?</p>
+                    <p style="margin: 0; color: #6b7280; font-size: 13px;">
+                      <a href="mailto:${COMPANY.email}" style="color: #1a2b3c; text-decoration: none;">${COMPANY.email}</a>
+                      <span style="color: #d1d5db; margin: 0 8px;">|</span>
+                      <a href="tel:${COMPANY.phone}" style="color: #1a2b3c; text-decoration: none;">${COMPANY.phone}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Legal Footer -->
+          <tr>
+            <td style="background-color: #1a2b3c; padding: 20px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 4px; color: rgba(255,255,255,0.8); font-size: 12px;">${COMPANY.shortName}</p>
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
+                  </td>
+                  <td style="text-align: right;">
+                    <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">AZ ROC# 341113</p>
+                    <p style="margin: 4px 0 0; color: rgba(255,255,255,0.4); font-size: 10px;">Licensed & Insured</p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
         </table>
 
-        <!-- Footer Note -->
-        <p style="margin: 25px 0 0; color: #94a3b8; font-size: 11px; text-align: center;">
-          This email confirms your order with ${COMPANY.shortName}.<br>
-          Please keep this for your records.
-        </p>
+        <!-- Bottom Note -->
+        <table width="600" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 20px 0; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 11px;">This is an automated confirmation for your order with ${COMPANY.shortName}.</p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

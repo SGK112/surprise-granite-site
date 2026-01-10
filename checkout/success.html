@@ -13,8 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Unified Navigation -->
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110b">
-  <script defer src="/js/unified-nav.js?v=20260110d"></script>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
 
   <style>
     * {
@@ -307,18 +307,32 @@
   <!-- Scripts -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Get session ID from URL
+      // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const sessionId = urlParams.get('session_id');
+      const paymentIntent = urlParams.get('payment_intent');
+      const redirectStatus = urlParams.get('redirect_status');
 
       // Display order info
       const orderNumber = document.getElementById('orderNumber');
       const orderDate = document.getElementById('orderDate');
 
-      if (sessionId) {
-        // Create a readable order number from session ID
+      // Check if payment was successful (for Payment Element flow)
+      if (redirectStatus && redirectStatus !== 'succeeded') {
+        // Payment wasn't successful, redirect back to checkout
+        window.location.href = '/checkout/?error=payment_failed';
+        return;
+      }
+
+      // Generate order number from payment intent or session ID
+      if (paymentIntent) {
+        // Payment Element flow
+        orderNumber.textContent = '#SG-' + paymentIntent.slice(-8).toUpperCase();
+      } else if (sessionId) {
+        // Legacy Checkout Session flow
         orderNumber.textContent = '#SG-' + sessionId.slice(-8).toUpperCase();
       } else {
+        // Fallback
         orderNumber.textContent = '#SG-' + Math.random().toString(36).slice(-8).toUpperCase();
       }
 
@@ -332,6 +346,7 @@
 
       // Clear the cart after successful checkout
       localStorage.removeItem('sg_cart');
+      localStorage.removeItem('sg_promo');
       localStorage.removeItem('sf-cart');
       localStorage.removeItem('cart');
 
@@ -339,6 +354,9 @@
       if (window.updateUnifiedNavCartBadge) {
         window.updateUnifiedNavCartBadge();
       }
+
+      // Also dispatch event for any cart listeners
+      window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: 0 } }));
     });
   </script>
 </body>

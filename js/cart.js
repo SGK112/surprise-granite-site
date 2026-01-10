@@ -244,74 +244,17 @@
   }
 
   /**
-   * Proceed to Stripe Checkout
+   * Proceed to Checkout Page
    */
-  async function checkout() {
+  function checkout() {
     const cart = getCart();
     if (cart.length === 0) {
       showNotification('Your cart is empty', 'error');
       return;
     }
 
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (checkoutBtn) {
-      checkoutBtn.disabled = true;
-      checkoutBtn.classList.add('loading');
-      checkoutBtn.innerHTML = '<span>Processing...</span>';
-    }
-
-    try {
-      // Create Stripe checkout session
-      const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          items: cart.map(item => ({
-            name: item.name,
-            price: Math.round(item.price * 100), // Convert to cents
-            quantity: item.quantity,
-            image: item.image
-          })),
-          success_url: window.location.origin + '/checkout/success?session_id={CHECKOUT_SESSION_ID}',
-          cancel_url: window.location.origin + '/cart/'
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.sessionId) {
-        // Redirect to Stripe Checkout
-        const result = await stripe.redirectToCheckout({
-          sessionId: data.sessionId
-        });
-
-        if (result.error) {
-          throw new Error(result.error.message);
-        }
-      } else if (data.url) {
-        // Direct URL redirect
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      showNotification('Checkout failed. Please try again.', 'error');
-
-      if (checkoutBtn) {
-        checkoutBtn.disabled = false;
-        checkoutBtn.classList.remove('loading');
-        checkoutBtn.innerHTML = `
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-            <line x1="1" y1="10" x2="23" y2="10"/>
-          </svg>
-          Proceed to Checkout
-        `;
-      }
-    }
+    // Redirect to the checkout page with Stripe Payment Element
+    window.location.href = '/checkout/';
   }
 
   /**

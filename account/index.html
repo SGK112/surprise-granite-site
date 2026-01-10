@@ -38,7 +38,7 @@
 
     /* Unified Nav Offset - account for fixed header */
     :root {
-      --unified-nav-height: 140px; /* Match unified-nav desktop height */
+      --unified-nav-height: 155px; /* Fixed sidebar needs explicit top offset */
       --sidebar-width: 260px;
       --sidebar-collapsed-width: 72px;
     }
@@ -57,6 +57,8 @@
       flex-direction: column;
       z-index: 100;
       transition: width 0.3s ease, transform 0.3s ease;
+      /* Position context for toggle button */
+      isolation: isolate;
     }
 
     /* Collapsed Sidebar State */
@@ -117,37 +119,42 @@
     }
 
     /* Sidebar Toggle Button */
+    .sidebar > .sidebar-toggle,
     .sidebar-toggle {
-      position: absolute;
-      top: 50%;
-      right: -12px;
-      transform: translateY(-50%);
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--gold-primary);
-      border: 2px solid var(--dark-surface);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--dark-primary);
-      z-index: 101;
-      transition: transform 0.3s ease;
+      position: absolute !important;
+      top: 50% !important;
+      right: -14px !important;
+      transform: translateY(-50%) !important;
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 50% !important;
+      background: var(--gold-primary) !important;
+      border: 3px solid var(--dark-deep) !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: var(--dark-primary) !important;
+      z-index: 200 !important;
+      transition: all 0.3s ease !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
     }
 
     .sidebar-toggle:hover {
-      transform: translateY(-50%) scale(1.1);
+      transform: translateY(-50%) scale(1.15) !important;
+      box-shadow: 0 4px 12px rgba(249, 203, 0, 0.4) !important;
     }
 
     .sidebar-toggle svg {
-      width: 14px;
-      height: 14px;
-      transition: transform 0.3s ease;
+      width: 14px !important;
+      height: 14px !important;
+      transition: transform 0.3s ease !important;
+      flex-shrink: 0 !important;
     }
 
     .sidebar.collapsed .sidebar-toggle svg {
-      transform: rotate(180deg);
+      transform: rotate(180deg) !important;
     }
 
     /* Hide zero badges */
@@ -408,7 +415,7 @@
       margin-left: var(--sidebar-width);
       min-height: 100vh;
       transition: margin-left 0.3s ease;
-      /* padding-top handled by body.unified-nav-active in unified-nav.css */
+      padding-top: 24px; /* Slight offset below sidebar logo */
     }
 
     body.sidebar-collapsed .main-content {
@@ -2988,8 +2995,8 @@
     }
   </style>
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260110b">
-<script defer src="/js/unified-nav.js?v=20260110d"></script>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+<script defer src="/js/unified-nav.js?v=20260110e"></script>
 
 </head>
 <body>
@@ -3176,7 +3183,7 @@
           <div class="sidebar-logo-icon">SG</div>
           <div>
             <div class="sidebar-logo-text">Surprise Granite</div>
-            <div class="sidebar-logo-sub">Account</div>
+            <div class="sidebar-logo-sub"><span id="account-type-label">Account</span></div>
           </div>
         </a>
       </div>
@@ -4650,6 +4657,21 @@
         if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
         if (nameEl) nameEl.textContent = name;
         if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (accountType === 'homeowner' ? 'Member' : accountType.replace('pro_', 'Pro ')));
+
+        // Update account type label in sidebar header
+        const accountTypeLabel = document.getElementById('account-type-label');
+        if (accountTypeLabel) {
+          const typeLabels = {
+            'homeowner': 'Homeowner Account',
+            'pro_contractor': 'Contractor Account',
+            'pro_fabricator': 'Fabricator Account',
+            'pro_designer': 'Designer Account',
+            'pro_builder': 'Builder Account',
+            'admin': 'Admin Account',
+            'super_admin': 'Admin Account'
+          };
+          accountTypeLabel.textContent = typeLabels[accountType] || 'Account';
+        }
 
         // Safely update profile form
         const profileNameEl = document.getElementById('profile-name');
