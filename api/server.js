@@ -502,42 +502,131 @@ const emailTemplates = {
   }),
 
   paymentReceived: (invoice) => ({
-    subject: `💰 Payment Received - Invoice #${invoice.number}`,
+    subject: `Payment Received - Invoice #${invoice.number} | Surprise Granite`,
     html: `
 <!DOCTYPE html>
 <html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f7;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <!-- Main Container -->
+        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header with Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            <td style="background: linear-gradient(135deg, #1a2b3c 0%, #2d4a5e 100%); padding: 32px 40px; text-align: center;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <h1 style="color: #f9cb00; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">SURPRISE GRANITE</h1>
+                    <p style="color: rgba(255,255,255,0.6); margin: 6px 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Premium Countertops & Remodeling</p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
+
+          <!-- Success Banner -->
           <tr>
-            <td style="padding: 40px; text-align: center;">
-              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 40px;">✓</span>
-              </div>
-              <h2 style="margin: 0 0 10px; color: #2e7d32; font-size: 24px;">Payment Received!</h2>
-              <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Invoice #${invoice.number} has been paid</p>
-              <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 30px; border-radius: 12px; margin-bottom: 25px;">
-                <p style="margin: 0 0 5px; color: #388e3c; font-size: 12px; text-transform: uppercase;">Amount Received</p>
-                <p style="margin: 0; color: #1b5e20; font-size: 36px; font-weight: 700;">$${(invoice.amount_paid / 100).toFixed(2)}</p>
-              </div>
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: left;">
-                <p style="margin: 0 0 8px; color: #666; font-size: 13px;">Customer</p>
-                <p style="margin: 0; color: #1a1a2e; font-size: 15px; font-weight: 600;">${invoice.customer_email}</p>
-              </div>
-              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-size: 14px;">View Receipt</a>
+            <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 20px 40px; text-align: center;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
+                      <span style="font-size: 20px; margin-right: 8px;">&#10003;</span>
+                      Payment Successfully Received
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
+
+          <!-- Content -->
           <tr>
-            <td style="background: #f8f9fa; padding: 20px; text-align: center;">
-              <p style="margin: 0; color: #888; font-size: 12px;">${COMPANY.name} • ${COMPANY.phone}</p>
+            <td style="padding: 48px 40px;">
+              <!-- Invoice Info -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 8px; color: #86868b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Invoice Number</p>
+                    <p style="margin: 0; color: #1d1d1f; font-size: 20px; font-weight: 700;">#${invoice.number}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Amount Box -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 32px; border-radius: 12px; text-align: center; border: 1px solid #bbf7d0;">
+                    <p style="margin: 0 0 8px; color: #166534; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Received</p>
+                    <p style="margin: 0; color: #15803d; font-size: 42px; font-weight: 700; letter-spacing: -1px;">$${(invoice.amount_paid / 100).toFixed(2)}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Customer Details -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="background: #f8fafc; padding: 24px; border-radius: 12px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                          <p style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Customer Email</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top: 12px;">
+                          <p style="margin: 0; color: #1d1d1f; font-size: 16px; font-weight: 600;">${invoice.customer_email}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background: linear-gradient(180deg, #f9cb00 0%, #e6b800 100%); color: #1a2b3c; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 14px rgba(249, 203, 0, 0.35);">View Receipt</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8fafc; padding: 28px 40px; border-top: 1px solid #e2e8f0;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 8px; color: #1d1d1f; font-size: 14px; font-weight: 600;">${COMPANY.name}</p>
+                    <p style="margin: 0 0 4px; color: #64748b; font-size: 13px;">Greater Phoenix, AZ</p>
+                    <p style="margin: 0; color: #64748b; font-size: 13px;">
+                      <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none; font-weight: 600;">${COMPANY.phone}</a>
+                      &nbsp;•&nbsp;
+                      <a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Legal Footer -->
+          <tr>
+            <td style="background: #1a2b3c; padding: 20px 40px; text-align: center;">
+              <p style="margin: 0; color: rgba(255,255,255,0.5); font-size: 11px;">
+                © ${new Date().getFullYear()} Surprise Granite Marble & Quartz. All rights reserved.<br>
+                ROC #341113 | Licensed, Bonded & Insured
+              </p>
             </td>
           </tr>
         </table>
@@ -760,13 +849,282 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         console.log('Connect account updated:', event.data.object.id);
         break;
 
-      case 'payment_intent.succeeded':
-        console.log('Payment intent succeeded:', event.data.object.id);
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object;
+        console.log('Payment intent succeeded:', paymentIntent.id);
+        console.log('Amount:', paymentIntent.amount / 100);
+
+        // Send order confirmation if we have shipping/customer details
+        const shipping = paymentIntent.shipping;
+        const receiptEmail = paymentIntent.receipt_email || paymentIntent.metadata?.customer_email;
+
+        if (receiptEmail) {
+          const orderEmail = {
+            subject: `Order Confirmed - Surprise Granite #SG-${paymentIntent.id.slice(-8).toUpperCase()}`,
+            html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f0;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+
+          <!-- Premium Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a2b3c 0%, #2d4a5e 50%, #1a2b3c 100%); padding: 35px 40px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 28px; font-weight: 700; font-family: 'Georgia', serif; letter-spacing: 1px;">${COMPANY.shortName}</h1>
+              <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 3px;">Premium Stone & Countertops</p>
+            </td>
+          </tr>
+
+          <!-- Success Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 20px; text-align: center;">
+              <table cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="width: 36px; height: 36px; background: rgba(255,255,255,0.25); border-radius: 50%; text-align: center; line-height: 36px;">
+                    <span style="font-size: 20px; color: #fff;">&#10003;</span>
+                  </td>
+                  <td style="padding-left: 15px;">
+                    <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700;">Order Confirmed!</p>
+                    <p style="margin: 4px 0 0; color: rgba(255,255,255,0.9); font-size: 13px;">Thank you for choosing Surprise Granite</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Order Details -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Order Number -->
+              <div style="text-align: center; margin-bottom: 30px;">
+                <p style="margin: 0 0 5px; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Order Number</p>
+                <p style="margin: 0; color: #1a2b3c; font-size: 20px; font-weight: 700; font-family: monospace; letter-spacing: 2px;">#SG-${paymentIntent.id.slice(-8).toUpperCase()}</p>
+              </div>
+
+              <!-- Order Total Box -->
+              <div style="background: linear-gradient(135deg, #fafaf5 0%, #f0efe6 100%); border: 2px solid #e8e6d9; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
+                <p style="margin: 0 0 8px; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order Total</p>
+                <p style="margin: 0; color: #1a2b3c; font-size: 42px; font-weight: 700;">$${(paymentIntent.amount / 100).toFixed(2)}</p>
+              </div>
+
+              ${shipping ? `
+              <!-- Shipping Address -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                <table cellspacing="0" cellpadding="0" width="100%">
+                  <tr>
+                    <td style="vertical-align: top; width: 40px;">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f9cb00, #d4aa00); border-radius: 8px; text-align: center; line-height: 32px;">
+                        <span style="font-size: 16px;">&#128230;</span>
+                      </div>
+                    </td>
+                    <td style="vertical-align: top; padding-left: 12px;">
+                      <p style="margin: 0 0 8px; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Shipping To</p>
+                      <p style="margin: 0; color: #1a2b3c; font-size: 15px; font-weight: 600;">${shipping.name}</p>
+                      <p style="margin: 6px 0 0; color: #64748b; font-size: 14px; line-height: 1.5;">${shipping.address?.line1}${shipping.address?.line2 ? '<br>' + shipping.address.line2 : ''}<br>${shipping.address?.city}, ${shipping.address?.state} ${shipping.address?.postal_code}</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              ` : ''}
+
+              <!-- What's Next -->
+              <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                <p style="margin: 0 0 10px; color: #92400e; font-size: 14px; font-weight: 700;">What happens next?</p>
+                <table cellspacing="0" cellpadding="0" width="100%">
+                  <tr>
+                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
+                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">1.</span> We're preparing your order with care
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
+                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">2.</span> You'll receive tracking info once shipped
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #78716c; font-size: 14px;">
+                      <span style="color: #f9cb00; font-weight: 700; margin-right: 10px;">3.</span> Questions? We're here to help!
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center;">
+                <a href="https://www.surprisegranite.com/shop" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #d4aa00 100%); color: #1a2b3c; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(249, 203, 0, 0.3);">Continue Shopping</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Trust Badges -->
+          <tr>
+            <td style="background: #f8fafc; padding: 25px 40px; border-top: 1px solid #e2e8f0;">
+              <table cellspacing="0" cellpadding="0" width="100%">
+                <tr>
+                  <td width="33%" style="text-align: center; padding: 10px;">
+                    <p style="margin: 0 0 5px; font-size: 20px;">&#128737;</p>
+                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Secure Payment</p>
+                  </td>
+                  <td width="33%" style="text-align: center; padding: 10px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 5px; font-size: 20px;">&#9733;</p>
+                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Premium Quality</p>
+                  </td>
+                  <td width="33%" style="text-align: center; padding: 10px;">
+                    <p style="margin: 0 0 5px; font-size: 20px;">&#128222;</p>
+                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600;">Expert Support</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #1a2b3c; padding: 30px 40px; text-align: center;">
+              <p style="margin: 0 0 15px; color: #f9cb00; font-size: 16px; font-weight: 700;">Need Help With Your Order?</p>
+              <p style="margin: 0 0 8px; color: rgba(255,255,255,0.9); font-size: 14px;">
+                <a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a>
+              </p>
+              <p style="margin: 0 0 20px; color: rgba(255,255,255,0.9); font-size: 14px;">
+                <a href="tel:${COMPANY.phone}" style="color: #ffffff; text-decoration: none;">${COMPANY.phone}</a>
+              </p>
+              <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 10px;">
+                <p style="margin: 0 0 5px; color: rgba(255,255,255,0.6); font-size: 12px;">${COMPANY.name}</p>
+                <p style="margin: 0 0 5px; color: rgba(255,255,255,0.5); font-size: 11px;">${COMPANY.address}</p>
+                <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 10px;">AZ ROC# 329666 | Licensed, Bonded & Insured</p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Footer Note -->
+        <p style="margin: 25px 0 0; color: #94a3b8; font-size: 11px; text-align: center;">
+          This email confirms your order with ${COMPANY.shortName}.<br>
+          Please keep this for your records.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+          };
+          await sendNotification(receiptEmail, orderEmail.subject, orderEmail.html);
+        }
+
+        // Notify admin
+        const adminOrderEmail = {
+          subject: `New Order - #SG-${paymentIntent.id.slice(-8).toUpperCase()} - $${(paymentIntent.amount / 100).toFixed(2)}`,
+          html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #1a1a2e;">New Order Received!</h2>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p><strong>Order ID:</strong> #SG-${paymentIntent.id.slice(-8).toUpperCase()}</p>
+    <p><strong>Payment Intent:</strong> ${paymentIntent.id}</p>
+    <p><strong>Customer:</strong> ${shipping?.name || 'N/A'}</p>
+    <p><strong>Email:</strong> ${receiptEmail || 'N/A'}</p>
+    <p><strong>Amount:</strong> $${(paymentIntent.amount / 100).toFixed(2)}</p>
+    <p><strong>Status:</strong> ${paymentIntent.status}</p>
+    ${shipping ? `
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
+    <p><strong>Shipping Address:</strong></p>
+    <p>${shipping.name}<br>
+    ${shipping.address?.line1}${shipping.address?.line2 ? '<br>' + shipping.address.line2 : ''}<br>
+    ${shipping.address?.city}, ${shipping.address?.state} ${shipping.address?.postal_code}</p>
+    ` : ''}
+  </div>
+  <p>View details in your <a href="https://dashboard.stripe.com/payments/${paymentIntent.id}">Stripe Dashboard</a></p>
+</body>
+</html>`
+        };
+        await sendNotification(ADMIN_EMAIL, adminOrderEmail.subject, adminOrderEmail.html);
         break;
+      }
 
       case 'payment_intent.payment_failed':
         console.log('Payment intent failed:', event.data.object.id);
         break;
+
+      // ============ VENDOR SUBSCRIPTION EVENTS ============
+      case 'customer.subscription.created': {
+        const subscription = event.data.object;
+        const vendorId = subscription.metadata?.vendor_id;
+        if (vendorId) {
+          console.log('Vendor subscription created:', subscription.id, 'Vendor:', vendorId);
+          // Notify admin of new vendor subscription
+          const subEmail = {
+            subject: `New Vendor Subscription - ${subscription.metadata?.plan || 'Unknown'} Plan`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #1a1a2e;">New Vendor Subscription!</h2>
+  <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0; color: #2e7d32; font-weight: 600;">A new vendor has subscribed!</p>
+  </div>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <p><strong>Vendor ID:</strong> ${vendorId}</p>
+    <p><strong>Plan:</strong> ${subscription.metadata?.plan || 'Unknown'}</p>
+    <p><strong>Leads/Month:</strong> ${subscription.metadata?.leads_per_month || '0'}</p>
+    <p><strong>Subscription ID:</strong> ${subscription.id}</p>
+    <p><strong>Status:</strong> ${subscription.status}</p>
+  </div>
+  <p>View in your <a href="https://dashboard.stripe.com/subscriptions/${subscription.id}">Stripe Dashboard</a></p>
+</body>
+</html>`
+          };
+          await sendNotification(ADMIN_EMAIL, subEmail.subject, subEmail.html);
+        }
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const vendorId = subscription.metadata?.vendor_id;
+        if (vendorId) {
+          console.log('Vendor subscription updated:', subscription.id, 'Status:', subscription.status);
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        const vendorId = subscription.metadata?.vendor_id;
+        if (vendorId) {
+          console.log('Vendor subscription canceled:', subscription.id, 'Vendor:', vendorId);
+          // Notify admin of cancellation
+          const cancelEmail = {
+            subject: `Vendor Subscription Canceled - ${subscription.metadata?.plan || 'Unknown'} Plan`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #c62828;">Vendor Subscription Canceled</h2>
+  <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0; color: #c62828;">A vendor has canceled their subscription.</p>
+  </div>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <p><strong>Vendor ID:</strong> ${vendorId}</p>
+    <p><strong>Plan:</strong> ${subscription.metadata?.plan || 'Unknown'}</p>
+    <p><strong>Subscription ID:</strong> ${subscription.id}</p>
+  </div>
+</body>
+</html>`
+          };
+          await sendNotification(ADMIN_EMAIL, cancelEmail.subject, cancelEmail.html);
+        }
+        break;
+      }
 
       default:
         console.log(`Unhandled event type: ${event.type}`);
@@ -911,6 +1269,62 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
   } catch (error) {
     console.error('Checkout session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ PAYMENT INTENT (for Payment Element) ============
+
+// Create a PaymentIntent for embedded checkout with Payment Element
+app.post('/api/create-payment-intent', async (req, res) => {
+  try {
+    const { amount, items, metadata, customer_email } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+
+    // Build payment intent config
+    const paymentIntentConfig = {
+      amount: Math.round(amount), // Should already be in cents
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true
+      },
+      metadata: {
+        order_source: 'website_checkout',
+        items_count: items?.length || 0,
+        ...metadata
+      }
+    };
+
+    // If customer email provided, find or create customer
+    if (customer_email) {
+      const existingCustomers = await stripe.customers.list({ email: customer_email, limit: 1 });
+
+      if (existingCustomers.data.length > 0) {
+        paymentIntentConfig.customer = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: customer_email,
+          metadata: { source: 'surprise_granite_checkout' }
+        });
+        paymentIntentConfig.customer = customer.id;
+      }
+    }
+
+    // Create the PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentConfig);
+
+    console.log('PaymentIntent created:', paymentIntent.id, 'Amount:', amount / 100);
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
+
+  } catch (error) {
+    console.error('PaymentIntent error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1400,6 +1814,401 @@ app.post('/api/connect/payouts', async (req, res) => {
     });
   } catch (error) {
     console.error('Payout error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ VENDOR SUBSCRIPTIONS ============
+
+// Subscription plan pricing (in cents)
+const VENDOR_PLANS = {
+  starter: { monthly: 0, annual: 0, name: 'Starter', leads_per_month: 0 },
+  basic: { monthly: 999, annual: 9590, name: 'Basic', leads_per_month: 3 },
+  plus: { monthly: 1999, annual: 19190, name: 'Plus', leads_per_month: 10 },
+  pro: { monthly: 2999, annual: 28790, name: 'Pro', leads_per_month: 50 }
+};
+
+// Create vendor subscription checkout session
+app.post('/api/create-vendor-subscription', async (req, res) => {
+  try {
+    const { vendor_id, plan_name, billing_cycle, success_url, cancel_url } = req.body;
+
+    if (!vendor_id || !plan_name) {
+      return res.status(400).json({ error: 'Vendor ID and plan name are required' });
+    }
+
+    const plan = VENDOR_PLANS[plan_name.toLowerCase()];
+    if (!plan) {
+      return res.status(400).json({ error: 'Invalid plan name' });
+    }
+
+    // Free starter plan - no checkout needed
+    if (plan_name.toLowerCase() === 'starter') {
+      return res.json({
+        success: true,
+        plan: 'starter',
+        message: 'Free plan activated - no payment required',
+        redirect_url: success_url || 'https://www.surprisegranite.com/vendor/dashboard/'
+      });
+    }
+
+    const isAnnual = billing_cycle === 'annual';
+    const amount = isAnnual ? plan.annual : plan.monthly;
+    const interval = isAnnual ? 'year' : 'month';
+
+    // Create or get the product
+    let product;
+    const existingProducts = await stripe.products.list({
+      limit: 100,
+      active: true
+    });
+
+    product = existingProducts.data.find(p =>
+      p.metadata?.type === 'vendor_subscription' &&
+      p.metadata?.plan === plan_name.toLowerCase()
+    );
+
+    if (!product) {
+      product = await stripe.products.create({
+        name: `Surprise Granite Pro - ${plan.name} Plan`,
+        description: `${plan.leads_per_month} leads/month, verified badge, priority support`,
+        metadata: {
+          type: 'vendor_subscription',
+          plan: plan_name.toLowerCase(),
+          leads_per_month: plan.leads_per_month.toString()
+        }
+      });
+    }
+
+    // Create a price for this billing cycle
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: amount,
+      currency: 'usd',
+      recurring: {
+        interval: interval
+      },
+      metadata: {
+        plan: plan_name.toLowerCase(),
+        billing_cycle: billing_cycle
+      }
+    });
+
+    // Create checkout session for subscription
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price: price.id,
+        quantity: 1
+      }],
+      mode: 'subscription',
+      success_url: success_url || `https://www.surprisegranite.com/vendor/dashboard/?subscription=success`,
+      cancel_url: cancel_url || `https://www.surprisegranite.com/vendor/select-plan/?canceled=true`,
+      metadata: {
+        vendor_id: vendor_id,
+        plan: plan_name.toLowerCase(),
+        billing_cycle: billing_cycle,
+        source: 'vendor_onboarding'
+      },
+      subscription_data: {
+        metadata: {
+          vendor_id: vendor_id,
+          plan: plan_name.toLowerCase(),
+          leads_per_month: plan.leads_per_month.toString()
+        }
+      },
+      allow_promotion_codes: true
+    });
+
+    console.log('Vendor subscription session created:', session.id, 'Plan:', plan_name);
+
+    res.json({
+      success: true,
+      sessionId: session.id,
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error('Vendor subscription error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get vendor billing portal link
+app.post('/api/vendor-billing-portal', async (req, res) => {
+  try {
+    const { customer_id, return_url } = req.body;
+
+    if (!customer_id) {
+      return res.status(400).json({ error: 'Customer ID is required' });
+    }
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customer_id,
+      return_url: return_url || 'https://www.surprisegranite.com/vendor/dashboard/'
+    });
+
+    res.json({
+      success: true,
+      url: portalSession.url
+    });
+
+  } catch (error) {
+    console.error('Billing portal error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get vendor subscription status
+app.get('/api/vendor-subscription/:vendor_id', async (req, res) => {
+  try {
+    const { vendor_id } = req.params;
+
+    // Search for subscriptions with this vendor_id in metadata
+    const subscriptions = await stripe.subscriptions.search({
+      query: `metadata['vendor_id']:'${vendor_id}'`,
+      limit: 1
+    });
+
+    if (subscriptions.data.length === 0) {
+      return res.json({
+        active: false,
+        plan: 'starter',
+        status: 'none'
+      });
+    }
+
+    const subscription = subscriptions.data[0];
+    const plan = subscription.metadata?.plan || 'starter';
+    const leadsPerMonth = parseInt(subscription.metadata?.leads_per_month || '0');
+
+    res.json({
+      active: subscription.status === 'active',
+      plan: plan,
+      status: subscription.status,
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      leads_per_month: leadsPerMonth,
+      stripe_subscription_id: subscription.id,
+      customer_id: subscription.customer
+    });
+
+  } catch (error) {
+    console.error('Get vendor subscription error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Cancel vendor subscription
+app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
+  try {
+    const { vendor_id } = req.params;
+    const { cancel_immediately = false } = req.body;
+
+    // Find the subscription
+    const subscriptions = await stripe.subscriptions.search({
+      query: `metadata['vendor_id']:'${vendor_id}'`,
+      limit: 1
+    });
+
+    if (subscriptions.data.length === 0) {
+      return res.status(404).json({ error: 'No active subscription found' });
+    }
+
+    const subscription = subscriptions.data[0];
+
+    if (cancel_immediately) {
+      await stripe.subscriptions.cancel(subscription.id);
+    } else {
+      await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true
+      });
+    }
+
+    res.json({
+      success: true,
+      message: cancel_immediately
+        ? 'Subscription canceled immediately'
+        : 'Subscription will cancel at end of billing period'
+    });
+
+  } catch (error) {
+    console.error('Cancel subscription error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ LEAD MANAGEMENT ============
+
+// Submit a new lead (from estimate form)
+app.post('/api/leads', async (req, res) => {
+  try {
+    const {
+      homeowner_name,
+      homeowner_email,
+      homeowner_phone,
+      project_type,
+      project_budget,
+      project_timeline,
+      project_zip,
+      project_details,
+      source = 'website'
+    } = req.body;
+
+    if (!homeowner_name || !homeowner_email || !project_zip) {
+      return res.status(400).json({
+        error: 'Name, email, and ZIP code are required'
+      });
+    }
+
+    // Calculate lead price based on project type
+    let lead_price = 15; // Default price
+    if (project_type === 'kitchen_countertops' || project_type === 'full_remodel') {
+      lead_price = 25;
+    } else if (project_type === 'bathroom') {
+      lead_price = 20;
+    } else if (project_type === 'commercial') {
+      lead_price = 35;
+    }
+
+    // Lead data to store (you'd typically save this to Supabase)
+    const leadData = {
+      homeowner_name,
+      homeowner_email,
+      homeowner_phone,
+      project_type,
+      project_budget,
+      project_timeline,
+      project_zip,
+      project_details,
+      source,
+      lead_price,
+      status: 'new',
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() // 72 hours
+    };
+
+    console.log('New lead received:', leadData);
+
+    // Send notification to admin
+    const adminEmail = {
+      subject: `New Lead - ${project_type} in ${project_zip}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #f9cb00; margin: 0; font-size: 20px;">New Lead Received!</h1>
+    </div>
+    <div style="padding: 25px;">
+      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0; color: #2e7d32; font-weight: 600;">Lead Value: $${lead_price}</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Name:</td>
+          <td style="padding: 8px 0; color: #1a1a2e; font-weight: 600;">${homeowner_name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Email:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${homeowner_email}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Phone:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${homeowner_phone || 'Not provided'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Project:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_type}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">ZIP Code:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_zip}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Budget:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_budget || 'Not specified'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Timeline:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_timeline || 'Not specified'}</td>
+        </tr>
+      </table>
+      ${project_details ? `
+      <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase;">Project Details:</p>
+        <p style="margin: 0; color: #1a1a2e; font-size: 14px;">${project_details}</p>
+      </div>
+      ` : ''}
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="https://www.surprisegranite.com/vendor/dashboard/" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600;">View in Dashboard</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+    };
+    await sendNotification(ADMIN_EMAIL, adminEmail.subject, adminEmail.html);
+
+    res.json({
+      success: true,
+      message: 'Lead submitted successfully',
+      lead_id: `lead_${Date.now()}`
+    });
+
+  } catch (error) {
+    console.error('Lead submission error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Purchase a lead (a la carte)
+app.post('/api/purchase-lead', async (req, res) => {
+  try {
+    const { vendor_id, lead_id, lead_price, success_url, cancel_url } = req.body;
+
+    if (!vendor_id || !lead_id || !lead_price) {
+      return res.status(400).json({ error: 'Vendor ID, lead ID, and lead price are required' });
+    }
+
+    // Create a one-time checkout session for the lead
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Lead Purchase',
+            description: `Lead ID: ${lead_id}`,
+            metadata: {
+              type: 'lead_purchase',
+              lead_id: lead_id
+            }
+          },
+          unit_amount: Math.round(lead_price * 100)
+        },
+        quantity: 1
+      }],
+      mode: 'payment',
+      success_url: success_url || `https://www.surprisegranite.com/vendor/dashboard/leads/?purchased=${lead_id}`,
+      cancel_url: cancel_url || `https://www.surprisegranite.com/vendor/dashboard/leads/`,
+      metadata: {
+        vendor_id: vendor_id,
+        lead_id: lead_id,
+        type: 'lead_purchase'
+      }
+    });
+
+    console.log('Lead purchase session created:', session.id);
+
+    res.json({
+      success: true,
+      sessionId: session.id,
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error('Lead purchase error:', error);
     res.status(500).json({ error: error.message });
   }
 });

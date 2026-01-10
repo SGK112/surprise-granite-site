@@ -713,6 +713,11 @@
                 <label>Phone Number *</label>
               </div>
 
+              <div class="floating-label">
+                <input type="text" name="zipCode" id="zipCode" placeholder=" " pattern="[0-9]{5}" maxlength="5" required>
+                <label>ZIP Code *</label>
+              </div>
+
               <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 16px;">How should we contact you?</p>
               <div class="contact-methods">
                 <div class="contact-method selected" data-value="phone">
@@ -913,6 +918,7 @@
         name: document.getElementById('firstName').value.trim() + ' ' + document.getElementById('lastName').value.trim(),
         email: document.getElementById('email').value.trim(),
         phone: document.getElementById('phone').value.trim(),
+        zipCode: document.getElementById('zipCode').value.trim(),
         projectType: document.getElementById('projectType').value,
         contactMethod: document.getElementById('contactMethod').value,
         timeline: document.getElementById('timeline').value,
@@ -932,6 +938,27 @@
         console.log('CRM webhook error, but lead captured locally');
       }
 
+      // Submit to vendor leads API for vendor distribution
+      try {
+        await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            homeowner_name: formData.name,
+            homeowner_email: formData.email,
+            homeowner_phone: formData.phone,
+            project_type: formData.projectType,
+            project_budget: formData.budget,
+            project_timeline: formData.timeline,
+            project_zip: formData.zipCode,
+            project_details: formData.message,
+            source: 'website-estimate-form'
+          })
+        });
+      } catch (error) {
+        console.log('Vendor leads API error:', error);
+      }
+
       // Submit to Supabase for admin panel
       try {
         await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
@@ -947,6 +974,7 @@
             full_name: formData.name,
             email: formData.email,
             phone: formData.phone,
+            zip_code: formData.zipCode,
             project_type: formData.projectType,
             timeline: formData.timeline,
             budget: formData.budget,
