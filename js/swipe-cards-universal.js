@@ -779,8 +779,12 @@
             <span>Buy Now</span>
           </button>
         ` : ''}
-        <div class="swipe-emoji-indicator like">❤️</div>
-        <div class="swipe-emoji-indicator nope">❌</div>
+        <div class="swipe-emoji-indicator like">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="swipe-emoji-indicator nope">
+          <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
         <div class="swipe-card-content">
           <div class="swipe-card-header">
             <h3 class="swipe-card-title">${card.title}</h3>
@@ -849,14 +853,11 @@
     lastMoveTime = now;
 
     const deltaX = currentX - startX;
-    const deltaY = currentY - startY;
 
     e.preventDefault();
 
-    const rotation = deltaX * 0.08;
-    const scale = 1 - Math.min(Math.abs(deltaX) * 0.0005, 0.05);
-
-    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(-50%) rotate(${rotation}deg) scale(${scale})`;
+    // Pure horizontal swipe - no rotation, just slide left/right
+    this.style.transform = `translateX(calc(-50% + ${deltaX}px))`;
 
     const threshold = 40;
     if (deltaX > threshold) {
@@ -881,16 +882,19 @@
     const velocityThreshold = 3;
 
     if (projectedX > threshold || velocityX > velocityThreshold) {
+      // Swipe right - pure horizontal exit
       this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(120vw) rotate(20deg)`;
+      this.style.transform = `translateX(120vw)`;
       setTimeout(() => handleLike(), 250);
     } else if (projectedX < -threshold || velocityX < -velocityThreshold) {
+      // Swipe left - pure horizontal exit
       this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(-120vw) rotate(-20deg)`;
+      this.style.transform = `translateX(-120vw)`;
       setTimeout(() => handleNope(), 250);
     } else {
+      // Snap back to center
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.style.transform = 'translate(-50%, -50%)';
+      this.style.transform = 'translateX(-50%)';
       this.classList.remove('swiping-left', 'swiping-right');
     }
   }

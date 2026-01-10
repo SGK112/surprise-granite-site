@@ -585,34 +585,59 @@
     display: none;
   }
 
-  /* EMOJI SWIPE INDICATORS */
+  /* EMOJI SWIPE INDICATORS - Yellow Heart & Red X */
   .swipe-emoji-indicator {
     position: absolute;
     top: 50%;
     transform: translateY(-50%) scale(0.5);
-    font-size: 80px;
+    width: 100px;
+    height: 100px;
     opacity: 0;
     pointer-events: none;
     z-index: 20;
     transition: opacity 0.15s ease, transform 0.15s ease;
-    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
   }
 
   .swipe-emoji-indicator.like {
     right: 30px;
+    background: rgba(249, 203, 0, 0.25);
+    border: 3px solid rgba(249, 203, 0, 0.6);
+    box-shadow: 0 8px 32px rgba(249, 203, 0, 0.4);
+  }
+
+  .swipe-emoji-indicator.like svg {
+    width: 56px;
+    height: 56px;
+    fill: var(--sg-gold);
+    filter: drop-shadow(0 2px 8px rgba(249, 203, 0, 0.5));
   }
 
   .swipe-emoji-indicator.nope {
     left: 30px;
+    background: rgba(255, 59, 92, 0.25);
+    border: 3px solid rgba(255, 59, 92, 0.6);
+    box-shadow: 0 8px 32px rgba(255, 59, 92, 0.4);
+  }
+
+  .swipe-emoji-indicator.nope svg {
+    width: 48px;
+    height: 48px;
+    stroke: var(--sg-red);
+    stroke-width: 4;
+    filter: drop-shadow(0 2px 8px rgba(255, 59, 92, 0.5));
   }
 
   .swipe-card.swiping-right .swipe-emoji-indicator.like {
-    opacity: 0.9;
+    opacity: 1;
     transform: translateY(-50%) scale(1);
   }
 
   .swipe-card.swiping-left .swipe-emoji-indicator.nope {
-    opacity: 0.9;
+    opacity: 1;
     transform: translateY(-50%) scale(1);
   }
 
@@ -720,32 +745,33 @@
   /* VENDOR NAME - Bottom of image, above content card */
   .swipe-card-vendor {
     position: absolute;
-    top: 310px; /* Position at bottom of 360px image */
+    top: 300px; /* Position at bottom of 360px image */
     left: 0;
     right: 0;
-    padding: 10px 16px 14px;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+    padding: 14px 18px 18px;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.75) 60%, transparent 100%);
     display: flex;
     align-items: baseline;
-    gap: 6px;
+    gap: 8px;
     pointer-events: none;
     z-index: 5;
   }
 
   .swipe-card-vendor .vendor-label {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     font-style: italic;
   }
 
   .swipe-card-vendor .vendor-name {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--sg-gold);
     letter-spacing: 0.3px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
   }
 
   /* IMAGE BADGES ROW - Top Left */
@@ -1088,7 +1114,7 @@
     transform: translateY(-50%) scale(1);
   }
 
-  /* SWIPE ANIMATIONS */
+  /* SWIPE ANIMATIONS - Pure horizontal */
   .swipe-card.swipe-out-left {
     animation: swipeLeft 0.35s ease-out forwards;
   }
@@ -1098,11 +1124,11 @@
   }
 
   @keyframes swipeLeft {
-    to { transform: translateX(-150%) rotate(-25deg); opacity: 0; }
+    to { transform: translateX(-150%); opacity: 0; }
   }
 
   @keyframes swipeRight {
-    to { transform: translateX(150%) rotate(25deg); opacity: 0; }
+    to { transform: translateX(150%); opacity: 0; }
   }
 
   /* FLOATING ACTION BUTTONS - Tinder Style */
