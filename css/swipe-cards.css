@@ -559,72 +559,78 @@
     box-shadow: 0 2px 10px rgba(249, 203, 0, 0.3);
   }
 
-  /* TOP ACTIONS (Share + View) */
-  .swipe-card-top-actions {
+  /* VIEW BUTTON */
+  .swipe-card-view-btn {
     position: absolute;
     top: 12px;
     right: 12px;
+    padding: 10px 18px;
+    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: none;
+    cursor: pointer;
     display: flex;
+    align-items: center;
     gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
     z-index: 15;
   }
 
-  .swipe-card-share-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .swipe-card-share-btn:active {
-    transform: scale(0.9);
-    background: rgba(0, 0, 0, 0.7);
-  }
-
-  .swipe-card-share-btn svg {
-    width: 20px;
-    height: 20px;
-    stroke: #fff;
-  }
-
-  .swipe-card-view-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    text-decoration: none;
-  }
-
   .swipe-card-view-btn:active {
-    transform: scale(0.9);
-    background: rgba(0, 0, 0, 0.7);
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 0.8);
   }
 
   .swipe-card-view-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     stroke: #fff;
     fill: none;
   }
 
+  .swipe-card-view-btn span {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+
   .swipe-card-view-btn::after {
     display: none;
+  }
+
+  /* EMOJI SWIPE INDICATORS */
+  .swipe-emoji-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) scale(0.5);
+    font-size: 80px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+  }
+
+  .swipe-emoji-indicator.like {
+    right: 30px;
+  }
+
+  .swipe-emoji-indicator.nope {
+    left: 30px;
+  }
+
+  .swipe-card.swiping-right .swipe-emoji-indicator.like {
+    opacity: 0.9;
+    transform: translateY(-50%) scale(1);
+  }
+
+  .swipe-card.swiping-left .swipe-emoji-indicator.nope {
+    opacity: 0.9;
+    transform: translateY(-50%) scale(1);
   }
 
   /* SHARE TOAST */
@@ -715,10 +721,10 @@
     z-index: 100;
   }
 
-  /* CARD IMAGE - Balanced with content */
+  /* CARD IMAGE - Larger for simplified card */
   .swipe-card-image {
     width: 100%;
-    height: 240px;
+    height: 320px;
     object-fit: cover;
     display: block;
     background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
@@ -816,9 +822,9 @@
     color: #fff;
   }
 
-  /* CARD CONTENT */
+  /* CARD CONTENT - Compact for simplified card */
   .swipe-card-content {
-    padding: 14px 16px 16px;
+    padding: 14px 16px;
     background: #fff;
   }
 
@@ -827,7 +833,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 0;
   }
 
   .swipe-card-title {
@@ -858,11 +864,11 @@
   .swipe-card-description {
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.45;
     color: #666;
-    margin: 0 0 14px;
+    margin: 8px 0 0;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
@@ -1053,54 +1059,9 @@
     fill: var(--sg-dark);
   }
 
-  /* SWIPE INDICATORS */
+  /* OLD SWIPE INDICATORS - Replaced by emoji indicators */
   .swipe-indicator {
-    position: absolute;
-    width: 72px;
-    height: 72px;
-    border-radius: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    pointer-events: none;
-    z-index: 20;
-  }
-
-  .swipe-indicator svg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .swipe-indicator.like {
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%) scale(0.8);
-    background: var(--sg-gold);
-    box-shadow: 0 8px 30px var(--sg-gold-glow);
-  }
-
-  .swipe-indicator.like svg {
-    fill: #000;
-  }
-
-  .swipe-indicator.nope {
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%) scale(0.8);
-    background: var(--sg-red);
-    box-shadow: 0 8px 30px rgba(255, 59, 92, 0.4);
-  }
-
-  .swipe-indicator.nope svg {
-    stroke: #fff;
-    stroke-width: 3;
-  }
-
-  /* Hide super like indicator - only left/right now */
-  .swipe-indicator.super {
-    display: none;
+    display: none !important;
   }
 
   .swipe-card.swiping-right .swipe-indicator.like,

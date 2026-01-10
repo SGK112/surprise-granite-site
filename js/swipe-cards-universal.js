@@ -582,41 +582,18 @@
       cardEl.innerHTML = `
         ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
         <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
-        <div class="swipe-card-top-actions">
-          <button class="swipe-card-share-btn" onclick="event.stopPropagation(); window.shareCard('${card.title.replace(/'/g, "\\'")}', '${card.href}', '${card.image}')" title="Share">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          </button>
-          <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
-            <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
-        </div>
-        <div class="swipe-indicator like">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </div>
-        <div class="swipe-indicator nope">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </div>
+        <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>View</span>
+        </a>
+        <div class="swipe-emoji-indicator like">❤️</div>
+        <div class="swipe-emoji-indicator nope">❌</div>
         <div class="swipe-card-content">
           <div class="swipe-card-header">
             <h3 class="swipe-card-title">${card.title}</h3>
             ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
           ${card.description ? `<p class="swipe-card-description">${card.description}</p>` : ''}
-          <div class="swipe-card-specs">${specsHtml}</div>
-          <div class="swipe-card-actions-row">
-            <a href="/get-a-free-estimate?product=${encodeURIComponent(card.title)}" class="swipe-quote-btn" onclick="event.stopPropagation();">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              Free Quote
-            </a>
-            ${(productType === 'countertop' || productType === 'tile') ? `
-            <button class="swipe-sample-btn" onclick="event.stopPropagation(); window.requestSampleForCard('${card.title.replace(/'/g, "\\'")}', '${card.image}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-              Sample
-            </button>
-            ` : ''}
-          </div>
         </div>
       `;
 
