@@ -589,9 +589,54 @@
   setTimeout(overrideCustomMenus, 100);
   setTimeout(overrideCustomMenus, 500);
 
+  // Force close Webflow nav menu if it opens
+  function forceCloseWebflowNav() {
+    // Remove w--open class from any Webflow menus
+    document.querySelectorAll('.w--open, .w-nav-menu.w--open, .navbar_menu.w--open, .w-nav-overlay.w--open').forEach(el => {
+      el.classList.remove('w--open');
+      el.style.display = 'none';
+      el.style.visibility = 'hidden';
+      el.style.height = '0';
+      el.style.width = '0';
+    });
+
+    // Remove body class that Webflow adds
+    document.body.classList.remove('w--nav-menu-open');
+
+    // Remove any data attributes Webflow uses
+    document.querySelectorAll('[data-nav-menu-open]').forEach(el => {
+      el.removeAttribute('data-nav-menu-open');
+    });
+  }
+
+  // Watch for Webflow trying to open its menu
+  const webflowMenuObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        const target = mutation.target;
+        if (target.classList.contains('w--open') || target.classList.contains('w--nav-menu-open')) {
+          // Webflow is trying to open its menu - close it immediately
+          forceCloseWebflowNav();
+        }
+      }
+    });
+  });
+
+  // Observe body and navbar elements for class changes
+  setTimeout(() => {
+    webflowMenuObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    document.querySelectorAll('.navbar_menu, .w-nav-menu, .w-nav-overlay').forEach(el => {
+      webflowMenuObserver.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+  }, 100);
+
+  // Run force close periodically just in case
+  setInterval(forceCloseWebflowNav, 500);
+
   // Also clean up on any DOM changes
   const cleanupObserver = new MutationObserver(() => {
     removeOldNavigation();
+    forceCloseWebflowNav();
   });
 
   // Start observing after DOM is ready

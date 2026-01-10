@@ -90,17 +90,50 @@ body.unified-nav-active .sg-header {
 .w--nav-menu-open .w-nav-overlay,
 [data-nav-menu-open],
 nav[data-animation="over-left"] .w-nav-overlay,
-nav[data-animation="over-left"] .w-nav-menu {
+nav[data-animation="over-left"] .w-nav-menu,
+/* Additional Webflow mobile menu states */
+.navbar_menu.w-nav-menu,
+.navbar_menu.w-nav-menu.w--open,
+.navbar_menu.w--open,
+nav.navbar_wrapper .w-nav-menu,
+nav.navbar_wrapper .navbar_menu,
+.w-nav-menu.w--open,
+.navbar_menu[style*="display"],
+.navbar_menu[style*="height"],
+body.w--nav-menu-open .navbar_menu,
+body.w--nav-menu-open .w-nav-menu,
+body.w--nav-menu-open .w-nav-overlay,
+/* Target menu by role */
+nav[role="navigation"].navbar_menu,
+nav[role="navigation"].w-nav-menu {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   height: 0 !important;
   width: 0 !important;
+  max-height: 0 !important;
+  max-width: 0 !important;
   position: absolute !important;
   left: -9999px !important;
   top: -9999px !important;
+  transform: translateX(-200vw) !important;
   pointer-events: none !important;
-  transform: translateX(-200%) !important;
+  z-index: -1 !important;
+}
+
+/* Remove any Webflow nav menu open body class effects */
+body.w--nav-menu-open {
+  overflow: auto !important;
+}
+
+/* Hide Webflow hamburger button too */
+.navbar_menu-button,
+.w-nav-button,
+.menu-icon_trigger,
+.menu-icon {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* Extra safety for Webflow navbar classes only */
