@@ -229,6 +229,14 @@
         description = generateDescription(productType, item.name, specs);
       }
 
+      // Check availability from JSON data or by brand
+      const itemName = (item.name || '').toLowerCase();
+      const itemBrand = (specs.brand || '').toLowerCase();
+      const unavailableBrands = ['radianz', 'samsung radianz'];
+      const isAvailable = item.available !== false &&
+        item.inStock !== false &&
+        !unavailableBrands.some(b => itemName.includes(b) || itemBrand.includes(b));
+
       cards.push({
         id: index,
         href: urlPrefix + (item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
@@ -237,6 +245,7 @@
         title: item.name || 'Product',
         price: item.price || '',
         description: description,
+        available: isAvailable,
         ...specs
       });
     });
@@ -301,6 +310,26 @@
       const productTitle = title ? title.textContent.trim() : productLabel.slice(0, -1);
       let description = generateDescription(productType, productTitle, specs);
 
+      // Check availability - look for indicators in DOM
+      const itemText = item.textContent.toLowerCase();
+      const itemClasses = item.className.toLowerCase();
+      const isUnavailable =
+        itemText.includes('not available') ||
+        itemText.includes('unavailable') ||
+        itemText.includes('out of stock') ||
+        itemText.includes('discontinued') ||
+        itemClasses.includes('unavailable') ||
+        itemClasses.includes('out-of-stock') ||
+        item.querySelector('.unavailable, .out-of-stock, [data-unavailable="true"]') !== null;
+
+      // Check for specific brands known to be unavailable
+      const titleLower = productTitle.toLowerCase();
+      const brandLower = (specs.brand || '').toLowerCase();
+      const unavailableBrands = ['radianz', 'samsung radianz'];
+      const isBrandUnavailable = unavailableBrands.some(b =>
+        titleLower.includes(b) || brandLower.includes(b)
+      );
+
       cards.push({
         id: index,
         href: link ? link.href : '#',
@@ -308,6 +337,7 @@
         title: productTitle,
         price: priceText,
         description: description,
+        available: !isUnavailable && !isBrandUnavailable,
         ...specs
       });
     });
@@ -706,17 +736,21 @@
       }
 
       let badgesHtml = '';
-      const isRadianz = card.title && card.title.toLowerCase().includes('radianz');
-      const isPremiumBrand = card.brand && ['Cambria', 'Caesarstone', 'Silestone'].some(b => card.brand.includes(b));
+      const isUnavailable = card.available === false;
+      const isPremiumBrand = card.brand && ['Cambria', 'Caesarstone', 'Silestone', 'Dekton', 'Neolith'].some(b => card.brand.includes(b));
       const isNew = Math.random() < 0.15;
 
-      if (isRadianz) {
+      // Show unavailable badge first (highest priority)
+      if (isUnavailable) {
         badgesHtml += '<span class="swipe-card-badge badge-unavailable">Not Available</span>';
-      } else if (isPremiumBrand) {
-        badgesHtml += '<span class="swipe-card-badge badge-premium">Premium</span>';
-      }
-      if (isNew && !isRadianz) {
-        badgesHtml += '<span class="swipe-card-badge badge-new">New</span>';
+      } else {
+        // Only show other badges if available
+        if (isPremiumBrand) {
+          badgesHtml += '<span class="swipe-card-badge badge-premium">Premium</span>';
+        }
+        if (isNew) {
+          badgesHtml += '<span class="swipe-card-badge badge-new">New</span>';
+        }
       }
 
       // Shop cards get price and Buy Now button
