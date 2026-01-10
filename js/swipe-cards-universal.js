@@ -380,6 +380,11 @@
           ${favs.length > 0 ? `<span class="fav-count">${favs.length}</span>` : ''}
         </button>
       </div>
+      <div class="swipe-progress-bar">
+        <div class="swipe-progress-fill" id="swipeProgressFill"></div>
+        <span class="swipe-progress-text" id="swipeProgressText">1 of ${cards.length}</span>
+      </div>
+      <div class="swipe-filter-chips" id="swipeFilterChips"></div>
       <div class="swipe-card-stack"></div>
       <div class="swipe-action-buttons">
         <button class="swipe-action-btn undo" onclick="window.undoSwipe()" title="Undo">
@@ -402,7 +407,113 @@
     document.body.appendChild(container);
 
     createFavoritesDrawer();
+    createFilterChips();
+    preloadImages();
     renderCards();
+    updateProgress();
+  }
+
+  // Preload next batch of images for smoother experience
+  function preloadImages() {
+    const upcoming = cards.slice(currentIndex, currentIndex + 8);
+    upcoming.forEach(card => {
+      if (card.image) {
+        const img = new Image();
+        img.src = card.image;
+      }
+    });
+  }
+
+  // Update progress bar and text
+  function updateProgress() {
+    const progressFill = document.getElementById('swipeProgressFill');
+    const progressText = document.getElementById('swipeProgressText');
+
+    if (progressFill && progressText) {
+      const progress = cards.length > 0 ? ((currentIndex + 1) / cards.length) * 100 : 0;
+      progressFill.style.width = `${Math.min(progress, 100)}%`;
+
+      const remaining = Math.max(0, cards.length - currentIndex);
+      if (remaining === 0) {
+        progressText.textContent = 'All done!';
+      } else {
+        progressText.textContent = `${currentIndex + 1} of ${cards.length}`;
+      }
+    }
+  }
+
+  // Create filter chips based on available materials/types
+  function createFilterChips() {
+    const container = document.getElementById('swipeFilterChips');
+    if (!container) return;
+
+    // Get unique materials/types from cards
+    const types = [...new Set(cards.map(c => c.material || c.type).filter(Boolean))];
+
+    if (types.length <= 1) {
+      container.style.display = 'none';
+      return;
+    }
+
+    let chipsHtml = `<button class="swipe-filter-chip active" data-filter="all">All</button>`;
+    types.slice(0, 5).forEach(type => {
+      chipsHtml += `<button class="swipe-filter-chip" data-filter="${type}">${type}</button>`;
+    });
+
+    container.innerHTML = chipsHtml;
+
+    // Add click handlers
+    container.querySelectorAll('.swipe-filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        container.querySelectorAll('.swipe-filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        filterCards(chip.dataset.filter);
+      });
+    });
+  }
+
+  // Store original cards for filtering
+  let originalCards = [];
+
+  function filterCards(filter) {
+    if (originalCards.length === 0) {
+      originalCards = [...cards];
+    }
+
+    if (filter === 'all') {
+      cards = [...originalCards];
+    } else {
+      cards = originalCards.filter(c => (c.material || c.type) === filter);
+    }
+
+    currentIndex = 0;
+    swipeHistory = [];
+    renderCards();
+    updateProgress();
+    triggerHaptic('light');
+  }
+
+  // Haptic feedback for supported devices
+  function triggerHaptic(type = 'light') {
+    if ('vibrate' in navigator) {
+      switch(type) {
+        case 'light':
+          navigator.vibrate(10);
+          break;
+        case 'medium':
+          navigator.vibrate(25);
+          break;
+        case 'heavy':
+          navigator.vibrate([30, 10, 30]);
+          break;
+        case 'success':
+          navigator.vibrate([10, 50, 20]);
+          break;
+        case 'error':
+          navigator.vibrate([50, 30, 50]);
+          break;
+      }
+    }
   }
 
   function renderCards() {
@@ -471,9 +582,14 @@
       cardEl.innerHTML = `
         ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
         <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
-        <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
-          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
+        <div class="swipe-card-top-actions">
+          <button class="swipe-card-share-btn" onclick="event.stopPropagation(); window.shareCard('${card.title.replace(/'/g, "\\'")}', '${card.href}', '${card.image}')" title="Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </button>
+          <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
+            <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
         <div class="swipe-indicator like">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
@@ -620,7 +736,8 @@
         url: card.href,
         image: card.image,
         material: card.material || '',
-        color: card.color || ''
+        color: card.color || '',
+        description: card.description || ''
       }, productType);
     } else {
       // Fallback to localStorage
@@ -632,14 +749,20 @@
     }
 
     currentIndex++;
+    triggerHaptic('success');
+    preloadImages();
     renderCards();
     updateFavoritesUI();
+    updateProgress();
   }
 
   function handleNope() {
     swipeHistory.push({ index: currentIndex, action: 'nope' });
     currentIndex++;
+    triggerHaptic('light');
+    preloadImages();
     renderCards();
+    updateProgress();
   }
 
   window.swipeLike = function() {
@@ -748,21 +871,108 @@
     if (!stack) return;
 
     const favs = getFavorites();
+    const totalSwiped = currentIndex;
+    const likedCount = swipeHistory.filter(h => h.action === 'like').length;
+
     stack.innerHTML = `
       <div class="swipe-empty">
-        <div class="swipe-empty-icon">${favs.length > 0 ? '🎉' : '📦'}</div>
-        <h3>${favs.length > 0 ? 'All done!' : 'No more items'}</h3>
-        <p>${favs.length > 0 ? `You saved ${favs.length} ${productLabel.toLowerCase()}` : 'Check back later for new arrivals'}</p>
-        ${favs.length > 0 ? `<button class="swipe-view-saved-btn" onclick="window.toggleFavoritesDrawer()">View Saved</button>` : ''}
-        <button class="swipe-reset-btn" onclick="window.resetSwipe()">Start Over</button>
+        <div class="swipe-empty-icon">${favs.length > 0 ? '🎉' : '✨'}</div>
+        <h3>${favs.length > 0 ? 'Great choices!' : 'You\'ve seen them all!'}</h3>
+        <p class="swipe-empty-subtitle">${favs.length > 0
+          ? `You saved ${favs.length} ${productLabel.toLowerCase()} to your favorites`
+          : `You browsed ${totalSwiped} ${productLabel.toLowerCase()}`}</p>
+
+        <div class="swipe-empty-stats">
+          <div class="swipe-stat">
+            <span class="swipe-stat-value">${totalSwiped}</span>
+            <span class="swipe-stat-label">Viewed</span>
+          </div>
+          <div class="swipe-stat">
+            <span class="swipe-stat-value">${likedCount}</span>
+            <span class="swipe-stat-label">Saved</span>
+          </div>
+          <div class="swipe-stat">
+            <span class="swipe-stat-value">${totalSwiped - likedCount}</span>
+            <span class="swipe-stat-label">Skipped</span>
+          </div>
+        </div>
+
+        <div class="swipe-empty-actions">
+          ${favs.length > 0 ? `
+            <button class="swipe-empty-btn primary" onclick="window.toggleFavoritesDrawer()">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              View Favorites
+            </button>
+            <a href="/get-a-free-estimate" class="swipe-empty-btn secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
+              Get Free Quote
+            </a>
+          ` : `
+            <button class="swipe-empty-btn primary" onclick="window.resetSwipe()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 12a9 9 0 109-9 9 9 0 00-9 9"/><path d="M3 3v6h6"/></svg>
+              Browse Again
+            </button>
+            <button class="swipe-empty-btn secondary" onclick="window.exitSwipeMode()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              View Grid
+            </button>
+          `}
+        </div>
       </div>
     `;
+
+    triggerHaptic('success');
+  }
+
+  // Share a card using Web Share API or fallback
+  window.shareCard = function(title, url, image) {
+    const shareData = {
+      title: title + ' - Surprise Granite',
+      text: `Check out ${title} at Surprise Granite!`,
+      url: url
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      navigator.share(shareData).catch(() => {});
+      triggerHaptic('medium');
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(url).then(() => {
+        showShareToast('Link copied to clipboard!');
+        triggerHaptic('medium');
+      }).catch(() => {
+        // Final fallback: open in new tab
+        window.open(url, '_blank');
+      });
+    }
+  };
+
+  function showShareToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'swipe-share-toast';
+    toast.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+        <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+        <path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
   }
 
   window.resetSwipe = function() {
     currentIndex = 0;
     swipeHistory = [];
+    if (originalCards.length > 0) {
+      cards = [...originalCards];
+    }
     renderCards();
+    updateProgress();
+    triggerHaptic('medium');
   };
 
   window.exitSwipeMode = function() {
