@@ -340,3 +340,127 @@ CREATE INDEX IF NOT EXISTS user_activity_page_url_idx ON public.user_activity(pa
 
 -- Add last_seen column to sg_users if not exists
 ALTER TABLE public.sg_users ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
+
+-- ============================================================
+-- LEADS TABLE - Website form submissions and quote requests
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.leads (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  -- Contact Information
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+
+  -- Project Details
+  project_type TEXT,                 -- kitchen, bathroom, flooring, etc.
+  service_type TEXT,                 -- countertops, tile, flooring, cabinets
+  material_preference TEXT,          -- granite, quartz, marble, etc.
+  message TEXT,
+
+  -- Quote/Estimate Data (from calculator)
+  counter_sqft DECIMAL(10,2),
+  splash_sqft DECIMAL(10,2),
+  budget_estimate DECIMAL(10,2),
+  popular_estimate DECIMAL(10,2),
+  premium_estimate DECIMAL(10,2),
+  selected_tier TEXT,                -- budget, popular, premium
+
+  -- Source Tracking
+  source TEXT DEFAULT 'website',     -- website, calculator, referral, etc.
+  source_page TEXT,                  -- URL where lead came from
+  utm_source TEXT,
+  utm_medium TEXT,
+  utm_campaign TEXT,
+
+  -- Status Management
+  status TEXT DEFAULT 'new' CHECK (
+    status IN ('new', 'contacted', 'qualified', 'proposal', 'won', 'lost', 'archived')
+  ),
+  assigned_to UUID REFERENCES auth.users(id),
+  priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+
+  -- Notes and Follow-up
+  notes TEXT,
+  follow_up_date TIMESTAMPTZ,
+  last_contacted TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Admins can view all leads
+CREATE POLICY "leads_admin_view" ON public.leads
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.sg_users
+      WHERE id = auth.uid() AND account_type = 'admin'
+    )
+  );
+
+-- Policy: Admins can insert leads
+CREATE POLICY "leads_admin_insert" ON public.leads
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.sg_users
+      WHERE id = auth.uid() AND account_type = 'admin'
+    )
+    OR auth.uid() IS NULL  -- Allow anonymous inserts from website forms
+  );
+
+-- Policy: Admins can update leads
+CREATE POLICY "leads_admin_update" ON public.leads
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.sg_users
+      WHERE id = auth.uid() AND account_type = 'admin'
+    )
+  );
+
+-- Policy: Admins can delete leads
+CREATE POLICY "leads_admin_delete" ON public.leads
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.sg_users
+      WHERE id = auth.uid() AND account_type = 'admin'
+    )
+  );
+
+-- Policy: Service role can do everything
+CREATE POLICY "leads_service_all" ON public.leads
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Policy: Allow anonymous inserts (for website forms)
+CREATE POLICY "leads_anon_insert" ON public.leads
+  FOR INSERT WITH CHECK (true);
+
+-- Auto-update updated_at
+CREATE OR REPLACE FUNCTION public.leads_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS leads_updated_at_trigger ON public.leads;
+CREATE TRIGGER leads_updated_at_trigger
+  BEFORE UPDATE ON public.leads
+  FOR EACH ROW EXECUTE FUNCTION public.leads_updated_at();
+
+-- Grant access
+GRANT ALL ON public.leads TO authenticated;
+GRANT ALL ON public.leads TO service_role;
+GRANT INSERT ON public.leads TO anon;
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS leads_email_idx ON public.leads(email);
+CREATE INDEX IF NOT EXISTS leads_status_idx ON public.leads(status);
+CREATE INDEX IF NOT EXISTS leads_created_idx ON public.leads(created_at DESC);
+CREATE INDEX IF NOT EXISTS leads_assigned_idx ON public.leads(assigned_to);
+CREATE INDEX IF NOT EXISTS leads_priority_idx ON public.leads(priority);

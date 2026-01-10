@@ -4389,7 +4389,31 @@
         }
 
         const { createClient } = window.supabase;
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token'
+          }
+        });
+
+        // Listen for auth state changes (handles token refresh on mobile)
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          console.log('Account Auth State:', event);
+
+          if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+            currentUser = null;
+            showAuth();
+          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (session) {
+              currentUser = session.user;
+              // Refresh profile on token refresh
+              loadUserProfile().catch(err => console.warn('Profile refresh failed:', err));
+            }
+          }
+        });
 
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
