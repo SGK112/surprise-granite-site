@@ -49,6 +49,8 @@ nav.navbar_wrapper,
 
 /* Custom nav elements - Webflow specific */
 .sg-header,
+.sg-header-banner,
+.sg-header-main,
 .sg-mobile-nav,
 #mobileNav,
 .nav-simple,
@@ -66,6 +68,16 @@ div[data-nav-menu-open],
   height: 0 !important;
   overflow: hidden !important;
   pointer-events: none !important;
+}
+
+/* Force hide any header element that's not the unified nav */
+body.unified-nav-active header.sg-header,
+body.unified-nav-active .sg-header {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
 /* CRITICAL: Force hide Webflow nav overlay even with inline styles */

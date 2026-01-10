@@ -285,6 +285,8 @@
       'header.header',
       '.header:not(.unified-nav *)',
       '.sg-header',
+      '.sg-header-banner',
+      '.sg-header-main',
       '.sg-mobile-nav',
       '.sg-mobile-menu-overlay',
       '#sgMobileMenu',
