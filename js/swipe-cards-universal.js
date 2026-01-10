@@ -1,5 +1,6 @@
 /**
  * Universal Swipe Cards - Works across all product pages
+ * Uses JSON data files for full inventory (no Webflow dependency)
  * Uses the unified SGFavorites system from favorites.js
  */
 
@@ -9,33 +10,73 @@
   // Only run on mobile
   if (window.innerWidth > 767) return;
 
-  // Detect product type from URL
+  // Detect product type from URL and set config
   const path = window.location.pathname.toLowerCase();
   let productType = 'general';
   let productLabel = 'Products';
+  let jsonPath = null;
+  let jsonKey = null;
+  let urlPrefix = '/';
 
   if (path.includes('flooring')) {
     productType = 'flooring';
     productLabel = 'Flooring';
-  } else if (path.includes('countertop') || path.includes('granite') || path.includes('marble') || path.includes('quartz') || path.includes('porcelain')) {
+    jsonPath = '/data/flooring.json';
+    jsonKey = 'flooring';
+    urlPrefix = '/flooring/';
+  } else if (path.includes('countertop') || path.includes('granite') || path.includes('marble') || path.includes('quartz') || path.includes('porcelain') || path.includes('quartzite')) {
     productType = 'countertop';
     productLabel = 'Countertops';
+    jsonPath = '/data/countertops.json';
+    jsonKey = 'countertops';
+    urlPrefix = '/countertops/';
   } else if (path.includes('tile')) {
     productType = 'tile';
     productLabel = 'Tiles';
+    jsonPath = '/data/tile.json';
+    jsonKey = 'tile';
+    urlPrefix = '/tile/';
   } else if (path.includes('cabinet')) {
     productType = 'cabinet';
     productLabel = 'Cabinets';
+    jsonPath = '/data/cabinets.json';
+    jsonKey = 'cabinets';
+    urlPrefix = '/cabinets/';
   } else if (path.includes('sink')) {
     productType = 'sink';
     productLabel = 'Sinks';
+    jsonPath = '/data/sinks.json';
+    jsonKey = 'sinks';
+    urlPrefix = '/sinks/';
   } else if (path.includes('shop')) {
     productType = 'shop';
     productLabel = 'Products';
+    // Shop loads products dynamically via Shopify API
+    jsonPath = null;
   }
 
   // Wait for DOM
   document.addEventListener('DOMContentLoaded', init);
+
+  // For shop: wait for dynamic products to load
+  function waitForShopProducts(callback, maxWait = 10000) {
+    const startTime = Date.now();
+
+    function check() {
+      const grid = document.querySelector('.shop-product-grid');
+      const products = grid ? grid.querySelectorAll('.shop-product-card') : [];
+
+      if (products.length > 0) {
+        callback();
+      } else if (Date.now() - startTime < maxWait) {
+        setTimeout(check, 300);
+      } else {
+        console.log('Swipe Cards: Shop products not found within timeout');
+      }
+    }
+
+    check();
+  }
 
   let cards = [];
   let currentIndex = 0;
@@ -46,7 +87,6 @@
   // Get ALL favorites combined from unified system
   function getFavorites() {
     if (window.SGFavorites) {
-      // Get ALL favorites from ALL product types for unified display
       const allFavs = window.SGFavorites.getAll();
       const combined = [];
       Object.keys(allFavs).forEach(type => {
@@ -57,7 +97,7 @@
       });
       return combined;
     }
-    // Fallback to localStorage - try to get from all types
+    // Fallback to localStorage
     const types = ['countertop', 'flooring', 'tile', 'cabinet', 'sink', 'shop'];
     const combined = [];
     types.forEach(type => {
@@ -68,12 +108,10 @@
         });
       } catch (e) {}
     });
-    // Also check unified storage
     try {
       const unified = JSON.parse(localStorage.getItem('sg_all_favorites')) || {};
       Object.keys(unified).forEach(type => {
         (unified[type] || []).forEach(item => {
-          // Only add if not already present
           if (!combined.some(c => c.title === item.title)) {
             combined.push({ ...item, productType: type });
           }
@@ -83,7 +121,6 @@
     return combined;
   }
 
-  // Get favorites for current product type only (for checking if item is favorited)
   function getFavoritesByType() {
     if (window.SGFavorites) {
       return window.SGFavorites.getByType(productType) || [];
@@ -100,24 +137,112 @@
     return favs.some(f => f.title === product.title || f.url === product.href);
   }
 
-  function init() {
-    const materialsList = document.querySelector('.materials_list');
-    const shopGrid = document.querySelector('.shop-product-grid');
+  async function init() {
+    // For shop pages, wait for dynamic products to load
+    if (productType === 'shop') {
+      waitForShopProducts(() => {
+        const shopGrid = document.querySelector('.shop-product-grid');
+        if (shopGrid) {
+          parseShopProducts(shopGrid);
+        }
 
-    if (!materialsList && !shopGrid) return;
+        if (cards.length === 0) return;
+        console.log('Swipe Cards:', cards.length, productLabel, 'ready');
+        showIntroOverlay();
+      });
+      return;
+    }
 
-    if (materialsList) {
-      parseWebflowProducts(materialsList);
-    } else if (shopGrid) {
-      parseShopProducts(shopGrid);
+    // Try to load from JSON first
+    if (jsonPath) {
+      try {
+        const response = await fetch(jsonPath);
+        if (response.ok) {
+          const data = await response.json();
+          const items = data[jsonKey] || data.countertops || data.flooring || data.tile || [];
+          parseJSONProducts(items);
+          console.log(`Swipe Cards: Loaded ${cards.length} ${productLabel} from JSON`);
+        }
+      } catch (error) {
+        console.warn('Swipe Cards: JSON load failed, falling back to DOM', error);
+      }
+    }
+
+    // Fallback to DOM scraping if JSON failed or not available
+    if (cards.length === 0) {
+      const materialsList = document.querySelector('.materials_list');
+      const shopGrid = document.querySelector('.shop-product-grid');
+
+      if (materialsList) {
+        parseWebflowProducts(materialsList);
+      } else if (shopGrid) {
+        parseShopProducts(shopGrid);
+      }
     }
 
     if (cards.length === 0) return;
 
-    console.log('Swipe Cards:', cards.length, productLabel, 'found');
+    console.log('Swipe Cards:', cards.length, productLabel, 'ready');
     showIntroOverlay();
   }
 
+  // Parse products from JSON data
+  function parseJSONProducts(items) {
+    items.forEach((item, index) => {
+      // Skip items without images
+      if (!item.primaryImage && !item.image) return;
+
+      let specs = {};
+      let description = '';
+
+      if (productType === 'flooring') {
+        specs = {
+          material: item.material || item.type || '',
+          color: item.primaryColor || item.color || '',
+          thickness: item.thickness || '',
+          wearLayer: item.wearLayer || '',
+          shadeVariations: item.shadeVariations || ''
+        };
+        description = generateDescription('flooring', item.name, specs);
+      } else if (productType === 'countertop') {
+        specs = {
+          material: item.type || item.material || '',
+          brand: item.brand || '',
+          color: item.primaryColor || item.color || '',
+          style: item.style || ''
+        };
+        description = generateDescription('countertop', item.name, specs);
+      } else if (productType === 'tile') {
+        specs = {
+          material: item.material || item.type || '',
+          color: item.primaryColor || item.color || '',
+          style: item.style || '',
+          finish: item.finish || ''
+        };
+        description = generateDescription('tile', item.name, specs);
+      } else {
+        specs = {
+          material: item.type || item.material || '',
+          brand: item.brand || '',
+          color: item.primaryColor || item.color || ''
+        };
+        description = generateDescription(productType, item.name, specs);
+      }
+
+      cards.push({
+        id: index,
+        href: urlPrefix + (item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
+        image: item.primaryImage || item.image || '',
+        secondaryImage: item.secondaryImage || '',
+        title: item.name || 'Product',
+        price: item.price || '',
+        description: description,
+        ...specs
+      });
+    });
+  }
+
+  // Fallback: Parse products from DOM (for pages without JSON)
   function parseWebflowProducts(container) {
     const items = container.querySelectorAll('.w-dyn-item, .materials_item');
 
@@ -170,11 +295,9 @@
         imageUrl = primaryImg ? primaryImg.src : (images[1] || images[0]).src;
       }
 
-      // Extract price if available
       const priceEl = item.querySelector('[fs-cmsfilter-field="price"], .materials_item-pricing, .product-price');
       const priceText = priceEl ? priceEl.textContent.trim() : '';
 
-      // Generate description based on product type
       const productTitle = title ? title.textContent.trim() : productLabel.slice(0, -1);
       let description = generateDescription(productType, productTitle, specs);
 
@@ -197,14 +320,50 @@
       const link = item.querySelector('a[href]');
       const image = item.querySelector('img');
       const title = item.querySelector('.shop-product-title, h3');
-      const price = item.querySelector('.shop-product-price');
+      const priceEl = item.querySelector('.shop-product-price');
+      const buyBtn = item.querySelector('.shop-product-btn.buy-now');
+
+      // Extract onclick data from buy button for cart functionality
+      let productId = '';
+      let priceNum = 0;
+      if (buyBtn) {
+        const onclick = buyBtn.getAttribute('onclick') || '';
+        const match = onclick.match(/buyNow\('([^']+)',\s*'([^']+)',\s*([\d.]+)/);
+        if (match) {
+          productId = match[1];
+          priceNum = parseFloat(match[3]);
+        }
+      }
+
+      const priceText = priceEl ? priceEl.textContent.trim() : '';
+      const titleText = title ? title.textContent.trim() : 'Product';
+      const imageUrl = image ? image.src : '';
+      const href = link ? link.href : '#';
+
+      // Generate shop description
+      let description = '';
+      if (titleText.toLowerCase().includes('sample')) {
+        description = 'Get a physical sample to see the color and texture in your home before deciding.';
+      } else if (titleText.toLowerCase().includes('remnant')) {
+        description = 'Discounted leftover piece from a previous project. Perfect for smaller applications.';
+      } else if (titleText.toLowerCase().includes('sink')) {
+        description = 'Quality sink for your kitchen or bathroom. Professional installation available.';
+      } else if (titleText.toLowerCase().includes('edge')) {
+        description = 'Decorative edge profile upgrade for your countertop project.';
+      } else {
+        description = 'Available for purchase online. Free consultation with every order.';
+      }
 
       cards.push({
         id: index,
-        href: link ? link.href : '#',
-        image: image ? image.src : '',
-        title: title ? title.textContent.trim() : 'Product',
-        price: price ? price.textContent.trim() : ''
+        productId: productId,
+        href: href,
+        image: imageUrl,
+        title: titleText,
+        price: priceText,
+        priceNum: priceNum,
+        description: description,
+        isShop: true
       });
     });
   }
@@ -268,7 +427,6 @@
       return `Quality tile for walls, floors, and backsplashes. Durable, easy to maintain, and available in various sizes.`;
     }
 
-    // Generic fallback
     return `Quality ${type} available at our showroom. Schedule a free consultation to see samples and get expert advice.`;
   }
 
@@ -413,7 +571,6 @@
     updateProgress();
   }
 
-  // Preload next batch of images for smoother experience
   function preloadImages() {
     const upcoming = cards.slice(currentIndex, currentIndex + 8);
     upcoming.forEach(card => {
@@ -424,7 +581,6 @@
     });
   }
 
-  // Update progress bar and text
   function updateProgress() {
     const progressFill = document.getElementById('swipeProgressFill');
     const progressText = document.getElementById('swipeProgressText');
@@ -442,12 +598,10 @@
     }
   }
 
-  // Create filter chips based on available materials/types
   function createFilterChips() {
     const container = document.getElementById('swipeFilterChips');
     if (!container) return;
 
-    // Get unique materials/types from cards
     const types = [...new Set(cards.map(c => c.material || c.type).filter(Boolean))];
 
     if (types.length <= 1) {
@@ -462,7 +616,6 @@
 
     container.innerHTML = chipsHtml;
 
-    // Add click handlers
     container.querySelectorAll('.swipe-filter-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         container.querySelectorAll('.swipe-filter-chip').forEach(c => c.classList.remove('active'));
@@ -472,7 +625,6 @@
     });
   }
 
-  // Store original cards for filtering
   let originalCards = [];
 
   function filterCards(filter) {
@@ -493,25 +645,14 @@
     triggerHaptic('light');
   }
 
-  // Haptic feedback for supported devices
   function triggerHaptic(type = 'light') {
     if ('vibrate' in navigator) {
       switch(type) {
-        case 'light':
-          navigator.vibrate(10);
-          break;
-        case 'medium':
-          navigator.vibrate(25);
-          break;
-        case 'heavy':
-          navigator.vibrate([30, 10, 30]);
-          break;
-        case 'success':
-          navigator.vibrate([10, 50, 20]);
-          break;
-        case 'error':
-          navigator.vibrate([50, 30, 50]);
-          break;
+        case 'light': navigator.vibrate(10); break;
+        case 'medium': navigator.vibrate(25); break;
+        case 'heavy': navigator.vibrate([30, 10, 30]); break;
+        case 'success': navigator.vibrate([10, 50, 20]); break;
+        case 'error': navigator.vibrate([50, 30, 50]); break;
       }
     }
   }
@@ -564,11 +705,10 @@
         `;
       }
 
-      // Generate badges
       let badgesHtml = '';
       const isRadianz = card.title && card.title.toLowerCase().includes('radianz');
       const isPremiumBrand = card.brand && ['Cambria', 'Caesarstone', 'Silestone'].some(b => card.brand.includes(b));
-      const isNew = Math.random() < 0.15; // 15% chance of "new" badge for demo
+      const isNew = Math.random() < 0.15;
 
       if (isRadianz) {
         badgesHtml += '<span class="swipe-card-badge badge-unavailable">Not Available</span>';
@@ -579,6 +719,9 @@
         badgesHtml += '<span class="swipe-card-badge badge-new">New</span>';
       }
 
+      // Shop cards get price and Buy Now button
+      const isShopCard = productType === 'shop' || card.isShop;
+
       cardEl.innerHTML = `
         ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
         <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
@@ -586,12 +729,19 @@
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           <span>View</span>
         </a>
+        ${isShopCard ? `
+          <button class="swipe-card-buy-btn" onclick="event.stopPropagation(); window.swipeBuyNow('${card.productId}', '${(card.title || '').replace(/'/g, "\\'")}', ${card.priceNum || 0}, '${card.image}', '${card.href}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Buy Now</span>
+          </button>
+        ` : ''}
         <div class="swipe-emoji-indicator like">❤️</div>
         <div class="swipe-emoji-indicator nope">❌</div>
         <div class="swipe-card-content">
           <div class="swipe-card-header">
             <h3 class="swipe-card-title">${card.title}</h3>
-            ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
+            ${isShopCard && card.price ? `<span class="swipe-card-price">${card.price}</span>` : ''}
+            ${!isShopCard && card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
           ${card.description ? `<p class="swipe-card-description">${card.description}</p>` : ''}
         </div>
@@ -610,7 +760,6 @@
     cardEl.addEventListener('touchmove', handleTouchMove, { passive: false });
     cardEl.addEventListener('touchend', handleTouchEnd);
 
-    // Double-tap to like
     let lastTap = 0;
     cardEl.addEventListener('touchend', (e) => {
       const now = Date.now();
@@ -706,7 +855,6 @@
     const card = cards[currentIndex];
     swipeHistory.push({ index: currentIndex, action: 'like' });
 
-    // Use unified favorites system
     if (window.SGFavorites) {
       window.SGFavorites.add({
         title: card.title,
@@ -717,7 +865,6 @@
         description: card.description || ''
       }, productType);
     } else {
-      // Fallback to localStorage
       const favs = getFavorites();
       if (!favs.some(f => f.title === card.title)) {
         favs.push(card);
@@ -792,7 +939,6 @@
       `;
     }
 
-    // Update count badge
     if (favBtn) {
       let countEl = favBtn.querySelector('.fav-count');
       if (favs.length > 0) {
@@ -807,7 +953,6 @@
       }
     }
 
-    // Update drawer if open
     updateFavoritesDrawer();
   }
 
@@ -901,7 +1046,6 @@
     triggerHaptic('success');
   }
 
-  // Share a card using Web Share API or fallback
   window.shareCard = function(title, url, image) {
     const shareData = {
       title: title + ' - Surprise Granite',
@@ -913,16 +1057,84 @@
       navigator.share(shareData).catch(() => {});
       triggerHaptic('medium');
     } else {
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(url).then(() => {
         showShareToast('Link copied to clipboard!');
         triggerHaptic('medium');
       }).catch(() => {
-        // Final fallback: open in new tab
         window.open(url, '_blank');
       });
     }
   };
+
+  // Buy Now for shop products
+  window.swipeBuyNow = function(id, name, price, image, href) {
+    if (window.SgCart && typeof window.SgCart.addToCart === 'function') {
+      window.SgCart.addToCart({
+        id: id,
+        name: name,
+        price: parseFloat(price) || 0,
+        image: image,
+        variant: '',
+        quantity: 1,
+        category: 'shop',
+        href: href
+      });
+
+      triggerHaptic('success');
+      showBuyNotification(name);
+
+      // Go to cart after short delay
+      setTimeout(() => {
+        window.location.href = '/cart/';
+      }, 1500);
+    } else if (typeof buyNow === 'function') {
+      // Fallback to page's buyNow function
+      buyNow(id, name, price, image, href);
+    } else {
+      // Last resort: go to product page
+      window.location.href = href;
+    }
+  };
+
+  function showBuyNotification(name) {
+    const notification = document.createElement('div');
+    notification.className = 'swipe-buy-notification';
+    notification.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+        <circle cx="12" cy="12" r="10" fill="#22c55e"/>
+        <path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>${name} added to cart!</span>
+    `;
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #1c1c1e 0%, #2d2d30 100%);
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      z-index: 1000001;
+      animation: slideUpFade 0.3s ease-out;
+      max-width: 90%;
+      text-align: center;
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 1200);
+  }
 
   function showShareToast(message) {
     const toast = document.createElement('div');
@@ -977,7 +1189,6 @@
     `;
     document.body.appendChild(drawer);
 
-    // Drag to close functionality
     const handle = drawer.querySelector('.favorites-drawer-handle');
     let drawerStartY = 0;
     let drawerCurrentY = 0;
@@ -1011,7 +1222,6 @@
       }
     });
 
-    // Also allow tap on handle to toggle
     handle.addEventListener('click', () => {
       window.toggleFavoritesDrawer();
     });
@@ -1066,13 +1276,11 @@
     }
   };
 
-  // Request sample for a card (integrates with cart system)
   window.requestSampleForCard = function(title, imageUrl) {
     const SAMPLE_PRICE = 25.00;
     const sampleName = title + ' - Sample';
     const sampleId = sampleName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // Try to use SgCart if available
     if (window.SgCart && typeof window.SgCart.addToCart === 'function') {
       window.SgCart.addToCart({
         id: sampleId,
@@ -1083,21 +1291,17 @@
         category: 'samples'
       });
 
-      // Open cart drawer if available
       if (window.openCartDrawer) {
         window.openCartDrawer();
       }
 
-      // Show success notification
       showSampleAddedNotification(sampleName);
     } else {
-      // Fallback: redirect to shop
       window.location.href = '/shop/?collection=countertop-samples';
     }
   };
 
   function showSampleAddedNotification(name) {
-    // Remove existing notification
     const existing = document.querySelector('.sample-added-notification');
     if (existing) existing.remove();
 
@@ -1111,7 +1315,6 @@
       <span>${name} added to cart!</span>
     `;
 
-    // Add styles inline
     notification.style.cssText = `
       position: fixed;
       bottom: 180px;
@@ -1134,7 +1337,6 @@
 
     document.body.appendChild(notification);
 
-    // Add animation keyframes
     if (!document.querySelector('#sample-notification-styles')) {
       const style = document.createElement('style');
       style.id = 'sample-notification-styles';
@@ -1147,7 +1349,6 @@
       document.head.appendChild(style);
     }
 
-    // Remove after 3 seconds
     setTimeout(() => {
       notification.style.opacity = '0';
       notification.style.transition = 'opacity 0.3s ease';

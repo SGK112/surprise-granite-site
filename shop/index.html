@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="/css/mobile-optimizations.css">
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260110b">
+<link rel="stylesheet" href="/css/design-system.css?v=20260109">
 <script defer src="/js/unified-nav.js?v=20260110d"></script>
  
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/nocode/webflow-form.js"></script>
@@ -198,6 +199,9 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 <link rel="stylesheet" href="/css/favorites.css?v=20260107w">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script defer src="/js/favorites.js?v=20260107w"></script>
+<!-- Swipe Cards for Mobile -->
+<link rel="stylesheet" href="/css/swipe-cards.css?v=20260109a">
+<script defer src="/js/swipe-cards-universal.js?v=20260109a"></script>
 <!-- Custom Mobile Menu Styles -->
 <style>
 .sg-mobile-menu-overlay {
@@ -919,6 +923,15 @@ setInterval(displayOpeningStatus, 60000);
 <!-- Shop Hero -->
 <section class="shop-hero"><div class="padding-global"><div class="container-large"><h1>Shop <span style="color:#cca600;">Surprise Granite</span></h1><p>Premium countertops, sinks, faucets and more for your Arizona home.</p></div></div></section>
 
+<!-- Test Product Banner (Remove after testing) -->
+<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 12px 20px; text-align: center; border-bottom: 1px solid #f59e0b;">
+  <a href="/test-product/" style="color: #92400e; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px;">
+    <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase;">Test</span>
+    Checkout Test Product - $1.00
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</div>
+
 <!-- Category Filter Bar - Custom Storefront API -->
 <style>
 /* Hide search bar and expand button */
@@ -1152,23 +1165,34 @@ setInterval(displayOpeningStatus, 60000);
     color: #cca600;
     margin: 0 0 12px;
 }
+.shop-product-buttons {
+    display: flex;
+    gap: 8px;
+}
 .shop-product-btn {
-    display: block;
-    width: 100%;
-    padding: 10px;
+    flex: 1;
+    padding: 10px 8px;
     background: #1a1a1a;
     color: #fff;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
 }
 .shop-product-btn:hover {
     background: #333;
+}
+.shop-product-btn.buy-now {
+    background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%);
+    color: #1a1a1a;
+}
+.shop-product-btn.buy-now:hover {
+    background: linear-gradient(135deg, #ffdb4d 0%, #e6b800 100%);
+    transform: translateY(-1px);
 }
 .shop-no-results {
     text-align: center;
@@ -1361,7 +1385,10 @@ function renderProducts(products, container, collection) {
         html += '<div class="shop-product-info">';
         html += '<h3 class="shop-product-title">' + node.title + '</h3>';
         html += '<p class="shop-product-price">$' + price + '</p>';
-        html += '<a href="' + url + '" target="_blank" class="shop-product-btn">View Product</a>';
+        html += '<div class="shop-product-buttons">';
+        html += '<a href="' + url + '" target="_blank" class="shop-product-btn">View</a>';
+        html += '<button type="button" class="shop-product-btn buy-now" onclick="buyNow(\'' + node.id + '\', \'' + (node.title || '').replace(/'/g, "\\'") + '\', ' + price + ', \'' + img + '\', \'' + url + '\')">Buy Now</button>';
+        html += '</div>';
         html += '</div></div>';
     });
     html += '</div>';
@@ -1374,6 +1401,27 @@ function renderProducts(products, container, collection) {
     } else {
         countEl.textContent = products.length + ' product' + (products.length !== 1 ? 's' : '') + ' found';
         countEl.style.display = 'block';
+    }
+}
+
+// Buy Now - Add to cart and redirect to checkout
+function buyNow(id, name, price, image, href) {
+    if (window.SgCart && window.SgCart.addToCart) {
+        window.SgCart.addToCart({
+            id: id,
+            name: name,
+            price: parseFloat(price),
+            image: image,
+            variant: '',
+            quantity: 1,
+            category: 'shop',
+            href: href
+        });
+        // Redirect to cart page
+        window.location.href = '/cart/';
+    } else {
+        console.error('Cart not available');
+        alert('Unable to add to cart. Please try again.');
     }
 }
 
