@@ -51,7 +51,8 @@
     { label: 'Shop', href: '/shop' },
     { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
-    { label: 'Contact', href: '/contact-us' }
+    { label: 'Contact', href: '/contact-us' },
+    { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
 
   // Mobile menu items (expanded with all key pages)
@@ -75,7 +76,8 @@
     { label: 'FAQ', href: '/company/faq-center' },
     { label: 'Contact', href: '/contact-us' },
     { label: 'Financing', href: '/services/home-remodeling-financing-options-in-arizona' },
-    { label: 'My Account', href: '/account' }
+    { label: 'My Account', href: '/account' },
+    { label: 'For Pros - Join Now', href: '/vendor/signup', isPro: true }
   ];
 
   // Product data for mega menus
@@ -140,10 +142,11 @@
       const category = item.label.toLowerCase();
       const megaMenu = item.hasMenu && PRODUCTS[category] ? createMegaMenu(category, item.label, item.href) : '';
       const arrow = item.hasMenu ? '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>' : '';
+      const proClass = item.isPro ? ' class="unified-nav-pro-link"' : '';
 
       return `
         <li>
-          <a href="${item.href}">${item.label}${arrow}</a>
+          <a href="${item.href}"${proClass}>${item.label}${arrow}</a>
           ${megaMenu}
         </li>
       `;
@@ -152,12 +155,15 @@
 
   // Create mobile drawer links
   function createDrawerLinks() {
-    return MOBILE_MENU_ITEMS.map(item => `
-      <a href="${item.href}" class="unified-nav-drawer-item">
-        <span>${item.label}</span>
-        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-      </a>
-    `).join('');
+    return MOBILE_MENU_ITEMS.map(item => {
+      const proClass = item.isPro ? ' unified-nav-drawer-pro' : '';
+      return `
+        <a href="${item.href}" class="unified-nav-drawer-item${proClass}">
+          <span>${item.label}</span>
+          <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </a>
+      `;
+    }).join('');
   }
 
   // Create full navigation HTML
