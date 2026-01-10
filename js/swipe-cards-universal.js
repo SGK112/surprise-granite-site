@@ -722,9 +722,19 @@
       // Shop cards get price and Buy Now button
       const isShopCard = productType === 'shop' || card.isShop;
 
+      // Build vendor/brand overlay
+      const vendorName = card.brand || card.vendor || '';
+      const vendorOverlay = vendorName ? `
+        <div class="swipe-card-vendor">
+          <span class="vendor-label">by</span>
+          <span class="vendor-name">${vendorName}</span>
+        </div>
+      ` : '';
+
       cardEl.innerHTML = `
         ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
         <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
+        ${vendorOverlay}
         <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           <span>View</span>
