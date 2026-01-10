@@ -321,17 +321,41 @@
 
   // Intercept Webflow hamburger button clicks and redirect to unified nav
   function interceptWebflowHamburger() {
+    // Use capture phase to intercept before other handlers
     document.addEventListener('click', function(e) {
       // Only intercept actual hamburger/menu buttons, not general data-w-id elements
-      const hamburger = e.target.closest('.navbar_menu-button, .w-nav-button, .menu-icon, .hamburger-menu');
+      const hamburger = e.target.closest('.navbar_menu-button, .w-nav-button, .menu-icon, .hamburger-menu, .sg-mobile-trigger, [data-menu-toggle]');
       if (hamburger && !hamburger.closest('.unified-nav') && !hamburger.closest('.filters_filters-wrapper')) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         // Open unified nav instead
         const toggle = document.getElementById('unifiedNavToggle');
-        if (toggle) toggle.click();
+        if (toggle) {
+          const drawer = document.getElementById('unifiedNavDrawer');
+          const overlay = document.getElementById('unifiedNavOverlay');
+          toggle.classList.add('is-open');
+          if (drawer) drawer.classList.add('is-open');
+          if (overlay) overlay.classList.add('is-visible');
+          document.body.style.overflow = 'hidden';
+        }
+        return false;
       }
     }, true);
+
+    // Also intercept on the navbar_menu-button directly
+    setTimeout(() => {
+      document.querySelectorAll('.navbar_menu-button, .w-nav-button').forEach(btn => {
+        if (!btn.closest('.unified-nav')) {
+          btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.openSgMobileMenu && window.openSgMobileMenu();
+            return false;
+          };
+        }
+      });
+    }, 100);
   }
 
   // Initialize navigation
@@ -519,21 +543,51 @@
   // Expose functions globally
   window.updateUnifiedNavAuthUI = updateAuthUI;
 
+  // Override any custom mobile menu functions that might exist on the page
+  function overrideCustomMenus() {
+    // Override openSgMobileMenu to open unified nav instead
+    window.openSgMobileMenu = function() {
+      const toggle = document.getElementById('unifiedNavToggle');
+      if (toggle) toggle.click();
+    };
+
+    // Override closeSgMobileMenu
+    window.closeSgMobileMenu = function() {
+      const drawer = document.getElementById('unifiedNavDrawer');
+      const toggle = document.getElementById('unifiedNavToggle');
+      const overlay = document.getElementById('unifiedNavOverlay');
+      if (drawer) drawer.classList.remove('is-open');
+      if (toggle) toggle.classList.remove('is-open');
+      if (overlay) overlay.classList.remove('is-visible');
+      document.body.style.overflow = '';
+    };
+
+    // Remove the old sgMobileMenu element completely
+    const oldMenu = document.getElementById('sgMobileMenu');
+    if (oldMenu) oldMenu.remove();
+  }
+
   // Run on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       init();
       initAuthListener();
+      overrideCustomMenus();
     });
   } else {
     init();
     initAuthListener();
+    overrideCustomMenus();
   }
 
   // Run cleanup again after delays to catch dynamically loaded navbars
   setTimeout(removeOldNavigation, 500);
   setTimeout(removeOldNavigation, 1500);
   setTimeout(removeOldNavigation, 3000);
+
+  // Override custom menus again after delays (in case they're set later)
+  setTimeout(overrideCustomMenus, 100);
+  setTimeout(overrideCustomMenus, 500);
 
   // Also clean up on any DOM changes
   const cleanupObserver = new MutationObserver(() => {
