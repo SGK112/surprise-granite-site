@@ -856,8 +856,10 @@
 
     e.preventDefault();
 
-    // Pure horizontal swipe - no rotation, just slide left/right
-    this.style.transform = `translateX(calc(-50% + ${deltaX}px))`;
+    // Tinder-style swipe - rotate as card moves
+    const rotation = deltaX * 0.1;
+    const lift = Math.min(Math.abs(deltaX) * 0.15, 20);
+    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(-${lift}px) rotate(${rotation}deg)`;
 
     const threshold = 40;
     if (deltaX > threshold) {
@@ -882,15 +884,15 @@
     const velocityThreshold = 3;
 
     if (projectedX > threshold || velocityX > velocityThreshold) {
-      // Swipe right - pure horizontal exit
-      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(120vw)`;
-      setTimeout(() => handleLike(), 250);
+      // Tinder-style swipe right - fly off with rotation
+      this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.style.transform = `translateX(120vw) translateY(-100px) rotate(30deg)`;
+      setTimeout(() => handleLike(), 300);
     } else if (projectedX < -threshold || velocityX < -velocityThreshold) {
-      // Swipe left - pure horizontal exit
-      this.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(-120vw)`;
-      setTimeout(() => handleNope(), 250);
+      // Tinder-style swipe left - fly off with rotation
+      this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.style.transform = `translateX(-120vw) translateY(-100px) rotate(-30deg)`;
+      setTimeout(() => handleNope(), 300);
     } else {
       // Snap back to center
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
