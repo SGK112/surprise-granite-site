@@ -93,10 +93,10 @@
       { name: 'Backsplash', desc: 'Kitchen & bath', href: '/materials/all-tile', img: '/images/tiles/abani-marble-encaustic-subway-tile.webp' }
     ],
     flooring: [
-      { name: 'Luxury Vinyl', desc: 'Waterproof & stylish', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
-      { name: 'Hardwood Look', desc: 'Natural wood aesthetic', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20130fbc97c_msi-surfaces-surprise-granite-hatfield-luxury-vinyl-planks-close-up.avif' },
-      { name: 'Stone Look', desc: 'Elegant stone patterns', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb201fafbccd6_msi-surfaces-surprise-granite-xl-trecento-mountains-gray-luxury-vinyl-planks-close-up.avif' },
-      { name: 'Marble Look', desc: 'Premium vinyl tile', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2ebb6fbccd4_msi-surfaces-surprise-granite-xl-trecento-carrara-avell-luxury-vinyl-tile-close-up.avif' }
+      { name: 'Luxury Vinyl Plank', desc: 'Waterproof LVP flooring', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
+      { name: 'Wood Look Vinyl', desc: 'LVP with wood aesthetic', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20130fbc97c_msi-surfaces-surprise-granite-hatfield-luxury-vinyl-planks-close-up.avif' },
+      { name: 'Stone Look Vinyl', desc: 'LVP with stone patterns', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb201fafbccd6_msi-surfaces-surprise-granite-xl-trecento-mountains-gray-luxury-vinyl-planks-close-up.avif' },
+      { name: 'Marble Look Vinyl', desc: 'LVP with marble design', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2ebb6fbccd4_msi-surfaces-surprise-granite-xl-trecento-carrara-avell-luxury-vinyl-tile-close-up.avif' }
     ],
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
