@@ -174,12 +174,17 @@
       const priceEl = item.querySelector('[fs-cmsfilter-field="price"], .materials_item-pricing, .product-price');
       const priceText = priceEl ? priceEl.textContent.trim() : '';
 
+      // Generate description based on product type
+      const productTitle = title ? title.textContent.trim() : productLabel.slice(0, -1);
+      let description = generateDescription(productType, productTitle, specs);
+
       cards.push({
         id: index,
         href: link ? link.href : '#',
         image: imageUrl,
-        title: title ? title.textContent.trim() : productLabel.slice(0, -1),
+        title: productTitle,
         price: priceText,
+        description: description,
         ...specs
       });
     });
@@ -207,6 +212,64 @@
   function getText(container, selector) {
     const el = container.querySelector(selector);
     return el ? el.textContent.trim() : '';
+  }
+
+  // Generate smart descriptions based on product type and attributes
+  function generateDescription(type, title, specs) {
+    const color = (specs.color || specs.primaryColor || '').trim();
+    const material = (specs.material || '').trim();
+    const brand = (specs.brand || '').trim();
+    const style = (specs.style || '').trim();
+    const titleLower = title.toLowerCase();
+
+    if (type === 'flooring') {
+      const thickness = (specs.thickness || '').trim();
+      const wearLayer = (specs.wearLayer || '').trim();
+      if (wearLayer && thickness) {
+        return `Premium waterproof LVP with ${wearLayer} wear layer and realistic wood texture. Perfect for kitchens, bathrooms, and high-traffic areas.`;
+      }
+      if (color) {
+        return `Luxury vinyl plank flooring in beautiful ${color.toLowerCase()} tones. 100% waterproof, scratch-resistant, and easy to install.`;
+      }
+      return `Luxury vinyl plank flooring with realistic wood look. Waterproof, durable, and perfect for any room in your home.`;
+    }
+
+    if (type === 'countertop') {
+      const mat = material.toLowerCase();
+      if (mat.includes('quartz')) {
+        return `Engineered quartz countertop${brand ? ' by ' + brand : ''}. Non-porous, stain-resistant, and maintenance-free with lifetime durability.`;
+      }
+      if (mat.includes('granite')) {
+        return `Natural granite countertop with unique patterns. Heat-resistant, durable, and adds timeless elegance to any kitchen.`;
+      }
+      if (mat.includes('marble')) {
+        return `Elegant marble surface with classic veining. Perfect for creating a luxurious kitchen or bathroom aesthetic.`;
+      }
+      if (mat.includes('quartzite')) {
+        return `Natural quartzite countertop combining marble beauty with granite durability. Heat and scratch resistant.`;
+      }
+      if (mat.includes('porcelain') || mat.includes('dekton')) {
+        return `Ultra-compact surface that's UV stable, scratch-proof, and heat resistant. Perfect for indoor and outdoor use.`;
+      }
+      return `Premium countertop surface with professional installation available. Schedule a free in-home estimate today.`;
+    }
+
+    if (type === 'tile') {
+      const finish = (specs.finish || '').trim();
+      if (titleLower.includes('mosaic')) {
+        return `Decorative mosaic tile perfect for backsplashes, accent walls, and creative designs. Easy to install and maintain.`;
+      }
+      if (finish) {
+        return `Beautiful tile with ${finish.toLowerCase()} finish. Ideal for floors, walls, showers, and backsplashes.`;
+      }
+      if (color) {
+        return `Stylish ${color.toLowerCase()} tile for floors, walls, and backsplashes. Durable, easy to clean, and timeless design.`;
+      }
+      return `Quality tile for walls, floors, and backsplashes. Durable, easy to maintain, and available in various sizes.`;
+    }
+
+    // Generic fallback
+    return `Quality ${type} available at our showroom. Schedule a free consultation to see samples and get expert advice.`;
   }
 
   function showIntroOverlay() {
@@ -424,15 +487,20 @@
             <h3 class="swipe-card-title">${card.title}</h3>
             ${card.material ? `<span class="swipe-card-material">${card.material}</span>` : ''}
           </div>
+          ${card.description ? `<p class="swipe-card-description">${card.description}</p>` : ''}
           <div class="swipe-card-specs">${specsHtml}</div>
-          ${card.price ? `
-          <div class="swipe-card-buy">
-            <button class="swipe-buy-now-btn" onclick="event.stopPropagation(); window.SgCart && window.SgCart.quickBuyNow({name:'${card.title.replace(/'/g, "\\'")}', price:${parseFloat(card.price.replace(/[^0-9.]/g,''))||0}, image:'${card.image}', href:'${card.href}'})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-              Buy Now
+          <div class="swipe-card-actions-row">
+            <a href="/get-a-free-estimate?product=${encodeURIComponent(card.title)}" class="swipe-quote-btn" onclick="event.stopPropagation();">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              Free Quote
+            </a>
+            ${(productType === 'countertop' || productType === 'tile') ? `
+            <button class="swipe-sample-btn" onclick="event.stopPropagation(); window.requestSampleForCard('${card.title.replace(/'/g, "\\'")}', '${card.image}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Sample
             </button>
+            ` : ''}
           </div>
-          ` : ''}
         </div>
       `;
 
