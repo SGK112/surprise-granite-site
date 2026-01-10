@@ -2,23 +2,31 @@
  * Universal Swipe Cards - Works across all product pages
  * Uses JSON data files for full inventory (no Webflow dependency)
  * Uses the unified SGFavorites system from favorites.js
+ * Supports UNIVERSAL mode with all products combined
  */
 
 (function() {
   'use strict';
 
-  // Only run on mobile
-  if (window.innerWidth > 767) return;
+  // Check for universal swipe mode (dedicated swipe page)
+  const isUniversalMode = document.body.dataset.swipeMode === 'universal';
+
+  // Only run on mobile (unless universal mode)
+  if (!isUniversalMode && window.innerWidth > 767) return;
 
   // Detect product type from URL and set config
   const path = window.location.pathname.toLowerCase();
-  let productType = 'general';
+  let productType = isUniversalMode ? 'universal' : 'general';
   let productLabel = 'Products';
   let jsonPath = null;
   let jsonKey = null;
   let urlPrefix = '/';
 
-  if (path.includes('flooring')) {
+  // Universal mode - load ALL products
+  if (isUniversalMode) {
+    productType = 'universal';
+    productLabel = 'All Products';
+  } else if (path.includes('flooring')) {
     productType = 'flooring';
     productLabel = 'Flooring';
     jsonPath = '/data/flooring.json';
@@ -54,6 +62,10 @@
     // Shop loads products dynamically via Shopify API
     jsonPath = null;
   }
+
+  // Store all products for filtering in universal mode
+  let allProducts = [];
+  let activeCategory = 'all';
 
   // Wait for DOM
   document.addEventListener('DOMContentLoaded', init);
@@ -138,6 +150,12 @@
   }
 
   async function init() {
+    // UNIVERSAL MODE - Load ALL product types
+    if (isUniversalMode) {
+      await loadUniversalProducts();
+      return;
+    }
+
     // For shop pages, wait for dynamic products to load
     if (productType === 'shop') {
       waitForShopProducts(() => {
@@ -184,6 +202,152 @@
 
     console.log('Swipe Cards:', cards.length, productLabel, 'ready');
     showIntroOverlay();
+  }
+
+  // Load ALL products for universal swipe mode
+  async function loadUniversalProducts() {
+    const loadingEl = document.getElementById('swipeLoading');
+    const filterEl = document.getElementById('categoryFilter');
+    const statsEl = document.getElementById('swipeStats');
+
+    const dataSources = [
+      { path: '/data/countertops.json', key: 'countertops', type: 'countertop', label: 'Countertop' },
+      { path: '/data/tile.json', key: 'tile', type: 'tile', label: 'Tile' },
+      { path: '/data/flooring.json', key: 'flooring', type: 'flooring', label: 'Flooring' }
+    ];
+
+    allProducts = [];
+
+    // Load all JSON data sources
+    for (const source of dataSources) {
+      try {
+        const response = await fetch(source.path);
+        if (response.ok) {
+          const data = await response.json();
+          const items = data[source.key] || [];
+          items.forEach(item => {
+            if (!item.primaryImage && !item.image) return;
+            allProducts.push({
+              ...item,
+              category: source.type,
+              categoryLabel: source.label
+            });
+          });
+        }
+      } catch (e) {
+        console.warn(`Failed to load ${source.path}:`, e);
+      }
+    }
+
+    // Shuffle products for variety
+    allProducts = shuffleArray(allProducts);
+
+    // Hide loading, show filter
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (filterEl) filterEl.style.display = 'flex';
+    if (statsEl) statsEl.style.display = 'flex';
+
+    // Setup category filter
+    setupCategoryFilter();
+
+    // Load initial cards
+    filterAndLoadCards('all');
+
+    if (cards.length === 0) {
+      showEmptyState();
+      return;
+    }
+
+    console.log('Universal Swipe:', allProducts.length, 'total products loaded');
+    showSwipeUI();
+  }
+
+  function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  function setupCategoryFilter() {
+    const pills = document.querySelectorAll('.category-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const category = pill.dataset.category;
+        filterAndLoadCards(category);
+      });
+    });
+  }
+
+  function filterAndLoadCards(category) {
+    activeCategory = category;
+    cards = [];
+    currentIndex = 0;
+
+    const filtered = category === 'all'
+      ? allProducts
+      : allProducts.filter(p => p.category === category);
+
+    filtered.forEach((item, index) => {
+      cards.push({
+        title: item.name || item.title || 'Unknown',
+        image: item.primaryImage || item.image,
+        href: item.url || item.href || '#',
+        brand: item.brand || item.vendor || item.categoryLabel || '',
+        material: item.material || item.type || item.categoryLabel || '',
+        color: item.color || '',
+        description: item.description || '',
+        available: item.available !== false,
+        category: item.category,
+        categoryLabel: item.categoryLabel,
+        price: item.price || null
+      });
+    });
+
+    // Update stats
+    updateStats();
+
+    // Rebuild UI
+    if (cards.length > 0) {
+      rebuildSwipeUI();
+    }
+  }
+
+  function updateStats() {
+    const likedEl = document.getElementById('likedCount');
+    const remainingEl = document.getElementById('remainingCount');
+    if (likedEl) likedEl.textContent = getFavorites().length;
+    if (remainingEl) remainingEl.textContent = Math.max(0, cards.length - currentIndex);
+  }
+
+  function showEmptyState() {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="swipe-empty">
+        <div class="swipe-empty-icon">🔍</div>
+        <h2>No Products Found</h2>
+        <p>Try selecting a different category</p>
+      </div>
+    `);
+  }
+
+  function showSwipeUI() {
+    // For universal mode, skip the intro and go straight to swiping
+    createSwipeUI();
+  }
+
+  function rebuildSwipeUI() {
+    // Remove existing cards
+    const existingCards = document.querySelectorAll('.swipe-card');
+    existingCards.forEach(c => c.remove());
+
+    // Create new cards
+    createCards();
+    setupTouchHandlers();
+    updateStats();
   }
 
   // Parse products from JSON data
@@ -779,12 +943,8 @@
             <span>Buy Now</span>
           </button>
         ` : ''}
-        <div class="swipe-emoji-indicator like">
-          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </div>
-        <div class="swipe-emoji-indicator nope">
-          <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </div>
+        <div class="swipe-emoji-indicator like">💛</div>
+        <div class="swipe-emoji-indicator nope">❌</div>
         <div class="swipe-card-content">
           <div class="swipe-card-header">
             <h3 class="swipe-card-title">${card.title}</h3>
@@ -859,7 +1019,7 @@
     // Tinder-style swipe - rotate as card moves
     const rotation = deltaX * 0.1;
     const lift = Math.min(Math.abs(deltaX) * 0.15, 20);
-    this.style.transform = `translateX(calc(-50% + ${deltaX}px)) translateY(-${lift}px) rotate(${rotation}deg)`;
+    this.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% - ${lift}px)) rotate(${rotation}deg)`;
 
     const threshold = 40;
     if (deltaX > threshold) {
@@ -886,17 +1046,17 @@
     if (projectedX > threshold || velocityX > velocityThreshold) {
       // Tinder-style swipe right - fly off with rotation
       this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(120vw) translateY(-100px) rotate(30deg)`;
+      this.style.transform = `translate(120vw, -50%) rotate(30deg)`;
       setTimeout(() => handleLike(), 300);
     } else if (projectedX < -threshold || velocityX < -velocityThreshold) {
       // Tinder-style swipe left - fly off with rotation
       this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translateX(-120vw) translateY(-100px) rotate(-30deg)`;
+      this.style.transform = `translate(-120vw, -50%) rotate(-30deg)`;
       setTimeout(() => handleNope(), 300);
     } else {
       // Snap back to center
       this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.style.transform = 'translateX(-50%)';
+      this.style.transform = 'translate(-50%, -50%)';
       this.classList.remove('swiping-left', 'swiping-right');
     }
   }

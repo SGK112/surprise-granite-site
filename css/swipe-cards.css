@@ -585,60 +585,37 @@
     display: none;
   }
 
-  /* EMOJI SWIPE INDICATORS - Yellow Heart & Red X */
+  /* EMOJI SWIPE INDICATORS - Solid Yellow Heart & Red X */
   .swipe-emoji-indicator {
     position: absolute;
     top: 50%;
     transform: translateY(-50%) scale(0.5);
-    width: 100px;
-    height: 100px;
     opacity: 0;
     pointer-events: none;
     z-index: 20;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    font-size: 80px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
   }
 
   .swipe-emoji-indicator.like {
-    right: 30px;
-    background: rgba(249, 203, 0, 0.25);
-    border: 3px solid rgba(249, 203, 0, 0.6);
-    box-shadow: 0 8px 32px rgba(249, 203, 0, 0.4);
-  }
-
-  .swipe-emoji-indicator.like svg {
-    width: 56px;
-    height: 56px;
-    fill: var(--sg-gold);
-    filter: drop-shadow(0 2px 8px rgba(249, 203, 0, 0.5));
+    right: 40px;
+    color: #f9cb00;
   }
 
   .swipe-emoji-indicator.nope {
-    left: 30px;
-    background: rgba(255, 59, 92, 0.25);
-    border: 3px solid rgba(255, 59, 92, 0.6);
-    box-shadow: 0 8px 32px rgba(255, 59, 92, 0.4);
-  }
-
-  .swipe-emoji-indicator.nope svg {
-    width: 48px;
-    height: 48px;
-    stroke: var(--sg-red);
-    stroke-width: 4;
-    filter: drop-shadow(0 2px 8px rgba(255, 59, 92, 0.5));
+    left: 40px;
+    color: #ff3b5c;
   }
 
   .swipe-card.swiping-right .swipe-emoji-indicator.like {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(-50%) scale(1.2);
   }
 
   .swipe-card.swiping-left .swipe-emoji-indicator.nope {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(-50%) scale(1.2);
   }
 
   /* SHARE TOAST */
@@ -679,20 +656,20 @@
   .swipe-card-stack {
     flex: 1;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     position: relative;
-    padding: 10px 16px;
-    padding-bottom: 120px; /* Space for action buttons */
+    padding: 20px 16px;
+    padding-bottom: 100px; /* Space for action buttons */
     min-height: 0;
-    padding-top: 10px;
+    padding-top: 20px;
   }
 
-  /* CARDS - Positioned from top */
+  /* CARDS - Centered in viewport with breathing room */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 32px);
-    max-width: 380px;
+    width: calc(100% - 40px);
+    max-width: 360px;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 16px 50px rgba(0, 0, 0, 0.55);
@@ -700,26 +677,25 @@
     cursor: grab;
     user-select: none;
     left: 50%;
-    top: 10px;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
     will-change: transform;
+    max-height: calc(100vh - 280px); /* Leave room for nav, filters, and buttons */
   }
 
   .swipe-card:active {
     cursor: grabbing;
   }
 
-  /* Stack effect */
+  /* Stack effect - cards behind */
   .swipe-card:nth-child(2) {
-    transform: translateX(-50%) scale(0.95);
-    top: 20px;
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.95);
     z-index: -1;
     filter: brightness(0.88);
   }
 
   .swipe-card:nth-child(3) {
-    transform: translateX(-50%) scale(0.90);
-    top: 30px;
+    transform: translate(-50%, calc(-50% + 20px)) scale(0.90);
     z-index: -2;
     filter: brightness(0.76);
   }
@@ -1124,11 +1100,11 @@
   }
 
   @keyframes swipeLeft {
-    to { transform: translateX(-150%) translateY(-80px) rotate(-25deg); opacity: 0; }
+    to { transform: translate(-150%, -50%) rotate(-25deg); opacity: 0; }
   }
 
   @keyframes swipeRight {
-    to { transform: translateX(150%) translateY(-80px) rotate(25deg); opacity: 0; }
+    to { transform: translate(150%, -50%) rotate(25deg); opacity: 0; }
   }
 
   /* FLOATING ACTION BUTTONS - Tinder Style */

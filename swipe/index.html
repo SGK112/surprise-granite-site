@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Swipe to Discover | Surprise Granite</title>
+  <meta name="description" content="Swipe through our entire collection of countertops, tile, flooring, and shop products. Find your perfect match with our Tinder-style product discovery."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <link rel="canonical" href="https://surprisegranite.com/swipe/"/>
+
+  <!-- Favicon -->
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110e">
+  <link rel="stylesheet" href="/css/swipe-cards.css?v=20260110b">
+  <link rel="stylesheet" href="/css/favorites-panel.css?v=20260109">
+
+  <style>
+    :root {
+      --sg-gold: #f9cb00;
+      --sg-dark: #1a1a1a;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Category Filter Pills */
+    .swipe-category-filter {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      background: linear-gradient(to bottom, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.9) 80%, transparent 100%);
+    }
+
+    .swipe-category-filter::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-pill {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #222;
+      color: #888;
+    }
+
+    .category-pill.active {
+      background: var(--sg-gold);
+      color: #000;
+    }
+
+    .category-pill:not(.active):hover {
+      background: #333;
+      color: #fff;
+    }
+
+    /* Stats Bar */
+    .swipe-stats {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 24px;
+      padding: 8px 20px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 20px;
+      font-size: 12px;
+      color: #888;
+      z-index: 50;
+    }
+
+    .swipe-stats span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swipe-stats .count {
+      color: var(--sg-gold);
+      font-weight: 700;
+    }
+
+    /* Loading State */
+    .swipe-loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .swipe-loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #333;
+      border-top-color: var(--sg-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .swipe-loading-text {
+      color: #888;
+      font-size: 14px;
+    }
+
+    /* Empty State */
+    .swipe-empty {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      padding: 40px;
+    }
+
+    .swipe-empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .swipe-empty h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .swipe-empty p {
+      margin: 0;
+      color: #888;
+    }
+  </style>
+
+  <!-- Unified Navigation -->
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+</head>
+<body data-swipe-mode="universal">
+  <!-- Loading State -->
+  <div class="swipe-loading" id="swipeLoading">
+    <div class="swipe-loading-spinner"></div>
+    <div class="swipe-loading-text">Loading products...</div>
+  </div>
+
+  <!-- Category Filter -->
+  <div class="swipe-category-filter" id="categoryFilter" style="display:none;">
+    <button class="category-pill active" data-category="all">All</button>
+    <button class="category-pill" data-category="countertop">Countertops</button>
+    <button class="category-pill" data-category="tile">Tile</button>
+    <button class="category-pill" data-category="flooring">Flooring</button>
+    <button class="category-pill" data-category="shop">Shop</button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="swipe-stats" id="swipeStats" style="display:none;">
+    <span><span class="count" id="likedCount">0</span> Liked</span>
+    <span><span class="count" id="remainingCount">0</span> Left</span>
+  </div>
+
+  <!-- Favorites System -->
+  <script src="/js/favorites.js?v=20260109"></script>
+
+  <!-- Universal Swipe Cards -->
+  <script src="/js/swipe-cards-universal.js?v=20260110c"></script>
+</body>
+</html>
