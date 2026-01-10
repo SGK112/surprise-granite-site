@@ -654,15 +654,16 @@
   .swipe-card-stack {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     position: relative;
-    padding: 20px;
-    padding-bottom: 110px; /* Space for action buttons */
+    padding: 10px 16px;
+    padding-bottom: 120px; /* Space for action buttons */
     min-height: 0;
+    padding-top: 10px;
   }
 
-  /* CARDS - Centered with proper transform */
+  /* CARDS - Positioned from top */
   .swipe-card {
     position: absolute;
     width: calc(100% - 32px);
@@ -674,8 +675,8 @@
     cursor: grab;
     user-select: none;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    top: 10px;
+    transform: translateX(-50%);
     will-change: transform;
   }
 
@@ -685,13 +686,15 @@
 
   /* Stack effect */
   .swipe-card:nth-child(2) {
-    transform: translate(-50%, calc(-50% + 10px)) scale(0.95);
+    transform: translateX(-50%) scale(0.95);
+    top: 20px;
     z-index: -1;
     filter: brightness(0.88);
   }
 
   .swipe-card:nth-child(3) {
-    transform: translate(-50%, calc(-50% + 20px)) scale(0.90);
+    transform: translateX(-50%) scale(0.90);
+    top: 30px;
     z-index: -2;
     filter: brightness(0.76);
   }
@@ -1064,11 +1067,11 @@
   }
 
   @keyframes swipeLeft {
-    to { transform: translate(-150%, -50%) rotate(-25deg); opacity: 0; }
+    to { transform: translateX(-150%) rotate(-25deg); opacity: 0; }
   }
 
   @keyframes swipeRight {
-    to { transform: translate(50%, -50%) rotate(25deg); opacity: 0; }
+    to { transform: translateX(150%) rotate(25deg); opacity: 0; }
   }
 
   /* FLOATING ACTION BUTTONS - Tinder Style */
