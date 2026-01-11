@@ -30,46 +30,40 @@
   // Categories with SVG icons
   const categories = [
     {
+      id: 'countertops',
+      name: 'Countertops',
+      desc: 'Granite, quartz, marble & quartzite',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="4" rx="1"/><path d="M4 10v8h16v-8"/><path d="M8 14h8"/></svg>'
+    },
+    {
       id: 'kitchen',
       name: 'Kitchen Remodel',
-      desc: 'Countertops, cabinets & more',
+      desc: 'Full kitchen renovation',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/></svg>'
     },
     {
       id: 'bathroom',
       name: 'Bathroom Remodel',
-      desc: 'Vanities, tile & fixtures',
+      desc: 'Vanities, showers & fixtures',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="8" r="1"/></svg>'
-    },
-    {
-      id: 'countertops',
-      name: 'Countertops Only',
-      desc: 'Granite, quartz & marble',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="4" rx="1"/><path d="M4 10v8h16v-8"/><path d="M8 14h8"/></svg>'
     },
     {
       id: 'flooring',
       name: 'Flooring',
-      desc: 'Tile, vinyl & hardwood',
+      desc: 'Tile, LVP & hardwood',
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>'
     },
     {
-      id: 'full-home',
-      name: 'Full Home',
-      desc: 'Multiple rooms & areas',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'
+      id: 'tile',
+      name: 'Tile & Backsplash',
+      desc: 'Walls, showers & backsplashes',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>'
     },
     {
-      id: 'commercial',
-      name: 'Commercial',
-      desc: 'Restaurant, office & retail',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h2M9 10h2M9 14h2M9 18h2M13 6h2M13 10h2M13 14h2M13 18h2"/></svg>'
-    },
-    {
-      id: 'other',
-      name: 'Other',
-      desc: 'Something else or not sure yet',
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>'
+      id: 'cabinets',
+      name: 'Cabinets',
+      desc: 'Kitchen & bathroom cabinets',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/><circle cx="8" cy="7.5" r="1"/><circle cx="16" cy="7.5" r="1"/><circle cx="8" cy="16.5" r="1"/><circle cx="16" cy="16.5" r="1"/></svg>'
     }
   ];
 
