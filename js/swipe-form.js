@@ -236,31 +236,32 @@
         }
       ]
     },
-    'full-home': {
-      title: "Tell us about your home project",
-      subtitle: "Select all areas you want to remodel",
+    tile: {
+      title: "Tell us about your tile project",
+      subtitle: "Select all that apply",
       questions: [
         {
-          id: 'areas',
-          label: 'Which areas?',
+          id: 'location',
+          label: 'Where is the tile going?',
           type: 'multi',
           options: [
-            { id: 'kitchen', label: 'Kitchen', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>' },
-            { id: 'bathrooms', label: 'Bathrooms', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/></svg>' },
-            { id: 'flooring', label: 'Flooring', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' },
-            { id: 'living', label: 'Living Spaces', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v6H3v-6a1 1 0 011-1z"/></svg>' },
-            { id: 'outdoor', label: 'Outdoor', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2"/></svg>' }
+            { id: 'backsplash', label: 'Kitchen Backsplash', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="12" rx="1"/><path d="M3 9h18M9 3v12M15 3v12"/></svg>' },
+            { id: 'shower', label: 'Shower Walls', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4v16h16"/><path d="M4 10h12v10"/></svg>' },
+            { id: 'floor', label: 'Floor Tile', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' },
+            { id: 'accent', label: 'Accent Wall', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>' },
+            { id: 'fireplace', label: 'Fireplace', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18V8l-9-5-9 5v13z"/><path d="M9 21v-6a3 3 0 016 0v6"/></svg>' }
           ]
         },
         {
-          id: 'priority',
-          label: 'What\'s your top priority?',
+          id: 'style',
+          label: 'Preferred tile style?',
           type: 'single',
           options: [
-            { id: 'kitchen', label: 'Kitchen first' },
-            { id: 'bathrooms', label: 'Bathrooms first' },
-            { id: 'flooring', label: 'Flooring first' },
-            { id: 'all-together', label: 'All at once' }
+            { id: 'subway', label: 'Subway/Metro' },
+            { id: 'mosaic', label: 'Mosaic' },
+            { id: 'large-format', label: 'Large Format' },
+            { id: 'natural-stone', label: 'Natural Stone' },
+            { id: 'not-sure', label: 'Not sure yet' }
           ]
         },
         {
@@ -269,77 +270,48 @@
           type: 'single',
           options: [
             { id: 'asap', label: 'As soon as possible' },
+            { id: '1-month', label: 'Within 1 month' },
             { id: '1-3-months', label: '1-3 months' },
-            { id: '3-6-months', label: '3-6 months' },
             { id: 'planning', label: 'Just planning' }
           ]
         }
       ]
     },
-    commercial: {
-      title: "Tell us about your commercial project",
-      subtitle: "Help us understand your business needs",
+    cabinets: {
+      title: "Tell us about your cabinet project",
+      subtitle: "Help us understand your needs",
       questions: [
         {
-          id: 'business-type',
-          label: 'Type of business?',
-          type: 'single',
-          options: [
-            { id: 'restaurant', label: 'Restaurant/Bar', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>' },
-            { id: 'office', label: 'Office', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h2M9 10h2M9 14h2M13 6h2M13 10h2M13 14h2"/></svg>' },
-            { id: 'retail', label: 'Retail Store', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>' },
-            { id: 'medical', label: 'Medical/Dental', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'other', label: 'Other' }
-          ]
-        },
-        {
-          id: 'scope',
-          label: 'What do you need?',
+          id: 'location',
+          label: 'Which cabinets?',
           type: 'multi',
           options: [
-            { id: 'countertops', label: 'Countertops' },
-            { id: 'flooring', label: 'Flooring' },
-            { id: 'reception', label: 'Reception Area' },
-            { id: 'restrooms', label: 'Restrooms' },
-            { id: 'full-buildout', label: 'Full Buildout' }
+            { id: 'kitchen', label: 'Kitchen Cabinets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="7" cy="7" r="1"/></svg>' },
+            { id: 'bathroom', label: 'Bathroom Vanity', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="10" width="16" height="10" rx="2"/><circle cx="12" cy="6" r="3"/></svg>' },
+            { id: 'laundry', label: 'Laundry Room', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="5"/></svg>' },
+            { id: 'garage', label: 'Garage Storage', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18V9l-9-7-9 7v12z"/><rect x="7" y="13" width="10" height="8"/></svg>' }
+          ]
+        },
+        {
+          id: 'service',
+          label: 'What do you need?',
+          type: 'single',
+          options: [
+            { id: 'full-replace', label: 'Full cabinet replacement' },
+            { id: 'reface', label: 'Cabinet refacing' },
+            { id: 'doors-only', label: 'Replace doors only' },
+            { id: 'add-cabinets', label: 'Add new cabinets' }
           ]
         },
         {
           id: 'timeline',
-          label: 'Project timeline?',
-          type: 'single',
-          options: [
-            { id: 'urgent', label: 'Urgent (< 2 weeks)' },
-            { id: '1-month', label: 'Within 1 month' },
-            { id: '1-3-months', label: '1-3 months' },
-            { id: 'planning', label: 'Planning phase' }
-          ]
-        }
-      ]
-    },
-    other: {
-      title: "Tell us more",
-      subtitle: "We'll help you figure out the best solution",
-      questions: [
-        {
-          id: 'project-type',
-          label: 'What best describes your project?',
-          type: 'single',
-          options: [
-            { id: 'repair', label: 'Repair/Fix existing', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>' },
-            { id: 'replace', label: 'Replace/Upgrade', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9m-9 9a9 9 0 019-9"/></svg>' },
-            { id: 'new', label: 'New construction', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>' },
-            { id: 'consultation', label: 'Just need advice', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>' }
-          ]
-        },
-        {
-          id: 'timeline',
-          label: 'When do you need this done?',
+          label: 'When do you want to start?',
           type: 'single',
           options: [
             { id: 'asap', label: 'As soon as possible' },
             { id: '1-month', label: 'Within 1 month' },
-            { id: 'flexible', label: 'Flexible/No rush' }
+            { id: '1-3-months', label: '1-3 months' },
+            { id: 'planning', label: 'Just planning' }
           ]
         }
       ]
