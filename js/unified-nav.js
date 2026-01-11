@@ -52,6 +52,7 @@
     { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
     { label: 'Contact', href: '/contact-us' },
+    { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
     { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
 
@@ -77,6 +78,7 @@
     { label: 'Contact', href: '/contact-us' },
     { label: 'Financing', href: '/services/home-remodeling-financing-options-in-arizona' },
     { label: 'My Account', href: '/account' },
+    { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
     { label: 'For Pros - Join Now', href: '/vendor/signup', isPro: true }
   ];
 
@@ -142,11 +144,13 @@
       const category = item.label.toLowerCase();
       const megaMenu = item.hasMenu && PRODUCTS[category] ? createMegaMenu(category, item.label, item.href) : '';
       const arrow = item.hasMenu ? '<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>' : '';
-      const proClass = item.isPro ? ' class="unified-nav-pro-link"' : '';
+      let linkClass = '';
+      if (item.isPro) linkClass = ' class="unified-nav-pro-link"';
+      else if (item.isQuiz) linkClass = ' class="unified-nav-quiz-link"';
 
       return `
         <li>
-          <a href="${item.href}"${proClass}>${item.label}${arrow}</a>
+          <a href="${item.href}"${linkClass}>${item.label}${arrow}</a>
           ${megaMenu}
         </li>
       `;
@@ -156,9 +160,11 @@
   // Create mobile drawer links
   function createDrawerLinks() {
     return MOBILE_MENU_ITEMS.map(item => {
-      const proClass = item.isPro ? ' unified-nav-drawer-pro' : '';
+      let extraClass = '';
+      if (item.isPro) extraClass = ' unified-nav-drawer-pro';
+      else if (item.isQuiz) extraClass = ' unified-nav-drawer-quiz';
       return `
-        <a href="${item.href}" class="unified-nav-drawer-item${proClass}">
+        <a href="${item.href}" class="unified-nav-drawer-item${extraClass}">
           <span>${item.label}</span>
           <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
         </a>
@@ -399,6 +405,11 @@
       drawer.classList.remove('is-open');
       overlay.classList.remove('is-visible');
       document.body.style.overflow = '';
+      // Reset any inline styles from swipe gesture
+      drawer.style.transform = '';
+      drawer.style.transition = '';
+      overlay.style.opacity = '';
+      overlay.style.transition = '';
     }
 
     // Event listeners
@@ -413,10 +424,108 @@
       }
     });
 
-    // Close drawer on link click
-    document.querySelectorAll('.unified-nav-drawer-item, .unified-nav-drawer-cta').forEach(el => {
+    // Close drawer on link click (but not on CTA - that opens SwipeForm)
+    document.querySelectorAll('.unified-nav-drawer-item').forEach(el => {
       el.addEventListener('click', closeDrawer);
     });
+
+    // CTA button opens SwipeForm instead of navigating
+    const ctaBtn = document.querySelector('.unified-nav-drawer-cta');
+    if (ctaBtn) {
+      ctaBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeDrawer();
+        // Open SwipeForm after drawer closes
+        setTimeout(() => {
+          if (window.SwipeForm && window.SwipeForm.open) {
+            window.SwipeForm.open();
+          } else {
+            // Fallback to navigation if SwipeForm not loaded
+            window.location.href = '/get-a-free-estimate';
+          }
+        }, 150);
+      });
+    }
+
+    // ============ SWIPE TO CLOSE GESTURE ============
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchCurrentX = 0;
+    let isDragging = false;
+    const SWIPE_THRESHOLD = 50; // Minimum pixels to trigger close
+    const SWIPE_VELOCITY_THRESHOLD = 0.3; // Minimum velocity to trigger close
+    let touchStartTime = 0;
+
+    function handleTouchStart(e) {
+      if (!drawer.classList.contains('is-open')) return;
+
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchCurrentX = touch.clientX;
+      touchStartTime = Date.now();
+      isDragging = false;
+
+      // Disable transition during drag for smooth feel
+      drawer.style.transition = 'none';
+    }
+
+    function handleTouchMove(e) {
+      if (!drawer.classList.contains('is-open')) return;
+
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+
+      // Only trigger swipe if horizontal movement is greater than vertical
+      if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX < 0) {
+        isDragging = true;
+        touchCurrentX = touch.clientX;
+
+        // Move drawer with touch (only allow dragging left/closed)
+        const translateX = Math.min(0, deltaX);
+        drawer.style.transform = `translateX(${translateX}px)`;
+
+        // Fade overlay based on drag position
+        const drawerWidth = drawer.offsetWidth;
+        const progress = Math.abs(translateX) / drawerWidth;
+        overlay.style.opacity = 1 - progress;
+
+        // Prevent scrolling while swiping
+        e.preventDefault();
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (!drawer.classList.contains('is-open') || !isDragging) {
+        drawer.style.transition = '';
+        return;
+      }
+
+      const deltaX = touchCurrentX - touchStartX;
+      const deltaTime = Date.now() - touchStartTime;
+      const velocity = Math.abs(deltaX) / deltaTime;
+
+      // Re-enable transition
+      drawer.style.transition = '';
+      overlay.style.transition = '';
+
+      // Close if swiped far enough or fast enough
+      if (deltaX < -SWIPE_THRESHOLD || (velocity > SWIPE_VELOCITY_THRESHOLD && deltaX < -20)) {
+        closeDrawer();
+      } else {
+        // Snap back to open position
+        drawer.style.transform = 'translateX(0)';
+        overlay.style.opacity = '1';
+      }
+
+      isDragging = false;
+    }
+
+    // Add touch listeners to drawer
+    drawer?.addEventListener('touchstart', handleTouchStart, { passive: true });
+    drawer?.addEventListener('touchmove', handleTouchMove, { passive: false });
+    drawer?.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     // Desktop search
     searchBtn?.addEventListener('click', () => handleSearch(searchInput?.value));

@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Style Quiz | Find Your Perfect Stone | Surprise Granite</title>
+  <meta name="description" content="Take our quick style quiz to discover the perfect countertops, tile, and flooring for your home. Get personalized recommendations based on your preferences."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <link rel="canonical" href="https://surprisegranite.com/quiz/"/>
+
+  <!-- Favicon -->
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --quiz-gold: #f9cb00;
+      --quiz-dark: #0a0a0a;
+      --quiz-surface: #1a1a1a;
+      --quiz-yes: #22c55e;
+      --quiz-no: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f0f1a 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    .quiz-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .quiz-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .quiz-back svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .quiz-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .quiz-logo-icon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .quiz-logo-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .quiz-logo-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .quiz-logo-tagline {
+      font-size: 9px;
+      color: #cca600;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .quiz-progress-wrap {
+      width: 80px;
+    }
+
+    .quiz-progress-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      text-align: right;
+      margin-bottom: 4px;
+    }
+
+    .quiz-progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .quiz-progress-fill {
+      height: 100%;
+      background: var(--quiz-gold);
+      transition: width 0.3s ease;
+    }
+
+    /* Intro Screen */
+    .quiz-intro {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      z-index: 200;
+    }
+
+    .quiz-intro.hidden {
+      display: none;
+    }
+
+    .quiz-intro-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+      text-decoration: none;
+    }
+
+    .quiz-intro-logo .quiz-logo-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .quiz-intro-logo .quiz-logo-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .quiz-intro-logo .quiz-logo-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .quiz-intro-logo .quiz-logo-tagline {
+      font-size: 11px;
+      color: #cca600;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .quiz-intro h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 0 12px;
+      line-height: 1.2;
+    }
+
+    .quiz-intro p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      margin: 0 0 32px;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .quiz-start-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, var(--quiz-gold), #e6b800);
+      color: #000;
+      font-size: 17px;
+      font-weight: 700;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 6px 24px rgba(249, 203, 0, 0.3);
+    }
+
+    .quiz-start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(249, 203, 0, 0.4);
+    }
+
+    .quiz-intro-note {
+      margin-top: 24px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Quiz Container */
+    .quiz-container {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+
+    .quiz-container.active {
+      display: flex;
+    }
+
+    /* Card Wrapper for centering */
+    .quiz-card-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 16px 140px;
+    }
+
+    /* Question Card Stack */
+    .quiz-card-stack {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      height: 480px;
+      perspective: 1000px;
+    }
+
+    .quiz-card {
+      position: absolute;
+      width: calc(100% - 32px);
+      left: 16px;
+      top: 0;
+      background: var(--quiz-surface);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: scale(0.9) translateY(30px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .quiz-card.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+      z-index: 10;
+      cursor: grab;
+    }
+
+    .quiz-card.active:active {
+      cursor: grabbing;
+    }
+
+    .quiz-card.next {
+      opacity: 0.5;
+      transform: scale(0.95) translateY(20px);
+      z-index: 5;
+    }
+
+    .quiz-card.dragging {
+      transition: none;
+    }
+
+    .quiz-card-image {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+    }
+
+    .quiz-card-content {
+      padding: 24px;
+    }
+
+    .quiz-card-category {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--quiz-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .quiz-card-question {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 12px;
+      line-height: 1.3;
+    }
+
+    .quiz-card-hint {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Swipe Indicators */
+    .quiz-indicator {
+      position: absolute;
+      top: 20px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .quiz-indicator.yes {
+      right: 20px;
+      background: var(--quiz-yes);
+      color: #fff;
+    }
+
+    .quiz-indicator.no {
+      left: 20px;
+      background: var(--quiz-no);
+      color: #fff;
+    }
+
+    /* Action Buttons - Inside quiz container, only visible when active */
+    .quiz-actions {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      z-index: 50;
+    }
+
+    .quiz-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quiz-action-btn:active {
+      transform: scale(0.9);
+    }
+
+    .quiz-action-btn.no-btn {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--quiz-no), #dc2626);
+      box-shadow: 0 6px 24px rgba(239, 68, 68, 0.4);
+    }
+
+    .quiz-action-btn.yes-btn {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--quiz-yes), #16a34a);
+      box-shadow: 0 6px 24px rgba(34, 197, 94, 0.4);
+    }
+
+    .quiz-action-btn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .quiz-action-btn.no-btn svg {
+      stroke: #fff;
+      stroke-width: 3;
+    }
+
+    .quiz-action-btn.yes-btn svg {
+      stroke: #fff;
+      stroke-width: 3;
+    }
+
+    .quiz-action-btn.undo-btn {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.15);
+      box-shadow: none;
+    }
+
+    .quiz-action-btn.undo-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .quiz-action-btn.undo-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+
+    /* Results Screen */
+    .quiz-results {
+      display: none;
+      padding: 100px 24px 40px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .quiz-results.active {
+      display: block;
+    }
+
+    .quiz-results-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .quiz-results-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-results-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
+
+    .quiz-results-header p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.7);
+      margin: 0;
+    }
+
+    .quiz-profile {
+      background: var(--quiz-surface);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .quiz-profile-title {
+      font-size: 14px;
+      color: var(--quiz-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .quiz-profile-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .quiz-profile-desc {
+      font-size: 15px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .quiz-recommendations {
+      margin-bottom: 24px;
+    }
+
+    .quiz-rec-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .quiz-rec-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .quiz-rec-item {
+      background: var(--quiz-surface);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.2s;
+    }
+
+    .quiz-rec-item:hover {
+      transform: translateY(-4px);
+    }
+
+    .quiz-rec-item img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+    }
+
+    .quiz-rec-item-info {
+      padding: 12px;
+    }
+
+    .quiz-rec-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+
+    .quiz-rec-item span {
+      font-size: 12px;
+      color: var(--quiz-gold);
+    }
+
+    .quiz-cta-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .quiz-cta-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 24px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .quiz-cta-btn.primary {
+      background: linear-gradient(135deg, var(--quiz-gold), #e6b800);
+      color: #000;
+    }
+
+    .quiz-cta-btn.secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .quiz-cta-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Recommendation Sections */
+    .quiz-rec-section {
+      margin-bottom: 28px;
+    }
+
+    .quiz-rec-section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .quiz-rec-section-icon {
+      font-size: 20px;
+    }
+
+    .quiz-rec-section h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    /* Service Cards */
+    .quiz-service-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .quiz-service-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--quiz-surface);
+      border-radius: 14px;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.2s;
+    }
+
+    .quiz-service-item:hover {
+      background: #252525;
+      transform: translateX(4px);
+    }
+
+    .quiz-service-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(249, 203, 0, 0.15);
+      border-radius: 12px;
+      font-size: 22px;
+    }
+
+    .quiz-service-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+
+    .quiz-service-info span {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .quiz-service-arrow {
+      margin-left: auto;
+      color: var(--quiz-gold);
+      font-size: 18px;
+    }
+
+    /* Blog Cards */
+    .quiz-blog-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .quiz-blog-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: var(--quiz-surface);
+      border-radius: 14px;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.2s;
+    }
+
+    .quiz-blog-item:hover {
+      background: #252525;
+    }
+
+    .quiz-blog-thumb {
+      width: 80px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .quiz-blog-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      line-height: 1.3;
+    }
+
+    .quiz-blog-info span {
+      font-size: 12px;
+      color: var(--quiz-gold);
+    }
+
+    /* Extras Grid */
+    .quiz-extras-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .quiz-extra-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 10px;
+      background: var(--quiz-surface);
+      border-radius: 14px;
+      text-decoration: none;
+      color: #fff;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .quiz-extra-item:hover {
+      background: #252525;
+      transform: translateY(-2px);
+    }
+
+    .quiz-extra-icon {
+      font-size: 28px;
+    }
+
+    .quiz-extra-item span {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    /* Sign Up Prompt */
+    .quiz-signup-prompt {
+      background: linear-gradient(135deg, rgba(249,203,0,0.15), rgba(249,203,0,0.05));
+      border: 1px solid rgba(249,203,0,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .quiz-signup-prompt h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: var(--quiz-gold);
+    }
+
+    .quiz-signup-prompt p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      margin: 0 0 16px;
+      line-height: 1.4;
+    }
+
+    .quiz-signup-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--quiz-gold);
+      color: #000;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .quiz-signup-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(249,203,0,0.3);
+    }
+
+    .quiz-signup-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .quiz-signed-in {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quiz-signed-in-icon {
+      font-size: 24px;
+    }
+
+    .quiz-signed-in-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .quiz-signed-in-text strong {
+      color: #22c55e;
+    }
+
+    /* Animations */
+    @keyframes cardSwipeRight {
+      to {
+        transform: translateX(150%) rotate(20deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes cardSwipeLeft {
+      to {
+        transform: translateX(-150%) rotate(-20deg);
+        opacity: 0;
+      }
+    }
+
+    .quiz-card.swipe-right {
+      animation: cardSwipeRight 0.4s forwards;
+    }
+
+    .quiz-card.swipe-left {
+      animation: cardSwipeLeft 0.4s forwards;
+    }
+
+    /* Desktop Optimizations */
+    @media (min-width: 768px) {
+      .quiz-intro {
+        padding: 60px 40px;
+      }
+
+      .quiz-intro-logo img {
+        height: 60px;
+        max-width: 350px;
+      }
+
+      .quiz-intro-logo .quiz-logo-tagline {
+        font-size: 13px;
+        letter-spacing: 2px;
+        margin-top: 5px;
+      }
+
+      .quiz-intro h1 {
+        font-size: 42px;
+      }
+
+      .quiz-intro p {
+        font-size: 18px;
+        max-width: 400px;
+      }
+
+      .quiz-card-wrapper {
+        padding: 100px 24px 160px;
+      }
+
+      .quiz-card-stack {
+        max-width: 480px;
+        height: 560px;
+      }
+
+      .quiz-card {
+        width: calc(100% - 48px);
+        left: 24px;
+        border-radius: 28px;
+      }
+
+      .quiz-card-image {
+        height: 300px;
+      }
+
+      .quiz-card-content {
+        padding: 28px 32px;
+      }
+
+      .quiz-card-category {
+        font-size: 13px;
+      }
+
+      .quiz-card-question {
+        font-size: 26px;
+        margin-bottom: 14px;
+      }
+
+      .quiz-card-hint {
+        font-size: 15px;
+      }
+
+      .quiz-indicator {
+        padding: 14px 28px;
+        font-size: 20px;
+        border-radius: 14px;
+      }
+
+      .quiz-actions {
+        bottom: 60px;
+        gap: 32px;
+      }
+
+      .quiz-action-btn.no-btn,
+      .quiz-action-btn.yes-btn {
+        width: 72px;
+        height: 72px;
+      }
+
+      .quiz-action-btn.undo-btn {
+        width: 56px;
+        height: 56px;
+      }
+
+      .quiz-action-btn svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      .quiz-action-btn.undo-btn svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      /* Results Desktop */
+      .quiz-results {
+        padding: 120px 40px 60px;
+        max-width: 800px;
+      }
+
+      .quiz-results-header {
+        margin-bottom: 40px;
+      }
+
+      .quiz-results-icon {
+        font-size: 72px;
+      }
+
+      .quiz-results-header h2 {
+        font-size: 36px;
+      }
+
+      .quiz-results-header p {
+        font-size: 18px;
+      }
+
+      .quiz-profile {
+        padding: 32px;
+        border-radius: 24px;
+      }
+
+      .quiz-profile-name {
+        font-size: 28px;
+      }
+
+      .quiz-profile-desc {
+        font-size: 16px;
+      }
+
+      .quiz-rec-section {
+        margin-bottom: 36px;
+      }
+
+      .quiz-rec-section h3 {
+        font-size: 20px;
+      }
+
+      .quiz-rec-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+
+      .quiz-rec-item img {
+        height: 120px;
+      }
+
+      .quiz-rec-item h4 {
+        font-size: 15px;
+      }
+
+      .quiz-service-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+
+      .quiz-service-item {
+        padding: 18px 20px;
+      }
+
+      .quiz-blog-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+
+      .quiz-blog-thumb {
+        width: 100px;
+        height: 75px;
+      }
+
+      .quiz-extras-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .quiz-cta-buttons {
+        flex-direction: row;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 32px;
+      }
+
+      .quiz-cta-btn {
+        padding: 18px 32px;
+      }
+
+      .quiz-signup-prompt,
+      .quiz-signed-in {
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* Header desktop */
+      .quiz-header {
+        padding: 20px 40px;
+      }
+
+      .quiz-progress-wrap {
+        width: 120px;
+      }
+    }
+
+    /* Large Desktop */
+    @media (min-width: 1200px) {
+      .quiz-card-stack {
+        max-width: 520px;
+        height: 600px;
+      }
+
+      .quiz-card-image {
+        height: 340px;
+      }
+
+      .quiz-results {
+        max-width: 900px;
+      }
+
+      .quiz-rec-grid {
+        gap: 20px;
+      }
+
+      .quiz-rec-item img {
+        height: 140px;
+      }
+    }
+
+    /* Mobile Optimizations */
+    @media (max-width: 480px) {
+      .quiz-card-wrapper {
+        padding: 70px 12px 120px;
+      }
+
+      .quiz-card-stack {
+        height: 420px;
+      }
+
+      .quiz-card-image {
+        height: 180px;
+      }
+
+      .quiz-card-content {
+        padding: 20px;
+      }
+
+      .quiz-card-question {
+        font-size: 19px;
+      }
+
+      .quiz-card-hint {
+        font-size: 13px;
+      }
+
+      .quiz-actions {
+        bottom: 30px;
+        gap: 20px;
+      }
+
+      .quiz-action-btn.no-btn,
+      .quiz-action-btn.yes-btn {
+        width: 58px;
+        height: 58px;
+      }
+
+      .quiz-action-btn.undo-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .quiz-action-btn svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .quiz-results {
+        padding: 90px 16px 30px;
+      }
+
+      .quiz-results-header h2 {
+        font-size: 24px;
+      }
+
+      .quiz-profile {
+        padding: 20px;
+      }
+
+      .quiz-profile-name {
+        font-size: 22px;
+      }
+
+      .quiz-rec-grid {
+        gap: 10px;
+      }
+
+      .quiz-rec-item img {
+        height: 80px;
+      }
+
+      .quiz-rec-item h4 {
+        font-size: 13px;
+      }
+
+      .quiz-rec-item span {
+        font-size: 11px;
+      }
+
+      .quiz-extras-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .quiz-extra-item {
+        padding: 12px 8px;
+      }
+
+      .quiz-extra-icon {
+        font-size: 24px;
+      }
+
+      .quiz-cta-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+      }
+    }
+
+    /* Very small screens */
+    @media (max-width: 360px) {
+      .quiz-card-wrapper {
+        padding: 65px 10px 110px;
+      }
+
+      .quiz-card-stack {
+        height: 380px;
+      }
+
+      .quiz-card-image {
+        height: 150px;
+      }
+
+      .quiz-card-question {
+        font-size: 17px;
+      }
+
+      .quiz-intro h1 {
+        font-size: 26px;
+      }
+    }
+
+    /* Tablet */
+    @media (min-width: 481px) and (max-width: 767px) {
+      .quiz-card-wrapper {
+        padding: 90px 20px 150px;
+      }
+
+      .quiz-card-stack {
+        max-width: 420px;
+        height: 500px;
+      }
+
+      .quiz-card-image {
+        height: 260px;
+      }
+
+      .quiz-results {
+        max-width: 600px;
+        padding: 100px 24px 40px;
+      }
+
+      .quiz-rec-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Touch device hover states */
+    @media (hover: none) {
+      .quiz-action-btn:hover {
+        transform: none;
+      }
+
+      .quiz-cta-btn:hover {
+        transform: none;
+      }
+
+      .quiz-rec-item:hover {
+        transform: none;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .quiz-card-wrapper {
+        padding: 70px 16px 100px;
+      }
+
+      .quiz-card-stack {
+        height: 280px;
+        max-width: 500px;
+      }
+
+      .quiz-card-image {
+        height: 120px;
+      }
+
+      .quiz-card-content {
+        padding: 12px 16px;
+      }
+
+      .quiz-card-question {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+
+      .quiz-card-hint {
+        font-size: 12px;
+      }
+
+      .quiz-actions {
+        bottom: 15px;
+      }
+
+      .quiz-action-btn.no-btn,
+      .quiz-action-btn.yes-btn {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="quiz-header" id="quizHeader" style="display:none;">
+    <a href="/" class="quiz-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Exit
+    </a>
+    <a href="/" class="quiz-logo">
+      <img src="/images/sg-house-icon-gold.svg" alt="SG" class="quiz-logo-icon">
+      <div class="quiz-logo-text">
+        <span class="quiz-logo-title">Surprise Granite</span>
+        <span class="quiz-logo-tagline">Marble & Quartz</span>
+      </div>
+    </a>
+    <div class="quiz-progress-wrap">
+      <div class="quiz-progress-text" id="progressText">1/10</div>
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" id="progressFill" style="width: 10%"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Intro Screen -->
+  <div class="quiz-intro" id="quizIntro">
+    <a href="/" class="quiz-intro-logo">
+      <img src="/images/sg-house-icon-gold.svg" alt="SG" class="quiz-logo-icon">
+      <div class="quiz-logo-text">
+        <span class="quiz-logo-title">Surprise Granite</span>
+        <span class="quiz-logo-tagline">Marble & Quartz</span>
+      </div>
+    </a>
+    <h1>Let's Find Your Perfect Match</h1>
+    <p>Whether you're a homeowner or a pro, we'll tailor your experience to show you exactly what you need.</p>
+    <button class="quiz-start-btn" onclick="startQuiz()">
+      Start Quiz
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+    <p class="quiz-intro-note">Takes about 1 minute</p>
+  </div>
+
+  <!-- Quiz Container -->
+  <div class="quiz-container" id="quizContainer">
+    <div class="quiz-card-wrapper">
+      <div class="quiz-card-stack" id="cardStack">
+        <!-- Cards will be rendered here -->
+      </div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="quiz-action-btn undo-btn" onclick="undoAnswer()" title="Undo" id="undoBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M3 10h10a5 5 0 0 1 5 5v2"/>
+          <polyline points="3 10 7 6"/>
+          <polyline points="3 10 7 14"/>
+        </svg>
+      </button>
+      <button class="quiz-action-btn no-btn" onclick="answerNo()" title="No">
+        <svg viewBox="0 0 24 24" fill="none">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <button class="quiz-action-btn yes-btn" onclick="answerYes()" title="Yes">
+        <svg viewBox="0 0 24 24" fill="none">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div class="quiz-results" id="quizResults">
+    <div class="quiz-results-header">
+      <div class="quiz-results-icon">✨</div>
+      <h2>Your Style Profile</h2>
+      <p>Based on your answers, here's what we recommend</p>
+    </div>
+
+    <!-- Sign Up Prompt (shown if not logged in) -->
+    <div class="quiz-signup-prompt" id="signupPrompt" style="display:none;">
+      <h4>Save Your Results</h4>
+      <p>Create a free account to save your style profile and get personalized recommendations on every visit.</p>
+      <a href="/account.html" class="quiz-signup-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Create Free Account
+      </a>
+    </div>
+
+    <!-- Signed In Confirmation (shown if logged in) -->
+    <div class="quiz-signed-in" id="signedInMsg" style="display:none;">
+      <span class="quiz-signed-in-icon">✅</span>
+      <span class="quiz-signed-in-text"><strong>Results saved!</strong> Your style profile is stored in your account.</span>
+    </div>
+
+    <div class="quiz-profile" id="styleProfile">
+      <div class="quiz-profile-title">Your Style</div>
+      <div class="quiz-profile-name" id="styleName">Modern Minimalist</div>
+      <p class="quiz-profile-desc" id="styleDesc">You prefer clean lines and contemporary designs.</p>
+    </div>
+
+    <!-- Product Recommendations -->
+    <div class="quiz-rec-section">
+      <div class="quiz-rec-section-header">
+        <span class="quiz-rec-section-icon">🪨</span>
+        <h3>Recommended Materials</h3>
+      </div>
+      <div class="quiz-rec-grid" id="recGrid">
+        <!-- Product recommendations will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Services Section -->
+    <div class="quiz-rec-section">
+      <div class="quiz-rec-section-header">
+        <span class="quiz-rec-section-icon">🔧</span>
+        <h3>Recommended Services</h3>
+      </div>
+      <div class="quiz-service-grid" id="serviceGrid">
+        <!-- Service recommendations will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Blog Articles Section -->
+    <div class="quiz-rec-section">
+      <div class="quiz-rec-section-header">
+        <span class="quiz-rec-section-icon">📖</span>
+        <h3>Helpful Articles</h3>
+      </div>
+      <div class="quiz-blog-grid" id="blogGrid">
+        <!-- Blog recommendations will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Extras Section -->
+    <div class="quiz-rec-section">
+      <div class="quiz-rec-section-header">
+        <span class="quiz-rec-section-icon">✨</span>
+        <h3>Complete Your Look</h3>
+      </div>
+      <div class="quiz-extras-grid" id="extrasGrid">
+        <!-- Extras will be rendered here -->
+      </div>
+    </div>
+
+    <div class="quiz-cta-buttons">
+      <a href="/shop-swipe/" class="quiz-cta-btn primary">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L4 7l8 5 8-5-8-5z" fill="currentColor" opacity="0.3"/>
+          <path d="M4 12l8 5 8-5"/>
+        </svg>
+        Browse All Products
+      </a>
+      <a href="/get-a-free-estimate.html" class="quiz-cta-btn secondary">
+        Get Free Estimate
+      </a>
+      <button class="quiz-cta-btn secondary" onclick="restartQuiz()">
+        Retake Quiz
+      </button>
+    </div>
+  </div>
+
+  <!-- Supabase for auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/auth-state.js?v=2.0.1"></script>
+
+  <script>
+    /**
+     * ADAPTIVE QUIZ ALGORITHM
+     * Questions dynamically adjust based on previous answers
+     * Uses conditional logic, branching paths, and priority weighting
+     */
+
+    // Reliable CDN images
+    const IMG = {
+      kitchen: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp',
+      hero: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/666c82cd5e8c79229b330f4b_Surprise%20Granite%20Homepage%20Hero.webp',
+      bathroom: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6535e32ca24c9a3fff3024e0_bathroom-remodeling-services-arizona.webp',
+      flooring: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2e30ffbb1d1_All%20Flooring%20Hero%20Background%20Image.jpeg',
+      remodel: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/65335c9d645a5e7646ba6841_Bathroom-Remodel-Silverton.webp'
+    };
+
+    // Question Bank - Streamlined to 6-8 questions per path
+    const questionBank = [
+      // ===== USER TYPE - FIRST QUESTION =====
+      {
+        id: 'user_type',
+        priority: 0,
+        category: 'Welcome',
+        question: 'Are you a homeowner planning a project?',
+        hint: 'Contractors & pros swipe left',
+        image: IMG.hero,
+        yesValue: 'homeowner',
+        noValue: 'pro',
+        condition: null
+      },
+
+      // ===== HOMEOWNER PATH (6-7 questions) =====
+      {
+        id: 'project_type',
+        priority: 1,
+        category: 'Your Project',
+        question: 'Are you remodeling a kitchen?',
+        hint: 'Bathroom or other room? Swipe left',
+        image: IMG.kitchen,
+        yesValue: 'kitchen',
+        noValue: 'bathroom',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'style_modern',
+        priority: 2,
+        category: 'Style',
+        question: 'Do you prefer modern designs?',
+        hint: 'Clean lines & contemporary look',
+        image: IMG.hero,
+        yesValue: 'modern',
+        noValue: 'traditional',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'color_light',
+        priority: 3,
+        category: 'Color',
+        question: 'Do you prefer light colors?',
+        hint: 'Whites, creams, light grays',
+        image: IMG.bathroom,
+        yesValue: 'light',
+        noValue: 'dark',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'pattern_veining',
+        priority: 4,
+        category: 'Pattern',
+        question: 'Do you like marble-look veining?',
+        hint: 'Natural patterns vs solid colors',
+        image: IMG.remodel,
+        yesValue: 'veined',
+        noValue: 'solid',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'natural_stone',
+        priority: 5,
+        category: 'Material',
+        question: 'Do you prefer natural stone?',
+        hint: 'Granite, marble vs quartz, porcelain',
+        image: IMG.kitchen,
+        yesValue: 'natural',
+        noValue: 'engineered',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'budget_premium',
+        priority: 6,
+        category: 'Budget',
+        question: 'Are you open to premium options?',
+        hint: 'Higher-end materials & finishes',
+        image: IMG.hero,
+        yesValue: 'premium',
+        noValue: 'value',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+      {
+        id: 'timeline',
+        priority: 7,
+        category: 'Timeline',
+        question: 'Ready to start within 3 months?',
+        hint: 'Let us help plan your project',
+        image: IMG.kitchen,
+        yesValue: 'ready_soon',
+        noValue: 'planning',
+        condition: (answers) => answers.user_type === 'homeowner'
+      },
+
+      // ===== PRO PATH (6-7 questions) =====
+      {
+        id: 'pro_type',
+        priority: 1,
+        category: 'Your Business',
+        question: 'Are you a general contractor?',
+        hint: 'Designers & specialists swipe left',
+        image: IMG.kitchen,
+        yesValue: 'contractor',
+        noValue: 'other_pro',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'pro_volume',
+        priority: 2,
+        category: 'Volume',
+        question: 'Do you do 5+ projects per month?',
+        hint: 'High-volume pros get special pricing',
+        image: IMG.hero,
+        yesValue: 'high_volume',
+        noValue: 'standard_volume',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'pro_project_type',
+        priority: 3,
+        category: 'Current Project',
+        question: 'Is your current project a kitchen?',
+        hint: 'Bathroom project? Swipe left',
+        image: IMG.kitchen,
+        yesValue: 'kitchen',
+        noValue: 'bathroom',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'pro_client_budget',
+        priority: 4,
+        category: 'Client Budget',
+        question: 'Does this client have a premium budget?',
+        hint: 'Higher-end materials & finishes',
+        image: IMG.remodel,
+        yesValue: 'premium',
+        noValue: 'value',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'natural_stone_pro',
+        priority: 5,
+        category: 'Material',
+        question: 'Is the client requesting natural stone?',
+        hint: 'Granite, marble vs quartz',
+        image: IMG.bathroom,
+        yesValue: 'natural',
+        noValue: 'engineered',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'pro_fabrication',
+        priority: 6,
+        category: 'Services',
+        question: 'Do you need fabrication services?',
+        hint: 'We cut & finish to your specs',
+        image: IMG.kitchen,
+        yesValue: 'needs_fab',
+        noValue: 'slab_only',
+        condition: (answers) => answers.user_type === 'pro'
+      },
+      {
+        id: 'pro_quick_turnaround',
+        priority: 7,
+        category: 'Timeline',
+        question: 'Need materials within 2 weeks?',
+        hint: 'We prioritize urgent projects',
+        image: IMG.hero,
+        yesValue: 'quick',
+        noValue: 'standard',
+        condition: (answers) => answers.user_type === 'pro'
+      }
+    ];
+
+    // ===== ADAPTIVE ALGORITHM =====
+    const MAX_QUESTIONS = 8; // Limit quiz length
+
+    /**
+     * Get the next question based on current answers
+     * @param {Object} answers - Current answer state
+     * @param {Array} askedIds - IDs of questions already asked
+     * @returns {Object|null} Next question or null if done
+     */
+    function getNextQuestion(answers, askedIds) {
+      // Filter questions that:
+      // 1. Haven't been asked yet
+      // 2. Meet their condition (if any)
+      const available = questionBank.filter(q => {
+        if (askedIds.includes(q.id)) return false;
+        if (q.condition && !q.condition(answers)) return false;
+        return true;
+      });
+
+      if (available.length === 0) return null;
+
+      // Sort by priority (lower = asked sooner)
+      available.sort((a, b) => a.priority - b.priority);
+
+      return available[0];
+    }
+
+    /**
+     * Build the active question queue
+     * Recalculates after each answer
+     */
+    function buildQuestionQueue() {
+      const queue = [];
+      const tempAnswers = { ...answers };
+      const tempAsked = [...askedQuestionIds];
+
+      // Simulate getting next questions up to MAX
+      while (queue.length < MAX_QUESTIONS) {
+        const next = getNextQuestion(tempAnswers, tempAsked);
+        if (!next) break;
+        queue.push(next);
+        tempAsked.push(next.id);
+        // For simulation, assume neutral path (won't affect actual flow)
+      }
+
+      return queue;
+    }
+
+    /**
+     * Calculate total expected questions from current state
+     */
+    function getExpectedTotal() {
+      return Math.min(buildQuestionQueue().length + askedQuestionIds.length, MAX_QUESTIONS);
+    }
+
+    // State
+    let currentQuestion = null;
+    let answers = {};
+    let askedQuestionIds = [];
+    let answerHistory = []; // Track history for undo
+    let touchStartX = 0;
+    let touchCurrentX = 0;
+    let isDragging = false;
+
+    // Start Quiz
+    function startQuiz(preselectedType = null) {
+      document.getElementById('quizIntro').classList.add('hidden');
+      document.getElementById('quizContainer').classList.add('active');
+      document.getElementById('quizHeader').style.display = 'flex';
+
+      // Check if user type was preselected from popup
+      const storedType = localStorage.getItem('sg_quiz_start');
+      if (storedType) {
+        localStorage.removeItem('sg_quiz_start'); // Clear it
+
+        // Set the user type and skip the first question
+        if (storedType === 'pro') {
+          answers.user_type = 'pro';
+        } else {
+          answers.user_type = 'homeowner';
+        }
+        askedQuestionIds.push('user_type');
+        answerHistory.push({ questionId: 'user_type', value: storedType });
+      }
+
+      // Get first question using adaptive algorithm
+      currentQuestion = getNextQuestion(answers, askedQuestionIds);
+      renderCards();
+      updateUndoButton();
+    }
+
+    // Update undo button state
+    function updateUndoButton() {
+      const undoBtn = document.getElementById('undoBtn');
+      undoBtn.disabled = answerHistory.length === 0;
+    }
+
+    // Undo last answer
+    function undoAnswer() {
+      if (answerHistory.length === 0) return;
+
+      const lastAnswer = answerHistory.pop();
+
+      // Remove the answer
+      delete answers[lastAnswer.questionId];
+
+      // Remove from asked list
+      const idx = askedQuestionIds.indexOf(lastAnswer.questionId);
+      if (idx > -1) askedQuestionIds.splice(idx, 1);
+
+      // Restore the previous question
+      currentQuestion = questionBank.find(q => q.id === lastAnswer.questionId);
+
+      renderCards();
+      updateUndoButton();
+
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    }
+
+    // Render Cards using adaptive algorithm
+    function renderCards() {
+      const stack = document.getElementById('cardStack');
+      stack.innerHTML = '';
+
+      if (!currentQuestion) {
+        showResults();
+        return;
+      }
+
+      // Get peek at next question for the "next" card effect
+      const tempAsked = [...askedQuestionIds, currentQuestion.id];
+      const nextQuestion = getNextQuestion(answers, tempAsked);
+
+      // Render current card
+      const card = createCardElement(currentQuestion, true);
+      stack.appendChild(card);
+
+      // Render next card preview (if available and under limit)
+      if (nextQuestion && askedQuestionIds.length < MAX_QUESTIONS - 1) {
+        const nextCard = createCardElement(nextQuestion, false);
+        stack.appendChild(nextCard);
+      }
+
+      updateProgress();
+    }
+
+    // Create a card element
+    function createCardElement(q, isActive) {
+      const card = document.createElement('div');
+      card.className = `quiz-card ${isActive ? 'active' : 'next'}`;
+      card.dataset.id = q.id;
+      card.innerHTML = `
+        <img class="quiz-card-image" src="${q.image}" alt="${q.category}">
+        <div class="quiz-indicator yes">YES ✓</div>
+        <div class="quiz-indicator no">NO ✗</div>
+        <div class="quiz-card-content">
+          <div class="quiz-card-category">${q.category}</div>
+          <h3 class="quiz-card-question">${q.question}</h3>
+          <p class="quiz-card-hint">${q.hint}</p>
+        </div>
+      `;
+
+      if (isActive) {
+        setupCardTouch(card);
+      }
+
+      return card;
+    }
+
+    // Setup Touch and Mouse Handlers
+    function setupCardTouch(card) {
+      // Touch events
+      card.addEventListener('touchstart', handleTouchStart, { passive: true });
+      card.addEventListener('touchmove', handleTouchMove, { passive: false });
+      card.addEventListener('touchend', handleTouchEnd);
+
+      // Mouse events for desktop
+      card.addEventListener('mousedown', handleMouseDown);
+      card.addEventListener('mousemove', handleMouseMove);
+      card.addEventListener('mouseup', handleMouseUp);
+      card.addEventListener('mouseleave', handleMouseUp);
+    }
+
+    function handleTouchStart(e) {
+      touchStartX = e.touches[0].clientX;
+      touchCurrentX = touchStartX;
+      isDragging = true;
+      this.classList.add('dragging');
+      this.style.transition = 'none';
+    }
+
+    function handleTouchMove(e) {
+      if (!isDragging) return;
+      touchCurrentX = e.touches[0].clientX;
+      const deltaX = touchCurrentX - touchStartX;
+
+      if (Math.abs(deltaX) > 10) {
+        e.preventDefault();
+      }
+
+      updateCardPosition(this, deltaX);
+    }
+
+    function handleTouchEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      this.classList.remove('dragging');
+
+      const deltaX = touchCurrentX - touchStartX;
+      finalizeSwipe(this, deltaX);
+    }
+
+    // Mouse handlers for desktop
+    function handleMouseDown(e) {
+      e.preventDefault();
+      touchStartX = e.clientX;
+      touchCurrentX = touchStartX;
+      isDragging = true;
+      this.classList.add('dragging');
+      this.style.transition = 'none';
+      this.style.cursor = 'grabbing';
+    }
+
+    function handleMouseMove(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      touchCurrentX = e.clientX;
+      const deltaX = touchCurrentX - touchStartX;
+      updateCardPosition(this, deltaX);
+    }
+
+    function handleMouseUp(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      this.classList.remove('dragging');
+      this.style.cursor = 'grab';
+
+      const deltaX = touchCurrentX - touchStartX;
+      finalizeSwipe(this, deltaX);
+    }
+
+    // Shared card position update
+    function updateCardPosition(card, deltaX) {
+      const rotation = deltaX * 0.05;
+      card.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+
+      // Show indicators
+      const yesIndicator = card.querySelector('.quiz-indicator.yes');
+      const noIndicator = card.querySelector('.quiz-indicator.no');
+
+      if (deltaX > 30) {
+        yesIndicator.style.opacity = Math.min((deltaX - 30) / 60, 1);
+        noIndicator.style.opacity = 0;
+      } else if (deltaX < -30) {
+        noIndicator.style.opacity = Math.min((-deltaX - 30) / 60, 1);
+        yesIndicator.style.opacity = 0;
+      } else {
+        yesIndicator.style.opacity = 0;
+        noIndicator.style.opacity = 0;
+      }
+    }
+
+    // Shared swipe finalization
+    function finalizeSwipe(card, deltaX) {
+      if (deltaX > 80) {
+        answerYes();
+      } else if (deltaX < -80) {
+        answerNo();
+      } else {
+        // Reset position
+        card.style.transition = 'transform 0.3s ease';
+        card.style.transform = '';
+        card.querySelector('.quiz-indicator.yes').style.opacity = 0;
+        card.querySelector('.quiz-indicator.no').style.opacity = 0;
+      }
+    }
+
+    // Answer Functions
+    function answerYes() {
+      if (!currentQuestion) return;
+
+      // Save to history for undo
+      answerHistory.push({
+        questionId: currentQuestion.id,
+        value: currentQuestion.yesValue
+      });
+
+      // Record the answer
+      answers[currentQuestion.id] = currentQuestion.yesValue;
+      askedQuestionIds.push(currentQuestion.id);
+
+      animateAndNext('right');
+    }
+
+    function answerNo() {
+      if (!currentQuestion) return;
+
+      // Save to history for undo
+      answerHistory.push({
+        questionId: currentQuestion.id,
+        value: currentQuestion.noValue
+      });
+
+      // Record the answer
+      answers[currentQuestion.id] = currentQuestion.noValue;
+      askedQuestionIds.push(currentQuestion.id);
+
+      animateAndNext('left');
+    }
+
+    function animateAndNext(direction) {
+      const card = document.querySelector('.quiz-card.active');
+      if (!card) return;
+
+      card.classList.add(direction === 'right' ? 'swipe-right' : 'swipe-left');
+
+      // Haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(15);
+      }
+
+      setTimeout(() => {
+        updateUndoButton();
+
+        // Check if we've hit the max questions limit
+        if (askedQuestionIds.length >= MAX_QUESTIONS) {
+          currentQuestion = null;
+          showResults();
+          return;
+        }
+
+        // Get next question using adaptive algorithm
+        currentQuestion = getNextQuestion(answers, askedQuestionIds);
+
+        if (!currentQuestion) {
+          showResults();
+        } else {
+          renderCards();
+        }
+      }, 350);
+    }
+
+    // Update Progress - now adaptive
+    function updateProgress() {
+      const asked = askedQuestionIds.length;
+      const total = getExpectedTotal();
+      const current = asked + 1;
+
+      const progress = (current / Math.max(total, current)) * 100;
+      document.getElementById('progressFill').style.width = `${progress}%`;
+      document.getElementById('progressText').textContent = `${current}/${total}`;
+    }
+
+    // Show Results
+    async function showResults() {
+      document.getElementById('quizContainer').classList.remove('active');
+      document.getElementById('quizHeader').style.display = 'none';
+      document.getElementById('quizResults').classList.add('active');
+
+      // Calculate style profile
+      const profile = calculateProfile();
+      document.getElementById('styleName').textContent = profile.name;
+      document.getElementById('styleDesc').textContent = profile.description;
+
+      // Render all recommendations
+      renderRecommendations(profile.recommendations);
+      renderServices(profile.services);
+      renderBlogArticles(profile.blogs);
+      renderExtras(profile.extras);
+
+      // Check auth state and save results
+      await handleQuizResults(profile);
+    }
+
+    // Handle saving quiz results based on auth state
+    async function handleQuizResults(profile) {
+      // Save to localStorage regardless of auth state
+      const quizData = {
+        answers: answers,
+        profile: profile.name,
+        completedAt: new Date().toISOString()
+      };
+      localStorage.setItem('sg_quiz_results', JSON.stringify(quizData));
+
+      // Check if user is logged in
+      try {
+        if (typeof window.SGAuth !== 'undefined' && window.SGAuth.currentUser) {
+          // User is logged in - save to their account
+          await saveQuizToAccount(quizData, window.SGAuth.currentUser);
+          document.getElementById('signedInMsg').style.display = 'flex';
+          document.getElementById('signupPrompt').style.display = 'none';
+        } else if (typeof supabase !== 'undefined') {
+          // Check Supabase directly
+          const supabaseClient = supabase.createClient(
+            'https://jzvijxspnjwfushnolyl.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6dmlqeHNwbmp3ZnVzaG5vbHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2NjA4NzcsImV4cCI6MjA2MDIzNjg3N30.UJ7__T0s4bLcoLCGW3WvuVvfJXFMB6ZmGDA5ApdZ6qU'
+          );
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          if (user) {
+            await saveQuizToAccount(quizData, user);
+            document.getElementById('signedInMsg').style.display = 'flex';
+            document.getElementById('signupPrompt').style.display = 'none';
+          } else {
+            // Not logged in - show signup prompt
+            document.getElementById('signupPrompt').style.display = 'block';
+            document.getElementById('signedInMsg').style.display = 'none';
+          }
+        } else {
+          // No auth available - show signup prompt
+          document.getElementById('signupPrompt').style.display = 'block';
+          document.getElementById('signedInMsg').style.display = 'none';
+        }
+      } catch (err) {
+        console.log('Auth check error:', err);
+        // Show signup prompt on error
+        document.getElementById('signupPrompt').style.display = 'block';
+        document.getElementById('signedInMsg').style.display = 'none';
+      }
+    }
+
+    // Save quiz results to user account
+    async function saveQuizToAccount(quizData, user) {
+      try {
+        const supabaseClient = supabase.createClient(
+          'https://jzvijxspnjwfushnolyl.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6dmlqeHNwbmp3ZnVzaG5vbHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2NjA4NzcsImV4cCI6MjA2MDIzNjg3N30.UJ7__T0s4bLcoLCGW3WvuVvfJXFMB6ZmGDA5ApdZ6qU'
+        );
+
+        // Update user metadata with quiz results
+        const { error } = await supabaseClient.auth.updateUser({
+          data: {
+            quiz_results: quizData
+          }
+        });
+
+        if (error) throw error;
+        console.log('Quiz results saved to account');
+      } catch (err) {
+        console.error('Failed to save quiz results:', err);
+      }
+    }
+
+    // Calculate Style Profile - Streamlined
+    function calculateProfile() {
+      // User type
+      const isPro = answers.user_type === 'pro';
+      const isHomeowner = answers.user_type === 'homeowner';
+
+      // Core preferences (handle both homeowner and pro answer IDs)
+      const isModern = answers.style_modern === 'modern';
+      const isLight = answers.color_light === 'light';
+      const likesVeining = answers.pattern_veining === 'veined';
+      const isNatural = answers.natural_stone === 'natural' || answers.natural_stone_pro === 'natural';
+      const isPremium = answers.budget_premium === 'premium' || answers.pro_client_budget === 'premium';
+      const isKitchen = answers.project_type === 'kitchen' || answers.pro_project_type === 'kitchen';
+      const readySoon = answers.timeline === 'ready_soon' || answers.pro_quick_turnaround === 'quick';
+
+      // Pro-specific answers
+      const isContractor = answers.pro_type === 'contractor';
+      const isHighVolume = answers.pro_volume === 'high_volume';
+      const needsFab = answers.pro_fabrication === 'needs_fab';
+
+      // Debug log
+      console.log('Profile calculation with answers:', answers);
+      console.log('User type:', isPro ? 'Professional' : 'Homeowner');
+
+      let profile = {
+        name: '',
+        description: '',
+        recommendations: [],
+        services: [],
+        blogs: [],
+        extras: []
+      };
+
+      // Base services based on project type
+      const kitchenServices = [
+        { name: 'Kitchen Countertop Installation', desc: 'Professional fabrication & install', icon: '🍳', url: '/services/countertop-installation.html' },
+        { name: 'Kitchen Remodeling', desc: 'Complete kitchen transformation', icon: '🏠', url: '/services/kitchen-remodeling.html' },
+        { name: 'Sink & Faucet Installation', desc: 'Undermount & drop-in sinks', icon: '🚰', url: '/services/sink-installation.html' }
+      ];
+
+      const bathroomServices = [
+        { name: 'Bathroom Vanity Tops', desc: 'Custom vanity countertops', icon: '🛁', url: '/services/bathroom-remodeling.html' },
+        { name: 'Shower & Tub Surrounds', desc: 'Tile and stone shower walls', icon: '🚿', url: '/services/shower-remodeling.html' },
+        { name: 'Bathroom Remodeling', desc: 'Complete bathroom renovation', icon: '🏠', url: '/services/bathroom-remodeling.html' }
+      ];
+
+      // Reliable CDN image base
+      const imgBase = 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/';
+      const img = {
+        kitchen: imgBase + '66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp',
+        hero: imgBase + '666c82cd5e8c79229b330f4b_Surprise%20Granite%20Homepage%20Hero.webp',
+        bathroom: imgBase + '6535e32ca24c9a3fff3024e0_bathroom-remodeling-services-arizona.webp',
+        flooring: imgBase + '6456ce4476abb2e30ffbb1d1_All%20Flooring%20Hero%20Background%20Image.jpeg',
+        remodel: imgBase + '65335c9d645a5e7646ba6841_Bathroom-Remodel-Silverton.webp'
+      };
+
+      // Determine style profile
+      if (isModern && isLight && !likesVeining) {
+        profile.name = 'Modern Minimalist';
+        profile.description = 'You appreciate clean, contemporary aesthetics with solid colors and sleek finishes. Quartz surfaces with minimal pattern are perfect for your style.';
+        profile.recommendations = [
+          { name: 'Arctic White Quartz', type: 'Quartz', url: '/materials/all-countertops/', image: img.bathroom },
+          { name: 'Frost White', type: 'Quartz', url: '/materials/all-countertops/', image: img.remodel },
+          { name: 'Large Format Tile', type: 'Tile', url: '/materials/all-tile/', image: img.bathroom },
+          { name: 'Light Oak Flooring', type: 'Flooring', url: '/materials/flooring/', image: img.flooring }
+        ];
+        profile.blogs = [
+          { title: 'Best Quartz Colors for Modern Kitchens', category: 'Design Tips', url: '/blog/', image: img.kitchen },
+          { title: 'Why Quartz is the Low-Maintenance Choice', category: 'Materials', url: '/blog/', image: img.bathroom }
+        ];
+        profile.extras = [
+          { name: 'Undermount Sink', icon: '🚰', url: '/materials/all-countertops/' },
+          { name: 'Waterfall Edge', icon: '💧', url: '/materials/all-countertops/' },
+          { name: 'White Cabinets', icon: '🗄️', url: '/services/kitchen-remodeling.html' }
+        ];
+      } else if (likesVeining && isLight) {
+        profile.name = 'Marble Enthusiast';
+        profile.description = 'You love the timeless elegance of marble-look surfaces with dramatic veining. Calacatta and Carrara styles speak to your refined taste.';
+        profile.recommendations = [
+          { name: 'Calacatta Classique', type: 'Quartz', url: '/materials/all-countertops/', image: img.remodel },
+          { name: 'Carrara Marble', type: 'Marble', url: '/materials/all-countertops/', image: img.bathroom },
+          { name: 'Marble Mosaic Tile', type: 'Tile', url: '/materials/all-tile/', image: img.remodel },
+          { name: 'White Oak Flooring', type: 'Flooring', url: '/materials/flooring/', image: img.flooring }
+        ];
+        profile.blogs = [
+          { title: 'Marble vs Marble-Look Quartz: Pros & Cons', category: 'Comparison', url: '/blog/', image: img.remodel },
+          { title: 'Caring for Natural Marble Countertops', category: 'Maintenance', url: '/blog/', image: img.bathroom }
+        ];
+        profile.extras = [
+          { name: 'Full-Height Backsplash', icon: '🧱', url: '/materials/all-tile/' },
+          { name: 'Vessel Sink', icon: '🫧', url: '/materials/all-countertops/' },
+          { name: 'Gold Fixtures', icon: '✨', url: '/services/sink-installation.html' }
+        ];
+      } else if (!isLight && isModern) {
+        profile.name = 'Bold & Dramatic';
+        profile.description = 'You prefer striking, dark surfaces that make a statement. Dark quartz or granite with subtle sparkle creates the impact you desire.';
+        profile.recommendations = [
+          { name: 'Black Galaxy Granite', type: 'Granite', url: '/materials/all-countertops/', image: img.hero },
+          { name: 'Midnight Quartz', type: 'Quartz', url: '/materials/all-countertops/', image: img.kitchen },
+          { name: 'Dark Subway Tile', type: 'Tile', url: '/materials/all-tile/', image: img.hero },
+          { name: 'Espresso Flooring', type: 'Flooring', url: '/materials/flooring/', image: img.flooring }
+        ];
+        profile.blogs = [
+          { title: 'Dark Countertops: Making a Bold Statement', category: 'Design Tips', url: '/blog/', image: img.hero },
+          { title: 'Best Lighting for Dark Kitchen Surfaces', category: 'Design Tips', url: '/blog/', image: img.kitchen }
+        ];
+        profile.extras = [
+          { name: 'Matte Black Sink', icon: '⬛', url: '/services/sink-installation.html' },
+          { name: 'LED Under-Cabinet', icon: '💡', url: '/services/kitchen-remodeling.html' },
+          { name: 'Dark Grout Tile', icon: '🧱', url: '/materials/all-tile/' }
+        ];
+      } else if (isNatural && isPremium) {
+        profile.name = 'Natural Luxury';
+        profile.description = 'You appreciate the authenticity and uniqueness of natural stone. Each slab tells its own story, and you value quality craftsmanship.';
+        profile.recommendations = [
+          { name: 'Taj Mahal Quartzite', type: 'Quartzite', url: '/materials/all-countertops/', image: img.kitchen },
+          { name: 'White Fantasy Granite', type: 'Granite', url: '/materials/all-countertops/', image: img.remodel },
+          { name: 'Natural Stone Tile', type: 'Tile', url: '/materials/all-tile/', image: img.bathroom },
+          { name: 'Hardwood Flooring', type: 'Flooring', url: '/materials/flooring/', image: img.flooring }
+        ];
+        profile.blogs = [
+          { title: 'Quartzite vs Quartz: Understanding the Difference', category: 'Materials', url: '/blog/', image: img.kitchen },
+          { title: 'How to Select the Perfect Natural Stone Slab', category: 'Buying Guide', url: '/blog/', image: img.remodel }
+        ];
+        profile.extras = [
+          { name: 'Farm Sink', icon: '🚰', url: '/services/sink-installation.html' },
+          { name: 'Book-Match Slabs', icon: '📖', url: '/materials/all-countertops/' },
+          { name: 'Edge Profiles', icon: '〰️', url: '/services/countertop-installation.html' }
+        ];
+      } else {
+        profile.name = 'Classic & Timeless';
+        profile.description = 'You value enduring style and practical beauty. Traditional patterns and warm tones create a welcoming, comfortable space.';
+        profile.recommendations = [
+          { name: 'Santa Cecilia Granite', type: 'Granite', url: '/materials/all-countertops/', image: img.kitchen },
+          { name: 'Colonial Gold', type: 'Granite', url: '/materials/all-countertops/', image: img.hero },
+          { name: 'Travertine Tile', type: 'Tile', url: '/materials/all-tile/', image: img.bathroom },
+          { name: 'Warm Walnut Floor', type: 'Flooring', url: '/materials/flooring/', image: img.flooring }
+        ];
+        profile.blogs = [
+          { title: 'Timeless Kitchen Design Ideas That Never Go Out of Style', category: 'Design Tips', url: '/blog/', image: img.kitchen },
+          { title: 'How to Match Countertops with Your Cabinets', category: 'Design Tips', url: '/blog/', image: img.hero }
+        ];
+        profile.extras = [
+          { name: 'Double Basin Sink', icon: '🚰', url: '/services/sink-installation.html' },
+          { name: 'Ogee Edge', icon: '〰️', url: '/services/countertop-installation.html' },
+          { name: 'Subway Tile', icon: '🧱', url: '/materials/all-tile/' }
+        ];
+      }
+
+      // ===== PRO-SPECIFIC PROFILE OVERRIDE =====
+      if (isPro) {
+        profile.name = isHighVolume ? 'High-Volume Pro Partner' : 'Trade Professional';
+        profile.description = `Welcome to our pro program! Based on your ${isKitchen ? 'kitchen' : 'bathroom'} project needs, we've selected materials and services tailored for ${isContractor ? 'contractors' : 'design professionals'}.`;
+
+        // Pro services
+        profile.services = [
+          { name: 'Trade Account Setup', desc: 'Special pricing & net terms', icon: '💼', url: '/vendor/signup' },
+          { name: 'Slab Selection', desc: 'Browse our full inventory', icon: '🪨', url: '/materials/all-countertops/' }
+        ];
+
+        if (needsFab) {
+          profile.services.push({ name: 'Fabrication Services', desc: 'Cut to your templates', icon: '⚙️', url: '/services/countertop-installation.html' });
+        }
+        if (isHighVolume) {
+          profile.services.unshift({ name: 'Dedicated Account Rep', desc: 'Priority support for partners', icon: '⭐', url: '/contact-us' });
+        }
+
+        // Pro-focused blogs
+        profile.blogs = [
+          { title: 'Trade Program Benefits & Pricing', category: 'For Pros', url: '/vendor/signup', image: img.kitchen },
+          { title: 'Measuring & Templating Guide', category: 'Pro Resources', url: '/blog/', image: img.hero }
+        ];
+
+        // Pro extras
+        profile.extras = [
+          { name: 'Request Quote', icon: '📋', url: '/get-a-free-estimate.html' },
+          { name: 'View Inventory', icon: '📦', url: '/materials/all-countertops/' },
+          { name: 'Pro Portal', icon: '🔑', url: '/vendor/signup' }
+        ];
+
+        return profile;
+      }
+
+      // ===== HOMEOWNER SERVICES =====
+      profile.services = isKitchen ? [...kitchenServices] : [...bathroomServices];
+
+      // Add consultation for ready-soon projects
+      if (readySoon) {
+        profile.services.unshift({
+          name: 'Free Consultation',
+          desc: 'Schedule your design meeting',
+          icon: '📅',
+          url: '/get-a-free-estimate.html'
+        });
+      }
+
+      return profile;
+    }
+
+    // Render Recommendations
+    function renderRecommendations(recs) {
+      const grid = document.getElementById('recGrid');
+      grid.innerHTML = recs.map(rec => `
+        <a href="${rec.url}" class="quiz-rec-item">
+          <img src="${rec.image}" alt="${rec.name}">
+          <div class="quiz-rec-item-info">
+            <h4>${rec.name}</h4>
+            <span>${rec.type}</span>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    // Render Services
+    function renderServices(services) {
+      const grid = document.getElementById('serviceGrid');
+      grid.innerHTML = services.map(svc => `
+        <a href="${svc.url}" class="quiz-service-item">
+          <div class="quiz-service-icon">${svc.icon}</div>
+          <div class="quiz-service-info">
+            <h4>${svc.name}</h4>
+            <span>${svc.desc}</span>
+          </div>
+          <span class="quiz-service-arrow">&rarr;</span>
+        </a>
+      `).join('');
+    }
+
+    // Render Blog Articles
+    function renderBlogArticles(blogs) {
+      const grid = document.getElementById('blogGrid');
+      grid.innerHTML = blogs.map(blog => `
+        <a href="${blog.url}" class="quiz-blog-item">
+          <img src="${blog.image}" alt="${blog.title}" class="quiz-blog-thumb">
+          <div class="quiz-blog-info">
+            <h4>${blog.title}</h4>
+            <span>${blog.category}</span>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    // Render Extras
+    function renderExtras(extras) {
+      const grid = document.getElementById('extrasGrid');
+      grid.innerHTML = extras.map(extra => `
+        <a href="${extra.url}" class="quiz-extra-item">
+          <span class="quiz-extra-icon">${extra.icon}</span>
+          <span>${extra.name}</span>
+        </a>
+      `).join('');
+    }
+
+    // Restart Quiz
+    function restartQuiz() {
+      // Reset all state for adaptive algorithm
+      currentQuestion = null;
+      answers = {};
+      askedQuestionIds = [];
+      answerHistory = [];
+
+      document.getElementById('quizResults').classList.remove('active');
+      document.getElementById('quizIntro').classList.remove('hidden');
+      document.getElementById('signupPrompt').style.display = 'none';
+      document.getElementById('signedInMsg').style.display = 'none';
+    }
+
+    // Debug: Log the quiz path taken
+    function debugQuizPath() {
+      console.log('=== QUIZ PATH DEBUG ===');
+      console.log('Questions Asked:', askedQuestionIds);
+      console.log('Answers:', answers);
+      console.log('Total Questions:', askedQuestionIds.length);
+      console.log('========================');
+    }
+
+    // Auto-start quiz if user came from popup with pre-selected type
+    document.addEventListener('DOMContentLoaded', function() {
+      const storedType = localStorage.getItem('sg_quiz_start');
+      if (storedType) {
+        // Auto-start the quiz, skipping intro
+        startQuiz();
+      }
+    });
+  </script>
+
+</body>
+</html>
