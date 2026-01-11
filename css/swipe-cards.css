@@ -677,25 +677,25 @@
     to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   }
 
-  /* CARD STACK - Fill space between header and buttons */
+  /* CARD STACK - Fill space between filter chips and action buttons */
   .swipe-card-stack {
     position: absolute;
-    top: 56px; /* Below compact topbar */
+    top: 110px; /* Below topbar (56px) + filter chips (54px) */
     left: 0;
     right: 0;
-    bottom: 100px; /* Above action buttons */
+    bottom: 110px; /* Above action buttons */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
+    padding: 8px 16px;
     overflow: visible;
   }
 
   /* CARDS - Fit within viewport, show all content */
   .swipe-card {
     position: absolute;
-    width: calc(100% - 24px) !important;
-    max-width: 360px !important;
+    width: calc(100% - 32px) !important;
+    max-width: 340px !important;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -709,9 +709,9 @@
     will-change: transform, opacity;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    /* Fit in available space without scrolling */
-    height: calc(100% - 16px);
-    max-height: 520px;
+    /* Fit in available space - height controlled by card stack */
+    height: 100%;
+    max-height: 480px;
     display: flex;
     flex-direction: column;
   }
