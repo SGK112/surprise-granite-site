@@ -52,6 +52,7 @@
     { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
     { label: 'Contact', href: '/contact-us' },
+    { label: 'Book Estimate', href: '/book/', isBook: true },
     { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
     { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
@@ -78,6 +79,7 @@
     { label: 'Contact', href: '/contact-us' },
     { label: 'Financing', href: '/services/home-remodeling-financing-options-in-arizona' },
     { label: 'My Account', href: '/account' },
+    { label: 'Book Free Estimate', href: '/book/', isBook: true },
     { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
     { label: 'For Pros - Join Now', href: '/vendor/signup', isPro: true }
   ];
@@ -147,6 +149,7 @@
       let linkClass = '';
       if (item.isPro) linkClass = ' class="unified-nav-pro-link"';
       else if (item.isQuiz) linkClass = ' class="unified-nav-quiz-link"';
+      else if (item.isBook) linkClass = ' class="unified-nav-book-link"';
 
       return `
         <li>
@@ -163,6 +166,7 @@
       let extraClass = '';
       if (item.isPro) extraClass = ' unified-nav-drawer-pro';
       else if (item.isQuiz) extraClass = ' unified-nav-drawer-quiz';
+      else if (item.isBook) extraClass = ' unified-nav-drawer-book';
       return `
         <a href="${item.href}" class="unified-nav-drawer-item${extraClass}">
           <span>${item.label}</span>

@@ -57,7 +57,7 @@ const COMPANY = {
   name: 'Surprise Granite Marble & Quartz',
   shortName: 'Surprise Granite',
   email: 'info@surprisegranite.com',
-  phone: '(623) 466-2424',
+  phone: '(602) 833-3189',
   address: '15464 W Aster Dr, Surprise, AZ 85379',
   website: 'https://www.surprisegranite.com',
   logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg',
@@ -2134,7 +2134,7 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
 
 // ============ LEAD MANAGEMENT ============
 
-// Submit a new lead (from estimate form)
+// Submit a new lead (from estimate form or booking calendar)
 app.post('/api/leads', async (req, res) => {
   try {
     const {
@@ -2146,7 +2146,12 @@ app.post('/api/leads', async (req, res) => {
       project_timeline,
       project_zip,
       project_details,
-      source = 'website'
+      source = 'website',
+      // Appointment-specific fields
+      appointment_date,
+      appointment_time,
+      project_address,
+      message
     } = req.body;
 
     if (!homeowner_name || !homeowner_email || !project_zip) {
@@ -2184,21 +2189,37 @@ app.post('/api/leads', async (req, res) => {
 
     console.log('New lead received:', leadData);
 
+    // Determine if this is an appointment request
+    const isAppointment = appointment_date || appointment_time || source === 'Booking Calendar';
+    const emailTitle = isAppointment ? 'New Appointment Request!' : 'New Lead Received!';
+    const emailSubject = isAppointment
+      ? `APPOINTMENT: ${homeowner_name} - ${appointment_date || 'Date TBD'} at ${appointment_time || 'Time TBD'}`
+      : `New Lead - ${project_type} in ${project_zip}`;
+
     // Send notification to admin
     const adminEmail = {
-      subject: `New Lead - ${project_type} in ${project_zip}`,
+      subject: emailSubject,
       html: `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
   <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
-      <h1 style="color: #f9cb00; margin: 0; font-size: 20px;">New Lead Received!</h1>
+    <div style="background: linear-gradient(135deg, ${isAppointment ? '#22c55e' : '#1a1a2e'} 0%, ${isAppointment ? '#16a34a' : '#16213e'} 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #fff; margin: 0; font-size: 20px;">${emailTitle}</h1>
     </div>
     <div style="padding: 25px;">
+      ${isAppointment ? `
+      <div style="background: #dcfce7; border-left: 4px solid #22c55e; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0; color: #166534; font-weight: 600; font-size: 16px;">
+          📅 ${appointment_date || 'Date TBD'} at ${appointment_time || 'Time TBD'}
+        </p>
+        ${project_address ? `<p style="margin: 8px 0 0; color: #166534; font-size: 14px;">📍 ${project_address}</p>` : ''}
+      </div>
+      ` : `
       <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
         <p style="margin: 0; color: #2e7d32; font-weight: 600;">Lead Value: $${lead_price}</p>
       </div>
+      `}
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
           <td style="padding: 8px 0; color: #666; font-size: 13px;">Name:</td>
@@ -2206,16 +2227,21 @@ app.post('/api/leads', async (req, res) => {
         </tr>
         <tr>
           <td style="padding: 8px 0; color: #666; font-size: 13px;">Email:</td>
-          <td style="padding: 8px 0; color: #1a1a2e;">${homeowner_email}</td>
+          <td style="padding: 8px 0; color: #1a1a2e;"><a href="mailto:${homeowner_email}">${homeowner_email}</a></td>
         </tr>
         <tr>
           <td style="padding: 8px 0; color: #666; font-size: 13px;">Phone:</td>
-          <td style="padding: 8px 0; color: #1a1a2e;">${homeowner_phone || 'Not provided'}</td>
+          <td style="padding: 8px 0; color: #1a1a2e;"><a href="tel:${homeowner_phone}">${homeowner_phone || 'Not provided'}</a></td>
         </tr>
         <tr>
           <td style="padding: 8px 0; color: #666; font-size: 13px;">Project:</td>
           <td style="padding: 8px 0; color: #1a1a2e;">${project_type}</td>
         </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Source:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${source}</td>
+        </tr>
+        ${!isAppointment ? `
         <tr>
           <td style="padding: 8px 0; color: #666; font-size: 13px;">ZIP Code:</td>
           <td style="padding: 8px 0; color: #1a1a2e;">${project_zip}</td>
@@ -2228,16 +2254,21 @@ app.post('/api/leads', async (req, res) => {
           <td style="padding: 8px 0; color: #666; font-size: 13px;">Timeline:</td>
           <td style="padding: 8px 0; color: #1a1a2e;">${project_timeline || 'Not specified'}</td>
         </tr>
+        ` : ''}
       </table>
-      ${project_details ? `
+      ${(project_details || message) ? `
       <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-        <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase;">Project Details:</p>
-        <p style="margin: 0; color: #1a1a2e; font-size: 14px;">${project_details}</p>
+        <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase;">${isAppointment ? 'Notes' : 'Project Details'}:</p>
+        <p style="margin: 0; color: #1a1a2e; font-size: 14px; white-space: pre-wrap;">${project_details || message}</p>
       </div>
       ` : ''}
       <div style="margin-top: 20px; text-align: center;">
-        <a href="https://www.surprisegranite.com/vendor/dashboard/" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600;">View in Dashboard</a>
+        <a href="mailto:${homeowner_email}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; margin-right: 10px;">Reply to Customer</a>
+        ${homeowner_phone ? `<a href="tel:${homeowner_phone}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600;">Call Now</a>` : ''}
       </div>
+    </div>
+    <div style="background: #f8f9fa; padding: 15px; text-align: center;">
+      <p style="margin: 0; color: #666; font-size: 12px;">Surprise Granite • (602) 833-3189 • info@surprisegranite.com</p>
     </div>
   </div>
 </body>
@@ -3030,9 +3061,181 @@ app.post('/api/leads/assignment-rules', async (req, res) => {
   }
 });
 
+// ============ PRICE SHEET PARSING ============
+
+// Parse PDF price sheet using AI
+app.post('/api/price-sheets/parse', async (req, res) => {
+  try {
+    const { file_url, file_base64, vendor_name } = req.body;
+
+    if (!file_url && !file_base64) {
+      return res.status(400).json({ error: 'File URL or base64 data required' });
+    }
+
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // Prepare the image/PDF content
+    let imageContent;
+    if (file_base64) {
+      imageContent = {
+        type: 'image_url',
+        image_url: { url: `data:application/pdf;base64,${file_base64}` }
+      };
+    } else {
+      imageContent = {
+        type: 'image_url',
+        image_url: { url: file_url }
+      };
+    }
+
+    // Call OpenAI GPT-4 Vision to extract price data
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a price sheet data extraction expert. Extract product/service pricing data from the provided document.
+
+Return a JSON array of products with this structure:
+{
+  "products": [
+    {
+      "sku": "product SKU or code if visible",
+      "name": "product name",
+      "description": "brief description",
+      "category": "one of: countertops, tile, flooring, cabinets, sinks, faucets, labor, fabrication, edges, backsplash, demolition, plumbing, misc",
+      "unit_type": "one of: sqft, lnft, each, hour, job, slab, piece, box, pallet",
+      "cost_price": null,
+      "our_price": 0.00,
+      "vendor_name": "${vendor_name || 'Unknown'}",
+      "attributes": {
+        "color": "",
+        "material": "",
+        "thickness": "",
+        "finish": ""
+      }
+    }
+  ],
+  "vendor_detected": "detected vendor name if visible",
+  "date_detected": "price list date if visible",
+  "notes": "any important notes about the price sheet"
+}
+
+Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be thorough.`
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract all products and pricing from this price sheet:' },
+              imageContent
+            ]
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.1
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI error:', error);
+      return res.status(500).json({ error: 'Failed to parse price sheet' });
+    }
+
+    const result = await response.json();
+    const content = result.choices[0]?.message?.content || '';
+
+    // Parse JSON from response
+    let parsedData;
+    try {
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) ||
+                        content.match(/```\s*([\s\S]*?)\s*```/) ||
+                        [null, content];
+      parsedData = JSON.parse(jsonMatch[1] || content);
+    } catch (e) {
+      console.error('Failed to parse AI response:', content);
+      parsedData = { products: [], error: 'Could not parse response' };
+    }
+
+    res.json({
+      success: true,
+      data: parsedData,
+      raw_response: content
+    });
+
+  } catch (error) {
+    console.error('Price sheet parse error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Parse CSV price sheet
+app.post('/api/price-sheets/parse-csv', async (req, res) => {
+  try {
+    const { csv_data, column_mapping, vendor_name } = req.body;
+
+    if (!csv_data) {
+      return res.status(400).json({ error: 'CSV data required' });
+    }
+
+    // Parse CSV
+    const lines = csv_data.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+    // Default column mapping
+    const mapping = column_mapping || {
+      sku: headers.findIndex(h => h.includes('sku') || h.includes('code') || h.includes('item')),
+      name: headers.findIndex(h => h.includes('name') || h.includes('description') || h.includes('product')),
+      price: headers.findIndex(h => h.includes('price') || h.includes('cost') || h.includes('rate')),
+      unit: headers.findIndex(h => h.includes('unit') || h.includes('uom')),
+      category: headers.findIndex(h => h.includes('category') || h.includes('type'))
+    };
+
+    const products = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+
+      if (values.length < 2) continue;
+
+      products.push({
+        sku: mapping.sku >= 0 ? values[mapping.sku] : null,
+        name: mapping.name >= 0 ? values[mapping.name] : values[0],
+        our_price: mapping.price >= 0 ? parseFloat(values[mapping.price]) || 0 : 0,
+        unit_type: mapping.unit >= 0 ? values[mapping.unit]?.toLowerCase() || 'each' : 'each',
+        category: mapping.category >= 0 ? values[mapping.category] : 'misc',
+        vendor_name: vendor_name || 'CSV Import'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        products,
+        headers,
+        mapping_used: mapping
+      }
+    });
+
+  } catch (error) {
+    console.error('CSV parse error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
   console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
   console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
+  console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
 });

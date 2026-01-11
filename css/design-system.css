@@ -140,15 +140,49 @@
   --sg-transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --sg-transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-  /* ===== Z-INDEX ===== */
-  --sg-z-dropdown: 1000;
-  --sg-z-sticky: 1020;
-  --sg-z-fixed: 1030;
-  --sg-z-modal-backdrop: 1040;
-  --sg-z-modal: 1050;
-  --sg-z-popover: 1060;
-  --sg-z-tooltip: 1070;
+  /* ===== Z-INDEX SCALE ===== */
+  /* Content layers (internal element stacking) */
+  --sg-z-base: 0;
+  --sg-z-content-1: 1;
+  --sg-z-content-2: 2;
+  --sg-z-content-3: 3;
+  --sg-z-content-raised: 5;
+  --sg-z-content-overlay: 10;
+  --sg-z-content-button: 15;
+  --sg-z-content-float: 20;
+
+  /* Component layers (floating UI elements) */
+  --sg-z-dropdown: 50;
+  --sg-z-sticky: 100;
+  --sg-z-fixed: 900;
+  --sg-z-header: 1000;
+
+  /* Navigation system */
+  --sg-z-nav-backdrop: 9998;
+  --sg-z-nav-drawer: 9999;
   --sg-z-nav: 10000;
+  --sg-z-nav-overlay: 10050;
+  --sg-z-nav-menu: 10100;
+
+  /* Modal system */
+  --sg-z-modal-backdrop: 10150;
+  --sg-z-modal: 10200;
+  --sg-z-modal-drawer: 10300;
+
+  /* Floating widgets */
+  --sg-z-widget: 99990;
+  --sg-z-widget-chat: 1000000;
+
+  /* ===== BREAKPOINTS (for reference - CSS vars can't be used in media queries) =====
+   * Standard breakpoints for the project:
+   * - Small Mobile: 480px (max-width: 480px)
+   * - Mobile: 768px (max-width: 768px) - Primary mobile breakpoint
+   * - Tablet: 991px (max-width: 991px) - Tablet/Desktop switch
+   * - Desktop: 1024px+ (min-width: 1024px)
+   * - Large Desktop: 1440px+ (min-width: 1440px)
+   *
+   * Note: 767px and 479px should be avoided - use 768px and 480px for consistency
+   * ============================================================================= */
 
   /* ===== CONTAINER WIDTHS ===== */
   --sg-container-sm: 640px;
@@ -479,7 +513,7 @@ body {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
   .sg-heading-1 {
     font-size: var(--sg-text-4xl);
   }

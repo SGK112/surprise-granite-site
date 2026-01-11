@@ -677,31 +677,34 @@
     to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   }
 
-  /* CARD STACK - Fill space between filter chips and action buttons */
+  /* CARD STACK - Centered between filter chips and action buttons */
   .swipe-card-stack {
     position: absolute;
-    top: 110px; /* Below topbar (56px) + filter chips (54px) */
+    /* Account for: safe-area (~50px) + topbar (56px) + filter chips (60px) = ~166px */
+    top: calc(env(safe-area-inset-top, 0px) + 120px);
     left: 0;
     right: 0;
-    bottom: 110px; /* Above action buttons */
+    /* Account for: action buttons (100px) + safe-area-bottom */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
+    padding: 12px 16px;
     overflow: visible;
   }
 
-  /* CARDS - Fit within viewport, show all content */
+  /* CARDS - Centered in card stack, fills available space */
   .swipe-card {
     position: absolute;
     width: calc(100% - 32px) !important;
-    max-width: 340px !important;
+    max-width: 320px !important;
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     cursor: grab;
     user-select: none;
+    /* Center in parent */
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -709,9 +712,9 @@
     will-change: transform, opacity;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    /* Fit in available space - height controlled by card stack */
-    height: 100%;
-    max-height: 480px;
+    /* Fill available height, max for readability */
+    height: calc(100% - 24px);
+    max-height: 460px;
     display: flex;
     flex-direction: column;
   }

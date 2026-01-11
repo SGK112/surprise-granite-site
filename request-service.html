@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Request Service - Stone Repair & Remodel | Surprise Granite</title>
+  <link rel="canonical" href="https://surprisegranite.com/request-service/"/>
+  <meta name="description" content="Submit a service request for stone repair, countertop replacement, or remodeling. Upload photos of your project for accurate estimates."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/mobile-optimizations.css">
+  <script src="/js/lead-image-upload.js?v=20260110"></script>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cca600;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .back-link:hover { opacity: 0.8; transform: translateX(-3px); }
+
+    .phone-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .phone-header svg { color: #cca600; }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+      padding-top: 40px;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .form-intro {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .form-intro h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #fff 0%, #cca600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .form-intro p {
+      color: rgba(255,255,255,0.7);
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .service-types {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .service-type {
+      background: rgba(255,255,255,0.03);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .service-type:hover {
+      border-color: rgba(204, 166, 0, 0.3);
+      background: rgba(204, 166, 0, 0.05);
+    }
+
+    .service-type.selected {
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.1);
+    }
+
+    .service-type svg {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 8px;
+      color: #cca600;
+    }
+
+    .service-type span {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .form-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #cca600, #f9cb00, #cca600);
+    }
+
+    .form-section {
+      margin-bottom: 28px;
+    }
+
+    .form-section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #cca600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-section-title svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 8px;
+    }
+
+    .form-group label .required {
+      color: #ef4444;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.05);
+    }
+
+    .form-group select {
+      cursor: pointer;
+    }
+
+    .form-group select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .urgency-options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .urgency-option {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .urgency-option:hover {
+      border-color: rgba(204, 166, 0, 0.3);
+    }
+
+    .urgency-option.selected {
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.1);
+    }
+
+    .urgency-option.urgent.selected {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .urgency-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .urgency-desc {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .photo-tips {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .photo-tips h4 {
+      color: #60a5fa;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .photo-tips ul {
+      margin: 0;
+      padding-left: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+    }
+
+    .photo-tips li {
+      margin-bottom: 4px;
+    }
+
+    .submit-section {
+      margin-top: 32px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 18px 32px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, #cca600, #f9cb00);
+      color: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(204, 166, 0, 0.3);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .submit-note {
+      text-align: center;
+      margin-top: 16px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+    }
+
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-overlay.show {
+      display: flex;
+    }
+
+    .success-card {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 48px;
+      text-align: center;
+      max-width: 480px;
+      margin: 20px;
+      animation: successPop 0.5s ease;
+    }
+
+    @keyframes successPop {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { transform: scale(1.02); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    .success-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #22c55e;
+    }
+
+    .success-text {
+      color: rgba(255,255,255,0.8);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .success-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .success-btn {
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .success-btn.primary {
+      background: linear-gradient(135deg, #cca600, #f9cb00);
+      color: #1a1a2e;
+    }
+
+    .success-btn.secondary {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    .success-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .form-footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.85rem;
+    }
+
+    .form-footer a {
+      color: #cca600;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .form-card { padding: 24px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .service-types { grid-template-columns: repeat(2, 1fr); }
+      .form-intro h1 { font-size: 1.6rem; }
+      .urgency-options { flex-direction: column; }
+    }
+  </style>
+
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://surprisegranite.com/request-service/"/>
+  <meta property="og:title" content="Request Service - Stone Repair & Remodel"/>
+  <meta property="og:description" content="Submit a service request with photos for stone repair, countertop replacement, or remodeling."/>
+</head>
+<body>
+  <div class="page-container">
+    <header class="form-header">
+      <a href="/" class="back-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back
+      </a>
+      <a href="tel:+16028333189" class="phone-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+        </svg>
+        (602) 833-3189
+      </a>
+    </header>
+
+    <main class="main-content">
+      <div class="form-wrapper">
+        <div class="form-intro">
+          <h1>Request Stone Repair or Remodel Service</h1>
+          <p>Upload photos of your project and we'll connect you with qualified professionals in your area. Get estimates within 24-48 hours.</p>
+        </div>
+
+        <div class="form-card">
+          <form id="serviceRequestForm">
+            <!-- Service Type Selection -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+                What do you need help with?
+              </div>
+              <div class="service-types" id="serviceTypes">
+                <div class="service-type" data-value="chip-repair">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4"/>
+                  </svg>
+                  <span>Chip/Crack Repair</span>
+                </div>
+                <div class="service-type" data-value="countertop-replacement">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                  </svg>
+                  <span>Countertop Replacement</span>
+                </div>
+                <div class="service-type" data-value="seam-repair">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 12h16"/>
+                    <path d="M4 6h16"/>
+                  </svg>
+                  <span>Seam Repair</span>
+                </div>
+                <div class="service-type" data-value="polish-restore">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                    <circle cx="12" cy="12" r="4"/>
+                  </svg>
+                  <span>Polish & Restore</span>
+                </div>
+                <div class="service-type" data-value="stain-removal">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  </svg>
+                  <span>Stain Removal</span>
+                </div>
+                <div class="service-type" data-value="other">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                  </svg>
+                  <span>Other</span>
+                </div>
+              </div>
+              <input type="hidden" name="serviceType" id="serviceType" required>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Your Contact Information
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>First Name <span class="required">*</span></label>
+                  <input type="text" name="firstName" id="firstName" required placeholder="John">
+                </div>
+                <div class="form-group">
+                  <label>Last Name <span class="required">*</span></label>
+                  <input type="text" name="lastName" id="lastName" required placeholder="Smith">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Email Address <span class="required">*</span></label>
+                <input type="email" name="email" id="email" required placeholder="john@example.com">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Phone Number <span class="required">*</span></label>
+                  <input type="tel" name="phone" id="phone" required placeholder="(602) 555-1234">
+                </div>
+                <div class="form-group">
+                  <label>ZIP Code <span class="required">*</span></label>
+                  <input type="text" name="zipCode" id="zipCode" required pattern="[0-9]{5}" maxlength="5" placeholder="85374">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" name="city" id="city" placeholder="Surprise">
+              </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Project Details
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Stone/Material Type</label>
+                  <select name="materialType" id="materialType">
+                    <option value="">Select material...</option>
+                    <option value="granite">Granite</option>
+                    <option value="quartz">Quartz</option>
+                    <option value="marble">Marble</option>
+                    <option value="quartzite">Quartzite</option>
+                    <option value="soapstone">Soapstone</option>
+                    <option value="travertine">Travertine</option>
+                    <option value="tile">Tile</option>
+                    <option value="unknown">Not sure</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Location in Home</label>
+                  <select name="location" id="location">
+                    <option value="">Select location...</option>
+                    <option value="kitchen">Kitchen</option>
+                    <option value="bathroom">Bathroom</option>
+                    <option value="outdoor">Outdoor/BBQ</option>
+                    <option value="bar">Bar/Entertainment</option>
+                    <option value="laundry">Laundry Room</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Describe the Issue or Project</label>
+                <textarea name="description" id="description" rows="4" placeholder="Please describe the damage, issue, or what you're looking to accomplish..."></textarea>
+              </div>
+            </div>
+
+            <!-- Urgency -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                How soon do you need service?
+              </div>
+              <div class="urgency-options" id="urgencyOptions">
+                <div class="urgency-option urgent" data-value="emergency">
+                  <span class="urgency-label">Emergency</span>
+                  <span class="urgency-desc">Within 24-48 hours</span>
+                </div>
+                <div class="urgency-option selected" data-value="soon">
+                  <span class="urgency-label">Soon</span>
+                  <span class="urgency-desc">Within 1-2 weeks</span>
+                </div>
+                <div class="urgency-option" data-value="flexible">
+                  <span class="urgency-label">Flexible</span>
+                  <span class="urgency-desc">Just getting quotes</span>
+                </div>
+              </div>
+              <input type="hidden" name="urgency" id="urgency" value="soon">
+            </div>
+
+            <!-- Photo Upload -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Upload Project Photos
+              </div>
+              <div class="photo-tips">
+                <h4>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  Tips for better estimates:
+                </h4>
+                <ul>
+                  <li>Take photos in good lighting</li>
+                  <li>Include close-ups of any damage or issues</li>
+                  <li>Show the full countertop/surface area</li>
+                  <li>Include photos from multiple angles</li>
+                </ul>
+              </div>
+              <div id="service-image-upload"></div>
+            </div>
+
+            <!-- Submit -->
+            <div class="submit-section">
+              <button type="submit" class="btn-submit" id="submitBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Submit Service Request
+              </button>
+              <p class="submit-note">We'll match you with qualified pros in your area. No spam, ever.</p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <footer class="form-footer">
+      <p>Your information is secure and will never be shared without your consent. <a href="/legal/privacy-policy">Privacy Policy</a></p>
+    </footer>
+  </div>
+
+  <!-- Success Overlay -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 class="success-title">Request Submitted!</h2>
+      <p class="success-text">We've received your service request with <span id="photoCount">0</span> photos. A qualified professional will contact you within 24-48 hours.</p>
+      <div class="success-actions">
+        <a href="tel:+16028333189" class="success-btn primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          Call Now
+        </a>
+        <a href="/" class="success-btn secondary">Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize image upload
+    let serviceImageUpload;
+    if (typeof LeadImageUpload !== 'undefined') {
+      serviceImageUpload = new LeadImageUpload({
+        containerId: 'service-image-upload',
+        maxImages: 10,
+        maxFileSizeMB: 10,
+        onImagesChange: (images) => {
+          console.log('Service images updated:', images.length);
+        }
+      });
+      window.leadImageUpload = serviceImageUpload;
+    }
+
+    // Service type selection
+    document.querySelectorAll('.service-type').forEach(type => {
+      type.addEventListener('click', function() {
+        document.querySelectorAll('.service-type').forEach(t => t.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('serviceType').value = this.dataset.value;
+      });
+    });
+
+    // Urgency selection
+    document.querySelectorAll('.urgency-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.urgency-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('urgency').value = this.dataset.value;
+      });
+    });
+
+    // Phone formatting
+    document.getElementById('phone').addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length >= 6) {
+        value = '(' + value.substring(0,3) + ') ' + value.substring(3,6) + '-' + value.substring(6,10);
+      } else if (value.length >= 3) {
+        value = '(' + value.substring(0,3) + ') ' + value.substring(3);
+      }
+      e.target.value = value;
+    });
+
+    // Form submission
+    document.getElementById('serviceRequestForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loader"></span> Processing...';
+
+      // Upload images
+      let imageUrls = [];
+      if (serviceImageUpload && serviceImageUpload.images.length > 0) {
+        submitBtn.innerHTML = '<span class="loader"></span> Uploading photos...';
+        try {
+          imageUrls = await serviceImageUpload.uploadImages();
+        } catch (error) {
+          console.log('Image upload error:', error);
+        }
+      }
+
+      submitBtn.innerHTML = '<span class="loader"></span> Submitting...';
+
+      const formData = {
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        name: document.getElementById('firstName').value.trim() + ' ' + document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        zipCode: document.getElementById('zipCode').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        serviceType: document.getElementById('serviceType').value,
+        materialType: document.getElementById('materialType').value,
+        location: document.getElementById('location').value,
+        description: document.getElementById('description').value.trim(),
+        urgency: document.getElementById('urgency').value,
+        imageUrls: imageUrls,
+        source: 'service-request-form',
+        timestamp: new Date().toISOString()
+      };
+
+      // Submit to leads API with images
+      try {
+        await fetch('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            homeowner_name: formData.name,
+            homeowner_email: formData.email,
+            homeowner_phone: formData.phone,
+            project_type: formData.serviceType,
+            project_budget: formData.urgency === 'emergency' ? 'urgent' : 'standard',
+            project_timeline: formData.urgency,
+            project_zip: formData.zipCode,
+            project_city: formData.city,
+            project_state: 'AZ',
+            project_details: `Service: ${formData.serviceType}\nMaterial: ${formData.materialType}\nLocation: ${formData.location}\n\n${formData.description}`,
+            image_urls: imageUrls,
+            source: 'service-request-form'
+          })
+        });
+      } catch (error) {
+        console.log('API error:', error);
+      }
+
+      // Submit to Supabase
+      try {
+        await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            zip_code: formData.zipCode,
+            project_type: formData.serviceType,
+            timeline: formData.urgency,
+            message: formData.description,
+            image_urls: imageUrls,
+            images: imageUrls.map((url, i) => ({ url, order: i })),
+            source: formData.source,
+            form_name: 'service-request',
+            page_url: window.location.href,
+            raw_data: formData
+          })
+        });
+      } catch (error) {
+        console.log('Supabase error:', error);
+      }
+
+      // Show success
+      document.getElementById('photoCount').textContent = imageUrls.length;
+      document.getElementById('successOverlay').classList.add('show');
+    });
+  </script>
+  <!-- Unified Lead Capture Form -->
+  <link rel="stylesheet" href="/css/swipe-form.css?v=20260110c">
+  <script src="/js/swipe-form.js?v=20260110c"></script>
+</body>
+</html>

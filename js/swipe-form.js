@@ -1,6 +1,6 @@
 /**
- * Swipe Form - Tinder-style Lead Capture
- * Multi-step form with swipe card navigation
+ * Swipe Form - Popup Modal Lead Capture
+ * Smart algorithm that adapts questions based on previous answers
  */
 
 (function() {
@@ -8,11 +8,14 @@
 
   // Configuration
   const API_URL = 'https://surprise-granite-email-api.onrender.com';
+  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
   // State
   let currentStep = 0;
   let formData = {
     category: '',
+    details: {},
     firstName: '',
     lastName: '',
     email: '',
@@ -24,32 +27,336 @@
     sourcePage: window.location.href
   };
 
-  // Categories
+  // Categories with SVG icons
   const categories = [
-    { id: 'countertops', name: 'Countertops', icon: '🪨' },
-    { id: 'kitchen', name: 'Kitchen Remodel', icon: '🍳' },
-    { id: 'bathroom', name: 'Bathroom Remodel', icon: '🛁' },
-    { id: 'flooring', name: 'Flooring', icon: '🏠' },
-    { id: 'tile', name: 'Tile & Backsplash', icon: '🔲' },
-    { id: 'cabinets', name: 'Cabinets', icon: '🚪' }
+    {
+      id: 'kitchen',
+      name: 'Kitchen Remodel',
+      desc: 'Countertops, cabinets & more',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/></svg>'
+    },
+    {
+      id: 'bathroom',
+      name: 'Bathroom Remodel',
+      desc: 'Vanities, tile & fixtures',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/><path d="M6 12V5a2 2 0 012-2h1"/><circle cx="8" cy="8" r="1"/></svg>'
+    },
+    {
+      id: 'countertops',
+      name: 'Countertops Only',
+      desc: 'Granite, quartz & marble',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="4" rx="1"/><path d="M4 10v8h16v-8"/><path d="M8 14h8"/></svg>'
+    },
+    {
+      id: 'flooring',
+      name: 'Flooring',
+      desc: 'Tile, vinyl & hardwood',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>'
+    },
+    {
+      id: 'full-home',
+      name: 'Full Home',
+      desc: 'Multiple rooms & areas',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'
+    },
+    {
+      id: 'commercial',
+      name: 'Commercial',
+      desc: 'Restaurant, office & retail',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h2M9 10h2M9 14h2M9 18h2M13 6h2M13 10h2M13 14h2M13 18h2"/></svg>'
+    },
+    {
+      id: 'other',
+      name: 'Other',
+      desc: 'Something else or not sure yet',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>'
+    }
   ];
 
-  // Steps configuration
-  const steps = [
-    { id: 'category', title: 'What can we help with?', subtitle: 'Select your project type' },
-    { id: 'contact', title: 'How can we reach you?', subtitle: 'We\'ll never share your info' },
-    { id: 'images', title: 'Show us your space', subtitle: 'Upload photos (optional)' },
-    { id: 'message', title: 'Tell us more', subtitle: 'Describe your project' },
-    { id: 'success', title: 'Request Sent!', subtitle: '' }
-  ];
+  // ============================================
+  // SMART QUESTION ALGORITHM
+  // Questions adapt based on category selection
+  // ============================================
+  const categoryQuestions = {
+    kitchen: {
+      title: "Tell us about your kitchen project",
+      subtitle: "Select all that apply",
+      questions: [
+        {
+          id: 'scope',
+          label: 'What do you need?',
+          type: 'multi',
+          options: [
+            { id: 'countertops', label: 'Countertops', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="8" width="20" height="4" rx="1"/><path d="M4 12v6h16v-6"/></svg>' },
+            { id: 'cabinets', label: 'Cabinets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18M12 4v16"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/></svg>' },
+            { id: 'backsplash', label: 'Backsplash', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="12" rx="1"/><path d="M3 9h18M9 3v12M15 3v12"/></svg>' },
+            { id: 'flooring', label: 'Flooring', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' },
+            { id: 'full-remodel', label: 'Full Remodel', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>' }
+          ]
+        },
+        {
+          id: 'material',
+          label: 'Preferred countertop material?',
+          type: 'single',
+          options: [
+            { id: 'quartz', label: 'Quartz' },
+            { id: 'granite', label: 'Granite' },
+            { id: 'marble', label: 'Marble' },
+            { id: 'quartzite', label: 'Quartzite' },
+            { id: 'not-sure', label: 'Not sure yet' }
+          ]
+        },
+        {
+          id: 'timeline',
+          label: 'When do you want to start?',
+          type: 'single',
+          options: [
+            { id: 'asap', label: 'As soon as possible' },
+            { id: '1-month', label: 'Within 1 month' },
+            { id: '1-3-months', label: '1-3 months' },
+            { id: '3-6-months', label: '3-6 months' },
+            { id: 'planning', label: 'Just planning' }
+          ]
+        }
+      ]
+    },
+    bathroom: {
+      title: "Tell us about your bathroom project",
+      subtitle: "Select all that apply",
+      questions: [
+        {
+          id: 'scope',
+          label: 'What do you need?',
+          type: 'multi',
+          options: [
+            { id: 'vanity', label: 'Vanity/Countertop', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M8 8V6a4 4 0 018 0v2"/><circle cx="12" cy="13" r="2"/></svg>' },
+            { id: 'shower', label: 'Shower/Tub', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4v16h16"/><path d="M4 10h12v10"/><circle cx="8" cy="6" r="2"/></svg>' },
+            { id: 'tile', label: 'Tile & Flooring', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' },
+            { id: 'fixtures', label: 'Fixtures', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M12 12v8M8 20h8"/></svg>' },
+            { id: 'full-remodel', label: 'Full Remodel', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>' }
+          ]
+        },
+        {
+          id: 'bathroom-type',
+          label: 'Which bathroom?',
+          type: 'single',
+          options: [
+            { id: 'master', label: 'Master Bath' },
+            { id: 'guest', label: 'Guest Bath' },
+            { id: 'half', label: 'Half Bath' },
+            { id: 'multiple', label: 'Multiple' }
+          ]
+        },
+        {
+          id: 'timeline',
+          label: 'When do you want to start?',
+          type: 'single',
+          options: [
+            { id: 'asap', label: 'As soon as possible' },
+            { id: '1-month', label: 'Within 1 month' },
+            { id: '1-3-months', label: '1-3 months' },
+            { id: 'planning', label: 'Just planning' }
+          ]
+        }
+      ]
+    },
+    countertops: {
+      title: "Tell us about your countertops",
+      subtitle: "Help us understand your project",
+      questions: [
+        {
+          id: 'location',
+          label: 'Where are the countertops?',
+          type: 'multi',
+          options: [
+            { id: 'kitchen', label: 'Kitchen', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>' },
+            { id: 'bathroom', label: 'Bathroom', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/></svg>' },
+            { id: 'island', label: 'Island', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="16" height="8" rx="1"/><path d="M8 16v4M16 16v4"/></svg>' },
+            { id: 'outdoor', label: 'Outdoor', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>' },
+            { id: 'bar', label: 'Bar/Entertainment', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l4 6 4-6"/><path d="M12 8v8"/><path d="M8 22h8"/><path d="M10 16h4"/></svg>' }
+          ]
+        },
+        {
+          id: 'material',
+          label: 'Preferred material?',
+          type: 'single',
+          options: [
+            { id: 'quartz', label: 'Quartz' },
+            { id: 'granite', label: 'Granite' },
+            { id: 'marble', label: 'Marble' },
+            { id: 'quartzite', label: 'Quartzite' },
+            { id: 'not-sure', label: 'Not sure yet' }
+          ]
+        },
+        {
+          id: 'service',
+          label: 'What service do you need?',
+          type: 'single',
+          options: [
+            { id: 'replace', label: 'Replace existing' },
+            { id: 'new-construction', label: 'New construction' },
+            { id: 'repair', label: 'Repair/Refinish' }
+          ]
+        }
+      ]
+    },
+    flooring: {
+      title: "Tell us about your flooring project",
+      subtitle: "Select all that apply",
+      questions: [
+        {
+          id: 'rooms',
+          label: 'Which rooms?',
+          type: 'multi',
+          options: [
+            { id: 'kitchen', label: 'Kitchen', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>' },
+            { id: 'bathroom', label: 'Bathroom', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/></svg>' },
+            { id: 'living', label: 'Living Areas', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v6H3v-6a1 1 0 011-1z"/><path d="M6 12V8a2 2 0 012-2h8a2 2 0 012 2v4"/></svg>' },
+            { id: 'bedroom', label: 'Bedrooms', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10v10h18V10"/><path d="M3 10l9-6 9 6"/><rect x="7" y="14" width="10" height="6"/></svg>' },
+            { id: 'whole-house', label: 'Whole House', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>' }
+          ]
+        },
+        {
+          id: 'material',
+          label: 'Preferred material?',
+          type: 'single',
+          options: [
+            { id: 'tile', label: 'Tile' },
+            { id: 'lvp', label: 'Luxury Vinyl (LVP)' },
+            { id: 'hardwood', label: 'Hardwood' },
+            { id: 'laminate', label: 'Laminate' },
+            { id: 'not-sure', label: 'Not sure yet' }
+          ]
+        },
+        {
+          id: 'sqft',
+          label: 'Approximate square footage?',
+          type: 'single',
+          options: [
+            { id: 'under-500', label: 'Under 500 sq ft' },
+            { id: '500-1000', label: '500-1,000 sq ft' },
+            { id: '1000-2000', label: '1,000-2,000 sq ft' },
+            { id: 'over-2000', label: 'Over 2,000 sq ft' },
+            { id: 'not-sure', label: 'Not sure' }
+          ]
+        }
+      ]
+    },
+    'full-home': {
+      title: "Tell us about your home project",
+      subtitle: "Select all areas you want to remodel",
+      questions: [
+        {
+          id: 'areas',
+          label: 'Which areas?',
+          type: 'multi',
+          options: [
+            { id: 'kitchen', label: 'Kitchen', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>' },
+            { id: 'bathrooms', label: 'Bathrooms', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"/></svg>' },
+            { id: 'flooring', label: 'Flooring', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' },
+            { id: 'living', label: 'Living Spaces', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h16a1 1 0 011 1v6H3v-6a1 1 0 011-1z"/></svg>' },
+            { id: 'outdoor', label: 'Outdoor', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2"/></svg>' }
+          ]
+        },
+        {
+          id: 'priority',
+          label: 'What\'s your top priority?',
+          type: 'single',
+          options: [
+            { id: 'kitchen', label: 'Kitchen first' },
+            { id: 'bathrooms', label: 'Bathrooms first' },
+            { id: 'flooring', label: 'Flooring first' },
+            { id: 'all-together', label: 'All at once' }
+          ]
+        },
+        {
+          id: 'timeline',
+          label: 'When do you want to start?',
+          type: 'single',
+          options: [
+            { id: 'asap', label: 'As soon as possible' },
+            { id: '1-3-months', label: '1-3 months' },
+            { id: '3-6-months', label: '3-6 months' },
+            { id: 'planning', label: 'Just planning' }
+          ]
+        }
+      ]
+    },
+    commercial: {
+      title: "Tell us about your commercial project",
+      subtitle: "Help us understand your business needs",
+      questions: [
+        {
+          id: 'business-type',
+          label: 'Type of business?',
+          type: 'single',
+          options: [
+            { id: 'restaurant', label: 'Restaurant/Bar', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>' },
+            { id: 'office', label: 'Office', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h2M9 10h2M9 14h2M13 6h2M13 10h2M13 14h2"/></svg>' },
+            { id: 'retail', label: 'Retail Store', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>' },
+            { id: 'medical', label: 'Medical/Dental', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'other', label: 'Other' }
+          ]
+        },
+        {
+          id: 'scope',
+          label: 'What do you need?',
+          type: 'multi',
+          options: [
+            { id: 'countertops', label: 'Countertops' },
+            { id: 'flooring', label: 'Flooring' },
+            { id: 'reception', label: 'Reception Area' },
+            { id: 'restrooms', label: 'Restrooms' },
+            { id: 'full-buildout', label: 'Full Buildout' }
+          ]
+        },
+        {
+          id: 'timeline',
+          label: 'Project timeline?',
+          type: 'single',
+          options: [
+            { id: 'urgent', label: 'Urgent (< 2 weeks)' },
+            { id: '1-month', label: 'Within 1 month' },
+            { id: '1-3-months', label: '1-3 months' },
+            { id: 'planning', label: 'Planning phase' }
+          ]
+        }
+      ]
+    },
+    other: {
+      title: "Tell us more",
+      subtitle: "We'll help you figure out the best solution",
+      questions: [
+        {
+          id: 'project-type',
+          label: 'What best describes your project?',
+          type: 'single',
+          options: [
+            { id: 'repair', label: 'Repair/Fix existing', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>' },
+            { id: 'replace', label: 'Replace/Upgrade', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4-3-9s1.34-9 3-9m-9 9a9 9 0 019-9"/></svg>' },
+            { id: 'new', label: 'New construction', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>' },
+            { id: 'consultation', label: 'Just need advice', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>' }
+          ]
+        },
+        {
+          id: 'timeline',
+          label: 'When do you need this done?',
+          type: 'single',
+          options: [
+            { id: 'asap', label: 'As soon as possible' },
+            { id: '1-month', label: 'Within 1 month' },
+            { id: 'flexible', label: 'Flexible/No rush' }
+          ]
+        }
+      ]
+    }
+  };
 
   // Initialize
   function init() {
-    // Check if swipe form elements exist or create them
     if (!document.querySelector('.swipe-form-container')) {
       createFormHTML();
     }
-
     bindEvents();
     updateProgress();
   }
@@ -59,284 +366,361 @@
     const container = document.createElement('div');
     container.className = 'swipe-form-container hidden';
     container.innerHTML = `
-      <!-- Header -->
-      <div class="swipe-form-header">
-        <button class="swipe-form-close" onclick="SwipeForm.close()">×</button>
-        <span class="swipe-form-title">Get Free Estimate</span>
-        <span class="swipe-form-step-indicator">Step <span id="current-step">1</span> of 4</span>
-      </div>
+      <div class="swipe-form-card-wrapper">
+        <div class="swipe-form-modal">
+          <!-- Close Button -->
+          <button class="swipe-form-close" onclick="SwipeForm.close()">&times;</button>
 
-      <!-- Progress Bar -->
-      <div class="swipe-progress-bar">
-        <div class="swipe-progress-fill" id="progress-fill"></div>
-      </div>
-
-      <!-- Cards Stack -->
-      <div class="swipe-cards-stack">
-
-        <!-- Card 1: Category Selection -->
-        <div class="swipe-form-card active" data-step="0">
-          <div class="swipe-card-icon">📋</div>
-          <h2 class="swipe-card-title">What can we help with?</h2>
-          <p class="swipe-card-subtitle">Select your project type</p>
-
-          <div class="swipe-category-grid" id="category-grid">
-            ${categories.map(cat => `
-              <button class="swipe-category-btn" data-category="${cat.id}">
-                <div class="category-icon">${cat.icon}</div>
-                <div class="category-name">${cat.name}</div>
-              </button>
-            `).join('')}
-          </div>
-
-          <div class="swipe-nav-buttons">
-            <button class="swipe-btn swipe-btn-next" id="btn-next-0" disabled onclick="SwipeForm.next()">
-              Continue →
-            </button>
-          </div>
-        </div>
-
-        <!-- Card 2: Contact Info -->
-        <div class="swipe-form-card" data-step="1">
-          <div class="swipe-card-icon">📱</div>
-          <h2 class="swipe-card-title">How can we reach you?</h2>
-          <p class="swipe-card-subtitle">We'll never share your information</p>
-
-          <div class="swipe-input-group swipe-input-row">
-            <div>
-              <label class="swipe-input-label">First Name *</label>
-              <input type="text" class="swipe-input" id="input-firstName" placeholder="John" required>
+          <!-- Branded Logo -->
+          <div class="swipe-form-logo">
+            <div class="swipe-logo-icon">
+              <svg viewBox="0 0 121 125" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#ffdb00"/>
+                <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#ffdb00"/>
+                <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#ffdb00"/>
+                <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#ffdb00"/>
+              </svg>
             </div>
-            <div>
-              <label class="swipe-input-label">Last Name *</label>
-              <input type="text" class="swipe-input" id="input-lastName" placeholder="Smith" required>
+            <div class="swipe-logo-text">
+              <span class="swipe-logo-name">Surprise Granite</span>
+              <span class="swipe-logo-tagline">Marble & Quartz</span>
             </div>
           </div>
 
-          <div class="swipe-input-group">
-            <label class="swipe-input-label">Email *</label>
-            <input type="email" class="swipe-input" id="input-email" placeholder="john@example.com" required>
+          <!-- Header -->
+          <div class="swipe-form-header">
+            <span class="swipe-form-title">Get Your Free Estimate</span>
+            <span class="swipe-form-step-indicator">Step <span id="swipe-current-step">1</span> of <span id="swipe-total-steps">5</span></span>
           </div>
 
-          <div class="swipe-input-group">
-            <label class="swipe-input-label">Phone *</label>
-            <input type="tel" class="swipe-input" id="input-phone" placeholder="(480) 555-1234" required>
+          <!-- Progress Bar -->
+          <div class="swipe-progress-bar">
+            <div class="swipe-progress-fill" id="swipe-progress-fill"></div>
           </div>
 
-          <div class="swipe-input-group">
-            <label class="swipe-input-label">ZIP Code *</label>
-            <input type="text" class="swipe-input" id="input-zip" placeholder="85374" maxlength="5" required>
+          <!-- Step 1: Category Selection -->
+          <div class="swipe-step active" data-step="0">
+            <h2 class="swipe-step-title">What's your project?</h2>
+            <p class="swipe-step-subtitle">Choose the option that best describes your project</p>
+
+            <div class="swipe-category-list" id="swipe-category-list">
+              ${categories.map(cat => `
+                <button class="swipe-category-btn" data-category="${cat.id}" type="button">
+                  <div class="swipe-category-icon">${cat.icon}</div>
+                  <div class="swipe-category-text">
+                    <div class="swipe-category-name">${cat.name}</div>
+                    <div class="swipe-category-desc">${cat.desc}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+
+            <div class="swipe-nav-buttons">
+              <button class="swipe-btn swipe-btn-next" id="swipe-btn-next-0" disabled onclick="SwipeForm.next()">Continue</button>
+            </div>
           </div>
 
-          <div class="swipe-nav-buttons">
-            <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">← Back</button>
-            <button class="swipe-btn swipe-btn-next" id="btn-next-1" disabled onclick="SwipeForm.next()">Continue →</button>
+          <!-- Step 2: Dynamic Questions (populated based on category) -->
+          <div class="swipe-step" data-step="1">
+            <div id="swipe-dynamic-questions"></div>
+            <div class="swipe-nav-buttons">
+              <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">Back</button>
+              <button class="swipe-btn swipe-btn-next" id="swipe-btn-next-1" onclick="SwipeForm.next()">Continue</button>
+            </div>
           </div>
+
+          <!-- Step 3: Contact Info -->
+          <div class="swipe-step" data-step="2">
+            <h2 class="swipe-step-title">Your contact info</h2>
+            <p class="swipe-step-subtitle">We'll reach out within 24 hours</p>
+
+            <div class="swipe-input-group swipe-input-row">
+              <div>
+                <label class="swipe-input-label">First Name *</label>
+                <input type="text" class="swipe-input" id="swipe-firstName" placeholder="John" autocomplete="given-name">
+              </div>
+              <div>
+                <label class="swipe-input-label">Last Name *</label>
+                <input type="text" class="swipe-input" id="swipe-lastName" placeholder="Smith" autocomplete="family-name">
+              </div>
+            </div>
+
+            <div class="swipe-input-group">
+              <label class="swipe-input-label">Email *</label>
+              <input type="email" class="swipe-input" id="swipe-email" placeholder="john@example.com" autocomplete="email">
+            </div>
+
+            <div class="swipe-input-group swipe-input-row">
+              <div>
+                <label class="swipe-input-label">Phone *</label>
+                <input type="tel" class="swipe-input" id="swipe-phone" placeholder="(480) 555-1234" autocomplete="tel">
+              </div>
+              <div>
+                <label class="swipe-input-label">ZIP Code *</label>
+                <input type="text" class="swipe-input" id="swipe-zip" placeholder="85374" maxlength="5" autocomplete="postal-code">
+              </div>
+            </div>
+
+            <div class="swipe-nav-buttons">
+              <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">Back</button>
+              <button class="swipe-btn swipe-btn-next" id="swipe-btn-next-2" disabled onclick="SwipeForm.next()">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Photo Upload -->
+          <div class="swipe-step" data-step="3">
+            <h2 class="swipe-step-title">Add project photos</h2>
+            <p class="swipe-step-subtitle">Helps us give accurate estimates (optional)</p>
+
+            <div class="swipe-upload-zone" id="swipe-upload-zone">
+              <div class="swipe-upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="swipe-upload-text">Tap to upload photos</div>
+              <div class="swipe-upload-hint">JPG, PNG up to 10MB each</div>
+              <input type="file" class="swipe-upload-input" id="swipe-upload-input" multiple accept="image/*">
+            </div>
+
+            <div class="swipe-preview-grid" id="swipe-preview-grid"></div>
+
+            <div class="swipe-nav-buttons">
+              <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">Back</button>
+              <button class="swipe-btn swipe-btn-next" onclick="SwipeForm.next()">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 5: Message -->
+          <div class="swipe-step" data-step="4">
+            <h2 class="swipe-step-title">Project details</h2>
+            <p class="swipe-step-subtitle">Any additional info helps</p>
+
+            <div class="swipe-input-group">
+              <label class="swipe-input-label">Tell us about your project</label>
+              <textarea class="swipe-input swipe-textarea" id="swipe-message" placeholder="Dimensions, materials, timeline, budget..."></textarea>
+            </div>
+
+            <div class="swipe-nav-buttons">
+              <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">Back</button>
+              <button class="swipe-btn swipe-btn-submit" id="swipe-btn-submit" onclick="SwipeForm.submit()">Submit Request</button>
+            </div>
+          </div>
+
+          <!-- Success -->
+          <div class="swipe-step" data-step="5">
+            <div class="swipe-success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h2 class="swipe-success-title">Request Sent!</h2>
+            <p class="swipe-success-message">Thank you! One of our experts will contact you within 24 hours.</p>
+            <div class="swipe-success-actions">
+              <a href="tel:+16028333189" class="swipe-btn swipe-btn-phone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                </svg>
+                Call (602) 833-3189
+              </a>
+              <button class="swipe-btn swipe-btn-close" onclick="SwipeForm.close()">Done</button>
+            </div>
+          </div>
+
         </div>
-
-        <!-- Card 3: Image Upload -->
-        <div class="swipe-form-card" data-step="2">
-          <div class="swipe-card-icon">📷</div>
-          <h2 class="swipe-card-title">Show us your space</h2>
-          <p class="swipe-card-subtitle">Upload photos of your project area</p>
-
-          <div class="swipe-upload-zone" id="upload-zone">
-            <div class="upload-icon">📁</div>
-            <div class="upload-text">Tap to upload photos</div>
-            <div class="upload-hint">JPG, PNG up to 10MB each</div>
-            <input type="file" class="swipe-upload-input" id="image-upload" multiple accept="image/*">
-          </div>
-
-          <div class="swipe-preview-grid" id="preview-grid"></div>
-
-          <p class="upload-skip">Photos help us give you a better estimate</p>
-
-          <div class="swipe-nav-buttons">
-            <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">← Back</button>
-            <button class="swipe-btn swipe-btn-next" onclick="SwipeForm.next()">Continue →</button>
-          </div>
-        </div>
-
-        <!-- Card 4: Message -->
-        <div class="swipe-form-card" data-step="3">
-          <div class="swipe-card-icon">✍️</div>
-          <h2 class="swipe-card-title">Tell us about your project</h2>
-          <p class="swipe-card-subtitle">Any details that would help us</p>
-
-          <div class="swipe-input-group">
-            <label class="swipe-input-label">Project Details</label>
-            <textarea class="swipe-input swipe-textarea" id="input-message"
-              placeholder="Tell us about your project... dimensions, material preferences, timeline, etc."></textarea>
-          </div>
-
-          <div class="swipe-nav-buttons">
-            <button class="swipe-btn swipe-btn-back" onclick="SwipeForm.prev()">← Back</button>
-            <button class="swipe-btn swipe-btn-submit" id="btn-submit" onclick="SwipeForm.submit()">
-              Submit Request 🚀
-            </button>
-          </div>
-        </div>
-
-        <!-- Card 5: Success -->
-        <div class="swipe-form-card" data-step="4">
-          <div class="swipe-success-animation">✓</div>
-          <h2 class="swipe-success-title">Request Sent!</h2>
-          <p class="swipe-success-message">
-            Thank you for reaching out! One of our experts will contact you within 24 hours to discuss your project.
-          </p>
-
-          <div class="swipe-success-actions">
-            <button class="swipe-btn swipe-btn-next" onclick="SwipeForm.close()">
-              Done
-            </button>
-            <a href="/" class="swipe-btn-home">← Back to Home</a>
-          </div>
-        </div>
-
       </div>
     `;
 
     document.body.appendChild(container);
+  }
 
-    // Create trigger button
-    const trigger = document.createElement('button');
-    trigger.className = 'swipe-form-trigger';
-    trigger.innerHTML = '✉️';
-    trigger.onclick = () => window.SwipeForm.open();
-    trigger.title = 'Get Free Estimate';
-    document.body.appendChild(trigger);
+  // ============================================
+  // RENDER DYNAMIC QUESTIONS
+  // Based on selected category
+  // ============================================
+  function renderDynamicQuestions() {
+    const category = formData.category;
+    const config = categoryQuestions[category];
+    const container = document.getElementById('swipe-dynamic-questions');
+
+    if (!config) {
+      container.innerHTML = '<p>Please go back and select a category.</p>';
+      return;
+    }
+
+    let html = `
+      <h2 class="swipe-step-title">${config.title}</h2>
+      <p class="swipe-step-subtitle">${config.subtitle}</p>
+    `;
+
+    config.questions.forEach((question, qIndex) => {
+      html += `
+        <div class="swipe-question-block" data-question="${question.id}">
+          <label class="swipe-question-label">${question.label}</label>
+          <div class="swipe-options-grid ${question.type === 'multi' ? 'multi-select' : 'single-select'} ${question.options[0].icon ? 'has-icons' : ''}">
+      `;
+
+      question.options.forEach(option => {
+        const hasIcon = option.icon ? true : false;
+        html += `
+          <button type="button"
+                  class="swipe-option-btn ${hasIcon ? 'with-icon' : ''}"
+                  data-question="${question.id}"
+                  data-option="${option.id}"
+                  data-type="${question.type}">
+            ${hasIcon ? `<div class="swipe-option-icon">${option.icon}</div>` : ''}
+            <span class="swipe-option-label">${option.label}</span>
+          </button>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
+    // Bind option click events
+    container.querySelectorAll('.swipe-option-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const questionId = this.dataset.question;
+        const optionId = this.dataset.option;
+        const type = this.dataset.type;
+
+        if (type === 'single') {
+          // Deselect other options in this question
+          container.querySelectorAll(`[data-question="${questionId}"]`).forEach(b => {
+            if (b.classList.contains('swipe-option-btn')) {
+              b.classList.remove('selected');
+            }
+          });
+          this.classList.add('selected');
+          formData.details[questionId] = optionId;
+        } else {
+          // Multi-select toggle
+          this.classList.toggle('selected');
+          if (!formData.details[questionId]) {
+            formData.details[questionId] = [];
+          }
+          if (this.classList.contains('selected')) {
+            if (!formData.details[questionId].includes(optionId)) {
+              formData.details[questionId].push(optionId);
+            }
+          } else {
+            formData.details[questionId] = formData.details[questionId].filter(id => id !== optionId);
+          }
+        }
+      });
+    });
   }
 
   // Bind events
   function bindEvents() {
     // Category selection
     document.querySelectorAll('.swipe-category-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', function() {
         document.querySelectorAll('.swipe-category-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        formData.category = btn.dataset.category;
-        document.getElementById('btn-next-0').disabled = false;
+        this.classList.add('selected');
+        formData.category = this.dataset.category;
+        formData.details = {}; // Reset details when category changes
+        document.getElementById('swipe-btn-next-0').disabled = false;
       });
     });
 
     // Contact form validation
-    const contactInputs = ['firstName', 'lastName', 'email', 'phone', 'zip'];
-    contactInputs.forEach(field => {
-      const input = document.getElementById(`input-${field}`);
+    const contactInputs = ['swipe-firstName', 'swipe-lastName', 'swipe-email', 'swipe-phone', 'swipe-zip'];
+    contactInputs.forEach(id => {
+      const input = document.getElementById(id);
       if (input) {
-        input.addEventListener('input', () => {
-          formData[field] = input.value;
-          validateContactStep();
-        });
+        input.addEventListener('input', validateContactForm);
       }
     });
 
-    // Message input
-    const messageInput = document.getElementById('input-message');
-    if (messageInput) {
-      messageInput.addEventListener('input', () => {
-        formData.message = messageInput.value;
+    // Phone formatting
+    const phoneInput = document.getElementById('swipe-phone');
+    if (phoneInput) {
+      phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 6) {
+          value = '(' + value.substring(0,3) + ') ' + value.substring(3,6) + '-' + value.substring(6,10);
+        } else if (value.length >= 3) {
+          value = '(' + value.substring(0,3) + ') ' + value.substring(3);
+        }
+        e.target.value = value;
       });
     }
 
-    // Image upload
-    const uploadZone = document.getElementById('upload-zone');
-    const uploadInput = document.getElementById('image-upload');
+    // File upload
+    const uploadZone = document.getElementById('swipe-upload-zone');
+    const uploadInput = document.getElementById('swipe-upload-input');
 
     if (uploadZone && uploadInput) {
       uploadZone.addEventListener('click', () => uploadInput.click());
-
-      uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-      });
-
-      uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-      });
-
+      uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+      uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
       uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('dragover');
         handleFiles(e.dataTransfer.files);
       });
-
-      uploadInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-      });
+      uploadInput.addEventListener('change', (e) => handleFiles(e.target.files));
     }
 
-    // Phone formatting
-    const phoneInput = document.getElementById('input-phone');
-    if (phoneInput) {
-      phoneInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 0) {
-          if (value.length <= 3) {
-            value = `(${value}`;
-          } else if (value.length <= 6) {
-            value = `(${value.slice(0,3)}) ${value.slice(3)}`;
-          } else {
-            value = `(${value.slice(0,3)}) ${value.slice(3,6)}-${value.slice(6,10)}`;
-          }
+    // Close on overlay click
+    const container = document.querySelector('.swipe-form-container');
+    if (container) {
+      container.addEventListener('click', (e) => {
+        if (e.target === container || e.target.classList.contains('swipe-form-card-wrapper')) {
+          SwipeForm.close();
         }
-        e.target.value = value;
-        formData.phone = value;
-        validateContactStep();
       });
     }
 
-    // Keyboard navigation
+    // Close on Escape key
     document.addEventListener('keydown', (e) => {
-      const container = document.querySelector('.swipe-form-container');
-      if (container && !container.classList.contains('hidden')) {
-        if (e.key === 'Escape') {
-          close();
-        }
+      if (e.key === 'Escape' && !container.classList.contains('hidden')) {
+        SwipeForm.close();
       }
     });
+  }
 
-    // Swipe gestures for mobile
-    let touchStartX = 0;
-    let touchEndX = 0;
+  // Validate contact form
+  function validateContactForm() {
+    const firstName = document.getElementById('swipe-firstName').value.trim();
+    const lastName = document.getElementById('swipe-lastName').value.trim();
+    const email = document.getElementById('swipe-email').value.trim();
+    const phone = document.getElementById('swipe-phone').value.trim();
+    const zip = document.getElementById('swipe-zip').value.trim();
 
-    document.querySelector('.swipe-cards-stack')?.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-    });
+    // Proper email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailRegex.test(email);
 
-    document.querySelector('.swipe-cards-stack')?.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      handleSwipe();
-    });
+    // Phone should have 10 digits after removing formatting
+    const phoneDigits = phone.replace(/\D/g, '');
+    const isValidPhone = phoneDigits.length >= 10;
 
-    function handleSwipe() {
-      const diff = touchStartX - touchEndX;
-      if (Math.abs(diff) > 50) {
-        if (diff > 0 && currentStep < steps.length - 2) {
-          // Swipe left - next
-          if (canProceed()) next();
-        } else if (diff < 0 && currentStep > 0) {
-          // Swipe right - back
-          prev();
-        }
-      }
-    }
+    // ZIP should be exactly 5 digits
+    const zipDigits = zip.replace(/\D/g, '');
+    const isValidZip = zipDigits.length === 5;
+
+    const isValid = firstName && lastName && isValidEmail && isValidPhone && isValidZip;
+    document.getElementById('swipe-btn-next-2').disabled = !isValid;
   }
 
   // Handle file uploads
   function handleFiles(files) {
-    const previewGrid = document.getElementById('preview-grid');
-    const uploadZone = document.getElementById('upload-zone');
+    const uploadZone = document.getElementById('swipe-upload-zone');
 
     Array.from(files).forEach(file => {
       if (file.type.startsWith('image/') && formData.images.length < 6) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          formData.images.push({
-            name: file.name,
-            data: e.target.result,
-            file: file
-          });
+          formData.images.push({ file, dataUrl: e.target.result });
           renderPreviews();
         };
         reader.readAsDataURL(file);
@@ -350,11 +734,11 @@
 
   // Render image previews
   function renderPreviews() {
-    const previewGrid = document.getElementById('preview-grid');
-    previewGrid.innerHTML = formData.images.map((img, index) => `
+    const previewGrid = document.getElementById('swipe-preview-grid');
+    previewGrid.innerHTML = formData.images.map((img, i) => `
       <div class="swipe-preview-item">
-        <img src="${img.data}" alt="Preview ${index + 1}">
-        <button class="swipe-preview-remove" onclick="SwipeForm.removeImage(${index})">×</button>
+        <img src="${img.dataUrl}" alt="Preview ${i + 1}">
+        <button class="swipe-preview-remove" onclick="SwipeForm.removeImage(${i})">&times;</button>
       </div>
     `).join('');
   }
@@ -364,171 +748,132 @@
     formData.images.splice(index, 1);
     renderPreviews();
 
-    const uploadZone = document.getElementById('upload-zone');
+    const uploadZone = document.getElementById('swipe-upload-zone');
     if (formData.images.length === 0) {
       uploadZone.classList.remove('has-files');
     }
   }
 
-  // Validate contact step
-  function validateContactStep() {
-    const firstName = formData.firstName.trim();
-    const lastName = formData.lastName.trim();
-    const email = formData.email.trim();
-    const phone = formData.phone.replace(/\D/g, '');
-    const zip = formData.zip.replace(/\D/g, '');
+  // Resize image before upload (max 2000px)
+  async function resizeImage(file, maxDimension = 2000) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
 
-    const isValid = firstName.length > 0 &&
-                    lastName.length > 0 &&
-                    email.includes('@') &&
-                    phone.length >= 10 &&
-                    zip.length === 5;
+        // Only resize if needed
+        if (width <= maxDimension && height <= maxDimension) {
+          resolve(file);
+          return;
+        }
 
-    const nextBtn = document.getElementById('btn-next-1');
-    if (nextBtn) {
-      nextBtn.disabled = !isValid;
-    }
+        // Calculate new dimensions
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
 
-    return isValid;
+        // Create canvas and resize
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
   }
 
-  // Check if can proceed to next step
-  function canProceed() {
-    switch (currentStep) {
-      case 0: return formData.category !== '';
-      case 1: return validateContactStep();
-      case 2: return true; // Images optional
-      case 3: return true; // Message optional
-      default: return false;
+  // Upload single image to Supabase Storage
+  async function uploadImageToStorage(imageData) {
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substr(2, 9);
+    const extension = imageData.file.name.split('.').pop() || 'jpg';
+    const fileName = `lead_${timestamp}_${randomId}.${extension}`;
+    const filePath = `uploads/${new Date().toISOString().split('T')[0]}/${fileName}`;
+
+    try {
+      const resizedBlob = await resizeImage(imageData.file, 2000);
+
+      const response = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/lead-images/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'apikey': SUPABASE_KEY,
+            'Content-Type': resizedBlob.type || 'image/jpeg',
+            'x-upsert': 'true'
+          },
+          body: resizedBlob
+        }
+      );
+
+      if (response.ok) {
+        return `${SUPABASE_URL}/storage/v1/object/public/lead-images/${filePath}`;
+      }
+      return null;
+    } catch (error) {
+      console.log('Image upload error:', error);
+      return null;
     }
+  }
+
+  // Upload all images and return URLs
+  async function uploadAllImages() {
+    if (formData.images.length === 0) return [];
+
+    const uploadPromises = formData.images.map(img => uploadImageToStorage(img));
+    const results = await Promise.all(uploadPromises);
+    return results.filter(url => url !== null);
   }
 
   // Update progress bar
   function updateProgress() {
-    const totalSteps = steps.length - 1; // Exclude success step
-    const progress = (currentStep / (totalSteps - 1)) * 100;
+    const totalSteps = 5;
+    const progress = (currentStep / totalSteps) * 100;
+    const progressFill = document.getElementById('swipe-progress-fill');
+    const stepIndicator = document.getElementById('swipe-current-step');
 
-    const progressFill = document.getElementById('progress-fill');
-    if (progressFill) {
-      progressFill.style.width = `${Math.min(progress, 100)}%`;
-    }
-
-    const stepIndicator = document.getElementById('current-step');
-    if (stepIndicator) {
-      stepIndicator.textContent = Math.min(currentStep + 1, totalSteps);
-    }
+    if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
+    if (stepIndicator) stepIndicator.textContent = Math.min(currentStep + 1, totalSteps);
   }
 
-  // Navigate to next step
+  // Show step
+  function showStep(step) {
+    document.querySelectorAll('.swipe-step').forEach(s => s.classList.remove('active'));
+    const stepEl = document.querySelector(`.swipe-step[data-step="${step}"]`);
+    if (stepEl) stepEl.classList.add('active');
+    updateProgress();
+
+    // Scroll modal to top
+    const modal = document.querySelector('.swipe-form-modal');
+    if (modal) modal.scrollTop = 0;
+  }
+
+  // Navigation
   function next() {
-    if (currentStep >= steps.length - 1) return;
-    if (!canProceed()) return;
-
-    const cards = document.querySelectorAll('.swipe-form-card');
-    cards[currentStep].classList.remove('active');
-    cards[currentStep].classList.add('prev');
-
-    currentStep++;
-
-    cards[currentStep].classList.remove('next');
-    cards[currentStep].classList.add('active');
-
-    updateProgress();
-  }
-
-  // Navigate to previous step
-  function prev() {
-    if (currentStep <= 0) return;
-
-    const cards = document.querySelectorAll('.swipe-form-card');
-    cards[currentStep].classList.remove('active');
-    cards[currentStep].classList.add('next');
-
-    currentStep--;
-
-    cards[currentStep].classList.remove('prev');
-    cards[currentStep].classList.add('active');
-
-    updateProgress();
-  }
-
-  // Submit form
-  async function submit() {
-    const submitBtn = document.getElementById('btn-submit');
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = 'Sending... ⏳';
+    // If moving from step 0 to step 1, render dynamic questions
+    if (currentStep === 0) {
+      renderDynamicQuestions();
     }
 
-    try {
-      // Prepare form data
-      const leadData = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        zip: formData.zip,
-        projectType: formData.category,
-        message: formData.message,
-        source: 'swipe-form',
-        formName: 'swipe-lead-form',
-        pageUrl: window.location.href,
-        timestamp: new Date().toISOString(),
-        hasImages: formData.images.length > 0,
-        imageCount: formData.images.length
-      };
+    if (currentStep < 5) {
+      currentStep++;
+      showStep(currentStep);
+    }
+  }
 
-      // Send to API
-      const response = await fetch(`${API_URL}/api/leads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit');
-      }
-
-      // Also try to save to Supabase if available
-      if (window.supabase) {
-        try {
-          const { createClient } = window.supabase;
-          const supabaseClient = createClient(
-            'https://ypeypgwsycxcagncgdur.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME'
-          );
-
-          await supabaseClient.from('leads').insert([{
-            full_name: leadData.name,
-            first_name: leadData.firstName,
-            last_name: leadData.lastName,
-            email: leadData.email,
-            phone: leadData.phone,
-            zip_code: leadData.zip,
-            project_type: leadData.projectType,
-            message: leadData.message,
-            source: leadData.source,
-            form_name: leadData.formName,
-            page_url: leadData.pageUrl,
-            raw_data: leadData
-          }]);
-        } catch (e) {
-          console.warn('Supabase save failed:', e);
-        }
-      }
-
-      // Show success
-      next();
-
-    } catch (error) {
-      console.error('Submit error:', error);
-      alert('Something went wrong. Please try again or call us at (623) 466-2424');
-
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Submit Request 🚀';
-      }
+  function prev() {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
     }
   }
 
@@ -541,25 +886,23 @@
     }
   }
 
-  // Close form
+  // Close form and reset
   function close() {
     const container = document.querySelector('.swipe-form-container');
     if (container) {
       container.classList.add('hidden');
       document.body.style.overflow = '';
-
-      // Reset form after animation
-      setTimeout(() => {
-        resetForm();
-      }, 300);
     }
+    // Reset form after closing
+    resetForm();
   }
 
-  // Reset form
+  // Reset form to initial state
   function resetForm() {
     currentStep = 0;
     formData = {
       category: '',
+      details: {},
       firstName: '',
       lastName: '',
       email: '',
@@ -573,32 +916,119 @@
 
     // Reset UI
     document.querySelectorAll('.swipe-category-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelectorAll('.swipe-input').forEach(i => i.value = '');
-    document.getElementById('preview-grid').innerHTML = '';
-    document.getElementById('upload-zone')?.classList.remove('has-files');
-    document.getElementById('btn-next-0').disabled = true;
-    document.getElementById('btn-next-1').disabled = true;
+    document.getElementById('swipe-btn-next-0').disabled = true;
+    document.getElementById('swipe-firstName').value = '';
+    document.getElementById('swipe-lastName').value = '';
+    document.getElementById('swipe-email').value = '';
+    document.getElementById('swipe-phone').value = '';
+    document.getElementById('swipe-zip').value = '';
+    document.getElementById('swipe-message').value = '';
+    document.getElementById('swipe-preview-grid').innerHTML = '';
+    document.getElementById('swipe-upload-zone').classList.remove('has-files');
 
-    const submitBtn = document.getElementById('btn-submit');
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Submit Request 🚀';
+    showStep(0);
+  }
+
+  // Submit form
+  async function submit() {
+    const submitBtn = document.getElementById('swipe-btn-submit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+
+    // Collect form data
+    formData.firstName = document.getElementById('swipe-firstName').value.trim();
+    formData.lastName = document.getElementById('swipe-lastName').value.trim();
+    formData.email = document.getElementById('swipe-email').value.trim();
+    formData.phone = document.getElementById('swipe-phone').value.trim();
+    formData.zip = document.getElementById('swipe-zip').value.trim();
+    formData.message = document.getElementById('swipe-message').value.trim();
+
+    // Upload images first
+    let imageUrls = [];
+    if (formData.images.length > 0) {
+      submitBtn.textContent = 'Uploading photos...';
+      imageUrls = await uploadAllImages();
     }
 
-    // Reset cards
-    const cards = document.querySelectorAll('.swipe-form-card');
-    cards.forEach((card, index) => {
-      card.classList.remove('active', 'prev', 'next');
-      if (index === 0) card.classList.add('active');
-      else card.classList.add('next');
-    });
+    submitBtn.textContent = 'Sending...';
 
-    updateProgress();
+    // Build details string from dynamic questions
+    const detailsString = Object.entries(formData.details)
+      .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+      .join('; ');
+
+    const leadData = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      full_name: `${formData.firstName} ${formData.lastName}`,
+      email: formData.email,
+      phone: formData.phone,
+      zip_code: formData.zip,
+      project_type: formData.category,
+      project_details: detailsString,
+      message: formData.message,
+      source: formData.source,
+      source_page: formData.sourcePage,
+      image_count: formData.images.length,
+      image_urls: imageUrls
+    };
+
+    // Submit to API
+    try {
+      await fetch(`${API_URL}/api/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData)
+      });
+    } catch (error) {
+      console.log('API error:', error);
+    }
+
+    // Submit to Supabase
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          zip_code: formData.zip,
+          project_type: formData.category,
+          project_details: detailsString,
+          image_urls: imageUrls,
+          message: formData.message,
+          source: formData.source,
+          form_name: 'swipe-form',
+          page_url: window.location.href
+        })
+      });
+    } catch (error) {
+      console.log('Supabase error:', error);
+    }
+
+    // Show success
+    currentStep = 5;
+    showStep(currentStep);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Request';
+  }
+
+  // Initialize on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 
   // Public API
   window.SwipeForm = {
-    init,
     open,
     close,
     next,
@@ -606,12 +1036,5 @@
     submit,
     removeImage
   };
-
-  // Auto-initialize on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
 
 })();
