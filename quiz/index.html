@@ -623,6 +623,126 @@
       transform: none;
     }
 
+    /* Next Steps Section */
+    .quiz-next-steps {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .quiz-next-steps-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-next-steps-icon {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(34, 197, 94, 0.15);
+      border-radius: 10px;
+    }
+
+    .quiz-next-steps-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: #22c55e;
+    }
+
+    .quiz-next-steps-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      color: #fff;
+    }
+
+    .quiz-next-steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quiz-next-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .quiz-next-step:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(34, 197, 94, 0.3);
+      transform: translateX(4px);
+    }
+
+    .quiz-next-step-number {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #22c55e;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .quiz-next-step-content {
+      flex: 1;
+    }
+
+    .quiz-next-step-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .quiz-next-step-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .quiz-next-step-arrow {
+      width: 20px;
+      height: 20px;
+      opacity: 0.4;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .quiz-next-step:hover .quiz-next-step-arrow {
+      opacity: 0.8;
+      transform: translateX(3px);
+    }
+
+    .quiz-next-step.urgent {
+      background: rgba(249, 203, 0, 0.1);
+      border-color: rgba(249, 203, 0, 0.25);
+    }
+
+    .quiz-next-step.urgent .quiz-next-step-number {
+      background: var(--quiz-gold);
+      color: #000;
+    }
+
+    .quiz-next-step.urgent:hover {
+      border-color: rgba(249, 203, 0, 0.4);
+    }
+
     /* Recommendation Sections */
     .quiz-rec-section {
       margin-bottom: 28px;
@@ -1515,15 +1635,31 @@
       </div>
     </div>
 
+    <!-- Next Steps Section - Automated based on answers -->
+    <div class="quiz-next-steps" id="nextSteps">
+      <div class="quiz-next-steps-header">
+        <span class="quiz-next-steps-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </span>
+        <h3>Your Next Steps</h3>
+      </div>
+      <div class="quiz-next-steps-list" id="nextStepsList">
+        <!-- Auto-generated based on quiz answers -->
+      </div>
+    </div>
+
     <div class="quiz-cta-buttons">
-      <a href="/shop-swipe/" class="quiz-cta-btn primary">
+      <a href="/shop-swipe/" class="quiz-cta-btn primary" id="primaryCta">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2L4 7l8 5 8-5-8-5z" fill="currentColor" opacity="0.3"/>
           <path d="M4 12l8 5 8-5"/>
         </svg>
         Browse All Products
       </a>
-      <a href="/get-a-free-estimate" class="quiz-cta-btn secondary">
+      <a href="/get-a-free-estimate" class="quiz-cta-btn secondary" id="secondaryCta">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
@@ -2106,8 +2242,17 @@
       renderBlogArticles(profile.blogs);
       renderExtras(profile.extras);
 
+      // Generate automated next steps
+      renderNextSteps(profile);
+
+      // Update CTAs based on user type and urgency
+      updateCTAs();
+
       // Check auth state and save results
       await handleQuizResults(profile);
+
+      // Trigger automation actions
+      triggerAutomations(profile);
     }
 
     // Handle saving quiz results based on auth state
@@ -2429,6 +2574,213 @@
           <span>${extra.name}</span>
         </a>
       `).join('');
+    }
+
+    // ===== NEXT STEPS AUTOMATION =====
+
+    // Render automated next steps based on answers
+    function renderNextSteps(profile) {
+      const isPro = answers.user_type === 'pro';
+      const isKitchen = answers.project_type === 'kitchen' || answers.pro_project_type === 'kitchen';
+      const readySoon = answers.timeline === 'ready_soon' || answers.pro_quick_turnaround === 'quick';
+      const needsFab = answers.pro_fabrication === 'needs_fab';
+      const isHighVolume = answers.pro_volume === 'high_volume';
+      const isPremium = answers.budget_premium === 'premium' || answers.pro_client_budget === 'premium';
+
+      const steps = [];
+
+      // Build personalized next steps based on answers
+      if (isPro) {
+        // Pro path
+        if (isHighVolume) {
+          steps.push({
+            title: 'Set Up Your Trade Account',
+            desc: 'Get special pricing and dedicated support',
+            url: '/vendor/signup',
+            urgent: true
+          });
+        }
+
+        steps.push({
+          title: 'Browse Our Inventory',
+          desc: `View ${isKitchen ? 'kitchen' : 'bathroom'} materials in stock`,
+          url: '/materials/all-countertops/',
+          urgent: false
+        });
+
+        if (needsFab) {
+          steps.push({
+            title: 'Request Fabrication Quote',
+            desc: 'Submit your templates for pricing',
+            url: '/get-a-free-estimate?type=fabrication&source=quiz',
+            urgent: readySoon
+          });
+        }
+
+        if (readySoon) {
+          steps.push({
+            title: 'Call for Rush Orders',
+            desc: 'Speak with our team: (623) 223-1183',
+            url: 'tel:6232231183',
+            urgent: true
+          });
+        }
+      } else {
+        // Homeowner path
+        if (readySoon) {
+          steps.push({
+            title: 'Schedule Your Free Consultation',
+            desc: 'Meet with a designer this week',
+            url: '/get-a-free-estimate?source=quiz&urgent=true',
+            urgent: true
+          });
+        }
+
+        steps.push({
+          title: `Browse ${profile.name} Styles`,
+          desc: 'Swipe through materials that match your taste',
+          url: '/shop-swipe/',
+          urgent: false
+        });
+
+        if (isPremium) {
+          steps.push({
+            title: 'Visit Our Showroom',
+            desc: 'See premium slabs in person',
+            url: '/contact-us',
+            urgent: false
+          });
+        }
+
+        steps.push({
+          title: 'Get a Free Estimate',
+          desc: `${isKitchen ? 'Kitchen countertop' : 'Bathroom vanity'} pricing`,
+          url: `/get-a-free-estimate?project=${isKitchen ? 'kitchen' : 'bathroom'}&style=${encodeURIComponent(profile.name)}&source=quiz`,
+          urgent: false
+        });
+
+        if (!readySoon) {
+          steps.push({
+            title: 'Save Your Favorites',
+            desc: 'Create an account to build your wishlist',
+            url: '/account.html',
+            urgent: false
+          });
+        }
+      }
+
+      // Render the steps
+      const list = document.getElementById('nextStepsList');
+      list.innerHTML = steps.slice(0, 4).map((step, i) => `
+        <a href="${step.url}" class="quiz-next-step ${step.urgent ? 'urgent' : ''}" onclick="trackNextStep(${i + 1}, '${step.title}')">
+          <span class="quiz-next-step-number">${i + 1}</span>
+          <div class="quiz-next-step-content">
+            <div class="quiz-next-step-title">${step.title}</div>
+            <div class="quiz-next-step-desc">${step.desc}</div>
+          </div>
+          <svg class="quiz-next-step-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </a>
+      `).join('');
+    }
+
+    // Track next step clicks for analytics
+    function trackNextStep(stepNumber, stepTitle) {
+      console.log('Next step clicked:', stepNumber, stepTitle);
+      // Could integrate with analytics here
+      localStorage.setItem('sg_quiz_action', JSON.stringify({
+        step: stepNumber,
+        title: stepTitle,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
+    // Update CTAs based on user type and urgency
+    function updateCTAs() {
+      const isPro = answers.user_type === 'pro';
+      const readySoon = answers.timeline === 'ready_soon' || answers.pro_quick_turnaround === 'quick';
+
+      const primaryCta = document.getElementById('primaryCta');
+      const secondaryCta = document.getElementById('secondaryCta');
+
+      if (isPro) {
+        primaryCta.href = '/vendor/signup';
+        primaryCta.innerHTML = `
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+          Join Pro Program
+        `;
+        secondaryCta.href = '/materials/all-countertops/';
+        secondaryCta.innerHTML = `
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          View Inventory
+        `;
+      } else if (readySoon) {
+        // Swap order - estimate first for urgent projects
+        primaryCta.href = '/get-a-free-estimate?source=quiz&urgent=true';
+        primaryCta.innerHTML = `
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Schedule Consultation
+        `;
+      }
+    }
+
+    // Trigger automation actions
+    function triggerAutomations(profile) {
+      const isPro = answers.user_type === 'pro';
+      const isKitchen = answers.project_type === 'kitchen' || answers.pro_project_type === 'kitchen';
+      const readySoon = answers.timeline === 'ready_soon' || answers.pro_quick_turnaround === 'quick';
+
+      // Save comprehensive quiz data for form pre-fill
+      const quizPreferences = {
+        userType: isPro ? 'pro' : 'homeowner',
+        projectType: isKitchen ? 'kitchen' : 'bathroom',
+        style: answers.style_modern === 'modern' ? 'modern' : 'traditional',
+        colorPreference: answers.color_light === 'light' ? 'light' : 'dark',
+        materialPreference: (answers.natural_stone === 'natural' || answers.natural_stone_pro === 'natural') ? 'natural' : 'engineered',
+        budget: (answers.budget_premium === 'premium' || answers.pro_client_budget === 'premium') ? 'premium' : 'standard',
+        timeline: readySoon ? 'urgent' : 'flexible',
+        styleName: profile.name,
+        completedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('sg_quiz_preferences', JSON.stringify(quizPreferences));
+
+      // Set filter preferences for shop pages
+      if (quizPreferences.materialPreference === 'natural') {
+        localStorage.setItem('sg_material_filter', 'granite,marble,quartzite');
+      } else {
+        localStorage.setItem('sg_material_filter', 'quartz,porcelain');
+      }
+
+      if (quizPreferences.colorPreference === 'light') {
+        localStorage.setItem('sg_color_filter', 'white,cream,beige,gray');
+      } else {
+        localStorage.setItem('sg_color_filter', 'black,brown,charcoal,navy');
+      }
+
+      // For pros, set trade account flag
+      if (isPro) {
+        localStorage.setItem('sg_pro_interest', 'true');
+      }
+
+      // Log for debugging
+      console.log('Quiz automations triggered:', quizPreferences);
     }
 
     // Restart Quiz
