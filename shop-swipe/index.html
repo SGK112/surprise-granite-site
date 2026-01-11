@@ -3,21 +3,24 @@
 <head>
   <meta charset="utf-8"/>
   <title>Swipe to Shop | Surprise Granite</title>
-  <meta name="description" content="Swipe through countertops, tile, flooring, and more. Find your perfect match with our Tinder-style product discovery. Save favorites across all categories."/>
+  <meta name="description" content="Swipe through countertops, tile, flooring, and more. Find your perfect match with our Tinder-style product discovery."/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <link rel="canonical" href="https://surprisegranite.com/shop-swipe/"/>
 
   <!-- Favicon -->
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <!-- Enhanced Swipe Shop Styles -->
-  <link rel="stylesheet" href="/css/swipe-shop-enhanced.css?v=20260110">
+  <!-- Core Styles -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <link rel="stylesheet" href="/css/swipe-cards.css?v=20260110b">
+  <link rel="stylesheet" href="/css/favorites-panel.css?v=20260109">
 
   <style>
+    :root {
+      --sg-gold: #f9cb00;
+      --sg-dark: #1a1a1a;
+    }
+
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -26,29 +29,97 @@
     body {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
       background: #0a0a0a;
       color: #fff;
       min-height: 100vh;
       overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
     }
 
-    /* Loading spinner */
-    .swipe-loading-enhanced {
+    /* Category Filter Pills - Fixed at top */
+    .swipe-category-filter {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      background: linear-gradient(to bottom, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.9) 80%, transparent 100%);
+    }
+
+    .swipe-category-filter::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-pill {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #222;
+      color: #888;
+    }
+
+    .category-pill.active {
+      background: var(--sg-gold);
+      color: #000;
+    }
+
+    .category-pill:not(.active):hover {
+      background: #333;
+      color: #fff;
+    }
+
+    /* Stats Bar */
+    .swipe-stats {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 24px;
+      padding: 8px 20px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 20px;
+      font-size: 12px;
+      color: #888;
+      z-index: 50;
+    }
+
+    .swipe-stats span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swipe-stats .count {
+      color: var(--sg-gold);
+      font-weight: 700;
+    }
+
+    /* Loading State */
+    .swipe-loading {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
-      z-index: 500;
     }
 
-    .loading-spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #f9cb00;
+    .swipe-loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #333;
+      border-top-color: var(--sg-gold);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 16px;
@@ -58,246 +129,78 @@
       to { transform: rotate(360deg); }
     }
 
-    .loading-text {
-      color: rgba(255,255,255,0.6);
+    .swipe-loading-text {
+      color: #888;
       font-size: 14px;
     }
 
-    /* Cards stack positioning */
-    .swipe-cards-stack {
-      position: fixed;
-      top: 130px;
-      left: 0;
-      right: 0;
-      bottom: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      perspective: 1000px;
-    }
-
-    /* Override card position for this page */
-    .swipe-card-enhanced {
-      position: absolute;
-      width: calc(100% - 32px);
-      max-width: 380px;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-
-    /* Double tap heart */
-    .double-tap-heart {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      font-size: 100px;
-      pointer-events: none;
-      z-index: 100;
-      animation: heartPop 0.8s cubic-bezier(0.17, 0.67, 0.21, 1.25) forwards;
-    }
-
-    @keyframes heartPop {
-      0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-      50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-    }
-
-    /* Back button */
-    .back-btn {
+    /* Back to home link */
+    .back-home-link {
       position: fixed;
       top: 16px;
       left: 16px;
-      z-index: 1100;
+      z-index: 1000;
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 14px;
+      padding: 10px 16px;
       background: rgba(255,255,255,0.1);
-      border: none;
       border-radius: 20px;
       color: #fff;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
       text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
     }
 
-    .back-btn svg {
+    .back-home-link:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .back-home-link svg {
       width: 16px;
       height: 16px;
     }
-
-    /* Adjust favorites bar for back button */
-    .swipe-favorites-bar .favorites-bar-inner {
-      padding-left: 100px;
-    }
-
-    /* Help tooltip */
-    .swipe-help {
-      position: fixed;
-      bottom: 170px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(10px);
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      z-index: 50;
-      opacity: 1;
-      transition: opacity 0.3s;
-    }
-
-    .swipe-help.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .swipe-help span {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .swipe-help .icon {
-      font-size: 16px;
-    }
-
-    /* Request quote button in favorites panel */
-    .request-quote-btn {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 16px 20px;
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
-      background: linear-gradient(to top, #0a0a0a 80%, transparent);
-      z-index: 2001;
-      display: none;
-    }
-
-    .favorites-panel-enhanced.open .request-quote-btn {
-      display: block;
-    }
-
-    .request-quote-btn button {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #f9cb00, #e6b800);
-      border: none;
-      border-radius: 14px;
-      color: #000;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .request-quote-btn button svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    /* Adjust favorites grid for quote button */
-    .favorites-panel-enhanced .favorites-grid {
-      padding-bottom: 100px;
-    }
   </style>
-</head>
-<body data-swipe-shop="enabled">
 
-  <!-- Back Button -->
-  <a href="/" class="back-btn">
+  <!-- Unified Navigation -->
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+</head>
+<body data-swipe-mode="universal">
+
+  <!-- Back Link -->
+  <a href="/" class="back-home-link">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M19 12H5M12 19l-7-7 7-7"/>
     </svg>
     Home
   </a>
 
-  <!-- Help Tooltip -->
-  <div class="swipe-help" id="swipeHelp">
-    <span><span class="icon">👈</span> Skip</span>
-    <span><span class="icon">👉</span> Love</span>
-    <span><span class="icon">👆👆</span> Double-tap</span>
+  <!-- Loading State -->
+  <div class="swipe-loading" id="swipeLoading">
+    <div class="swipe-loading-spinner"></div>
+    <div class="swipe-loading-text">Loading products...</div>
   </div>
 
-  <!-- Request Quote Button (inside favorites panel) -->
-  <div class="request-quote-btn" id="requestQuoteBtn">
-    <button onclick="requestQuote()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-      Request Quote on Favorites
-    </button>
+  <!-- Category Filter -->
+  <div class="swipe-category-filter" id="categoryFilter" style="display:none;">
+    <button class="category-pill active" data-category="all">All</button>
+    <button class="category-pill" data-category="countertop">Countertops</button>
+    <button class="category-pill" data-category="tile">Tile</button>
+    <button class="category-pill" data-category="flooring">Flooring</button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="swipe-stats" id="swipeStats" style="display:none;">
+    <span><span class="count" id="likedCount">0</span> Liked</span>
+    <span><span class="count" id="remainingCount">0</span> Left</span>
   </div>
 
   <!-- Favorites System -->
   <script src="/js/favorites.js?v=20260109"></script>
 
-  <!-- Enhanced Swipe Shop -->
-  <script src="/js/swipe-shop-enhanced.js?v=20260110"></script>
-
-  <script>
-    // Hide help after first swipe
-    let helpVisible = true;
-    const originalLike = window.SwipeShop.like;
-    const originalSkip = window.SwipeShop.skip;
-
-    window.SwipeShop.like = function() {
-      hideHelp();
-      return originalLike.apply(this, arguments);
-    };
-
-    window.SwipeShop.skip = function() {
-      hideHelp();
-      return originalSkip.apply(this, arguments);
-    };
-
-    function hideHelp() {
-      if (helpVisible) {
-        helpVisible = false;
-        document.getElementById('swipeHelp').classList.add('hidden');
-      }
-    }
-
-    // Request quote functionality
-    function requestQuote() {
-      // Get all favorites
-      const favorites = [];
-      document.querySelectorAll('.favorites-item').forEach(item => {
-        const title = item.querySelector('.favorites-item-title')?.textContent || '';
-        const category = item.querySelector('.favorites-item-category')?.textContent || '';
-        favorites.push({ title, category });
-      });
-
-      if (favorites.length === 0) {
-        alert('Add some favorites first by swiping right on products you love!');
-        return;
-      }
-
-      // Build message
-      const itemsList = favorites.map(f => `- ${f.title} (${f.category})`).join('\n');
-      const message = `Hi! I'm interested in getting a quote for these products:\n\n${itemsList}\n\nPlease contact me with pricing and availability.`;
-
-      // Redirect to estimate page with prefilled data
-      const params = new URLSearchParams({
-        source: 'swipe-favorites',
-        items: favorites.length,
-        message: encodeURIComponent(message)
-      });
-
-      window.location.href = `/get-a-free-estimate.html?${params.toString()}`;
-    }
-  </script>
+  <!-- Universal Swipe Cards - Same as all-countertops -->
+  <script src="/js/swipe-cards-universal.js?v=20260110c"></script>
 
   <!-- Supabase for favorites sync -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
