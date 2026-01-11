@@ -6,17 +6,17 @@
 /* ============================================
    HEART BUTTON ON PRODUCT CARDS
    ============================================ */
-/* Ensure perfect circle with explicit aspect-ratio */
+/* Ensure 44px minimum touch target (Apple HIG) */
 .sg-favorite-btn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  max-width: 40px;
-  max-height: 40px;
+  top: 8px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 44px;
+  max-height: 44px;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   border: none;
@@ -32,6 +32,8 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .sg-favorite-btn:hover {
@@ -110,6 +112,7 @@
   position: fixed;
   bottom: 176px;
   right: 24px;
+  right: max(24px, env(safe-area-inset-right));
   width: 52px;
   height: 52px;
   border-radius: 50%;
@@ -118,12 +121,13 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  z-index: 9999;
+  z-index: 9000; /* Below nav (10000) but above content */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   opacity: 0;
   transform: scale(0.8);
   pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sg-favorites-badge.has-items {

@@ -647,26 +647,17 @@ html {
     scroll-behavior: smooth;
     overflow-x: hidden;
     width: 100%;
-    max-width: 100vw;
   }
 
   /* Prevent horizontal scroll and page sliding */
   body {
     overflow-x: hidden;
     width: 100%;
-    max-width: 100vw;
     position: relative;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Prevent any element from causing horizontal overflow */
-  *,
-  *::before,
-  *::after {
-    max-width: 100vw;
-  }
-
-  /* Page wrapper fix */
+  /* Page wrapper fix - prevents content overflow */
   .page-wrapper,
   .main-wrapper,
   main {
@@ -685,35 +676,32 @@ html {
 
   /* NOTE: Body scroll lock is handled via JavaScript, not CSS selectors */
 
-  /* ===== PRODUCT CAROUSEL EXCEPTIONS ===== */
-  /* Allow horizontal scrolling for product carousels */
-  .swiper_product .swiper-wrapper,
-  .swiper_services .swiper-wrapper,
-  .swiper_bis .swiper-wrapper,
-  .swiper_faucets .swiper-wrapper,
-  .swiper_silestone .swiper-wrapper {
-    overflow-x: scroll !important;
-    overflow-y: hidden !important;
-    max-width: none !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  /* Allow slides to extend beyond viewport */
-  .swiper_product .swiper-slide,
-  .swiper_services .swiper-slide,
-  .swiper_bis .swiper-slide,
-  .swiper_faucets .swiper-slide,
-  .swiper_silestone .swiper-slide {
-    max-width: none !important;
-  }
-
-  /* Allow carousel containers to scroll */
+  /* ===== PRODUCT CAROUSEL/SWIPER SUPPORT ===== */
+  /* Swiper containers need overflow visible for proper scrolling */
+  .swiper,
+  .swiper-container,
   .swiper_product,
   .swiper_services,
   .swiper_bis,
   .swiper_faucets,
-  .swiper_silestone {
+  .swiper_silestone,
+  [class*="swiper_"] {
     overflow: visible !important;
+    max-width: 100% !important;
+  }
+
+  /* Swiper wrappers handle the actual scrolling */
+  .swiper-wrapper {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory;
+  }
+
+  /* Slides can extend and snap properly */
+  .swiper-slide {
+    flex-shrink: 0 !important;
+    scroll-snap-align: start;
   }
 }
 

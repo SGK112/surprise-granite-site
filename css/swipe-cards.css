@@ -84,10 +84,12 @@
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
-    z-index: 999999;
+    z-index: 10200; /* Modal layer - above nav drawer */
     align-items: center;
     justify-content: center;
     padding: 24px;
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 
   .swipe-intro-content {
@@ -1819,12 +1821,15 @@
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  z-index: 1000000;
+  z-index: 10200; /* Modal layer - matches other modals */
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .local-favorites-content {
@@ -2011,13 +2016,38 @@
 
 /* Animation for buy notification */
 @keyframes slideUpFade {
-  from { 
-    opacity: 0; 
-    transform: translateX(-50%) translateY(20px); 
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateX(-50%) translateY(0); 
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY: Reduced Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .swipe-intro-overlay,
+  .swipe-cards-container,
+  .swipe-card,
+  .swipe-card-stack,
+  .double-tap-heart,
+  .grid-heart-btn,
+  .local-favorites-overlay,
+  .local-favorite-card {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+
+  @keyframes heartPop {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  }
+
+  @keyframes slideUpFade {
+    0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 }
 

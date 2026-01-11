@@ -1,0 +1,903 @@
+/**
+ * Lead Capture Modal - Premium Centered Popup
+ * C++ Level Minimal Branded Card Interaction
+ * v2.0.0
+ */
+
+:root {
+  --lcm-gold: #f9cb00;
+  --lcm-gold-dark: #cca600;
+  --lcm-dark: #0a0a12;
+  --lcm-surface: #111118;
+  --lcm-card: rgba(18, 18, 24, 0.98);
+  --lcm-border: rgba(255, 255, 255, 0.06);
+  --lcm-border-light: rgba(255, 255, 255, 0.12);
+  --lcm-text: #ffffff;
+  --lcm-text-muted: rgba(255, 255, 255, 0.5);
+  --lcm-text-secondary: rgba(255, 255, 255, 0.7);
+  --lcm-success: #22c55e;
+  --lcm-error: #ef4444;
+  --lcm-radius: 20px;
+  --lcm-radius-sm: 12px;
+  --lcm-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   MODAL OVERLAY
+   Z-Index Scale: Nav=10000, Drawer=10100, Modals=10200
+   ============================================ */
+.lcm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10200; /* Modal layer - above nav drawer */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lcm-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   MODAL CONTAINER
+   ============================================ */
+.lcm-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 120px);
+  background: var(--lcm-card);
+  border: 1px solid var(--lcm-border);
+  border-radius: var(--lcm-radius);
+  box-shadow: var(--lcm-shadow);
+  overflow: hidden;
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  margin: auto;
+}
+
+.lcm-overlay.active .lcm-modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Desktop sizing */
+@media (min-width: 768px) {
+  .lcm-modal {
+    max-height: calc(100vh - 160px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .lcm-modal {
+    max-height: 680px;
+  }
+}
+
+/* Gold accent line */
+.lcm-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--lcm-gold-dark), var(--lcm-gold), var(--lcm-gold-dark));
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+.lcm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--lcm-border);
+}
+
+.lcm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lcm-logo {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--lcm-gold-dark), var(--lcm-gold));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #000;
+}
+
+.lcm-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--lcm-text);
+  letter-spacing: -0.01em;
+}
+
+.lcm-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--lcm-border-light);
+  background: transparent;
+  color: var(--lcm-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin: -8px -8px -8px 0;
+}
+
+.lcm-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lcm-text);
+  border-color: var(--lcm-border-light);
+}
+
+.lcm-close svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+/* ============================================
+   PROGRESS & STEPS
+   ============================================ */
+.lcm-progress-container {
+  padding: 0 24px;
+  margin-top: 20px;
+}
+
+.lcm-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.lcm-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.lcm-step:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--lcm-border);
+  margin: 0 8px;
+}
+
+.lcm-step.completed::after {
+  background: var(--lcm-gold);
+}
+
+.lcm-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--lcm-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lcm-text-muted);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.lcm-step.active .lcm-step-dot {
+  background: var(--lcm-gold);
+  color: #000;
+  box-shadow: 0 0 20px rgba(249, 203, 0, 0.4);
+}
+
+.lcm-step.completed .lcm-step-dot {
+  background: var(--lcm-success);
+  color: #fff;
+}
+
+.lcm-step-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--lcm-text-muted);
+  white-space: nowrap;
+  display: none;
+}
+
+.lcm-step.active .lcm-step-label {
+  color: var(--lcm-gold);
+  display: block;
+}
+
+.lcm-progress-bar {
+  height: 3px;
+  background: var(--lcm-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.lcm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lcm-gold-dark), var(--lcm-gold));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%;
+}
+
+/* ============================================
+   LAYOUT TOGGLE
+   ============================================ */
+.lcm-layout-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 16px 24px 0;
+  padding: 4px;
+  background: var(--lcm-border);
+  border-radius: 10px;
+}
+
+.lcm-layout-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lcm-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lcm-layout-btn.active {
+  background: var(--lcm-card);
+  color: var(--lcm-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.lcm-layout-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+.lcm-content {
+  padding: 24px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lcm-border-light) transparent;
+}
+
+.lcm-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lcm-content::-webkit-scrollbar-thumb {
+  background: var(--lcm-border-light);
+  border-radius: 3px;
+}
+
+/* ============================================
+   CARD VIEW (Swipe Style)
+   ============================================ */
+.lcm-cards-wrapper {
+  position: relative;
+  min-height: 320px;
+}
+
+.lcm-card {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(0.95) translateX(30px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.lcm-card.active {
+  opacity: 1;
+  transform: scale(1) translateX(0);
+  pointer-events: auto;
+  position: relative;
+}
+
+.lcm-card.prev {
+  transform: scale(0.95) translateX(-30px);
+}
+
+.lcm-card-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.lcm-card-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  background: rgba(249, 203, 0, 0.1);
+  border: 1px solid rgba(249, 203, 0, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lcm-card-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--lcm-gold);
+  stroke-width: 1.5;
+}
+
+.lcm-card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--lcm-text);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.lcm-card-subtitle {
+  font-size: 0.9rem;
+  color: var(--lcm-text-muted);
+}
+
+/* ============================================
+   FORM VIEW (Traditional)
+   ============================================ */
+.lcm-form-wrapper {
+  display: none;
+}
+
+.lcm-form-wrapper.active {
+  display: block;
+}
+
+.lcm-cards-wrapper.hidden {
+  display: none;
+}
+
+.lcm-form-section {
+  margin-bottom: 24px;
+}
+
+.lcm-form-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lcm-gold);
+  margin-bottom: 12px;
+}
+
+/* ============================================
+   CATEGORY SELECTION
+   ============================================ */
+.lcm-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.lcm-category-btn {
+  background: transparent;
+  border: 1px solid var(--lcm-border-light);
+  border-radius: var(--lcm-radius-sm);
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.lcm-category-btn:hover {
+  border-color: rgba(249, 203, 0, 0.3);
+  background: rgba(249, 203, 0, 0.03);
+}
+
+.lcm-category-btn.selected {
+  border-color: var(--lcm-gold);
+  background: rgba(249, 203, 0, 0.08);
+}
+
+.lcm-category-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.lcm-category-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--lcm-text-secondary);
+  transition: stroke 0.3s ease;
+}
+
+.lcm-category-btn.selected .lcm-category-icon {
+  transform: scale(1.1);
+  background: rgba(249, 203, 0, 0.15);
+}
+
+.lcm-category-btn.selected .lcm-category-icon svg {
+  stroke: var(--lcm-gold);
+}
+
+.lcm-category-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--lcm-text);
+}
+
+/* ============================================
+   FORM INPUTS
+   ============================================ */
+.lcm-input-group {
+  margin-bottom: 16px;
+}
+
+.lcm-input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.lcm-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--lcm-text-secondary);
+  margin-bottom: 6px;
+}
+
+.lcm-label .required {
+  color: var(--lcm-error);
+  margin-left: 2px;
+}
+
+.lcm-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  border: 1px solid var(--lcm-border-light);
+  border-radius: var(--lcm-radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--lcm-text);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.lcm-input::placeholder {
+  color: var(--lcm-text-muted);
+}
+
+.lcm-input:focus {
+  outline: none;
+  border-color: var(--lcm-gold);
+  background: rgba(249, 203, 0, 0.03);
+}
+
+.lcm-input:invalid:not(:placeholder-shown) {
+  border-color: var(--lcm-error);
+}
+
+.lcm-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ============================================
+   IMAGE UPLOAD
+   ============================================ */
+.lcm-upload-zone {
+  border: 2px dashed var(--lcm-border-light);
+  border-radius: var(--lcm-radius-sm);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.lcm-upload-zone:hover,
+.lcm-upload-zone.dragover {
+  border-color: var(--lcm-gold);
+  background: rgba(249, 203, 0, 0.03);
+}
+
+.lcm-upload-zone.has-files {
+  border-color: var(--lcm-success);
+  border-style: solid;
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.lcm-upload-icon {
+  margin-bottom: 12px;
+}
+
+.lcm-upload-icon svg {
+  width: 40px;
+  height: 40px;
+  stroke: var(--lcm-text-muted);
+  stroke-width: 1.5;
+}
+
+.lcm-upload-text {
+  font-size: 0.9rem;
+  color: var(--lcm-text-secondary);
+  margin-bottom: 4px;
+}
+
+.lcm-upload-hint {
+  font-size: 0.75rem;
+  color: var(--lcm-text-muted);
+}
+
+.lcm-upload-input {
+  display: none;
+}
+
+.lcm-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lcm-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--lcm-border);
+}
+
+.lcm-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lcm-preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.lcm-preview-item:hover .lcm-preview-remove {
+  opacity: 1;
+}
+
+/* ============================================
+   NAVIGATION BUTTONS
+   ============================================ */
+.lcm-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.lcm-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: var(--lcm-radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lcm-btn-back {
+  background: transparent;
+  border: 1px solid var(--lcm-border-light);
+  color: var(--lcm-text-secondary);
+  flex: 0.4;
+}
+
+.lcm-btn-back:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--lcm-text);
+}
+
+.lcm-btn-next {
+  background: linear-gradient(135deg, var(--lcm-gold-dark), var(--lcm-gold));
+  color: #000;
+}
+
+.lcm-btn-next:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
+}
+
+.lcm-btn-next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lcm-btn-submit {
+  background: linear-gradient(135deg, var(--lcm-success), #16a34a);
+  color: #fff;
+}
+
+.lcm-btn-submit:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+}
+
+/* ============================================
+   QUICK LINKS
+   ============================================ */
+.lcm-quick-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--lcm-border);
+}
+
+.lcm-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lcm-text-muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.lcm-quick-link:hover {
+  color: var(--lcm-gold);
+}
+
+.lcm-quick-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   SUCCESS STATE
+   ============================================ */
+.lcm-success-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.lcm-success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: lcm-success-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes lcm-success-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.lcm-success-icon svg {
+  width: 40px;
+  height: 40px;
+  stroke: var(--lcm-success);
+  stroke-width: 2.5;
+}
+
+.lcm-success-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--lcm-text);
+  margin-bottom: 8px;
+}
+
+.lcm-success-message {
+  color: var(--lcm-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.lcm-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lcm-btn-phone {
+  background: rgba(249, 203, 0, 0.1);
+  border: 1px solid var(--lcm-gold);
+  color: var(--lcm-gold);
+}
+
+.lcm-btn-close {
+  background: transparent;
+  border: 1px solid var(--lcm-border-light);
+  color: var(--lcm-text-secondary);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.lcm-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--lcm-border);
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.lcm-footer-link {
+  font-size: 0.75rem;
+  color: var(--lcm-text-muted);
+  text-decoration: none;
+}
+
+.lcm-footer-link:hover {
+  color: var(--lcm-text-secondary);
+}
+
+/* ============================================
+   TRIGGER BUTTON
+   ============================================ */
+.lcm-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, var(--lcm-gold-dark), var(--lcm-gold));
+  border: none;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
+  cursor: pointer;
+  z-index: 99990;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.lcm-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(249, 203, 0, 0.5);
+}
+
+.lcm-trigger-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.lcm-trigger-text {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #000;
+}
+
+.lcm-overlay.active ~ .lcm-trigger {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 520px) {
+  .lcm-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .lcm-modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: var(--lcm-radius) var(--lcm-radius) 0 0;
+  }
+
+  .lcm-overlay.active .lcm-modal {
+    transform: scale(1) translateY(0);
+  }
+
+  .lcm-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lcm-preview-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .lcm-quick-links {
+    gap: 16px;
+  }
+
+  .lcm-trigger-text {
+    display: none;
+  }
+
+  .lcm-trigger {
+    padding: 16px;
+    border-radius: 50%;
+  }
+}
+
+/* Animation for form submission */
+.lcm-btn-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.lcm-btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: lcm-spin 0.8s linear infinite;
+}
+
+@keyframes lcm-spin {
+  to { transform: rotate(360deg); }
+}

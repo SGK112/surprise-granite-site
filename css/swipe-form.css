@@ -1,6 +1,6 @@
 /**
- * Swipe Form - Tinder-style Lead Capture
- * Premium glassmorphic multi-step form
+ * Swipe Form - Popup Modal Lead Capture
+ * Professional modal with inline icons and descriptions
  */
 
 :root {
@@ -8,57 +8,141 @@
   --swipe-gold-dark: #cca600;
   --swipe-dark: #0f0f1a;
   --swipe-surface: #1a1a2e;
-  --swipe-card: rgba(255, 255, 255, 0.03);
-  --swipe-border: rgba(255, 255, 255, 0.08);
+  --swipe-card-bg: rgba(20, 25, 50, 0.98);
+  --swipe-border: rgba(255, 255, 255, 0.1);
   --swipe-success: #22c55e;
   --swipe-error: #ef4444;
 }
 
 /* ============================================
-   SWIPE FORM CONTAINER
+   MODAL OVERLAY - Scrollable Container
+   Z-Index Scale: Nav=10000, Drawer=10100, Modals=10200
    ============================================ */
 .swipe-form-container {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, var(--swipe-dark) 0%, var(--swipe-surface) 50%, #16213e 100%);
-  z-index: 10000;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 10200; /* Modal layer - above nav drawer */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* iOS safe area support */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .swipe-form-container.hidden {
   display: none;
 }
 
-/* Header */
+/* ============================================
+   MODAL CARD - Centered Content
+   ============================================ */
+.swipe-form-card-wrapper {
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 20px 40px 20px;
+}
+
+.swipe-form-modal {
+  background: var(--swipe-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--swipe-border);
+  border-radius: 20px;
+  padding: 40px 35px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  animation: swipeSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes swipeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gold accent line */
+.swipe-form-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--swipe-gold-dark), var(--swipe-gold), var(--swipe-gold-dark));
+  border-radius: 20px 20px 0 0;
+}
+
+/* ============================================
+   BRANDED LOGO
+   ============================================ */
+.swipe-form-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-top: 8px;
+}
+
+.swipe-logo-icon {
+  width: 44px;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.swipe-logo-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.swipe-logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.swipe-logo-name {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.swipe-logo-tagline {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffdb00;
+  letter-spacing: 0.02em;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
 .swipe-form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.swipe-form-close {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.swipe-form-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  margin-bottom: 24px;
 }
 
 .swipe-form-title {
@@ -73,11 +157,38 @@
   font-weight: 500;
 }
 
-/* Progress Bar */
+.swipe-form-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.swipe-form-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
 .swipe-progress-bar {
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
-  position: relative;
+  border-radius: 2px;
+  margin-bottom: 32px;
+  overflow: hidden;
 }
 
 .swipe-progress-fill {
@@ -85,150 +196,104 @@
   background: linear-gradient(90deg, var(--swipe-gold-dark), var(--swipe-gold));
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   width: 0%;
+  border-radius: 2px;
 }
 
 /* ============================================
-   CARDS STACK
+   STEP CONTENT
    ============================================ */
-.swipe-cards-stack {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  perspective: 1000px;
+.swipe-step {
+  display: none;
 }
 
-.swipe-form-card {
-  position: absolute;
-  width: calc(100% - 40px);
-  max-width: 420px;
-  background: var(--swipe-card);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid var(--swipe-border);
-  border-radius: 28px;
-  padding: 32px 24px;
-  opacity: 0;
-  transform: scale(0.9) translateY(30px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+.swipe-step.active {
+  display: block;
+  animation: swipeFadeIn 0.3s ease;
 }
 
-.swipe-form-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--swipe-gold-dark), var(--swipe-gold), var(--swipe-gold-dark));
-  border-radius: 28px 28px 0 0;
+@keyframes swipeFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.swipe-form-card.active {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-  z-index: 10;
-}
-
-.swipe-form-card.prev {
-  opacity: 0;
-  transform: scale(0.85) translateX(-120%);
-  z-index: 5;
-}
-
-.swipe-form-card.next {
-  opacity: 0.3;
-  transform: scale(0.92) translateY(20px);
-  z-index: 1;
-}
-
-/* Card Content */
-.swipe-card-icon {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 20px;
-  background: linear-gradient(135deg, rgba(249, 203, 0, 0.2), rgba(204, 166, 0, 0.1));
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-}
-
-.swipe-card-title {
-  text-align: center;
-  font-size: 1.6rem;
+.swipe-step-title {
+  font-size: 1.5rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 8px;
 }
 
-.swipe-card-subtitle {
-  text-align: center;
+.swipe-step-subtitle {
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 28px;
 }
 
 /* ============================================
-   CATEGORY SELECTION
+   CATEGORY SELECTION - Inline Style
    ============================================ */
-.swipe-category-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.swipe-category-list {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .swipe-category-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.03);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px 12px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
+  text-align: left;
 }
 
 .swipe-category-btn:hover {
-  border-color: rgba(249, 203, 0, 0.3);
+  border-color: rgba(249, 203, 0, 0.4);
   background: rgba(249, 203, 0, 0.05);
-  transform: translateY(-2px);
 }
 
 .swipe-category-btn.selected {
   border-color: var(--swipe-gold);
   background: rgba(249, 203, 0, 0.1);
-  box-shadow: 0 0 30px rgba(249, 203, 0, 0.2);
 }
 
-.swipe-category-btn.selected .category-icon {
-  transform: scale(1.1);
-}
-
-.category-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 10px;
+.swipe-category-icon {
+  width: 44px;
+  height: 44px;
   background: rgba(249, 203, 0, 0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  transition: transform 0.3s;
+  flex-shrink: 0;
 }
 
-.category-name {
+.swipe-category-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--swipe-gold);
+}
+
+.swipe-category-text {
+  flex: 1;
+}
+
+.swipe-category-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #fff;
+  margin-bottom: 2px;
+}
+
+.swipe-category-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ============================================
@@ -244,12 +309,20 @@
   gap: 12px;
 }
 
+.swipe-input-label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
 .swipe-input {
   width: 100%;
-  padding: 16px;
+  padding: 14px 16px;
   font-size: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   color: #fff;
   transition: all 0.3s;
@@ -267,16 +340,8 @@
 }
 
 .swipe-textarea {
-  min-height: 120px;
+  min-height: 100px;
   resize: none;
-}
-
-.swipe-input-label {
-  display: block;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8px;
-  font-weight: 500;
 }
 
 /* ============================================
@@ -284,8 +349,8 @@
    ============================================ */
 .swipe-upload-zone {
   border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 40px 20px;
+  border-radius: 16px;
+  padding: 32px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
@@ -303,19 +368,23 @@
   background: rgba(34, 197, 94, 0.05);
 }
 
-.upload-icon {
-  font-size: 48px;
+.swipe-upload-icon {
   margin-bottom: 12px;
-  opacity: 0.6;
 }
 
-.upload-text {
+.swipe-upload-icon svg {
+  width: 40px;
+  height: 40px;
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+.swipe-upload-text {
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
-.upload-hint {
+.swipe-upload-hint {
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.8rem;
 }
@@ -326,7 +395,7 @@
 
 .swipe-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-top: 16px;
 }
@@ -334,7 +403,7 @@
 .swipe-preview-item {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
 }
@@ -349,20 +418,20 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 24px;
-  height: 24px;
-  border-radius: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
   background: rgba(239, 68, 68, 0.9);
   border: none;
   color: #fff;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.upload-skip {
+.swipe-upload-skip {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
   text-align: center;
@@ -375,13 +444,13 @@
 .swipe-nav-buttons {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .swipe-btn {
   flex: 1;
-  padding: 16px 24px;
-  border-radius: 14px;
+  padding: 14px 24px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -405,7 +474,7 @@
   box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
 }
 
-.swipe-btn-next:hover {
+.swipe-btn-next:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 30px rgba(249, 203, 0, 0.4);
 }
@@ -413,7 +482,6 @@
 .swipe-btn-next:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .swipe-btn-submit {
@@ -423,22 +491,28 @@
 }
 
 /* ============================================
-   SUCCESS CARD
+   SUCCESS STATE
    ============================================ */
-.swipe-success-animation {
-  width: 100px;
-  height: 100px;
+.swipe-success-icon {
+  width: 80px;
+  height: 80px;
   margin: 0 auto 24px;
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  animation: successPop 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: swipeSuccessPop 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes successPop {
+.swipe-success-icon svg {
+  width: 40px;
+  height: 40px;
+  stroke: var(--swipe-success);
+  stroke-width: 2.5;
+}
+
+@keyframes swipeSuccessPop {
   0% { transform: scale(0); opacity: 0; }
   50% { transform: scale(1.2); }
   100% { transform: scale(1); opacity: 1; }
@@ -446,7 +520,7 @@
 
 .swipe-success-title {
   text-align: center;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 12px;
@@ -457,7 +531,7 @@
   color: rgba(255, 255, 255, 0.7);
   font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .swipe-success-actions {
@@ -466,63 +540,244 @@
   gap: 12px;
 }
 
-.swipe-btn-home {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  text-align: center;
+.swipe-btn-phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--swipe-gold);
+  color: #000;
   text-decoration: none;
-  padding: 16px;
-  border-radius: 14px;
+  padding: 14px;
+  border-radius: 12px;
   font-weight: 600;
 }
 
+.swipe-btn-phone svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.swipe-btn-close {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
 /* ============================================
-   SWIPE GESTURES (Mobile)
+   DESKTOP - Centered Modal
+   ============================================ */
+@media (min-width: 768px) and (min-height: 700px) {
+  .swipe-form-card-wrapper {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .swipe-form-modal {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
    ============================================ */
 @media (max-width: 767px) {
-  .swipe-form-card {
-    width: calc(100% - 32px);
-    padding: 28px 20px;
-    touch-action: pan-y;
+  .swipe-form-card-wrapper {
+    padding: 60px 16px 40px 16px;
+  }
+
+  .swipe-form-modal {
+    padding: 32px 24px;
+    border-radius: 16px;
   }
 
   .swipe-input-row {
     grid-template-columns: 1fr;
   }
 
-  .swipe-category-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .swipe-preview-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .swipe-category-btn {
+    padding: 14px 16px;
+    gap: 14px;
+  }
+
+  .swipe-category-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .swipe-category-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .swipe-category-name {
+    font-size: 0.95rem;
+  }
+
+  .swipe-category-desc {
+    font-size: 0.8rem;
   }
 }
 
 /* ============================================
-   TRIGGER BUTTON (for embedding)
+   DYNAMIC QUESTIONS
+   ============================================ */
+.swipe-question-block {
+  margin-bottom: 24px;
+}
+
+.swipe-question-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 12px;
+}
+
+.swipe-options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.swipe-options-grid.has-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.swipe-option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.swipe-option-btn:hover {
+  border-color: rgba(249, 203, 0, 0.4);
+  background: rgba(249, 203, 0, 0.05);
+}
+
+.swipe-option-btn.selected {
+  border-color: var(--swipe-gold);
+  background: rgba(249, 203, 0, 0.15);
+  color: #fff;
+}
+
+.swipe-option-btn.with-icon {
+  flex-direction: column;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.swipe-option-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-option-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: var(--swipe-gold);
+}
+
+.swipe-option-label {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 767px) {
+  .swipe-options-grid.has-icons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .swipe-option-btn {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .swipe-option-btn.with-icon {
+    padding: 12px 10px;
+  }
+}
+
+/* ============================================
+   TRIGGER BUTTON
    ============================================ */
 .swipe-form-trigger {
   position: fixed;
-  bottom: 100px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
+  bottom: 24px;
+  right: 24px;
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 26px;
   background: linear-gradient(135deg, var(--swipe-gold-dark), var(--swipe-gold));
   border: none;
   box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
   cursor: pointer;
-  z-index: 9999;
+  z-index: 99998;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #000;
   transition: all 0.3s;
 }
 
+.swipe-form-trigger svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
 .swipe-form-trigger:hover {
-  transform: scale(1.1);
+  transform: translateY(-2px);
   box-shadow: 0 6px 30px rgba(249, 203, 0, 0.5);
 }
 
 /* Hide trigger when form is open */
 .swipe-form-container:not(.hidden) ~ .swipe-form-trigger {
   display: none;
+}
+
+/* ============================================
+   ACCESSIBILITY: Reduced Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .swipe-form-container,
+  .swipe-form-modal,
+  .swipe-form-trigger,
+  .swipe-option-btn,
+  .swipe-next-btn,
+  .swipe-back-btn,
+  .swipe-submit-btn {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+
+  @keyframes swipeSlideUp {
+    0%, 100% { opacity: 1; transform: translateY(0); }
+  }
 }

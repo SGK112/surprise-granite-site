@@ -1,17 +1,29 @@
 /**
- * Surprise Granite - Mobile Navigation
- * Standalone mobile nav component (max-width: 768px)
+ * Surprise Granite - Mobile Navigation (DEPRECATED)
  *
- * Dependencies: None (self-contained)
- * Visibility controlled by: mega-nav.css
+ * NOTE: This file is deprecated as of 2025-01-10.
+ * Mobile navigation is now handled by unified-nav.js
+ * This file is kept for backwards compatibility but will exit early.
+ *
+ * Dependencies: None
+ * Replaced by: unified-nav.js
  */
 
 (function() {
   'use strict';
 
+  // DEPRECATED: Exit if unified navigation is active
+  // unified-nav.js is the new consolidated mobile navigation system
+  if (window.unifiedNavInitialized) {
+    console.log('[mobile-nav.js] Skipping: unified-nav.js is active');
+    return;
+  }
+
   // Prevent multiple initializations
   if (window.sgMobileNavInitialized) return;
   window.sgMobileNavInitialized = true;
+
+  console.warn('[mobile-nav.js] DEPRECATED: This file will be removed. Use unified-nav.js instead.');
 
   // Menu configuration
   const MENU_ITEMS = [
