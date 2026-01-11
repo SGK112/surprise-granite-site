@@ -170,8 +170,12 @@ html {
 /* ===== FLOATING WIDGETS - Fixed z-index with fallbacks ===== */
 /* Override inline styles that use z-index: 99998 and 999999 */
 
-/* Chat widget - highest z-index, bottom-right */
-#sg-chat-widget {
+/* Chat widget - highest z-index, bottom-right - ALWAYS ON TOP */
+#sg-chat-widget,
+#chatbase-bubble-button,
+[id*="chatbase"],
+.chat-widget,
+.chatbot-widget {
   z-index: 2147483647 !important; /* Maximum z-index - always on top */
   bottom: 24px !important;
   right: 24px !important;
@@ -179,22 +183,28 @@ html {
   position: fixed !important;
 }
 
-/* Estimate widget - below chat, bottom-left */
+/* Estimate widget - bottom-left, constrained width */
 .sg-widget,
 #sgWidget {
-  z-index: 99990 !important; /* High but below chat */
+  z-index: 9999 !important; /* Below modals and chat */
   bottom: 24px !important;
   left: 24px !important;
   right: auto !important;
   position: fixed !important;
+  max-width: 200px !important; /* Prevent overlap with chat */
 }
 
 @media (max-width: 768px) {
-  /* Mobile chat button positioning - bottom-right */
-  #sg-chat-widget {
+  /* Mobile chat button positioning - bottom-right - ALWAYS ACCESSIBLE */
+  #sg-chat-widget,
+  #chatbase-bubble-button,
+  [id*="chatbase"],
+  .chat-widget,
+  .chatbot-widget {
     bottom: 20px !important;
     right: 16px !important;
     left: auto !important;
+    z-index: 2147483647 !important;
   }
 
   #sg-chat-button {
@@ -207,15 +217,22 @@ html {
     height: 26px !important;
   }
 
-  /* Mobile estimate widget - bottom-left, smaller */
+  /* Mobile estimate widget - icon only, bottom-left */
   .sg-widget,
   #sgWidget {
     bottom: 20px !important;
     left: 12px !important;
     right: auto !important;
-    max-width: calc(100vw - 90px) !important; /* Leave room for chat button */
-    transform: scale(0.9);
-    transform-origin: bottom left;
+    max-width: 60px !important; /* Icon only on mobile */
+    z-index: 9999 !important;
+  }
+
+  /* Hide estimate widget text on mobile - icon only */
+  .sg-widget .sg-widget-content,
+  #sgWidget .sg-widget-content,
+  .sg-widget-label,
+  .sg-widget-eyebrow {
+    display: none !important;
   }
 }
 
