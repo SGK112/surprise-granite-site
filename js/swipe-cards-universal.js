@@ -96,6 +96,11 @@
   let startX, startY, currentX, currentY;
   let isDragging = false;
 
+  // Performance: RAF handle and cached DOM references
+  let rafId = null;
+  let cachedStack = null;
+  let lastRenderTime = 0;
+
   // Get ALL favorites combined from unified system
   function getFavorites() {
     if (window.SGFavorites) {
@@ -765,12 +770,18 @@
     updateProgress();
   }
 
+  // Performance: Preload more images with priority hints
   function preloadImages() {
-    const upcoming = cards.slice(currentIndex, currentIndex + 8);
-    upcoming.forEach(card => {
-      if (card.image) {
+    const upcoming = cards.slice(currentIndex, currentIndex + 12);
+    upcoming.forEach((card, i) => {
+      if (card.image && !card._preloaded) {
         const img = new Image();
+        // First 4 images are high priority
+        if (i < 4 && 'fetchPriority' in img) {
+          img.fetchPriority = 'high';
+        }
         img.src = card.image;
+        card._preloaded = true;
       }
     });
   }
@@ -852,12 +863,19 @@
   }
 
   function renderCards() {
-    const stack = document.querySelector('.swipe-card-stack');
+    // Cache stack reference for performance
+    if (!cachedStack) {
+      cachedStack = document.querySelector('.swipe-card-stack');
+    }
+    const stack = cachedStack;
     if (!stack) return;
 
+    // Use DocumentFragment for batch DOM updates
+    const fragment = document.createDocumentFragment();
     stack.innerHTML = '';
 
-    const cardsToShow = cards.slice(currentIndex, currentIndex + 4);
+    // Show 5 cards for deeper visible stack effect
+    const cardsToShow = cards.slice(currentIndex, currentIndex + 5);
 
     if (cardsToShow.length === 0) {
       showEmptyState();
@@ -929,9 +947,13 @@
         </div>
       ` : '';
 
+      // First card loads eagerly for better LCP, others lazy
+      const imgLoading = i === 0 ? 'eager' : 'lazy';
+      const imgFetchPriority = i === 0 ? 'fetchpriority="high"' : '';
+
       cardEl.innerHTML = `
         ${badgesHtml ? `<div class="swipe-card-badges">${badgesHtml}</div>` : ''}
-        <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="lazy">
+        <img class="swipe-card-image" src="${card.image}" alt="${card.title}" loading="${imgLoading}" ${imgFetchPriority} decoding="async">
         ${vendorOverlay}
         <a href="${card.href}" class="swipe-card-view-btn" target="_blank">
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -959,8 +981,11 @@
         setupCardInteraction(cardEl);
       }
 
-      stack.appendChild(cardEl);
+      fragment.appendChild(cardEl);
     });
+
+    // Batch DOM update
+    stack.appendChild(fragment);
   }
 
   function setupCardInteraction(cardEl) {
@@ -979,9 +1004,13 @@
     });
   }
 
+  // Performance: Velocity tracking with smoothing
   let velocityX = 0;
   let lastMoveTime = 0;
   let lastX = 0;
+  let velocityHistory = [];
+  let pendingTransform = null;
+  let activeCard = null;
 
   function handleTouchStart(e) {
     startX = e.touches[0].clientX;
@@ -989,75 +1018,111 @@
     currentX = startX;
     currentY = startY;
     lastX = startX;
-    lastMoveTime = Date.now();
+    lastMoveTime = performance.now();
     velocityX = 0;
+    velocityHistory = [];
     isDragging = true;
+    activeCard = this;
     this.classList.add('dragging');
     this.style.transition = 'none';
+    // Cancel any pending animation frame
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   }
 
   function handleTouchMove(e) {
-    if (!isDragging) return;
+    if (!isDragging || !activeCard) return;
 
-    const now = Date.now();
+    const now = performance.now();
     const dt = now - lastMoveTime;
 
     currentX = e.touches[0].clientX;
     currentY = e.touches[0].clientY;
 
+    // Velocity with exponential smoothing
     if (dt > 0) {
-      velocityX = (currentX - lastX) / dt * 16;
+      const instantVelocity = (currentX - lastX) / dt * 16;
+      velocityHistory.push(instantVelocity);
+      if (velocityHistory.length > 5) velocityHistory.shift();
+      velocityX = velocityHistory.reduce((a, b) => a + b, 0) / velocityHistory.length;
     }
 
     lastX = currentX;
     lastMoveTime = now;
 
     const deltaX = currentX - startX;
-
     e.preventDefault();
 
+    // Use RAF for smooth rendering
+    pendingTransform = { deltaX, card: activeCard };
+    if (!rafId) {
+      rafId = requestAnimationFrame(applyTransform);
+    }
+  }
+
+  // Performance: Apply transform in RAF for 60fps
+  function applyTransform() {
+    rafId = null;
+    if (!pendingTransform) return;
+
+    const { deltaX, card } = pendingTransform;
+    pendingTransform = null;
+
     // Tinder-style swipe - rotate as card moves
-    const rotation = deltaX * 0.1;
-    const lift = Math.min(Math.abs(deltaX) * 0.15, 20);
-    this.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% - ${lift}px)) rotate(${rotation}deg)`;
+    const rotation = deltaX * 0.08;
+    const lift = Math.min(Math.abs(deltaX) * 0.12, 16);
+    card.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% - ${lift}px)) rotate(${rotation}deg)`;
 
     const threshold = 40;
     if (deltaX > threshold) {
-      this.classList.add('swiping-right');
-      this.classList.remove('swiping-left');
+      card.classList.add('swiping-right');
+      card.classList.remove('swiping-left');
     } else if (deltaX < -threshold) {
-      this.classList.add('swiping-left');
-      this.classList.remove('swiping-right');
+      card.classList.add('swiping-left');
+      card.classList.remove('swiping-right');
     } else {
-      this.classList.remove('swiping-left', 'swiping-right');
+      card.classList.remove('swiping-left', 'swiping-right');
     }
   }
 
   function handleTouchEnd() {
     if (!isDragging) return;
     isDragging = false;
-    this.classList.remove('dragging');
+
+    // Cancel pending RAF
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    const card = activeCard;
+    activeCard = null;
+    if (!card) return;
+
+    card.classList.remove('dragging');
 
     const deltaX = currentX - startX;
-    const projectedX = deltaX + velocityX * 5;
-    const threshold = 80;
-    const velocityThreshold = 3;
+    const projectedX = deltaX + velocityX * 6;
+    const threshold = 70;
+    const velocityThreshold = 2.5;
 
     if (projectedX > threshold || velocityX > velocityThreshold) {
       // Tinder-style swipe right - fly off with rotation
-      this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translate(120vw, -50%) rotate(30deg)`;
-      setTimeout(() => handleLike(), 300);
+      card.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.transform = `translate(120vw, -50%) rotate(25deg)`;
+      setTimeout(() => handleLike(), 280);
     } else if (projectedX < -threshold || velocityX < -velocityThreshold) {
       // Tinder-style swipe left - fly off with rotation
-      this.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-      this.style.transform = `translate(-120vw, -50%) rotate(-30deg)`;
-      setTimeout(() => handleNope(), 300);
+      card.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.transform = `translate(-120vw, -50%) rotate(-25deg)`;
+      setTimeout(() => handleNope(), 280);
     } else {
-      // Snap back to center
-      this.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.style.transform = 'translate(-50%, -50%)';
-      this.classList.remove('swiping-left', 'swiping-right');
+      // Snap back to center with spring effect
+      card.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      card.style.transform = 'translate(-50%, -50%)';
+      card.classList.remove('swiping-left', 'swiping-right');
     }
   }
 
