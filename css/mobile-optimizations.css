@@ -168,18 +168,20 @@ html {
 }
 
 /* ===== FLOATING WIDGETS - Proper z-index and positioning ===== */
+/* Override inline styles that use z-index: 99998 and 999999 */
 
-/* Chat widget - always on top, bottom-right */
+/* Chat widget - highest z-index, bottom-right */
 #sg-chat-widget {
-  z-index: 9999 !important;
+  z-index: 1000000 !important; /* Override inline 999999 */
   bottom: 24px !important;
   right: 24px !important;
+  left: auto !important;
 }
 
-/* Estimate widget - lower z-index, bottom-left */
+/* Estimate widget - below chat, bottom-left */
 .sg-widget,
 #sgWidget {
-  z-index: 9990 !important;
+  z-index: 99990 !important; /* Below chat, override inline 99998 */
   bottom: 24px !important;
   left: 24px !important;
   right: auto !important;
@@ -189,27 +191,29 @@ html {
   /* Mobile chat button positioning - bottom-right */
   #sg-chat-widget {
     bottom: 20px !important;
-    right: 20px !important;
+    right: 16px !important;
     left: auto !important;
   }
 
   #sg-chat-button {
-    width: 56px;
-    height: 56px;
+    width: 56px !important;
+    height: 56px !important;
   }
 
   #sg-chat-button svg {
-    width: 26px;
-    height: 26px;
+    width: 26px !important;
+    height: 26px !important;
   }
 
-  /* Mobile estimate widget - bottom-left */
+  /* Mobile estimate widget - bottom-left, smaller */
   .sg-widget,
   #sgWidget {
     bottom: 20px !important;
-    left: 16px !important;
+    left: 12px !important;
     right: auto !important;
-    max-width: calc(100% - 100px) !important; /* Leave room for chat button */
+    max-width: calc(100vw - 90px) !important; /* Leave room for chat button */
+    transform: scale(0.9);
+    transform-origin: bottom left;
   }
 }
 
@@ -221,13 +225,13 @@ html {
   }
 
   #sg-chat-button {
-    width: 60px;
-    height: 60px;
+    width: 60px !important;
+    height: 60px !important;
   }
 
   .sg-widget,
   #sgWidget {
-    max-width: 320px;
+    max-width: 320px !important;
   }
 }
 

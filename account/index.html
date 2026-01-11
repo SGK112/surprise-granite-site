@@ -4389,25 +4389,50 @@
         }
 
         const { createClient } = window.supabase;
+
+        // Check localStorage availability (mobile Safari ITP workaround)
+        let storageAvailable = true;
+        try {
+          localStorage.setItem('__storage_test__', '1');
+          localStorage.removeItem('__storage_test__');
+        } catch (e) {
+          storageAvailable = false;
+          console.warn('localStorage unavailable, using memory storage');
+        }
+
+        // Create custom storage that falls back gracefully
+        const customStorage = storageAvailable ? window.localStorage : {
+          _data: {},
+          getItem(key) { return this._data[key] || null; },
+          setItem(key, value) { this._data[key] = value; },
+          removeItem(key) { delete this._data[key]; }
+        };
+
         supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
-            storage: window.localStorage,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token'
+            storage: customStorage,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+            flowType: 'pkce'
           }
         });
 
         // Listen for auth state changes (handles token refresh on mobile)
+        let authChangeHandled = false;
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
           console.log('Account Auth State:', event);
+
+          // Prevent double-handling
+          if (authChangeHandled && event === 'INITIAL_SESSION') return;
 
           if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
             currentUser = null;
             showAuth();
-          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
             if (session) {
+              authChangeHandled = true;
               currentUser = session.user;
               // Refresh profile on token refresh
               loadUserProfile().catch(err => console.warn('Profile refresh failed:', err));
@@ -4415,14 +4440,30 @@
           }
         });
 
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        // Try to get session with retry for mobile
+        let session = null;
+        let sessionError = null;
+
+        for (let retry = 0; retry < 2; retry++) {
+          const result = await supabaseClient.auth.getSession();
+          session = result.data?.session;
+          sessionError = result.error;
+
+          if (session || !sessionError) break;
+
+          // Wait before retry
+          await new Promise(r => setTimeout(r, 500));
+        }
 
         clearTimeout(fallbackTimer);
 
         if (sessionError) {
           console.error('Session error:', sessionError);
-          showAuth();
-          return;
+          // Only redirect if this is a real error, not just missing session
+          if (sessionError.message?.includes('refresh_token')) {
+            showAuth();
+            return;
+          }
         }
 
         if (session) {
@@ -6222,7 +6263,7 @@
             <td style="padding: 40px 0; border-top: 1px solid #eee; text-align: center;">
               <p style="margin: 0; color: #888; font-size: 13px;">Surprise Granite Marble & Quartz</p>
               <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;">14155 W. Bell Road, Suite 100, Surprise, AZ 85374</p>
-              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;"><a href="#" style="color: #f9cb00; text-decoration: none;">info@surprisegranite.com</a> • <a href="#" style="color: #f9cb00; text-decoration: none;">(623) 466-2424</a></p>
+              <p style="margin: 8px 0 0; color: #aaa; font-size: 12px;"><a href="#" style="color: #f9cb00; text-decoration: none;">info@surprisegranite.com</a> • <a href="#" style="color: #f9cb00; text-decoration: none;">(602) 833-3189</a></p>
             </td>
           </tr>
         </table>
@@ -6281,7 +6322,7 @@
                   <td width="50%" valign="top" align="right">
                     <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">From</p>
                     <p style="margin: 15px 0 0; color: #ffffff; font-size: 14px;">Surprise Granite Marble & Quartz</p>
-                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">(623) 466-2424</p>
+                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">(602) 833-3189</p>
                   </td>
                 </tr>
               </table>
@@ -6346,7 +6387,7 @@
             <td style="background-color: #0a0a12; padding: 40px 50px; text-align: center;">
               <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 2px;">Surprise Granite Marble & Quartz</p>
               <p style="margin: 15px 0 0; color: #666; font-size: 12px;">14155 W. Bell Road, Suite 100, Surprise, AZ 85374</p>
-              <p style="margin: 10px 0 0; color: #666; font-size: 12px;">info@surprisegranite.com • (623) 466-2424</p>
+              <p style="margin: 10px 0 0; color: #666; font-size: 12px;">info@surprisegranite.com • (602) 833-3189</p>
               <p style="margin: 20px 0 0; color: #444; font-size: 11px;">Thank you for choosing Surprise Granite for your project.</p>
             </td>
           </tr>
