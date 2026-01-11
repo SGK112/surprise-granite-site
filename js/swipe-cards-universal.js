@@ -344,9 +344,9 @@
     const existingCards = document.querySelectorAll('.swipe-card');
     existingCards.forEach(c => c.remove());
 
-    // Create new cards
-    createCards();
-    setupTouchHandlers();
+    // Render new cards
+    renderCards();
+    updateProgress();
     updateStats();
   }
 
