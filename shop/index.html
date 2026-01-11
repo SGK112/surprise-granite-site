@@ -740,6 +740,8 @@ closeButton.addEventListener('click', function() {
     var hamburger = document.querySelector('.navbar_menu-button');
     var pageContent = document.querySelector('.page-wrapper');
 
+    if (!hamburger || !pageContent) return;
+
     function updatePageContent() {
       if (hamburger.classList.contains('w--open')) {
         pageContent.classList.add('is-fixed');
@@ -749,7 +751,6 @@ closeButton.addEventListener('click', function() {
     }
 
     var observer = new MutationObserver(updatePageContent);
-
     observer.observe(hamburger, { attributes: true, attributeFilter: ['class'] });
   });
 </script>
@@ -907,14 +908,14 @@ function displayOpeningStatus() {
     const openingHoursDiv = document.getElementById('openingHoursDiv');
     const openNowDiv = document.getElementById('openNowDiv');
 
+    if (!openNowDiv || !openingHoursDiv) return;
+
     if (isOpen) {
         openNowDiv.style.display = 'flex';
         openingHoursDiv.style.display = 'none';
-        console.log('Display: Open Now');
     } else {
         openNowDiv.style.display = 'none';
         openingHoursDiv.style.display = 'flex';
-        console.log('Display: Closed Now');
     }
 }
 
@@ -2192,6 +2193,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const enabledLocationElement = document.querySelector('.user-location_layout.is-enabled');
 
         function updateLocationDisplay() {
+            if (!locationDisplayElement || !disabledLocationElement || !enabledLocationElement) return;
+
             const locCity = localStorage.getItem('locCity');
             const locState = localStorage.getItem('locState');
 
