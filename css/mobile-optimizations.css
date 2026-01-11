@@ -167,24 +167,26 @@ html {
   }
 }
 
-/* ===== FLOATING WIDGETS - Proper z-index and positioning ===== */
+/* ===== FLOATING WIDGETS - Fixed z-index with fallbacks ===== */
 /* Override inline styles that use z-index: 99998 and 999999 */
 
 /* Chat widget - highest z-index, bottom-right */
 #sg-chat-widget {
-  z-index: 1000000 !important; /* Override inline 999999 */
+  z-index: 2147483647 !important; /* Maximum z-index - always on top */
   bottom: 24px !important;
   right: 24px !important;
   left: auto !important;
+  position: fixed !important;
 }
 
 /* Estimate widget - below chat, bottom-left */
 .sg-widget,
 #sgWidget {
-  z-index: 99990 !important; /* Below chat, override inline 99998 */
+  z-index: 99990 !important; /* High but below chat */
   bottom: 24px !important;
   left: 24px !important;
   right: auto !important;
+  position: fixed !important;
 }
 
 @media (max-width: 768px) {
