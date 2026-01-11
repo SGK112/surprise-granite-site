@@ -167,13 +167,30 @@ html {
   }
 }
 
-/* ===== CHAT WIDGET MOBILE - Properly spaced from cart and favorites ===== */
+/* ===== FLOATING WIDGETS - Proper z-index and positioning ===== */
+
+/* Chat widget - always on top, bottom-right */
+#sg-chat-widget {
+  z-index: 9999 !important;
+  bottom: 24px !important;
+  right: 24px !important;
+}
+
+/* Estimate widget - lower z-index, bottom-left */
+.sg-widget,
+#sgWidget {
+  z-index: 9990 !important;
+  bottom: 24px !important;
+  left: 24px !important;
+  right: auto !important;
+}
 
 @media (max-width: 768px) {
-  /* Mobile chat button positioning - bottom of the stack */
+  /* Mobile chat button positioning - bottom-right */
   #sg-chat-widget {
     bottom: 20px !important;
     right: 20px !important;
+    left: auto !important;
   }
 
   #sg-chat-button {
@@ -185,9 +202,18 @@ html {
     width: 26px;
     height: 26px;
   }
+
+  /* Mobile estimate widget - bottom-left */
+  .sg-widget,
+  #sgWidget {
+    bottom: 20px !important;
+    left: 16px !important;
+    right: auto !important;
+    max-width: calc(100% - 100px) !important; /* Leave room for chat button */
+  }
 }
 
-/* Desktop chat widget spacing */
+/* Desktop widget spacing */
 @media (min-width: 769px) {
   #sg-chat-widget {
     bottom: 24px !important;
@@ -197,6 +223,11 @@ html {
   #sg-chat-button {
     width: 60px;
     height: 60px;
+  }
+
+  .sg-widget,
+  #sgWidget {
+    max-width: 320px;
   }
 }
 
