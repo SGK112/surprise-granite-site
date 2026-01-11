@@ -444,8 +444,21 @@
     }
 
     .quiz-results-icon {
-      font-size: 56px;
-      margin-bottom: 16px;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.15) 0%, rgba(249, 203, 0, 0.05) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(249, 203, 0, 0.3);
+    }
+
+    .quiz-results-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--quiz-gold);
     }
 
     .quiz-results-header h2 {
@@ -465,6 +478,28 @@
       border-radius: 20px;
       padding: 24px;
       margin-bottom: 24px;
+    }
+
+    .quiz-profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--quiz-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      padding: 6px 14px;
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 20px;
+      border: 1px solid rgba(249, 203, 0, 0.25);
+    }
+
+    .quiz-profile-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--quiz-gold);
+      fill: rgba(249, 203, 0, 0.2);
     }
 
     .quiz-profile-title {
@@ -568,8 +603,24 @@
       border: 1px solid rgba(255,255,255,0.2);
     }
 
+    .quiz-cta-btn.tertiary {
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+
+    .quiz-cta-btn.tertiary:hover {
+      color: #fff;
+    }
+
     .quiz-cta-btn:hover {
       transform: translateY(-2px);
+    }
+
+    .quiz-cta-btn.tertiary:hover {
+      transform: none;
     }
 
     /* Recommendation Sections */
@@ -585,7 +636,21 @@
     }
 
     .quiz-rec-section-icon {
-      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 10px;
+      border: 1px solid rgba(249, 203, 0, 0.2);
+    }
+
+    .quiz-rec-section-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--quiz-gold);
     }
 
     .quiz-rec-section h3 {
@@ -786,7 +851,20 @@
     }
 
     .quiz-signed-in-icon {
-      font-size: 24px;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 50%;
+    }
+
+    .quiz-signed-in-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: #22c55e;
     }
 
     .quiz-signed-in-text {
@@ -1327,7 +1405,12 @@
   <!-- Results Screen -->
   <div class="quiz-results" id="quizResults">
     <div class="quiz-results-header">
-      <div class="quiz-results-icon">✨</div>
+      <div class="quiz-results-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 12l2 2 4-4"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+      </div>
       <h2>Your Style Profile</h2>
       <p>Based on your answers, here's what we recommend</p>
     </div>
@@ -1347,12 +1430,21 @@
 
     <!-- Signed In Confirmation (shown if logged in) -->
     <div class="quiz-signed-in" id="signedInMsg" style="display:none;">
-      <span class="quiz-signed-in-icon">✅</span>
+      <span class="quiz-signed-in-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </span>
       <span class="quiz-signed-in-text"><strong>Results saved!</strong> Your style profile is stored in your account.</span>
     </div>
 
     <div class="quiz-profile" id="styleProfile">
-      <div class="quiz-profile-title">Your Style</div>
+      <div class="quiz-profile-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Your Style</span>
+      </div>
       <div class="quiz-profile-name" id="styleName">Modern Minimalist</div>
       <p class="quiz-profile-desc" id="styleDesc">You prefer clean lines and contemporary designs.</p>
     </div>
@@ -1360,7 +1452,14 @@
     <!-- Product Recommendations -->
     <div class="quiz-rec-section">
       <div class="quiz-rec-section-header">
-        <span class="quiz-rec-section-icon">🪨</span>
+        <span class="quiz-rec-section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </span>
         <h3>Recommended Materials</h3>
       </div>
       <div class="quiz-rec-grid" id="recGrid">
@@ -1371,7 +1470,11 @@
     <!-- Services Section -->
     <div class="quiz-rec-section">
       <div class="quiz-rec-section-header">
-        <span class="quiz-rec-section-icon">🔧</span>
+        <span class="quiz-rec-section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </span>
         <h3>Recommended Services</h3>
       </div>
       <div class="quiz-service-grid" id="serviceGrid">
@@ -1382,7 +1485,12 @@
     <!-- Blog Articles Section -->
     <div class="quiz-rec-section">
       <div class="quiz-rec-section-header">
-        <span class="quiz-rec-section-icon">📖</span>
+        <span class="quiz-rec-section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </span>
         <h3>Helpful Articles</h3>
       </div>
       <div class="quiz-blog-grid" id="blogGrid">
@@ -1393,7 +1501,13 @@
     <!-- Extras Section -->
     <div class="quiz-rec-section">
       <div class="quiz-rec-section-header">
-        <span class="quiz-rec-section-icon">✨</span>
+        <span class="quiz-rec-section-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </span>
         <h3>Complete Your Look</h3>
       </div>
       <div class="quiz-extras-grid" id="extrasGrid">
@@ -1409,10 +1523,17 @@
         </svg>
         Browse All Products
       </a>
-      <a href="/get-a-free-estimate.html" class="quiz-cta-btn secondary">
+      <a href="/get-a-free-estimate" class="quiz-cta-btn secondary">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
         Get Free Estimate
       </a>
-      <button class="quiz-cta-btn secondary" onclick="restartQuiz()">
+      <button class="quiz-cta-btn tertiary" onclick="restartQuiz()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
         Retake Quiz
       </button>
     </div>
