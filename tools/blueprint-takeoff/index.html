@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Blueprint Takeoff | Material & Labor Calculator | Surprise Granite</title>
+  <meta name="description" content="Upload blueprints or floor plans and get instant material takeoffs. AI calculates countertop, flooring, and tile quantities with labor estimates.">
+  <link rel="canonical" href="https://surprisegranite.com/tools/blueprint-takeoff/">
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Unified Navigation -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110e">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    :root {
+      --sg-gold: #f9cb00;
+      --sg-gold-dark: #e5b800;
+      --sg-dark: #1a1a2e;
+      --sg-darker: #0f0f1a;
+      --sg-surface: #16161f;
+      --sg-blue: #3b82f6;
+      --sg-green: #22c55e;
+      --sg-orange: #f97316;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border: rgba(255, 255, 255, 0.1);
+      --gradient-gold: linear-gradient(135deg, #f9cb00 0%, #ffdf4a 50%, #e5b800 100%);
+      --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--sg-darker);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Hero */
+    .takeoff-hero {
+      position: relative;
+      padding: 120px 20px 50px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--sg-dark) 0%, var(--sg-darker) 100%);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-blue);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .hero-title .blue {
+      color: var(--sg-blue);
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    /* Main */
+    .takeoff-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px 100px;
+    }
+
+    /* Upload Section */
+    .upload-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .icon {
+      width: 32px;
+      height: 32px;
+      background: var(--gradient-blue);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 50px 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--sg-surface);
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+      border-color: var(--sg-blue);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .upload-area.has-image {
+      padding: 20px;
+      border-style: solid;
+      border-color: var(--sg-blue);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .upload-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .upload-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-blue);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .upload-input { display: none; }
+
+    .upload-preview {
+      display: none;
+      max-width: 100%;
+      max-height: 500px;
+      border-radius: 12px;
+    }
+
+    .upload-area.has-image .upload-preview { display: block; margin: 0 auto; }
+    .upload-area.has-image .upload-placeholder { display: none; }
+
+    .change-file-btn {
+      display: none;
+      margin-top: 16px;
+      background: var(--sg-surface);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .upload-area.has-image .change-file-btn { display: inline-flex; }
+
+    /* Project Type */
+    .project-section {
+      margin-bottom: 40px;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .project-card {
+      background: var(--sg-surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .project-card:hover {
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .project-card.selected {
+      border-color: var(--sg-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .project-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .project-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Material Prices */
+    .pricing-section {
+      margin-bottom: 40px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .pricing-card {
+      background: var(--sg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .pricing-card label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .pricing-input {
+      width: 100%;
+      background: var(--sg-darker);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .pricing-input:focus {
+      outline: none;
+      border-color: var(--sg-blue);
+    }
+
+    .pricing-unit {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Analyze Button */
+    .analyze-section {
+      text-align: center;
+      padding: 30px 0;
+    }
+
+    .analyze-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--gradient-gold);
+      color: #000;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .analyze-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(249, 203, 0, 0.3);
+    }
+
+    .analyze-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Loading */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--sg-surface);
+      border-top-color: var(--sg-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 24px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .loading-subtext {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Results Section */
+    .results-section {
+      display: none;
+      margin-top: 40px;
+    }
+
+    .results-section.active { display: block; }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .results-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .result-card {
+      background: var(--sg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .result-card.highlight {
+      border-color: var(--sg-gold);
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.1) 0%, var(--sg-surface) 100%);
+    }
+
+    .result-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .result-card-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--gradient-blue);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .result-card.highlight .result-card-icon {
+      background: var(--gradient-gold);
+    }
+
+    .result-card-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .result-card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .result-card-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--sg-gold);
+      margin-bottom: 4px;
+    }
+
+    .result-card-unit {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Room Breakdown */
+    .room-breakdown {
+      background: var(--sg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    .room-breakdown-header {
+      padding: 20px 24px;
+      background: rgba(59, 130, 246, 0.1);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .room-breakdown-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .room-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .room-table th,
+    .room-table td {
+      padding: 16px 24px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .room-table th {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .room-table td {
+      font-size: 14px;
+    }
+
+    .room-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .room-name-cell {
+      font-weight: 600;
+    }
+
+    .room-sqft-cell {
+      color: var(--sg-gold);
+      font-weight: 700;
+    }
+
+    /* Cost Summary */
+    .cost-summary {
+      background: linear-gradient(135deg, var(--sg-dark) 0%, var(--sg-surface) 100%);
+      border: 2px solid var(--sg-gold);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 40px;
+    }
+
+    .cost-summary h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .cost-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cost-row:last-child {
+      border-bottom: none;
+      padding-top: 20px;
+      margin-top: 8px;
+    }
+
+    .cost-label {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .cost-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .cost-row.total .cost-label {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cost-row.total .cost-value {
+      font-size: 28px;
+      color: var(--sg-gold);
+    }
+
+    /* Actions */
+    .result-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn.primary {
+      background: var(--gradient-gold);
+      color: #000;
+    }
+
+    .action-btn.secondary {
+      background: var(--sg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .pricing-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .room-table th,
+      .room-table td {
+        padding: 12px 16px;
+        font-size: 12px;
+      }
+
+      .result-actions {
+        flex-direction: column;
+      }
+
+      .action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Footer */
+    .takeoff-footer {
+      background: var(--sg-dark);
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    .takeoff-footer p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .takeoff-footer a {
+      color: var(--sg-gold);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO -->
+  <section class="takeoff-hero">
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        AI-Powered Estimation
+      </div>
+      <h1 class="hero-title">
+        Blueprint <span class="blue">Takeoff Tool</span>
+      </h1>
+      <p class="hero-subtitle">
+        Upload your floor plan or blueprint and get instant material quantities and cost estimates for countertops, flooring, and tile.
+      </p>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <main class="takeoff-main">
+    <!-- Upload -->
+    <section class="upload-section">
+      <h3 class="section-title">
+        <span class="icon">📐</span>
+        Upload Blueprint or Floor Plan
+      </h3>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-placeholder">
+          <div class="upload-icon">📄</div>
+          <h4 class="upload-title">Drop your blueprint here</h4>
+          <p class="upload-subtitle">Supports PDF, PNG, JPG up to 50MB + Bluebeam BAX files</p>
+          <button class="upload-btn" type="button">Choose File</button>
+          <div style="margin-top: 20px; color: var(--text-muted); font-size: 13px;">- or -</div>
+          <div style="margin-top: 16px;">
+            <input type="text" id="blueprintUrl" placeholder="Paste blueprint URL (Dropbox, Google Drive, etc.)" style="width: 100%; max-width: 400px; padding: 12px 16px; background: var(--sg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+            <button type="button" id="loadUrlBtn" style="margin-top: 10px; padding: 10px 20px; background: var(--sg-surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-weight: 600; cursor: pointer;">Load from URL</button>
+          </div>
+        </div>
+        <img class="upload-preview" id="uploadPreview" alt="Blueprint preview">
+        <button class="change-file-btn" type="button">Change File</button>
+        <input type="file" class="upload-input" id="uploadInput" accept="image/*,.pdf,.bax,.xml">
+      </div>
+    </section>
+
+    <!-- Project Type -->
+    <section class="project-section">
+      <h3 class="section-title">
+        <span class="icon">🏠</span>
+        Project Type
+      </h3>
+      <div class="project-grid" id="projectGrid">
+        <div class="project-card selected" data-project="kitchen-remodel">
+          <div class="project-icon">🍳</div>
+          <div class="project-name">Kitchen Remodel</div>
+        </div>
+        <div class="project-card" data-project="bathroom-remodel">
+          <div class="project-icon">🛁</div>
+          <div class="project-name">Bathroom Remodel</div>
+        </div>
+        <div class="project-card" data-project="full-home">
+          <div class="project-icon">🏡</div>
+          <div class="project-name">Full Home</div>
+        </div>
+        <div class="project-card" data-project="flooring-only">
+          <div class="project-icon">🪵</div>
+          <div class="project-name">Flooring Only</div>
+        </div>
+        <div class="project-card" data-project="commercial">
+          <div class="project-icon">🏢</div>
+          <div class="project-name">Commercial</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Material Pricing -->
+    <section class="pricing-section">
+      <h3 class="section-title">
+        <span class="icon">💰</span>
+        Material & Labor Rates (Optional)
+      </h3>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <label>Countertop Material</label>
+          <input type="number" class="pricing-input" id="countertopPrice" value="65" min="0">
+          <div class="pricing-unit">$ per sq ft (installed)</div>
+        </div>
+        <div class="pricing-card">
+          <label>Flooring Material</label>
+          <input type="number" class="pricing-input" id="flooringPrice" value="8" min="0">
+          <div class="pricing-unit">$ per sq ft (installed)</div>
+        </div>
+        <div class="pricing-card">
+          <label>Tile Material</label>
+          <input type="number" class="pricing-input" id="tilePrice" value="15" min="0">
+          <div class="pricing-unit">$ per sq ft (installed)</div>
+        </div>
+        <div class="pricing-card">
+          <label>Waste Factor</label>
+          <input type="number" class="pricing-input" id="wasteFactor" value="10" min="0" max="30">
+          <div class="pricing-unit">% extra for cuts/waste</div>
+        </div>
+      </div>
+
+      <!-- AI Engine Toggle -->
+      <div style="margin-top: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="useOllama" style="width: 18px; height: 18px; accent-color: var(--sg-gold);">
+          <label for="useOllama" style="font-size: 14px; color: var(--text-secondary); cursor: pointer;">
+            Use Self-Hosted AI (Ollama)
+          </label>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Requires Ollama running locally with llava:13b model
+        </div>
+      </div>
+    </section>
+
+    <!-- Analyze Button -->
+    <section class="analyze-section">
+      <button class="analyze-btn" id="analyzeBtn" disabled>
+        🔍 Analyze Blueprint
+      </button>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">
+        AI will extract dimensions and calculate material quantities
+      </p>
+    </section>
+
+    <!-- Results -->
+    <section class="results-section" id="resultsSection">
+      <div class="results-header">
+        <h2>Takeoff Results</h2>
+        <p style="color: var(--text-secondary);">AI-extracted measurements and estimates</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="results-grid" id="resultsGrid">
+        <div class="result-card highlight">
+          <div class="result-card-header">
+            <div class="result-card-icon">📐</div>
+            <div>
+              <div class="result-card-title">Total Area</div>
+              <div class="result-card-subtitle">All rooms combined</div>
+            </div>
+          </div>
+          <div class="result-card-value" id="totalArea">0</div>
+          <div class="result-card-unit">square feet</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-card-icon">🪨</div>
+            <div>
+              <div class="result-card-title">Countertop</div>
+              <div class="result-card-subtitle">Kitchen & bath surfaces</div>
+            </div>
+          </div>
+          <div class="result-card-value" id="countertopSqft">0</div>
+          <div class="result-card-unit">square feet</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-card-icon">🪵</div>
+            <div>
+              <div class="result-card-title">Flooring</div>
+              <div class="result-card-subtitle">LVP, hardwood, laminate</div>
+            </div>
+          </div>
+          <div class="result-card-value" id="flooringSqft">0</div>
+          <div class="result-card-unit">square feet</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-card-icon">🧱</div>
+            <div>
+              <div class="result-card-title">Tile</div>
+              <div class="result-card-subtitle">Backsplash & bathroom</div>
+            </div>
+          </div>
+          <div class="result-card-value" id="tileSqft">0</div>
+          <div class="result-card-unit">square feet</div>
+        </div>
+      </div>
+
+      <!-- Room Breakdown -->
+      <div class="room-breakdown">
+        <div class="room-breakdown-header">
+          <h3>Room-by-Room Breakdown</h3>
+        </div>
+        <table class="room-table">
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Dimensions</th>
+              <th>Area</th>
+              <th>Material Type</th>
+            </tr>
+          </thead>
+          <tbody id="roomTableBody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cost Summary -->
+      <div class="cost-summary">
+        <h3>Estimated Project Cost</h3>
+        <div class="cost-row">
+          <span class="cost-label">Countertops (<span id="costCountertopSqft">0</span> sq ft)</span>
+          <span class="cost-value" id="costCountertop">$0</span>
+        </div>
+        <div class="cost-row">
+          <span class="cost-label">Flooring (<span id="costFlooringSqft">0</span> sq ft)</span>
+          <span class="cost-value" id="costFlooring">$0</span>
+        </div>
+        <div class="cost-row">
+          <span class="cost-label">Tile (<span id="costTileSqft">0</span> sq ft)</span>
+          <span class="cost-value" id="costTile">$0</span>
+        </div>
+        <div class="cost-row total">
+          <span class="cost-label">Total Estimate</span>
+          <span class="cost-value" id="costTotal">$0</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="result-actions">
+        <a href="/get-a-free-estimate" class="action-btn primary">
+          Get Professional Quote
+        </a>
+        <button class="action-btn secondary" id="printBtn">
+          Print Report
+        </button>
+        <button class="action-btn secondary" id="newAnalysisBtn">
+          New Analysis
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Analyzing Blueprint...</div>
+    <div class="loading-subtext">AI is extracting room dimensions and calculating quantities</div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="takeoff-footer">
+    <p>&copy; 2026 Surprise Granite. All rights reserved.</p>
+    <p style="margin-top: 8px;">
+      <a href="/tools/">Back to Tools</a> &bull;
+      <a href="/">Home</a> &bull;
+      <a href="/get-a-free-estimate">Get Estimate</a>
+    </p>
+  </footer>
+
+  <script>
+    // State
+    let uploadedImage = null;
+    let uploadedImageBase64 = null;
+    let uploadedBAXContent = null;
+    let selectedProject = 'kitchen-remodel';
+
+    // DOM Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const uploadInput = document.getElementById('uploadInput');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const projectGrid = document.getElementById('projectGrid');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const resultsSection = document.getElementById('resultsSection');
+
+    // Upload handlers
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target.classList.contains('change-file-btn')) {
+        uploadInput.click();
+      } else if (!uploadArea.classList.contains('has-image')) {
+        uploadInput.click();
+      }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    uploadInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      uploadedImage = file;
+      uploadedBAXContent = null;
+      const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const isBAX = file.name.toLowerCase().endsWith('.bax') || file.name.toLowerCase().endsWith('.xml');
+
+      if (isBAX) {
+        // Handle Bluebeam BAX file (XML)
+        const textReader = new FileReader();
+        textReader.onload = (e) => {
+          uploadedBAXContent = e.target.result;
+          uploadedImageBase64 = null;
+
+          // Show BAX placeholder
+          uploadPreview.src = 'data:image/svg+xml,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+              <rect width="400" height="300" fill="#1a1a2e"/>
+              <text x="200" y="100" text-anchor="middle" fill="#3b82f6" font-size="48">📐</text>
+              <text x="200" y="160" text-anchor="middle" fill="#f9cb00" font-size="18" font-family="Arial">Bluebeam BAX File</text>
+              <text x="200" y="190" text-anchor="middle" fill="#fff" font-size="14" font-family="Arial">${file.name}</text>
+              <text x="200" y="220" text-anchor="middle" fill="#888" font-size="12" font-family="Arial">${(file.size / 1024).toFixed(1)} KB</text>
+              <text x="200" y="250" text-anchor="middle" fill="#22c55e" font-size="11" font-family="Arial">Markup data will be extracted automatically</text>
+            </svg>
+          `);
+
+          uploadArea.classList.add('has-image');
+          analyzeBtn.disabled = false;
+        };
+        textReader.readAsText(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          uploadedImageBase64 = e.target.result;
+
+          if (isPDF) {
+            // Show PDF placeholder
+            uploadPreview.src = 'data:image/svg+xml,' + encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+                <rect width="400" height="300" fill="#1a1a2e"/>
+                <text x="200" y="120" text-anchor="middle" fill="#3b82f6" font-size="64">📄</text>
+                <text x="200" y="180" text-anchor="middle" fill="#fff" font-size="20" font-family="Arial">PDF Blueprint</text>
+                <text x="200" y="210" text-anchor="middle" fill="#888" font-size="14" font-family="Arial">${file.name}</text>
+                <text x="200" y="240" text-anchor="middle" fill="#666" font-size="12" font-family="Arial">${(file.size / 1024 / 1024).toFixed(2)} MB</text>
+              </svg>
+            `);
+          } else {
+            uploadPreview.src = e.target.result;
+          }
+
+          uploadArea.classList.add('has-image');
+          analyzeBtn.disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // URL loading
+    const blueprintUrlInput = document.getElementById('blueprintUrl');
+    const loadUrlBtn = document.getElementById('loadUrlBtn');
+
+    loadUrlBtn.addEventListener('click', () => {
+      const url = blueprintUrlInput.value.trim();
+      if (!url) {
+        alert('Please enter a URL');
+        return;
+      }
+
+      // Convert Dropbox/Google Drive links to direct download
+      let directUrl = url;
+
+      // Dropbox: change dl=0 to dl=1 or add raw=1
+      if (url.includes('dropbox.com')) {
+        directUrl = url.replace('dl=0', 'dl=1').replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+        if (!directUrl.includes('dl=1') && !directUrl.includes('raw=1')) {
+          directUrl += (directUrl.includes('?') ? '&' : '?') + 'raw=1';
+        }
+      }
+
+      // Google Drive: convert to direct download
+      if (url.includes('drive.google.com')) {
+        const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch) {
+          directUrl = `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+        }
+      }
+
+      // Set URL as "uploaded" file
+      uploadedImage = { type: 'url', url: directUrl, originalUrl: url };
+      uploadedImageBase64 = directUrl;
+
+      // Show URL preview
+      uploadPreview.src = 'data:image/svg+xml,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+          <rect width="400" height="300" fill="#1a1a2e"/>
+          <text x="200" y="120" text-anchor="middle" fill="#3b82f6" font-size="64">🔗</text>
+          <text x="200" y="180" text-anchor="middle" fill="#fff" font-size="20" font-family="Arial">Blueprint URL</text>
+          <text x="200" y="220" text-anchor="middle" fill="#888" font-size="11" font-family="Arial">${url.substring(0, 50)}${url.length > 50 ? '...' : ''}</text>
+        </svg>
+      `);
+
+      uploadArea.classList.add('has-image');
+      analyzeBtn.disabled = false;
+    });
+
+    // Project selection
+    projectGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.project-card');
+      if (card) {
+        projectGrid.querySelectorAll('.project-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedProject = card.dataset.project;
+      }
+    });
+
+    // Analyze blueprint
+    analyzeBtn.addEventListener('click', async () => {
+      if (!uploadedImage && !uploadedBAXContent) return;
+
+      showLoading();
+
+      try {
+        // Get pricing values for labor estimate
+        const laborRate = parseFloat(document.getElementById('countertopPrice').value) || 65;
+        const useOllama = document.getElementById('useOllama').checked;
+
+        // Prepare request body
+        const requestBody = {
+          projectType: selectedProject,
+          useOllama: useOllama,
+          laborRate: laborRate,
+          materialPricing: {
+            countertops: parseFloat(document.getElementById('countertopPrice').value) || 65,
+            flooring: parseFloat(document.getElementById('flooringPrice').value) || 8,
+            tile: parseFloat(document.getElementById('tilePrice').value) || 15
+          }
+        };
+
+        // Add appropriate data based on upload type
+        if (uploadedBAXContent) {
+          requestBody.baxFile = uploadedBAXContent;
+        } else if (uploadedImage?.type === 'url') {
+          requestBody.blueprintUrl = uploadedImage.url;
+        } else if (uploadedImageBase64) {
+          requestBody.image = uploadedImageBase64;
+        }
+
+        // Call AI analysis API (use port 3001 for local dev, relative path for production)
+        const isLocalDev = ['8080', '8888', '5500', '3000'].includes(window.location.port);
+        const apiUrl = isLocalDev ? 'http://localhost:3001/api/analyze-blueprint' : '/api/analyze-blueprint';
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error);
+
+        // Show mode indicator if in demo mode
+        if (data.mode === 'demo' && data.notice) {
+          console.log('Note:', data.notice);
+        }
+
+        displayResults(data);
+
+      } catch (error) {
+        console.error('Analysis error:', error);
+        // Use demo data
+        displayDemoResults();
+      }
+    });
+
+    function showLoading() {
+      loadingOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function displayResults(data) {
+      hideLoading();
+
+      // Get pricing inputs
+      const countertopPrice = parseFloat(document.getElementById('countertopPrice').value) || 65;
+      const flooringPrice = parseFloat(document.getElementById('flooringPrice').value) || 8;
+      const tilePrice = parseFloat(document.getElementById('tilePrice').value) || 15;
+      const wasteFactor = (parseFloat(document.getElementById('wasteFactor').value) || 10) / 100;
+
+      // Apply waste factor
+      const countertopSqft = Math.ceil(data.countertopSqft * (1 + wasteFactor));
+      const flooringSqft = Math.ceil(data.flooringSqft * (1 + wasteFactor));
+      const tileSqft = Math.ceil(data.tileSqft * (1 + wasteFactor));
+      const totalArea = data.totalArea;
+
+      // Update summary cards
+      document.getElementById('totalArea').textContent = totalArea.toLocaleString();
+      document.getElementById('countertopSqft').textContent = countertopSqft.toLocaleString();
+      document.getElementById('flooringSqft').textContent = flooringSqft.toLocaleString();
+      document.getElementById('tileSqft').textContent = tileSqft.toLocaleString();
+
+      // Update room table
+      const roomTableBody = document.getElementById('roomTableBody');
+      roomTableBody.innerHTML = data.rooms.map(room => `
+        <tr>
+          <td class="room-name-cell">${room.name}</td>
+          <td>${room.dimensions}</td>
+          <td class="room-sqft-cell">${room.sqft} sq ft</td>
+          <td>${room.material}</td>
+        </tr>
+      `).join('');
+
+      // Calculate costs
+      const countertopCost = countertopSqft * countertopPrice;
+      const flooringCost = flooringSqft * flooringPrice;
+      const tileCost = tileSqft * tilePrice;
+      const totalCost = countertopCost + flooringCost + tileCost;
+
+      // Update cost summary
+      document.getElementById('costCountertopSqft').textContent = countertopSqft;
+      document.getElementById('costFlooringSqft').textContent = flooringSqft;
+      document.getElementById('costTileSqft').textContent = tileSqft;
+      document.getElementById('costCountertop').textContent = '$' + countertopCost.toLocaleString();
+      document.getElementById('costFlooring').textContent = '$' + flooringCost.toLocaleString();
+      document.getElementById('costTile').textContent = '$' + tileCost.toLocaleString();
+      document.getElementById('costTotal').textContent = '$' + totalCost.toLocaleString();
+
+      // Show results
+      resultsSection.classList.add('active');
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function displayDemoResults() {
+      // Demo data based on project type
+      const demoData = {
+        'kitchen-remodel': {
+          totalArea: 180,
+          countertopSqft: 45,
+          flooringSqft: 120,
+          tileSqft: 35,
+          rooms: [
+            { name: 'Kitchen', dimensions: "12' x 15'", sqft: 180, material: 'Flooring + Countertop' },
+            { name: 'Kitchen Island', dimensions: "4' x 8'", sqft: 32, material: 'Countertop' },
+            { name: 'Backsplash', dimensions: "18\" x 12'", sqft: 18, material: 'Tile' }
+          ]
+        },
+        'bathroom-remodel': {
+          totalArea: 85,
+          countertopSqft: 12,
+          flooringSqft: 0,
+          tileSqft: 120,
+          rooms: [
+            { name: 'Master Bath Floor', dimensions: "8' x 10'", sqft: 80, material: 'Tile' },
+            { name: 'Shower Walls', dimensions: "3' x 8' x 3 walls", sqft: 72, material: 'Tile' },
+            { name: 'Vanity Top', dimensions: "5' x 2'", sqft: 10, material: 'Countertop' }
+          ]
+        },
+        'full-home': {
+          totalArea: 2200,
+          countertopSqft: 65,
+          flooringSqft: 1800,
+          tileSqft: 280,
+          rooms: [
+            { name: 'Living Room', dimensions: "20' x 18'", sqft: 360, material: 'Flooring' },
+            { name: 'Kitchen', dimensions: "14' x 16'", sqft: 224, material: 'Flooring + Countertop' },
+            { name: 'Master Bedroom', dimensions: "16' x 14'", sqft: 224, material: 'Flooring' },
+            { name: 'Bedroom 2', dimensions: "12' x 12'", sqft: 144, material: 'Flooring' },
+            { name: 'Bedroom 3', dimensions: "11' x 12'", sqft: 132, material: 'Flooring' },
+            { name: 'Master Bath', dimensions: "10' x 12'", sqft: 120, material: 'Tile' },
+            { name: 'Guest Bath', dimensions: "8' x 8'", sqft: 64, material: 'Tile' }
+          ]
+        },
+        'flooring-only': {
+          totalArea: 1500,
+          countertopSqft: 0,
+          flooringSqft: 1500,
+          tileSqft: 0,
+          rooms: [
+            { name: 'Living Area', dimensions: "25' x 20'", sqft: 500, material: 'LVP Flooring' },
+            { name: 'Kitchen/Dining', dimensions: "20' x 18'", sqft: 360, material: 'LVP Flooring' },
+            { name: 'Master Suite', dimensions: "18' x 16'", sqft: 288, material: 'LVP Flooring' },
+            { name: 'Bedrooms (3)', dimensions: "Various", sqft: 352, material: 'LVP Flooring' }
+          ]
+        },
+        'commercial': {
+          totalArea: 5000,
+          countertopSqft: 120,
+          flooringSqft: 4500,
+          tileSqft: 400,
+          rooms: [
+            { name: 'Main Floor', dimensions: "100' x 45'", sqft: 4500, material: 'Commercial LVT' },
+            { name: 'Reception Counter', dimensions: "12' x 3'", sqft: 36, material: 'Quartz' },
+            { name: 'Break Room', dimensions: "15' x 12'", sqft: 180, material: 'Tile' },
+            { name: 'Restrooms (4)', dimensions: "8' x 10' each", sqft: 320, material: 'Tile' }
+          ]
+        }
+      };
+
+      displayResults(demoData[selectedProject] || demoData['kitchen-remodel']);
+    }
+
+    // Print report
+    document.getElementById('printBtn').addEventListener('click', () => {
+      window.print();
+    });
+
+    // New analysis
+    document.getElementById('newAnalysisBtn').addEventListener('click', () => {
+      resultsSection.classList.remove('active');
+      uploadArea.classList.remove('has-image');
+      uploadPreview.src = '';
+      uploadedImage = null;
+      uploadedImageBase64 = null;
+      uploadedBAXContent = null;
+      document.getElementById('blueprintUrl').value = '';
+      analyzeBtn.disabled = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>

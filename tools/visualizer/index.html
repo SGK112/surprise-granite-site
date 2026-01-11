@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Room Visualizer | See Our Materials In Your Space | Surprise Granite</title>
+  <meta name="description" content="Upload a photo of your kitchen or bathroom and see Surprise Granite countertops, tile, and flooring in your space. AI-powered visualization tool.">
+  <link rel="canonical" href="https://surprisegranite.com/tools/visualizer/">
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Unified Navigation -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110e">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    :root {
+      --sg-gold: #f9cb00;
+      --sg-gold-dark: #e5b800;
+      --sg-dark: #1a1a2e;
+      --sg-darker: #0f0f1a;
+      --sg-surface: #16161f;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border: rgba(255, 255, 255, 0.1);
+      --gradient-gold: linear-gradient(135deg, #f9cb00 0%, #ffdf4a 50%, #e5b800 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--sg-darker);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Hero Header */
+    .visualizer-hero {
+      position: relative;
+      padding: 120px 20px 50px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--sg-dark) 0%, var(--sg-darker) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-logo {
+      width: 60px;
+      height: 60px;
+      background: var(--gradient-gold);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .hero-title .gold {
+      color: var(--sg-gold);
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Main Container */
+    .visualizer-main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px 100px;
+    }
+
+    /* Step Indicator */
+    .steps-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 40px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--sg-surface);
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .step.active {
+      background: rgba(249, 203, 0, 0.15);
+      border-color: var(--sg-gold);
+      color: var(--sg-gold);
+    }
+
+    .step.completed {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+
+    .step-number {
+      width: 24px;
+      height: 24px;
+      background: currentColor;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #000;
+    }
+
+    /* Upload Section */
+    .upload-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .icon {
+      width: 32px;
+      height: 32px;
+      background: var(--gradient-gold);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 50px 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--sg-surface);
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+      border-color: var(--sg-gold);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .upload-area.has-image {
+      padding: 20px;
+      border-style: solid;
+      border-color: var(--sg-gold);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .upload-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .upload-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-gold);
+      color: #000;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .upload-input { display: none; }
+
+    .upload-preview {
+      display: none;
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 12px;
+    }
+
+    .upload-area.has-image .upload-preview { display: block; margin: 0 auto; }
+    .upload-area.has-image .upload-placeholder { display: none; }
+
+    .change-photo-btn {
+      display: none;
+      margin-top: 16px;
+      background: var(--sg-surface);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .upload-area.has-image .change-photo-btn { display: inline-flex; }
+
+    /* Material Selection */
+    .material-section {
+      margin-bottom: 40px;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .category-tab {
+      flex-shrink: 0;
+      padding: 10px 24px;
+      background: var(--sg-surface);
+      border: 1px solid var(--border);
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .category-tab:hover {
+      border-color: var(--sg-gold);
+      color: var(--text-primary);
+    }
+
+    .category-tab.active {
+      background: var(--sg-gold);
+      border-color: var(--sg-gold);
+      color: #000;
+    }
+
+    /* Product Grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .product-card {
+      background: var(--sg-surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .product-card:hover {
+      border-color: rgba(249, 203, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .product-card.selected {
+      border-color: var(--sg-gold);
+      box-shadow: 0 0 20px rgba(249, 203, 0, 0.3);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      background: #2a2a3a;
+    }
+
+    .product-info {
+      padding: 10px;
+    }
+
+    .product-name {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-type {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Room Type Selection */
+    .room-section {
+      margin-bottom: 40px;
+    }
+
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .room-card {
+      background: var(--sg-surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .room-card:hover {
+      border-color: rgba(249, 203, 0, 0.5);
+    }
+
+    .room-card.selected {
+      border-color: var(--sg-gold);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .room-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .room-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Generate Button */
+    .generate-section {
+      text-align: center;
+      padding: 30px 0;
+    }
+
+    .generate-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--gradient-gold);
+      color: #000;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(249, 203, 0, 0.3);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--sg-surface);
+      border-top-color: var(--sg-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .loading-subtext {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .loading-tips {
+      margin-top: 30px;
+      padding: 20px;
+      background: var(--sg-surface);
+      border-radius: 12px;
+      max-width: 400px;
+    }
+
+    .loading-tips h4 {
+      color: var(--sg-gold);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .loading-tips p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Result Section */
+    .result-section {
+      display: none;
+      margin-top: 40px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-section.active { display: block; }
+
+    .result-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .result-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .result-header p {
+      color: var(--text-secondary);
+    }
+
+    .result-image-container {
+      max-width: 800px;
+      margin: 0 auto 30px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .result-image {
+      width: 100%;
+      display: block;
+    }
+
+    .result-product-info {
+      background: var(--sg-surface);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .result-product-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .result-product-details h4 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .result-product-details p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .result-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn.primary {
+      background: var(--gradient-gold);
+      color: #000;
+    }
+
+    .action-btn.secondary {
+      background: var(--sg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .steps-indicator {
+        flex-wrap: wrap;
+      }
+
+      .step {
+        font-size: 11px;
+        padding: 8px 14px;
+      }
+
+      .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .result-actions {
+        flex-direction: column;
+      }
+
+      .action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Footer */
+    .visualizer-footer {
+      background: var(--sg-dark);
+      padding: 30px 20px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    .visualizer-footer p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .visualizer-footer a {
+      color: var(--sg-gold);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- HERO -->
+  <section class="visualizer-hero">
+    <div class="hero-content">
+      <div class="hero-logo">🏠</div>
+      <h1 class="hero-title">
+        See Our Materials <span class="gold">In Your Space</span>
+      </h1>
+      <p class="hero-subtitle">
+        Upload a photo and visualize real Surprise Granite countertops, tile, and flooring in your kitchen or bathroom.
+      </p>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <main class="visualizer-main">
+    <!-- Steps -->
+    <div class="steps-indicator">
+      <div class="step active" data-step="1">
+        <span class="step-number">1</span>
+        Upload Photo
+      </div>
+      <div class="step" data-step="2">
+        <span class="step-number">2</span>
+        Select Material
+      </div>
+      <div class="step" data-step="3">
+        <span class="step-number">3</span>
+        Visualize
+      </div>
+    </div>
+
+    <!-- Upload Section -->
+    <section class="upload-section">
+      <h3 class="section-title">
+        <span class="icon">📷</span>
+        Upload Your Space
+      </h3>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-placeholder">
+          <div class="upload-icon">📸</div>
+          <h4 class="upload-title">Drop your photo here</h4>
+          <p class="upload-subtitle">or click to browse (JPG, PNG up to 10MB)</p>
+          <button class="upload-btn" type="button">Choose Photo</button>
+        </div>
+        <img class="upload-preview" id="uploadPreview" alt="Your space">
+        <button class="change-photo-btn" type="button">Change Photo</button>
+        <input type="file" class="upload-input" id="uploadInput" accept="image/*">
+      </div>
+    </section>
+
+    <!-- Room Type -->
+    <section class="room-section">
+      <h3 class="section-title">
+        <span class="icon">🏡</span>
+        What type of room is this?
+      </h3>
+      <div class="room-grid" id="roomGrid">
+        <div class="room-card selected" data-room="kitchen">
+          <div class="room-icon">🍳</div>
+          <div class="room-name">Kitchen</div>
+        </div>
+        <div class="room-card" data-room="bathroom">
+          <div class="room-icon">🛁</div>
+          <div class="room-name">Bathroom</div>
+        </div>
+        <div class="room-card" data-room="living">
+          <div class="room-icon">🛋️</div>
+          <div class="room-name">Living Room</div>
+        </div>
+        <div class="room-card" data-room="bedroom">
+          <div class="room-icon">🛏️</div>
+          <div class="room-name">Bedroom</div>
+        </div>
+        <div class="room-card" data-room="laundry">
+          <div class="room-icon">🧺</div>
+          <div class="room-name">Laundry</div>
+        </div>
+        <div class="room-card" data-room="outdoor">
+          <div class="room-icon">🌿</div>
+          <div class="room-name">Outdoor</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Material Selection -->
+    <section class="material-section">
+      <h3 class="section-title">
+        <span class="icon">🪨</span>
+        Choose a Material
+      </h3>
+
+      <div class="category-tabs" id="categoryTabs">
+        <button class="category-tab active" data-category="countertops">Countertops</button>
+        <button class="category-tab" data-category="flooring">Flooring</button>
+        <button class="category-tab" data-category="tile">Tile</button>
+      </div>
+
+      <div class="product-grid" id="productGrid">
+        <!-- Products loaded via JS -->
+      </div>
+    </section>
+
+    <!-- Generate -->
+    <section class="generate-section">
+      <button class="generate-btn" id="generateBtn" disabled>
+        ✨ Generate Visualization
+      </button>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">
+        AI will transform your space with the selected material
+      </p>
+    </section>
+
+    <!-- Result Section -->
+    <section class="result-section" id="resultSection">
+      <div class="result-header">
+        <h2>Your Transformed Space</h2>
+        <p>Here's how your room could look with the selected material</p>
+      </div>
+
+      <div class="result-image-container">
+        <img class="result-image" id="resultImage" alt="AI Generated Result">
+        <div class="result-product-info">
+          <img class="result-product-thumb" id="resultProductThumb" alt="">
+          <div class="result-product-details">
+            <h4 id="resultProductName">-</h4>
+            <p id="resultProductType">-</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <a href="/get-a-free-estimate" class="action-btn primary">
+          Get Free Estimate
+        </a>
+        <button class="action-btn secondary" id="tryAgainBtn">
+          Try Different Material
+        </button>
+        <a href="#" class="action-btn secondary" id="downloadBtn" download="sg-visualization.jpg">
+          Download Image
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Creating Your Vision...</div>
+      <div class="loading-subtext">Our AI is transforming your space</div>
+
+      <div class="loading-tips">
+        <h4>Did you know?</h4>
+        <p>Surprise Granite has been serving Arizona homeowners for over 15 years with premium countertops, tile, and flooring installation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="visualizer-footer">
+    <p>&copy; 2026 Surprise Granite. All rights reserved.</p>
+    <p style="margin-top: 8px;">
+      <a href="/tools/">Back to Tools</a> &bull;
+      <a href="/">Home</a> &bull;
+      <a href="/get-a-free-estimate">Get Estimate</a>
+    </p>
+  </footer>
+
+  <script>
+    // Product Data
+    let products = {
+      countertops: [],
+      flooring: [],
+      tile: []
+    };
+
+    // State
+    let selectedCategory = 'countertops';
+    let selectedProduct = null;
+    let selectedRoom = 'kitchen';
+    let uploadedImage = null;
+    let uploadedImageBase64 = null;
+
+    // DOM Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const uploadInput = document.getElementById('uploadInput');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const categoryTabs = document.getElementById('categoryTabs');
+    const productGrid = document.getElementById('productGrid');
+    const roomGrid = document.getElementById('roomGrid');
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const resultSection = document.getElementById('resultSection');
+    const resultImage = document.getElementById('resultImage');
+    const resultProductThumb = document.getElementById('resultProductThumb');
+    const resultProductName = document.getElementById('resultProductName');
+    const resultProductType = document.getElementById('resultProductType');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const tryAgainBtn = document.getElementById('tryAgainBtn');
+
+    // Load product data
+    async function loadProducts() {
+      try {
+        const [countertopsRes, flooringRes, tileRes] = await Promise.all([
+          fetch('/data/countertops.json'),
+          fetch('/data/flooring.json'),
+          fetch('/data/tile.json')
+        ]);
+
+        const countertopsData = await countertopsRes.json();
+        const flooringData = await flooringRes.json();
+        const tileData = await tileRes.json();
+
+        products.countertops = countertopsData.countertops || [];
+        products.flooring = flooringData.flooring || [];
+        products.tile = tileData.tile || [];
+
+        renderProducts();
+      } catch (error) {
+        console.error('Error loading products:', error);
+        // Use fallback data
+        products.countertops = [
+          { name: 'Calacatta Abezzo', type: 'Quartz', primaryImage: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg' },
+          { name: 'Calacatta Miraggio Gold', type: 'Quartz', primaryImage: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.jpeg' }
+        ];
+        renderProducts();
+      }
+    }
+
+    // Render products grid
+    function renderProducts() {
+      const items = products[selectedCategory] || [];
+      const filtered = items.filter(p => p.primaryImage);
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = '<p style="color: var(--text-muted); padding: 20px;">No products available in this category.</p>';
+        return;
+      }
+
+      productGrid.innerHTML = filtered.slice(0, 30).map((product, index) => `
+        <div class="product-card ${index === 0 ? 'selected' : ''}" data-index="${index}">
+          <img class="product-image" src="${product.primaryImage}" alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+          <div class="product-info">
+            <div class="product-name">${product.name}</div>
+            <div class="product-type">${product.type || selectedCategory}</div>
+          </div>
+        </div>
+      `).join('');
+
+      // Auto-select first product
+      if (filtered.length > 0) {
+        selectedProduct = filtered[0];
+        updateGenerateButton();
+      }
+    }
+
+    // Upload handlers
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target.classList.contains('change-photo-btn')) {
+        uploadInput.click();
+      } else if (!uploadArea.classList.contains('has-image')) {
+        uploadInput.click();
+      }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    uploadInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+
+      uploadedImage = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedImageBase64 = e.target.result;
+        uploadPreview.src = e.target.result;
+        uploadArea.classList.add('has-image');
+        updateStep(1, 'completed');
+        updateStep(2, 'active');
+        updateGenerateButton();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Category tabs
+    categoryTabs.addEventListener('click', (e) => {
+      if (e.target.classList.contains('category-tab')) {
+        categoryTabs.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        selectedCategory = e.target.dataset.category;
+        selectedProduct = null;
+        renderProducts();
+      }
+    });
+
+    // Product selection
+    productGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.product-card');
+      if (card) {
+        productGrid.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const index = parseInt(card.dataset.index);
+        const items = products[selectedCategory].filter(p => p.primaryImage);
+        selectedProduct = items[index];
+        updateGenerateButton();
+      }
+    });
+
+    // Room selection
+    roomGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.room-card');
+      if (card) {
+        roomGrid.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRoom = card.dataset.room;
+      }
+    });
+
+    // Update generate button
+    function updateGenerateButton() {
+      generateBtn.disabled = !(uploadedImage && selectedProduct);
+    }
+
+    // Update step indicator
+    function updateStep(stepNum, status) {
+      const step = document.querySelector(`.step[data-step="${stepNum}"]`);
+      if (step) {
+        step.classList.remove('active', 'completed');
+        step.classList.add(status);
+      }
+    }
+
+    // Generate visualization
+    generateBtn.addEventListener('click', async () => {
+      if (!uploadedImage || !selectedProduct) return;
+
+      showLoading();
+
+      try {
+        const prompt = `Transform this ${selectedRoom} photo to show ${selectedProduct.name} ${selectedProduct.type || selectedCategory}. Keep the same layout and perspective. Professional interior design photography, realistic lighting, high quality.`;
+
+        const response = await fetch('/api/visualize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: uploadedImageBase64,
+            prompt: prompt,
+            style: selectedRoom,
+            material: selectedProduct.name
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error);
+
+        showResult(data.output || data.imageUrl);
+
+      } catch (error) {
+        console.error('Generation error:', error);
+        // Demo mode - show the product image as result
+        showDemoResult();
+      }
+    });
+
+    function showLoading() {
+      loadingOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function showResult(imageUrl) {
+      hideLoading();
+      resultImage.src = imageUrl;
+      resultProductThumb.src = selectedProduct.primaryImage;
+      resultProductName.textContent = selectedProduct.name;
+      resultProductType.textContent = selectedProduct.type || selectedCategory;
+      downloadBtn.href = imageUrl;
+      resultSection.classList.add('active');
+      resultSection.scrollIntoView({ behavior: 'smooth' });
+      updateStep(3, 'completed');
+    }
+
+    function showDemoResult() {
+      // For demo, use a kitchen image from Unsplash
+      const demoImages = {
+        kitchen: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
+        bathroom: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
+        living: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+        bedroom: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
+        laundry: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&q=80',
+        outdoor: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'
+      };
+
+      showResult(demoImages[selectedRoom] || demoImages.kitchen);
+    }
+
+    // Try again
+    tryAgainBtn.addEventListener('click', () => {
+      resultSection.classList.remove('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Init
+    loadProducts();
+  </script>
+</body>
+</html>

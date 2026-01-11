@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tools | Coming Soon | Surprise Granite</title>
-  <meta name="description" content="Professional remodeling tools coming soon. Calculators, visualizers, and design tools for countertops, tile, and flooring.">
+  <title>Pro Tools | Surprise Granite</title>
+  <meta name="description" content="Professional remodeling tools - AI Kitchen Visualizer, Countertop Calculator, Tile Calculator, and more. Design your dream space with cutting-edge AI.">
   <link rel="canonical" href="https://surprisegranite.com/tools/">
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Styles -->
   <!-- Unified Navigation -->
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110e">
   <script defer src="/js/unified-nav.js?v=20260110e"></script>
 
   <style>
     :root {
       --primary: #f9cb00;
       --primary-dark: #e5b800;
+      --dark: #0a0a0a;
       --dark-blue: #1a2b3c;
       --text: #333;
       --text-light: #666;
       --border: #e5e5e5;
       --bg-light: #f8f9fa;
       --success: #22c55e;
-      --error: #ef4444;
+      --gradient-gold: linear-gradient(135deg, #f9cb00 0%, #ffdf4a 50%, #e5b800 100%);
     }
 
     * {
@@ -39,520 +39,696 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-light);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .tools-page {
-      min-height: calc(100vh - 200px);
-      padding: 40px 20px;
-      padding-top: 180px;
-    }
-
-    .tools-container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    /* Hero Section */
-    .tools-hero {
-      text-align: center;
-      padding: 60px 40px;
-      background: linear-gradient(135deg, var(--dark-blue) 0%, #2d4a5e 100%);
-      border-radius: 20px;
+      background: #000;
       color: #fff;
-      margin-bottom: 50px;
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    .coming-soon-badge {
-      display: inline-block;
-      background: var(--primary);
-      color: var(--dark-blue);
+    /* ============================================
+       ANIMATED HERO SECTION
+       ============================================ */
+    .tools-hero {
+      position: relative;
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 160px 20px 80px;
+    }
+
+    /* Animated Background */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+    }
+
+    /* Animated Grid */
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(249, 203, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(249, 203, 0, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+
+    /* Floating Tool Icons Animation */
+    .floating-tools {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .floating-icon {
+      position: absolute;
+      font-size: 40px;
+      opacity: 0.15;
+      animation: float 15s ease-in-out infinite;
+    }
+
+    .floating-icon:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+    .floating-icon:nth-child(2) { left: 80%; top: 15%; animation-delay: -2s; }
+    .floating-icon:nth-child(3) { left: 20%; top: 70%; animation-delay: -4s; }
+    .floating-icon:nth-child(4) { left: 70%; top: 60%; animation-delay: -6s; }
+    .floating-icon:nth-child(5) { left: 50%; top: 30%; animation-delay: -8s; }
+    .floating-icon:nth-child(6) { left: 30%; top: 85%; animation-delay: -10s; }
+    .floating-icon:nth-child(7) { left: 90%; top: 80%; animation-delay: -12s; }
+    .floating-icon:nth-child(8) { left: 5%; top: 50%; animation-delay: -14s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.1; }
+      25% { transform: translateY(-20px) rotate(5deg); opacity: 0.2; }
+      50% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+      75% { transform: translateY(20px) rotate(-5deg); opacity: 0.2; }
+    }
+
+    /* Glowing Orbs */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      animation: pulse 8s ease-in-out infinite;
+    }
+
+    .glow-orb.gold {
+      width: 400px;
+      height: 400px;
+      background: rgba(249, 203, 0, 0.15);
+      top: -100px;
+      right: -100px;
+    }
+
+    .glow-orb.blue {
+      width: 300px;
+      height: 300px;
+      background: rgba(59, 130, 246, 0.1);
+      bottom: -50px;
+      left: -50px;
+      animation-delay: -4s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+
+    /* Hero Content */
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 900px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(249, 203, 0, 0.15);
+      border: 1px solid rgba(249, 203, 0, 0.3);
       padding: 8px 20px;
       border-radius: 50px;
       font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .hero-badge svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(42px, 8vw, 72px);
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 25px;
-    }
-
-    .tools-hero h1 {
-      font-size: 42px;
-      font-weight: 800;
-      margin-bottom: 15px;
-    }
-
-    .tools-hero p {
-      font-size: 18px;
-      opacity: 0.9;
-      max-width: 600px;
-      margin: 0 auto 30px;
-    }
-
-    /* Preview Tools Grid */
-    .preview-section {
-      margin-bottom: 60px;
-    }
-
-    .preview-section h2 {
-      text-align: center;
-      font-size: 28px;
-      color: var(--dark-blue);
-      margin-bottom: 30px;
-    }
-
-    .tools-preview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 25px;
-    }
-
-    .tool-preview-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-      text-align: center;
-      border: 2px solid transparent;
-      transition: all 0.3s;
-    }
-
-    .tool-preview-card:hover {
-      border-color: var(--primary);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-
-    .tool-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-    }
-
-    .tool-icon svg {
-      width: 30px;
-      height: 30px;
-      fill: var(--dark-blue);
-    }
-
-    .tool-preview-card h3 {
-      font-size: 18px;
-      color: var(--dark-blue);
-      margin-bottom: 10px;
-    }
-
-    .tool-preview-card p {
-      font-size: 14px;
-      color: var(--text-light);
-    }
-
-    .tool-status {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 4px 12px;
-      background: #e8f5e9;
-      color: var(--success);
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .tool-status.coming-soon {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    /* Vendor Contact Section */
-    .vendor-section {
-      background: #fff;
-      border-radius: 20px;
-      padding: 50px 40px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    }
-
-    .vendor-section h2 {
-      text-align: center;
-      font-size: 28px;
-      color: var(--dark-blue);
-      margin-bottom: 10px;
-    }
-
-    .vendor-section .subtitle {
-      text-align: center;
-      color: var(--text-light);
-      margin-bottom: 40px;
-      font-size: 16px;
-    }
-
-    .vendor-form {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      line-height: 1.1;
       margin-bottom: 20px;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
     }
 
-    .form-group {
-      margin-bottom: 20px;
+    .hero-title .highlight {
+      background: var(--gradient-gold);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--dark-blue);
-      margin-bottom: 8px;
+    .hero-subtitle {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 600px;
+      margin: 0 auto 40px;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
     }
 
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(249, 203, 0, 0.15);
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 120px;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 16px;
-      background: var(--primary);
-      color: var(--dark-blue);
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+    .hero-stats {
       display: flex;
-      align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 60px;
+      animation: fadeInUp 0.6s ease-out 0.3s both;
     }
 
-    .btn-submit:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-    }
-
-    .btn-submit:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .form-message {
-      text-align: center;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-      font-size: 15px;
-      display: none;
-    }
-
-    .form-message.success {
-      display: block;
-      background: #e8f5e9;
-      color: var(--success);
-    }
-
-    .form-message.error {
-      display: block;
-      background: #ffebee;
-      color: var(--error);
-    }
-
-    /* Footer */
-    .tools-footer {
-      background: var(--dark-blue);
-      color: #fff;
-      padding: 30px 20px;
-      margin-top: 60px;
-    }
-
-    .footer-container {
-      max-width: 1200px;
-      margin: 0 auto;
+    .stat {
       text-align: center;
     }
 
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-bottom: 15px;
-    }
-
-    .footer-links a {
-      color: rgba(255,255,255,0.8);
-      text-decoration: none;
-      font-size: 14px;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
+    .stat-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
       color: var(--primary);
     }
 
-    .footer-container p {
+    .stat-label {
       font-size: 13px;
-      color: rgba(255,255,255,0.6);
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .tools-page {
-        padding-top: 120px;
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
       }
-
-      .tools-hero {
-        padding: 40px 25px;
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
+    }
 
-      .tools-hero h1 {
-        font-size: 28px;
-      }
+    /* ============================================
+       TOOLS GRID SECTION
+       ============================================ */
+    .tools-section {
+      background: #fff;
+      padding: 80px 20px;
+      color: #333;
+    }
 
-      .form-row {
+    .tools-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 15px;
+    }
+
+    .section-header p {
+      color: var(--text-light);
+      font-size: 18px;
+    }
+
+    /* Tool Cards Grid */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 30px;
+    }
+
+    .tool-card {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid #eee;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      border-color: var(--primary);
+    }
+
+    .tool-card-image {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+
+    .tool-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .tool-card:hover .tool-card-image img {
+      transform: scale(1.1);
+    }
+
+    .tool-card-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: var(--primary);
+      color: #000;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tool-card-badge.ai {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: #fff;
+    }
+
+    .tool-card-badge.new {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .tool-card-content {
+      padding: 28px;
+    }
+
+    .tool-card-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--gradient-gold);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .tool-card-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: #000;
+    }
+
+    .tool-card h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 12px;
+    }
+
+    .tool-card p {
+      color: var(--text-light);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .tool-card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-dark);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .tool-card-cta svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.3s ease;
+    }
+
+    .tool-card:hover .tool-card-cta svg {
+      transform: translateX(4px);
+    }
+
+    /* Featured AI Tool */
+    .featured-tool {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 24px;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    .featured-tool .tool-card-image {
+      height: 100%;
+      min-height: 400px;
+    }
+
+    .featured-tool .tool-card-content {
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .featured-tool .tool-card-icon {
+      background: rgba(249, 203, 0, 0.2);
+      border: 1px solid rgba(249, 203, 0, 0.3);
+    }
+
+    .featured-tool .tool-card-icon svg {
+      fill: var(--primary);
+    }
+
+    .featured-tool h3 {
+      color: #fff;
+      font-size: 32px;
+    }
+
+    .featured-tool p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 17px;
+    }
+
+    .featured-tool .tool-card-cta {
+      background: var(--gradient-gold);
+      color: #000;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      width: fit-content;
+    }
+
+    .featured-tool:hover {
+      border-color: transparent;
+    }
+
+    /* Coming Soon Badge */
+    .coming-soon-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .coming-soon-text {
+      background: var(--primary);
+      color: #000;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 900px) {
+      .featured-tool {
         grid-template-columns: 1fr;
       }
 
-      .vendor-section {
-        padding: 30px 20px;
+      .featured-tool .tool-card-image {
+        min-height: 250px;
       }
+
+      .featured-tool .tool-card-content {
+        padding: 30px;
+      }
+
+      .hero-stats {
+        gap: 30px;
+      }
+
+      .stat-number {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .tools-hero {
+        min-height: 60vh;
+        padding: 140px 20px 60px;
+      }
+
+      .hero-title {
+        font-size: 36px;
+      }
+
+      .hero-subtitle {
+        font-size: 16px;
+      }
+
+      .hero-stats {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .tools-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header h2 {
+        font-size: 28px;
+      }
+    }
+
+    /* Footer spacing */
+    .tools-section {
+      padding-bottom: 120px;
     }
   </style>
 </head>
 <body>
-  <!-- Navigation injected by unified-nav.js -->
+  <!-- ANIMATED HERO -->
+  <section class="tools-hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="glow-orb gold"></div>
+      <div class="glow-orb blue"></div>
+    </div>
 
-  <main class="tools-page">
-    <div class="tools-container">
-      <!-- Hero Section -->
-      <div class="tools-hero">
-        <span class="coming-soon-badge">Coming Soon</span>
-        <h1>Professional Remodeling Tools</h1>
-        <p>We're building a suite of powerful calculators, visualizers, and design tools to help you plan your perfect remodel.</p>
+    <!-- Floating Tool Icons -->
+    <div class="floating-tools">
+      <span class="floating-icon">🔧</span>
+      <span class="floating-icon">📐</span>
+      <span class="floating-icon">🏠</span>
+      <span class="floating-icon">🎨</span>
+      <span class="floating-icon">📏</span>
+      <span class="floating-icon">🔨</span>
+      <span class="floating-icon">✨</span>
+      <span class="floating-icon">🪨</span>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Pro Tools Suite
       </div>
-
-      <!-- Preview Tools -->
-      <div class="preview-section">
-        <h2>Tools We're Building</h2>
-        <div class="tools-preview-grid">
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
-            </div>
-            <h3>Countertop Calculator</h3>
-            <p>Calculate square footage, estimate costs, and plan your countertop project.</p>
-            <span class="tool-status">In Development</span>
-          </div>
-
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 9h4V5H3v4zm0 5h4v-4H3v4zm5 0h4v-4H8v4zm5 0h4v-4h-4v4zM8 9h4V5H8v4zm5-4v4h4V5h-4zm5 9h4v-4h-4v4zM3 19h4v-4H3v4zm5 0h4v-4H8v4zm5 0h4v-4h-4v4zm5 0h4v-4h-4v4zm0-14v4h4V5h-4z"/></svg>
-            </div>
-            <h3>Tile Calculator</h3>
-            <p>Measure your space and calculate exactly how much tile you need.</p>
-            <span class="tool-status">In Development</span>
-          </div>
-
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-            </div>
-            <h3>Flooring Calculator</h3>
-            <p>Calculate flooring needs including waste factor for your room dimensions.</p>
-            <span class="tool-status">In Development</span>
-          </div>
-
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-            </div>
-            <h3>Room Visualizer</h3>
-            <p>See how different materials look in your space with our AR visualizer.</p>
-            <span class="tool-status coming-soon">Coming Soon</span>
-          </div>
-
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z"/></svg>
-            </div>
-            <h3>Kitchen Design Tool</h3>
-            <p>Design your dream kitchen with our interactive layout planner.</p>
-            <span class="tool-status coming-soon">Coming Soon</span>
-          </div>
-
-          <div class="tool-preview-card">
-            <div class="tool-icon">
-              <svg viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 00-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 000-1.41z"/></svg>
-            </div>
-            <h3>Edge Profile Visualizer</h3>
-            <p>Preview different countertop edge profiles on your selected stone.</p>
-            <span class="tool-status coming-soon">Coming Soon</span>
-          </div>
+      <h1 class="hero-title">
+        Design Your Dream Space<br>
+        with <span class="highlight">AI-Powered</span> Tools
+      </h1>
+      <p class="hero-subtitle">
+        Professional calculators, AI visualization, and design tools to plan your perfect kitchen, bathroom, or flooring project.
+      </p>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-number">6+</div>
+          <div class="stat-label">Pro Tools</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">AI</div>
+          <div class="stat-label">Powered</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">Free</div>
+          <div class="stat-label">To Use</div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- Vendor Contact Form -->
-      <div class="vendor-section">
-        <h2>Are You a Tool Vendor?</h2>
-        <p class="subtitle">Partner with us to feature your remodeling tools on our platform. Reach thousands of Arizona homeowners planning their projects.</p>
+  <!-- TOOLS GRID -->
+  <section class="tools-section">
+    <div class="tools-container">
+      <div class="section-header">
+        <h2>Professional Remodeling Tools</h2>
+        <p>Everything you need to plan, visualize, and calculate your next project</p>
+      </div>
 
-        <form class="vendor-form" id="vendorForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="companyName">Company Name *</label>
-              <input type="text" id="companyName" name="companyName" required>
+      <div class="tools-grid">
+        <!-- FEATURED: AI Kitchen Visualizer -->
+        <a href="/tools/visualizer/" class="tool-card featured-tool">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80" alt="Modern Kitchen">
+            <span class="tool-card-badge ai">AI Powered</span>
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
             </div>
-            <div class="form-group">
-              <label for="contactName">Contact Name *</label>
-              <input type="text" id="contactName" name="contactName" required>
+            <h3>AI Kitchen & Bath Visualizer</h3>
+            <p>Upload a photo of your space and see it transformed with new countertops, cabinets, and finishes. Powered by advanced AI image generation.</p>
+            <span class="tool-card-cta">
+              Try Visualizer
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Countertop Calculator -->
+        <a href="/tools/countertop-calculator/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1556909114-44e3e70034e2?w=600&q=80" alt="Countertop Measurement">
+            <span class="tool-card-badge">Popular</span>
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4H6v-2h4V7h2v4h4v2h-4v4z"/></svg>
+            </div>
+            <h3>Countertop Calculator</h3>
+            <p>Calculate square footage, estimate material costs, and plan your countertop layout with precision.</p>
+            <span class="tool-card-cta">
+              Calculate Now
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Tile Calculator -->
+        <a href="/tools/tile-calculator/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1615873968403-89e068629265?w=600&q=80" alt="Tile Installation">
+            <span class="tool-card-badge new">New</span>
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zm9 0h7v7h-7zm-9 9h7v7H4zm9 0h7v7h-7z"/></svg>
+            </div>
+            <h3>Tile Calculator</h3>
+            <p>Plan your tile project with accurate measurements for walls, floors, and backsplashes including waste factor.</p>
+            <span class="tool-card-cta">
+              Calculate Tiles
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Flooring Calculator -->
+        <a href="/tools/flooring-calculator/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=600&q=80" alt="Flooring">
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            </div>
+            <h3>Flooring Calculator</h3>
+            <p>Calculate LVP, hardwood, and laminate flooring needs with room dimensions and waste allowance.</p>
+            <span class="tool-card-cta">
+              Estimate Flooring
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Blueprint Takeoff - NEW -->
+        <a href="/tools/blueprint-takeoff/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80" alt="Blueprint Analysis">
+            <span class="tool-card-badge ai">AI</span>
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM9 13h6v2H9v-2zm0 4h6v2H9v-2zm0-8h3v2H9V9z"/></svg>
+            </div>
+            <h3>Blueprint Takeoff</h3>
+            <p>Upload floor plans or blueprints. AI extracts room dimensions and calculates material quantities with cost estimates.</p>
+            <span class="tool-card-cta">
+              Analyze Blueprint
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Color Matcher -->
+        <a href="/tools/color-matcher/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" alt="Stone Colors">
+            <span class="tool-card-badge ai">AI</span>
+            <div class="coming-soon-overlay">
+              <span class="coming-soon-text">Coming Soon</span>
             </div>
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="email">Email Address *</label>
-              <input type="email" id="email" name="email" required>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             </div>
-            <div class="form-group">
-              <label for="phone">Phone Number</label>
-              <input type="tel" id="phone" name="phone">
+            <h3>AI Color Matcher</h3>
+            <p>Upload a photo and get AI-powered countertop, cabinet, and paint color recommendations that match.</p>
+            <span class="tool-card-cta">
+              Coming Soon
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Budget Estimator -->
+        <a href="/tools/budget-estimator/" class="tool-card">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80" alt="Budget Planning">
+            <div class="coming-soon-overlay">
+              <span class="coming-soon-text">Coming Soon</span>
             </div>
           </div>
-
-          <div class="form-group">
-            <label for="toolType">Type of Tool *</label>
-            <select id="toolType" name="toolType" required>
-              <option value="">Select a category...</option>
-              <option value="calculator">Calculator / Estimator</option>
-              <option value="visualizer">Visualizer / AR Tool</option>
-              <option value="design">Design / Planning Tool</option>
-              <option value="measurement">Measurement Tool</option>
-              <option value="other">Other</option>
-            </select>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+            </div>
+            <h3>Budget Estimator</h3>
+            <p>Get instant project estimates for your kitchen or bathroom remodel based on your selections and square footage.</p>
+            <span class="tool-card-cta">
+              Coming Soon
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
           </div>
-
-          <div class="form-group">
-            <label for="toolDescription">Tell Us About Your Tool *</label>
-            <textarea id="toolDescription" name="toolDescription" placeholder="Describe your tool, its features, and how it helps homeowners with their remodeling projects..." required></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="website">Website URL</label>
-            <input type="url" id="website" name="website" placeholder="https://...">
-          </div>
-
-          <button type="submit" class="btn-submit" id="submitBtn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-            </svg>
-            Submit Partnership Inquiry
-          </button>
-
-          <div class="form-message" id="formMessage"></div>
-        </form>
+        </a>
       </div>
     </div>
-  </main>
+  </section>
 
-  <!-- Footer -->
-  <footer class="tools-footer">
-    <div class="footer-container">
-      <div class="footer-links">
-        <a href="/contact-us">Contact Us</a>
-        <a href="/company/about">About</a>
-        <a href="/privacy-policy">Privacy Policy</a>
-        <a href="/terms">Terms of Service</a>
-      </div>
-      <p>&copy; 2025 Surprise Granite. All rights reserved.</p>
-    </div>
+  <!-- Footer placeholder -->
+  <footer style="background: #1a1a1a; padding: 40px 20px; text-align: center; color: #666;">
+    <p>&copy; 2026 Surprise Granite. All rights reserved.</p>
+    <p style="margin-top: 10px;"><a href="/" style="color: #f9cb00;">Back to Home</a></p>
   </footer>
-
-  <!-- Scripts -->
-  <script>
-    // Vendor Form Submission
-    document.getElementById('vendorForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      const btn = document.getElementById('submitBtn');
-      const msg = document.getElementById('formMessage');
-
-      btn.disabled = true;
-      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="spin"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> Sending...';
-
-      const formData = {
-        companyName: document.getElementById('companyName').value,
-        contactName: document.getElementById('contactName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        toolType: document.getElementById('toolType').value,
-        toolDescription: document.getElementById('toolDescription').value,
-        website: document.getElementById('website').value,
-        type: 'vendor_tools_inquiry'
-      };
-
-      try {
-        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-
-        if (response.ok) {
-          msg.className = 'form-message success';
-          msg.textContent = 'Thank you! We\'ve received your inquiry and will be in touch soon.';
-          document.getElementById('vendorForm').reset();
-        } else {
-          throw new Error('Failed to send');
-        }
-      } catch (error) {
-        msg.className = 'form-message error';
-        msg.textContent = 'Something went wrong. Please try again or email us directly at info@surprisegranite.com';
-      }
-
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Submit Partnership Inquiry';
-    });
-  </script>
-
-  <style>
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .spin {
-      animation: spin 1s linear infinite;
-    }
-  </style>
 </body>
 </html>

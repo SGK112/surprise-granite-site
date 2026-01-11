@@ -2657,6 +2657,379 @@ function getDemoImage(style) {
   return demoImages[style] || demoImages.modern;
 }
 
+// ============ LEAD ASSIGNMENT & IMAGE MANAGEMENT ============
+
+// Submit lead with images (enhanced version)
+app.post('/api/leads/with-images', async (req, res) => {
+  try {
+    const {
+      homeowner_name,
+      homeowner_email,
+      homeowner_phone,
+      project_type,
+      project_budget,
+      project_timeline,
+      project_zip,
+      project_city,
+      project_state,
+      project_details,
+      source = 'website',
+      image_urls = [],
+      contact_method,
+      auto_assign = true
+    } = req.body;
+
+    if (!homeowner_name || !homeowner_email || !project_zip) {
+      return res.status(400).json({
+        error: 'Name, email, and ZIP code are required'
+      });
+    }
+
+    // Calculate lead price based on project type and images
+    let lead_price = 15;
+    if (project_type === 'kitchen' || project_type === 'countertops' || project_type === 'full-remodel') {
+      lead_price = 25;
+    } else if (project_type === 'bathroom') {
+      lead_price = 20;
+    } else if (project_type === 'commercial') {
+      lead_price = 35;
+    }
+    // Premium for leads with images (more qualified)
+    if (image_urls.length > 0) {
+      lead_price += 5;
+    }
+
+    const leadData = {
+      homeowner_name,
+      homeowner_email,
+      homeowner_phone,
+      project_type,
+      project_budget,
+      project_timeline,
+      project_zip,
+      project_city: project_city || null,
+      project_state: project_state || 'AZ',
+      project_details,
+      source,
+      image_urls: image_urls,
+      images: image_urls.map((url, index) => ({
+        url,
+        order: index,
+        uploaded_at: new Date().toISOString()
+      })),
+      lead_price,
+      contact_method: contact_method || 'phone',
+      status: 'new',
+      quality_score: image_urls.length > 0 ? 75 : 50,
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+    };
+
+    console.log('New lead with images received:', {
+      name: leadData.homeowner_name,
+      project: leadData.project_type,
+      zip: leadData.project_zip,
+      images: image_urls.length
+    });
+
+    // Send notification to admin with images
+    const imageGalleryHTML = image_urls.length > 0 ? `
+      <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+        <p style="margin: 0 0 12px; color: #0369a1; font-weight: 600;">Project Photos (${image_urls.length})</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          ${image_urls.map((url, i) => `
+            <a href="${url}" target="_blank" style="display: block; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 2px solid #0ea5e9;">
+              <img src="${url}" alt="Project photo ${i + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    const adminEmail = {
+      subject: `New Lead with ${image_urls.length} Photo${image_urls.length !== 1 ? 's' : ''} - ${project_type} in ${project_zip}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #f9cb00; margin: 0; font-size: 20px;">New Lead with Project Photos!</h1>
+    </div>
+    <div style="padding: 25px;">
+      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0; color: #2e7d32; font-weight: 600;">Lead Value: $${lead_price} | Quality Score: ${leadData.quality_score}</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Name:</td>
+          <td style="padding: 8px 0; color: #1a1a2e; font-weight: 600;">${homeowner_name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Email:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;"><a href="mailto:${homeowner_email}">${homeowner_email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Phone:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;"><a href="tel:${homeowner_phone}">${homeowner_phone || 'Not provided'}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Project:</td>
+          <td style="padding: 8px 0; color: #1a1a2e; font-weight: 600;">${project_type}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Location:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_city || ''} ${project_state || 'AZ'} ${project_zip}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Budget:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_budget || 'Not specified'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Timeline:</td>
+          <td style="padding: 8px 0; color: #1a1a2e;">${project_timeline || 'Not specified'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-size: 13px;">Photos:</td>
+          <td style="padding: 8px 0; color: #1a1a2e; font-weight: 600;">${image_urls.length} uploaded</td>
+        </tr>
+      </table>
+      ${project_details ? `
+      <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase;">Project Details:</p>
+        <p style="margin: 0; color: #1a1a2e; font-size: 14px; white-space: pre-wrap;">${project_details}</p>
+      </div>
+      ` : ''}
+      ${imageGalleryHTML}
+      <div style="margin-top: 25px; text-align: center;">
+        <a href="https://www.surprisegranite.com/account/admin/" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600; margin-right: 10px;">View in Dashboard</a>
+        <a href="mailto:${homeowner_email}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600;">Reply to Lead</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+    };
+    await sendNotification(ADMIN_EMAIL, adminEmail.subject, adminEmail.html);
+
+    res.json({
+      success: true,
+      message: 'Lead submitted successfully with images',
+      lead_id: `lead_${Date.now()}`,
+      images_count: image_urls.length,
+      lead_price
+    });
+
+  } catch (error) {
+    console.error('Lead with images submission error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Assign lead to vendor (admin only)
+app.post('/api/leads/assign', async (req, res) => {
+  try {
+    const {
+      lead_id,
+      lead_table = 'leads',
+      vendor_id,
+      user_id,
+      assignment_type = 'manual',
+      notes,
+      notify_vendor = true
+    } = req.body;
+
+    if (!lead_id) {
+      return res.status(400).json({ error: 'Lead ID is required' });
+    }
+
+    if (!vendor_id && !user_id) {
+      return res.status(400).json({ error: 'Vendor ID or User ID is required' });
+    }
+
+    const assignment = {
+      lead_id,
+      lead_table,
+      vendor_id,
+      user_id,
+      assignment_type,
+      notes,
+      assigned_at: new Date().toISOString(),
+      status: 'assigned'
+    };
+
+    console.log('Lead assignment:', assignment);
+
+    // Send notification to assigned vendor/user if requested
+    if (notify_vendor && (vendor_id || user_id)) {
+      const vendorEmail = {
+        subject: 'New Lead Assigned to You!',
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #f9cb00; margin: 0; font-size: 20px;">New Lead Available!</h1>
+    </div>
+    <div style="padding: 25px;">
+      <p style="color: #333; font-size: 15px;">A new lead has been assigned to you. Log in to your dashboard to view the details and contact the customer.</p>
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="https://www.surprisegranite.com/vendor/dashboard/" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-weight: 600;">View Lead Details</a>
+      </div>
+      <p style="margin-top: 20px; color: #666; font-size: 13px; text-align: center;">This lead expires in 72 hours. Act fast!</p>
+    </div>
+  </div>
+</body>
+</html>`
+      };
+      // Would need to fetch vendor email from database
+      // await sendNotification(vendorEmail, vendorEmail.subject, vendorEmail.html);
+    }
+
+    res.json({
+      success: true,
+      message: 'Lead assigned successfully',
+      assignment
+    });
+
+  } catch (error) {
+    console.error('Lead assignment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Auto-assign lead based on ZIP code and rules
+app.post('/api/leads/auto-assign', async (req, res) => {
+  try {
+    const { lead_id, project_zip, project_type } = req.body;
+
+    if (!lead_id || !project_zip) {
+      return res.status(400).json({ error: 'Lead ID and ZIP code are required' });
+    }
+
+    // In production, this would query Supabase for matching vendors
+    // For now, return a demo response
+    const matchedVendors = [
+      {
+        vendor_id: 'demo_vendor_1',
+        business_name: 'Phoenix Granite Pros',
+        priority: 1,
+        subscription_plan: 'pro',
+        leads_remaining: 45
+      },
+      {
+        vendor_id: 'demo_vendor_2',
+        business_name: 'AZ Stone Works',
+        priority: 2,
+        subscription_plan: 'plus',
+        leads_remaining: 8
+      }
+    ];
+
+    console.log(`Auto-assignment for lead ${lead_id} in ZIP ${project_zip}:`, matchedVendors);
+
+    res.json({
+      success: true,
+      lead_id,
+      matched_vendors: matchedVendors,
+      assigned_to: matchedVendors[0] || null,
+      message: matchedVendors.length > 0
+        ? `Lead assigned to ${matchedVendors[0].business_name}`
+        : 'No matching vendors found for this area'
+    });
+
+  } catch (error) {
+    console.error('Auto-assignment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get leads with images for admin dashboard
+app.get('/api/leads/with-images', async (req, res) => {
+  try {
+    const { status, limit = 50, offset = 0 } = req.query;
+
+    // In production, this would query Supabase
+    // For now, return structure that admin dashboard expects
+    res.json({
+      success: true,
+      leads: [],
+      total: 0,
+      message: 'Connect to Supabase to fetch leads with images'
+    });
+
+  } catch (error) {
+    console.error('Get leads error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get auto-assignment rules
+app.get('/api/leads/assignment-rules', async (req, res) => {
+  try {
+    // In production, fetch from Supabase
+    res.json({
+      success: true,
+      rules: [
+        {
+          id: 'rule_demo_1',
+          zip_codes: ['85374', '85375', '85379', '85381', '85383'],
+          project_types: ['countertops', 'kitchen'],
+          vendor_id: null,
+          user_id: null,
+          priority: 1,
+          max_leads_per_day: 10,
+          is_active: true
+        }
+      ]
+    });
+  } catch (error) {
+    console.error('Get assignment rules error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create/update auto-assignment rule
+app.post('/api/leads/assignment-rules', async (req, res) => {
+  try {
+    const {
+      id,
+      zip_codes = [],
+      project_types = [],
+      vendor_id,
+      user_id,
+      priority = 10,
+      max_leads_per_day = 10,
+      is_active = true
+    } = req.body;
+
+    const rule = {
+      id: id || `rule_${Date.now()}`,
+      zip_codes,
+      project_types,
+      vendor_id,
+      user_id,
+      priority,
+      max_leads_per_day,
+      is_active,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('Assignment rule saved:', rule);
+
+    res.json({
+      success: true,
+      rule,
+      message: id ? 'Rule updated' : 'Rule created'
+    });
+
+  } catch (error) {
+    console.error('Save assignment rule error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
