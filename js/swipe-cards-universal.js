@@ -874,8 +874,8 @@
     const fragment = document.createDocumentFragment();
     stack.innerHTML = '';
 
-    // Show 4 cards for visible stack effect
-    const cardsToShow = cards.slice(currentIndex, currentIndex + 4);
+    // Show 3 cards for visible stack effect
+    const cardsToShow = cards.slice(currentIndex, currentIndex + 3);
 
     if (cardsToShow.length === 0) {
       showEmptyState();
