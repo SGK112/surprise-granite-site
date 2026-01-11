@@ -218,10 +218,15 @@
   <script src="/js/swipe-cards-universal.js?v=20260110g"></script>
 
   <script>
-    // Debug: Check if universal mode is detected
-    console.log('Shop Swipe Page Loaded');
-    console.log('data-swipe-mode:', document.body.dataset.swipeMode);
-    console.log('isUniversal:', document.body.dataset.swipeMode === 'universal');
+    // Override exitSwipeMode to redirect to homepage
+    window.exitSwipeMode = function() {
+      window.location.href = '/';
+    };
+
+    // Also override startScrollMode
+    window.startScrollMode = function() {
+      window.location.href = '/';
+    };
   </script>
 
   <!-- Supabase for favorites sync -->
