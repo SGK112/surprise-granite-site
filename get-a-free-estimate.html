@@ -9,6 +9,8 @@
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/mobile-optimizations.css">
+<!-- Lead Image Upload Component -->
+<script src="/js/lead-image-upload.js?v=20260110"></script>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
 <script defer src="/js/unified-nav.js?v=20260110e"></script>
@@ -793,6 +795,9 @@
                 <label>Project details (optional)</label>
               </div>
 
+              <!-- Image Upload Section -->
+              <div id="image-upload-container"></div>
+
               <div class="form-navigation">
                 <button type="button" class="btn btn-back" onclick="prevStep()">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -904,12 +909,41 @@
       e.target.value = value;
     });
 
-    // Form submission
+    // Initialize image upload component
+    let leadImageUpload;
+    if (typeof LeadImageUpload !== 'undefined') {
+      leadImageUpload = new LeadImageUpload({
+        containerId: 'image-upload-container',
+        maxImages: 5,
+        maxFileSizeMB: 10,
+        onImagesChange: (images) => {
+          console.log('Images updated:', images.length);
+        }
+      });
+      // Make it globally accessible for remove button
+      window.leadImageUpload = leadImageUpload;
+    }
+
+    // Form submission with image upload
     document.getElementById('estimateForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Uploading... <span class="loader"></span>';
+
+      // Upload images first if any
+      let imageUrls = [];
+      if (leadImageUpload && leadImageUpload.images.length > 0) {
+        try {
+          submitBtn.innerHTML = 'Uploading photos... <span class="loader"></span>';
+          imageUrls = await leadImageUpload.uploadImages();
+          console.log('Images uploaded:', imageUrls);
+        } catch (error) {
+          console.log('Image upload error:', error);
+        }
+      }
+
       submitBtn.innerHTML = 'Sending... <span class="loader"></span>';
 
       const formData = {
@@ -924,7 +958,8 @@
         timeline: document.getElementById('timeline').value,
         budget: document.getElementById('budget').value,
         message: document.getElementById('message').value.trim(),
-        source: 'website-estimate-form-v2',
+        imageUrls: imageUrls,
+        source: 'website-estimate-form-v3',
         timestamp: new Date().toISOString()
       };
 
@@ -938,9 +973,9 @@
         console.log('CRM webhook error, but lead captured locally');
       }
 
-      // Submit to vendor leads API for vendor distribution
+      // Submit to vendor leads API with images
       try {
-        await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+        await fetch('https://surprise-granite-email-api.onrender.com/api/leads/with-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -952,6 +987,8 @@
             project_timeline: formData.timeline,
             project_zip: formData.zipCode,
             project_details: formData.message,
+            image_urls: imageUrls,
+            contact_method: formData.contactMethod,
             source: 'website-estimate-form'
           })
         });
@@ -959,7 +996,7 @@
         console.log('Vendor leads API error:', error);
       }
 
-      // Submit to Supabase for admin panel
+      // Submit to Supabase for admin panel with images
       try {
         await fetch('https://ypeypgwsycxcagncgdur.supabase.co/rest/v1/leads', {
           method: 'POST',
@@ -979,6 +1016,8 @@
             timeline: formData.timeline,
             budget: formData.budget,
             message: formData.message,
+            image_urls: imageUrls,
+            images: imageUrls.map((url, i) => ({ url, order: i })),
             source: formData.source,
             form_name: 'estimate-form',
             page_url: window.location.href,
@@ -1723,5 +1762,8 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/auth-state.js?v=2.0.1"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js"></script>
+<!-- Swipe Form Lead Capture -->
+<link rel="stylesheet" href="/css/swipe-form.css?v=20260110">
+<script src="/js/swipe-form.js?v=20260110"></script>
 </body>
 </html>

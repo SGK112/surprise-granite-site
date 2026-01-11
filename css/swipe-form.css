@@ -1,0 +1,528 @@
+/**
+ * Swipe Form - Tinder-style Lead Capture
+ * Premium glassmorphic multi-step form
+ */
+
+:root {
+  --swipe-gold: #f9cb00;
+  --swipe-gold-dark: #cca600;
+  --swipe-dark: #0f0f1a;
+  --swipe-surface: #1a1a2e;
+  --swipe-card: rgba(255, 255, 255, 0.03);
+  --swipe-border: rgba(255, 255, 255, 0.08);
+  --swipe-success: #22c55e;
+  --swipe-error: #ef4444;
+}
+
+/* ============================================
+   SWIPE FORM CONTAINER
+   ============================================ */
+.swipe-form-container {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--swipe-dark) 0%, var(--swipe-surface) 50%, #16213e 100%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.swipe-form-container.hidden {
+  display: none;
+}
+
+/* Header */
+.swipe-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.swipe-form-close {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.swipe-form-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.swipe-form-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.swipe-form-step-indicator {
+  font-size: 0.9rem;
+  color: var(--swipe-gold);
+  font-weight: 500;
+}
+
+/* Progress Bar */
+.swipe-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.swipe-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--swipe-gold-dark), var(--swipe-gold));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%;
+}
+
+/* ============================================
+   CARDS STACK
+   ============================================ */
+.swipe-cards-stack {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  perspective: 1000px;
+}
+
+.swipe-form-card {
+  position: absolute;
+  width: calc(100% - 40px);
+  max-width: 420px;
+  background: var(--swipe-card);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid var(--swipe-border);
+  border-radius: 28px;
+  padding: 32px 24px;
+  opacity: 0;
+  transform: scale(0.9) translateY(30px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.swipe-form-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--swipe-gold-dark), var(--swipe-gold), var(--swipe-gold-dark));
+  border-radius: 28px 28px 0 0;
+}
+
+.swipe-form-card.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.swipe-form-card.prev {
+  opacity: 0;
+  transform: scale(0.85) translateX(-120%);
+  z-index: 5;
+}
+
+.swipe-form-card.next {
+  opacity: 0.3;
+  transform: scale(0.92) translateY(20px);
+  z-index: 1;
+}
+
+/* Card Content */
+.swipe-card-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(249, 203, 0, 0.2), rgba(204, 166, 0, 0.1));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.swipe-card-title {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.swipe-card-subtitle {
+  text-align: center;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 28px;
+}
+
+/* ============================================
+   CATEGORY SELECTION
+   ============================================ */
+.swipe-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.swipe-category-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+}
+
+.swipe-category-btn:hover {
+  border-color: rgba(249, 203, 0, 0.3);
+  background: rgba(249, 203, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.swipe-category-btn.selected {
+  border-color: var(--swipe-gold);
+  background: rgba(249, 203, 0, 0.1);
+  box-shadow: 0 0 30px rgba(249, 203, 0, 0.2);
+}
+
+.swipe-category-btn.selected .category-icon {
+  transform: scale(1.1);
+}
+
+.category-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  background: rgba(249, 203, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: transform 0.3s;
+}
+
+.category-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+/* ============================================
+   FORM INPUTS
+   ============================================ */
+.swipe-input-group {
+  margin-bottom: 20px;
+}
+
+.swipe-input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.swipe-input {
+  width: 100%;
+  padding: 16px;
+  font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+
+.swipe-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.swipe-input:focus {
+  outline: none;
+  border-color: var(--swipe-gold);
+  background: rgba(249, 203, 0, 0.05);
+}
+
+.swipe-textarea {
+  min-height: 120px;
+  resize: none;
+}
+
+.swipe-input-label {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* ============================================
+   IMAGE UPLOAD
+   ============================================ */
+.swipe-upload-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 20px;
+}
+
+.swipe-upload-zone:hover,
+.swipe-upload-zone.dragover {
+  border-color: var(--swipe-gold);
+  background: rgba(249, 203, 0, 0.05);
+}
+
+.swipe-upload-zone.has-files {
+  border-color: var(--swipe-success);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.upload-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.upload-hint {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+}
+
+.swipe-upload-input {
+  display: none;
+}
+
+.swipe-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.swipe-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.swipe-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.swipe-preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-skip {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* ============================================
+   NAVIGATION BUTTONS
+   ============================================ */
+.swipe-nav-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.swipe-btn {
+  flex: 1;
+  padding: 16px 24px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-family: inherit;
+}
+
+.swipe-btn-back {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.swipe-btn-back:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.swipe-btn-next {
+  background: linear-gradient(135deg, var(--swipe-gold-dark), var(--swipe-gold));
+  color: #000;
+  box-shadow: 0 4px 20px rgba(249, 203, 0, 0.3);
+}
+
+.swipe-btn-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(249, 203, 0, 0.4);
+}
+
+.swipe-btn-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.swipe-btn-submit {
+  background: linear-gradient(135deg, var(--swipe-success), #16a34a);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+}
+
+/* ============================================
+   SUCCESS CARD
+   ============================================ */
+.swipe-success-animation {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  animation: successPop 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes successPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.swipe-success-title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.swipe-success-message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.swipe-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.swipe-btn-home {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  padding: 16px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+/* ============================================
+   SWIPE GESTURES (Mobile)
+   ============================================ */
+@media (max-width: 767px) {
+  .swipe-form-card {
+    width: calc(100% - 32px);
+    padding: 28px 20px;
+    touch-action: pan-y;
+  }
+
+  .swipe-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .swipe-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   TRIGGER BUTTON (for embedding)
+   ============================================ */
+.swipe-form-trigger {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, var(--swipe-gold-dark), var(--swipe-gold));
+  border: none;
+  box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
+  cursor: pointer;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  transition: all 0.3s;
+}
+
+.swipe-form-trigger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(249, 203, 0, 0.5);
+}
+
+/* Hide trigger when form is open */
+.swipe-form-container:not(.hidden) ~ .swipe-form-trigger {
+  display: none;
+}
