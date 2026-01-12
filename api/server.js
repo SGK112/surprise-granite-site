@@ -1820,13 +1820,23 @@ app.post('/api/invoices', async (req, res) => {
       });
     }
 
-    // Create invoice
+    // Create invoice with card + ACH bank transfer payment options
     const invoice = await stripe.invoices.create({
       customer: customer.id,
       collection_method: 'send_invoice',
       days_until_due: due_days,
       description,
       footer: notes || 'Thank you for your business! - Surprise Granite',
+      payment_settings: {
+        payment_method_types: ['card', 'us_bank_account'],
+        payment_method_options: {
+          us_bank_account: {
+            financial_connections: {
+              permissions: ['payment_method']
+            }
+          }
+        }
+      },
       metadata: {
         source: 'surprise_granite_portal',
         created_by: 'admin'
