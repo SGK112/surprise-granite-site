@@ -60,13 +60,14 @@ const COMPANY = {
   phone: '(602) 833-3189',
   address: '15464 W Aster Dr, Surprise, AZ 85379',
   website: 'https://www.surprisegranite.com',
-  logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d552f97cd3ad628e716590_Group%20179.jpg',
-  tagline: 'Premium Countertops & Expert Installation'
+  logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d50be6d353ffb720a1aae4_SG%20LOGO%20BLACK%203.png',
+  tagline: 'Premium Countertops & Expert Installation',
+  license: 'AZ ROC# 341113'
 };
 
 // Professional Invoice Templates
 const invoiceTemplates = {
-  // TEMPLATE 1: Classic Professional
+  // TEMPLATE 1: Classic Professional (White Background)
   classic: (invoice, items, customerName) => `
 <!DOCTYPE html>
 <html>
@@ -74,31 +75,31 @@ const invoiceTemplates = {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border: 1px solid #e5e5e5;">
+          <!-- Premium Header with Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">${COMPANY.tagline}</p>
+            <td style="background-color: #ffffff; padding: 40px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 60px; width: auto; margin-bottom: 15px;">
+              <p style="color: #666; margin: 0; font-size: 14px; letter-spacing: 1px;">${COMPANY.tagline}</p>
             </td>
           </tr>
 
           <!-- Invoice Title -->
           <tr>
-            <td style="padding: 40px 40px 20px; border-bottom: 2px solid #f9cb00;">
+            <td style="padding: 40px 40px 20px;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <h2 style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 300;">INVOICE</h2>
-                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">#${invoice.number || invoice.id?.slice(-8)}</p>
+                    <h2 style="margin: 0; color: #1a1a2e; font-size: 28px; font-weight: 600;">INVOICE</h2>
+                    <p style="margin: 8px 0 0; color: #f9cb00; font-size: 16px; font-weight: 600;">#${invoice.number || invoice.id?.slice(-8)}</p>
                   </td>
                   <td align="right">
-                    <p style="margin: 0; color: #1a1a2e; font-size: 14px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-                    <p style="margin: 5px 0 0; color: #1a1a2e; font-size: 14px;"><strong>Due:</strong> ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
+                    <p style="margin: 0; color: #333; font-size: 14px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p style="margin: 5px 0 0; color: #333; font-size: 14px;"><strong>Due:</strong> ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
                   </td>
                 </tr>
               </table>
@@ -129,10 +130,10 @@ const invoiceTemplates = {
           <tr>
             <td style="padding: 0 40px 30px;">
               <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
-                <tr style="background-color: #1a1a2e;">
-                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Description</td>
-                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Qty</td>
-                  <td style="padding: 15px; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: right;">Amount</td>
+                <tr style="background-color: #f8f8f8; border-bottom: 2px solid #f9cb00;">
+                  <td style="padding: 15px; color: #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Description</td>
+                  <td style="padding: 15px; color: #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center; font-weight: 600;">Qty</td>
+                  <td style="padding: 15px; color: #333; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: right; font-weight: 600;">Amount</td>
                 </tr>
                 ${items.map((item, i) => `
                 <tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : '#ffffff'};">
@@ -151,18 +152,18 @@ const invoiceTemplates = {
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td></td>
-                  <td width="200" style="background-color: #1a1a2e; padding: 20px; border-radius: 8px;">
+                  <td width="220" style="background-color: #f8f8f8; padding: 20px; border-radius: 8px; border: 1px solid #e5e5e5;">
                     <table width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="color: rgba(255,255,255,0.7); font-size: 14px;">Subtotal</td>
-                        <td style="color: #fff; font-size: 14px; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                        <td style="color: #666; font-size: 14px;">Subtotal</td>
+                        <td style="color: #333; font-size: 14px; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
                       </tr>
                       <tr>
-                        <td colspan="2" style="padding: 10px 0;"><hr style="border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 0;"></td>
+                        <td colspan="2" style="padding: 10px 0;"><hr style="border: none; border-top: 1px solid #ddd; margin: 0;"></td>
                       </tr>
                       <tr>
-                        <td style="color: #f9cb00; font-size: 18px; font-weight: 700;">TOTAL</td>
-                        <td style="color: #f9cb00; font-size: 18px; font-weight: 700; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
+                        <td style="color: #1a1a2e; font-size: 20px; font-weight: 700;">TOTAL</td>
+                        <td style="color: #1a1a2e; font-size: 20px; font-weight: 700; text-align: right;">$${(invoice.amount_due / 100).toFixed(2)}</td>
                       </tr>
                     </table>
                   </td>
@@ -194,7 +195,7 @@ const invoiceTemplates = {
 </html>
 `,
 
-  // TEMPLATE 2: Modern Minimal
+  // TEMPLATE 2: Modern Minimal (White Background with Logo)
   modern: (invoice, items, customerName) => `
 <!DOCTYPE html>
 <html>
@@ -203,21 +204,20 @@ const invoiceTemplates = {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 60px 20px;">
         <table role="presentation" width="550" cellspacing="0" cellpadding="0">
-          <!-- Logo & Invoice Number -->
+          <!-- Premium Logo Header -->
           <tr>
-            <td style="padding-bottom: 40px; border-bottom: 1px solid #eee;">
+            <td style="padding-bottom: 40px; border-bottom: 2px solid #f9cb00;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <h1 style="margin: 0; color: #000; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">SURPRISE<span style="color: #f9cb00;">GRANITE</span></h1>
-                    <p style="margin: 4px 0 0; color: #888; font-size: 12px; letter-spacing: 2px;">MARBLE & QUARTZ</p>
+                    <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
                   </td>
                   <td align="right">
-                    <p style="margin: 0; color: #000; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Invoice</p>
+                    <p style="margin: 0; color: #333; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Invoice</p>
                     <p style="margin: 4px 0 0; color: #f9cb00; font-size: 20px; font-weight: 700;">#${invoice.number || invoice.id?.slice(-8)}</p>
                   </td>
                 </tr>
@@ -311,7 +311,7 @@ const invoiceTemplates = {
 </html>
 `,
 
-  // TEMPLATE 3: Premium Luxury
+  // TEMPLATE 3: Premium Luxury (White Background with Gold Accents)
   premium: (invoice, items, customerName) => `
 <!DOCTYPE html>
 <html>
@@ -319,37 +319,37 @@ const invoiceTemplates = {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #0a0a12; font-family: 'Georgia', 'Times New Roman', serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #0a0a12;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Georgia', 'Times New Roman', serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 50px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 4px; overflow: hidden;">
           <!-- Gold Accent Line -->
           <tr>
-            <td style="height: 4px; background: linear-gradient(90deg, transparent, #f9cb00, transparent);"></td>
+            <td style="height: 4px; background: linear-gradient(90deg, #f9cb00, #d4a800, #f9cb00);"></td>
           </tr>
 
-          <!-- Header -->
+          <!-- Premium Header with Logo -->
           <tr>
-            <td style="background-color: #12121a; padding: 50px; text-align: center;">
+            <td style="background-color: #ffffff; padding: 50px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 70px; width: auto; margin-bottom: 20px;">
               <p style="margin: 0; color: #f9cb00; font-size: 12px; letter-spacing: 4px; text-transform: uppercase;">Premium Quality</p>
-              <h1 style="margin: 15px 0 0; color: #ffffff; font-size: 36px; font-weight: 400; letter-spacing: 3px;">SURPRISE GRANITE</h1>
-              <p style="margin: 10px 0 0; color: #888; font-size: 14px; letter-spacing: 2px;">MARBLE & QUARTZ</p>
+              <p style="margin: 10px 0 0; color: #666; font-size: 14px; letter-spacing: 2px;">${COMPANY.tagline}</p>
             </td>
           </tr>
 
           <!-- Invoice Header -->
           <tr>
-            <td style="background-color: #1a1a2e; padding: 40px 50px;">
+            <td style="background-color: #fafafa; padding: 40px 50px;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Invoice Number</p>
-                    <p style="margin: 8px 0 0; color: #ffffff; font-size: 24px; font-weight: 300;">#${invoice.number || invoice.id?.slice(-8)}</p>
+                    <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600;">Invoice Number</p>
+                    <p style="margin: 8px 0 0; color: #1a1a2e; font-size: 24px; font-weight: 300;">#${invoice.number || invoice.id?.slice(-8)}</p>
                   </td>
                   <td align="right">
-                    <p style="margin: 0; color: #888; font-size: 13px;">Issue Date: ${new Date().toLocaleDateString()}</p>
-                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">Due: ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
+                    <p style="margin: 0; color: #666; font-size: 13px;">Issue Date: ${new Date().toLocaleDateString()}</p>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 13px;">Due: ${invoice.due_date ? new Date(invoice.due_date * 1000).toLocaleDateString() : 'Upon Receipt'}</p>
                   </td>
                 </tr>
               </table>
@@ -358,18 +358,18 @@ const invoiceTemplates = {
 
           <!-- Bill To Section -->
           <tr>
-            <td style="background-color: #12121a; padding: 40px 50px;">
+            <td style="background-color: #ffffff; padding: 40px 50px;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td width="50%" valign="top">
-                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">Bill To</p>
-                    <p style="margin: 15px 0 0; color: #ffffff; font-size: 20px; font-weight: 400;">${customerName || 'Valued Client'}</p>
-                    <p style="margin: 8px 0 0; color: #888; font-size: 14px;">${invoice.customer_email}</p>
+                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;">Bill To</p>
+                    <p style="margin: 15px 0 0; color: #1a1a2e; font-size: 20px; font-weight: 400;">${customerName || 'Valued Client'}</p>
+                    <p style="margin: 8px 0 0; color: #666; font-size: 14px;">${invoice.customer_email}</p>
                   </td>
                   <td width="50%" valign="top" align="right">
-                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">From</p>
-                    <p style="margin: 15px 0 0; color: #ffffff; font-size: 14px;">${COMPANY.name}</p>
-                    <p style="margin: 5px 0 0; color: #888; font-size: 13px;">${COMPANY.phone}</p>
+                    <p style="margin: 0; color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;">From</p>
+                    <p style="margin: 15px 0 0; color: #1a1a2e; font-size: 14px;">${COMPANY.name}</p>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 13px;">${COMPANY.phone}</p>
                   </td>
                 </tr>
               </table>
@@ -378,27 +378,27 @@ const invoiceTemplates = {
 
           <!-- Items -->
           <tr>
-            <td style="background-color: #1a1a2e; padding: 0;">
+            <td style="background-color: #fafafa; padding: 0;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="padding: 20px 50px; border-bottom: 1px solid rgba(249, 203, 0, 0.2);">
+                  <td style="padding: 20px 50px; border-bottom: 2px solid #f9cb00;">
                     <table width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">Description</td>
-                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: center;" width="80">Qty</td>
-                        <td style="color: #f9cb00; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: right;" width="120">Amount</td>
+                        <td style="color: #333; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;">Description</td>
+                        <td style="color: #333; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; text-align: center;" width="80">Qty</td>
+                        <td style="color: #333; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; text-align: right;" width="120">Amount</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
                 ${items.map(item => `
                 <tr>
-                  <td style="padding: 25px 50px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td style="padding: 25px 50px; border-bottom: 1px solid #e5e5e5; background-color: #ffffff;">
                     <table width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="color: #ffffff; font-size: 16px;">${item.description}</td>
-                        <td style="color: #888; font-size: 14px; text-align: center;" width="80">${item.quantity || 1}</td>
-                        <td style="color: #ffffff; font-size: 16px; text-align: right;" width="120">$${(item.amount).toFixed(2)}</td>
+                        <td style="color: #1a1a2e; font-size: 16px;">${item.description}</td>
+                        <td style="color: #666; font-size: 14px; text-align: center;" width="80">${item.quantity || 1}</td>
+                        <td style="color: #1a1a2e; font-size: 16px; text-align: right;" width="120">$${(item.amount).toFixed(2)}</td>
                       </tr>
                     </table>
                   </td>
@@ -410,10 +410,10 @@ const invoiceTemplates = {
 
           <!-- Total -->
           <tr>
-            <td style="background: linear-gradient(135deg, #f9cb00 0%, #d4a800 100%); padding: 30px 50px;">
+            <td style="background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); padding: 30px 50px;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="color: #1a1a2e; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Total Amount</td>
+                  <td style="color: #1a1a2e; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Total Amount</td>
                   <td align="right" style="color: #1a1a2e; font-size: 32px; font-weight: 700;">$${(invoice.amount_due / 100).toFixed(2)}</td>
                 </tr>
               </table>
@@ -422,25 +422,26 @@ const invoiceTemplates = {
 
           <!-- Pay Button -->
           <tr>
-            <td style="background-color: #12121a; padding: 50px; text-align: center;">
-              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; border: 2px solid #f9cb00; color: #f9cb00; text-decoration: none; padding: 18px 60px; font-size: 13px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; transition: all 0.3s;">PAY INVOICE</a>
-              <p style="margin: 30px 0 0; color: #666; font-size: 13px;">Secure payment powered by Stripe</p>
+            <td style="background-color: #ffffff; padding: 50px; text-align: center;">
+              <a href="${invoice.hosted_invoice_url}" style="display: inline-block; background-color: #1a1a2e; color: #ffffff; text-decoration: none; padding: 18px 60px; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border-radius: 4px;">PAY INVOICE</a>
+              <p style="margin: 30px 0 0; color: #888; font-size: 13px;">Secure payment powered by Stripe</p>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: #0a0a12; padding: 40px 50px; text-align: center;">
-              <p style="margin: 0; color: #f9cb00; font-size: 11px; letter-spacing: 2px;">${COMPANY.name}</p>
+            <td style="background-color: #fafafa; padding: 40px 50px; text-align: center; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0; color: #1a1a2e; font-size: 12px; font-weight: 600; letter-spacing: 1px;">${COMPANY.name}</p>
               <p style="margin: 15px 0 0; color: #666; font-size: 12px;">${COMPANY.address}</p>
               <p style="margin: 10px 0 0; color: #666; font-size: 12px;">${COMPANY.email} • ${COMPANY.phone}</p>
-              <p style="margin: 20px 0 0; color: #444; font-size: 11px;">Thank you for choosing Surprise Granite for your project.</p>
+              <p style="margin: 15px 0 0; color: #999; font-size: 11px;">${COMPANY.license} • Licensed & Insured</p>
+              <p style="margin: 20px 0 0; color: #888; font-size: 11px;">Thank you for choosing Surprise Granite for your project.</p>
             </td>
           </tr>
 
           <!-- Gold Accent Line -->
           <tr>
-            <td style="height: 4px; background: linear-gradient(90deg, transparent, #f9cb00, transparent);"></td>
+            <td style="height: 4px; background: linear-gradient(90deg, #f9cb00, #d4a800, #f9cb00);"></td>
           </tr>
         </table>
       </td>
@@ -458,15 +459,14 @@ const emailTemplates = {
     html: `
 <!DOCTYPE html>
 <html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            <td style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
             </td>
           </tr>
           <tr>
@@ -513,36 +513,22 @@ const emailTemplates = {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8f8f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f8f8;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
 
-          <!-- Header -->
+          <!-- Premium Header with Logo -->
           <tr>
-            <td style="background-color: #1a2b3c; padding: 30px 40px;">
+            <td style="background-color: #ffffff; padding: 30px 40px; border-bottom: 3px solid #f9cb00;">
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td style="vertical-align: middle;">
-                    <table cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td style="vertical-align: middle; padding-right: 14px;">
-                          <svg viewBox="0 0 122 125" width="42" height="42" style="display: block;">
-                            <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
-                            <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
-                            <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
-                            <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
-                          </svg>
-                        </td>
-                        <td style="vertical-align: middle;">
-                          <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: 0.5px;">SURPRISE GRANITE</p>
-                        </td>
-                      </tr>
-                    </table>
+                    <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 45px; width: auto;">
                   </td>
                   <td style="vertical-align: middle; text-align: right;">
-                    <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 12px;">Payment Receipt</p>
+                    <p style="margin: 0; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Payment Receipt</p>
                   </td>
                 </tr>
               </table>
@@ -677,15 +663,14 @@ const emailTemplates = {
     html: `
 <!DOCTYPE html>
 <html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            <td style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
             </td>
           </tr>
           <tr>
@@ -790,27 +775,26 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             html: `
 <!DOCTYPE html>
 <html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
-        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
-              <h1 style="color: #f9cb00; margin: 0; font-size: 22px; font-weight: 700;">${COMPANY.shortName}</h1>
-              <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0; font-size: 12px;">MARBLE & QUARTZ</p>
+            <td style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
             </td>
           </tr>
           <tr>
             <td style="padding: 40px; text-align: center;">
-              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; line-height: 80px;">
-                <span style="font-size: 40px; color: #fff;">✓</span>
+              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 40px; color: #fff; line-height: 80px;">✓</span>
               </div>
-              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Order Confirmed!</h2>
-              <p style="margin: 0 0 5px; color: #666; font-size: 15px;">Order #SG-${session.id.slice(-8).toUpperCase()}</p>
+              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
+              <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #SG-${session.id.slice(-8).toUpperCase()}</p>
               <p style="margin: 0 0 30px; color: #666; font-size: 15px;">Thank you for your purchase!</p>
-              <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
-                <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase;">Order Total</p>
+              <div style="background: #f8f8f8; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e5e5;">
+                <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Order Total</p>
                 <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$${(session.amount_total / 100).toFixed(2)}</p>
               </div>
               <p style="margin: 0 0 20px; color: #666; font-size: 14px;">We're preparing your order and will send you shipping information once it's on its way.</p>
@@ -818,9 +802,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             </td>
           </tr>
           <tr>
-            <td style="background: #f8f9fa; padding: 25px; text-align: center;">
+            <td style="background: #f8f8f8; padding: 25px; text-align: center; border-top: 1px solid #e5e5e5;">
               <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions about your order?</p>
-              <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #f9cb00; text-decoration: none;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #f9cb00; text-decoration: none;">${COMPANY.phone}</a></p>
+              <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.phone}</a></p>
+              <p style="margin: 15px 0 0; color: #999; font-size: 11px;">${COMPANY.license} • Licensed & Insured</p>
             </td>
           </tr>
         </table>
