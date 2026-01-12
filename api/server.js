@@ -3,7 +3,13 @@ const cors = require('cors');
 const Stripe = require('stripe');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
+
+// Initialize Supabase client (service role for backend operations)
+const supabaseUrl = process.env.SUPABASE_URL || 'https://htjvyzmuqsrjpesdurni.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
 // Blueprint Takeoff Analyzer with GPT-4 Vision and Ollama support
 const { analyzeBlueprint, parseBluebeamBAX, CONFIG: TAKEOFF_CONFIG } = require('./lib/takeoff/blueprint-analyzer');
@@ -748,6 +754,295 @@ const invoiceTemplates = {
 `
 };
 
+// Generate thank you email with next steps for customers
+function generateThankYouEmail(invoice, job) {
+  const amount = (invoice.amount_paid / 100).toFixed(2);
+  const bookingUrl = `${COMPANY.website}/book/?job=${job.job_number}`;
+
+  return {
+    subject: `Thank You for Your Payment - ${COMPANY.shortName} Job #${job.job_number}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px; text-align: center;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto; margin-bottom: 15px;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 28px; font-weight: 700;">Thank You!</h1>
+              <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 14px;">Your payment has been received</p>
+            </td>
+          </tr>
+
+          <!-- Payment Confirmation -->
+          <tr>
+            <td style="padding: 40px;">
+              <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
+                <p style="margin: 0; color: #2e7d32; font-size: 16px;">
+                  <strong style="font-size: 20px;">Payment Confirmed</strong><br>
+                  Amount: <strong>$${amount}</strong><br>
+                  Job Number: <strong>#${job.job_number}</strong>
+                </p>
+              </div>
+
+              <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 20px;">Hi ${invoice.customer_name || 'Valued Customer'},</h2>
+
+              <p style="margin: 0 0 20px; color: #666; font-size: 15px; line-height: 1.6;">
+                Thank you for choosing ${COMPANY.shortName}! We're excited to work on your project. Here's what happens next:
+              </p>
+
+              <!-- Next Steps -->
+              <div style="background: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                <h3 style="margin: 0 0 20px; color: #1a1a2e; font-size: 16px;">Next Steps:</h3>
+
+                <div style="display: flex; margin-bottom: 15px;">
+                  <div style="background: #f9cb00; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+                  <div>
+                    <strong style="color: #1a1a2e;">Schedule Your Field Measure</strong>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Our team will contact you within 24-48 hours to schedule a time to measure your space.</p>
+                  </div>
+                </div>
+
+                <div style="display: flex; margin-bottom: 15px;">
+                  <div style="background: #f9cb00; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+                  <div>
+                    <strong style="color: #1a1a2e;">Template & Material Selection</strong>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">We'll create precise templates and confirm your material selection.</p>
+                  </div>
+                </div>
+
+                <div style="display: flex; margin-bottom: 15px;">
+                  <div style="background: #f9cb00; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+                  <div>
+                    <strong style="color: #1a1a2e;">Fabrication</strong>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Your countertops will be precision-cut and polished in our facility.</p>
+                  </div>
+                </div>
+
+                <div style="display: flex;">
+                  <div style="background: #f9cb00; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; margin-right: 15px; flex-shrink: 0;">4</div>
+                  <div>
+                    <strong style="color: #1a1a2e;">Installation</strong>
+                    <p style="margin: 5px 0 0; color: #666; font-size: 14px;">Professional installation by our expert team.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${bookingUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 15px rgba(249, 203, 0, 0.3);">Schedule Field Measure</a>
+              </div>
+
+              <!-- Contact Info -->
+              <div style="border-top: 1px solid #eee; padding-top: 25px;">
+                <p style="margin: 0 0 10px; color: #1a1a2e; font-weight: 600;">Questions? We're here to help!</p>
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                  <strong>Phone:</strong> <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none;">${COMPANY.phone}</a><br>
+                  <strong>Email:</strong> <a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none;">${COMPANY.email}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8f9fa; padding: 25px; text-align: center; border-top: 1px solid #eee;">
+              <p style="margin: 0 0 5px; color: #1a1a2e; font-weight: 600;">${COMPANY.name}</p>
+              <p style="margin: 0 0 5px; color: #888; font-size: 13px;">${COMPANY.address}</p>
+              <p style="margin: 0; color: #888; font-size: 12px;">${COMPANY.license} | Licensed & Insured</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+  };
+}
+
+// Generate material order email
+function generateMaterialOrderEmail(order, job) {
+  return {
+    subject: `Material Order Request - Job #${job.job_number} - ${order.material_name}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+    <div style="background: #1a1a2e; color: #f9cb00; padding: 20px; text-align: center;">
+      <h1 style="margin: 0; font-size: 24px;">Material Order Request</h1>
+    </div>
+
+    <div style="padding: 30px;">
+      <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse: collapse;">
+        <tr style="background: #f8f9fa;">
+          <td style="border: 1px solid #ddd; font-weight: bold; width: 40%;">Job Number:</td>
+          <td style="border: 1px solid #ddd;">#${job.job_number}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; font-weight: bold;">Customer:</td>
+          <td style="border: 1px solid #ddd;">${job.customer_name}</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="border: 1px solid #ddd; font-weight: bold;">Material:</td>
+          <td style="border: 1px solid #ddd; font-size: 16px; color: #1a1a2e;"><strong>${order.material_name}</strong></td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; font-weight: bold;">Color:</td>
+          <td style="border: 1px solid #ddd;">${order.material_color || 'As specified'}</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="border: 1px solid #ddd; font-weight: bold;">Thickness:</td>
+          <td style="border: 1px solid #ddd;">${order.material_thickness || '3cm'}</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; font-weight: bold;">Quantity:</td>
+          <td style="border: 1px solid #ddd;">${order.quantity} ${order.unit || 'slab(s)'}</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+          <td style="border: 1px solid #ddd; font-weight: bold;">Supplier:</td>
+          <td style="border: 1px solid #ddd;">${order.supplier}</td>
+        </tr>
+        ${order.notes ? `
+        <tr>
+          <td style="border: 1px solid #ddd; font-weight: bold;">Notes:</td>
+          <td style="border: 1px solid #ddd;">${order.notes}</td>
+        </tr>
+        ` : ''}
+      </table>
+
+      <div style="margin-top: 30px; padding: 20px; background: #fff8e1; border-left: 4px solid #f9cb00; border-radius: 4px;">
+        <p style="margin: 0; color: #333;">
+          <strong>Ship To:</strong><br>
+          ${COMPANY.name}<br>
+          ${COMPANY.address}
+        </p>
+      </div>
+
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="margin: 0; color: #666; font-size: 14px;">
+          <strong>Contact:</strong> ${COMPANY.phone}<br>
+          <strong>Email:</strong> ${COMPANY.email}
+        </p>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
+`
+  };
+}
+
+// Generate contractor job invite email
+function generateContractorInviteEmail(contractor, job, inviteToken) {
+  const acceptUrl = `${COMPANY.website}/contractor/job/?token=${inviteToken}`;
+
+  return {
+    subject: `New Job Assignment - ${COMPANY.shortName} Job #${job.job_number}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 35px; text-align: center;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 45px; width: auto; margin-bottom: 10px;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 24px;">New Job Assignment</h1>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="margin: 0 0 20px; color: #333; font-size: 16px;">Hi ${contractor.name},</p>
+
+              <p style="margin: 0 0 25px; color: #666; font-size: 15px; line-height: 1.6;">
+                You've been assigned to a new job. Please review the details below and accept or decline.
+              </p>
+
+              <!-- Job Details -->
+              <div style="background: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                <h3 style="margin: 0 0 15px; color: #1a1a2e; font-size: 18px;">Job #${job.job_number}</h3>
+
+                <table width="100%" cellspacing="0" cellpadding="8">
+                  <tr>
+                    <td style="color: #888; font-size: 13px; padding: 5px 0;">Customer:</td>
+                    <td style="color: #333; font-size: 14px; font-weight: 500;">${job.customer_name}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #888; font-size: 13px; padding: 5px 0;">Location:</td>
+                    <td style="color: #333; font-size: 14px;">${job.job_address || job.customer_address || 'TBD'}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #888; font-size: 13px; padding: 5px 0;">Project:</td>
+                    <td style="color: #333; font-size: 14px;">${job.project_description || job.project_type || 'Countertop Installation'}</td>
+                  </tr>
+                  ${job.material_name ? `
+                  <tr>
+                    <td style="color: #888; font-size: 13px; padding: 5px 0;">Material:</td>
+                    <td style="color: #333; font-size: 14px;">${job.material_name}</td>
+                  </tr>
+                  ` : ''}
+                </table>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${acceptUrl}&action=accept" style="display: inline-block; background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%); color: #fff; text-decoration: none; padding: 14px 35px; border-radius: 50px; font-size: 15px; font-weight: 600; margin-right: 10px;">Accept Job</a>
+                <a href="${acceptUrl}&action=decline" style="display: inline-block; background: #f5f5f5; color: #666; text-decoration: none; padding: 14px 35px; border-radius: 50px; font-size: 15px; font-weight: 600; border: 1px solid #ddd;">Decline</a>
+              </div>
+
+              <p style="margin: 0; color: #888; font-size: 13px; text-align: center;">
+                This invitation expires in 48 hours.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+              <p style="margin: 0; color: #888; font-size: 12px;">
+                ${COMPANY.name} | ${COMPANY.phone}
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+  };
+}
+
 // Admin notification templates
 const emailTemplates = {
   invoiceSent: (invoice, template = 'classic') => ({
@@ -1141,8 +1436,121 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'invoice.paid': {
         const invoice = event.data.object;
         console.log('Invoice paid:', invoice.id);
+
+        // Send admin notification
         const paidEmail = emailTemplates.paymentReceived(invoice);
         await sendNotification(ADMIN_EMAIL, paidEmail.subject, paidEmail.html);
+
+        // Auto-create customer and job record in Supabase
+        if (supabase && invoice.customer_email) {
+          try {
+            // Get admin user ID (first admin in system)
+            const { data: adminUser } = await supabase
+              .from('sg_users')
+              .select('id')
+              .eq('account_type', 'admin')
+              .limit(1)
+              .single();
+
+            const adminUserId = adminUser?.id;
+
+            if (adminUserId) {
+              // Create or find customer
+              let customerId = null;
+              const { data: existingCustomer } = await supabase
+                .from('customers')
+                .select('id')
+                .eq('user_id', adminUserId)
+                .eq('email', invoice.customer_email)
+                .single();
+
+              if (existingCustomer) {
+                customerId = existingCustomer.id;
+              } else {
+                const { data: newCustomer, error: custErr } = await supabase
+                  .from('customers')
+                  .insert({
+                    user_id: adminUserId,
+                    name: invoice.customer_name || 'Customer',
+                    email: invoice.customer_email,
+                    phone: invoice.customer_phone,
+                    stripe_customer_id: invoice.customer,
+                    source: 'invoice_payment'
+                  })
+                  .select()
+                  .single();
+
+                if (!custErr && newCustomer) {
+                  customerId = newCustomer.id;
+                  console.log('Created customer:', customerId);
+                }
+              }
+
+              // Generate job number
+              const { data: settings } = await supabase
+                .from('business_settings')
+                .select('job_prefix, job_next_number')
+                .eq('user_id', adminUserId)
+                .single();
+
+              const jobPrefix = settings?.job_prefix || 'JOB-';
+              const jobNum = settings?.job_next_number || 1001;
+              const jobNumber = `${jobPrefix}${jobNum}`;
+
+              // Update next job number
+              await supabase
+                .from('business_settings')
+                .upsert({
+                  user_id: adminUserId,
+                  job_prefix: jobPrefix,
+                  job_next_number: jobNum + 1
+                }, { onConflict: 'user_id' });
+
+              // Get line items from invoice
+              let projectDescription = '';
+              if (invoice.lines?.data) {
+                projectDescription = invoice.lines.data
+                  .map(line => line.description)
+                  .filter(Boolean)
+                  .join(', ');
+              }
+
+              // Create job record
+              const { data: newJob, error: jobErr } = await supabase
+                .from('jobs')
+                .insert({
+                  user_id: adminUserId,
+                  job_number: jobNumber,
+                  customer_id: customerId,
+                  customer_name: invoice.customer_name || 'Customer',
+                  customer_email: invoice.customer_email,
+                  customer_phone: invoice.customer_phone,
+                  project_description: projectDescription || `Invoice #${invoice.number}`,
+                  contract_amount: invoice.amount_paid / 100,
+                  total_paid: invoice.amount_paid / 100,
+                  deposit_paid: true,
+                  deposit_paid_at: new Date().toISOString(),
+                  stripe_invoice_id: invoice.id,
+                  status: 'new'
+                })
+                .select()
+                .single();
+
+              if (!jobErr && newJob) {
+                console.log('Created job:', newJob.job_number);
+
+                // Send thank you email to customer with next steps
+                const thankYouEmail = generateThankYouEmail(invoice, newJob);
+                await sendNotification(invoice.customer_email, thankYouEmail.subject, thankYouEmail.html);
+                console.log('Thank you email sent to customer:', invoice.customer_email);
+              } else if (jobErr) {
+                console.error('Error creating job:', jobErr.message);
+              }
+            }
+          } catch (dbErr) {
+            console.error('Database error in invoice.paid:', dbErr.message);
+          }
+        }
         break;
       }
 
@@ -3966,10 +4374,508 @@ app.post('/api/send-estimate', async (req, res) => {
   }
 });
 
+// ============ JOBS MANAGEMENT API ============
+
+// Get all jobs
+app.get('/api/jobs', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { status, limit = 50 } = req.query;
+
+    let query = supabase
+      .from('jobs')
+      .select('*, customer:customers(name, email, phone), job_contractors(contractor:contractors(name, company_name, phone))')
+      .order('created_at', { ascending: false })
+      .limit(parseInt(limit));
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data: jobs, error } = await query;
+
+    if (error) throw error;
+
+    res.json({ jobs: jobs || [] });
+  } catch (error) {
+    console.error('Get jobs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single job
+app.get('/api/jobs/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select(`
+        *,
+        customer:customers(*),
+        job_contractors(*, contractor:contractors(*)),
+        job_files(*),
+        material_orders(*),
+        status_history:job_status_history(*)
+      `)
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw error;
+
+    res.json({ job });
+  } catch (error) {
+    console.error('Get job error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update job
+app.patch('/api/jobs/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id;
+    delete updates.user_id;
+    delete updates.created_at;
+
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ job });
+  } catch (error) {
+    console.error('Update job error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Upload file to job
+app.post('/api/jobs/:id/files', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { file_name, file_url, file_type, category, description, visible_to_customer, visible_to_contractor } = req.body;
+
+    // Get job to get user_id
+    const { data: job } = await supabase
+      .from('jobs')
+      .select('user_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    const { data: file, error } = await supabase
+      .from('job_files')
+      .insert({
+        job_id: req.params.id,
+        user_id: job.user_id,
+        file_name,
+        file_url,
+        file_type: file_type || 'document',
+        category: category || 'general',
+        description,
+        visible_to_customer: visible_to_customer || false,
+        visible_to_contractor: visible_to_contractor || false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ file });
+  } catch (error) {
+    console.error('Upload file error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ CONTRACTORS MANAGEMENT API ============
+
+// Get all contractors
+app.get('/api/contractors', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { status = 'active' } = req.query;
+
+    let query = supabase
+      .from('contractors')
+      .select('*')
+      .order('name');
+
+    if (status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data: contractors, error } = await query;
+
+    if (error) throw error;
+
+    res.json({ contractors: contractors || [] });
+  } catch (error) {
+    console.error('Get contractors error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create contractor
+app.post('/api/contractors', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { name, company_name, email, phone, address, city, state, zip, specialty, license_number, hourly_rate, day_rate, notes } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Contractor name is required' });
+    }
+
+    // Get admin user ID
+    const { data: adminUser } = await supabase
+      .from('sg_users')
+      .select('id')
+      .eq('account_type', 'admin')
+      .limit(1)
+      .single();
+
+    const { data: contractor, error } = await supabase
+      .from('contractors')
+      .insert({
+        user_id: adminUser?.id,
+        name,
+        company_name,
+        email,
+        phone,
+        address,
+        city,
+        state,
+        zip,
+        specialty: specialty || [],
+        license_number,
+        hourly_rate,
+        day_rate,
+        notes
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ contractor });
+  } catch (error) {
+    console.error('Create contractor error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Assign contractor to job
+app.post('/api/jobs/:jobId/assign-contractor', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { contractor_id, role = 'installer', agreed_rate, rate_type = 'flat', send_invite = true } = req.body;
+
+    if (!contractor_id) {
+      return res.status(400).json({ error: 'Contractor ID is required' });
+    }
+
+    // Get job and contractor details
+    const [{ data: job }, { data: contractor }] = await Promise.all([
+      supabase.from('jobs').select('*, user_id').eq('id', req.params.jobId).single(),
+      supabase.from('contractors').select('*').eq('id', contractor_id).single()
+    ]);
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    if (!contractor) return res.status(404).json({ error: 'Contractor not found' });
+
+    // Generate invite token
+    const inviteToken = require('crypto').randomUUID();
+    const inviteExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48 hours
+
+    // Create assignment
+    const { data: assignment, error } = await supabase
+      .from('job_contractors')
+      .insert({
+        job_id: req.params.jobId,
+        contractor_id,
+        user_id: job.user_id,
+        role,
+        agreed_rate,
+        rate_type,
+        invite_token: inviteToken,
+        invite_expires_at: inviteExpiry,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update job status
+    await supabase
+      .from('jobs')
+      .update({ status: 'assigned', updated_at: new Date().toISOString() })
+      .eq('id', req.params.jobId);
+
+    // Send invite email if requested
+    if (send_invite && contractor.email) {
+      const inviteEmail = generateContractorInviteEmail(contractor, job, inviteToken);
+      await sendNotification(contractor.email, inviteEmail.subject, inviteEmail.html);
+
+      await supabase
+        .from('job_contractors')
+        .update({ invite_sent_at: new Date().toISOString() })
+        .eq('id', assignment.id);
+    }
+
+    res.json({
+      assignment,
+      invite_sent: send_invite && !!contractor.email
+    });
+  } catch (error) {
+    console.error('Assign contractor error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Contractor responds to invite
+app.post('/api/contractor/respond', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { token, action, decline_reason } = req.body;
+
+    if (!token || !action) {
+      return res.status(400).json({ error: 'Token and action are required' });
+    }
+
+    // Find assignment by token
+    const { data: assignment, error: findErr } = await supabase
+      .from('job_contractors')
+      .select('*, job:jobs(*), contractor:contractors(*)')
+      .eq('invite_token', token)
+      .single();
+
+    if (findErr || !assignment) {
+      return res.status(404).json({ error: 'Invalid or expired invite' });
+    }
+
+    // Check expiry
+    if (new Date(assignment.invite_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This invite has expired' });
+    }
+
+    // Update assignment status
+    const newStatus = action === 'accept' ? 'accepted' : 'declined';
+    const { error: updateErr } = await supabase
+      .from('job_contractors')
+      .update({
+        status: newStatus,
+        responded_at: new Date().toISOString(),
+        decline_reason: action === 'decline' ? decline_reason : null
+      })
+      .eq('id', assignment.id);
+
+    if (updateErr) throw updateErr;
+
+    // Notify admin
+    const statusText = action === 'accept' ? 'ACCEPTED' : 'DECLINED';
+    await sendNotification(ADMIN_EMAIL, `Contractor ${statusText} Job #${assignment.job.job_number}`, `
+      <h2>Contractor Response</h2>
+      <p><strong>${assignment.contractor.name}</strong> has <strong>${statusText}</strong> Job #${assignment.job.job_number}</p>
+      ${decline_reason ? `<p>Reason: ${decline_reason}</p>` : ''}
+      <p>Customer: ${assignment.job.customer_name}</p>
+    `);
+
+    res.json({
+      success: true,
+      status: newStatus,
+      job: assignment.job
+    });
+  } catch (error) {
+    console.error('Contractor respond error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ MATERIAL ORDERS API ============
+
+// Create material order and send email
+app.post('/api/jobs/:jobId/material-order', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { material_name, material_color, material_thickness, quantity, unit = 'slab', supplier, unit_cost, notes, send_email = true, order_email } = req.body;
+
+    if (!material_name || !supplier) {
+      return res.status(400).json({ error: 'Material name and supplier are required' });
+    }
+
+    // Get job details
+    const { data: job } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', req.params.jobId)
+      .single();
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Calculate total cost
+    const totalCost = unit_cost ? quantity * unit_cost : null;
+
+    // Create order record
+    const { data: order, error } = await supabase
+      .from('material_orders')
+      .insert({
+        job_id: req.params.jobId,
+        user_id: job.user_id,
+        supplier,
+        material_name,
+        material_color,
+        material_thickness,
+        quantity,
+        unit,
+        unit_cost,
+        total_cost: totalCost,
+        notes,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update job material info
+    await supabase
+      .from('jobs')
+      .update({
+        material_name,
+        material_supplier: supplier,
+        material_color,
+        material_thickness,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', req.params.jobId);
+
+    // Send order email if requested
+    let emailSent = false;
+    if (send_email) {
+      const recipientEmail = order_email || `order@${supplier.toLowerCase().replace(/\s+/g, '')}.com`;
+      const orderEmail = generateMaterialOrderEmail(order, job);
+
+      // Also CC admin
+      const result = await sendNotification(recipientEmail, orderEmail.subject, orderEmail.html);
+      emailSent = result.success;
+
+      // Send copy to admin
+      await sendNotification(ADMIN_EMAIL, `[Copy] ${orderEmail.subject}`, orderEmail.html);
+
+      if (emailSent) {
+        await supabase
+          .from('material_orders')
+          .update({
+            order_email_sent: true,
+            order_email_sent_at: new Date().toISOString(),
+            status: 'ordered',
+            ordered_at: new Date().toISOString()
+          })
+          .eq('id', order.id);
+      }
+    }
+
+    res.json({
+      order,
+      email_sent: emailSent
+    });
+  } catch (error) {
+    console.error('Material order error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update material order status
+app.patch('/api/material-orders/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+
+    // Auto-set timestamps based on status
+    if (updates.status === 'ordered' && !updates.ordered_at) {
+      updates.ordered_at = new Date().toISOString();
+    }
+    if (updates.status === 'received' && !updates.received_at) {
+      updates.received_at = new Date().toISOString();
+
+      // Update job material_received status
+      const { data: order } = await supabase
+        .from('material_orders')
+        .select('job_id')
+        .eq('id', req.params.id)
+        .single();
+
+      if (order?.job_id) {
+        await supabase
+          .from('jobs')
+          .update({
+            material_received: true,
+            material_received_at: new Date().toISOString(),
+            status: 'material_received'
+          })
+          .eq('id', order.job_id);
+      }
+    }
+
+    const { data: orderUpdate, error } = await supabase
+      .from('material_orders')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ order: orderUpdate });
+  } catch (error) {
+    console.error('Update material order error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ CUSTOMERS API ============
+
+// Get all customers
+app.get('/api/customers-list', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('*, jobs(id, job_number, status)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ customers: customers || [] });
+  } catch (error) {
+    console.error('Get customers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
   console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
+  console.log(`Supabase configured: ${!!supabase}`);
   console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
   console.log(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
