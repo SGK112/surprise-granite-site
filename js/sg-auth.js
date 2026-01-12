@@ -33,7 +33,9 @@
           auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+            flowType: 'pkce'
           }
         });
 
