@@ -3658,6 +3658,7 @@
                 <button class="filter-btn" data-estimate-status="sent" onclick="filterEstimates('sent')">Sent</button>
                 <button class="filter-btn" data-estimate-status="approved" onclick="filterEstimates('approved')">Approved</button>
                 <button class="filter-btn" data-estimate-status="rejected" onclick="filterEstimates('rejected')">Rejected</button>
+                <button class="filter-btn" data-estimate-status="archived" onclick="filterEstimates('archived')" style="color: var(--text-muted);">Archived</button>
               </div>
 
               <!-- Estimates List -->
@@ -3699,6 +3700,7 @@
                 <button class="filter-btn" data-invoice-status="open" onclick="filterInvoices('open')">Open</button>
                 <button class="filter-btn" data-invoice-status="paid" onclick="filterInvoices('paid')">Paid</button>
                 <button class="filter-btn" data-invoice-status="void" onclick="filterInvoices('void')">Voided</button>
+                <button class="filter-btn" data-invoice-status="archived" onclick="filterInvoices('archived')" style="color: var(--text-muted);">Archived</button>
               </div>
               <div id="invoices-list">
                 <div class="spinner" style="margin: 40px auto;"></div>
@@ -4626,12 +4628,14 @@
             </div>
 
             <!-- Line Items Table Header -->
-            <div style="display: grid; grid-template-columns: 30px 2fr 100px 80px 100px 110px 40px; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px 8px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">
+            <div style="display: grid; grid-template-columns: 30px 2fr 90px 70px 85px 85px 70px 90px 36px; gap: 6px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px 8px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">
               <span></span>
               <span>Description</span>
               <span>Unit</span>
               <span style="text-align: center;">Qty</span>
-              <span style="text-align: right;">Unit Price</span>
+              <span style="text-align: right; color: rgba(59,130,246,0.8);" title="Your cost (internal only)">Cost</span>
+              <span style="text-align: right;">Price</span>
+              <span style="text-align: center; color: rgba(59,130,246,0.8);" title="Margin % (internal only)">Margin</span>
               <span style="text-align: right;">Total</span>
               <span></span>
             </div>
@@ -4646,7 +4650,7 @@
 
             <!-- Hidden Template -->
             <div class="line-item-template" style="display: none;">
-              <div class="estimate-line-item" data-category="material" style="display: grid; grid-template-columns: 30px 2fr 100px 80px 100px 110px 40px; gap: 8px; align-items: start; padding: 12px; border-bottom: 1px solid var(--border-subtle);">
+              <div class="estimate-line-item" data-category="material" style="display: grid; grid-template-columns: 30px 2fr 90px 70px 85px 85px 70px 90px 36px; gap: 6px; align-items: start; padding: 12px; border-bottom: 1px solid var(--border-subtle);">
                 <div class="category-indicator" style="display: flex; align-items: center; justify-content: center; padding-top: 8px;">
                   <span class="category-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;" title="Material"></span>
                 </div>
@@ -4664,7 +4668,9 @@
                   <option value="job">Flat Rate</option>
                 </select>
                 <input type="number" class="item-qty" placeholder="Qty" value="1" min="0" step="0.01" style="text-align: center;">
-                <input type="number" class="item-price" placeholder="0.00" value="0" min="0" step="0.01" style="text-align: right;">
+                <input type="number" class="item-cost" placeholder="Cost" value="" min="0" step="0.01" style="text-align: right; background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3);" title="Your cost (internal only)">
+                <input type="number" class="item-price" placeholder="Price" value="0" min="0" step="0.01" style="text-align: right;">
+                <div class="item-margin" style="text-align: center; padding: 10px 4px; font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); border-radius: 4px;" title="Margin % (internal only)">--%</div>
                 <div class="item-total" style="text-align: right; padding: 10px 0; font-weight: 600; color: var(--gold-primary); font-size: 14px;">$0.00</div>
                 <button type="button" class="btn-remove-item" onclick="removeEstimateLineItem(this)" style="background: none; border: none; color: #6b7280; cursor: pointer; padding: 8px; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#6b7280'">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -4703,6 +4709,26 @@
                 Pricing Summary
               </div>
               <div class="estimate-totals" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Margin Summary (Internal Only) -->
+                <div id="margin-summary" style="margin-bottom: 12px; padding: 12px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px;">
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(59,130,246,0.9); font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Internal Only - Not shown to customer
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                    <span style="color: var(--text-muted);">Your Cost</span>
+                    <span id="estimate-total-cost" style="font-weight: 500;">$0.00</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                    <span style="color: var(--text-muted);">Gross Profit</span>
+                    <span id="estimate-total-profit" style="font-weight: 600; color: #22c55e;">$0.00</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 14px; padding-top: 8px; border-top: 1px solid rgba(59,130,246,0.2);">
+                    <span style="font-weight: 600; color: rgba(59,130,246,0.9);">Margin</span>
+                    <span id="estimate-total-margin" style="font-weight: 700; color: #22c55e;">--%</span>
+                  </div>
+                </div>
+
                 <!-- Category Subtotals -->
                 <div id="category-subtotals" style="margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
                   <div class="category-subtotal" data-category="material" style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">
@@ -4859,6 +4885,30 @@
       </div>
       <div class="modal-body">
         <form id="business-settings-form" onsubmit="return saveBusinessSettings(event)">
+          <!-- Logo Upload Section -->
+          <div class="form-section">
+            <div class="form-section-title">Company Logo</div>
+            <div style="display: flex; align-items: center; gap: 24px;">
+              <div id="logo-preview" style="width: 120px; height: 120px; background: var(--dark-elevated); border: 2px dashed var(--border-subtle); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <span id="logo-placeholder" style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 10px;">No logo<br>uploaded</span>
+                <img id="logo-image" src="" alt="Company Logo" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="logo-upload" accept="image/*" style="display: none;" onchange="handleLogoUpload(event)">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('logo-upload').click()" style="margin-bottom: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  Upload Logo
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="removeLogo()" id="remove-logo-btn" style="display: none; margin-left: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Remove
+                </button>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Recommended: Square image, 200x200px or larger. PNG or JPG.</p>
+                <input type="hidden" id="biz-logo-url" value="">
+              </div>
+            </div>
+          </div>
+
           <div class="form-section">
             <div class="form-section-title">Company Information</div>
             <div class="form-group">
@@ -6818,23 +6868,40 @@
       if (!invoicesList) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/invoices?limit=50`);
-
-        if (!response.ok) {
-          throw new Error('API not available. Please deploy the Stripe API backend first.');
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          invoicesList.innerHTML = '<div class="empty-state"><p>Please log in to view invoices.</p></div>';
+          return;
         }
 
-        const data = await response.json();
-        allInvoices = data.invoices || [];
+        let query = supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        // Filter by archived status
+        if (invoiceFilter === 'archived') {
+          query = query.not('archived_at', 'is', null);
+        } else {
+          query = query.is('archived_at', null);
+        }
+
+        const { data: invoices, error } = await query;
+
+        if (error) throw error;
+
+        allInvoices = invoices || [];
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
         invoicesList.innerHTML = `
           <div class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <h3>Invoice API Not Connected</h3>
-            <p>The Stripe invoice API needs to be deployed. See /api folder for setup instructions.</p>
-            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice Anyway</button>
+            <h3>No Invoices Found</h3>
+            <p>Create your first invoice or convert an approved estimate.</p>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice</button>
           </div>
         `;
       }
@@ -6845,7 +6912,60 @@
       document.querySelectorAll('[data-invoice-status]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.invoiceStatus === status);
       });
-      renderInvoices();
+      // Reload from database when switching to/from archived
+      if (status === 'archived' || invoiceFilter === 'archived') {
+        loadInvoices();
+      } else {
+        renderInvoices();
+      }
+    }
+
+    async function archiveInvoice(invoiceId) {
+      try {
+        const { error } = await supabaseClient
+          .from('invoices')
+          .update({ archived_at: new Date().toISOString() })
+          .eq('id', invoiceId);
+
+        if (error) throw error;
+        loadInvoices();
+        showToast('Invoice archived');
+      } catch (err) {
+        console.error('Archive invoice error:', err);
+        alert('Error archiving invoice');
+      }
+    }
+
+    async function unarchiveInvoice(invoiceId) {
+      try {
+        const { error } = await supabaseClient
+          .from('invoices')
+          .update({ archived_at: null })
+          .eq('id', invoiceId);
+
+        if (error) throw error;
+        loadInvoices();
+        showToast('Invoice restored');
+      } catch (err) {
+        console.error('Unarchive invoice error:', err);
+        alert('Error restoring invoice');
+      }
+    }
+
+    async function deleteInvoicePermanent(invoiceId) {
+      if (!confirm('Permanently delete this invoice? This cannot be undone.')) return;
+
+      try {
+        // Delete line items first
+        await supabaseClient.from('invoice_items').delete().eq('invoice_id', invoiceId);
+        // Delete the invoice
+        await supabaseClient.from('invoices').delete().eq('id', invoiceId);
+        loadInvoices();
+        showToast('Invoice permanently deleted');
+      } catch (err) {
+        console.error('Delete invoice error:', err);
+        alert('Error deleting invoice');
+      }
     }
 
     function renderInvoices() {
@@ -6853,7 +6973,8 @@
       if (!invoicesList) return;
 
       let filtered = allInvoices;
-      if (invoiceFilter !== 'all') {
+      // Don't filter by status if showing archived - archived is handled in loadInvoices
+      if (invoiceFilter !== 'all' && invoiceFilter !== 'archived') {
         filtered = filtered.filter(inv => inv.status === invoiceFilter);
       }
 
@@ -6897,6 +7018,12 @@
                     ${inv.hosted_invoice_url ? `<a class="action-btn" href="${inv.hosted_invoice_url}" target="_blank" title="View Invoice"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>` : ''}
                     ${inv.pdf ? `<a class="action-btn" href="${inv.pdf}" target="_blank" title="Download PDF"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>` : ''}
                     ${inv.status === 'open' ? `<button class="action-btn" onclick="sendReminder('${inv.id}')" title="Send Reminder"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>` : ''}
+                    ${inv.archived_at ? `
+                      <button class="action-btn" onclick="unarchiveInvoice('${inv.id}')" title="Restore"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+                      <button class="action-btn" onclick="deleteInvoicePermanent('${inv.id}')" title="Delete Permanently" style="color: #ef4444;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    ` : `
+                      <button class="action-btn" onclick="archiveInvoice('${inv.id}')" title="Archive"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></button>
+                    `}
                   </div>
                 </td>
               </tr>
@@ -8451,8 +8578,15 @@
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (currentEstimateFilter !== 'all') {
-          query = query.eq('status', currentEstimateFilter);
+        // Filter by status
+        if (currentEstimateFilter === 'archived') {
+          query = query.not('archived_at', 'is', null);
+        } else {
+          // By default, hide archived estimates
+          query = query.is('archived_at', null);
+          if (currentEstimateFilter !== 'all') {
+            query = query.eq('status', currentEstimateFilter);
+          }
         }
 
         const { data: estimates, error } = await query;
@@ -8535,11 +8669,19 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 Duplicate
               </button>
-              ${estimate.status === 'draft' ? `
-                <button class="btn btn-sm" onclick="deleteEstimate('${estimate.id}')" style="color: #ef4444;">
+              ${estimate.archived_at ? `
+                <button class="btn btn-sm btn-secondary" onclick="unarchiveEstimate('${estimate.id}')" title="Restore">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  Restore
+                </button>
+                <button class="btn btn-sm" onclick="deleteEstimatePermanent('${estimate.id}')" style="color: #ef4444;" title="Delete Permanently">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
-              ` : ''}
+              ` : `
+                <button class="btn btn-sm" onclick="archiveEstimate('${estimate.id}')" style="color: #6b7280;" title="Archive">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                </button>
+              `}
             </div>
           </div>
         `).join('');
@@ -8722,6 +8864,18 @@
       const estimateNumber = document.getElementById('estimate-number-display').textContent;
       const estimateDate = document.getElementById('estimate-date-display').textContent;
 
+      // Get business settings for branding
+      const companyName = businessSettings?.company_name || 'Your Company Name';
+      const companyPhone = businessSettings?.phone || '';
+      const companyEmail = businessSettings?.email || '';
+      const companyWebsite = businessSettings?.website || '';
+      const companyLogo = businessSettings?.logo_url || '';
+      const companyAddress = [
+        businessSettings?.address,
+        [businessSettings?.city, businessSettings?.state, businessSettings?.zip].filter(Boolean).join(', ')
+      ].filter(Boolean).join(', ');
+      const companyContact = [companyPhone, companyEmail].filter(Boolean).join(' | ');
+
       // Collect line items
       const lineItems = [];
       document.querySelectorAll('#estimate-line-items .estimate-line-item').forEach(item => {
@@ -8781,13 +8935,18 @@
           <div class="preview-banner">PREVIEW - This is how your estimate will appear to the customer</div>
           <div class="estimate-preview">
             <div class="header">
-              <div>
-                <h1>ESTIMATE</h1>
-                <div class="est-number">Estimate #: <strong>${estimateNumber}</strong> | Date: ${estimateDate}</div>
+              <div style="display: flex; align-items: center; gap: 20px;">
+                ${companyLogo ? `<img src="${companyLogo}" alt="Logo" style="height: 60px; width: auto; max-width: 120px; object-fit: contain; border-radius: 8px;">` : `<div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f9cb00, #cca600); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; color: #1a1a1a;">${companyName.substring(0,2).toUpperCase()}</div>`}
+                <div>
+                  <div style="font-size: 22px; font-weight: 700;">${companyName}</div>
+                  ${companyAddress ? `<div style="font-size: 12px; color: #aaa; margin-top: 4px;">${companyAddress}</div>` : ''}
+                  ${companyContact ? `<div style="font-size: 12px; color: #aaa;">${companyContact}</div>` : ''}
+                </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 12px; color: #888;">Your Company Name</div>
-                <div style="font-size: 12px; color: #888;">Phone | Email</div>
+                <h1 style="font-size: 28px; color: #f9cb00; margin: 0;">ESTIMATE</h1>
+                <div class="est-number" style="margin-top: 8px;">Estimate #: <strong>${estimateNumber}</strong></div>
+                <div style="font-size: 12px; color: #888;">Date: ${estimateDate}</div>
               </div>
             </div>
 
@@ -8838,7 +8997,8 @@
             </div>
 
             <div class="footer">
-              <p>Thank you for your business!</p>
+              <p>Thank you for choosing <strong>${companyName}</strong>!</p>
+              ${companyWebsite ? `<p style="margin-top: 5px;">${companyWebsite}</p>` : ''}
             </div>
           </div>
           <div style="text-align:center;margin-top:20px;">
@@ -8941,6 +9101,8 @@
       // Add event listeners for real-time calculation
       template.querySelector('.item-qty').addEventListener('input', calculateEstimateTotals);
       template.querySelector('.item-price').addEventListener('input', calculateEstimateTotals);
+      const costInput = template.querySelector('.item-cost');
+      if (costInput) costInput.addEventListener('input', calculateEstimateTotals);
 
       container.appendChild(template);
       calculateEstimateTotals();
@@ -8958,17 +9120,42 @@
     function calculateEstimateTotals() {
       const lineItems = document.querySelectorAll('#estimate-line-items .estimate-line-item');
       let subtotal = 0;
+      let totalCost = 0;
       const categoryTotals = { material: 0, labor: 0, service: 0, other: 0 };
 
       lineItems.forEach(item => {
         const qty = parseFloat(item.querySelector('.item-qty').value) || 0;
         const price = parseFloat(item.querySelector('.item-price').value) || 0;
+        const costInput = item.querySelector('.item-cost');
+        const cost = costInput ? (parseFloat(costInput.value) || 0) : 0;
         const total = qty * price;
+        const totalItemCost = qty * cost;
         const category = item.querySelector('.item-category').value || 'other';
 
         item.querySelector('.item-total').textContent = '$' + total.toFixed(2);
         subtotal += total;
+        totalCost += totalItemCost;
         categoryTotals[category] = (categoryTotals[category] || 0) + total;
+
+        // Calculate and display margin for this line item
+        const marginEl = item.querySelector('.item-margin');
+        if (marginEl) {
+          if (cost > 0 && price > 0) {
+            const marginPercent = ((price - cost) / cost) * 100;
+            marginEl.textContent = marginPercent.toFixed(1) + '%';
+            // Color code the margin
+            if (marginPercent < 0) {
+              marginEl.style.color = '#ef4444'; // Red for negative
+            } else if (marginPercent < 20) {
+              marginEl.style.color = '#f59e0b'; // Orange for low
+            } else {
+              marginEl.style.color = '#22c55e'; // Green for good
+            }
+          } else {
+            marginEl.textContent = '--%';
+            marginEl.style.color = 'var(--text-muted)';
+          }
+        }
       });
 
       // Update category subtotals
@@ -9015,6 +9202,36 @@
       if (depositAmountEl) depositAmountEl.textContent = '$' + depositAmount.toFixed(2);
       if (balanceAmountEl) balanceAmountEl.textContent = '$' + balanceAmount.toFixed(2);
       if (balancePercentEl) balancePercentEl.textContent = (100 - depositPercent) + '%';
+
+      // Update margin summary (internal only)
+      const totalCostEl = document.getElementById('estimate-total-cost');
+      const totalProfitEl = document.getElementById('estimate-total-profit');
+      const totalMarginEl = document.getElementById('estimate-total-margin');
+
+      if (totalCostEl) totalCostEl.textContent = '$' + totalCost.toFixed(2);
+
+      const profit = subtotal - totalCost;
+      if (totalProfitEl) {
+        totalProfitEl.textContent = '$' + profit.toFixed(2);
+        totalProfitEl.style.color = profit >= 0 ? '#22c55e' : '#ef4444';
+      }
+
+      if (totalMarginEl) {
+        if (totalCost > 0) {
+          const overallMargin = ((subtotal - totalCost) / totalCost) * 100;
+          totalMarginEl.textContent = overallMargin.toFixed(1) + '%';
+          if (overallMargin < 0) {
+            totalMarginEl.style.color = '#ef4444';
+          } else if (overallMargin < 20) {
+            totalMarginEl.style.color = '#f59e0b';
+          } else {
+            totalMarginEl.style.color = '#22c55e';
+          }
+        } else {
+          totalMarginEl.textContent = '--%';
+          totalMarginEl.style.color = 'var(--text-muted)';
+        }
+      }
     }
 
     // Alias for compatibility
@@ -9161,13 +9378,56 @@
         closeCreateEstimateModal();
         loadEstimates();
 
-        // Show success and offer to view/send
-        const viewLink = `/estimate/view/?token=${token}`;
-        if (confirm('Estimate created successfully!\n\nDo you want to view and send it now?')) {
-          window.open(viewLink, '_blank');
+        const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
+        const customerEmail = document.getElementById('estimate-customer-email').value.trim();
+
+        // Try to send email via API, but don't fail if it doesn't work
+        if (customerEmail) {
+          try {
+            await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: customerEmail,
+                customerName: estimateData.customer_name,
+                estimateNumber: estimate.estimate_number,
+                projectName: estimateData.project_name,
+                total: estimateData.total,
+                approvalUrl: viewLink
+              })
+            });
+            showToast('Estimate created and email sent!');
+          } catch (emailErr) {
+            console.log('Email API unavailable, showing manual send option');
+            // Fallback: offer to copy link or open email client
+            const sendManually = confirm(
+              `Estimate created successfully!\n\n` +
+              `Email service is not configured. Would you like to:\n\n` +
+              `• Click OK to open your email client with the estimate link\n` +
+              `• Click Cancel to just copy the link`
+            );
+
+            if (sendManually) {
+              const subject = encodeURIComponent(`Your Estimate from ${businessSettings?.company_name || 'Surprise Granite'}`);
+              const body = encodeURIComponent(
+                `Hi ${estimateData.customer_name},\n\n` +
+                `Please review your estimate at the link below:\n\n${viewLink}\n\n` +
+                `Thank you,\n${businessSettings?.company_name || 'Surprise Granite'}`
+              );
+              window.open(`mailto:${customerEmail}?subject=${subject}&body=${body}`);
+            } else {
+              navigator.clipboard.writeText(viewLink);
+              showToast('Estimate link copied to clipboard!');
+            }
+          }
+        } else {
+          showToast('Estimate created! Add customer email to send.');
         }
 
-        showToast('Estimate created successfully!');
+        // Offer to preview
+        if (confirm('Would you like to preview the estimate?')) {
+          window.open(viewLink, '_blank');
+        }
 
       } catch (err) {
         console.error('Create estimate error:', err);
@@ -9304,11 +9564,14 @@
       if (!confirm('Send this estimate to the customer?')) return;
 
       try {
-        const { data: estimate } = await supabaseClient
+        // Fetch estimate with items
+        const { data: estimate, error: fetchErr } = await supabaseClient
           .from('estimates')
-          .select('customer_email')
+          .select('*, estimate_items(*)')
           .eq('id', estimateId)
           .single();
+
+        if (fetchErr) throw fetchErr;
 
         if (!estimate.customer_email) {
           alert('Please add a customer email before sending');
@@ -9321,7 +9584,7 @@
           .update({ status: 'sent', sent_at: new Date().toISOString() })
           .eq('id', estimateId);
 
-        // Generate token and send email
+        // Generate token
         const token = crypto.randomUUID();
         await supabaseClient
           .from('estimate_tokens')
@@ -9331,9 +9594,82 @@
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           }]);
 
-        await sendEstimateEmail(estimateId, token);
+        const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
+
+        // Prepare complete estimate data for email + PDF
+        const emailData = {
+          customer_email: estimate.customer_email,
+          customer_name: estimate.customer_name,
+          customer_phone: estimate.customer_phone,
+          customer_address: estimate.customer_address,
+          estimate_number: estimate.estimate_number,
+          estimate_id: estimate.id,
+          items: (estimate.estimate_items || []).map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total
+          })),
+          subtotal: estimate.subtotal,
+          tax_rate: estimate.tax_rate,
+          tax_amount: estimate.tax_amount,
+          total: estimate.total,
+          notes: estimate.notes,
+          view_url: viewLink,
+          // Business info
+          business_name: businessSettings?.company_name,
+          business_email: businessSettings?.company_email,
+          business_phone: businessSettings?.company_phone,
+          business_address: businessSettings?.company_address,
+          business_logo: businessSettings?.logo_url,
+          // Project details
+          project_type: estimate.project_type || estimate.project_name,
+          estimated_timeline: estimate.estimated_timeline,
+          inclusions: estimate.inclusions,
+          exclusions: estimate.exclusions,
+          terms_conditions: estimate.terms_conditions,
+          valid_until: estimate.valid_until,
+          created_at: estimate.created_at
+        };
+
+        // Parse payment schedule if stored as JSON
+        if (estimate.payment_schedule) {
+          try {
+            emailData.payment_schedule = typeof estimate.payment_schedule === 'string'
+              ? JSON.parse(estimate.payment_schedule)
+              : estimate.payment_schedule;
+          } catch (e) {}
+        }
+
+        // Try to send email via API
+        try {
+          const response = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailData)
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            showToast(result.pdf_attached ? 'Estimate sent with PDF!' : 'Estimate sent!');
+          } else {
+            throw new Error(result.error || 'Failed to send');
+          }
+        } catch (emailErr) {
+          console.log('Email API error:', emailErr.message);
+          // Fallback to email client
+          const subject = encodeURIComponent(`Your Estimate from ${businessSettings?.company_name || 'Surprise Granite'}`);
+          const body = encodeURIComponent(
+            `Hi ${estimate.customer_name},\n\n` +
+            `Please review your estimate at the link below:\n\n${viewLink}\n\n` +
+            `Thank you,\n${businessSettings?.company_name || 'Surprise Granite'}`
+          );
+          window.open(`mailto:${estimate.customer_email}?subject=${subject}&body=${body}`);
+          showToast('Email client opened with estimate link');
+        }
+
         loadEstimates();
-        showToast('Estimate sent!');
       } catch (err) {
         console.error('Send estimate error:', err);
         alert('Error sending estimate: ' + err.message);
@@ -9378,6 +9714,54 @@
         await supabaseClient.from('estimates').delete().eq('id', estimateId);
         loadEstimates();
         showToast('Estimate deleted');
+      } catch (err) {
+        console.error('Delete estimate error:', err);
+        alert('Error deleting estimate');
+      }
+    }
+
+    async function archiveEstimate(estimateId) {
+      try {
+        const { error } = await supabaseClient
+          .from('estimates')
+          .update({ archived_at: new Date().toISOString() })
+          .eq('id', estimateId);
+
+        if (error) throw error;
+        loadEstimates();
+        showToast('Estimate archived');
+      } catch (err) {
+        console.error('Archive estimate error:', err);
+        alert('Error archiving estimate');
+      }
+    }
+
+    async function unarchiveEstimate(estimateId) {
+      try {
+        const { error } = await supabaseClient
+          .from('estimates')
+          .update({ archived_at: null })
+          .eq('id', estimateId);
+
+        if (error) throw error;
+        loadEstimates();
+        showToast('Estimate restored');
+      } catch (err) {
+        console.error('Unarchive estimate error:', err);
+        alert('Error restoring estimate');
+      }
+    }
+
+    async function deleteEstimatePermanent(estimateId) {
+      if (!confirm('Permanently delete this estimate? This cannot be undone.')) return;
+
+      try {
+        // Delete line items first
+        await supabaseClient.from('estimate_items').delete().eq('estimate_id', estimateId);
+        // Delete the estimate
+        await supabaseClient.from('estimates').delete().eq('id', estimateId);
+        loadEstimates();
+        showToast('Estimate permanently deleted');
       } catch (err) {
         console.error('Delete estimate error:', err);
         alert('Error deleting estimate');
@@ -9468,11 +9852,24 @@
 
         if (!estimate) throw new Error('Estimate not found');
 
+        // Prevent duplicate conversion
+        if (estimate.status === 'converted' || estimate.converted_to_invoice_id) {
+          alert('This estimate has already been converted to an invoice.');
+          return;
+        }
+
         const { data: { user } } = await supabaseClient.auth.getUser();
+
+        // Generate invoice number
+        const invoicePrefix = businessSettings?.invoice_prefix || 'INV-';
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
 
         // Create invoice
         const invoiceData = {
           user_id: user.id,
+          invoice_number: invoiceNumber,
           estimate_id: estimateId,
           customer_name: estimate.customer_name,
           customer_email: estimate.customer_email,
@@ -9580,6 +9977,26 @@
             document.getElementById('biz-invoice-prefix').value = settings.invoice_prefix || 'INV-';
           }
           document.getElementById('biz-estimate-terms').value = settings.default_estimate_terms || '';
+
+          // Load logo if exists
+          const logoUrl = settings.logo_url;
+          const logoImage = document.getElementById('logo-image');
+          const logoPlaceholder = document.getElementById('logo-placeholder');
+          const removeLogoBtn = document.getElementById('remove-logo-btn');
+          const logoUrlInput = document.getElementById('biz-logo-url');
+
+          if (logoUrl) {
+            logoImage.src = logoUrl;
+            logoImage.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+            removeLogoBtn.style.display = 'inline-block';
+            logoUrlInput.value = logoUrl;
+          } else {
+            logoImage.style.display = 'none';
+            logoPlaceholder.style.display = 'block';
+            removeLogoBtn.style.display = 'none';
+            logoUrlInput.value = '';
+          }
         }
       } catch (err) {
         console.log('No business settings found');
@@ -9610,7 +10027,8 @@
           default_tax_rate: parseFloat(document.getElementById('biz-tax-rate')?.value) || 0,
           default_deposit_percent: parseFloat(document.getElementById('biz-deposit-percent')?.value) || 50,
           default_payment_terms: document.getElementById('biz-payment-terms')?.value.trim() || null,
-          default_warranty_terms: document.getElementById('biz-warranty-terms')?.value.trim() || null
+          default_warranty_terms: document.getElementById('biz-warranty-terms')?.value.trim() || null,
+          logo_url: document.getElementById('biz-logo-url').value.trim() || null
         };
 
         const { error } = await supabaseClient
@@ -9627,6 +10045,93 @@
       }
 
       return false;
+    }
+
+    // Logo upload handler
+    async function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image must be smaller than 2MB');
+        return;
+      }
+
+      const logoImage = document.getElementById('logo-image');
+      const logoPlaceholder = document.getElementById('logo-placeholder');
+      const removeLogoBtn = document.getElementById('remove-logo-btn');
+      const logoUrlInput = document.getElementById('biz-logo-url');
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        // Show loading state
+        logoPlaceholder.innerHTML = 'Uploading...';
+        logoPlaceholder.style.display = 'block';
+        logoImage.style.display = 'none';
+
+        // Create unique filename
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`;
+
+        // Upload to Supabase Storage
+        const { data, error } = await supabaseClient.storage
+          .from('business-logos')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (error) throw error;
+
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+          .from('business-logos')
+          .getPublicUrl(fileName);
+
+        const publicUrl = urlData.publicUrl;
+
+        // Update UI
+        logoImage.src = publicUrl;
+        logoImage.style.display = 'block';
+        logoPlaceholder.style.display = 'none';
+        removeLogoBtn.style.display = 'inline-block';
+        logoUrlInput.value = publicUrl;
+
+        showToast('Logo uploaded! Click Save to apply changes.');
+      } catch (err) {
+        console.error('Logo upload error:', err);
+        logoPlaceholder.innerHTML = 'No logo<br>uploaded';
+        logoPlaceholder.style.display = 'block';
+        alert('Error uploading logo: ' + err.message);
+      }
+    }
+
+    // Remove logo handler
+    function removeLogo() {
+      const logoImage = document.getElementById('logo-image');
+      const logoPlaceholder = document.getElementById('logo-placeholder');
+      const removeLogoBtn = document.getElementById('remove-logo-btn');
+      const logoUrlInput = document.getElementById('biz-logo-url');
+      const logoUpload = document.getElementById('logo-upload');
+
+      logoImage.src = '';
+      logoImage.style.display = 'none';
+      logoPlaceholder.innerHTML = 'No logo<br>uploaded';
+      logoPlaceholder.style.display = 'block';
+      removeLogoBtn.style.display = 'none';
+      logoUrlInput.value = '';
+      logoUpload.value = '';
+
+      showToast('Logo removed. Click Save to apply changes.');
     }
 
     // =============================================

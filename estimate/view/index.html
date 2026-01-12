@@ -507,11 +507,10 @@
     <div id="estimate-content" style="display: none;">
       <!-- Company Header -->
       <div class="estimate-header" id="company-header">
-        <div class="company-logo" id="company-logo">SG</div>
+        <div class="company-logo" id="company-logo-text">SG</div>
+        <img class="company-logo-img" id="company-logo-img" src="" alt="Company Logo" style="display: none; width: 80px; height: 80px; border-radius: 16px; object-fit: contain; margin: 0 auto 16px;">
         <div class="company-name" id="company-name">Surprise Granite</div>
-        <div class="company-contact" id="company-contact">
-          Loading company info...
-        </div>
+        <div class="company-contact" id="company-contact"></div>
       </div>
 
       <!-- Estimate Card -->
@@ -780,6 +779,11 @@
     }
 
     async function loadBusinessInfo(userId) {
+      const logoText = document.getElementById('company-logo-text');
+      const logoImg = document.getElementById('company-logo-img');
+      const companyName = document.getElementById('company-name');
+      const companyContact = document.getElementById('company-contact');
+
       try {
         const { data: settings } = await supabaseClient
           .from('business_settings')
@@ -788,27 +792,56 @@
           .single();
 
         if (settings) {
+          // Handle company name
           if (settings.company_name) {
-            document.getElementById('company-name').textContent = settings.company_name;
-            document.getElementById('company-logo').textContent = settings.company_name.substring(0, 2).toUpperCase();
+            companyName.textContent = settings.company_name;
+            logoText.textContent = settings.company_name.substring(0, 2).toUpperCase();
           }
 
+          // Handle logo - prefer image if available
+          if (settings.logo_url) {
+            logoImg.src = settings.logo_url;
+            logoImg.style.display = 'block';
+            logoText.style.display = 'none';
+          } else {
+            logoImg.style.display = 'none';
+            logoText.style.display = 'flex';
+          }
+
+          // Build contact info
           let contactParts = [];
           if (settings.phone) contactParts.push(settings.phone);
           if (settings.email) contactParts.push(settings.email);
           if (settings.website) contactParts.push(settings.website);
+
           if (contactParts.length > 0) {
-            document.getElementById('company-contact').textContent = contactParts.join(' | ');
+            companyContact.textContent = contactParts.join(' | ');
+          } else {
+            // Build address if no contact info
+            let addressParts = [];
+            if (settings.address) addressParts.push(settings.address);
+            if (settings.city || settings.state || settings.zip) {
+              addressParts.push([settings.city, settings.state, settings.zip].filter(Boolean).join(', '));
+            }
+            companyContact.textContent = addressParts.join(' | ') || '';
           }
 
           // Set terms if available
           if (settings.default_estimate_terms) {
-            document.getElementById('tos-content').textContent = settings.default_estimate_terms;
-            document.getElementById('tos-section').style.display = 'block';
+            const tosContent = document.getElementById('tos-content');
+            const tosSection = document.getElementById('tos-section');
+            if (tosContent && tosSection) {
+              tosContent.textContent = settings.default_estimate_terms;
+              tosSection.style.display = 'block';
+            }
           }
+        } else {
+          // No settings found - show defaults
+          companyContact.textContent = '';
         }
       } catch (err) {
-        console.log('No business settings found');
+        console.log('No business settings found:', err);
+        companyContact.textContent = '';
       }
     }
 

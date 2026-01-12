@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const Stripe = require('stripe');
 const nodemailer = require('nodemailer');
+const PDFDocument = require('pdfkit');
 require('dotenv').config();
 
 // Blueprint Takeoff Analyzer with GPT-4 Vision and Ollama support
@@ -64,6 +65,301 @@ const COMPANY = {
   tagline: 'Premium Countertops & Expert Installation',
   license: 'AZ ROC# 341113'
 };
+
+// ==================== PDF GENERATION ====================
+
+// Generate professional estimate PDF
+function generateEstimatePDF(data) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'LETTER',
+        margin: 50,
+        bufferPages: true
+      });
+
+      const chunks = [];
+      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const {
+        customer_name,
+        customer_email,
+        customer_phone,
+        customer_address,
+        estimate_number,
+        items = [],
+        subtotal = 0,
+        tax_rate = 0,
+        tax_amount = 0,
+        total = 0,
+        notes,
+        company_name,
+        company_email,
+        company_phone,
+        company_address,
+        company_logo,
+        project_type,
+        estimated_timeline,
+        inclusions,
+        exclusions,
+        terms_conditions,
+        payment_schedule,
+        valid_until,
+        created_at
+      } = data;
+
+      // Use company info or defaults
+      const compName = company_name || COMPANY.name;
+      const compEmail = company_email || COMPANY.email;
+      const compPhone = company_phone || COMPANY.phone;
+      const compAddress = company_address || COMPANY.address;
+
+      // Colors
+      const primaryColor = '#1a1a2e';
+      const accentColor = '#f9cb00';
+      const grayColor = '#666666';
+      const lightGray = '#f5f5f5';
+
+      // Format currency helper
+      const formatCurrency = (amount) => {
+        const num = parseFloat(amount) || 0;
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+
+      // Format date helper
+      const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      };
+
+      // ===== HEADER =====
+      // Company name (large, bold)
+      doc.fontSize(24).fillColor(primaryColor).font('Helvetica-Bold')
+         .text(compName, 50, 50);
+
+      // Tagline
+      doc.fontSize(10).fillColor(grayColor).font('Helvetica')
+         .text(COMPANY.tagline, 50, 78);
+
+      // ESTIMATE label (right side)
+      doc.fontSize(28).fillColor(accentColor).font('Helvetica-Bold')
+         .text('ESTIMATE', 400, 50, { align: 'right' });
+
+      // Estimate number
+      doc.fontSize(12).fillColor(primaryColor).font('Helvetica')
+         .text(`#${estimate_number || 'N/A'}`, 400, 82, { align: 'right' });
+
+      // Accent line
+      doc.moveTo(50, 105).lineTo(562, 105).strokeColor(accentColor).lineWidth(3).stroke();
+
+      // ===== COMPANY & CUSTOMER INFO =====
+      let yPos = 125;
+
+      // Company info (left)
+      doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+         .text('FROM:', 50, yPos);
+      doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+         .text(compName, 50, yPos + 12);
+      doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+         .text(compAddress, 50, yPos + 25)
+         .text(`Phone: ${compPhone}`, 50, yPos + 37)
+         .text(`Email: ${compEmail}`, 50, yPos + 49);
+
+      // Customer info (right)
+      doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+         .text('TO:', 350, yPos);
+      doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+         .text(customer_name || 'Valued Customer', 350, yPos + 12);
+      doc.fontSize(9).fillColor(grayColor).font('Helvetica');
+      if (customer_address) doc.text(customer_address, 350, yPos + 25);
+      if (customer_phone) doc.text(`Phone: ${customer_phone}`, 350, yPos + (customer_address ? 37 : 25));
+      if (customer_email) doc.text(`Email: ${customer_email}`, 350, yPos + (customer_address ? 49 : 37));
+
+      // ===== ESTIMATE DETAILS BOX =====
+      yPos = 210;
+      doc.rect(50, yPos, 512, 50).fillColor(lightGray).fill();
+
+      // Details row
+      doc.fontSize(8).fillColor(grayColor).font('Helvetica')
+         .text('DATE', 60, yPos + 8)
+         .text('VALID UNTIL', 180, yPos + 8)
+         .text('PROJECT TYPE', 320, yPos + 8);
+
+      doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+         .text(formatDate(created_at) || formatDate(new Date()), 60, yPos + 22)
+         .text(formatDate(valid_until) || 'Upon Request', 180, yPos + 22)
+         .text(project_type || 'Custom Project', 320, yPos + 22);
+
+      if (estimated_timeline) {
+        doc.fontSize(8).fillColor(grayColor).font('Helvetica')
+           .text('TIMELINE', 450, yPos + 8);
+        doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+           .text(estimated_timeline, 450, yPos + 22);
+      }
+
+      // ===== LINE ITEMS TABLE =====
+      yPos = 280;
+
+      // Table header
+      doc.rect(50, yPos, 512, 25).fillColor(primaryColor).fill();
+      doc.fontSize(9).fillColor('#ffffff').font('Helvetica-Bold')
+         .text('DESCRIPTION', 60, yPos + 8)
+         .text('QTY', 350, yPos + 8, { width: 50, align: 'center' })
+         .text('UNIT PRICE', 410, yPos + 8, { width: 70, align: 'right' })
+         .text('TOTAL', 490, yPos + 8, { width: 60, align: 'right' });
+
+      yPos += 25;
+
+      // Table rows
+      items.forEach((item, index) => {
+        const rowHeight = 25;
+        const bgColor = index % 2 === 0 ? '#ffffff' : lightGray;
+
+        doc.rect(50, yPos, 512, rowHeight).fillColor(bgColor).fill();
+
+        const qty = item.quantity || 1;
+        const unitPrice = item.unit_price || item.price || 0;
+        const lineTotal = item.total || (qty * unitPrice);
+
+        doc.fontSize(9).fillColor(primaryColor).font('Helvetica')
+           .text(item.description || item.name || 'Item', 60, yPos + 8, { width: 280 })
+           .text(qty.toString(), 350, yPos + 8, { width: 50, align: 'center' })
+           .text(formatCurrency(unitPrice), 410, yPos + 8, { width: 70, align: 'right' })
+           .text(formatCurrency(lineTotal), 490, yPos + 8, { width: 60, align: 'right' });
+
+        yPos += rowHeight;
+      });
+
+      // Table bottom border
+      doc.moveTo(50, yPos).lineTo(562, yPos).strokeColor('#e0e0e0').lineWidth(1).stroke();
+
+      // ===== TOTALS =====
+      yPos += 15;
+      const totalsX = 400;
+
+      // Subtotal
+      doc.fontSize(10).fillColor(grayColor).font('Helvetica')
+         .text('Subtotal:', totalsX, yPos);
+      doc.fontSize(10).fillColor(primaryColor).font('Helvetica')
+         .text(formatCurrency(subtotal), 490, yPos, { width: 60, align: 'right' });
+
+      yPos += 18;
+
+      // Tax (if applicable)
+      if (tax_amount && tax_amount > 0) {
+        doc.fontSize(10).fillColor(grayColor).font('Helvetica')
+           .text(`Tax (${tax_rate || 0}%):`, totalsX, yPos);
+        doc.fontSize(10).fillColor(primaryColor).font('Helvetica')
+           .text(formatCurrency(tax_amount), 490, yPos, { width: 60, align: 'right' });
+        yPos += 18;
+      }
+
+      // Total line
+      doc.moveTo(totalsX, yPos).lineTo(550, yPos).strokeColor(accentColor).lineWidth(2).stroke();
+      yPos += 8;
+
+      // Grand Total
+      doc.fontSize(14).fillColor(primaryColor).font('Helvetica-Bold')
+         .text('TOTAL:', totalsX, yPos);
+      doc.fontSize(14).fillColor(accentColor).font('Helvetica-Bold')
+         .text(formatCurrency(total), 480, yPos, { width: 70, align: 'right' });
+
+      // ===== PAYMENT SCHEDULE =====
+      if (payment_schedule && payment_schedule.length > 0) {
+        yPos += 40;
+        doc.fontSize(11).fillColor(primaryColor).font('Helvetica-Bold')
+           .text('Payment Schedule', 50, yPos);
+        yPos += 18;
+
+        payment_schedule.forEach(payment => {
+          doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+             .text(`${payment.name} (${payment.percentage}%)`, 60, yPos);
+          doc.fontSize(9).fillColor(primaryColor).font('Helvetica')
+             .text(formatCurrency(payment.amount), 200, yPos);
+          yPos += 15;
+        });
+      }
+
+      // ===== INCLUSIONS & EXCLUSIONS =====
+      if (inclusions || exclusions) {
+        yPos += 25;
+
+        if (inclusions) {
+          doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+             .text("What's Included:", 50, yPos);
+          yPos += 15;
+          doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+             .text(inclusions, 50, yPos, { width: 500 });
+          yPos += doc.heightOfString(inclusions, { width: 500 }) + 15;
+        }
+
+        if (exclusions) {
+          doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+             .text("What's Not Included:", 50, yPos);
+          yPos += 15;
+          doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+             .text(exclusions, 50, yPos, { width: 500 });
+          yPos += doc.heightOfString(exclusions, { width: 500 }) + 15;
+        }
+      }
+
+      // ===== NOTES =====
+      if (notes) {
+        yPos += 10;
+        doc.rect(50, yPos, 512, 5).fillColor(accentColor).fill();
+        yPos += 15;
+        doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+           .text('Notes:', 50, yPos);
+        yPos += 15;
+        doc.fontSize(9).fillColor(grayColor).font('Helvetica')
+           .text(notes, 50, yPos, { width: 500 });
+      }
+
+      // ===== TERMS & CONDITIONS =====
+      if (terms_conditions) {
+        // Check if we need a new page
+        if (yPos > 650) {
+          doc.addPage();
+          yPos = 50;
+        } else {
+          yPos += 40;
+        }
+
+        doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold')
+           .text('Terms & Conditions', 50, yPos);
+        yPos += 15;
+        doc.fontSize(8).fillColor(grayColor).font('Helvetica')
+           .text(terms_conditions, 50, yPos, { width: 500 });
+      }
+
+      // ===== FOOTER =====
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+
+        // Footer line
+        doc.moveTo(50, 730).lineTo(562, 730).strokeColor('#e0e0e0').lineWidth(1).stroke();
+
+        // Footer text
+        doc.fontSize(8).fillColor(grayColor).font('Helvetica')
+           .text(compName, 50, 740)
+           .text(`${compPhone} | ${compEmail}`, 50, 752)
+           .text(COMPANY.license, 50, 764);
+
+        // Page number
+        doc.fontSize(8).fillColor(grayColor)
+           .text(`Page ${i + 1} of ${pageCount}`, 500, 752, { align: 'right' });
+      }
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
 
 // Professional Invoice Templates
 const invoiceTemplates = {
@@ -3296,10 +3592,375 @@ app.post('/api/price-sheets/parse-csv', async (req, res) => {
   }
 });
 
+// ==================== PROFESSIONAL ESTIMATES ====================
+
+// Send professional estimate email to customer
+app.post('/api/send-estimate', async (req, res) => {
+  try {
+    const {
+      // Support both field naming conventions
+      customer_name, customerName,
+      customer_email, to,
+      estimate_number, estimateNumber,
+      estimate_id,
+      items,
+      subtotal,
+      tax_rate,
+      tax_amount,
+      total,
+      notes,
+      view_url, approvalUrl,
+      business_name,
+      business_email,
+      business_phone,
+      business_address,
+      business_logo,
+      project_type, projectName,
+      estimated_timeline,
+      inclusions,
+      exclusions,
+      terms_conditions,
+      payment_schedule,
+      depositAmount,
+      validUntil
+    } = req.body;
+
+    // Normalize field names (accept both formats)
+    const custName = customer_name || customerName || 'Valued Customer';
+    const custEmail = customer_email || to;
+    const estNumber = estimate_number || estimateNumber;
+    const viewUrl = view_url || approvalUrl;
+    const projType = project_type || projectName;
+
+    if (!custEmail) {
+      return res.status(400).json({ error: 'Customer email is required' });
+    }
+
+    if (!estNumber && !estimate_id) {
+      return res.status(400).json({ error: 'Estimate number or ID is required' });
+    }
+
+    // Use business info or defaults
+    const companyName = business_name || COMPANY.name;
+    const companyEmail = business_email || COMPANY.email;
+    const companyPhone = business_phone || COMPANY.phone;
+    const companyAddress = business_address || COMPANY.address;
+    const companyLogo = business_logo || COMPANY.logo;
+
+    // Format currency
+    const formatCurrency = (amount) => {
+      const num = parseFloat(amount) || 0;
+      return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    // Generate line items HTML
+    let itemsHtml = '';
+    if (items && items.length > 0) {
+      itemsHtml = items.map(item => `
+        <tr>
+          <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #333;">${item.description || item.name || 'Item'}</td>
+          <td style="padding: 12px 15px; border-bottom: 1px solid #eee; text-align: center; color: #666;">${item.quantity || 1}</td>
+          <td style="padding: 12px 15px; border-bottom: 1px solid #eee; text-align: right; color: #666;">${formatCurrency(item.unit_price || item.price)}</td>
+          <td style="padding: 12px 15px; border-bottom: 1px solid #eee; text-align: right; color: #333; font-weight: 500;">${formatCurrency(item.total || (item.quantity * item.unit_price))}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Generate payment schedule HTML if provided
+    let paymentScheduleHtml = '';
+    if (payment_schedule && payment_schedule.length > 0) {
+      paymentScheduleHtml = `
+        <tr>
+          <td style="padding: 30px 40px;">
+            <h3 style="margin: 0 0 15px; color: #1a1a2e; font-size: 16px;">Payment Schedule</h3>
+            <table width="100%" cellspacing="0" cellpadding="0" style="background: #f8f9fa; border-radius: 6px;">
+              ${payment_schedule.map(p => `
+                <tr>
+                  <td style="padding: 10px 15px; color: #333;">${p.name}</td>
+                  <td style="padding: 10px 15px; text-align: right; color: #333; font-weight: 500;">${formatCurrency(p.amount)} (${p.percentage}%)</td>
+                </tr>
+              `).join('')}
+            </table>
+          </td>
+        </tr>
+      `;
+    }
+
+    // Generate inclusions/exclusions HTML
+    let scopeHtml = '';
+    if (inclusions || exclusions) {
+      scopeHtml = `
+        <tr>
+          <td style="padding: 20px 40px;">
+            ${inclusions ? `
+              <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 8px; color: #1a1a2e; font-size: 14px;">What's Included:</h4>
+                <p style="margin: 0; color: #666; font-size: 13px; line-height: 1.5;">${inclusions}</p>
+              </div>
+            ` : ''}
+            ${exclusions ? `
+              <div>
+                <h4 style="margin: 0 0 8px; color: #1a1a2e; font-size: 14px;">What's Not Included:</h4>
+                <p style="margin: 0; color: #666; font-size: 13px; line-height: 1.5;">${exclusions}</p>
+              </div>
+            ` : ''}
+          </td>
+        </tr>
+      `;
+    }
+
+    // Professional estimate email template
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header with Logo -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 35px 40px; text-align: center;">
+              ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 50px; width: auto; margin-bottom: 10px;">` : `<h1 style="color: #f9cb00; margin: 0; font-size: 24px;">${companyName}</h1>`}
+              <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 13px;">Professional Estimate</p>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 35px 40px 20px;">
+              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 22px;">Hello ${custName},</h2>
+              <p style="margin: 0; color: #666; font-size: 15px; line-height: 1.6;">
+                Thank you for your interest in our services. Please find your detailed estimate below.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Estimate Info Box -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0" style="background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f9cb00;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="color: #666; font-size: 13px;">Estimate Number</td>
+                        <td style="text-align: right; color: #1a1a2e; font-weight: 600; font-size: 15px;">#${estNumber || estimate_id?.slice(-8) || 'N/A'}</td>
+                      </tr>
+                      ${projType ? `
+                      <tr>
+                        <td style="color: #666; font-size: 13px; padding-top: 8px;">Project Type</td>
+                        <td style="text-align: right; color: #1a1a2e; font-size: 14px; padding-top: 8px;">${projType}</td>
+                      </tr>
+                      ` : ''}
+                      ${estimated_timeline ? `
+                      <tr>
+                        <td style="color: #666; font-size: 13px; padding-top: 8px;">Estimated Timeline</td>
+                        <td style="text-align: right; color: #1a1a2e; font-size: 14px; padding-top: 8px;">${estimated_timeline}</td>
+                      </tr>
+                      ` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Line Items -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <table width="100%" cellspacing="0" cellpadding="0" style="border: 1px solid #eee; border-radius: 6px; overflow: hidden;">
+                <tr style="background: #f8f9fa;">
+                  <th style="padding: 12px 15px; text-align: left; font-weight: 600; color: #1a1a2e; font-size: 13px; border-bottom: 2px solid #eee;">Description</th>
+                  <th style="padding: 12px 15px; text-align: center; font-weight: 600; color: #1a1a2e; font-size: 13px; border-bottom: 2px solid #eee;">Qty</th>
+                  <th style="padding: 12px 15px; text-align: right; font-weight: 600; color: #1a1a2e; font-size: 13px; border-bottom: 2px solid #eee;">Unit Price</th>
+                  <th style="padding: 12px 15px; text-align: right; font-weight: 600; color: #1a1a2e; font-size: 13px; border-bottom: 2px solid #eee;">Total</th>
+                </tr>
+                ${itemsHtml}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Totals -->
+          <tr>
+            <td style="padding: 0 40px 30px;">
+              <table width="250" cellspacing="0" cellpadding="0" align="right">
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Subtotal:</td>
+                  <td style="padding: 8px 0; text-align: right; color: #333;">${formatCurrency(subtotal)}</td>
+                </tr>
+                ${tax_amount && tax_amount > 0 ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Tax (${tax_rate || 0}%):</td>
+                  <td style="padding: 8px 0; text-align: right; color: #333;">${formatCurrency(tax_amount)}</td>
+                </tr>
+                ` : ''}
+                <tr>
+                  <td style="padding: 12px 0; color: #1a1a2e; font-weight: 700; font-size: 18px; border-top: 2px solid #eee;">Total:</td>
+                  <td style="padding: 12px 0; text-align: right; color: #f9cb00; font-weight: 700; font-size: 18px; border-top: 2px solid #eee;">${formatCurrency(total)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          ${paymentScheduleHtml}
+          ${scopeHtml}
+
+          <!-- Notes -->
+          ${notes ? `
+          <tr>
+            <td style="padding: 0 40px 30px;">
+              <div style="background: #fffbeb; border-radius: 6px; padding: 15px; border-left: 4px solid #f9cb00;">
+                <h4 style="margin: 0 0 8px; color: #1a1a2e; font-size: 14px;">Notes:</h4>
+                <p style="margin: 0; color: #666; font-size: 13px; line-height: 1.5;">${notes}</p>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- CTA Button -->
+          ${viewUrl ? `
+          <tr>
+            <td style="padding: 10px 40px 30px; text-align: center;">
+              <a href="${viewUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #f0b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-weight: 600; font-size: 15px; box-shadow: 0 2px 8px rgba(249, 203, 0, 0.4);">View & Approve Estimate</a>
+              <p style="margin: 15px 0 0; color: #999; font-size: 12px;">Click the button above to view details and respond</p>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Terms & Conditions -->
+          ${terms_conditions ? `
+          <tr>
+            <td style="padding: 0 40px 30px;">
+              <div style="background: #f8f9fa; border-radius: 6px; padding: 15px;">
+                <h4 style="margin: 0 0 8px; color: #1a1a2e; font-size: 13px;">Terms & Conditions:</h4>
+                <p style="margin: 0; color: #888; font-size: 11px; line-height: 1.5;">${terms_conditions}</p>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #eee;">
+              <p style="margin: 0 0 5px; color: #1a1a2e; font-weight: 600;">${companyName}</p>
+              <p style="margin: 0 0 5px; color: #666; font-size: 13px;">${companyAddress}</p>
+              <p style="margin: 0; color: #666; font-size: 13px;">
+                <a href="tel:${companyPhone.replace(/[^0-9]/g, '')}" style="color: #f9cb00; text-decoration: none;">${companyPhone}</a> |
+                <a href="mailto:${companyEmail}" style="color: #f9cb00; text-decoration: none;">${companyEmail}</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Unsubscribe -->
+        <p style="margin: 20px 0 0; color: #999; font-size: 11px; text-align: center;">
+          This estimate was sent from ${companyName}. If you have questions, please reply to this email or call us.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+    // Generate PDF attachment
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateEstimatePDF({
+        customer_name: custName,
+        customer_email: custEmail,
+        customer_phone: req.body.customer_phone,
+        customer_address: req.body.customer_address,
+        estimate_number: estNumber,
+        items: items || [],
+        subtotal,
+        tax_rate,
+        tax_amount,
+        total,
+        notes,
+        company_name: companyName,
+        company_email: companyEmail,
+        company_phone: companyPhone,
+        company_address: companyAddress,
+        company_logo: companyLogo,
+        project_type: projType,
+        estimated_timeline,
+        inclusions,
+        exclusions,
+        terms_conditions,
+        payment_schedule,
+        valid_until: validUntil,
+        created_at: req.body.created_at || new Date().toISOString()
+      });
+      console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+    } catch (pdfErr) {
+      console.error('PDF generation error:', pdfErr.message);
+      // Continue without PDF if generation fails
+    }
+
+    // Check if SMTP is configured
+    if (!SMTP_USER) {
+      console.log('Email notification (SMTP not configured):', { to: custEmail });
+      return res.status(500).json({
+        success: false,
+        error: 'SMTP not configured',
+        smtp_configured: false
+      });
+    }
+
+    // Send email with PDF attachment
+    const emailOptions = {
+      from: `"${companyName}" <${SMTP_USER}>`,
+      to: custEmail,
+      subject: `Your Estimate #${estNumber || estimate_id?.slice(-8) || 'N/A'} from ${companyName}`,
+      html: emailHtml,
+      attachments: []
+    };
+
+    // Add PDF attachment if generated
+    if (pdfBuffer) {
+      emailOptions.attachments.push({
+        filename: `Estimate-${estNumber || estimate_id?.slice(-8) || 'estimate'}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      });
+    }
+
+    try {
+      await transporter.sendMail(emailOptions);
+      console.log(`Estimate email sent to ${custEmail}${pdfBuffer ? ' with PDF attachment' : ''}`);
+      res.json({
+        success: true,
+        message: 'Estimate email sent successfully',
+        pdf_attached: !!pdfBuffer
+      });
+    } catch (emailErr) {
+      console.error('Failed to send estimate email:', emailErr.message);
+      res.status(500).json({
+        success: false,
+        error: emailErr.message || 'Failed to send email',
+        smtp_configured: !!SMTP_USER
+      });
+    }
+
+  } catch (error) {
+    console.error('Send estimate error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
   console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
   console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
+  console.log(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
 });
