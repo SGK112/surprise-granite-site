@@ -27,7 +27,18 @@
   }
 
   async function initSupabase() {
-    // Wait for Supabase to be available
+    // Use SgAuth's shared client if available (preferred - avoids multiple clients)
+    if (window.SgAuth) {
+      try {
+        await window.SgAuth.init();
+        supabase = window.SgAuth.getClient();
+        return;
+      } catch (e) {
+        console.warn('SgAuth init failed, falling back:', e);
+      }
+    }
+
+    // Fallback: Wait for Supabase to be available
     if (typeof window.supabase === 'undefined') {
       await new Promise((resolve) => {
         const check = setInterval(() => {
@@ -40,7 +51,7 @@
       });
     }
 
-    if (typeof window.supabase !== 'undefined') {
+    if (typeof window.supabase !== 'undefined' && !supabase) {
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
@@ -80,6 +91,25 @@
   }
 
   function setupAuthStateListener() {
+    // Use SgAuth's listener if available (preferred - single listener)
+    if (window.SgAuth) {
+      window.SgAuth.onAuthChange((event, data) => {
+        if (event === 'login' && data?.user) {
+          currentUser = data.user;
+          syncLocalFavoritesToCloud();
+          updateUserActivity();
+          window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user: currentUser } }));
+          updateUserInterface();
+        } else if (event === 'logout') {
+          currentUser = null;
+          window.dispatchEvent(new CustomEvent('userLoggedOut'));
+          updateUserInterface();
+        }
+      });
+      return;
+    }
+
+    // Fallback: Direct Supabase listener
     if (!supabase) return;
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -87,29 +117,14 @@
 
       if (event === 'SIGNED_IN' && session) {
         currentUser = session.user;
-
-        // Sync local favorites to cloud
         syncLocalFavoritesToCloud();
-
-        // Update activity
         updateUserActivity();
-
-        // Notify other scripts
-        window.dispatchEvent(new CustomEvent('userLoggedIn', {
-          detail: { user: currentUser }
-        }));
-
+        window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user: currentUser } }));
         updateUserInterface();
-
       } else if (event === 'SIGNED_OUT') {
         currentUser = null;
-
         window.dispatchEvent(new CustomEvent('userLoggedOut'));
         updateUserInterface();
-
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        // Supabase handles token storage automatically
-        console.log('Token refreshed');
       }
     });
   }

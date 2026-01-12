@@ -90,12 +90,35 @@
     // Immediately show logged-out state while we check auth
     updateAllAuthDisplays(null);
 
-    // Load Supabase if needed
-    if (typeof window.supabase === 'undefined') {
-      await loadSupabaseScript();
-    }
-
     try {
+      // Use SgAuth's shared client if available (preferred - avoids multiple clients)
+      if (window.SgAuth) {
+        await window.SgAuth.init();
+        supabaseClient = window.SgAuth.getClient();
+        currentUser = window.SgAuth.getUser();
+
+        if (currentUser) {
+          updateAllAuthDisplays(currentUser);
+        }
+
+        // Listen for auth changes via SgAuth
+        window.SgAuth.onAuthChange((event, data) => {
+          if (data?.user) {
+            currentUser = data.user;
+            updateAllAuthDisplays(currentUser);
+          } else {
+            currentUser = null;
+            updateAllAuthDisplays(null);
+          }
+        });
+        return;
+      }
+
+      // Fallback: Create own client only if SgAuth not available
+      if (typeof window.supabase === 'undefined') {
+        await loadSupabaseScript();
+      }
+
       if (typeof window.supabase !== 'undefined') {
         const { createClient } = window.supabase;
         supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -108,7 +131,6 @@
           }
         });
 
-        // Check current session
         const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session?.user) {
@@ -116,7 +138,6 @@
           updateAllAuthDisplays(currentUser);
         }
 
-        // Listen for auth changes
         supabaseClient.auth.onAuthStateChange((event, session) => {
           if (session?.user) {
             currentUser = session.user;
