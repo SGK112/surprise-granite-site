@@ -353,7 +353,14 @@
       if (!window.supabase) return;
 
       const { createClient } = window.supabase;
-      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token'
+        }
+      });
       const { data: { session } } = await supabaseClient.auth.getSession();
 
       if (session && session.user) {

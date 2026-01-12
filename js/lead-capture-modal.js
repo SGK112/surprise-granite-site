@@ -757,7 +757,14 @@
     if (window.supabase) {
       try {
         const { createClient } = window.supabase;
-        const supabaseClient = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+        const supabaseClient = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token'
+          }
+        });
         await supabaseClient.from('leads').insert([{
           full_name: leadData.homeowner_name,
           first_name: state.formData.firstName,

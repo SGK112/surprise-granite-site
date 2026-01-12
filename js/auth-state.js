@@ -98,7 +98,14 @@
     try {
       if (typeof window.supabase !== 'undefined') {
         const { createClient } = window.supabase;
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token'
+          }
+        });
 
         // Check current session
         const { data: { session } } = await supabaseClient.auth.getSession();
