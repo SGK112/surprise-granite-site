@@ -272,8 +272,9 @@
     showLoading(true);
 
     try {
+      // Fetch from stone_listings table with seller info from sg_users
       const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/marketplace_listings?status=eq.active&select=*&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/stone_listings?status=eq.active&select=*,seller:sg_users(id,full_name,company_name,phone,email)&order=created_at.desc`,
         {
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -287,7 +288,34 @@
         throw new Error('Failed to fetch listings');
       }
 
-      listings = await response.json();
+      const rawListings = await response.json();
+
+      // Transform to consistent format
+      listings = rawListings.map(listing => ({
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        material_type: listing.material_type,
+        category: 'remnants', // stone_listings are remnants
+        price: listing.price,
+        dimensions: {
+          length: listing.dimensions ? parseInt(listing.dimensions.split('x')[0]) : null,
+          width: listing.dimensions ? parseInt(listing.dimensions.split('x')[1]) : null,
+          thickness: listing.thickness
+        },
+        images: [listing.image_url, listing.image_url_2, listing.image_url_3, listing.image_url_4].filter(Boolean),
+        location: listing.city && listing.state ? `${listing.city}, ${listing.state}` : null,
+        quantity: listing.quantity,
+        created_at: listing.created_at,
+        views: listing.views,
+        // Seller info
+        seller: listing.seller,
+        show_phone: listing.show_phone,
+        show_email: listing.show_email,
+        contact_form_only: listing.contact_form_only,
+        user_id: listing.user_id
+      }));
+
       filteredListings = [...listings];
 
       populateFilters();
@@ -491,11 +519,38 @@
             ` : ''}
           </div>
           ${distanceHtml}
+          ${listing.seller ? `
+            <div class="listing-seller">
+              <svg class="listing-seller-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span class="listing-seller-name">${escapeHtml(listing.seller.company_name || listing.seller.full_name || 'Local Seller')}</span>
+            </div>
+          ` : ''}
           <div class="listing-card-footer">
             <div class="listing-card-price">
               ${formatPrice(listing.price)}
             </div>
-            <button class="listing-card-btn" data-listing-id="${listing.id}">Request Quote</button>
+            <div class="listing-card-actions">
+              ${listing.show_phone && listing.seller?.phone ? `
+                <a href="tel:${listing.seller.phone}" class="listing-action-btn listing-action-call" title="Call seller">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                </a>
+              ` : ''}
+              ${listing.show_email && listing.seller?.email ? `
+                <a href="mailto:${listing.seller.email}?subject=Inquiry about ${encodeURIComponent(listing.title)}" class="listing-action-btn listing-action-email" title="Email seller">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="m22 6-10 7L2 6"/>
+                  </svg>
+                </a>
+              ` : ''}
+              <button class="listing-card-btn" data-listing-id="${listing.id}">Contact Seller</button>
+            </div>
           </div>
         </div>
       </div>
@@ -512,6 +567,7 @@
     const listingImage = quoteModal.querySelector('.quote-modal-listing-image');
     const listingTitle = quoteModal.querySelector('.quote-modal-listing-title');
     const listingPrice = quoteModal.querySelector('.quote-modal-listing-price');
+    const listingSeller = quoteModal.querySelector('.quote-modal-listing-seller');
 
     if (listingImage) {
       listingImage.src = (listing.images && listing.images.length > 0)
@@ -524,6 +580,13 @@
     }
     if (listingPrice) {
       listingPrice.textContent = formatPrice(listing.price) + (listing.location ? ` - ${listing.location}` : '');
+    }
+    if (listingSeller && listing.seller) {
+      const sellerName = listing.seller.company_name || listing.seller.full_name || 'Local Seller';
+      listingSeller.textContent = `Sold by: ${sellerName}`;
+      listingSeller.style.display = 'block';
+    } else if (listingSeller) {
+      listingSeller.style.display = 'none';
     }
 
     // Reset form
@@ -561,19 +624,18 @@
     const submitBtn = form.querySelector('.quote-form-submit');
     const originalText = submitBtn.textContent;
 
-    // Get form data
+    // Get form data - uses listing_inquiries table schema
     const formData = {
       listing_id: selectedListing.id,
-      requester_name: form.querySelector('[name="name"]').value.trim(),
-      requester_email: form.querySelector('[name="email"]').value.trim(),
-      requester_phone: form.querySelector('[name="phone"]')?.value.trim() || null,
-      message: form.querySelector('[name="message"]')?.value.trim() || null,
-      status: 'pending'
+      sender_name: form.querySelector('[name="name"]').value.trim(),
+      sender_email: form.querySelector('[name="email"]').value.trim(),
+      sender_phone: form.querySelector('[name="phone"]')?.value.trim() || null,
+      message: form.querySelector('[name="message"]')?.value.trim() || 'Interested in this listing'
     };
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.requester_email)) {
+    if (!emailRegex.test(formData.sender_email)) {
       alert('Please enter a valid email address.');
       return;
     }
@@ -583,7 +645,8 @@
     submitBtn.textContent = 'Sending...';
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/quote_requests`, {
+      // Submit to listing_inquiries table
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/listing_inquiries`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
@@ -596,7 +659,22 @@
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to submit quote request');
+        throw new Error(error.message || 'Failed to send message');
+      }
+
+      // Increment inquiry count on the listing
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_listing_inquiries`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ listing_id: selectedListing.id })
+        });
+      } catch (e) {
+        // Non-critical, ignore
       }
 
       // Show success
@@ -612,8 +690,8 @@
       }, 3000);
 
     } catch (error) {
-      console.error('Error submitting quote:', error);
-      alert('Failed to submit quote request. Please try again.');
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;
