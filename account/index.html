@@ -3700,7 +3700,6 @@
                 <button class="filter-btn" data-invoice-status="open" onclick="filterInvoices('open')">Open</button>
                 <button class="filter-btn" data-invoice-status="paid" onclick="filterInvoices('paid')">Paid</button>
                 <button class="filter-btn" data-invoice-status="void" onclick="filterInvoices('void')">Voided</button>
-                <button class="filter-btn" data-invoice-status="archived" onclick="filterInvoices('archived')" style="color: var(--text-muted);">Archived</button>
               </div>
               <div id="invoices-list">
                 <div class="spinner" style="margin: 40px auto;"></div>
@@ -6868,39 +6867,30 @@
       if (!invoicesList) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-          invoicesList.innerHTML = '<div class="empty-state"><p>Please log in to view invoices.</p></div>';
-          return;
-        }
+        // Show loading state
+        invoicesList.innerHTML = '<div class="empty-state"><p>Loading invoices...</p></div>';
 
-        let query = supabaseClient
-          .from('invoices')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50);
+        // Fetch invoices from Stripe via API
+        const response = await fetch(`${API_URL}/api/invoices?limit=50`);
+        if (!response.ok) throw new Error('Failed to fetch invoices');
 
-        // Filter by archived status
-        if (invoiceFilter === 'archived') {
-          query = query.not('archived_at', 'is', null);
-        } else {
-          query = query.is('archived_at', null);
-        }
+        const data = await response.json();
 
-        const { data: invoices, error } = await query;
+        // Transform Stripe data to match expected format
+        allInvoices = (data.invoices || []).map(inv => ({
+          ...inv,
+          amount_due: inv.amount_due || 0,
+          amount_paid: inv.amount_paid || 0
+        }));
 
-        if (error) throw error;
-
-        allInvoices = invoices || [];
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
         invoicesList.innerHTML = `
           <div class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <h3>No Invoices Found</h3>
-            <p>Create your first invoice or convert an approved estimate.</p>
+            <h3>Unable to Load Invoices</h3>
+            <p>Please try again or create a new invoice.</p>
             <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice</button>
           </div>
         `;
@@ -6912,59 +6902,27 @@
       document.querySelectorAll('[data-invoice-status]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.invoiceStatus === status);
       });
-      // Reload from database when switching to/from archived
-      if (status === 'archived' || invoiceFilter === 'archived') {
-        loadInvoices();
-      } else {
-        renderInvoices();
-      }
+      renderInvoices();
     }
 
-    async function archiveInvoice(invoiceId) {
-      try {
-        const { error } = await supabaseClient
-          .from('invoices')
-          .update({ archived_at: new Date().toISOString() })
-          .eq('id', invoiceId);
-
-        if (error) throw error;
-        loadInvoices();
-        showToast('Invoice archived');
-      } catch (err) {
-        console.error('Archive invoice error:', err);
-        alert('Error archiving invoice');
-      }
-    }
-
-    async function unarchiveInvoice(invoiceId) {
-      try {
-        const { error } = await supabaseClient
-          .from('invoices')
-          .update({ archived_at: null })
-          .eq('id', invoiceId);
-
-        if (error) throw error;
-        loadInvoices();
-        showToast('Invoice restored');
-      } catch (err) {
-        console.error('Unarchive invoice error:', err);
-        alert('Error restoring invoice');
-      }
-    }
-
-    async function deleteInvoicePermanent(invoiceId) {
-      if (!confirm('Permanently delete this invoice? This cannot be undone.')) return;
+    async function voidInvoice(invoiceId) {
+      if (!confirm('Void this invoice? The customer will no longer be able to pay it.')) return;
 
       try {
-        // Delete line items first
-        await supabaseClient.from('invoice_items').delete().eq('invoice_id', invoiceId);
-        // Delete the invoice
-        await supabaseClient.from('invoices').delete().eq('id', invoiceId);
+        const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/void`, {
+          method: 'POST'
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to void invoice');
+        }
+
         loadInvoices();
-        showToast('Invoice permanently deleted');
+        showToast('Invoice voided');
       } catch (err) {
-        console.error('Delete invoice error:', err);
-        alert('Error deleting invoice');
+        console.error('Void invoice error:', err);
+        alert('Error voiding invoice: ' + err.message);
       }
     }
 
@@ -6973,8 +6931,8 @@
       if (!invoicesList) return;
 
       let filtered = allInvoices;
-      // Don't filter by status if showing archived - archived is handled in loadInvoices
-      if (invoiceFilter !== 'all' && invoiceFilter !== 'archived') {
+      // Filter by status
+      if (invoiceFilter !== 'all') {
         filtered = filtered.filter(inv => inv.status === invoiceFilter);
       }
 
@@ -7017,13 +6975,10 @@
                   <div class="lead-actions" style="justify-content: flex-end;">
                     ${inv.hosted_invoice_url ? `<a class="action-btn" href="${inv.hosted_invoice_url}" target="_blank" title="View Invoice"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>` : ''}
                     ${inv.pdf ? `<a class="action-btn" href="${inv.pdf}" target="_blank" title="Download PDF"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>` : ''}
-                    ${inv.status === 'open' ? `<button class="action-btn" onclick="sendReminder('${inv.id}')" title="Send Reminder"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>` : ''}
-                    ${inv.archived_at ? `
-                      <button class="action-btn" onclick="unarchiveInvoice('${inv.id}')" title="Restore"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
-                      <button class="action-btn" onclick="deleteInvoicePermanent('${inv.id}')" title="Delete Permanently" style="color: #ef4444;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                    ` : `
-                      <button class="action-btn" onclick="archiveInvoice('${inv.id}')" title="Archive"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></button>
-                    `}
+                    ${inv.status === 'open' ? `
+                      <button class="action-btn" onclick="sendReminder('${inv.id}')" title="Send Reminder"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></button>
+                      <button class="action-btn" onclick="voidInvoice('${inv.id}')" title="Void Invoice" style="color: #ef4444;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
+                    ` : ''}
                   </div>
                 </td>
               </tr>
