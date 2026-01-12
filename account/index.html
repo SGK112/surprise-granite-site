@@ -674,7 +674,7 @@
     .form-group textarea {
       width: 100%;
       padding: 14px 18px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--dark-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
       font-size: 15px;
@@ -687,11 +687,59 @@
     .form-group textarea:focus {
       outline: none;
       border-color: var(--gold-primary);
-      background: rgba(249, 203, 0, 0.05);
+      background: var(--dark-elevated);
     }
 
     .form-group input::placeholder {
       color: var(--text-muted);
+    }
+
+    /* Fix select dropdowns to be visible */
+    select,
+    .form-section select,
+    .estimate-line-item select,
+    #create-estimate-modal select {
+      background: var(--dark-elevated) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-subtle) !important;
+      border-radius: 8px !important;
+      padding: 10px 12px !important;
+      cursor: pointer;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23f9cb00' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 12px center !important;
+      padding-right: 36px !important;
+    }
+
+    select option,
+    .form-section select option,
+    #create-estimate-modal select option {
+      background: #1e1e2d !important;
+      color: #ffffff !important;
+      padding: 12px !important;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--gold-primary) !important;
+      box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.2);
+    }
+
+    /* Estimate form specific input styling */
+    #create-estimate-modal input,
+    #create-estimate-modal textarea {
+      background: var(--dark-elevated) !important;
+      border: 1px solid var(--border-subtle) !important;
+      color: var(--text-primary) !important;
+    }
+
+    #create-estimate-modal input:focus,
+    #create-estimate-modal textarea:focus {
+      border-color: var(--gold-primary) !important;
+      box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.2);
     }
 
     .form-row {
@@ -8985,7 +9033,12 @@
     async function handleCreateEstimate(event) {
       event.preventDefault();
 
-      const submitBtn = event.target.querySelector('button[type="submit"]');
+      // Button is in modal footer, not inside form, so find it by form attribute
+      const submitBtn = document.querySelector('button[form="create-estimate-form"][type="submit"]');
+      if (!submitBtn) {
+        console.error('Submit button not found');
+        return;
+      }
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Creating...';
       submitBtn.disabled = true;
