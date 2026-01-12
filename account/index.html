@@ -9518,6 +9518,15 @@
     async function sendEstimate(estimateId) {
       if (!confirm('Send this estimate to the customer?')) return;
 
+      // Show loading state
+      const btn = event?.target || document.querySelector(`button[onclick*="sendEstimate('${estimateId}')"]`);
+      const originalText = btn?.innerHTML;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Sending...';
+      }
+      showToast('Preparing estimate...', 'info');
+
       try {
         // Fetch estimate with items
         const { data: estimate, error: fetchErr } = await supabaseClient
@@ -9628,6 +9637,12 @@
       } catch (err) {
         console.error('Send estimate error:', err);
         alert('Error sending estimate: ' + err.message);
+      } finally {
+        // Reset button state
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText || 'Send';
+        }
       }
     }
 
