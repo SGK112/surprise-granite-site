@@ -114,28 +114,18 @@
         return;
       }
 
-      // Fallback: Use global client or create one
+      // Wait for global client (created by supabase-init.js)
+      let attempts = 0;
+      while (!window._sgSupabaseClient && attempts < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        attempts++;
+      }
+
       if (window._sgSupabaseClient) {
         supabaseClient = window._sgSupabaseClient;
       } else {
-        if (typeof window.supabase === 'undefined') {
-          await loadSupabaseScript();
-        }
-
-        if (typeof window.supabase !== 'undefined') {
-          const { createClient } = window.supabase;
-          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-              persistSession: true,
-              autoRefreshToken: true,
-              detectSessionInUrl: true,
-              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-              flowType: 'implicit',
-              lock: false
-            }
-          });
-          window._sgSupabaseClient = supabaseClient;
-        }
+        console.error('Auth state: Global Supabase client not found');
+        return;
       }
 
       if (supabaseClient) {

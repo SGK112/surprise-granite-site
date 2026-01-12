@@ -25,26 +25,18 @@
 
     initPromise = (async () => {
       try {
-        // Wait for Supabase library to load
-        await waitForSupabase();
+        // Wait for global client to be available (created by supabase-init.js)
+        let attempts = 0;
+        while (!window._sgSupabaseClient && attempts < 50) {
+          await new Promise(r => setTimeout(r, 100));
+          attempts++;
+        }
 
-        // Check if a global client already exists (prevents multiple clients)
         if (window._sgSupabaseClient) {
           supabaseClient = window._sgSupabaseClient;
         } else {
-          const { createClient } = window.supabase;
-          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-              persistSession: true,
-              autoRefreshToken: true,
-              detectSessionInUrl: true,
-              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-              flowType: 'implicit',
-              lock: false  // Disable lock to prevent AbortError conflicts
-            }
-          });
-          // Store globally so other scripts can reuse
-          window._sgSupabaseClient = supabaseClient;
+          console.error('SG Auth: Global Supabase client not found');
+          return;
         }
 
         // Get current session

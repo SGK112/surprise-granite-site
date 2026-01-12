@@ -8,6 +8,7 @@
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-init.js"></script>
   <style>
     :root {
       --gold-primary: #f9cb00;
@@ -4414,22 +4415,12 @@
           removeItem(key) { delete this._data[key]; }
         };
 
-        // Use global client if available
-        if (window._sgSupabaseClient) {
-          supabaseClient = window._sgSupabaseClient;
-        } else {
-          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-              persistSession: true,
-              autoRefreshToken: true,
-              detectSessionInUrl: true,
-              storage: customStorage,
-              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-              flowType: 'implicit',
-              lock: false
-            }
-          });
-          window._sgSupabaseClient = supabaseClient;
+        // Use global client (created by supabase-init.js)
+        supabaseClient = window._sgSupabaseClient;
+        if (!supabaseClient) {
+          console.error('Supabase client not initialized');
+          showAuth();
+          return;
         }
 
         // Listen for auth state changes (handles token refresh on mobile)
