@@ -1228,6 +1228,85 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
+// ============ TEST EMAIL ENDPOINT ============
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { email, type = 'order_confirmation' } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    let emailContent;
+
+    if (type === 'order_confirmation') {
+      emailContent = {
+        subject: `Test Order Confirmation - Surprise Granite #SG-TEST123`,
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e5e5e5;">
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #f9cb00;">
+              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 50px; width: auto;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px; text-align: center;">
+              <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 40px; color: #fff; line-height: 80px;">✓</span>
+              </div>
+              <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px; font-weight: 600;">Test Email - New Design!</h2>
+              <p style="margin: 0 0 5px; color: #f9cb00; font-size: 16px; font-weight: 600;">Order #SG-TEST123</p>
+              <p style="margin: 0 0 30px; color: #666; font-size: 15px;">This is a test of the new premium email template.</p>
+              <div style="background: #f8f8f8; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e5e5e5;">
+                <p style="margin: 0 0 5px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Sample Total</p>
+                <p style="margin: 0; color: #1a1a2e; font-size: 32px; font-weight: 700;">$1,234.56</p>
+              </div>
+              <p style="margin: 0 0 20px; color: #666; font-size: 14px;">White background with premium gold accents and branded logo header.</p>
+              <a href="https://www.surprisegranite.com" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 15px 35px; border-radius: 8px; font-weight: 600;">Visit Website</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #f8f8f8; padding: 25px; text-align: center; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Questions? Contact us:</p>
+              <p style="margin: 0; color: #888; font-size: 13px;"><a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.email}</a> • <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.phone}</a></p>
+              <p style="margin: 15px 0 0; color: #999; font-size: 11px;">${COMPANY.license} • Licensed & Insured</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+      };
+    } else if (type === 'invoice') {
+      emailContent = emailTemplates.paymentReceived({
+        number: 'TEST-001',
+        amount_paid: 150000,
+        customer_email: email,
+        hosted_invoice_url: 'https://www.surprisegranite.com'
+      });
+    }
+
+    const result = await sendNotification(email, emailContent.subject, emailContent.html);
+
+    if (result.success) {
+      res.json({ success: true, message: `Test email sent to ${email}` });
+    } else {
+      res.status(500).json({ success: false, error: result.reason });
+    }
+  } catch (err) {
+    console.error('Test email error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ============ CUSTOMER MANAGEMENT ============
 
 // Create or get a Stripe customer
