@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
 
   -- Company Info
   company_name TEXT,
-  company_logo TEXT,
-  company_address TEXT,
-  company_city TEXT,
-  company_state TEXT,
-  company_zip TEXT,
-  company_phone TEXT,
-  company_email TEXT,
-  company_website TEXT,
+  logo_url TEXT,
+  address TEXT,
+  city TEXT,
+  state TEXT,
+  zip TEXT,
+  phone TEXT,
+  email TEXT,
+  website TEXT,
   license_number TEXT,
   tax_id TEXT,
 
@@ -32,10 +32,10 @@ CREATE TABLE IF NOT EXISTS public.business_settings (
   default_tax_rate DECIMAL(5,2) DEFAULT 0,
   default_deposit_percent DECIMAL(5,2) DEFAULT 50,
   default_payment_terms TEXT DEFAULT 'Due upon completion',
-  default_warranty TEXT DEFAULT '1 year workmanship warranty',
+  default_warranty_terms TEXT DEFAULT '1 year workmanship warranty',
 
   -- Terms & Conditions
-  estimate_terms TEXT,
+  default_estimate_terms TEXT,
   invoice_terms TEXT,
 
   -- Estimate Numbering
@@ -65,8 +65,13 @@ CREATE POLICY "business_settings_update_own" ON public.business_settings
 CREATE POLICY "business_settings_service_all" ON public.business_settings
   FOR ALL USING (auth.role() = 'service_role');
 
+-- Allow public viewing (for estimate view page branding)
+CREATE POLICY "business_settings_public_select" ON public.business_settings
+  FOR SELECT USING (true);
+
 GRANT ALL ON public.business_settings TO authenticated;
 GRANT ALL ON public.business_settings TO service_role;
+GRANT SELECT ON public.business_settings TO anon;
 
 -- ============================================================
 -- SERVICE CATALOG TABLE - Predefined services/materials
@@ -78,12 +83,12 @@ CREATE TABLE IF NOT EXISTS public.service_catalog (
   -- Service Details
   name TEXT NOT NULL,
   description TEXT,
-  category TEXT DEFAULT 'service' CHECK (category IN ('material', 'service', 'labor', 'other')),
+  category TEXT DEFAULT 'General',
   sku TEXT,
 
   -- Pricing
-  unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
-  unit_type TEXT DEFAULT 'each' CHECK (unit_type IN ('each', 'sqft', 'lnft', 'hour', 'day', 'job')),
+  default_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  unit TEXT DEFAULT 'each',
   cost DECIMAL(10,2), -- Your cost (for profit tracking)
 
   -- Catalog Link (for materials from store)
@@ -211,8 +216,29 @@ CREATE POLICY "estimates_delete_own" ON public.estimates
 CREATE POLICY "estimates_service_all" ON public.estimates
   FOR ALL USING (auth.role() = 'service_role');
 
+-- Allow public viewing via valid token (for customer approval page)
+CREATE POLICY "estimates_public_via_token" ON public.estimates
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
+
+-- Allow public update for approval/rejection via token
+CREATE POLICY "estimates_public_update_via_token" ON public.estimates
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
+
 GRANT ALL ON public.estimates TO authenticated;
 GRANT ALL ON public.estimates TO service_role;
+GRANT SELECT, UPDATE ON public.estimates TO anon;
 
 CREATE INDEX IF NOT EXISTS estimates_user_idx ON public.estimates(user_id);
 CREATE INDEX IF NOT EXISTS estimates_status_idx ON public.estimates(status);
@@ -280,8 +306,19 @@ CREATE POLICY "estimate_items_delete_own" ON public.estimate_items
 CREATE POLICY "estimate_items_service_all" ON public.estimate_items
   FOR ALL USING (auth.role() = 'service_role');
 
+-- Allow public viewing via valid token
+CREATE POLICY "estimate_items_public_via_token" ON public.estimate_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = estimate_items.estimate_id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
+
 GRANT ALL ON public.estimate_items TO authenticated;
 GRANT ALL ON public.estimate_items TO service_role;
+GRANT SELECT ON public.estimate_items TO anon;
 
 CREATE INDEX IF NOT EXISTS estimate_items_estimate_idx ON public.estimate_items(estimate_id);
 
@@ -503,7 +540,11 @@ CREATE POLICY "estimate_tokens_insert_own" ON public.estimate_tokens
 CREATE POLICY "estimate_tokens_service_all" ON public.estimate_tokens
   FOR ALL USING (auth.role() = 'service_role');
 
-GRANT SELECT ON public.estimate_tokens TO anon;
+-- Allow public update for marking tokens as used
+CREATE POLICY "estimate_tokens_public_update" ON public.estimate_tokens
+  FOR UPDATE USING (true);
+
+GRANT SELECT, UPDATE ON public.estimate_tokens TO anon;
 GRANT ALL ON public.estimate_tokens TO authenticated;
 GRANT ALL ON public.estimate_tokens TO service_role;
 
