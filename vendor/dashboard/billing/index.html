@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Billing | Vendor Dashboard | Surprise Granite</title>
+  <meta name="description" content="Manage your subscription and billing in the Surprise Granite Pro Network."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00; --gold-dark: #cca600; --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e; --dark-deep: #0a0a12; --dark-surface: #12121a; --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff; --text-secondary: rgba(255, 255, 255, 0.75); --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1); --success: #22c55e; --warning: #f59e0b; --error: #ef4444; --info: #3b82f6;
+      --sidebar-width: 260px; --nav-height: 140px;
+    }
+    @media (max-width: 991px) { :root { --nav-height: 64px; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--dark-deep); min-height: 100vh; color: var(--text-primary); }
+    .dashboard-layout { display: flex; min-height: 100vh; padding-top: var(--nav-height); }
+    .sidebar { position: fixed; left: 0; top: var(--nav-height); bottom: 0; width: var(--sidebar-width); background: var(--dark-surface); border-right: 1px solid var(--border-subtle); padding: 24px 0; overflow-y: auto; z-index: 100; transition: transform 0.3s ease; }
+    @media (max-width: 991px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+    .sidebar-header { padding: 0 20px 24px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px; }
+    .sidebar-business { font-size: 16px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-plan { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gold-primary); background: rgba(249, 203, 0, 0.1); padding: 4px 10px; border-radius: 100px; }
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin-bottom: 8px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; opacity: 0.7; }
+    .nav-item.active svg { opacity: 1; }
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 32px; max-width: 100%; }
+    @media (max-width: 991px) { .main-content { margin-left: 0; padding: 20px; } }
+    .mobile-menu-btn { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: var(--gold-primary); border: none; border-radius: 50%; color: var(--dark-primary); cursor: pointer; z-index: 101; box-shadow: 0 4px 20px var(--gold-glow); }
+    .mobile-menu-btn svg { width: 24px; height: 24px; }
+    @media (max-width: 991px) { .mobile-menu-btn { display: flex; align-items: center; justify-content: center; } }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Billing Card */
+    .billing-content { max-width: 900px; }
+    .card { background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 16px; margin-bottom: 24px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); }
+    .card-title { font-size: 18px; font-weight: 700; }
+    .card-body { padding: 24px; }
+
+    /* Current Plan */
+    .current-plan { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    .plan-info { flex: 1; }
+    .plan-name-display { font-size: 28px; font-weight: 800; margin-bottom: 4px; color: var(--gold-primary); }
+    .plan-price-display { font-size: 16px; color: var(--text-muted); }
+    .plan-price-display strong { color: var(--text-primary); font-weight: 700; }
+    .plan-status { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    .plan-status.active { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .plan-status.canceled { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .plan-status.past_due { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+    /* Usage Stats */
+    .usage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 700px) { .usage-grid { grid-template-columns: 1fr; } }
+    .usage-stat { background: var(--dark-elevated); border-radius: 12px; padding: 20px; text-align: center; }
+    .usage-stat-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+    .usage-stat-label { font-size: 13px; color: var(--text-muted); }
+    .usage-bar { height: 8px; background: var(--dark-primary); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+    .usage-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-primary), var(--gold-dark)); border-radius: 4px; transition: width 0.3s; }
+
+    /* Billing Details */
+    .billing-row { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border-subtle); }
+    .billing-row:last-child { border-bottom: none; }
+    .billing-label { color: var(--text-muted); font-size: 14px; }
+    .billing-value { font-weight: 600; font-size: 14px; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); color: var(--dark-primary); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--gold-glow); }
+    .btn-secondary { background: var(--dark-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+    .btn-danger { background: transparent; color: var(--error); border: 1px solid var(--error); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.1); }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Actions */
+    .card-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+    /* Plan Comparison */
+    .plan-comparison { margin-top: 32px; }
+    .plan-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .plan-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .plan-grid { grid-template-columns: 1fr; } }
+    .plan-card { background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 20px; text-align: center; transition: all 0.2s; }
+    .plan-card:hover { border-color: rgba(255,255,255,0.2); }
+    .plan-card.current { border-color: var(--gold-primary); background: rgba(249, 203, 0, 0.08); }
+    .plan-card-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .plan-card-price { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .plan-card-price span { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+    .plan-card-leads { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .plan-card .btn { width: 100%; }
+
+    .loading-container { display: flex; align-items: center; justify-content: center; min-height: 400px; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+    @media (max-width: 991px) { .sidebar-overlay.active { display: block; } }
+
+    /* Alert */
+    .alert { padding: 16px 20px; border-radius: 10px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px; }
+    .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
+    .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
+    .alert svg { flex-shrink: 0; width: 20px; height: 20px; }
+    .alert-content { font-size: 14px; line-height: 1.5; }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-business" id="businessName">Loading...</div>
+        <div class="sidebar-plan" id="planBadge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
+          <span id="planNameBadge">Free</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/vendor/dashboard/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a>
+          <a href="/vendor/dashboard/leads/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Marketplace</div>
+          <a href="/vendor/dashboard/listings/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>My Listings</a>
+          <a href="/marketplace/list-remnant/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>List a Remnant</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Account</div>
+          <a href="/vendor/dashboard/profile/" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+          <a href="/vendor/dashboard/billing/" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Billing</a>
+          <a href="#" class="nav-item" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log Out</a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <main class="main-content">
+      <div id="loadingState" class="loading-container"><div class="loading-spinner"></div></div>
+
+      <div id="pageContent" style="display: none;" class="billing-content">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">Billing & Subscription</h1>
+            <p class="page-subtitle">Manage your plan and payment settings</p>
+          </div>
+        </header>
+
+        <div id="alertContainer"></div>
+
+        <!-- Current Plan -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Current Plan</h3>
+            <span class="plan-status active" id="planStatus">Active</span>
+          </div>
+          <div class="card-body">
+            <div class="current-plan">
+              <div class="plan-info">
+                <div class="plan-name-display" id="planName">Starter</div>
+                <div class="plan-price-display">
+                  <strong id="planPrice">$0</strong>/month
+                  <span id="billingCycle">(billed monthly)</span>
+                </div>
+              </div>
+              <a href="/vendor/select-plan/" class="btn btn-primary">Change Plan</a>
+            </div>
+
+            <div class="card-actions" id="subscriptionActions" style="display: none;">
+              <button class="btn btn-secondary btn-sm" onclick="openBillingPortal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Update Payment Method
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="cancelSubscription()">Cancel Subscription</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lead Usage -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Lead Usage This Period</h3>
+          </div>
+          <div class="card-body">
+            <div class="usage-grid">
+              <div class="usage-stat">
+                <div class="usage-stat-value" id="leadsUsed">0</div>
+                <div class="usage-stat-label">Leads Used</div>
+              </div>
+              <div class="usage-stat">
+                <div class="usage-stat-value" id="leadsLimit">0</div>
+                <div class="usage-stat-label">Monthly Limit</div>
+              </div>
+              <div class="usage-stat">
+                <div class="usage-stat-value" id="leadsRemaining">0</div>
+                <div class="usage-stat-label">Remaining</div>
+              </div>
+            </div>
+            <div class="usage-bar">
+              <div class="usage-bar-fill" id="usageBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Billing Details -->
+        <div class="card" id="billingDetailsCard" style="display: none;">
+          <div class="card-header">
+            <h3 class="card-title">Billing Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="billing-row">
+              <span class="billing-label">Billing Period</span>
+              <span class="billing-value" id="billingPeriod">-</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Next Billing Date</span>
+              <span class="billing-value" id="nextBilling">-</span>
+            </div>
+            <div class="billing-row">
+              <span class="billing-label">Payment Method</span>
+              <span class="billing-value" id="paymentMethod">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Plans -->
+        <div class="plan-comparison">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 20px;">Available Plans</h3>
+          <div class="plan-grid">
+            <div class="plan-card" data-plan="starter">
+              <div class="plan-card-name">Starter</div>
+              <div class="plan-card-price">$0<span>/mo</span></div>
+              <div class="plan-card-leads">0 leads/month</div>
+              <button class="btn btn-secondary btn-sm" onclick="selectPlan('starter')">Select</button>
+            </div>
+            <div class="plan-card" data-plan="basic">
+              <div class="plan-card-name">Basic</div>
+              <div class="plan-card-price">$9.99<span>/mo</span></div>
+              <div class="plan-card-leads">3 leads/month</div>
+              <button class="btn btn-secondary btn-sm" onclick="selectPlan('basic')">Select</button>
+            </div>
+            <div class="plan-card" data-plan="plus">
+              <div class="plan-card-name">Plus</div>
+              <div class="plan-card-price">$19.99<span>/mo</span></div>
+              <div class="plan-card-leads">10 leads/month</div>
+              <button class="btn btn-primary btn-sm" onclick="selectPlan('plus')">Select</button>
+            </div>
+            <div class="plan-card" data-plan="pro">
+              <div class="plan-card-name">Pro</div>
+              <div class="plan-card-price">$29.99<span>/mo</span></div>
+              <div class="plan-card-leads">50 leads/month</div>
+              <button class="btn btn-secondary btn-sm" onclick="selectPlan('pro')">Select</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <button class="mobile-menu-btn" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let vendorProfile = null;
+    let subscription = null;
+    let plan = null;
+
+    // Check URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subscription') === 'success') {
+      localStorage.removeItem('sg_vendor_signup');
+    }
+
+    async function initPage() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) { window.location.href = '/vendor/signup/'; return; }
+
+        const { data: profile } = await supabase.from('vendor_profiles').select('*').eq('id', user.id).single();
+        if (!profile) { window.location.href = '/vendor/signup/'; return; }
+        vendorProfile = profile;
+
+        const { data: sub } = await supabase.from('vendor_subscriptions').select('*, subscription_plans(*)').eq('vendor_id', user.id).single();
+        subscription = sub;
+        plan = sub?.subscription_plans;
+
+        document.getElementById('businessName').textContent = profile.business_name || 'Your Business';
+
+        updateUI();
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('pageContent').style.display = 'block';
+
+        // Show success alert if just subscribed
+        if (urlParams.get('subscription') === 'success') {
+          showAlert('success', 'Your subscription has been activated! You can now start receiving leads.');
+          window.history.replaceState({}, '', '/vendor/dashboard/billing/');
+        }
+      } catch (err) {
+        console.error('Init error:', err);
+      }
+    }
+
+    function updateUI() {
+      if (plan) {
+        document.getElementById('planNameBadge').textContent = plan.display_name;
+        document.getElementById('planName').textContent = plan.display_name;
+        document.getElementById('planPrice').textContent = '$' + parseFloat(plan.price_monthly).toFixed(2);
+
+        // Lead usage
+        const limit = plan.leads_per_month || 0;
+        const used = subscription?.leads_used_this_period || 0;
+        const remaining = Math.max(0, limit - used);
+        const usagePercent = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+
+        document.getElementById('leadsUsed').textContent = used;
+        document.getElementById('leadsLimit').textContent = limit || 'N/A';
+        document.getElementById('leadsRemaining').textContent = limit ? remaining : '-';
+        document.getElementById('usageBar').style.width = usagePercent + '%';
+
+        // Billing details
+        if (subscription?.stripe_subscription_id && plan.name !== 'starter') {
+          document.getElementById('subscriptionActions').style.display = 'flex';
+          document.getElementById('billingDetailsCard').style.display = 'block';
+
+          const cycle = subscription.billing_cycle === 'annual' ? 'Annual' : 'Monthly';
+          document.getElementById('billingCycle').textContent = `(billed ${cycle.toLowerCase()})`;
+          document.getElementById('billingPeriod').textContent = cycle;
+
+          if (subscription.current_period_end) {
+            document.getElementById('nextBilling').textContent = new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          }
+
+          document.getElementById('paymentMethod').textContent = 'Card on file';
+        }
+
+        // Status
+        const statusEl = document.getElementById('planStatus');
+        const status = subscription?.status || 'active';
+        statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+        statusEl.className = 'plan-status ' + status;
+
+        // Highlight current plan
+        document.querySelectorAll('.plan-card').forEach(card => {
+          const cardPlan = card.dataset.plan;
+          card.classList.toggle('current', cardPlan === plan.name);
+          const btn = card.querySelector('.btn');
+          if (cardPlan === plan.name) {
+            btn.textContent = 'Current Plan';
+            btn.disabled = true;
+          }
+        });
+      }
+    }
+
+    function showAlert(type, message) {
+      const container = document.getElementById('alertContainer');
+      const icon = type === 'success'
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+
+      container.innerHTML = `<div class="alert alert-${type}">${icon}<div class="alert-content">${message}</div></div>`;
+    }
+
+    async function openBillingPortal() {
+      try {
+        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/vendor-billing-portal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vendor_id: vendorProfile.id,
+            return_url: window.location.href
+          })
+        });
+
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Unable to open billing portal');
+        }
+      } catch (err) {
+        console.error('Billing portal error:', err);
+        alert('Failed to open billing portal');
+      }
+    }
+
+    async function cancelSubscription() {
+      if (!confirm('Are you sure you want to cancel your subscription? You will lose access to leads at the end of your billing period.')) return;
+
+      try {
+        const response = await fetch(`https://surprise-granite-email-api.onrender.com/api/vendor-subscription/${vendorProfile.id}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showAlert('warning', 'Your subscription has been canceled. You will retain access until the end of your billing period.');
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          alert(data.error || 'Failed to cancel subscription');
+        }
+      } catch (err) {
+        console.error('Cancel error:', err);
+        alert('Failed to cancel subscription');
+      }
+    }
+
+    function selectPlan(planName) {
+      window.location.href = '/vendor/select-plan/';
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
+
+    initPage();
+  </script>
+</body>
+</html>

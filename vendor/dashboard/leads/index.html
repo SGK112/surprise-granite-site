@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>My Leads | Vendor Dashboard | Surprise Granite</title>
+  <meta name="description" content="View and manage your leads from the Surprise Granite Pro Network."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      --sidebar-width: 260px;
+      --nav-height: 140px;
+    }
+    @media (max-width: 991px) { :root { --nav-height: 64px; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+    .dashboard-layout { display: flex; min-height: 100vh; padding-top: var(--nav-height); }
+    .sidebar {
+      position: fixed; left: 0; top: var(--nav-height); bottom: 0;
+      width: var(--sidebar-width); background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle); padding: 24px 0;
+      overflow-y: auto; z-index: 100; transition: transform 0.3s ease;
+    }
+    @media (max-width: 991px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+    .sidebar-header { padding: 0 20px 24px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px; }
+    .sidebar-business { font-size: 16px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-plan { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gold-primary); background: rgba(249, 203, 0, 0.1); padding: 4px 10px; border-radius: 100px; }
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 12px; margin-bottom: 8px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; opacity: 0.7; }
+    .nav-item.active svg { opacity: 1; }
+    .nav-badge { margin-left: auto; background: var(--gold-primary); color: var(--dark-primary); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; min-width: 20px; text-align: center; }
+    .nav-badge.empty { background: var(--border-subtle); color: var(--text-muted); }
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 32px; max-width: 100%; }
+    @media (max-width: 991px) { .main-content { margin-left: 0; padding: 20px; } }
+    .mobile-menu-btn { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: var(--gold-primary); border: none; border-radius: 50%; color: var(--dark-primary); cursor: pointer; z-index: 101; box-shadow: 0 4px 20px var(--gold-glow); }
+    .mobile-menu-btn svg { width: 24px; height: 24px; }
+    @media (max-width: 991px) { .mobile-menu-btn { display: flex; align-items: center; justify-content: center; } }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Filters */
+    .filters-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--dark-surface); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .filter-btn:hover { border-color: rgba(255,255,255,0.2); }
+    .filter-btn.active { background: var(--gold-primary); color: var(--dark-primary); border-color: var(--gold-primary); }
+    .filter-count { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 100px; margin-left: 6px; font-size: 11px; }
+
+    /* Lead Card */
+    .leads-grid { display: flex; flex-direction: column; gap: 16px; }
+    .lead-card { background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; transition: all 0.2s; }
+    .lead-card:hover { border-color: rgba(255,255,255,0.2); }
+    .lead-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .lead-card-info { display: flex; align-items: center; gap: 16px; }
+    .lead-avatar { width: 56px; height: 56px; background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--dark-primary); flex-shrink: 0; }
+    .lead-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .lead-project-type { font-size: 14px; color: var(--text-muted); }
+    .lead-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; }
+    .lead-status.new { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .lead-status.delivered { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .lead-status.viewed { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .lead-status.contacted { background: rgba(249, 203, 0, 0.15); color: var(--gold-primary); }
+    .lead-status.quoted { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .lead-status.won { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .lead-status.lost { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    .lead-details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .lead-details { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .lead-details { grid-template-columns: 1fr; } }
+    .lead-detail { display: flex; flex-direction: column; gap: 4px; }
+    .lead-detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .lead-detail-value { font-size: 14px; font-weight: 500; }
+    .lead-detail-value a { color: var(--gold-primary); text-decoration: none; }
+    .lead-detail-value a:hover { text-decoration: underline; }
+
+    .lead-description { background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .lead-description-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+
+    .lead-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); color: var(--dark-primary); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--gold-glow); }
+    .btn-secondary { background: var(--dark-elevated); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+
+    /* Status Update Dropdown */
+    .status-dropdown { position: relative; display: inline-block; }
+    .status-dropdown-btn { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--dark-elevated); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: inherit; }
+    .status-dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 4px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 6px; min-width: 160px; display: none; z-index: 50; }
+    .status-dropdown-menu.open { display: block; }
+    .status-option { display: block; width: 100%; padding: 10px 14px; border: none; background: none; color: var(--text-secondary); font-size: 13px; text-align: left; cursor: pointer; border-radius: 6px; font-family: inherit; }
+    .status-option:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 80px 20px; }
+    .empty-icon { width: 100px; height: 100px; background: var(--dark-elevated); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; }
+    .empty-icon svg { width: 48px; height: 48px; stroke: var(--text-muted); }
+    .empty-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; color: var(--text-muted); max-width: 400px; margin: 0 auto 28px; line-height: 1.6; }
+
+    /* Loading */
+    .loading-container { display: flex; align-items: center; justify-content: center; min-height: 400px; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border-subtle); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+    @media (max-width: 991px) { .sidebar-overlay.active { display: block; } }
+
+    /* Lead Stats */
+    .lead-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    @media (max-width: 900px) { .lead-stats { grid-template-columns: repeat(2, 1fr); } }
+    .lead-stat { background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; text-align: center; }
+    .lead-stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .lead-stat-label { font-size: 13px; color: var(--text-muted); }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-business" id="businessName">Loading...</div>
+        <div class="sidebar-plan" id="planBadge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
+          <span id="planName">Free</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/vendor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+          <a href="/vendor/dashboard/leads/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Leads
+            <span class="nav-badge" id="leadsCount">0</span>
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Marketplace</div>
+          <a href="/vendor/dashboard/listings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            My Listings
+          </a>
+          <a href="/marketplace/list-remnant/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            List a Remnant
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Account</div>
+          <a href="/vendor/dashboard/profile/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+          </a>
+          <a href="/vendor/dashboard/billing/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Billing
+          </a>
+          <a href="#" class="nav-item" onclick="logout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log Out
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div id="loadingState" class="loading-container">
+        <div class="loading-spinner"></div>
+      </div>
+
+      <div id="pageContent" style="display: none;">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">My Leads</h1>
+            <p class="page-subtitle">View and manage leads from homeowners</p>
+          </div>
+        </header>
+
+        <!-- Lead Stats -->
+        <div class="lead-stats">
+          <div class="lead-stat">
+            <div class="lead-stat-value" id="statTotal">0</div>
+            <div class="lead-stat-label">Total Leads</div>
+          </div>
+          <div class="lead-stat">
+            <div class="lead-stat-value" style="color: var(--info);" id="statNew">0</div>
+            <div class="lead-stat-label">New</div>
+          </div>
+          <div class="lead-stat">
+            <div class="lead-stat-value" style="color: var(--gold-primary);" id="statContacted">0</div>
+            <div class="lead-stat-label">Contacted</div>
+          </div>
+          <div class="lead-stat">
+            <div class="lead-stat-value" style="color: var(--success);" id="statWon">0</div>
+            <div class="lead-stat-label">Won</div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+          <button class="filter-btn active" data-filter="all" onclick="filterLeads('all')">All</button>
+          <button class="filter-btn" data-filter="delivered" onclick="filterLeads('delivered')">New</button>
+          <button class="filter-btn" data-filter="contacted" onclick="filterLeads('contacted')">Contacted</button>
+          <button class="filter-btn" data-filter="quoted" onclick="filterLeads('quoted')">Quoted</button>
+          <button class="filter-btn" data-filter="won" onclick="filterLeads('won')">Won</button>
+          <button class="filter-btn" data-filter="lost" onclick="filterLeads('lost')">Lost</button>
+        </div>
+
+        <!-- Leads List -->
+        <div id="leadsContainer" class="leads-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <button class="mobile-menu-btn" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let vendorProfile = null;
+    let allLeads = [];
+    let currentFilter = 'all';
+
+    async function initPage() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) { window.location.href = '/vendor/signup/'; return; }
+
+        const { data: profile } = await supabase.from('vendor_profiles').select('*').eq('id', user.id).single();
+        if (!profile) { window.location.href = '/vendor/signup/'; return; }
+        vendorProfile = profile;
+
+        const { data: sub } = await supabase.from('vendor_subscriptions').select('*, subscription_plans(*)').eq('vendor_id', user.id).single();
+
+        document.getElementById('businessName').textContent = profile.business_name || 'Your Business';
+        if (sub?.subscription_plans) {
+          document.getElementById('planName').textContent = sub.subscription_plans.display_name;
+        }
+
+        await loadLeads();
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('pageContent').style.display = 'block';
+      } catch (err) {
+        console.error('Init error:', err);
+        document.getElementById('loadingState').innerHTML = '<p style="color: var(--error);">Error loading page.</p>';
+      }
+    }
+
+    async function loadLeads() {
+      try {
+        const { data: leads } = await supabase
+          .from('lead_distributions')
+          .select('*, vendor_leads(*)')
+          .eq('vendor_id', vendorProfile.id)
+          .order('created_at', { ascending: false });
+
+        allLeads = leads || [];
+        document.getElementById('leadsCount').textContent = allLeads.length;
+
+        // Update stats
+        const delivered = allLeads.filter(l => l.status === 'delivered' || l.status === 'viewed').length;
+        const contacted = allLeads.filter(l => l.status === 'contacted').length;
+        const won = allLeads.filter(l => l.status === 'won').length;
+
+        document.getElementById('statTotal').textContent = allLeads.length;
+        document.getElementById('statNew').textContent = delivered;
+        document.getElementById('statContacted').textContent = contacted;
+        document.getElementById('statWon').textContent = won;
+
+        renderLeads();
+      } catch (err) {
+        console.error('Load leads error:', err);
+      }
+    }
+
+    function filterLeads(status) {
+      currentFilter = status;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === status);
+      });
+      renderLeads();
+    }
+
+    function renderLeads() {
+      const container = document.getElementById('leadsContainer');
+      let filtered = allLeads;
+
+      if (currentFilter !== 'all') {
+        if (currentFilter === 'delivered') {
+          filtered = allLeads.filter(l => l.status === 'delivered' || l.status === 'viewed');
+        } else {
+          filtered = allLeads.filter(l => l.status === currentFilter);
+        }
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3 class="empty-title">${currentFilter === 'all' ? 'No leads yet' : 'No ' + currentFilter + ' leads'}</h3>
+            <p class="empty-text">${currentFilter === 'all' ? 'When homeowners request quotes in your service area, their leads will appear here.' : 'You don\'t have any leads with this status.'}</p>
+            ${currentFilter === 'all' ? '<a href="/vendor/select-plan/" class="btn btn-primary">Upgrade to Get Leads</a>' : ''}
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(dist => {
+        const lead = dist.vendor_leads;
+        if (!lead) return '';
+        const initials = lead.homeowner_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        const displayStatus = dist.status === 'delivered' ? 'new' : dist.status;
+
+        return `
+          <div class="lead-card" data-lead-id="${dist.id}">
+            <div class="lead-card-header">
+              <div class="lead-card-info">
+                <div class="lead-avatar">${initials}</div>
+                <div>
+                  <div class="lead-name">${lead.homeowner_name}</div>
+                  <div class="lead-project-type">${formatProjectType(lead.project_type)} Project</div>
+                </div>
+              </div>
+              <span class="lead-status ${displayStatus}">${formatStatus(dist.status)}</span>
+            </div>
+
+            <div class="lead-details">
+              <div class="lead-detail">
+                <span class="lead-detail-label">Phone</span>
+                <span class="lead-detail-value"><a href="tel:${lead.homeowner_phone}">${lead.homeowner_phone || 'N/A'}</a></span>
+              </div>
+              <div class="lead-detail">
+                <span class="lead-detail-label">Email</span>
+                <span class="lead-detail-value"><a href="mailto:${lead.homeowner_email}">${lead.homeowner_email}</a></span>
+              </div>
+              <div class="lead-detail">
+                <span class="lead-detail-label">Location</span>
+                <span class="lead-detail-value">${lead.project_city || ''} ${lead.project_zip}</span>
+              </div>
+              <div class="lead-detail">
+                <span class="lead-detail-label">Received</span>
+                <span class="lead-detail-value">${formatDate(dist.created_at)}</span>
+              </div>
+              ${lead.project_budget ? `<div class="lead-detail"><span class="lead-detail-label">Budget</span><span class="lead-detail-value">${lead.project_budget}</span></div>` : ''}
+              ${lead.project_timeline ? `<div class="lead-detail"><span class="lead-detail-label">Timeline</span><span class="lead-detail-value">${formatTimeline(lead.project_timeline)}</span></div>` : ''}
+            </div>
+
+            ${lead.project_description ? `
+              <div class="lead-description">
+                <div class="lead-description-label">Project Details</div>
+                ${lead.project_description}
+              </div>
+            ` : ''}
+
+            <div class="lead-actions">
+              <a href="tel:${lead.homeowner_phone}" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Call
+              </a>
+              <a href="mailto:${lead.homeowner_email}" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </a>
+              <div class="status-dropdown">
+                <button class="status-dropdown-btn" onclick="toggleStatusMenu(this)">
+                  Update Status
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="status-dropdown-menu">
+                  <button class="status-option" onclick="updateLeadStatus('${dist.id}', 'contacted')">Contacted</button>
+                  <button class="status-option" onclick="updateLeadStatus('${dist.id}', 'quoted')">Quote Sent</button>
+                  <button class="status-option" onclick="updateLeadStatus('${dist.id}', 'won')">Won Job</button>
+                  <button class="status-option" onclick="updateLeadStatus('${dist.id}', 'lost')">Lost</button>
+                  <button class="status-option" onclick="updateLeadStatus('${dist.id}', 'no_response')">No Response</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function formatProjectType(type) {
+      const types = { countertop: 'Countertop', flooring: 'Flooring', bathroom: 'Bathroom', kitchen: 'Kitchen', full_remodel: 'Full Remodel' };
+      return types[type] || type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    function formatStatus(status) {
+      const statuses = { delivered: 'New', viewed: 'Viewed', contacted: 'Contacted', quoted: 'Quoted', won: 'Won', lost: 'Lost', no_response: 'No Response' };
+      return statuses[status] || status;
+    }
+
+    function formatTimeline(timeline) {
+      const timelines = { asap: 'ASAP', '1_month': 'Within 1 month', '1_3_months': '1-3 months', '3_6_months': '3-6 months', planning: 'Just Planning' };
+      return timelines[timeline] || timeline;
+    }
+
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function toggleStatusMenu(btn) {
+      const menu = btn.nextElementSibling;
+      document.querySelectorAll('.status-dropdown-menu.open').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+      menu.classList.toggle('open');
+    }
+
+    async function updateLeadStatus(distId, status) {
+      try {
+        const updates = { status, updated_at: new Date().toISOString() };
+        if (status === 'contacted' && !allLeads.find(l => l.id === distId)?.first_contact_at) {
+          updates.first_contact_at = new Date().toISOString();
+        }
+        if (status === 'quoted') updates.quote_sent_at = new Date().toISOString();
+        if (status === 'won' || status === 'lost') updates.outcome_at = new Date().toISOString();
+
+        await supabase.from('lead_distributions').update(updates).eq('id', distId);
+        await loadLeads();
+        document.querySelectorAll('.status-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+      } catch (err) {
+        console.error('Update status error:', err);
+        alert('Failed to update status');
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.status-dropdown')) {
+        document.querySelectorAll('.status-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
+
+    initPage();
+  </script>
+</body>
+</html>
