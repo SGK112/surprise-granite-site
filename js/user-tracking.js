@@ -51,16 +51,21 @@
       });
     }
 
-    if (typeof window.supabase !== 'undefined' && !supabase) {
+    // Use global client or create one
+    if (window._sgSupabaseClient) {
+      supabase = window._sgSupabaseClient;
+    } else if (typeof window.supabase !== 'undefined' && !supabase) {
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
           storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-          flowType: 'pkce'
+          flowType: 'implicit',
+          lock: false
         }
       });
+      window._sgSupabaseClient = supabase;
     }
   }
 

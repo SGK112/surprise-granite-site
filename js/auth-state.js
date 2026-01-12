@@ -114,23 +114,31 @@
         return;
       }
 
-      // Fallback: Create own client only if SgAuth not available
-      if (typeof window.supabase === 'undefined') {
-        await loadSupabaseScript();
+      // Fallback: Use global client or create one
+      if (window._sgSupabaseClient) {
+        supabaseClient = window._sgSupabaseClient;
+      } else {
+        if (typeof window.supabase === 'undefined') {
+          await loadSupabaseScript();
+        }
+
+        if (typeof window.supabase !== 'undefined') {
+          const { createClient } = window.supabase;
+          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+              flowType: 'implicit',
+              lock: false
+            }
+          });
+          window._sgSupabaseClient = supabaseClient;
+        }
       }
 
-      if (typeof window.supabase !== 'undefined') {
-        const { createClient } = window.supabase;
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'pkce'
-          }
-        });
-
+      if (supabaseClient) {
         const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session?.user) {

@@ -757,15 +757,18 @@
     if (window.supabase) {
       try {
         const { createClient } = window.supabase;
-        const supabaseClient = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
+        // Use global client if available
+        const supabaseClient = window._sgSupabaseClient || createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
             storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'pkce'
+            flowType: 'implicit',
+            lock: false
           }
         });
+        if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;
         await supabaseClient.from('leads').insert([{
           full_name: leadData.homeowner_name,
           first_name: state.formData.firstName,

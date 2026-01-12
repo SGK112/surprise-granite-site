@@ -4414,16 +4414,23 @@
           removeItem(key) { delete this._data[key]; }
         };
 
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storage: customStorage,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'pkce'
-          }
-        });
+        // Use global client if available
+        if (window._sgSupabaseClient) {
+          supabaseClient = window._sgSupabaseClient;
+        } else {
+          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+              storage: customStorage,
+              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+              flowType: 'implicit',
+              lock: false
+            }
+          });
+          window._sgSupabaseClient = supabaseClient;
+        }
 
         // Listen for auth state changes (handles token refresh on mobile)
         let authChangeHandled = false;

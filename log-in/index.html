@@ -503,16 +503,23 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      const { createClient } = window.supabase;
-      supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-          flowType: 'pkce'
-        }
-      });
+      // Use global client if available, otherwise create one
+      if (window._sgSupabaseClient) {
+        supabaseClient = window._sgSupabaseClient;
+      } else {
+        const { createClient } = window.supabase;
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+            flowType: 'implicit',
+            lock: false
+          }
+        });
+        window._sgSupabaseClient = supabaseClient;
+      }
 
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();

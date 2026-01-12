@@ -182,15 +182,18 @@
     // Fallback to direct Supabase initialization
     try {
       if (window.supabase && window.supabase.createClient) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        // Use global client if available
+        supabaseClient = window._sgSupabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
             storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'pkce'
+            flowType: 'implicit',
+            lock: false
           }
         });
+        if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
           currentUser = session.user;

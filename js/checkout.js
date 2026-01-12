@@ -353,15 +353,18 @@
       if (!window.supabase) return;
 
       const { createClient } = window.supabase;
-      const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      // Use global client if available
+      const supabaseClient = window._sgSupabaseClient || createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
           storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-          flowType: 'pkce'
+          flowType: 'implicit',
+          lock: false
         }
       });
+      if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;
       const { data: { session } } = await supabaseClient.auth.getSession();
 
       if (session && session.user) {

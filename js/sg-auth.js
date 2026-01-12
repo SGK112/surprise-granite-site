@@ -28,16 +28,24 @@
         // Wait for Supabase library to load
         await waitForSupabase();
 
-        const { createClient } = window.supabase;
-        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-            flowType: 'pkce'
-          }
-        });
+        // Check if a global client already exists (prevents multiple clients)
+        if (window._sgSupabaseClient) {
+          supabaseClient = window._sgSupabaseClient;
+        } else {
+          const { createClient } = window.supabase;
+          supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+              storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+              flowType: 'implicit',
+              lock: false  // Disable lock to prevent AbortError conflicts
+            }
+          });
+          // Store globally so other scripts can reuse
+          window._sgSupabaseClient = supabaseClient;
+        }
 
         // Get current session
         const { data: { session }, error } = await supabaseClient.auth.getSession();
