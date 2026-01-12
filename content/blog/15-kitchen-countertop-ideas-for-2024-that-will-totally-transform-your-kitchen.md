@@ -2,7 +2,7 @@
 title: "15 Kitchen Countertop Ideas for 2024"
 description: "Upgrading your kitchen countertops can completely transform your kitchen. Review these different options and find the one that fits your aesthetic."
 date: "2026-01-10"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65c51ec33ddf5eb79bf1f32f_kitchen%20countertops.avif"
 slug: "15-kitchen-countertop-ideas-for-2024-that-will-totally-transform-your-kitchen"
 author: "Surprise Granite"

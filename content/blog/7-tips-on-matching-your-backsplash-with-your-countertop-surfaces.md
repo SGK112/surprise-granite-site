@@ -2,7 +2,7 @@
 title: "7 Tips on Matching Your Backsplash With Your Countertop"
 description: "A backsplash and countertop should complement each other, so keep reading to learn 7 tips on matching your countertop surfaces with your kitchen backsplash."
 date: "2022-10-07"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2fc83fbc943_kitchen-countertop-and-backsplash.avif"
 slug: "7-tips-on-matching-your-backsplash-with-your-countertop-surfaces"
 author: "Surprise Granite"

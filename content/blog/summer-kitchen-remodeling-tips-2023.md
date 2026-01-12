@@ -2,7 +2,7 @@
 title: "Summer Kitchen Remodeling Tips for Arizona Homeowners"
 description: "Discover the best strategies for kitchen remodeling during Arizona's hot summer months. Learn how to plan your project for maximum comfort and efficiency."
 date: "2023-05-15"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "summer-kitchen-remodeling-tips-2023"
 author: "Surprise Granite"

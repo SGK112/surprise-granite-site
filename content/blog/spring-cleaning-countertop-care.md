@@ -2,7 +2,7 @@
 title: "Spring Cleaning Guide: How to Care for Every Type of Countertop"
 description: "Complete spring cleaning guide for countertop maintenance. Learn the proper care techniques for granite, quartz, marble, and other popular surfaces."
 date: "2025-03-18"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "spring-cleaning-countertop-care"
 author: "Surprise Granite"

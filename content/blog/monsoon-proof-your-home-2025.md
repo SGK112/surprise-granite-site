@@ -2,7 +2,7 @@
 title: "Monsoon-Proofing Your Arizona Home: 2025 Guide"
 description: "Protect your home from Arizona monsoon damage. Learn essential preparation steps for kitchens, bathrooms, and throughout your home before storm season."
 date: "2025-08-05"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "monsoon-proof-your-home-2025"
 author: "Surprise Granite"

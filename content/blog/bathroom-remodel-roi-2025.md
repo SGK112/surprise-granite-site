@@ -2,7 +2,7 @@
 title: "Bathroom Remodel ROI: Which Upgrades Add the Most Value in 2025"
 description: "Learn which bathroom remodeling upgrades deliver the best return on investment in 2025. Make smart choices that boost both enjoyment and home value."
 date: "2025-02-12"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "bathroom-remodel-roi-2025"
 author: "Surprise Granite"

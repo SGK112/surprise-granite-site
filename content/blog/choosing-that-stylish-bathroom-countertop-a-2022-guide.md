@@ -2,7 +2,7 @@
 title: "2022 Guide: Choosing that stylish bathroom countertop"
 description: "Not sure where to start? Keep reading to find out about some of the most popular bathroom countertop ideas in 2022."
 date: "2022-02-04"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb289ddfbaf5b_modern%20bathroom%20and%20countertop-1600w.avif"
 slug: "choosing-that-stylish-bathroom-countertop-a-2022-guide"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Complete Guide to Outdoor Kitchen Countertops in Arizona"
 description: "Everything you need to know about choosing countertops for Arizona outdoor kitchens. Learn which materials withstand sun, heat, and monsoons best."
 date: "2023-10-05"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "outdoor-kitchen-countertop-guide"
 author: "Surprise Granite"

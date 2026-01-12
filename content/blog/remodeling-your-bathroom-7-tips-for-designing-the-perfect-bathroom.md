@@ -2,7 +2,7 @@
 title: "7 Tips for Designing the Perfect Bathroom Remodel"
 description: "However, renovating a bathroom isn&#x27;t cheap. The last thing you want to do is make mistakes during the remodeling process that&#x27;ll leave you with regrets down the line. Instead, read on for 7 top tips for remodeling your bathroom and nailing its design."
 date: "2022-04-20"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2e599fbaf5f_Planned%20renovation%20of%20a%20luxury-1600w.avif"
 slug: "remodeling-your-bathroom-7-tips-for-designing-the-perfect-bathroom"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Fall Kitchen Refresh: Simple Updates for the New Season"
 description: "Welcome fall with kitchen updates that don't break the bank. From seasonal decor to quick improvement projects, refresh your kitchen for autumn entertaining."
 date: "2025-09-17"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "fall-kitchen-refresh-ideas-2025"
 author: "Surprise Granite"

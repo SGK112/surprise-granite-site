@@ -2,7 +2,7 @@
 title: "Fall Bathroom Refresh Ideas for Arizona Homes"
 description: "Transform your bathroom this fall with these refresh ideas. From new vanity tops to updated fixtures, create a spa-like retreat before winter."
 date: "2024-10-15"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "october-bathroom-refresh-ideas"
 author: "Surprise Granite"

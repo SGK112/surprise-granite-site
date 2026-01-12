@@ -2,7 +2,7 @@
 title: "Top Bathroom Vanity Trends Transforming Arizona Homes in 2023"
 description: "Explore the hottest bathroom vanity trends of 2023. From floating designs to natural stone tops, discover what's popular in Arizona bathroom remodels."
 date: "2023-07-18"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "bathroom-vanity-trends-2023"
 author: "Surprise Granite"

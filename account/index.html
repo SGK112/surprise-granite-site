@@ -1037,6 +1037,22 @@
     .status-lost { background: rgba(255, 107, 107, 0.15); color: var(--error); }
     .status-lost::before { background: var(--error); }
 
+    /* Estimate statuses */
+    .status-draft { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+    .status-draft::before { background: #9ca3af; }
+
+    .status-sent { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-sent::before { background: #3b82f6; }
+
+    .status-approved { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-approved::before { background: #22c55e; }
+
+    .status-rejected { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-rejected::before { background: #ef4444; }
+
+    .status-converted { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+    .status-converted::before { background: #a855f7; }
+
     .lead-date {
       font-size: 13px;
       color: var(--text-muted);
@@ -3254,6 +3270,11 @@
             <span class="nav-item-text">Leads</span>
             <span class="nav-badge" id="leads-count" data-count="0">0</span>
           </a>
+          <a class="nav-item" data-page="estimates" onclick="showPage('estimates')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="nav-item-text">Estimates</span>
+            <span class="nav-badge" id="estimates-count" data-count="0">0</span>
+          </a>
           <a class="nav-item" data-page="invoices" onclick="showPage('invoices')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">Invoices</span>
@@ -3536,6 +3557,72 @@
               <div class="empty-state">
                 <div class="spinner"></div>
                 <p>Loading leads...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Estimates Page -->
+        <section id="page-estimates" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Estimates</h3>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="openBusinessSettings()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Settings
+                </button>
+                <button class="btn btn-secondary" onclick="openServiceCatalog()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  Service Catalog
+                </button>
+                <button class="btn btn-primary" onclick="openCreateEstimateModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  New Estimate
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Stats Row -->
+              <div class="estimate-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div class="stat-mini" style="background: rgba(249, 203, 0, 0.1); border-radius: 12px; padding: 16px; text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: var(--gold-primary);" id="stat-draft-estimates">0</div>
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Draft</div>
+                </div>
+                <div class="stat-mini" style="background: rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 16px; text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="stat-sent-estimates">0</div>
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Sent</div>
+                </div>
+                <div class="stat-mini" style="background: rgba(34, 197, 94, 0.1); border-radius: 12px; padding: 16px; text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #22c55e;" id="stat-approved-estimates">0</div>
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Approved</div>
+                </div>
+                <div class="stat-mini" style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 16px; text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #ef4444;" id="stat-rejected-estimates">0</div>
+                  <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Rejected</div>
+                </div>
+              </div>
+
+              <!-- Filters -->
+              <div class="table-filters" style="margin-bottom: 20px;">
+                <button class="filter-btn active" data-estimate-status="all" onclick="filterEstimates('all')">All</button>
+                <button class="filter-btn" data-estimate-status="draft" onclick="filterEstimates('draft')">Draft</button>
+                <button class="filter-btn" data-estimate-status="sent" onclick="filterEstimates('sent')">Sent</button>
+                <button class="filter-btn" data-estimate-status="approved" onclick="filterEstimates('approved')">Approved</button>
+                <button class="filter-btn" data-estimate-status="rejected" onclick="filterEstimates('rejected')">Rejected</button>
+              </div>
+
+              <!-- Estimates List -->
+              <div id="estimates-list">
+                <div class="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" style="color: var(--text-muted); margin-bottom: 16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  <h3 style="margin-bottom: 8px;">No estimates yet</h3>
+                  <p style="color: var(--text-muted); margin-bottom: 16px;">Create your first estimate to send to customers</p>
+                  <button class="btn btn-primary" onclick="openCreateEstimateModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Create First Estimate
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -4338,6 +4425,402 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           Create Listing
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Estimate Modal -->
+  <div id="create-estimate-modal" class="modal-overlay" onclick="if(event.target === this) closeCreateEstimateModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Estimate</h2>
+        <button class="modal-close" onclick="closeCreateEstimateModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="create-estimate-form" onsubmit="return handleCreateEstimate(event)">
+          <!-- Customer Information -->
+          <div class="form-section">
+            <div class="form-section-title">Customer Information</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" id="estimate-customer-name" required placeholder="John Smith">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="estimate-customer-email" placeholder="customer@email.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="estimate-customer-phone" placeholder="(602) 555-1234">
+              </div>
+              <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="estimate-customer-address" placeholder="123 Main St">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" id="estimate-customer-city" placeholder="Phoenix">
+              </div>
+              <div class="form-group" style="flex: 0.5;">
+                <label>State</label>
+                <input type="text" id="estimate-customer-state" placeholder="AZ" value="AZ">
+              </div>
+              <div class="form-group" style="flex: 0.5;">
+                <label>ZIP</label>
+                <input type="text" id="estimate-customer-zip" placeholder="85001">
+              </div>
+            </div>
+          </div>
+
+          <!-- Project Details -->
+          <div class="form-section">
+            <div class="form-section-title">Project Details</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Project Name</label>
+                <input type="text" id="estimate-project-name" placeholder="Kitchen Countertop Replacement">
+              </div>
+              <div class="form-group" style="flex: 0.5;">
+                <label>Valid Until</label>
+                <input type="date" id="estimate-valid-until">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Project Description</label>
+              <textarea id="estimate-project-desc" rows="2" placeholder="Brief description of the project..."></textarea>
+            </div>
+          </div>
+
+          <!-- Line Items -->
+          <div class="form-section">
+            <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Line Items</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="openCatalogPicker()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  From Catalog
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addEstimateLineItem()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Add Item
+                </button>
+              </div>
+            </div>
+
+            <div id="estimate-line-items">
+              <!-- Line items will be added here -->
+            </div>
+
+            <div class="line-item-template" style="display: none;">
+              <div class="estimate-line-item" style="display: grid; grid-template-columns: 2fr 1fr 80px 80px 100px 40px; gap: 10px; align-items: start; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px;">
+                <div>
+                  <input type="text" class="item-name" placeholder="Item name" style="width: 100%; margin-bottom: 4px;">
+                  <input type="text" class="item-desc" placeholder="Description (optional)" style="width: 100%; font-size: 12px; opacity: 0.8;">
+                </div>
+                <select class="item-unit" style="height: 42px;">
+                  <option value="each">Each</option>
+                  <option value="sqft">Sq Ft</option>
+                  <option value="lnft">Ln Ft</option>
+                  <option value="hour">Hour</option>
+                  <option value="job">Job</option>
+                </select>
+                <input type="number" class="item-qty" placeholder="Qty" value="1" min="0" step="0.01" style="text-align: center;">
+                <input type="number" class="item-price" placeholder="Price" value="0" min="0" step="0.01" style="text-align: right;">
+                <div class="item-total" style="text-align: right; padding: 12px 0; font-weight: 600; color: var(--gold-primary);">$0.00</div>
+                <button type="button" class="btn-remove-item" onclick="removeEstimateLineItem(this)" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 12px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="form-section">
+            <div class="estimate-totals" style="display: flex; flex-direction: column; gap: 12px; max-width: 350px; margin-left: auto;">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+                <span>Subtotal</span>
+                <span id="estimate-subtotal">$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>Tax</span>
+                  <input type="number" id="estimate-tax-rate" value="0" min="0" max="100" step="0.01" style="width: 60px; text-align: center; padding: 4px;">
+                  <span>%</span>
+                </div>
+                <span id="estimate-tax-amount">$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>Discount</span>
+                  <input type="number" id="estimate-discount-value" value="0" min="0" step="0.01" style="width: 60px; text-align: center; padding: 4px;">
+                  <select id="estimate-discount-type" style="padding: 4px;">
+                    <option value="amount">$</option>
+                    <option value="percent">%</option>
+                  </select>
+                </div>
+                <span id="estimate-discount-amount">-$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 2px solid var(--gold-primary); font-size: 18px; font-weight: 700;">
+                <span>Total</span>
+                <span id="estimate-total" style="color: var(--gold-primary);">$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(249, 203, 0, 0.1); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>Deposit Required</span>
+                  <input type="number" id="estimate-deposit-percent" value="50" min="0" max="100" style="width: 50px; text-align: center; padding: 4px;">
+                  <span>%</span>
+                </div>
+                <span id="estimate-deposit-amount" style="font-weight: 600;">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Terms & Notes -->
+          <div class="form-section">
+            <div class="form-section-title">Terms & Notes</div>
+            <div class="form-group">
+              <label>Payment Terms</label>
+              <input type="text" id="estimate-payment-terms" placeholder="50% deposit, balance due upon completion">
+            </div>
+            <div class="form-group">
+              <label>Warranty</label>
+              <input type="text" id="estimate-warranty" placeholder="1 year workmanship warranty">
+            </div>
+            <div class="form-group">
+              <label>Notes to Customer</label>
+              <textarea id="estimate-notes" rows="2" placeholder="Any additional notes for the customer..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Internal Notes (not shown to customer)</label>
+              <textarea id="estimate-internal-notes" rows="2" placeholder="Private notes for your records..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateEstimateModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="saveEstimateDraft()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          Save Draft
+        </button>
+        <button type="submit" form="create-estimate-form" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          Create & Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Business Settings Modal -->
+  <div id="business-settings-modal" class="modal-overlay" onclick="if(event.target === this) closeBusinessSettings()" style="display: none;">
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Business Settings</h2>
+        <button class="modal-close" onclick="closeBusinessSettings()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="business-settings-form" onsubmit="return saveBusinessSettings(event)">
+          <div class="form-section">
+            <div class="form-section-title">Company Information</div>
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="biz-company-name" placeholder="Your Company Name">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="biz-phone" placeholder="(602) 555-1234">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="biz-email" placeholder="info@company.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" id="biz-address" placeholder="123 Main St">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" id="biz-city" placeholder="Phoenix">
+              </div>
+              <div class="form-group" style="flex: 0.5;">
+                <label>State</label>
+                <input type="text" id="biz-state" placeholder="AZ">
+              </div>
+              <div class="form-group" style="flex: 0.5;">
+                <label>ZIP</label>
+                <input type="text" id="biz-zip" placeholder="85001">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>License Number</label>
+                <input type="text" id="biz-license" placeholder="ROC #123456">
+              </div>
+              <div class="form-group">
+                <label>Website</label>
+                <input type="url" id="biz-website" placeholder="https://yoursite.com">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Default Settings</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Default Tax Rate (%)</label>
+                <input type="number" id="biz-tax-rate" value="0" min="0" max="100" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Default Deposit (%)</label>
+                <input type="number" id="biz-deposit" value="50" min="0" max="100">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Default Payment Terms</label>
+              <input type="text" id="biz-payment-terms" placeholder="50% deposit, balance due upon completion">
+            </div>
+            <div class="form-group">
+              <label>Default Warranty</label>
+              <input type="text" id="biz-warranty" placeholder="1 year workmanship warranty">
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Numbering</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Estimate Prefix</label>
+                <input type="text" id="biz-estimate-prefix" value="EST-" maxlength="10">
+              </div>
+              <div class="form-group">
+                <label>Invoice Prefix</label>
+                <input type="text" id="biz-invoice-prefix" value="INV-" maxlength="10">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Terms & Conditions</div>
+            <div class="form-group">
+              <label>Default Terms & Conditions for Estimates</label>
+              <textarea id="biz-estimate-terms" rows="4" placeholder="Enter your standard terms and conditions..."></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBusinessSettings()">Cancel</button>
+        <button type="submit" form="business-settings-form" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Catalog Modal -->
+  <div id="service-catalog-modal" class="modal-overlay" onclick="if(event.target === this) closeServiceCatalog()" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Service & Material Catalog</h2>
+        <button class="modal-close" onclick="closeServiceCatalog()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Create reusable services and materials for quick estimate creation.</p>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+          <div class="table-filters">
+            <button class="filter-btn active" onclick="filterCatalog('all')">All</button>
+            <button class="filter-btn" onclick="filterCatalog('material')">Materials</button>
+            <button class="filter-btn" onclick="filterCatalog('service')">Services</button>
+            <button class="filter-btn" onclick="filterCatalog('labor')">Labor</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddCatalogItem()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Item
+          </button>
+        </div>
+
+        <div id="service-catalog-list">
+          <div class="empty-state" style="padding: 40px;">
+            <p style="color: var(--text-muted);">No catalog items yet. Add your first service or material.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeServiceCatalog()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Catalog Item Modal -->
+  <div id="add-catalog-item-modal" class="modal-overlay" onclick="if(event.target === this) closeAddCatalogItem()" style="display: none; z-index: 1001;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Catalog Item</h2>
+        <button class="modal-close" onclick="closeAddCatalogItem()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="add-catalog-item-form" onsubmit="return saveCatalogItem(event)">
+          <div class="form-group">
+            <label>Item Name *</label>
+            <input type="text" id="catalog-item-name" required placeholder="e.g., Granite Installation">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="catalog-item-desc" placeholder="Brief description">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="catalog-item-category">
+                <option value="service">Service</option>
+                <option value="material">Material</option>
+                <option value="labor">Labor</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Unit Type</label>
+              <select id="catalog-item-unit">
+                <option value="each">Each</option>
+                <option value="sqft">Sq Ft</option>
+                <option value="lnft">Ln Ft</option>
+                <option value="hour">Hour</option>
+                <option value="day">Day</option>
+                <option value="job">Job</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Unit Price ($) *</label>
+              <input type="number" id="catalog-item-price" required min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label>Your Cost ($)</label>
+              <input type="number" id="catalog-item-cost" min="0" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+          <input type="hidden" id="catalog-item-id">
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeAddCatalogItem()">Cancel</button>
+        <button type="submit" form="add-catalog-item-form" class="btn btn-primary">Save Item</button>
       </div>
     </div>
   </div>
@@ -5485,6 +5968,7 @@
         'favorites': 'My Favorites',
         'listings': 'My Listings',
         'leads': 'Leads',
+        'estimates': 'Estimates',
         'invoices': 'Invoices',
         'wallet': 'Wallet',
         'admin-users': 'Manage Admins',
@@ -5493,6 +5977,11 @@
         'messages': 'Messages'
       };
       document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
+
+      // Load estimates when that page is shown
+      if (page === 'estimates') {
+        loadEstimates();
+      }
 
       // Load favorites when that page is shown
       if (page === 'favorites') {
@@ -7703,6 +8192,1066 @@
     function editListing(id) {
       // TODO: Implement edit listing modal
       alert('Edit functionality coming soon!');
+    }
+
+    // =============================================
+    // ESTIMATES FEATURE
+    // =============================================
+
+    let currentEstimateFilter = 'all';
+    let serviceCatalog = [];
+    let businessSettings = null;
+
+    async function loadEstimates() {
+      const listContainer = document.getElementById('estimates-list');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><div class="loading-spinner"></div><p>Loading estimates...</p></div>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><p>Please log in to view estimates</p></div>';
+          return;
+        }
+
+        let query = supabaseClient
+          .from('estimates')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (currentEstimateFilter !== 'all') {
+          query = query.eq('status', currentEstimateFilter);
+        }
+
+        const { data: estimates, error } = await query;
+
+        if (error) throw error;
+
+        // Update stats
+        const allEstimates = await supabaseClient
+          .from('estimates')
+          .select('status')
+          .eq('user_id', user.id);
+
+        if (allEstimates.data) {
+          const stats = {
+            draft: allEstimates.data.filter(e => e.status === 'draft').length,
+            sent: allEstimates.data.filter(e => e.status === 'sent').length,
+            approved: allEstimates.data.filter(e => e.status === 'approved').length,
+            rejected: allEstimates.data.filter(e => e.status === 'rejected').length
+          };
+          document.getElementById('stat-draft-estimates').textContent = stats.draft;
+          document.getElementById('stat-sent-estimates').textContent = stats.sent;
+          document.getElementById('stat-approved-estimates').textContent = stats.approved;
+          document.getElementById('stat-rejected-estimates').textContent = stats.rejected;
+          document.getElementById('estimates-count').textContent = allEstimates.data.length;
+          document.getElementById('estimates-count').dataset.count = allEstimates.data.length;
+        }
+
+        if (!estimates || estimates.length === 0) {
+          listContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3; margin-bottom: 16px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <h3 style="margin-bottom: 8px;">No estimates yet</h3>
+              <p style="color: var(--text-muted); margin-bottom: 16px;">Create your first estimate to send to customers</p>
+              <button class="btn btn-primary" onclick="openCreateEstimateModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Create First Estimate
+              </button>
+            </div>`;
+          return;
+        }
+
+        listContainer.innerHTML = estimates.map(estimate => `
+          <div class="estimate-card" style="background: var(--dark-elevated); border-radius: 12px; padding: 20px; margin-bottom: 12px; border: 1px solid var(--border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                  <span style="font-size: 18px; font-weight: 600;">${estimate.estimate_number || 'Draft'}</span>
+                  <span class="status-badge status-${estimate.status}" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                    ${estimate.status}
+                  </span>
+                </div>
+                <div style="color: var(--text-secondary);">${estimate.customer_name}</div>
+                ${estimate.project_name ? `<div style="color: var(--text-muted); font-size: 13px;">${estimate.project_name}</div>` : ''}
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$${(estimate.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${new Date(estimate.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-sm btn-secondary" onclick="viewEstimate('${estimate.id}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                View
+              </button>
+              ${estimate.status === 'draft' ? `
+                <button class="btn btn-sm btn-primary" onclick="sendEstimate('${estimate.id}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  Send
+                </button>
+              ` : ''}
+              ${estimate.status === 'approved' ? `
+                <button class="btn btn-sm btn-success" onclick="convertToInvoice('${estimate.id}')" style="background: #22c55e;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Convert to Invoice
+                </button>
+              ` : ''}
+              <button class="btn btn-sm btn-secondary" onclick="duplicateEstimate('${estimate.id}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Duplicate
+              </button>
+              ${estimate.status === 'draft' ? `
+                <button class="btn btn-sm" onclick="deleteEstimate('${estimate.id}')" style="color: #ef4444;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error('Load estimates error:', err);
+        listContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--error);">Error loading estimates: ${err.message}</div>`;
+      }
+    }
+
+    function filterEstimates(status) {
+      currentEstimateFilter = status;
+
+      // Update active filter button
+      document.querySelectorAll('[data-estimate-status]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.estimateStatus === status);
+      });
+
+      loadEstimates();
+    }
+
+    function openCreateEstimateModal() {
+      document.getElementById('create-estimate-modal').style.display = 'flex';
+      document.getElementById('create-estimate-form').reset();
+      document.getElementById('estimate-line-items').innerHTML = '';
+
+      // Set default valid until date (30 days from now)
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 30);
+      document.getElementById('estimate-valid-until').value = validUntil.toISOString().split('T')[0];
+
+      // Add first line item
+      addEstimateLineItem();
+
+      // Load business settings defaults
+      loadBusinessDefaults();
+    }
+
+    function closeCreateEstimateModal() {
+      document.getElementById('create-estimate-modal').style.display = 'none';
+    }
+
+    async function loadBusinessDefaults() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: settings } = await supabaseClient
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (settings) {
+          businessSettings = settings;
+          if (settings.default_tax_rate) {
+            document.getElementById('estimate-tax-rate').value = settings.default_tax_rate;
+          }
+          if (settings.default_deposit_percent) {
+            document.getElementById('estimate-deposit-percent').value = settings.default_deposit_percent;
+          }
+          if (settings.default_payment_terms) {
+            document.getElementById('estimate-payment-terms').value = settings.default_payment_terms;
+          }
+          if (settings.default_warranty_terms) {
+            document.getElementById('estimate-warranty').value = settings.default_warranty_terms;
+          }
+        }
+      } catch (err) {
+        console.log('No business settings found');
+      }
+    }
+
+    function addEstimateLineItem(itemData = null) {
+      const container = document.getElementById('estimate-line-items');
+      const template = document.querySelector('.line-item-template .estimate-line-item').cloneNode(true);
+
+      // Set values if item data provided
+      if (itemData) {
+        template.querySelector('.item-name').value = itemData.name || '';
+        template.querySelector('.item-desc').value = itemData.description || '';
+        template.querySelector('.item-unit').value = itemData.unit || 'each';
+        template.querySelector('.item-qty').value = itemData.quantity || 1;
+        template.querySelector('.item-price').value = itemData.price || 0;
+      }
+
+      // Add event listeners for real-time calculation
+      template.querySelector('.item-qty').addEventListener('input', calculateEstimateTotals);
+      template.querySelector('.item-price').addEventListener('input', calculateEstimateTotals);
+
+      container.appendChild(template);
+      calculateEstimateTotals();
+    }
+
+    function removeEstimateLineItem(button) {
+      const lineItem = button.closest('.estimate-line-item');
+      lineItem.remove();
+      calculateEstimateTotals();
+    }
+
+    function calculateEstimateTotals() {
+      const lineItems = document.querySelectorAll('#estimate-line-items .estimate-line-item');
+      let subtotal = 0;
+
+      lineItems.forEach(item => {
+        const qty = parseFloat(item.querySelector('.item-qty').value) || 0;
+        const price = parseFloat(item.querySelector('.item-price').value) || 0;
+        const total = qty * price;
+        item.querySelector('.item-total').textContent = '$' + total.toFixed(2);
+        subtotal += total;
+      });
+
+      document.getElementById('estimate-subtotal').textContent = '$' + subtotal.toFixed(2);
+
+      // Calculate tax
+      const taxRate = parseFloat(document.getElementById('estimate-tax-rate').value) || 0;
+      const taxAmount = subtotal * (taxRate / 100);
+      document.getElementById('estimate-tax-amount').textContent = '$' + taxAmount.toFixed(2);
+
+      // Calculate discount
+      const discountValue = parseFloat(document.getElementById('estimate-discount-value').value) || 0;
+      const discountType = document.getElementById('estimate-discount-type').value;
+      let discountAmount = 0;
+      if (discountType === 'percent') {
+        discountAmount = subtotal * (discountValue / 100);
+      } else {
+        discountAmount = discountValue;
+      }
+      document.getElementById('estimate-discount-amount').textContent = '-$' + discountAmount.toFixed(2);
+
+      // Calculate total
+      const total = subtotal + taxAmount - discountAmount;
+      document.getElementById('estimate-total').textContent = '$' + total.toFixed(2);
+
+      // Calculate deposit
+      const depositPercent = parseFloat(document.getElementById('estimate-deposit-percent').value) || 0;
+      const depositAmount = total * (depositPercent / 100);
+      document.getElementById('estimate-deposit-amount').textContent = '$' + depositAmount.toFixed(2);
+    }
+
+    // Add event listeners for tax, discount, deposit changes
+    document.addEventListener('DOMContentLoaded', function() {
+      ['estimate-tax-rate', 'estimate-discount-value', 'estimate-discount-type', 'estimate-deposit-percent'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calculateEstimateTotals);
+      });
+    });
+
+    async function handleCreateEstimate(event) {
+      event.preventDefault();
+
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Creating...';
+      submitBtn.disabled = true;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        // Collect line items
+        const lineItems = [];
+        document.querySelectorAll('#estimate-line-items .estimate-line-item').forEach(item => {
+          const name = item.querySelector('.item-name').value.trim();
+          if (name) {
+            lineItems.push({
+              name: name,
+              description: item.querySelector('.item-desc').value.trim(),
+              unit: item.querySelector('.item-unit').value,
+              quantity: parseFloat(item.querySelector('.item-qty').value) || 0,
+              unit_price: parseFloat(item.querySelector('.item-price').value) || 0
+            });
+          }
+        });
+
+        if (lineItems.length === 0) {
+          throw new Error('Please add at least one line item');
+        }
+
+        // Get totals
+        const subtotal = parseFloat(document.getElementById('estimate-subtotal').textContent.replace('$', '').replace(',', '')) || 0;
+        const taxRate = parseFloat(document.getElementById('estimate-tax-rate').value) || 0;
+        const taxAmount = parseFloat(document.getElementById('estimate-tax-amount').textContent.replace('$', '').replace(',', '')) || 0;
+        const discountValue = parseFloat(document.getElementById('estimate-discount-value').value) || 0;
+        const discountType = document.getElementById('estimate-discount-type').value;
+        const discountAmount = parseFloat(document.getElementById('estimate-discount-amount').textContent.replace('-$', '').replace(',', '')) || 0;
+        const total = parseFloat(document.getElementById('estimate-total').textContent.replace('$', '').replace(',', '')) || 0;
+        const depositPercent = parseFloat(document.getElementById('estimate-deposit-percent').value) || 0;
+        const depositAmount = parseFloat(document.getElementById('estimate-deposit-amount').textContent.replace('$', '').replace(',', '')) || 0;
+
+        // Create estimate
+        const estimateData = {
+          user_id: user.id,
+          customer_name: document.getElementById('estimate-customer-name').value.trim(),
+          customer_email: document.getElementById('estimate-customer-email').value.trim() || null,
+          customer_phone: document.getElementById('estimate-customer-phone').value.trim() || null,
+          customer_address: document.getElementById('estimate-customer-address').value.trim() || null,
+          customer_city: document.getElementById('estimate-customer-city').value.trim() || null,
+          customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
+          customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
+          project_name: document.getElementById('estimate-project-name').value.trim() || null,
+          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
+          valid_until: document.getElementById('estimate-valid-until').value || null,
+          subtotal: subtotal,
+          tax_rate: taxRate,
+          tax_amount: taxAmount,
+          discount_type: discountType,
+          discount_value: discountValue,
+          discount_amount: discountAmount,
+          total: total,
+          deposit_percent: depositPercent,
+          deposit_amount: depositAmount,
+          payment_terms: document.getElementById('estimate-payment-terms').value.trim() || null,
+          warranty_terms: document.getElementById('estimate-warranty').value.trim() || null,
+          notes: document.getElementById('estimate-notes').value.trim() || null,
+          internal_notes: document.getElementById('estimate-internal-notes').value.trim() || null,
+          status: 'sent'
+        };
+
+        const { data: estimate, error: estimateError } = await supabaseClient
+          .from('estimates')
+          .insert([estimateData])
+          .select()
+          .single();
+
+        if (estimateError) throw estimateError;
+
+        // Insert line items
+        const itemsToInsert = lineItems.map(item => ({
+          estimate_id: estimate.id,
+          name: item.name,
+          description: item.description,
+          unit: item.unit,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total: item.quantity * item.unit_price
+        }));
+
+        const { error: itemsError } = await supabaseClient
+          .from('estimate_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) throw itemsError;
+
+        // Generate approval token
+        const token = crypto.randomUUID();
+        await supabaseClient
+          .from('estimate_tokens')
+          .insert([{
+            estimate_id: estimate.id,
+            token: token,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          }]);
+
+        // Send email if customer email provided
+        if (estimateData.customer_email) {
+          await sendEstimateEmail(estimate.id, token);
+        }
+
+        closeCreateEstimateModal();
+        loadEstimates();
+        showToast('Estimate created and sent successfully!');
+
+      } catch (err) {
+        console.error('Create estimate error:', err);
+        alert('Error creating estimate: ' + err.message);
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function saveEstimateDraft() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        // Collect line items
+        const lineItems = [];
+        document.querySelectorAll('#estimate-line-items .estimate-line-item').forEach(item => {
+          const name = item.querySelector('.item-name').value.trim();
+          if (name) {
+            lineItems.push({
+              name: name,
+              description: item.querySelector('.item-desc').value.trim(),
+              unit: item.querySelector('.item-unit').value,
+              quantity: parseFloat(item.querySelector('.item-qty').value) || 0,
+              unit_price: parseFloat(item.querySelector('.item-price').value) || 0
+            });
+          }
+        });
+
+        const customerName = document.getElementById('estimate-customer-name').value.trim();
+        if (!customerName) {
+          throw new Error('Please enter a customer name');
+        }
+
+        // Get totals
+        const subtotal = parseFloat(document.getElementById('estimate-subtotal').textContent.replace('$', '').replace(',', '')) || 0;
+        const total = parseFloat(document.getElementById('estimate-total').textContent.replace('$', '').replace(',', '')) || 0;
+
+        const estimateData = {
+          user_id: user.id,
+          customer_name: customerName,
+          customer_email: document.getElementById('estimate-customer-email').value.trim() || null,
+          customer_phone: document.getElementById('estimate-customer-phone').value.trim() || null,
+          customer_address: document.getElementById('estimate-customer-address').value.trim() || null,
+          customer_city: document.getElementById('estimate-customer-city').value.trim() || null,
+          customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
+          customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
+          project_name: document.getElementById('estimate-project-name').value.trim() || null,
+          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
+          valid_until: document.getElementById('estimate-valid-until').value || null,
+          subtotal: subtotal,
+          tax_rate: parseFloat(document.getElementById('estimate-tax-rate').value) || 0,
+          tax_amount: parseFloat(document.getElementById('estimate-tax-amount').textContent.replace('$', '')) || 0,
+          discount_type: document.getElementById('estimate-discount-type').value,
+          discount_value: parseFloat(document.getElementById('estimate-discount-value').value) || 0,
+          discount_amount: parseFloat(document.getElementById('estimate-discount-amount').textContent.replace('-$', '')) || 0,
+          total: total,
+          deposit_percent: parseFloat(document.getElementById('estimate-deposit-percent').value) || 0,
+          deposit_amount: parseFloat(document.getElementById('estimate-deposit-amount').textContent.replace('$', '')) || 0,
+          payment_terms: document.getElementById('estimate-payment-terms').value.trim() || null,
+          warranty_terms: document.getElementById('estimate-warranty').value.trim() || null,
+          notes: document.getElementById('estimate-notes').value.trim() || null,
+          internal_notes: document.getElementById('estimate-internal-notes').value.trim() || null,
+          status: 'draft'
+        };
+
+        const { data: estimate, error } = await supabaseClient
+          .from('estimates')
+          .insert([estimateData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Insert line items if any
+        if (lineItems.length > 0) {
+          const itemsToInsert = lineItems.map(item => ({
+            estimate_id: estimate.id,
+            name: item.name,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.quantity * item.unit_price
+          }));
+
+          await supabaseClient.from('estimate_items').insert(itemsToInsert);
+        }
+
+        closeCreateEstimateModal();
+        loadEstimates();
+        showToast('Draft saved successfully!');
+
+      } catch (err) {
+        console.error('Save draft error:', err);
+        alert('Error saving draft: ' + err.message);
+      }
+    }
+
+    async function sendEstimateEmail(estimateId, token) {
+      try {
+        const { data: estimate } = await supabaseClient
+          .from('estimates')
+          .select('*, estimate_items(*)')
+          .eq('id', estimateId)
+          .single();
+
+        if (!estimate || !estimate.customer_email) return;
+
+        const approvalUrl = `${window.location.origin}/estimate/view/?token=${token}`;
+
+        await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: estimate.customer_email,
+            customerName: estimate.customer_name,
+            estimateNumber: estimate.estimate_number,
+            projectName: estimate.project_name,
+            total: estimate.total,
+            depositAmount: estimate.deposit_amount,
+            validUntil: estimate.valid_until,
+            approvalUrl: approvalUrl,
+            items: estimate.estimate_items
+          })
+        });
+      } catch (err) {
+        console.error('Send email error:', err);
+      }
+    }
+
+    async function sendEstimate(estimateId) {
+      if (!confirm('Send this estimate to the customer?')) return;
+
+      try {
+        const { data: estimate } = await supabaseClient
+          .from('estimates')
+          .select('customer_email')
+          .eq('id', estimateId)
+          .single();
+
+        if (!estimate.customer_email) {
+          alert('Please add a customer email before sending');
+          return;
+        }
+
+        // Update status to sent
+        await supabaseClient
+          .from('estimates')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('id', estimateId);
+
+        // Generate token and send email
+        const token = crypto.randomUUID();
+        await supabaseClient
+          .from('estimate_tokens')
+          .insert([{
+            estimate_id: estimateId,
+            token: token,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          }]);
+
+        await sendEstimateEmail(estimateId, token);
+        loadEstimates();
+        showToast('Estimate sent!');
+      } catch (err) {
+        console.error('Send estimate error:', err);
+        alert('Error sending estimate: ' + err.message);
+      }
+    }
+
+    async function viewEstimate(estimateId) {
+      // Open estimate in preview modal or new tab
+      try {
+        const { data: tokenData } = await supabaseClient
+          .from('estimate_tokens')
+          .select('token')
+          .eq('estimate_id', estimateId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (tokenData) {
+          window.open(`/estimate/view/?token=${tokenData.token}`, '_blank');
+        } else {
+          // Generate new token for viewing
+          const token = crypto.randomUUID();
+          await supabaseClient
+            .from('estimate_tokens')
+            .insert([{
+              estimate_id: estimateId,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }]);
+          window.open(`/estimate/view/?token=${token}`, '_blank');
+        }
+      } catch (err) {
+        console.error('View estimate error:', err);
+        alert('Error viewing estimate');
+      }
+    }
+
+    async function deleteEstimate(estimateId) {
+      if (!confirm('Delete this draft estimate?')) return;
+
+      try {
+        await supabaseClient.from('estimates').delete().eq('id', estimateId);
+        loadEstimates();
+        showToast('Estimate deleted');
+      } catch (err) {
+        console.error('Delete estimate error:', err);
+        alert('Error deleting estimate');
+      }
+    }
+
+    async function duplicateEstimate(estimateId) {
+      try {
+        const { data: original } = await supabaseClient
+          .from('estimates')
+          .select('*, estimate_items(*)')
+          .eq('id', estimateId)
+          .single();
+
+        if (!original) throw new Error('Estimate not found');
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        // Create copy
+        const newEstimate = {
+          user_id: user.id,
+          customer_name: original.customer_name,
+          customer_email: original.customer_email,
+          customer_phone: original.customer_phone,
+          customer_address: original.customer_address,
+          customer_city: original.customer_city,
+          customer_state: original.customer_state,
+          customer_zip: original.customer_zip,
+          project_name: original.project_name ? original.project_name + ' (Copy)' : null,
+          project_description: original.project_description,
+          valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          subtotal: original.subtotal,
+          tax_rate: original.tax_rate,
+          tax_amount: original.tax_amount,
+          discount_type: original.discount_type,
+          discount_value: original.discount_value,
+          discount_amount: original.discount_amount,
+          total: original.total,
+          deposit_percent: original.deposit_percent,
+          deposit_amount: original.deposit_amount,
+          payment_terms: original.payment_terms,
+          warranty_terms: original.warranty_terms,
+          notes: original.notes,
+          internal_notes: original.internal_notes,
+          status: 'draft'
+        };
+
+        const { data: newEst, error } = await supabaseClient
+          .from('estimates')
+          .insert([newEstimate])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Copy line items
+        if (original.estimate_items && original.estimate_items.length > 0) {
+          const items = original.estimate_items.map(item => ({
+            estimate_id: newEst.id,
+            name: item.name,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total
+          }));
+
+          await supabaseClient.from('estimate_items').insert(items);
+        }
+
+        loadEstimates();
+        showToast('Estimate duplicated!');
+      } catch (err) {
+        console.error('Duplicate estimate error:', err);
+        alert('Error duplicating estimate');
+      }
+    }
+
+    async function convertToInvoice(estimateId) {
+      if (!confirm('Convert this estimate to an invoice?')) return;
+
+      try {
+        const { data: estimate } = await supabaseClient
+          .from('estimates')
+          .select('*, estimate_items(*)')
+          .eq('id', estimateId)
+          .single();
+
+        if (!estimate) throw new Error('Estimate not found');
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        // Create invoice
+        const invoiceData = {
+          user_id: user.id,
+          estimate_id: estimateId,
+          customer_name: estimate.customer_name,
+          customer_email: estimate.customer_email,
+          customer_phone: estimate.customer_phone,
+          customer_address: estimate.customer_address,
+          customer_city: estimate.customer_city,
+          customer_state: estimate.customer_state,
+          customer_zip: estimate.customer_zip,
+          project_name: estimate.project_name,
+          subtotal: estimate.subtotal,
+          tax_rate: estimate.tax_rate,
+          tax_amount: estimate.tax_amount,
+          discount_type: estimate.discount_type,
+          discount_value: estimate.discount_value,
+          discount_amount: estimate.discount_amount,
+          total: estimate.total,
+          amount_paid: 0,
+          amount_due: estimate.total,
+          payment_terms: estimate.payment_terms,
+          notes: estimate.notes,
+          status: 'unpaid',
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        const { data: invoice, error } = await supabaseClient
+          .from('invoices')
+          .insert([invoiceData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Copy line items to invoice
+        if (estimate.estimate_items && estimate.estimate_items.length > 0) {
+          const items = estimate.estimate_items.map(item => ({
+            invoice_id: invoice.id,
+            name: item.name,
+            description: item.description,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total
+          }));
+
+          await supabaseClient.from('invoice_items').insert(items);
+        }
+
+        // Update estimate status
+        await supabaseClient
+          .from('estimates')
+          .update({ status: 'converted', converted_to_invoice_id: invoice.id })
+          .eq('id', estimateId);
+
+        showToast('Invoice created successfully!');
+        showPage('invoices');
+        loadInvoices();
+      } catch (err) {
+        console.error('Convert to invoice error:', err);
+        alert('Error converting to invoice: ' + err.message);
+      }
+    }
+
+    // =============================================
+    // BUSINESS SETTINGS
+    // =============================================
+
+    function openBusinessSettings() {
+      document.getElementById('business-settings-modal').style.display = 'flex';
+      loadBusinessSettings();
+    }
+
+    function closeBusinessSettings() {
+      document.getElementById('business-settings-modal').style.display = 'none';
+    }
+
+    async function loadBusinessSettings() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: settings } = await supabaseClient
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (settings) {
+          document.getElementById('biz-company-name').value = settings.company_name || '';
+          document.getElementById('biz-phone').value = settings.phone || '';
+          document.getElementById('biz-email').value = settings.email || '';
+          document.getElementById('biz-address').value = settings.address || '';
+          document.getElementById('biz-city').value = settings.city || '';
+          document.getElementById('biz-state').value = settings.state || '';
+          document.getElementById('biz-zip').value = settings.zip || '';
+          document.getElementById('biz-license').value = settings.license_number || '';
+          document.getElementById('biz-website').value = settings.website || '';
+          document.getElementById('biz-estimate-prefix').value = settings.estimate_prefix || 'EST-';
+          if (document.getElementById('biz-invoice-prefix')) {
+            document.getElementById('biz-invoice-prefix').value = settings.invoice_prefix || 'INV-';
+          }
+          document.getElementById('biz-estimate-terms').value = settings.default_estimate_terms || '';
+        }
+      } catch (err) {
+        console.log('No business settings found');
+      }
+    }
+
+    async function saveBusinessSettings(event) {
+      if (event) event.preventDefault();
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        const settingsData = {
+          user_id: user.id,
+          company_name: document.getElementById('biz-company-name').value.trim() || null,
+          phone: document.getElementById('biz-phone').value.trim() || null,
+          email: document.getElementById('biz-email').value.trim() || null,
+          address: document.getElementById('biz-address').value.trim() || null,
+          city: document.getElementById('biz-city').value.trim() || null,
+          state: document.getElementById('biz-state').value.trim() || null,
+          zip: document.getElementById('biz-zip').value.trim() || null,
+          license_number: document.getElementById('biz-license').value.trim() || null,
+          website: document.getElementById('biz-website').value.trim() || null,
+          estimate_prefix: document.getElementById('biz-estimate-prefix').value.trim() || 'EST-',
+          invoice_prefix: document.getElementById('biz-invoice-prefix')?.value.trim() || 'INV-',
+          default_estimate_terms: document.getElementById('biz-estimate-terms').value.trim() || null,
+          default_tax_rate: parseFloat(document.getElementById('biz-tax-rate')?.value) || 0,
+          default_deposit_percent: parseFloat(document.getElementById('biz-deposit-percent')?.value) || 50,
+          default_payment_terms: document.getElementById('biz-payment-terms')?.value.trim() || null,
+          default_warranty_terms: document.getElementById('biz-warranty-terms')?.value.trim() || null
+        };
+
+        const { error } = await supabaseClient
+          .from('business_settings')
+          .upsert([settingsData], { onConflict: 'user_id' });
+
+        if (error) throw error;
+
+        closeBusinessSettings();
+        showToast('Business settings saved!');
+      } catch (err) {
+        console.error('Save business settings error:', err);
+        alert('Error saving settings: ' + err.message);
+      }
+
+      return false;
+    }
+
+    // =============================================
+    // SERVICE CATALOG
+    // =============================================
+
+    function openServiceCatalog() {
+      document.getElementById('service-catalog-modal').style.display = 'flex';
+      loadServiceCatalog();
+    }
+
+    function closeServiceCatalog() {
+      document.getElementById('service-catalog-modal').style.display = 'none';
+    }
+
+    async function loadServiceCatalog() {
+      const container = document.getElementById('catalog-items-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: items, error } = await supabaseClient
+          .from('service_catalog')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('category', { ascending: true });
+
+        if (error) throw error;
+
+        serviceCatalog = items || [];
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <p>No catalog items yet</p>
+              <button class="btn btn-primary btn-sm" onclick="openAddCatalogItem()" style="margin-top: 12px;">Add First Item</button>
+            </div>`;
+          return;
+        }
+
+        // Group by category
+        const grouped = items.reduce((acc, item) => {
+          const cat = item.category || 'Uncategorized';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(item);
+          return acc;
+        }, {});
+
+        container.innerHTML = Object.entries(grouped).map(([category, catItems]) => `
+          <div style="margin-bottom: 20px;">
+            <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">${category}</h4>
+            ${catItems.map(item => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;">
+                <div>
+                  <div style="font-weight: 500;">${item.name}</div>
+                  ${item.description ? `<div style="font-size: 12px; color: var(--text-muted);">${item.description}</div>` : ''}
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="color: var(--gold-primary); font-weight: 600;">$${item.default_price}/${item.unit}</span>
+                  <button onclick="deleteCatalogItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error('Load catalog error:', err);
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Error loading catalog</div>';
+      }
+    }
+
+    function openAddCatalogItem() {
+      document.getElementById('add-catalog-item-modal').style.display = 'flex';
+      document.getElementById('add-catalog-item-form').reset();
+    }
+
+    function closeAddCatalogItem() {
+      document.getElementById('add-catalog-item-modal').style.display = 'none';
+    }
+
+    async function saveCatalogItem(event) {
+      if (event) event.preventDefault();
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        const itemData = {
+          user_id: user.id,
+          name: document.getElementById('catalog-item-name').value.trim(),
+          description: document.getElementById('catalog-item-desc').value.trim() || null,
+          category: document.getElementById('catalog-item-category').value.trim() || 'General',
+          unit: document.getElementById('catalog-item-unit').value,
+          default_price: parseFloat(document.getElementById('catalog-item-price').value) || 0
+        };
+
+        if (!itemData.name) throw new Error('Please enter an item name');
+
+        const { error } = await supabaseClient
+          .from('service_catalog')
+          .insert([itemData]);
+
+        if (error) throw error;
+
+        closeAddCatalogItem();
+        loadServiceCatalog();
+        showToast('Catalog item added!');
+      } catch (err) {
+        console.error('Save catalog item error:', err);
+        alert('Error: ' + err.message);
+      }
+
+      return false;
+    }
+
+    async function deleteCatalogItem(itemId) {
+      if (!confirm('Delete this catalog item?')) return;
+
+      try {
+        await supabaseClient.from('service_catalog').delete().eq('id', itemId);
+        loadServiceCatalog();
+        showToast('Item deleted');
+      } catch (err) {
+        console.error('Delete catalog item error:', err);
+        alert('Error deleting item');
+      }
+    }
+
+    // =============================================
+    // CATALOG PICKER FOR ESTIMATES
+    // =============================================
+
+    function openCatalogPicker() {
+      // Load catalog items and show picker
+      const modal = document.createElement('div');
+      modal.id = 'catalog-picker-modal';
+      modal.className = 'modal-overlay';
+      modal.style.display = 'flex';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+          <div class="modal-header">
+            <h2 class="modal-title">Add from Catalog</h2>
+            <button class="modal-close" onclick="document.getElementById('catalog-picker-modal').remove()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="modal-body" id="catalog-picker-list">
+            <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading catalog...</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      loadCatalogPicker();
+    }
+
+    async function loadCatalogPicker() {
+      const container = document.getElementById('catalog-picker-list');
+      if (!container) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: items } = await supabaseClient
+          .from('service_catalog')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('category', { ascending: true });
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+              <p style="color: var(--text-muted); margin-bottom: 16px;">No catalog items. Add services and materials to your catalog for quick estimate creation.</p>
+              <button class="btn btn-primary" onclick="document.getElementById('catalog-picker-modal').remove(); openServiceCatalog();">
+                Set Up Catalog
+              </button>
+            </div>`;
+          return;
+        }
+
+        const grouped = items.reduce((acc, item) => {
+          const cat = item.category || 'Uncategorized';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(item);
+          return acc;
+        }, {});
+
+        container.innerHTML = Object.entries(grouped).map(([category, catItems]) => `
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">${category}</h4>
+            ${catItems.map(item => `
+              <div onclick="addCatalogItemToEstimate(${JSON.stringify(item).replace(/"/g, '&quot;')})" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(249,203,0,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                <div>
+                  <div style="font-weight: 500;">${item.name}</div>
+                  ${item.description ? `<div style="font-size: 12px; color: var(--text-muted);">${item.description}</div>` : ''}
+                </div>
+                <span style="color: var(--gold-primary); font-weight: 600;">$${item.default_price}/${item.unit}</span>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error('Load catalog picker error:', err);
+        container.innerHTML = '<div style="padding: 20px; color: var(--error);">Error loading catalog</div>';
+      }
+    }
+
+    function addCatalogItemToEstimate(item) {
+      addEstimateLineItem({
+        name: item.name,
+        description: item.description,
+        unit: item.unit,
+        quantity: 1,
+        price: item.default_price
+      });
+      document.getElementById('catalog-picker-modal')?.remove();
     }
   </script>
 <script src="/js/sg-auth.js"></script>

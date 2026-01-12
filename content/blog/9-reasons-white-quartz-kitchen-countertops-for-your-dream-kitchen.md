@@ -2,7 +2,7 @@
 title: "9 Reasons to go with White Quartz Kitchen Countertops"
 description: "Find out why white quartz countertops are a staple in new kitchen remodels and is it right for your remodel?"
 date: "2026-01-10"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/665f3e844ec6c6495cfa58f8_White%20Quart%20Countertops%20Kitchen%20Remodel.avif"
 slug: "9-reasons-white-quartz-kitchen-countertops-for-your-dream-kitchen"
 author: "Surprise Granite"

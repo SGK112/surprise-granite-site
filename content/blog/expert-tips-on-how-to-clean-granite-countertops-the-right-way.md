@@ -2,7 +2,7 @@
 title: "Expert tips on cleaning granite countertops correctly"
 description: "Granite takes a little bit of TLC, but caring for it doesn't have to be complicated. Read on to learn how to clean granite countertops to keep them looking gorgeous for years to come."
 date: "2026-01-10"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb232d0fbaf4b_shiny-granite-countertop-large-image.avif"
 slug: "expert-tips-on-how-to-clean-granite-countertops-the-right-way"
 author: "Surprise Granite"

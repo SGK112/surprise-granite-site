@@ -2,7 +2,7 @@
 title: "Bathroom renovation tips &amp; tricks"
 description: "we&#x27;ll walk you through several renovation tips and tricks, especially if you&#x27;re having trouble choosing the best material for your makeover."
 date: "2021-08-24"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb209aafbaf4f_bathroom%20renovation%20tips%20and%20tricks-1600w.avif"
 slug: "bathroom-renovation-tips-tricks"
 author: "Surprise Granite"

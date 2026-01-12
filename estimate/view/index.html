@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>View Estimate | Surprise Granite</title>
+  <meta name="description" content="View and approve your project estimate from Surprise Granite."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+  <script src="/js/supabase-init.js"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .estimate-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .company-logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 32px;
+      color: var(--dark-primary);
+      margin: 0 auto 16px;
+    }
+
+    .company-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .company-contact {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .estimate-card {
+      background: var(--dark-surface);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .estimate-title {
+      padding: 24px;
+      background: var(--dark-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .estimate-number {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .estimate-status {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-sent, .status-pending { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-approved { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-rejected { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-expired { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+
+    .estimate-body {
+      padding: 24px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .info-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .info-section p {
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .project-name {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .project-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .line-items-section {
+      margin-bottom: 32px;
+    }
+
+    .line-items-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .line-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      align-items: center;
+    }
+
+    .line-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-name {
+      font-weight: 500;
+    }
+
+    .item-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .item-qty, .item-price, .item-total {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .item-qty, .item-price {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .item-total {
+      font-weight: 600;
+      min-width: 100px;
+    }
+
+    @media (max-width: 600px) {
+      .line-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .item-qty, .item-price, .item-total {
+        text-align: left;
+      }
+      .line-item-details {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+    }
+
+    .totals-section {
+      background: var(--dark-elevated);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 15px;
+    }
+
+    .total-row.grand-total {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      padding-top: 16px;
+      margin-top: 8px;
+      border-top: 2px solid var(--gold-primary);
+    }
+
+    .deposit-info {
+      background: rgba(249, 203, 0, 0.1);
+      border: 1px solid rgba(249, 203, 0, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .deposit-label {
+      font-weight: 500;
+    }
+
+    .deposit-amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+
+    .terms-section {
+      margin-bottom: 24px;
+    }
+
+    .terms-section h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .terms-section p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .terms-box {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .valid-until {
+      text-align: center;
+      padding: 12px;
+      background: rgba(255, 184, 77, 0.1);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #ffb84d;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-approve {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-approve:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    }
+
+    .btn-reject {
+      background: transparent;
+      border: 2px solid var(--error);
+      color: var(--error);
+    }
+
+    .btn-reject:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .btn-download {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-download:hover {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .success-message, .error-message {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .success-icon, .error-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .error-icon {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+    }
+
+    .success-message h2, .error-message h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .success-message p, .error-message p {
+      color: var(--text-secondary);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 100px 20px;
+      color: var(--text-muted);
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: var(--gold-primary);
+      text-decoration: none;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        color: #1a1a2e;
+        padding: 0;
+      }
+      .estimate-card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+      }
+      .estimate-title, .totals-section, .terms-box {
+        background: #f5f5f5 !important;
+      }
+      .action-buttons, .footer {
+        display: none;
+      }
+      .status-sent, .status-pending, .status-approved, .status-rejected {
+        border: 1px solid currentColor;
+      }
+    }
+
+    /* Reject modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--dark-surface);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      max-width: 500px;
+      width: 100%;
+      padding: 24px;
+    }
+
+    .modal-content h3 {
+      margin-bottom: 16px;
+    }
+
+    .modal-content textarea {
+      width: 100%;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+      margin-bottom: 16px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .modal-buttons .btn {
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>Loading estimate...</p>
+    </div>
+
+    <div id="estimate-content" style="display: none;">
+      <!-- Company Header -->
+      <div class="estimate-header" id="company-header">
+        <div class="company-logo" id="company-logo">SG</div>
+        <div class="company-name" id="company-name">Surprise Granite</div>
+        <div class="company-contact" id="company-contact">
+          Loading company info...
+        </div>
+      </div>
+
+      <!-- Estimate Card -->
+      <div class="estimate-card">
+        <div class="estimate-title">
+          <div>
+            <div class="estimate-number" id="estimate-number">EST-0000</div>
+            <div style="color: var(--text-muted); font-size: 14px; margin-top: 4px;" id="estimate-date">Created: --</div>
+          </div>
+          <div class="estimate-status status-sent" id="estimate-status">Pending Review</div>
+        </div>
+
+        <div class="estimate-body">
+          <!-- Info Grid -->
+          <div class="info-grid">
+            <div class="info-section">
+              <h4>Bill To</h4>
+              <p id="customer-info">Loading...</p>
+            </div>
+            <div class="info-section">
+              <h4>Project</h4>
+              <p class="project-name" id="project-name">--</p>
+              <p class="project-desc" id="project-desc"></p>
+            </div>
+          </div>
+
+          <!-- Line Items -->
+          <div class="line-items-section">
+            <h3>Items & Services</h3>
+            <div id="line-items">
+              <!-- Line items will be populated here -->
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="totals-section">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span id="subtotal">$0.00</span>
+            </div>
+            <div class="total-row" id="tax-row" style="display: none;">
+              <span>Tax (<span id="tax-rate">0</span>%)</span>
+              <span id="tax-amount">$0.00</span>
+            </div>
+            <div class="total-row" id="discount-row" style="display: none;">
+              <span>Discount</span>
+              <span id="discount-amount">-$0.00</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>Total</span>
+              <span id="total">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Deposit -->
+          <div class="deposit-info" id="deposit-info" style="display: none;">
+            <div>
+              <div class="deposit-label">Deposit Required (<span id="deposit-percent">50</span>%)</div>
+              <div style="font-size: 13px; color: var(--text-muted);">Due upon approval</div>
+            </div>
+            <div class="deposit-amount" id="deposit-amount">$0.00</div>
+          </div>
+
+          <!-- Valid Until -->
+          <div class="valid-until" id="valid-until" style="display: none;">
+            This estimate is valid until <strong id="valid-date">--</strong>
+          </div>
+
+          <!-- Terms -->
+          <div class="terms-section" id="payment-terms-section" style="display: none;">
+            <h4>Payment Terms</h4>
+            <p id="payment-terms"></p>
+          </div>
+
+          <div class="terms-section" id="warranty-section" style="display: none;">
+            <h4>Warranty</h4>
+            <p id="warranty-terms"></p>
+          </div>
+
+          <div class="terms-section" id="notes-section" style="display: none;">
+            <h4>Notes</h4>
+            <p id="notes"></p>
+          </div>
+
+          <div class="terms-section" id="tos-section" style="display: none;">
+            <h4>Terms & Conditions</h4>
+            <div class="terms-box" id="tos-content"></div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons" id="action-buttons">
+            <button class="btn btn-approve" id="btn-approve" onclick="approveEstimate()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+              Approve Estimate
+            </button>
+            <button class="btn btn-reject" id="btn-reject" onclick="showRejectModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Decline
+            </button>
+            <button class="btn btn-download" onclick="window.print()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+              Print / Save PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="success-message" class="success-message" style="display: none;">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <h2>Estimate Approved!</h2>
+      <p id="success-text">Thank you for approving this estimate. We'll be in touch shortly to schedule your project.</p>
+    </div>
+
+    <div id="rejected-message" class="success-message" style="display: none;">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h2>Estimate Declined</h2>
+      <p>This estimate has been declined. If you have any questions or would like to discuss alternatives, please contact us.</p>
+    </div>
+
+    <div id="error-message" class="error-message" style="display: none;">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <h2 id="error-title">Estimate Not Found</h2>
+      <p id="error-text">This estimate link may have expired or is invalid. Please contact us for assistance.</p>
+    </div>
+
+    <div class="footer">
+      Powered by <a href="https://www.surprisegranite.com" target="_blank">Surprise Granite</a>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div id="reject-modal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeRejectModal()">
+    <div class="modal-content">
+      <h3>Decline Estimate</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 16px;">Please let us know why you're declining this estimate (optional):</p>
+      <textarea id="reject-reason" placeholder="Enter your feedback here..."></textarea>
+      <div class="modal-buttons">
+        <button class="btn btn-download" onclick="closeRejectModal()">Cancel</button>
+        <button class="btn btn-reject" onclick="rejectEstimate()">Confirm Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let estimateData = null;
+    let tokenData = null;
+
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (!token) {
+        showError('Invalid Link', 'No estimate token provided. Please check your link and try again.');
+        return;
+      }
+
+      try {
+        // Get token and estimate data
+        const { data: tokenResult, error: tokenError } = await supabaseClient
+          .from('estimate_tokens')
+          .select('*, estimates(*, estimate_items(*))')
+          .eq('token', token)
+          .single();
+
+        if (tokenError || !tokenResult) {
+          showError('Estimate Not Found', 'This estimate link may have expired or is invalid. Please contact us for assistance.');
+          return;
+        }
+
+        tokenData = tokenResult;
+        estimateData = tokenResult.estimates;
+
+        // Check if expired
+        if (new Date(tokenResult.expires_at) < new Date()) {
+          showError('Link Expired', 'This estimate link has expired. Please contact us for a new link.');
+          return;
+        }
+
+        // Load business settings for the estimate owner
+        await loadBusinessInfo(estimateData.user_id);
+
+        // Render estimate
+        renderEstimate();
+
+      } catch (err) {
+        console.error('Error loading estimate:', err);
+        showError('Error Loading Estimate', 'There was an error loading this estimate. Please try again or contact us.');
+      }
+    }
+
+    async function loadBusinessInfo(userId) {
+      try {
+        const { data: settings } = await supabaseClient
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (settings) {
+          if (settings.company_name) {
+            document.getElementById('company-name').textContent = settings.company_name;
+            document.getElementById('company-logo').textContent = settings.company_name.substring(0, 2).toUpperCase();
+          }
+
+          let contactParts = [];
+          if (settings.phone) contactParts.push(settings.phone);
+          if (settings.email) contactParts.push(settings.email);
+          if (settings.website) contactParts.push(settings.website);
+          if (contactParts.length > 0) {
+            document.getElementById('company-contact').textContent = contactParts.join(' | ');
+          }
+
+          // Set terms if available
+          if (settings.default_estimate_terms) {
+            document.getElementById('tos-content').textContent = settings.default_estimate_terms;
+            document.getElementById('tos-section').style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.log('No business settings found');
+      }
+    }
+
+    function renderEstimate() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('estimate-content').style.display = 'block';
+
+      const est = estimateData;
+
+      // Basic info
+      document.getElementById('estimate-number').textContent = est.estimate_number || 'Estimate';
+      document.getElementById('estimate-date').textContent = 'Created: ' + new Date(est.created_at).toLocaleDateString();
+
+      // Status
+      const statusEl = document.getElementById('estimate-status');
+      statusEl.textContent = est.status.charAt(0).toUpperCase() + est.status.slice(1);
+      statusEl.className = 'estimate-status status-' + est.status;
+
+      // Customer info
+      let customerInfo = est.customer_name || '';
+      if (est.customer_address) customerInfo += '<br>' + est.customer_address;
+      if (est.customer_city || est.customer_state || est.customer_zip) {
+        customerInfo += '<br>' + [est.customer_city, est.customer_state, est.customer_zip].filter(Boolean).join(', ');
+      }
+      if (est.customer_email) customerInfo += '<br>' + est.customer_email;
+      if (est.customer_phone) customerInfo += '<br>' + est.customer_phone;
+      document.getElementById('customer-info').innerHTML = customerInfo;
+
+      // Project
+      document.getElementById('project-name').textContent = est.project_name || 'Project Estimate';
+      if (est.project_description) {
+        document.getElementById('project-desc').textContent = est.project_description;
+      }
+
+      // Line items
+      const itemsContainer = document.getElementById('line-items');
+      if (est.estimate_items && est.estimate_items.length > 0) {
+        itemsContainer.innerHTML = est.estimate_items.map(item => `
+          <div class="line-item">
+            <div>
+              <div class="item-name">${item.name}</div>
+              ${item.description ? `<div class="item-desc">${item.description}</div>` : ''}
+            </div>
+            <div class="item-qty">${item.quantity} ${item.unit}</div>
+            <div class="item-price">$${parseFloat(item.unit_price).toFixed(2)}</div>
+            <div class="item-total">$${parseFloat(item.total).toFixed(2)}</div>
+          </div>
+        `).join('');
+      }
+
+      // Totals
+      document.getElementById('subtotal').textContent = '$' + parseFloat(est.subtotal || 0).toFixed(2);
+
+      if (est.tax_rate && est.tax_rate > 0) {
+        document.getElementById('tax-row').style.display = 'flex';
+        document.getElementById('tax-rate').textContent = est.tax_rate;
+        document.getElementById('tax-amount').textContent = '$' + parseFloat(est.tax_amount || 0).toFixed(2);
+      }
+
+      if (est.discount_amount && est.discount_amount > 0) {
+        document.getElementById('discount-row').style.display = 'flex';
+        document.getElementById('discount-amount').textContent = '-$' + parseFloat(est.discount_amount).toFixed(2);
+      }
+
+      document.getElementById('total').textContent = '$' + parseFloat(est.total || 0).toFixed(2);
+
+      // Deposit
+      if (est.deposit_percent && est.deposit_percent > 0) {
+        document.getElementById('deposit-info').style.display = 'flex';
+        document.getElementById('deposit-percent').textContent = est.deposit_percent;
+        document.getElementById('deposit-amount').textContent = '$' + parseFloat(est.deposit_amount || 0).toFixed(2);
+      }
+
+      // Valid until
+      if (est.valid_until) {
+        document.getElementById('valid-until').style.display = 'block';
+        document.getElementById('valid-date').textContent = new Date(est.valid_until).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+
+      // Terms
+      if (est.payment_terms) {
+        document.getElementById('payment-terms-section').style.display = 'block';
+        document.getElementById('payment-terms').textContent = est.payment_terms;
+      }
+
+      if (est.warranty_terms) {
+        document.getElementById('warranty-section').style.display = 'block';
+        document.getElementById('warranty-terms').textContent = est.warranty_terms;
+      }
+
+      if (est.notes) {
+        document.getElementById('notes-section').style.display = 'block';
+        document.getElementById('notes').textContent = est.notes;
+      }
+
+      // Hide action buttons if already approved/rejected
+      if (est.status === 'approved') {
+        document.getElementById('action-buttons').innerHTML = `
+          <div style="text-align: center; color: var(--success); padding: 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <div style="font-weight: 600;">This estimate has been approved</div>
+          </div>
+          <button class="btn btn-download" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            Print / Save PDF
+          </button>
+        `;
+      } else if (est.status === 'rejected') {
+        document.getElementById('action-buttons').innerHTML = `
+          <div style="text-align: center; color: var(--error); padding: 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <div style="font-weight: 600;">This estimate has been declined</div>
+          </div>
+        `;
+      }
+    }
+
+    function showError(title, message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error-message').style.display = 'block';
+      document.getElementById('error-title').textContent = title;
+      document.getElementById('error-text').textContent = message;
+    }
+
+    async function approveEstimate() {
+      const btn = document.getElementById('btn-approve');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px;"></div> Processing...';
+
+      try {
+        // Update estimate status
+        const { error } = await supabaseClient
+          .from('estimates')
+          .update({
+            status: 'approved',
+            approved_at: new Date().toISOString(),
+            customer_signature: 'Approved via web link'
+          })
+          .eq('id', estimateData.id);
+
+        if (error) throw error;
+
+        // Update token as used
+        await supabaseClient
+          .from('estimate_tokens')
+          .update({ used_at: new Date().toISOString() })
+          .eq('id', tokenData.id);
+
+        // Show success
+        document.getElementById('estimate-content').style.display = 'none';
+        document.getElementById('success-message').style.display = 'block';
+
+      } catch (err) {
+        console.error('Error approving estimate:', err);
+        alert('Error approving estimate. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Approve Estimate
+        `;
+      }
+    }
+
+    function showRejectModal() {
+      document.getElementById('reject-modal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+      document.getElementById('reject-modal').style.display = 'none';
+    }
+
+    async function rejectEstimate() {
+      const reason = document.getElementById('reject-reason').value.trim();
+
+      try {
+        const { error } = await supabaseClient
+          .from('estimates')
+          .update({
+            status: 'rejected',
+            rejected_at: new Date().toISOString(),
+            rejection_reason: reason || null
+          })
+          .eq('id', estimateData.id);
+
+        if (error) throw error;
+
+        await supabaseClient
+          .from('estimate_tokens')
+          .update({ used_at: new Date().toISOString() })
+          .eq('id', tokenData.id);
+
+        closeRejectModal();
+        document.getElementById('estimate-content').style.display = 'none';
+        document.getElementById('rejected-message').style.display = 'block';
+
+      } catch (err) {
+        console.error('Error rejecting estimate:', err);
+        alert('Error processing your response. Please try again.');
+      }
+    }
+
+    // Initialize on page load
+    init();
+  </script>
+</body>
+</html>

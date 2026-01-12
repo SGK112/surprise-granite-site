@@ -2,7 +2,7 @@
 title: "Countertop Thickness: What You Need to Know Before Choosing"
 description: "Learn how countertop thickness affects appearance, durability, and cost. Understand the differences between 2cm, 3cm, and ultra-thin options."
 date: "2025-10-08"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "countertop-thickness-guide"
 author: "Surprise Granite"

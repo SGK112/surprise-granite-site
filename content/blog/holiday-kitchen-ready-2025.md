@@ -2,7 +2,7 @@
 title: "Get Your Kitchen Holiday-Ready: Pre-Season Checklist"
 description: "Prepare your kitchen for holiday cooking and entertaining with this comprehensive checklist. From appliance maintenance to organizing essentials."
 date: "2025-11-12"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "holiday-kitchen-ready-2025"
 author: "Surprise Granite"

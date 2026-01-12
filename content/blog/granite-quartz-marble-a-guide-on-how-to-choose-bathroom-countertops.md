@@ -2,7 +2,7 @@
 title: "Granite? Quartz? Marble? The Bathroom Countertop Guide"
 description: "There are dozens of different options when it comes to your new bathroom countertops, but how do you know which one to pick? Read on to discover some of the most popular countertop options and their pros and cons."
 date: "2021-07-28"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb23cc3fbaf4d_modern-bathroom-marble-countertop-1600w.avif"
 slug: "granite-quartz-marble-a-guide-on-how-to-choose-bathroom-countertops"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Top 10 Best Cambria Countertop Colors | Updated for 2024"
 description: "Explore our list of the most popular and sought after Cambria countertops colors."
 date: "2026-01-10"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/668cda19925c7a9f4dfd9026_Top%2010%20Cambria%20Countertop%20Colors.webp"
 slug: "top-10-best-cambria-countertop-colors"
 author: "Surprise Granite"

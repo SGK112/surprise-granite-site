@@ -2,7 +2,7 @@
 title: "Home Improvement Resolutions for the New Year"
 description: "Start the new year with a plan to improve your home. From minor updates to major remodels, set achievable home improvement goals for the coming year."
 date: "2024-01-03"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "new-year-home-improvement-resolutions"
 author: "Surprise Granite"

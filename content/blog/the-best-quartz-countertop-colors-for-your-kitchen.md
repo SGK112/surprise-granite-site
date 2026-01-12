@@ -2,7 +2,7 @@
 title: "The Best Quartz Countertop Colors for Your Kitchen 2024"
 description: "Choosing the right color for your quartz countertop is no easy task. We&#x27;re here to help with this guide to the best quartz countertop colors."
 date: "2026-01-10"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2873afbc682_quartz-counter-tops-for-kitchen-2022.avif"
 slug: "the-best-quartz-countertop-colors-for-your-kitchen"
 author: "Surprise Granite"

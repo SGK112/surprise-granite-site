@@ -2,7 +2,7 @@
 title: "Kitchen Countertop Color Trends to Watch in 2024"
 description: "Preview the hottest kitchen countertop colors coming in 2024. From warm neutrals to bold veining, discover what's trending in countertop design."
 date: "2023-11-14"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "kitchen-countertop-color-trends-2024"
 author: "Surprise Granite"

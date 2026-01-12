@@ -2,7 +2,7 @@
 title: "2025 Year in Review: Top Kitchen and Bath Trends That Defined the Year"
 description: "Look back at the kitchen and bathroom trends that shaped 2025. See how Arizona homeowners transformed their spaces and what to expect in 2026."
 date: "2025-12-10"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "year-end-remodeling-review-2025"
 author: "Surprise Granite"

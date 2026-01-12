@@ -2,7 +2,7 @@
 title: "Things to Consider Before Replacing Kitchen Countertops"
 description: "Are you getting ready to undergo a kitchen countertop remodeling project? This is what to consider before replacing your counters."
 date: "2022-07-28"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb27ba9fbb9c8_Modern%20Kitchen%20with%20Granite%20Countertop.avif"
 slug: "6-things-to-consider-before-replacing-your-kitchen-countertop"
 author: "Surprise Granite"

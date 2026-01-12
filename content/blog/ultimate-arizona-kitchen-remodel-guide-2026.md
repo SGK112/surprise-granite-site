@@ -2,7 +2,7 @@
 title: "The Ultimate Arizona Kitchen Remodel Guide for 2026: Everything You Need to Know"
 description: "Your comprehensive guide to kitchen remodeling in Arizona for 2026. From planning and budgeting to material selection and contractor tips, this is everything you need for a successful kitchen transformation."
 date: "2026-01-15"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "ultimate-arizona-kitchen-remodel-guide-2026"
 author: "Surprise Granite"

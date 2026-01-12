@@ -2,7 +2,7 @@
 title: "Cabinet Style Guide: Finding the Perfect Look for Your Arizona Kitchen"
 description: "Explore cabinet styles from shaker to flat-panel modern. Learn how to choose cabinet designs that complement your home's architecture and your lifestyle."
 date: "2025-07-16"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "choosing-cabinet-styles-2025"
 author: "Surprise Granite"

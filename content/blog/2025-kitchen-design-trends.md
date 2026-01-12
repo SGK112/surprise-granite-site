@@ -2,7 +2,7 @@
 title: "2025 Kitchen Design Trends: What's Hot in Arizona Home Remodeling"
 description: "Discover the top kitchen design trends for 2025. From sustainable materials to smart technology integration, see what's shaping Arizona kitchen remodels this year."
 date: "2025-01-08"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "2025-kitchen-design-trends"
 author: "Surprise Granite"

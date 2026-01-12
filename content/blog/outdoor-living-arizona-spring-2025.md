@@ -2,7 +2,7 @@
 title: "Creating the Perfect Arizona Outdoor Living Space This Spring"
 description: "Design your ideal Arizona outdoor living space. From outdoor kitchens to patio materials, learn how to maximize enjoyment of your outdoor areas."
 date: "2025-04-22"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "outdoor-living-arizona-spring-2025"
 author: "Surprise Granite"

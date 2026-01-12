@@ -2,7 +2,7 @@
 title: "How Much Does a Bathroom Remodel Cost?"
 description: "From factoring in size and notable features to materials and expert labor, our article is for everyone wondering, &quot;How much does a bathroom remodel cost?&quot;"
 date: "2026-01-10"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66077a0229e8fefaf6cb0f01_Drawing-renovation-of-a-Luxury.avif"
 slug: "how-much-does-a-bathroom-remodel-cost"
 author: "Surprise Granite"

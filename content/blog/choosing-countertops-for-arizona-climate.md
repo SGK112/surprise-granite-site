@@ -2,7 +2,7 @@
 title: "Choosing Countertops That Thrive in Arizona's Climate"
 description: "Learn which countertop materials perform best in Arizona's extreme heat and low humidity. Expert guide to selecting durable, beautiful surfaces for your home."
 date: "2023-06-22"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "choosing-countertops-for-arizona-climate"
 author: "Surprise Granite"

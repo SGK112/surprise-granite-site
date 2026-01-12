@@ -2,7 +2,7 @@
 title: "Preparing Your Home for Holiday Entertaining"
 description: "Get your kitchen and bathroom ready for holiday guests. Quick updates and deep cleaning tips to make your home shine for seasonal celebrations."
 date: "2023-12-01"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "holiday-home-preparation-tips"
 author: "Surprise Granite"

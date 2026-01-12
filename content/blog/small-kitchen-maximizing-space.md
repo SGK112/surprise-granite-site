@@ -2,7 +2,7 @@
 title: "Big Ideas for Small Kitchens: Maximizing Space in Arizona Homes"
 description: "Transform your small kitchen with smart design solutions. Learn how to maximize storage, improve functionality, and create the illusion of more space."
 date: "2025-05-14"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "small-kitchen-maximizing-space"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "5 Common Bathroom Design Mistakes to Avoid"
 description: "Don&#x27;t let your remodeling project suffer from common design mistakes. Check out our bathroom reno checklist for tips and tricks to make it a success."
 date: "2024-08-11"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "5-common-bathroom-design-mistakes-to-avoid"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "7 Reasons to Install Granite Countertops"
 description: "If you are searching for a beautiful and durable countertop material, then look no further than granite. Here are 7 reasons to install granite countertops."
 date: "2022-12-04"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2a5b1fbccdd_New-modern-faucet-and-kitchen.avif"
 slug: "7-reasons-to-install-granite-countertops"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Homeowners Guide to Home Renovation 2023"
 description: "Discover everything you need to know about the current trends, tools and tips for home renovation in 2023 in this comprehensive Homeowners Guide!"
 date: "2026-01-10"
-category: "Kitchen"
+category: "Home Remodeling"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2a7d7fbccde_modern-kitchen-space-home-renovation.avif"
 slug: "homeowners-guide-to-home-renovation-2023"
 author: "Surprise Granite"

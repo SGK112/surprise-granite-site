@@ -2,7 +2,7 @@
 title: "Preparing Your Arizona Home for Monsoon Season"
 description: "Essential tips for protecting your home during Arizona's monsoon season. Learn how proper remodeling and maintenance can prevent water damage."
 date: "2023-08-08"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "monsoon-season-home-preparation"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Surviving a Summer Kitchen Remodel in Arizona: A Complete Guide"
 description: "Planning a summer kitchen remodel in Arizona? This survival guide covers everything from temporary kitchens to managing dust and heat during construction."
 date: "2025-06-10"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "summer-remodeling-survival-guide"
 author: "Surprise Granite"

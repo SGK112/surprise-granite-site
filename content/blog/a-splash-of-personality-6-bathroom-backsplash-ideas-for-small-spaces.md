@@ -2,7 +2,7 @@
 title: "6 Bathroom backsplash ideas for small spaces"
 description: "There are dozens of amazing options for redoing the backsplash in your bathroom. Read on to discover some of the best bathroom backsplash ideas for the coming year."
 date: "2021-11-03"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2a62cfbaf55_bathroom%20backsplash%20ideas-1600w.avif"
 slug: "a-splash-of-personality-6-bathroom-backsplash-ideas-for-small-spaces"
 author: "Surprise Granite"

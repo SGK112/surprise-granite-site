@@ -2,7 +2,7 @@
 title: "Why Fall Is Prime Remodeling Season in Arizona"
 description: "Discover why autumn is the perfect time for home remodeling in Arizona. Cooler temperatures and contractor availability make fall ideal for your project."
 date: "2023-09-12"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/66b931b559ce9796348c3be2_Modern%20Bathroom%20Interior.avif"
 slug: "fall-remodeling-season-arizona"
 author: "Surprise Granite"

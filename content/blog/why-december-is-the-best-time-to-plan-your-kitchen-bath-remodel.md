@@ -2,7 +2,7 @@
 title: "Why December Is the Best Time to Plan your Remodel"
 description: "Use December’s slower pace, holiday hosting insights, and seasonal deals to get ahead on planning your kitchen and bath remodel."
 date: "2024-12-16"
-category: "Kitchen"
+category: "Home Remodeling"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6760a7d4e3c80c7f84c7dc76_December%20%20Kitchen%20%26%20Bath%20Remodel%20Planning.png"
 slug: "why-december-is-the-best-time-to-plan-your-kitchen-bath-remodel"
 author: "Surprise Granite"

@@ -2,7 +2,7 @@
 title: "Top 10 Signs You Need a New Kitchen Countertop"
 description: "Having the right kitchen countertop for your style requires knowing when you need a replacement. Here are the top 10 signs you need a new kitchen countertop."
 date: "2022-06-07"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22948fbaf9c_Breakfast-bar-in-contemporary-1600w.avif"
 slug: "top-10-signs-you-need-a-new-kitchen-countertop"
 author: "Surprise Granite"

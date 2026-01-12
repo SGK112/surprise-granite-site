@@ -2,7 +2,7 @@
 title: "Buying Granite for Your Home: What you need to know"
 description: "Buying granite is a big undertaking. Granite isn&#x27;t cheap, therefore you want to make sure you are getting the perfect slab for your home. Avoid buyer&#x27;s regret and keep on reading to find out some of the top tips for buying granite."
 date: "2021-10-16"
-category: "Kitchen"
+category: "Countertops"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2da89fbaf53_Granite-Countertop-and-Tile-1600w.avif"
 slug: "buying-granite-for-your-home-everything-you-need-to-know"
 author: "Surprise Granite"

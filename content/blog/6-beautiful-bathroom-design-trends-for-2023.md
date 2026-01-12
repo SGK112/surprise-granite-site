@@ -2,7 +2,7 @@
 title: "6 Beautiful Bathroom Design Trends for 2023"
 description: "Here, we&#x27;re going to talk about some bathroom design trends to keep in mind for your upcoming project. Read on for some ideas on how you can make your home&#x27;s interior look modern and fresh."
 date: "2023-04-01"
-category: "Kitchen"
+category: "Bathroom"
 image: "https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb272b7fbcce1_SF0A9430-HDR.avif"
 slug: "6-beautiful-bathroom-design-trends-for-2023"
 author: "Surprise Granite"
