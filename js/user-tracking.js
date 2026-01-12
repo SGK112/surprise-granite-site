@@ -57,11 +57,12 @@
     if (!supabase) return;
 
     try {
+      // Let Supabase handle session persistence - don't manually manage sessions
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (session?.user) {
         currentUser = session.user;
-// Update last seen
+        // Update last seen
         updateUserActivity();
 
         // Dispatch event for other scripts
@@ -71,45 +72,21 @@
 
         // Update UI
         updateUserInterface();
-      } else {
-        // Check for session in localStorage (cross-tab persistence)
-        const storedSession = localStorage.getItem('sg_user_session');
-        if (storedSession) {
-          try {
-            const parsed = JSON.parse(storedSession);
-            if (parsed.expires_at > Date.now()) {
-              // Session still valid, try to restore
-              const { data, error } = await supabase.auth.setSession({
-                access_token: parsed.access_token,
-                refresh_token: parsed.refresh_token
-              });
-              if (data?.session) {
-                currentUser = data.session.user;
-                updateUserInterface();
-              }
-            }
-          } catch (e) {
-            localStorage.removeItem('sg_user_session');
-          }
-        }
       }
+      // Note: Removed manual session restoration - Supabase handles this with persistSession: true
     } catch (e) {
-}
+      console.warn('Session check error:', e);
+    }
   }
 
   function setupAuthStateListener() {
     if (!supabase) return;
 
     supabase.auth.onAuthStateChange((event, session) => {
-if (event === 'SIGNED_IN' && session) {
-        currentUser = session.user;
+      console.log('User tracking auth event:', event);
 
-        // Store session for cross-tab persistence
-        localStorage.setItem('sg_user_session', JSON.stringify({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: Date.now() + (session.expires_in * 1000)
-        }));
+      if (event === 'SIGNED_IN' && session) {
+        currentUser = session.user;
 
         // Sync local favorites to cloud
         syncLocalFavoritesToCloud();
@@ -126,18 +103,13 @@ if (event === 'SIGNED_IN' && session) {
 
       } else if (event === 'SIGNED_OUT') {
         currentUser = null;
-        localStorage.removeItem('sg_user_session');
 
         window.dispatchEvent(new CustomEvent('userLoggedOut'));
         updateUserInterface();
 
       } else if (event === 'TOKEN_REFRESHED' && session) {
-        // Update stored session
-        localStorage.setItem('sg_user_session', JSON.stringify({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: Date.now() + (session.expires_in * 1000)
-        }));
+        // Supabase handles token storage automatically
+        console.log('Token refreshed');
       }
     });
   }

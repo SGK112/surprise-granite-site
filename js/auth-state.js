@@ -333,7 +333,7 @@
   async function logout() {
     if (supabaseClient) {
       await supabaseClient.auth.signOut();
-      localStorage.removeItem('sg_user_session');
+      // Supabase handles session cleanup automatically
       window.location.href = '/';
     }
   }
