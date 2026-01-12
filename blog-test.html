@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Kitchen & Bathroom Remodeling Blog | Tips & insights</title>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <meta content="Get inspired and learn how to design your dream kitchen and bathroom. Read about the best countertop materials, cabinetry, types of backsplash tiles, and more." name="description"/>
+
+  <!-- Same CSS as main site -->
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/css/surprisegranite.webflow.shared.06fa25eb8.min.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+
+  <style>
+    /* Test banner */
+    .test-banner {
+      background: #fef3c7;
+      border-bottom: 2px solid #f59e0b;
+      padding: 0.75rem;
+      text-align: center;
+      font-size: 0.875rem;
+      color: #92400e;
+    }
+
+    /* Blog Hero */
+    .blog-hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      position: relative;
+      overflow: hidden;
+      padding: 80px 24px 60px;
+    }
+
+    .blog-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(249, 203, 0, 0.03) 0%, transparent 50%);
+      animation: pulse 15s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .blog-hero-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .blog-hero-tagline {
+      display: inline-block;
+      background: rgba(249,203,0,0.2);
+      color: #f9cb00;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .blog-hero h1 {
+      color: white;
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin: 0 0 16px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .blog-hero h1 span {
+      color: #f9cb00;
+    }
+
+    .blog-hero p {
+      color: rgba(255,255,255,0.8);
+      font-size: 1.15rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Featured Article */
+    .featured-article {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 0;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      text-decoration: none;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      margin-top: 50px;
+    }
+
+    @media (max-width: 900px) {
+      .featured-article {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .featured-article-image {
+      position: relative;
+      min-height: 350px;
+    }
+
+    .featured-article-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .featured-article-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #f9cb00;
+      color: #1a1a2e;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .featured-article-content {
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .featured-article-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .featured-article-category {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #f9cb00;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .featured-article-date {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .featured-article h2 {
+      color: #1a1a2e;
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 0 0 16px 0;
+      line-height: 1.3;
+    }
+
+    .featured-article p {
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.7;
+      margin: 0 0 24px 0;
+    }
+
+    .featured-article-cta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1a1a2e;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Blog Section */
+    .blog-section {
+      background: #f8fafc;
+      padding: 60px 24px;
+    }
+
+    .blog-container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* Section Header */
+    .blog-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .blog-section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin: 0;
+    }
+
+    /* Filter Buttons */
+    .blog-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .blog-filter-btn {
+      padding: 10px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 30px;
+      background: white;
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .blog-filter-btn:hover {
+      border-color: #1a1a2e;
+      color: #1a1a2e;
+    }
+
+    .blog-filter-btn.is-active {
+      background: #1a1a2e;
+      border-color: #1a1a2e;
+      color: white;
+    }
+
+    /* Blog Grid */
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 28px;
+    }
+
+    @media (max-width: 768px) {
+      .blog-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+
+    /* Blog Cards */
+    .blog-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Yellow gradient border on hover */
+    .blog-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      padding: 2px;
+      background: linear-gradient(135deg, transparent 0%, rgba(249, 203, 0, 0) 50%, transparent 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .blog-card:hover::before {
+      opacity: 1;
+      background: linear-gradient(135deg, #f9cb00 0%, #ff8c00 50%, #f9cb00 100%);
+    }
+
+    .blog-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .blog-card-image-wrapper {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+    }
+
+    .blog-card-image-wrapper::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
+      pointer-events: none;
+    }
+
+    .blog-card-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .blog-card:hover .blog-card-image-wrapper img {
+      transform: scale(1.08);
+    }
+
+    /* Staggered animation for cards */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .blog-card {
+      animation: fadeInUp 0.6s ease backwards;
+    }
+
+    .blog-card:nth-child(1) { animation-delay: 0.1s; }
+    .blog-card:nth-child(2) { animation-delay: 0.2s; }
+    .blog-card:nth-child(3) { animation-delay: 0.3s; }
+    .blog-card:nth-child(4) { animation-delay: 0.4s; }
+    .blog-card:nth-child(5) { animation-delay: 0.5s; }
+    .blog-card:nth-child(6) { animation-delay: 0.6s; }
+    .blog-card:nth-child(7) { animation-delay: 0.7s; }
+    .blog-card:nth-child(8) { animation-delay: 0.8s; }
+    .blog-card:nth-child(9) { animation-delay: 0.9s; }
+
+    .blog-card-content {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .blog-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .blog-card-category {
+      background: linear-gradient(135deg, #f9cb00, #e5b800);
+      color: #1a1a2e;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .blog-card-date {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .blog-card h3 {
+      color: #1e293b;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      line-height: 1.4;
+      transition: color 0.3s ease;
+    }
+
+    .blog-card:hover h3 {
+      color: #1a1a2e;
+    }
+
+    .blog-card p {
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .blog-card-arrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 20px;
+      color: #1a1a2e;
+      font-weight: 600;
+      font-size: 14px;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.3s ease;
+    }
+
+    .blog-card:hover .blog-card-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Article count */
+    .blog-count {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    /* Back link */
+    .back-link {
+      display: inline-block;
+      margin: 1rem;
+      padding: 0.5rem 1rem;
+      background: #f3f4f6;
+      color: #374151;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .back-link:hover {
+      background: #e5e7eb;
+    }
+
+    /* Hidden articles (for filtering) */
+    .blog-card.hidden-article {
+      display: none;
+    }
+
+    /* Loading state */
+    .blog-loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+
+    /* No results */
+    .blog-no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <!-- Test Banner -->
+  <div class="test-banner">
+    <strong>TEST PAGE</strong> - This is a preview of the new blog engine (not connected to Webflow CMS)
+  </div>
+
+  <a href="/blog" class="back-link">← Back to current blog</a>
+
+  <!-- Blog Hero -->
+  <section class="blog-hero">
+    <div class="blog-hero-content">
+      <span class="blog-hero-tagline">REMODELING INSIGHTS</span>
+      <h1>Kitchen & Bath <span>Blog</span></h1>
+      <p>Expert advice, design inspiration, and practical guides for your Arizona home remodeling projects.</p>
+
+      <!-- Featured Article (first post) -->
+      <a href="#" class="featured-article" id="featured-article">
+        <div class="featured-article-image">
+          <img src="" alt="" id="featured-image"/>
+          <span class="featured-article-badge">FEATURED</span>
+        </div>
+        <div class="featured-article-content">
+          <div class="featured-article-meta">
+            <span class="featured-article-category" id="featured-category"></span>
+            <span class="featured-article-date" id="featured-date"></span>
+          </div>
+          <h2 id="featured-title"></h2>
+          <p id="featured-description"></p>
+          <div class="featured-article-cta">
+            <span>Read Article</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Blog Section -->
+  <section class="blog-section">
+    <div class="blog-container">
+      <!-- Section Header with Filters -->
+      <div class="blog-section-header">
+        <h2 class="blog-section-title">All Articles</h2>
+        <div class="blog-filters">
+          <button class="blog-filter-btn is-active" data-category="all">All</button>
+          <button class="blog-filter-btn" data-category="kitchen">Kitchen</button>
+          <button class="blog-filter-btn" data-category="bathroom">Bathroom</button>
+          <button class="blog-filter-btn" data-category="countertops">Countertops</button>
+          <button class="blog-filter-btn" data-category="guides">Guides</button>
+        </div>
+      </div>
+
+      <!-- Blog Grid -->
+      <div class="blog-grid" id="blog-grid">
+        <div class="blog-loading">Loading articles...</div>
+      </div>
+
+      <!-- Article Count -->
+      <p class="blog-count" id="blog-count"></p>
+    </div>
+  </section>
+
+  <!-- Hide Wized Badge (injected by Webflow CSS) -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var link = document.querySelector('a[href="https://wized.com?utm_campaign=badge"]');
+      if (link) link.style.display = 'none';
+      // Also hide any Wized elements
+      document.querySelectorAll('[class*="wized"]').forEach(el => el.style.display = 'none');
+    }, 500);
+  });
+  </script>
+
+  <!-- Blog Engine Script -->
+  <script>
+  (function() {
+    'use strict';
+
+    const CONFIG = {
+      dataUrl: '/data/blog-posts.json'
+    };
+
+    let allPosts = [];
+    let currentFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      try {
+        await loadPosts();
+        setupFilters();
+        renderFeatured();
+        renderPosts();
+        updateCount();
+      } catch (error) {
+        console.error('Blog engine error:', error);
+        document.getElementById('blog-grid').innerHTML = '<p class="blog-no-results">Error loading articles. Please try again later.</p>';
+      }
+    }
+
+    async function loadPosts() {
+      const response = await fetch(CONFIG.dataUrl);
+      const data = await response.json();
+      allPosts = data.posts || [];
+    }
+
+    function setupFilters() {
+      const buttons = document.querySelectorAll('.blog-filter-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          currentFilter = btn.dataset.category;
+          renderPosts();
+          updateCount();
+        });
+      });
+    }
+
+    function getFilteredPosts() {
+      if (currentFilter === 'all') {
+        return allPosts.slice(1); // Skip first (featured)
+      }
+      return allPosts.filter((post, index) => {
+        if (index === 0) return false; // Skip featured
+        const cat = (post.categorySlug || post.category || '').toLowerCase();
+        return cat === currentFilter || cat.includes(currentFilter);
+      });
+    }
+
+    function renderFeatured() {
+      if (allPosts.length === 0) return;
+
+      const post = allPosts[0];
+      const article = document.getElementById('featured-article');
+      const image = document.getElementById('featured-image');
+      const category = document.getElementById('featured-category');
+      const date = document.getElementById('featured-date');
+      const title = document.getElementById('featured-title');
+      const description = document.getElementById('featured-description');
+
+      article.href = post.url;
+      image.src = post.image || '/images/blog-placeholder.jpg';
+      image.alt = post.title;
+      category.textContent = (post.category || 'General').toUpperCase();
+      date.textContent = post.dateFormatted;
+      title.textContent = post.title;
+      description.textContent = post.description;
+    }
+
+    function renderPosts() {
+      const grid = document.getElementById('blog-grid');
+      const posts = getFilteredPosts();
+
+      if (posts.length === 0) {
+        grid.innerHTML = '<p class="blog-no-results">No articles found for this category.</p>';
+        return;
+      }
+
+      grid.innerHTML = posts.map(post => createCard(post)).join('');
+    }
+
+    function createCard(post) {
+      const category = (post.category || 'General').toUpperCase();
+      const image = post.image || '/images/blog-placeholder.jpg';
+
+      return `
+        <a href="${post.url}" class="blog-card" data-category="${post.categorySlug || 'guides'}">
+          <div class="blog-card-image-wrapper">
+            <img src="${image}" alt="${post.title}" loading="lazy"/>
+          </div>
+          <div class="blog-card-content">
+            <div class="blog-card-meta">
+              <span class="blog-card-category">${category}</span>
+              <span class="blog-card-date">${post.dateFormatted}</span>
+            </div>
+            <h3>${post.title}</h3>
+            <p>${post.description}</p>
+            <div class="blog-card-arrow">
+              <span>Read more</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    function updateCount() {
+      const countEl = document.getElementById('blog-count');
+      const posts = getFilteredPosts();
+      const total = allPosts.length;
+      if (currentFilter === 'all') {
+        countEl.textContent = `Showing ${posts.length} of ${total} articles`;
+      } else {
+        countEl.textContent = `Showing ${posts.length} articles in ${currentFilter}`;
+      }
+    }
+
+    // Expose for debugging
+    window.SurpriseGraniteBlog = {
+      filter: (cat) => {
+        currentFilter = cat;
+        renderPosts();
+        updateCount();
+      },
+      getAll: () => allPosts
+    };
+  })();
+  </script>
+</body>
+</html>

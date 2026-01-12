@@ -3348,10 +3348,16 @@
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Your Favorites</h3>
-              <button class="btn btn-primary" onclick="requestQuoteForFavorites()" id="request-quote-btn" style="display: none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Request Quote
-              </button>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <button class="btn btn-danger" onclick="clearAllFavoritesConfirm()" id="clear-all-btn" style="display: none; background: #dc2626; border-color: #dc2626;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  Clear All
+                </button>
+                <button class="btn btn-primary" onclick="requestQuoteForFavorites()" id="request-quote-btn" style="display: none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Request Quote
+                </button>
+              </div>
             </div>
             <div class="card-body">
               <p style="color: #666; margin-bottom: 20px;">Browse materials on your phone and swipe right to save your favorites. They'll appear here!</p>
@@ -4804,6 +4810,7 @@
       const tileSection = document.getElementById('favorites-tile');
       const shopSection = document.getElementById('favorites-shop');
       const quoteBtn = document.getElementById('request-quote-btn');
+      const clearAllBtn = document.getElementById('clear-all-btn');
 
       try {
         const { data, error } = await supabaseClient
@@ -4829,9 +4836,11 @@
           if (tileSection) tileSection.style.display = 'none';
           if (shopSection) shopSection.style.display = 'none';
           quoteBtn.style.display = 'none';
+          if (clearAllBtn) clearAllBtn.style.display = 'none';
         } else {
           emptyEl.style.display = 'none';
           quoteBtn.style.display = 'inline-flex';
+          if (clearAllBtn) clearAllBtn.style.display = 'inline-flex';
 
           // Show/render countertops section
           if (countertopFavorites.length > 0) {
@@ -4960,6 +4969,127 @@
         console.error('Error removing favorite:', err);
         showToast('Error removing item', 'error');
       }
+    }
+
+    // Clear ALL favorites - permanent action
+    async function clearAllFavoritesConfirm() {
+      // Show confirmation modal
+      const confirmModal = document.createElement('div');
+      confirmModal.className = 'quote-modal';
+      confirmModal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100001; padding: 20px;';
+      confirmModal.innerHTML = `
+        <div style="background: linear-gradient(180deg, #1a1a2e 0%, #0d0d15 100%); border-radius: 20px; padding: 32px; max-width: 400px; width: 100%; text-align: center; color: #fff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" style="margin-bottom: 16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <h3 style="margin: 0 0 12px; font-size: 22px;">Clear All Favorites?</h3>
+          <p style="color: rgba(255,255,255,0.7); margin-bottom: 24px; line-height: 1.5;">This will permanently delete <strong>${allFavorites.length}</strong> item${allFavorites.length !== 1 ? 's' : ''} from your favorites. This action cannot be undone.</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="cancel-clear" style="background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px;">Cancel</button>
+            <button id="confirm-clear" style="background: #dc2626; color: #fff; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px;">Yes, Clear All</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(confirmModal);
+
+      // Handle cancel
+      confirmModal.querySelector('#cancel-clear').addEventListener('click', () => {
+        confirmModal.remove();
+      });
+
+      // Handle confirm
+      confirmModal.querySelector('#confirm-clear').addEventListener('click', async () => {
+        const confirmBtn = confirmModal.querySelector('#confirm-clear');
+        confirmBtn.textContent = 'Clearing...';
+        confirmBtn.disabled = true;
+
+        try {
+          // Delete from Supabase
+          const { error } = await supabaseClient
+            .from('user_favorites')
+            .delete()
+            .eq('user_id', currentUser.id);
+
+          if (error) throw error;
+
+          // Clear ALL localStorage keys related to favorites
+          const keysToRemove = [
+            'sg_all_favorites',
+            'sg_flooring_favorites',
+            'sg_countertop_favorites',
+            'sg_tile_favorites',
+            'sg_cabinet_favorites',
+            'sg_sink_favorites',
+            'sg_shop_favorites',
+            'sg_general_favorites',
+            'favorites',
+            'userFavorites',
+            'sg_favorites'
+          ];
+          keysToRemove.forEach(key => {
+            try { localStorage.removeItem(key); } catch (e) {}
+          });
+
+          // Also clear any key containing 'favorite'
+          Object.keys(localStorage).forEach(key => {
+            if (key.toLowerCase().includes('favorite')) {
+              try { localStorage.removeItem(key); } catch (e) {}
+            }
+          });
+
+          // Clear local arrays
+          allFavorites = [];
+          flooringFavorites = [];
+          countertopFavorites = [];
+          tileFavorites = [];
+          shopFavorites = [];
+
+          // Hide all sections
+          document.getElementById('favorites-countertops').style.display = 'none';
+          document.getElementById('favorites-flooring').style.display = 'none';
+          document.getElementById('favorites-tile').style.display = 'none';
+          document.getElementById('favorites-shop').style.display = 'none';
+
+          // Show empty state
+          document.getElementById('favorites-empty').style.display = 'block';
+
+          // Hide buttons
+          document.getElementById('request-quote-btn').style.display = 'none';
+          document.getElementById('clear-all-btn').style.display = 'none';
+
+          // Update counts
+          const countEl = document.getElementById('favorites-count');
+          if (countEl) {
+            countEl.textContent = '0';
+            countEl.style.display = 'none';
+          }
+
+          // Update dashboard stat if visible
+          const statEl = document.getElementById('stat-favorites');
+          if (statEl) statEl.textContent = '0';
+
+          // Update global favorites if available
+          if (window.SGFavorites && typeof window.SGFavorites.clearAll === 'function') {
+            // Already cleared above, but this ensures in-memory state is synced
+          }
+
+          confirmModal.remove();
+          showToast('All favorites cleared permanently', 'success');
+
+        } catch (err) {
+          console.error('Error clearing favorites:', err);
+          confirmBtn.textContent = 'Yes, Clear All';
+          confirmBtn.disabled = false;
+          showToast('Error clearing favorites. Please try again.', 'error');
+        }
+      });
+
+      // Close on click outside
+      confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+          confirmModal.remove();
+        }
+      });
     }
 
     function requestQuoteForFavorites() {

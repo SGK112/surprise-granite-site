@@ -1217,6 +1217,8 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
         const enabledLocationElement = document.querySelector('.user-location_layout.is-enabled');
 
         function updateLocationDisplay() {
+            if (!locationDisplayElement || !disabledLocationElement || !enabledLocationElement) return;
+
             const locCity = localStorage.getItem('locCity');
             const locState = localStorage.getItem('locState');
 

@@ -591,7 +591,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 .slider-list_wrapper::-webkit-scrollbar {
     display: none; /* for Chrome, Safari, and Opera */
 }
-</style><script type="text/javascript">window.__WEBFLOW_CURRENCY_SETTINGS = {"currencyCode":"USD","symbol":"$","decimal":".","fractionDigits":2,"group":",","template":"{{wf {\"path\":\"symbol\",\"type\":\"PlainText\"} }} {{wf {\"path\":\"amount\",\"type\":\"CommercePrice\"} }} {{wf {\"path\":\"currencyCode\",\"type\":\"PlainText\"} }}","hideDecimalForWholeNumbers":false};}</script><link rel="stylesheet" href="/css/swipe-cards.css?v=20260111c"><link rel="stylesheet" href="/css/favorites.css?v=20260111c"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script defer src="/js/favorites.js?v=20260111c"></script><!-- Custom Mobile Menu Styles -->
+</style><script type="text/javascript">window.__WEBFLOW_CURRENCY_SETTINGS = {"currencyCode":"USD","symbol":"$","decimal":".","fractionDigits":2,"group":",","template":"{{wf {\"path\":\"symbol\",\"type\":\"PlainText\"} }} {{wf {\"path\":\"amount\",\"type\":\"CommercePrice\"} }} {{wf {\"path\":\"currencyCode\",\"type\":\"PlainText\"} }}","hideDecimalForWholeNumbers":false};}</script><link rel="stylesheet" href="/css/swipe-cards.css?v=20260111c"><link rel="stylesheet" href="/css/favorites.css?v=20260111c"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script defer src="/js/favorites.js?v=20260111d"></script><!-- Custom Mobile Menu Styles -->
 <style>
 .sg-mobile-menu-overlay {
   display: none;
@@ -1289,6 +1289,8 @@ closeButton.addEventListener('click', function() {
     var hamburger = document.querySelector('.navbar_menu-button');
     var pageContent = document.querySelector('.page-wrapper');
 
+    if (!hamburger || !pageContent) return;
+
     function updatePageContent() {
       if (hamburger.classList.contains('w--open')) {
         pageContent.classList.add('is-fixed');
@@ -1456,6 +1458,8 @@ function displayOpeningStatus() {
     const openingHoursDiv = document.getElementById('openingHoursDiv');
     const openNowDiv = document.getElementById('openNowDiv');
 
+    if (!openNowDiv || !openingHoursDiv) return;
+
     if (isOpen) {
         openNowDiv.style.display = 'flex';
         openingHoursDiv.style.display = 'none';
@@ -1563,6 +1567,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const enabledLocationElement = document.querySelector('.user-location_layout.is-enabled');
 
         function updateLocationDisplay() {
+            if (!locationDisplayElement || !disabledLocationElement || !enabledLocationElement) return;
+
             const locCity = localStorage.getItem('locCity');
             const locState = localStorage.getItem('locState');
 

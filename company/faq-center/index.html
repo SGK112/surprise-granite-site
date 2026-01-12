@@ -680,6 +680,8 @@ closeButton.addEventListener('click', function() {
     var hamburger = document.querySelector('.navbar_menu-button');
     var pageContent = document.querySelector('.page-wrapper');
 
+    if (!hamburger || !pageContent) return;
+
     function updatePageContent() {
       if (hamburger.classList.contains('w--open')) {
         pageContent.classList.add('is-fixed');
@@ -846,6 +848,8 @@ function displayOpeningStatus() {
 
     const openingHoursDiv = document.getElementById('openingHoursDiv');
     const openNowDiv = document.getElementById('openNowDiv');
+
+    if (!openNowDiv || !openingHoursDiv) return;
 
     if (isOpen) {
         openNowDiv.style.display = 'flex';
@@ -1067,6 +1071,8 @@ setInterval(displayOpeningStatus, 60000);
         const enabledLocationElement = document.querySelector('.user-location_layout.is-enabled');
 
         function updateLocationDisplay() {
+            if (!locationDisplayElement || !disabledLocationElement || !enabledLocationElement) return;
+
             const locCity = localStorage.getItem('locCity');
             const locState = localStorage.getItem('locState');
 

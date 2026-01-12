@@ -216,6 +216,17 @@
     });
   }
 
+  // Helper to deduplicate favorites by title or url
+  function deduplicateFavorites(list) {
+    const seen = new Set();
+    return list.filter(item => {
+      const key = item.title || item.url || '';
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   async function loadAllFavorites() {
     // Load from Supabase if logged in
     if (currentUser && supabaseClient) {
@@ -232,9 +243,19 @@
             favorites[key] = [];
           });
 
-          // Group by product type
+          // Group by product type and deduplicate
+          const seenTitles = new Set();
           data.forEach(fav => {
             const type = fav.product_type || 'general';
+            const key = fav.product_title || fav.product_url || '';
+
+            // Skip duplicates
+            if (seenTitles.has(key)) {
+              console.log('Favorites: Skipping duplicate:', key);
+              return;
+            }
+            seenTitles.add(key);
+
             if (!favorites[type]) favorites[type] = [];
             favorites[type].push({
               dbId: fav.id,
@@ -245,9 +266,9 @@
               color: fav.product_color
             });
           });
-          console.log('Favorites: Loaded', data.length, 'items from Supabase');
+          console.log('Favorites: Loaded', seenTitles.size, 'unique items from Supabase');
 
-          // Sync localStorage with database data
+          // Sync localStorage with deduplicated data
           saveToLocalStorage();
           return;
         }
@@ -258,24 +279,38 @@
 
     // Fallback to localStorage (when not logged in)
     try {
+      // Reset first
+      Object.keys(favorites).forEach(key => {
+        favorites[key] = [];
+      });
+
       const stored = localStorage.getItem('sg_all_favorites');
       if (stored) {
         const parsed = JSON.parse(stored);
-        Object.assign(favorites, parsed);
+        // Deduplicate each category
+        Object.keys(parsed).forEach(type => {
+          if (Array.isArray(parsed[type])) {
+            favorites[type] = deduplicateFavorites(parsed[type]);
+          }
+        });
       }
 
-      // Also check legacy storage keys
+      // Also check legacy storage keys and deduplicate
       const legacyFlooring = localStorage.getItem('sg_flooring_favorites');
       const legacyCountertop = localStorage.getItem('sg_countertop_favorites');
 
       if (legacyFlooring) {
-        favorites.flooring = JSON.parse(legacyFlooring);
+        const parsed = JSON.parse(legacyFlooring);
+        favorites.flooring = deduplicateFavorites(parsed);
       }
       if (legacyCountertop) {
-        favorites.countertop = JSON.parse(legacyCountertop);
+        const parsed = JSON.parse(legacyCountertop);
+        favorites.countertop = deduplicateFavorites(parsed);
       }
 
-      console.log('Favorites: Loaded from localStorage');
+      // Save deduplicated data back
+      saveToLocalStorage();
+      console.log('Favorites: Loaded from localStorage (deduplicated)');
     } catch (e) {
       console.log('Favorites: Error loading from localStorage', e);
     }
@@ -973,10 +1008,115 @@
   `;
   document.head.appendChild(styles);
 
+  // Clear ALL favorites from everywhere - nuclear option
+  async function clearAllFavorites() {
+    console.log('Favorites: Clearing ALL favorites from all sources');
+
+    // 1. Clear from Supabase if logged in
+    if (currentUser && supabaseClient) {
+      try {
+        const { error } = await supabaseClient
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', currentUser.id);
+
+        if (error) {
+          console.error('Favorites: Error clearing from Supabase', error);
+        } else {
+          console.log('Favorites: Cleared from Supabase');
+        }
+      } catch (e) {
+        console.error('Favorites: Exception clearing from Supabase', e);
+      }
+    }
+
+    // 2. Clear ALL localStorage keys related to favorites
+    const keysToRemove = [
+      'sg_all_favorites',
+      'sg_flooring_favorites',
+      'sg_countertop_favorites',
+      'sg_tile_favorites',
+      'sg_cabinet_favorites',
+      'sg_sink_favorites',
+      'sg_shop_favorites',
+      'sg_general_favorites',
+      // Legacy/alternate keys that might exist
+      'favorites',
+      'userFavorites',
+      'sg_favorites'
+    ];
+
+    keysToRemove.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {}
+    });
+
+    // Also clear any keys that start with 'sg_' and contain 'favorite'
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.toLowerCase().includes('favorite')) {
+          localStorage.removeItem(key);
+          console.log('Favorites: Removed localStorage key:', key);
+        }
+      });
+    } catch (e) {}
+
+    // 3. Reset in-memory favorites object
+    Object.keys(favorites).forEach(key => {
+      favorites[key] = [];
+    });
+
+    // 4. Update all heart buttons on page to unfavorited state
+    document.querySelectorAll('.sg-favorite-btn.is-favorited').forEach(btn => {
+      btn.classList.remove('is-favorited');
+      btn.setAttribute('aria-label', 'Add to favorites');
+    });
+
+    // 5. Update the badge
+    updateFavoritesBadge();
+
+    console.log('Favorites: All favorites cleared successfully');
+    showToast('All favorites cleared');
+
+    return true;
+  }
+
+  // Update all heart buttons to reflect current favorites state
+  function updateAllHeartButtons() {
+    document.querySelectorAll('.sg-favorite-btn').forEach(btn => {
+      try {
+        const productData = btn.dataset.product ? JSON.parse(btn.dataset.product) : null;
+        const productType = btn.dataset.productType || 'general';
+
+        if (productData) {
+          const typeList = favorites[productType] || [];
+          const isFavorited = typeList.some(f =>
+            f.title === productData.title || f.url === productData.url
+          );
+
+          if (isFavorited) {
+            btn.classList.add('is-favorited');
+            btn.setAttribute('aria-label', 'Remove from favorites');
+          } else {
+            btn.classList.remove('is-favorited');
+            btn.setAttribute('aria-label', 'Add to favorites');
+          }
+        }
+      } catch (e) {}
+    });
+  }
+
   // Expose functions globally for other scripts
   window.SGFavorites = {
     add: async (product, type) => {
       if (!favorites[type]) favorites[type] = [];
+      // Check for duplicates before adding
+      const exists = favorites[type].some(f => f.title === product.title || f.url === product.url);
+      if (exists) {
+        console.log('Favorites: Item already exists, skipping');
+        return;
+      }
       favorites[type].push(product);
       await saveFavoriteToSupabase(product, type);
       saveToLocalStorage();
@@ -990,12 +1130,18 @@
         if (removed?.dbId) await removeFavoriteFromSupabase(removed.dbId);
         saveToLocalStorage();
         updateFavoritesBadge();
+        updateAllHeartButtons();
       }
     },
+    clearAll: clearAllFavorites,
     getAll: () => favorites,
     getByType: (type) => favorites[type] || [],
     getCount: getTotalFavoritesCount,
-    refresh: addHeartButtonsToProducts,
+    refresh: () => {
+      addHeartButtonsToProducts();
+      updateAllHeartButtons();
+    },
+    updateButtons: updateAllHeartButtons,
     share: shareFavorites,
     requestQuote: requestQuote
   };
