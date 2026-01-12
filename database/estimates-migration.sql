@@ -216,26 +216,6 @@ CREATE POLICY "estimates_delete_own" ON public.estimates
 CREATE POLICY "estimates_service_all" ON public.estimates
   FOR ALL USING (auth.role() = 'service_role');
 
--- Allow public viewing via valid token (for customer approval page)
-CREATE POLICY "estimates_public_via_token" ON public.estimates
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.estimate_tokens
-      WHERE estimate_id = id
-      AND (expires_at IS NULL OR expires_at > NOW())
-    )
-  );
-
--- Allow public update for approval/rejection via token
-CREATE POLICY "estimates_public_update_via_token" ON public.estimates
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM public.estimate_tokens
-      WHERE estimate_id = id
-      AND (expires_at IS NULL OR expires_at > NOW())
-    )
-  );
-
 GRANT ALL ON public.estimates TO authenticated;
 GRANT ALL ON public.estimates TO service_role;
 GRANT SELECT, UPDATE ON public.estimates TO anon;
@@ -305,16 +285,6 @@ CREATE POLICY "estimate_items_delete_own" ON public.estimate_items
 
 CREATE POLICY "estimate_items_service_all" ON public.estimate_items
   FOR ALL USING (auth.role() = 'service_role');
-
--- Allow public viewing via valid token
-CREATE POLICY "estimate_items_public_via_token" ON public.estimate_items
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.estimate_tokens
-      WHERE estimate_id = estimate_items.estimate_id
-      AND (expires_at IS NULL OR expires_at > NOW())
-    )
-  );
 
 GRANT ALL ON public.estimate_items TO authenticated;
 GRANT ALL ON public.estimate_items TO service_role;
@@ -684,6 +654,41 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER estimate_items_recalc_trigger
   AFTER INSERT OR UPDATE OR DELETE ON public.estimate_items
   FOR EACH ROW EXECUTE FUNCTION trigger_recalculate_estimate();
+
+-- ============================================================
+-- PUBLIC ACCESS POLICIES (after estimate_tokens is created)
+-- These allow customers to view/approve estimates via token
+-- ============================================================
+
+-- Allow public viewing via valid token (for customer approval page)
+CREATE POLICY "estimates_public_via_token" ON public.estimates
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
+
+-- Allow public update for approval/rejection via token
+CREATE POLICY "estimates_public_update_via_token" ON public.estimates
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
+
+-- Allow public viewing of estimate items via valid token
+CREATE POLICY "estimate_items_public_via_token" ON public.estimate_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.estimate_tokens
+      WHERE estimate_id = estimate_items.estimate_id
+      AND (expires_at IS NULL OR expires_at > NOW())
+    )
+  );
 
 -- ============================================================
 -- DONE
