@@ -3327,6 +3327,15 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">Invoices</span>
           </a>
+          <a class="nav-item" data-page="jobs" onclick="showPage('jobs')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span class="nav-item-text">Jobs</span>
+            <span class="nav-badge" id="jobs-count" data-count="0">0</span>
+          </a>
+          <a class="nav-item" data-page="contractors" onclick="showPage('contractors')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span class="nav-item-text">Contractors</span>
+          </a>
           <a class="nav-item" data-page="wallet" onclick="showPage('wallet')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             <span class="nav-item-text">Wallet</span>
@@ -3704,6 +3713,72 @@
               </div>
               <div id="invoices-list">
                 <div class="spinner" style="margin: 40px auto;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Jobs Page -->
+        <section id="page-jobs" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Jobs & Projects</h3>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="openCustomersModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Customers
+                </button>
+                <button class="btn btn-primary" onclick="openNewJobModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  New Job
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-filters" style="margin-bottom: 20px;">
+                <button class="filter-btn active" data-job-status="all" onclick="filterJobs('all')">All</button>
+                <button class="filter-btn" data-job-status="pending" onclick="filterJobs('pending')">Pending</button>
+                <button class="filter-btn" data-job-status="scheduled" onclick="filterJobs('scheduled')">Scheduled</button>
+                <button class="filter-btn" data-job-status="in_progress" onclick="filterJobs('in_progress')">In Progress</button>
+                <button class="filter-btn" data-job-status="completed" onclick="filterJobs('completed')">Completed</button>
+              </div>
+              <div id="jobs-list">
+                <div class="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                  <h3>No jobs yet</h3>
+                  <p>Jobs are automatically created when invoices are paid, or you can create one manually.</p>
+                  <button class="btn btn-primary" style="margin-top: 16px;" onclick="openNewJobModal()">Create First Job</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contractors Page -->
+        <section id="page-contractors" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Contractors & Team</h3>
+              <button class="btn btn-primary" onclick="openNewContractorModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add Contractor
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="table-filters" style="margin-bottom: 20px;">
+                <button class="filter-btn active" data-contractor-status="all" onclick="filterContractors('all')">All</button>
+                <button class="filter-btn" data-contractor-status="fabricator" onclick="filterContractors('fabricator')">Fabricators</button>
+                <button class="filter-btn" data-contractor-status="installer" onclick="filterContractors('installer')">Installers</button>
+                <button class="filter-btn" data-contractor-status="plumber" onclick="filterContractors('plumber')">Plumbers</button>
+                <button class="filter-btn" data-contractor-status="other" onclick="filterContractors('other')">Other</button>
+              </div>
+              <div id="contractors-list">
+                <div class="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <h3>No contractors yet</h3>
+                  <p>Add your fabricators, installers, plumbers, and other team members.</p>
+                  <button class="btn btn-primary" style="margin-top: 16px;" onclick="openNewContractorModal()">Add First Contractor</button>
+                </div>
               </div>
             </div>
           </div>
@@ -5007,6 +5082,380 @@
     </div>
   </div>
 
+  <!-- New Job Modal -->
+  <div id="new-job-modal" class="modal-overlay" onclick="if(event.target === this) closeNewJobModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Create New Job</h2>
+        <button class="modal-close" onclick="closeNewJobModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="new-job-form" onsubmit="createJob(event)">
+        <div class="modal-body">
+          <div class="form-section">
+            <div class="form-section-title">Customer Information</div>
+            <div class="form-group">
+              <label>Select Existing Customer or Create New</label>
+              <select id="job-customer-select" onchange="toggleNewCustomerFields()">
+                <option value="">-- Select Customer --</option>
+                <option value="new">+ Add New Customer</option>
+              </select>
+            </div>
+            <div id="new-customer-fields" style="display: none;">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Customer Name *</label>
+                  <input type="text" id="job-customer-name" placeholder="John Smith">
+                </div>
+                <div class="form-group">
+                  <label>Email</label>
+                  <input type="email" id="job-customer-email" placeholder="john@example.com">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Phone</label>
+                  <input type="tel" id="job-customer-phone" placeholder="(555) 123-4567">
+                </div>
+                <div class="form-group">
+                  <label>Address</label>
+                  <input type="text" id="job-customer-address" placeholder="123 Main St">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>City</label>
+                  <input type="text" id="job-customer-city" placeholder="Phoenix">
+                </div>
+                <div class="form-group" style="flex: 0.5;">
+                  <label>State</label>
+                  <input type="text" id="job-customer-state" placeholder="AZ" maxlength="2">
+                </div>
+                <div class="form-group" style="flex: 0.5;">
+                  <label>ZIP</label>
+                  <input type="text" id="job-customer-zip" placeholder="85001">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Job Details</div>
+            <div class="form-group">
+              <label>Job Title / Description *</label>
+              <input type="text" id="job-title" required placeholder="Kitchen Countertop Installation">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Job Type</label>
+                <select id="job-type">
+                  <option value="installation">Installation</option>
+                  <option value="fabrication">Fabrication</option>
+                  <option value="repair">Repair</option>
+                  <option value="template">Template/Measure</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Priority</label>
+                <select id="job-priority">
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Total Amount ($)</label>
+                <input type="number" id="job-total" step="0.01" min="0" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Deposit Received ($)</label>
+                <input type="number" id="job-deposit" step="0.01" min="0" placeholder="0.00">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea id="job-notes" rows="3" placeholder="Special instructions, material details, etc."></textarea>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Schedule (Optional)</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Scheduled Date</label>
+                <input type="date" id="job-scheduled-date">
+              </div>
+              <div class="form-group">
+                <label>Scheduled Time</label>
+                <input type="time" id="job-scheduled-time">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeNewJobModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Job</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Job Detail Modal -->
+  <div id="job-detail-modal" class="modal-overlay" onclick="if(event.target === this) closeJobDetailModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Job Details - <span id="job-detail-number">JOB-0001</span></h2>
+        <button class="modal-close" onclick="closeJobDetailModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Job Status Bar -->
+        <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+          <select id="job-detail-status" onchange="updateJobStatus()" style="padding: 8px 16px; border-radius: 8px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary);">
+            <option value="pending">Pending</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="on_hold">On Hold</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="sendCustomerUpdate()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Email Customer
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openAssignContractorModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            Assign Contractor
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="orderMaterials()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Order Materials
+          </button>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- Left Column - Customer & Job Info -->
+          <div>
+            <div class="form-section">
+              <div class="form-section-title">Customer</div>
+              <div id="job-detail-customer" style="padding: 12px; background: var(--dark-elevated); border-radius: 8px;">
+                <div style="font-weight: 600;" id="job-customer-name-display">Loading...</div>
+                <div style="font-size: 13px; color: var(--text-muted);" id="job-customer-email-display"></div>
+                <div style="font-size: 13px; color: var(--text-muted);" id="job-customer-phone-display"></div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;" id="job-customer-address-display"></div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">Job Info</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Type</label>
+                  <div id="job-detail-type" style="font-weight: 500;">Installation</div>
+                </div>
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Priority</label>
+                  <div id="job-detail-priority" style="font-weight: 500;">Normal</div>
+                </div>
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total</label>
+                  <div id="job-detail-total" style="font-weight: 600; color: var(--gold-primary);">$0.00</div>
+                </div>
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Balance Due</label>
+                  <div id="job-detail-balance" style="font-weight: 600;">$0.00</div>
+                </div>
+              </div>
+              <div style="margin-top: 12px;">
+                <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Notes</label>
+                <div id="job-detail-notes" style="font-size: 14px; color: var(--text-secondary);">-</div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">Assigned Contractors</div>
+              <div id="job-contractors-list" style="min-height: 60px;">
+                <div style="color: var(--text-muted); font-size: 13px;">No contractors assigned yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column - Files & Timeline -->
+          <div>
+            <div class="form-section">
+              <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                Files & Drawings
+                <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  Upload
+                  <input type="file" id="job-file-upload" multiple accept="image/*,.pdf,.dxf,.dwg" style="display: none;" onchange="uploadJobFiles(event)">
+                </label>
+              </div>
+              <div id="job-files-list" style="min-height: 100px; max-height: 300px; overflow-y: auto;">
+                <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">
+                  No files uploaded yet.<br>
+                  <span style="font-size: 12px;">Drop files here or click Upload</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">Activity Timeline</div>
+              <div id="job-timeline" style="max-height: 200px; overflow-y: auto;">
+                <div style="color: var(--text-muted); font-size: 13px;">No activity yet.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeJobDetailModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveJobChanges()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Modal -->
+  <div id="customers-modal" class="modal-overlay" onclick="if(event.target === this) closeCustomersModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Customer Database</h2>
+        <button class="modal-close" onclick="closeCustomersModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+          <input type="text" id="customer-search" placeholder="Search customers..." style="flex: 1; max-width: 300px; padding: 8px 12px; border-radius: 8px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary);" oninput="searchCustomers()">
+          <button class="btn btn-primary btn-sm" onclick="openNewCustomerModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add Customer
+          </button>
+        </div>
+        <div id="customers-list-modal">
+          <div class="spinner" style="margin: 40px auto;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Contractor Modal -->
+  <div id="new-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeNewContractorModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Contractor</h2>
+        <button class="modal-close" onclick="closeNewContractorModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="new-contractor-form" onsubmit="createContractor(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name *</label>
+              <input type="text" id="contractor-name" required placeholder="John's Fabrication">
+            </div>
+            <div class="form-group">
+              <label>Type *</label>
+              <select id="contractor-type" required>
+                <option value="fabricator">Fabricator</option>
+                <option value="installer">Installer</option>
+                <option value="plumber">Plumber</option>
+                <option value="electrician">Electrician</option>
+                <option value="template">Template Tech</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="contractor-email" placeholder="john@fabrication.com">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="contractor-phone" placeholder="(555) 123-4567">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Company / Business Name</label>
+            <input type="text" id="contractor-company" placeholder="ABC Stoneworks LLC">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hourly Rate ($)</label>
+              <input type="number" id="contractor-rate" step="0.01" min="0" placeholder="75.00">
+            </div>
+            <div class="form-group">
+              <label>License #</label>
+              <input type="text" id="contractor-license" placeholder="ROC #123456">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="contractor-notes" rows="2" placeholder="Specialties, availability, etc."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeNewContractorModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Contractor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Assign Contractor Modal -->
+  <div id="assign-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeAssignContractorModal()" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Assign Contractor to Job</h2>
+        <button class="modal-close" onclick="closeAssignContractorModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="assign-contractor-form" onsubmit="assignContractor(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Contractor *</label>
+            <select id="assign-contractor-select" required>
+              <option value="">-- Select Contractor --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Role on this Job</label>
+            <select id="assign-contractor-role">
+              <option value="fabricator">Fabricator</option>
+              <option value="installer">Installer</option>
+              <option value="plumber">Plumber</option>
+              <option value="template">Template Tech</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount to Pay ($)</label>
+            <input type="number" id="assign-contractor-amount" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="assign-contractor-notify" checked>
+              Send email invitation to contractor
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAssignContractorModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Contractor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Service Catalog Modal -->
   <div id="service-catalog-modal" class="modal-overlay" onclick="if(event.target === this) closeServiceCatalog()" style="display: none;">
     <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
@@ -6250,6 +6699,8 @@
         'leads': 'Leads',
         'estimates': 'Estimates',
         'invoices': 'Invoices',
+        'jobs': 'Jobs & Projects',
+        'contractors': 'Contractors & Team',
         'wallet': 'Wallet',
         'admin-users': 'Manage Admins',
         'products': 'Products',
@@ -6271,6 +6722,16 @@
       // Load listings when that page is shown
       if (page === 'listings') {
         loadMyListings();
+      }
+
+      // Load jobs when that page is shown
+      if (page === 'jobs') {
+        loadJobs();
+      }
+
+      // Load contractors when that page is shown
+      if (page === 'contractors') {
+        loadContractors();
       }
 
       // Close mobile sidebar
@@ -10129,6 +10590,772 @@
       logoUpload.value = '';
 
       showToast('Logo removed. Click Save to apply changes.');
+    }
+
+    // =============================================
+    // JOBS & PROJECT MANAGEMENT
+    // =============================================
+
+    let allJobs = [];
+    let allContractors = [];
+    let allCustomers = [];
+    let currentJobId = null;
+    let jobFilter = 'all';
+    let contractorFilter = 'all';
+
+    async function loadJobs() {
+      const jobsList = document.getElementById('jobs-list');
+      if (!jobsList) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        jobsList.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+
+        const { data: jobs, error } = await supabaseClient
+          .from('jobs')
+          .select(`
+            *,
+            customers (id, name, email, phone, address, city, state, zip),
+            job_contractors (
+              id, contractor_id, role, amount_quoted, status,
+              contractors (id, name, email, phone, type)
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        allJobs = jobs || [];
+        updateJobsCount();
+        renderJobs();
+      } catch (err) {
+        console.error('Load jobs error:', err);
+        jobsList.innerHTML = `<div class="empty-state"><p>Error loading jobs: ${err.message}</p></div>`;
+      }
+    }
+
+    function updateJobsCount() {
+      const badge = document.getElementById('jobs-count');
+      if (badge) {
+        const activeJobs = allJobs.filter(j => !['completed', 'cancelled'].includes(j.status)).length;
+        badge.textContent = activeJobs;
+        badge.dataset.count = activeJobs;
+      }
+    }
+
+    function filterJobs(status) {
+      jobFilter = status;
+      document.querySelectorAll('[data-job-status]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.jobStatus === status);
+      });
+      renderJobs();
+    }
+
+    function renderJobs() {
+      const jobsList = document.getElementById('jobs-list');
+      if (!jobsList) return;
+
+      let filtered = allJobs;
+      if (jobFilter !== 'all') {
+        filtered = filtered.filter(job => job.status === jobFilter);
+      }
+
+      if (filtered.length === 0) {
+        jobsList.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <h3>${jobFilter !== 'all' ? 'No ' + jobFilter.replace('_', ' ') + ' jobs' : 'No jobs yet'}</h3>
+            <p>Jobs are created automatically when invoices are paid.</p>
+          </div>`;
+        return;
+      }
+
+      const statusColors = {
+        pending: '#f59e0b',
+        scheduled: '#3b82f6',
+        in_progress: '#8b5cf6',
+        completed: '#22c55e',
+        on_hold: '#6b7280',
+        cancelled: '#ef4444'
+      };
+
+      jobsList.innerHTML = `
+        <table style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Job #</th>
+              <th>Customer</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Created</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(job => `
+              <tr onclick="openJobDetail('${job.id}')" style="cursor: pointer;">
+                <td><strong>${job.job_number || '-'}</strong></td>
+                <td>
+                  <div>${job.customers?.name || 'Unknown'}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${job.customers?.email || ''}</div>
+                </td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${job.title || job.description || '-'}</td>
+                <td>
+                  <span class="status-badge" style="background: ${statusColors[job.status] || '#6b7280'}20; color: ${statusColors[job.status] || '#6b7280'};">
+                    ${(job.status || 'pending').replace('_', ' ')}
+                  </span>
+                </td>
+                <td style="font-weight: 600; color: var(--gold-primary);">$${(job.total_amount || 0).toFixed(2)}</td>
+                <td>${new Date(job.created_at).toLocaleDateString()}</td>
+                <td style="text-align: right;" onclick="event.stopPropagation();">
+                  <div class="lead-actions" style="justify-content: flex-end;">
+                    <button class="action-btn" onclick="openJobDetail('${job.id}')" title="View Details">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function openNewJobModal() {
+      document.getElementById('new-job-modal').style.display = 'flex';
+      document.getElementById('new-job-form').reset();
+      document.getElementById('new-customer-fields').style.display = 'none';
+      loadCustomersForSelect();
+    }
+
+    function closeNewJobModal() {
+      document.getElementById('new-job-modal').style.display = 'none';
+    }
+
+    function toggleNewCustomerFields() {
+      const select = document.getElementById('job-customer-select');
+      const fields = document.getElementById('new-customer-fields');
+      fields.style.display = select.value === 'new' ? 'block' : 'none';
+    }
+
+    async function loadCustomersForSelect() {
+      const select = document.getElementById('job-customer-select');
+      if (!select) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: customers } = await supabaseClient
+          .from('customers')
+          .select('id, name, email')
+          .eq('user_id', user.id)
+          .order('name');
+
+        allCustomers = customers || [];
+
+        // Keep first two options and rebuild
+        select.innerHTML = `
+          <option value="">-- Select Customer --</option>
+          <option value="new">+ Add New Customer</option>
+          ${(customers || []).map(c => `<option value="${c.id}">${c.name}${c.email ? ' (' + c.email + ')' : ''}</option>`).join('')}
+        `;
+      } catch (err) {
+        console.error('Load customers error:', err);
+      }
+    }
+
+    async function createJob(event) {
+      event.preventDefault();
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        let customerId = document.getElementById('job-customer-select').value;
+
+        // Create new customer if needed
+        if (customerId === 'new') {
+          const customerData = {
+            user_id: user.id,
+            name: document.getElementById('job-customer-name').value.trim(),
+            email: document.getElementById('job-customer-email').value.trim() || null,
+            phone: document.getElementById('job-customer-phone').value.trim() || null,
+            address: document.getElementById('job-customer-address').value.trim() || null,
+            city: document.getElementById('job-customer-city').value.trim() || null,
+            state: document.getElementById('job-customer-state').value.trim() || null,
+            zip: document.getElementById('job-customer-zip').value.trim() || null
+          };
+
+          if (!customerData.name) throw new Error('Customer name is required');
+
+          const { data: newCustomer, error: custError } = await supabaseClient
+            .from('customers')
+            .insert([customerData])
+            .select()
+            .single();
+
+          if (custError) throw custError;
+          customerId = newCustomer.id;
+        }
+
+        if (!customerId) throw new Error('Please select or create a customer');
+
+        // Get next job number
+        const { data: jobNumber } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
+
+        const jobData = {
+          user_id: user.id,
+          customer_id: customerId,
+          job_number: jobNumber || `JOB-${Date.now()}`,
+          title: document.getElementById('job-title').value.trim(),
+          job_type: document.getElementById('job-type').value,
+          priority: document.getElementById('job-priority').value,
+          total_amount: parseFloat(document.getElementById('job-total').value) || 0,
+          deposit_paid: parseFloat(document.getElementById('job-deposit').value) || 0,
+          notes: document.getElementById('job-notes').value.trim() || null,
+          scheduled_date: document.getElementById('job-scheduled-date').value || null,
+          status: document.getElementById('job-scheduled-date').value ? 'scheduled' : 'pending'
+        };
+
+        const { error } = await supabaseClient.from('jobs').insert([jobData]);
+        if (error) throw error;
+
+        closeNewJobModal();
+        showToast('Job created successfully!');
+        loadJobs();
+      } catch (err) {
+        console.error('Create job error:', err);
+        alert('Error creating job: ' + err.message);
+      }
+    }
+
+    async function openJobDetail(jobId) {
+      currentJobId = jobId;
+      const modal = document.getElementById('job-detail-modal');
+      modal.style.display = 'flex';
+
+      // Find job in allJobs
+      const job = allJobs.find(j => j.id === jobId);
+      if (!job) {
+        alert('Job not found');
+        return;
+      }
+
+      // Populate job details
+      document.getElementById('job-detail-number').textContent = job.job_number || 'N/A';
+      document.getElementById('job-detail-status').value = job.status || 'pending';
+      document.getElementById('job-detail-type').textContent = (job.job_type || 'N/A').replace('_', ' ');
+      document.getElementById('job-detail-priority').textContent = job.priority || 'Normal';
+      document.getElementById('job-detail-total').textContent = '$' + (job.total_amount || 0).toFixed(2);
+      document.getElementById('job-detail-balance').textContent = '$' + ((job.total_amount || 0) - (job.total_paid || 0)).toFixed(2);
+      document.getElementById('job-detail-notes').textContent = job.notes || '-';
+
+      // Customer info
+      if (job.customers) {
+        document.getElementById('job-customer-name-display').textContent = job.customers.name || 'Unknown';
+        document.getElementById('job-customer-email-display').textContent = job.customers.email || '';
+        document.getElementById('job-customer-phone-display').textContent = job.customers.phone || '';
+        const addr = [job.customers.address, job.customers.city, job.customers.state, job.customers.zip].filter(Boolean).join(', ');
+        document.getElementById('job-customer-address-display').textContent = addr || '';
+      }
+
+      // Assigned contractors
+      const contractorsList = document.getElementById('job-contractors-list');
+      if (job.job_contractors && job.job_contractors.length > 0) {
+        contractorsList.innerHTML = job.job_contractors.map(jc => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 8px;">
+            <div>
+              <div style="font-weight: 500;">${jc.contractors?.name || 'Unknown'}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${jc.role || jc.contractors?.type || ''} - $${(jc.amount_quoted || 0).toFixed(2)}</div>
+            </div>
+            <span class="status-badge" style="font-size: 10px; background: ${jc.status === 'accepted' ? 'rgba(34,197,94,0.15)' : jc.status === 'declined' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color: ${jc.status === 'accepted' ? '#22c55e' : jc.status === 'declined' ? '#ef4444' : '#f59e0b'};">${jc.status || 'pending'}</span>
+          </div>
+        `).join('');
+      } else {
+        contractorsList.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No contractors assigned yet.</div>';
+      }
+
+      // Load files
+      loadJobFiles(jobId);
+
+      // Load timeline
+      loadJobTimeline(jobId);
+    }
+
+    function closeJobDetailModal() {
+      document.getElementById('job-detail-modal').style.display = 'none';
+      currentJobId = null;
+    }
+
+    async function updateJobStatus() {
+      if (!currentJobId) return;
+
+      const newStatus = document.getElementById('job-detail-status').value;
+
+      try {
+        const { error } = await supabaseClient
+          .from('jobs')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', currentJobId);
+
+        if (error) throw error;
+
+        showToast('Status updated');
+        loadJobs();
+      } catch (err) {
+        console.error('Update status error:', err);
+        alert('Error updating status: ' + err.message);
+      }
+    }
+
+    async function loadJobFiles(jobId) {
+      const container = document.getElementById('job-files-list');
+      if (!container) return;
+
+      try {
+        const { data: files, error } = await supabaseClient
+          .from('job_files')
+          .select('*')
+          .eq('job_id', jobId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!files || files.length === 0) {
+          container.innerHTML = `
+            <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">
+              No files uploaded yet.<br>
+              <span style="font-size: 12px;">Drop files here or click Upload</span>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = files.map(file => `
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 8px;">
+            <div style="width: 40px; height: 40px; background: var(--dark-surface); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+              ${file.file_type?.includes('image') ? `<img src="${file.file_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">` :
+                `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.file_name || 'File'}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${file.category || 'Document'} - ${new Date(file.created_at).toLocaleDateString()}</div>
+            </div>
+            <a href="${file.file_url}" target="_blank" class="action-btn" title="Download">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </a>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load files error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Error loading files</div>';
+      }
+    }
+
+    async function uploadJobFiles(event) {
+      if (!currentJobId) return;
+
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        showToast('Uploading files...', 'info');
+
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${currentJobId}/${Date.now()}-${file.name}`;
+
+          // Upload to storage
+          const { data, error: uploadError } = await supabaseClient.storage
+            .from('job-files')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          // Get public URL
+          const { data: urlData } = supabaseClient.storage
+            .from('job-files')
+            .getPublicUrl(fileName);
+
+          // Save file record
+          const { error: dbError } = await supabaseClient
+            .from('job_files')
+            .insert([{
+              job_id: currentJobId,
+              user_id: user.id,
+              file_name: file.name,
+              file_url: urlData.publicUrl,
+              file_type: file.type,
+              file_size: file.size,
+              category: file.type.includes('image') ? 'photo' : 'document'
+            }]);
+
+          if (dbError) throw dbError;
+        }
+
+        showToast('Files uploaded successfully!');
+        loadJobFiles(currentJobId);
+        event.target.value = '';
+      } catch (err) {
+        console.error('Upload error:', err);
+        alert('Error uploading files: ' + err.message);
+      }
+    }
+
+    async function loadJobTimeline(jobId) {
+      const container = document.getElementById('job-timeline');
+      if (!container) return;
+
+      try {
+        const { data: history, error } = await supabaseClient
+          .from('job_status_history')
+          .select('*')
+          .eq('job_id', jobId)
+          .order('changed_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        if (!history || history.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No activity yet.</div>';
+          return;
+        }
+
+        container.innerHTML = history.map(h => `
+          <div style="display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+            <div style="width: 8px; height: 8px; background: var(--gold-primary); border-radius: 50%; margin-top: 6px;"></div>
+            <div>
+              <div style="font-size: 13px;">Status changed from <strong>${h.from_status || 'new'}</strong> to <strong>${h.to_status}</strong></div>
+              <div style="font-size: 11px; color: var(--text-muted);">${new Date(h.changed_at).toLocaleString()}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load timeline error:', err);
+      }
+    }
+
+    // =============================================
+    // CONTRACTORS
+    // =============================================
+
+    async function loadContractors() {
+      const container = document.getElementById('contractors-list');
+      if (!container) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        container.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+
+        const { data: contractors, error } = await supabaseClient
+          .from('contractors')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+
+        if (error) throw error;
+
+        allContractors = contractors || [];
+        renderContractors();
+      } catch (err) {
+        console.error('Load contractors error:', err);
+        container.innerHTML = `<div class="empty-state"><p>Error loading contractors</p></div>`;
+      }
+    }
+
+    function filterContractors(type) {
+      contractorFilter = type;
+      document.querySelectorAll('[data-contractor-status]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.contractorStatus === type);
+      });
+      renderContractors();
+    }
+
+    function renderContractors() {
+      const container = document.getElementById('contractors-list');
+      if (!container) return;
+
+      let filtered = allContractors;
+      if (contractorFilter !== 'all') {
+        filtered = filtered.filter(c => c.type === contractorFilter);
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <h3>No contractors found</h3>
+            <p>Add your team members to assign them to jobs.</p>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="openNewContractorModal()">Add Contractor</button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          ${filtered.map(c => `
+            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; border: 1px solid var(--border-subtle);">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                <div>
+                  <div style="font-weight: 600; font-size: 15px;">${c.name}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.company || ''}</div>
+                </div>
+                <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px;">${c.type || 'other'}</span>
+              </div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                ${c.email ? `<div>${c.email}</div>` : ''}
+                ${c.phone ? `<div>${c.phone}</div>` : ''}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  ${c.total_jobs || 0} jobs | $${(c.total_earned || 0).toFixed(0)} earned
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="action-btn" onclick="editContractor('${c.id}')" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function openNewContractorModal() {
+      document.getElementById('new-contractor-modal').style.display = 'flex';
+      document.getElementById('new-contractor-form').reset();
+    }
+
+    function closeNewContractorModal() {
+      document.getElementById('new-contractor-modal').style.display = 'none';
+    }
+
+    async function createContractor(event) {
+      event.preventDefault();
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        const contractorData = {
+          user_id: user.id,
+          name: document.getElementById('contractor-name').value.trim(),
+          type: document.getElementById('contractor-type').value,
+          email: document.getElementById('contractor-email').value.trim() || null,
+          phone: document.getElementById('contractor-phone').value.trim() || null,
+          company: document.getElementById('contractor-company').value.trim() || null,
+          hourly_rate: parseFloat(document.getElementById('contractor-rate').value) || null,
+          license_number: document.getElementById('contractor-license').value.trim() || null,
+          notes: document.getElementById('contractor-notes').value.trim() || null
+        };
+
+        const { error } = await supabaseClient.from('contractors').insert([contractorData]);
+        if (error) throw error;
+
+        closeNewContractorModal();
+        showToast('Contractor added!');
+        loadContractors();
+      } catch (err) {
+        console.error('Create contractor error:', err);
+        alert('Error adding contractor: ' + err.message);
+      }
+    }
+
+    function openAssignContractorModal() {
+      if (!currentJobId) return;
+      document.getElementById('assign-contractor-modal').style.display = 'flex';
+      loadContractorsForSelect();
+    }
+
+    function closeAssignContractorModal() {
+      document.getElementById('assign-contractor-modal').style.display = 'none';
+    }
+
+    async function loadContractorsForSelect() {
+      const select = document.getElementById('assign-contractor-select');
+      if (!select) return;
+
+      select.innerHTML = '<option value="">-- Select Contractor --</option>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: contractors } = await supabaseClient
+          .from('contractors')
+          .select('id, name, type')
+          .eq('user_id', user.id)
+          .order('name');
+
+        (contractors || []).forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${c.name} (${c.type})</option>`;
+        });
+      } catch (err) {
+        console.error('Load contractors for select error:', err);
+      }
+    }
+
+    async function assignContractor(event) {
+      event.preventDefault();
+
+      if (!currentJobId) return;
+
+      try {
+        const contractorId = document.getElementById('assign-contractor-select').value;
+        if (!contractorId) throw new Error('Please select a contractor');
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        const assignData = {
+          job_id: currentJobId,
+          contractor_id: contractorId,
+          role: document.getElementById('assign-contractor-role').value,
+          amount_quoted: parseFloat(document.getElementById('assign-contractor-amount').value) || 0,
+          status: 'pending'
+        };
+
+        const { error } = await supabaseClient.from('job_contractors').insert([assignData]);
+        if (error) throw error;
+
+        const shouldNotify = document.getElementById('assign-contractor-notify').checked;
+        if (shouldNotify) {
+          // Send invite email via API
+          try {
+            await fetch(`${API_URL}/api/jobs/${currentJobId}/assign-contractor`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contractor_id: contractorId, send_invite: true })
+            });
+          } catch (apiErr) {
+            console.log('Could not send invite email:', apiErr);
+          }
+        }
+
+        closeAssignContractorModal();
+        showToast('Contractor assigned!');
+        loadJobs();
+        if (currentJobId) {
+          const job = allJobs.find(j => j.id === currentJobId);
+          if (job) openJobDetail(currentJobId);
+        }
+      } catch (err) {
+        console.error('Assign contractor error:', err);
+        alert('Error assigning contractor: ' + err.message);
+      }
+    }
+
+    // =============================================
+    // CUSTOMERS MODAL
+    // =============================================
+
+    function openCustomersModal() {
+      document.getElementById('customers-modal').style.display = 'flex';
+      loadCustomersModal();
+    }
+
+    function closeCustomersModal() {
+      document.getElementById('customers-modal').style.display = 'none';
+    }
+
+    async function loadCustomersModal() {
+      const container = document.getElementById('customers-list-modal');
+      if (!container) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        container.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+
+        const { data: customers, error } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+
+        if (error) throw error;
+
+        if (!customers || customers.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">No customers yet. They are created automatically when invoices are paid.</div>';
+          return;
+        }
+
+        container.innerHTML = `
+          <table style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Jobs</th>
+                <th>Total Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${customers.map(c => `
+                <tr>
+                  <td><strong>${c.name}</strong></td>
+                  <td>
+                    <div style="font-size: 13px;">${c.email || '-'}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${c.phone || ''}</div>
+                  </td>
+                  <td>${c.total_jobs || 0}</td>
+                  <td style="color: var(--gold-primary); font-weight: 600;">$${(c.total_spent || 0).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (err) {
+        console.error('Load customers error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted);">Error loading customers</div>';
+      }
+    }
+
+    function searchCustomers() {
+      // Simple client-side search
+      const query = document.getElementById('customer-search').value.toLowerCase();
+      const rows = document.querySelectorAll('#customers-list-modal tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    async function sendCustomerUpdate() {
+      // Placeholder for sending customer update email
+      showToast('Customer update feature coming soon!', 'info');
+    }
+
+    async function orderMaterials() {
+      // Placeholder for material ordering
+      showToast('Material ordering feature coming soon!', 'info');
+    }
+
+    function saveJobChanges() {
+      showToast('Changes saved!');
+      closeJobDetailModal();
+    }
+
+    function editContractor(contractorId) {
+      showToast('Edit contractor feature coming soon!', 'info');
+    }
+
+    function openNewCustomerModal() {
+      // Use the job modal's new customer feature
+      openNewJobModal();
+      document.getElementById('job-customer-select').value = 'new';
+      toggleNewCustomerFields();
     }
 
     // =============================================
