@@ -10485,11 +10485,13 @@
 
     async function handleCreateEstimate(event) {
       event.preventDefault();
+      console.log('[Estimate] Starting creation...');
 
       // Button is in modal footer, not inside form, so find it by form attribute
       const submitBtn = document.querySelector('button[form="create-estimate-form"][type="submit"]');
       if (!submitBtn) {
-        console.error('Submit button not found');
+        console.error('[Estimate] Submit button not found');
+        alert('Error: Submit button not found');
         return;
       }
       const originalText = submitBtn.innerHTML;
@@ -10497,7 +10499,12 @@
       submitBtn.disabled = true;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log('[Estimate] Getting user...');
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        if (userError) {
+          console.error('[Estimate] User error:', userError);
+          throw userError;
+        }
         if (!user) throw new Error('Please log in');
 
         // Collect line items with category
@@ -10519,6 +10526,7 @@
         if (lineItems.length === 0) {
           throw new Error('Please add at least one line item');
         }
+        console.log('[Estimate] Line items:', lineItems.length);
 
         // Get totals
         const subtotal = parseFloat(document.getElementById('estimate-subtotal').textContent.replace('$', '').replace(',', '')) || 0;
@@ -10574,13 +10582,18 @@
           status: 'sent'
         };
 
+        console.log('[Estimate] Inserting estimate into database...');
         const { data: estimate, error: estimateError } = await supabaseClient
           .from('estimates')
           .insert([estimateData])
           .select()
           .single();
 
-        if (estimateError) throw estimateError;
+        if (estimateError) {
+          console.error('[Estimate] Insert error:', estimateError);
+          throw estimateError;
+        }
+        console.log('[Estimate] Created:', estimate.id);
 
         // Insert line items with category
         const itemsToInsert = lineItems.map(item => ({
@@ -10594,21 +10607,33 @@
           category: item.category
         }));
 
+        console.log('[Estimate] Inserting line items...');
         const { error: itemsError } = await supabaseClient
           .from('estimate_items')
           .insert(itemsToInsert);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('[Estimate] Items error:', itemsError);
+          throw itemsError;
+        }
+        console.log('[Estimate] Items inserted');
 
         // Generate approval token
+        console.log('[Estimate] Creating token...');
         const token = crypto.randomUUID();
-        await supabaseClient
+        const { error: tokenError } = await supabaseClient
           .from('estimate_tokens')
           .insert([{
             estimate_id: estimate.id,
             token: token,
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           }]);
+
+        if (tokenError) {
+          console.error('[Estimate] Token error:', tokenError);
+          // Don't throw - estimate is already created
+        }
+        console.log('[Estimate] Token created, closing modal...');
 
         // Open preview with option to send
         closeCreateEstimateModal();
