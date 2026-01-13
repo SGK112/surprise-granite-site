@@ -8274,7 +8274,7 @@
                   <div>${inv.customer_name || 'N/A'}</div>
                   <div style="font-size: 12px; color: var(--text-muted);">${inv.customer_email}</div>
                 </td>
-                <td style="font-weight: 600; color: var(--gold-primary);">$${(inv.source === 'stripe' ? inv.amount_due / 100 : inv.amount_due).toFixed(2)}</td>
+                <td style="font-weight: 600; color: var(--gold-primary);">$${(inv.amount_due || 0).toFixed(2)}</td>
                 <td>
                   <span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : inv.status === 'void' ? 'lost' : 'qualified'}">${inv.status}</span>
                   ${viewedBadge}
