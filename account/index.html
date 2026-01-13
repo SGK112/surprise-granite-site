@@ -10483,9 +10483,24 @@
       });
     });
 
+    // Helper: timeout wrapper for promises
+    function withTimeout(promise, ms, errorMsg) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg || 'Operation timed out')), ms))
+      ]);
+    }
+
     async function handleCreateEstimate(event) {
       event.preventDefault();
       console.log('[Estimate] Starting creation...');
+
+      // Check supabaseClient
+      if (!supabaseClient) {
+        console.error('[Estimate] Supabase client not initialized');
+        alert('Error: Database connection not ready. Please refresh the page.');
+        return;
+      }
 
       // Button is in modal footer, not inside form, so find it by form attribute
       const submitBtn = document.querySelector('button[form="create-estimate-form"][type="submit"]');
@@ -10500,7 +10515,11 @@
 
       try {
         console.log('[Estimate] Getting user...');
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        const { data: { user }, error: userError } = await withTimeout(
+          supabaseClient.auth.getUser(),
+          10000,
+          'Getting user timed out'
+        );
         if (userError) {
           console.error('[Estimate] User error:', userError);
           throw userError;
@@ -10583,11 +10602,11 @@
         };
 
         console.log('[Estimate] Inserting estimate into database...');
-        const { data: estimate, error: estimateError } = await supabaseClient
-          .from('estimates')
-          .insert([estimateData])
-          .select()
-          .single();
+        const { data: estimate, error: estimateError } = await withTimeout(
+          supabaseClient.from('estimates').insert([estimateData]).select().single(),
+          15000,
+          'Database insert timed out - please try again'
+        );
 
         if (estimateError) {
           console.error('[Estimate] Insert error:', estimateError);
@@ -10608,9 +10627,11 @@
         }));
 
         console.log('[Estimate] Inserting line items...');
-        const { error: itemsError } = await supabaseClient
-          .from('estimate_items')
-          .insert(itemsToInsert);
+        const { error: itemsError } = await withTimeout(
+          supabaseClient.from('estimate_items').insert(itemsToInsert),
+          15000,
+          'Line items insert timed out'
+        );
 
         if (itemsError) {
           console.error('[Estimate] Items error:', itemsError);
@@ -10621,16 +10642,22 @@
         // Generate approval token
         console.log('[Estimate] Creating token...');
         const token = crypto.randomUUID();
-        const { error: tokenError } = await supabaseClient
-          .from('estimate_tokens')
-          .insert([{
-            estimate_id: estimate.id,
-            token: token,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          }]);
+        try {
+          const { error: tokenError } = await withTimeout(
+            supabaseClient.from('estimate_tokens').insert([{
+              estimate_id: estimate.id,
+              token: token,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }]),
+            10000,
+            'Token creation timed out'
+          );
 
-        if (tokenError) {
-          console.error('[Estimate] Token error:', tokenError);
+          if (tokenError) {
+            console.error('[Estimate] Token error:', tokenError);
+          }
+        } catch (tokenErr) {
+          console.error('[Estimate] Token creation failed:', tokenErr.message);
           // Don't throw - estimate is already created
         }
         console.log('[Estimate] Token created, closing modal...');
