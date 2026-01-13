@@ -10538,11 +10538,11 @@
 
         // Create unique filename
         const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`;
+        const fileName = `logos/${user.id}/logo-${Date.now()}.${fileExt}`;
 
         // Upload to Supabase Storage
         const { data, error } = await supabaseClient.storage
-          .from('business-logos')
+          .from('lead-images')
           .upload(fileName, file, {
             cacheControl: '3600',
             upsert: true
@@ -10552,7 +10552,7 @@
 
         // Get public URL
         const { data: urlData } = supabaseClient.storage
-          .from('business-logos')
+          .from('lead-images')
           .getPublicUrl(fileName);
 
         const publicUrl = urlData.publicUrl;
@@ -10970,18 +10970,18 @@
 
         for (const file of files) {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${currentJobId}/${Date.now()}-${file.name}`;
+          const fileName = `jobs/${currentJobId}/${Date.now()}-${file.name}`;
 
           // Upload to storage
           const { data, error: uploadError } = await supabaseClient.storage
-            .from('job-files')
+            .from('lead-images')
             .upload(fileName, file);
 
           if (uploadError) throw uploadError;
 
           // Get public URL
           const { data: urlData } = supabaseClient.storage
-            .from('job-files')
+            .from('lead-images')
             .getPublicUrl(fileName);
 
           // Save file record
