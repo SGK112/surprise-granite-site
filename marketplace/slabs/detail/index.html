@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Slab Details | Surprise Granite Marketplace</title>
+  <meta content="View slab details, pricing, and request a quote from verified distributors." name="description"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --text-primary: #1a1a2e;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --border-color: #e5e5e5;
+      --bg-light: #f8f9fa;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: var(--dark-primary);
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo img { height: 32px; }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .header-link {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .header-link:hover { color: var(--gold-primary); }
+
+    .header-cta {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+    }
+
+    .breadcrumb-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { color: var(--gold-primary); }
+
+    .breadcrumb span { color: var(--text-muted); }
+
+    .breadcrumb-current { color: var(--text-primary); font-weight: 500; }
+
+    /* Main Content */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .slab-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 48px;
+    }
+
+    @media (max-width: 1000px) {
+      .slab-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Image Gallery */
+    .gallery {
+      position: relative;
+    }
+
+    .gallery-main {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f0f0f0;
+      margin-bottom: 16px;
+    }
+
+    .gallery-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gallery-thumbs {
+      display: flex;
+      gap: 12px;
+    }
+
+    .gallery-thumb {
+      width: 80px;
+      height: 60px;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .gallery-thumb:hover,
+    .gallery-thumb.active {
+      border-color: var(--gold-primary);
+    }
+
+    .gallery-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Slab Info */
+    .slab-info {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 100px;
+    }
+
+    .slab-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-material {
+      background: var(--dark-primary);
+      color: #fff;
+    }
+
+    .badge-available {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+    }
+
+    .slab-distributor {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .slab-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .slab-brand {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .slab-price-section {
+      background: var(--bg-light);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .slab-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .slab-price span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .price-label { color: var(--text-muted); }
+    .price-value { font-weight: 600; }
+
+    .slab-specs {
+      margin-bottom: 24px;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    .spec-row:last-child { border-bottom: none; }
+
+    .spec-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spec-label svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--text-muted);
+    }
+
+    .spec-value { font-weight: 600; }
+
+    .inquiry-btn {
+      width: 100%;
+      padding: 18px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .inquiry-btn:hover {
+      background: var(--gold-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .contact-options {
+      display: flex;
+      gap: 12px;
+    }
+
+    .contact-btn {
+      flex: 1;
+      padding: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .contact-btn:hover {
+      border-color: var(--gold-primary);
+    }
+
+    .contact-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Description Section */
+    .section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-text {
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* Distributor Card */
+    .distributor-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: var(--bg-light);
+      border-radius: 12px;
+      margin-top: 24px;
+    }
+
+    .distributor-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--dark-primary);
+    }
+
+    .distributor-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .distributor-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Inquiry Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title { font-size: 1.25rem; font-weight: 700; }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: #f5f5f5;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close svg { width: 20px; height: 20px; }
+
+    .modal-body { padding: 24px; }
+
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-textarea { min-height: 100px; resize: vertical; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .modal-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-submit:hover { background: var(--gold-dark); }
+
+    /* Loading State */
+    .loading-state {
+      text-align: center;
+      padding: 100px 24px;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    .footer {
+      background: var(--dark-primary);
+      color: #fff;
+      padding: 48px 24px;
+      margin-top: 64px;
+    }
+
+    .footer-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .footer-copyright {
+      font-size: 14px;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 600px) {
+      .header-nav { display: none; }
+      .slab-title { font-size: 1.5rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .contact-options { flex-direction: column; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite">
+      </a>
+      <nav class="header-nav">
+        <a href="/marketplace/" class="header-link">Marketplace</a>
+        <a href="/marketplace/slabs/" class="header-link">All Slabs</a>
+        <a href="/quote/" class="header-link">Get Quote</a>
+      </nav>
+      <a href="/distributor/signup/" class="header-cta">List Your Inventory</a>
+    </div>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <div class="breadcrumb-inner">
+      <a href="/">Home</a>
+      <span>/</span>
+      <a href="/marketplace/">Marketplace</a>
+      <span>/</span>
+      <a href="/marketplace/slabs/">Slabs</a>
+      <span>/</span>
+      <span class="breadcrumb-current" id="breadcrumbTitle">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+      <div class="loading-spinner"></div>
+      <p>Loading slab details...</p>
+    </div>
+
+    <!-- Slab Detail -->
+    <div class="slab-layout" id="slabContent" style="display: none;">
+      <!-- Gallery -->
+      <div class="gallery-section">
+        <div class="gallery">
+          <div class="gallery-main">
+            <img id="mainImage" src="" alt="">
+          </div>
+          <div class="gallery-thumbs" id="galleryThumbs">
+            <!-- Thumbnails populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="section" id="descriptionSection" style="display: none;">
+          <h2 class="section-title">Description</h2>
+          <p class="section-text" id="slabDescription"></p>
+        </div>
+
+        <!-- Distributor -->
+        <div class="section" id="distributorSection">
+          <h2 class="section-title">Sold By</h2>
+          <div class="distributor-card">
+            <div class="distributor-logo" id="distributorLogo">?</div>
+            <div>
+              <div class="distributor-name" id="distributorName">Loading...</div>
+              <div class="distributor-meta" id="distributorMeta">Verified Distributor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slab Info Sidebar -->
+      <div class="slab-info">
+        <div class="slab-badges">
+          <span class="badge badge-material" id="materialBadge">Stone</span>
+          <span class="badge badge-available" id="statusBadge">Available</span>
+        </div>
+
+        <div class="slab-distributor" id="distributorNameSmall">Distributor</div>
+        <h1 class="slab-title" id="slabTitle">Loading...</h1>
+        <div class="slab-brand" id="slabBrand"></div>
+
+        <div class="slab-price-section">
+          <div class="slab-price" id="slabPrice">Contact <span>for pricing</span></div>
+          <div class="price-row" id="tradePriceRow" style="display: none;">
+            <span class="price-label">Trade Price</span>
+            <span class="price-value" id="tradePrice"></span>
+          </div>
+          <div class="price-row" id="sqftRow" style="display: none;">
+            <span class="price-label">Total Sq Ft</span>
+            <span class="price-value" id="totalSqft"></span>
+          </div>
+        </div>
+
+        <div class="slab-specs">
+          <div class="spec-row" id="dimensionsRow" style="display: none;">
+            <span class="spec-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              Dimensions
+            </span>
+            <span class="spec-value" id="dimensions"></span>
+          </div>
+          <div class="spec-row" id="thicknessRow" style="display: none;">
+            <span class="spec-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Thickness
+            </span>
+            <span class="spec-value" id="thickness"></span>
+          </div>
+          <div class="spec-row" id="finishRow" style="display: none;">
+            <span class="spec-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+              Finish
+            </span>
+            <span class="spec-value" id="finish"></span>
+          </div>
+          <div class="spec-row" id="colorRow" style="display: none;">
+            <span class="spec-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
+              Color
+            </span>
+            <span class="spec-value" id="color"></span>
+          </div>
+          <div class="spec-row" id="quantityRow" style="display: none;">
+            <span class="spec-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              Quantity
+            </span>
+            <span class="spec-value" id="quantity"></span>
+          </div>
+        </div>
+
+        <button class="inquiry-btn" onclick="openInquiryModal()">Request Quote</button>
+
+        <div class="contact-options">
+          <a href="tel:" class="contact-btn" id="phoneBtn" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Call
+          </a>
+          <a href="#" class="contact-btn" id="websiteBtn" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Website
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Inquiry Modal -->
+  <div class="modal-backdrop" id="inquiryModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Request Quote</h3>
+        <button class="modal-close" onclick="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="inquiryForm" onsubmit="submitInquiry(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Your Name *</label>
+              <input type="text" class="form-input" id="inquiryName" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-input" id="inquiryPhone">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-input" id="inquiryEmail" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Company (if applicable)</label>
+            <input type="text" class="form-input" id="inquiryCompany" placeholder="Fabricator or contractor company">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-textarea" id="inquiryMessage" placeholder="Questions about pricing, delivery, or availability?"></textarea>
+          </div>
+
+          <button type="submit" class="modal-submit" id="submitBtn">Send Inquiry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-copyright">
+        &copy; 2025 Surprise Granite. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    let slab = null;
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const slabId = params.get('id');
+
+      if (!slabId) {
+        window.location.href = '/marketplace/slabs/';
+        return;
+      }
+
+      await loadSlab(slabId);
+    }
+
+    async function loadSlab(slabId) {
+      try {
+        const response = await fetch(`${API_BASE}/api/marketplace/slabs/${slabId}`);
+
+        if (!response.ok) {
+          throw new Error('Slab not found');
+        }
+
+        const data = await response.json();
+        slab = data.slab;
+
+        renderSlab();
+
+      } catch (err) {
+        console.error('Error loading slab:', err);
+        document.getElementById('loadingState').innerHTML = `
+          <div style="text-align: center; padding: 60px;">
+            <h2>Slab Not Found</h2>
+            <p style="color: #666; margin: 16px 0;">This slab may no longer be available.</p>
+            <a href="/marketplace/slabs/" style="display: inline-block; padding: 12px 24px; background: #f9cb00; color: #1a1a2e; text-decoration: none; border-radius: 8px; font-weight: 600;">Browse All Slabs</a>
+          </div>
+        `;
+      }
+    }
+
+    function renderSlab() {
+      // Update page title
+      document.title = `${slab.product_name} | Surprise Granite Marketplace`;
+      document.getElementById('breadcrumbTitle').textContent = slab.product_name;
+
+      // Show content
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('slabContent').style.display = 'grid';
+
+      // Gallery
+      const images = slab.images?.length ? slab.images : [getPlaceholderImage(slab.material_type)];
+      document.getElementById('mainImage').src = images[0];
+      document.getElementById('mainImage').alt = slab.product_name;
+
+      const thumbsContainer = document.getElementById('galleryThumbs');
+      if (images.length > 1) {
+        thumbsContainer.innerHTML = images.map((img, i) => `
+          <div class="gallery-thumb ${i === 0 ? 'active' : ''}" onclick="setMainImage('${img}', this)">
+            <img src="${img}" alt="View ${i + 1}">
+          </div>
+        `).join('');
+      } else {
+        thumbsContainer.style.display = 'none';
+      }
+
+      // Basic info
+      document.getElementById('materialBadge').textContent = formatMaterial(slab.material_type);
+      document.getElementById('statusBadge').textContent = formatStatus(slab.status);
+      document.getElementById('slabTitle').textContent = slab.product_name;
+
+      if (slab.brand) {
+        document.getElementById('slabBrand').textContent = slab.brand;
+      }
+
+      // Distributor
+      if (slab.distributor) {
+        document.getElementById('distributorNameSmall').textContent = slab.distributor.company_name;
+        document.getElementById('distributorName').textContent = slab.distributor.company_name;
+        document.getElementById('distributorLogo').textContent = slab.distributor.company_name.charAt(0);
+
+        if (slab.distributor.primary_contact_phone) {
+          const phoneBtn = document.getElementById('phoneBtn');
+          phoneBtn.href = `tel:${slab.distributor.primary_contact_phone}`;
+          phoneBtn.style.display = 'flex';
+        }
+
+        if (slab.distributor.website) {
+          const websiteBtn = document.getElementById('websiteBtn');
+          websiteBtn.href = slab.distributor.website;
+          websiteBtn.target = '_blank';
+          websiteBtn.style.display = 'flex';
+        }
+      }
+
+      // Pricing
+      if (slab.price_per_sqft) {
+        document.getElementById('slabPrice').innerHTML = `$${slab.price_per_sqft.toFixed(2)} <span>/sq ft</span>`;
+      }
+
+      if (slab.trade_price_per_sqft) {
+        document.getElementById('tradePriceRow').style.display = 'flex';
+        document.getElementById('tradePrice').textContent = `$${slab.trade_price_per_sqft.toFixed(2)}/sq ft`;
+      }
+
+      if (slab.total_sqft) {
+        document.getElementById('sqftRow').style.display = 'flex';
+        document.getElementById('totalSqft').textContent = `${slab.total_sqft.toFixed(1)} sq ft`;
+      }
+
+      // Specs
+      if (slab.length_inches && slab.width_inches) {
+        document.getElementById('dimensionsRow').style.display = 'flex';
+        document.getElementById('dimensions').textContent = `${slab.length_inches}" x ${slab.width_inches}"`;
+      }
+
+      if (slab.thickness_cm) {
+        document.getElementById('thicknessRow').style.display = 'flex';
+        document.getElementById('thickness').textContent = `${slab.thickness_cm} cm`;
+      }
+
+      if (slab.finish) {
+        document.getElementById('finishRow').style.display = 'flex';
+        document.getElementById('finish').textContent = slab.finish;
+      }
+
+      if (slab.color_family) {
+        document.getElementById('colorRow').style.display = 'flex';
+        document.getElementById('color').textContent = slab.color_family;
+      }
+
+      if (slab.quantity && slab.quantity > 1) {
+        document.getElementById('quantityRow').style.display = 'flex';
+        document.getElementById('quantity').textContent = `${slab.quantity} available`;
+      }
+
+      // Description
+      if (slab.description) {
+        document.getElementById('descriptionSection').style.display = 'block';
+        document.getElementById('slabDescription').textContent = slab.description;
+      }
+    }
+
+    function setMainImage(src, thumb) {
+      document.getElementById('mainImage').src = src;
+      document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    }
+
+    function openInquiryModal() {
+      document.getElementById('inquiryModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('inquiryModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    async function submitInquiry(e) {
+      e.preventDefault();
+      if (!slab) return;
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      const inquiryData = {
+        customer_name: document.getElementById('inquiryName').value,
+        customer_email: document.getElementById('inquiryEmail').value,
+        customer_phone: document.getElementById('inquiryPhone').value || null,
+        company_name: document.getElementById('inquiryCompany').value || null,
+        message: document.getElementById('inquiryMessage').value || null
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/api/marketplace/slabs/${slab.id}/inquiry`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(inquiryData)
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to submit inquiry');
+        }
+
+        alert('Thank you! Your inquiry has been sent to the distributor. They will contact you soon.');
+        closeModal();
+        document.getElementById('inquiryForm').reset();
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Inquiry';
+      }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('inquiryModal').addEventListener('click', (e) => {
+      if (e.target.id === 'inquiryModal') closeModal();
+    });
+
+    // Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Helpers
+    function formatMaterial(type) {
+      if (!type) return 'Stone';
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    function formatStatus(status) {
+      const statuses = {
+        available: 'Available',
+        reserved: 'Reserved',
+        sold: 'Sold',
+        on_hold: 'On Hold'
+      };
+      return statuses[status] || 'Available';
+    }
+
+    function getPlaceholderImage(material) {
+      return 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop';
+    }
+  </script>
+</body>
+</html>

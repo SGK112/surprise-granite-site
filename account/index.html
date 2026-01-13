@@ -8134,18 +8134,50 @@
         // Show loading state
         invoicesList.innerHTML = '<div class="empty-state"><p>Loading invoices...</p></div>';
 
-        // Fetch invoices from Stripe via API
-        const response = await fetch(`${API_URL}/api/invoices?limit=50`);
-        if (!response.ok) throw new Error('Failed to fetch invoices');
+        // Fetch from both Stripe API and Supabase in parallel
+        const { data: { user } } = await supabaseClient.auth.getUser();
 
-        const data = await response.json();
+        const [stripeResponse, supabaseResult] = await Promise.all([
+          fetch(`${API_URL}/api/invoices?limit=50`).catch(() => null),
+          supabaseClient.from('invoices').select('*, invoice_items(*)').eq('user_id', user?.id).order('created_at', { ascending: false })
+        ]);
 
-        // Transform Stripe data to match expected format
-        allInvoices = (data.invoices || []).map(inv => ({
-          ...inv,
-          amount_due: inv.amount_due || 0,
-          amount_paid: inv.amount_paid || 0
+        let stripeInvoices = [];
+        if (stripeResponse && stripeResponse.ok) {
+          const stripeData = await stripeResponse.json();
+          stripeInvoices = (stripeData.invoices || []).map(inv => ({
+            ...inv,
+            source: 'stripe',
+            amount_due: inv.amount_due || 0,
+            amount_paid: inv.amount_paid || 0
+          }));
+        }
+
+        // Transform Supabase invoices to match format
+        const supabaseInvoices = (supabaseResult.data || []).map(inv => ({
+          id: inv.id,
+          number: inv.invoice_number,
+          invoice_number: inv.invoice_number,
+          customer_email: inv.customer_email,
+          customer_name: inv.customer_name,
+          status: inv.status,
+          total: inv.total * 100, // Convert to cents for consistency
+          amount_due: (inv.amount_due || inv.total) * 100,
+          amount_paid: (inv.amount_paid || 0) * 100,
+          due_date: inv.due_date,
+          created: new Date(inv.created_at).getTime() / 1000,
+          created_at: inv.created_at,
+          source: 'supabase',
+          estimate_id: inv.estimate_id,
+          invoice_items: inv.invoice_items
         }));
+
+        // Combine and sort by date (newest first)
+        allInvoices = [...stripeInvoices, ...supabaseInvoices].sort((a, b) => {
+          const dateA = a.created || new Date(a.created_at).getTime() / 1000;
+          const dateB = b.created || new Date(b.created_at).getTime() / 1000;
+          return dateB - dateA;
+        });
 
         renderInvoices();
       } catch (err) {

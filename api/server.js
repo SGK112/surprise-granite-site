@@ -4558,8 +4558,10 @@ app.post('/api/send-estimate', async (req, res) => {
           <!-- Header with Logo -->
           <tr>
             <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 35px 40px; text-align: center;">
-              ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 50px; width: auto; margin-bottom: 10px;">` : `<h1 style="color: #f9cb00; margin: 0; font-size: 24px;">${companyName}</h1>`}
-              <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 13px;">Professional Estimate</p>
+              ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 60px; width: auto; margin-bottom: 12px;">` : ''}
+              <h1 style="color: #f9cb00; margin: 0 0 5px; font-size: 22px; font-weight: 700;">${companyName}</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 0 0 15px; font-size: 14px; letter-spacing: 1px;">Marble & Quartz</p>
+              <p style="color: #f9cb00; margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Professional Estimate</p>
             </td>
           </tr>
 
