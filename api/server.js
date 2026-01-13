@@ -2332,7 +2332,11 @@ app.get('/api/invoices', async (req, res) => {
         created: new Date(inv.created * 1000).toISOString(),
         due_date: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
         hosted_invoice_url: inv.hosted_invoice_url,
-        pdf: inv.invoice_pdf
+        pdf: inv.invoice_pdf,
+        // View tracking metadata
+        view_count: parseInt(inv.metadata?.view_count || '0'),
+        first_viewed_at: inv.metadata?.first_viewed_at || null,
+        last_viewed_at: inv.metadata?.last_viewed_at || null
       }))
     });
   } catch (error) {
@@ -2393,6 +2397,93 @@ app.post('/api/invoices/:id/void', async (req, res) => {
     res.json({ success: true, message: 'Invoice voided', status: invoice.status });
   } catch (error) {
     console.error('Void invoice error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Track invoice view - redirect endpoint for tracking when customer views invoice
+app.get('/invoice/view/:id', async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    const userAgent = req.headers['user-agent'] || '';
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+    // Get invoice from Stripe
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+
+    if (!invoice.hosted_invoice_url) {
+      return res.status(404).send('Invoice not found');
+    }
+
+    // Log view to Supabase if available
+    if (supabase) {
+      try {
+        await supabase.from('invoice_views').insert({
+          invoice_id: invoiceId,
+          invoice_number: invoice.number,
+          customer_email: invoice.customer_email,
+          viewed_at: new Date().toISOString(),
+          ip_address: ip,
+          user_agent: userAgent
+        });
+      } catch (dbErr) {
+        console.log('Could not log invoice view:', dbErr.message);
+      }
+    }
+
+    // Update Stripe invoice metadata with view info
+    try {
+      const currentViews = parseInt(invoice.metadata?.view_count || '0') + 1;
+      await stripe.invoices.update(invoiceId, {
+        metadata: {
+          ...invoice.metadata,
+          view_count: currentViews.toString(),
+          first_viewed_at: invoice.metadata?.first_viewed_at || new Date().toISOString(),
+          last_viewed_at: new Date().toISOString()
+        }
+      });
+    } catch (metaErr) {
+      console.log('Could not update invoice metadata:', metaErr.message);
+    }
+
+    // Redirect to Stripe hosted invoice page
+    res.redirect(invoice.hosted_invoice_url);
+  } catch (error) {
+    console.error('Invoice view tracking error:', error);
+    res.status(500).send('Error loading invoice');
+  }
+});
+
+// Get invoice view stats
+app.get('/api/invoices/:id/views', async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+
+    // Get from Stripe metadata
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    const viewCount = parseInt(invoice.metadata?.view_count || '0');
+    const firstViewed = invoice.metadata?.first_viewed_at || null;
+    const lastViewed = invoice.metadata?.last_viewed_at || null;
+
+    // Get detailed views from Supabase if available
+    let views = [];
+    if (supabase) {
+      const { data } = await supabase
+        .from('invoice_views')
+        .select('*')
+        .eq('invoice_id', invoiceId)
+        .order('viewed_at', { ascending: false });
+      views = data || [];
+    }
+
+    res.json({
+      view_count: viewCount,
+      first_viewed_at: firstViewed,
+      last_viewed_at: lastViewed,
+      views: views
+    });
+  } catch (error) {
+    console.error('Get invoice views error:', error);
     res.status(500).json({ error: error.message });
   }
 });

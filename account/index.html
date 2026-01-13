@@ -3698,6 +3698,7 @@
                 <button class="filter-btn active" data-invoice-status="all" onclick="filterInvoices('all')">All</button>
                 <button class="filter-btn" data-invoice-status="draft" onclick="filterInvoices('draft')">Draft</button>
                 <button class="filter-btn" data-invoice-status="open" onclick="filterInvoices('open')">Open</button>
+                <button class="filter-btn" data-invoice-status="viewed" onclick="filterInvoices('viewed')">Viewed</button>
                 <button class="filter-btn" data-invoice-status="paid" onclick="filterInvoices('paid')">Paid</button>
                 <button class="filter-btn" data-invoice-status="void" onclick="filterInvoices('void')">Voided</button>
               </div>
@@ -6933,7 +6934,12 @@
       let filtered = allInvoices;
       // Filter by status
       if (invoiceFilter !== 'all') {
-        filtered = filtered.filter(inv => inv.status === invoiceFilter);
+        if (invoiceFilter === 'viewed') {
+          // Filter for invoices that have been viewed
+          filtered = filtered.filter(inv => inv.view_count > 0);
+        } else {
+          filtered = filtered.filter(inv => inv.status === invoiceFilter);
+        }
       }
 
       if (filtered.length === 0) {
@@ -6961,7 +6967,11 @@
             </tr>
           </thead>
           <tbody>
-            ${filtered.map(inv => `
+            ${filtered.map(inv => {
+              const viewedBadge = inv.view_count > 0
+                ? `<span class="status-badge" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; font-size: 10px; padding: 2px 6px; margin-left: 4px;" title="Viewed ${inv.view_count} time${inv.view_count > 1 ? 's' : ''}${inv.last_viewed_at ? ' - Last: ' + new Date(inv.last_viewed_at).toLocaleString() : ''}">VIEWED${inv.view_count > 1 ? ' (' + inv.view_count + ')' : ''}</span>`
+                : '';
+              return `
               <tr>
                 <td><strong>${inv.number || inv.id.slice(-8)}</strong></td>
                 <td>
@@ -6969,7 +6979,10 @@
                   <div style="font-size: 12px; color: var(--text-muted);">${inv.customer_email}</div>
                 </td>
                 <td style="font-weight: 600; color: var(--gold-primary);">$${inv.amount_due.toFixed(2)}</td>
-                <td><span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : inv.status === 'void' ? 'lost' : 'qualified'}">${inv.status}</span></td>
+                <td>
+                  <span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : inv.status === 'void' ? 'lost' : 'qualified'}">${inv.status}</span>
+                  ${viewedBadge}
+                </td>
                 <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'N/A'}</td>
                 <td style="text-align: right;">
                   <div class="lead-actions" style="justify-content: flex-end;">
@@ -6982,7 +6995,7 @@
                   </div>
                 </td>
               </tr>
-            `).join('')}
+            `;}).join('')}
           </tbody>
         </table>
       `;
@@ -9948,6 +9961,20 @@
           }
           document.getElementById('biz-estimate-terms').value = settings.default_estimate_terms || '';
 
+          // Load defaults
+          if (document.getElementById('biz-tax-rate')) {
+            document.getElementById('biz-tax-rate').value = settings.default_tax_rate || 0;
+          }
+          if (document.getElementById('biz-deposit')) {
+            document.getElementById('biz-deposit').value = settings.default_deposit_percent || 50;
+          }
+          if (document.getElementById('biz-payment-terms')) {
+            document.getElementById('biz-payment-terms').value = settings.default_payment_terms || '';
+          }
+          if (document.getElementById('biz-warranty')) {
+            document.getElementById('biz-warranty').value = settings.default_warranty_terms || '';
+          }
+
           // Load logo if exists
           const logoUrl = settings.logo_url;
           const logoImage = document.getElementById('logo-image');
@@ -9995,9 +10022,9 @@
           invoice_prefix: document.getElementById('biz-invoice-prefix')?.value.trim() || 'INV-',
           default_estimate_terms: document.getElementById('biz-estimate-terms').value.trim() || null,
           default_tax_rate: parseFloat(document.getElementById('biz-tax-rate')?.value) || 0,
-          default_deposit_percent: parseFloat(document.getElementById('biz-deposit-percent')?.value) || 50,
+          default_deposit_percent: parseFloat(document.getElementById('biz-deposit')?.value) || 50,
           default_payment_terms: document.getElementById('biz-payment-terms')?.value.trim() || null,
-          default_warranty_terms: document.getElementById('biz-warranty-terms')?.value.trim() || null,
+          default_warranty_terms: document.getElementById('biz-warranty')?.value.trim() || null,
           logo_url: document.getElementById('biz-logo-url').value.trim() || null
         };
 

@@ -619,3 +619,33 @@ CREATE TRIGGER update_contractor_stats_trigger
   AFTER UPDATE ON public.job_contractors
   FOR EACH ROW
   EXECUTE FUNCTION update_contractor_stats();
+
+-- ============================================================
+-- INVOICE VIEWS TABLE - Track when customers view invoices
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.invoice_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id TEXT NOT NULL,
+  invoice_number TEXT,
+  customer_email TEXT,
+  viewed_at TIMESTAMPTZ DEFAULT NOW(),
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_views_invoice_id ON public.invoice_views(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_invoice_views_viewed_at ON public.invoice_views(viewed_at DESC);
+
+-- Enable RLS
+ALTER TABLE public.invoice_views ENABLE ROW LEVEL SECURITY;
+
+-- Allow service role full access
+CREATE POLICY "invoice_views_service_all" ON public.invoice_views
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Grant permissions
+GRANT ALL ON public.invoice_views TO service_role;
+
+COMMENT ON TABLE public.invoice_views IS 'Tracks when customers view invoices via tracking links';
