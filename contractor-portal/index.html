@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contractor Portal - Surprise Granite</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root {
+      --dark-bg: #0a0a0f;
+      --dark-surface: #12121a;
+      --dark-elevated: #1a1a24;
+      --gold-primary: #d4af37;
+      --gold-hover: #e5c349;
+      --text-primary: #f5f5f7;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --border-subtle: rgba(255,255,255,0.08);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .portal-header {
+      background: var(--dark-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .portal-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+
+    .portal-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .portal-user-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .contractor-badge {
+      background: rgba(139,92,246,0.2);
+      color: #8b5cf6;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .portal-nav {
+      background: var(--dark-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .portal-nav-item {
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .portal-nav-item:hover {
+      color: var(--text-primary);
+    }
+
+    .portal-nav-item.active {
+      color: var(--gold-primary);
+      border-bottom-color: var(--gold-primary);
+    }
+
+    .portal-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .portal-section {
+      display: none;
+    }
+
+    .portal-section.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-badge.accepted { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .status-badge.declined { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .status-badge.en_route { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .status-badge.on_site { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-badge.working { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .status-badge.completed { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .status-badge.issue { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+    /* Job status badges */
+    .status-badge.new { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-badge.scheduled { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .status-badge.in_production { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .status-badge.installing { background: rgba(16,185,129,0.15); color: #10b981; }
+
+    .job-card {
+      background: var(--dark-elevated);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .job-card:hover {
+      border-color: var(--gold-primary);
+      transform: translateY(-2px);
+    }
+
+    .job-card.needs-action {
+      border-color: var(--warning);
+      animation: pulse-border 2s infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: var(--warning); }
+      50% { border-color: rgba(245,158,11,0.3); }
+    }
+
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .job-number {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--gold-primary);
+    }
+
+    .job-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .job-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .job-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-primary {
+      background: var(--gold-primary);
+      color: var(--dark-bg);
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-hover);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #16a34a;
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--dark-surface);
+    }
+
+    .btn-info {
+      background: var(--info);
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #2563eb;
+    }
+
+    .status-update-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 16px;
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .status-update-bar .btn {
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .file-card {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .file-card:hover {
+      background: var(--dark-surface);
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 8px;
+      background: var(--dark-surface);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-name {
+      font-size: 12px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .upload-zone {
+      border: 2px dashed var(--border-subtle);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--gold-primary);
+      background: rgba(212,175,55,0.05);
+    }
+
+    .upload-zone.dragover {
+      border-color: var(--gold-primary);
+      background: rgba(212,175,55,0.1);
+    }
+
+    .comment-box {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .comment-author {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .comment-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .comment-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .comment-input-box {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .comment-input-box textarea {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      resize: none;
+      font-family: inherit;
+    }
+
+    .loading-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--dark-elevated);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .address-card {
+      background: var(--dark-elevated);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .address-card h4 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--gold-primary);
+    }
+
+    .address-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .address-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--info);
+      text-decoration: none;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .checkin-timer {
+      background: var(--dark-elevated);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .checkin-timer .time {
+      font-size: 48px;
+      font-weight: 700;
+      font-family: monospace;
+      color: var(--gold-primary);
+    }
+
+    .checkin-timer .label {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--dark-surface);
+      border-radius: 16px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 18px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .portal-content { padding: 16px; }
+      .card-body { padding: 16px; }
+      .job-meta { flex-wrap: wrap; }
+      .action-buttons { flex-wrap: wrap; }
+      .action-buttons .btn { flex: 1; min-width: 80px; }
+      .status-update-bar { flex-direction: column; }
+      .status-update-bar .btn { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="spinner"></div>
+    <div>Loading your portal...</div>
+  </div>
+
+  <!-- Main Portal (hidden until loaded) -->
+  <div id="portal-main" style="display: none;">
+    <header class="portal-header">
+      <div class="portal-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Surprise Granite
+      </div>
+      <div class="portal-user">
+        <span class="contractor-badge">Contractor</span>
+        <span class="portal-user-name" id="contractor-name">Contractor</span>
+      </div>
+    </header>
+
+    <nav class="portal-nav">
+      <div class="portal-nav-item active" data-section="dashboard" onclick="showSection('dashboard')">Dashboard</div>
+      <div class="portal-nav-item" data-section="jobs" onclick="showSection('jobs')">My Jobs</div>
+      <div class="portal-nav-item" data-section="schedule" onclick="showSection('schedule')">Schedule</div>
+      <div class="portal-nav-item" data-section="documents" onclick="showSection('documents')">Documents</div>
+      <div class="portal-nav-item" data-section="profile" onclick="showSection('profile')">My Profile</div>
+    </nav>
+
+    <main class="portal-content">
+      <!-- Dashboard Section -->
+      <section id="section-dashboard" class="portal-section active">
+        <!-- Pending Actions Alert -->
+        <div id="pending-actions-alert" class="card" style="display: none; border-color: var(--warning);">
+          <div class="card-body" style="display: flex; align-items: center; gap: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--warning)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; margin-bottom: 4px;">You have pending job assignments</div>
+              <div style="font-size: 13px; color: var(--text-secondary);" id="pending-count-text">Please review and respond</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="showSection('jobs')">View Jobs</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Welcome Back!</h2>
+          </div>
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" style="color: var(--warning);" id="stat-pending">0</div>
+                <div class="stat-label">Pending</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: var(--info);" id="stat-active">0</div>
+                <div class="stat-label">Active</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: var(--success);" id="stat-completed">0</div>
+                <div class="stat-label">Completed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" style="color: var(--gold-primary);" id="stat-hours">0</div>
+                <div class="stat-label">Hours (Month)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Jobs -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Today's Jobs</h2>
+          </div>
+          <div class="card-body" id="todays-jobs">
+            <div class="empty-state">No jobs scheduled for today</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Jobs Section -->
+      <section id="section-jobs" class="portal-section">
+        <!-- Filter Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button class="btn btn-secondary job-filter active" onclick="filterJobs('all')">All</button>
+          <button class="btn btn-secondary job-filter" onclick="filterJobs('pending')">Pending</button>
+          <button class="btn btn-secondary job-filter" onclick="filterJobs('accepted')">Accepted</button>
+          <button class="btn btn-secondary job-filter" onclick="filterJobs('in_progress')">In Progress</button>
+          <button class="btn btn-secondary job-filter" onclick="filterJobs('completed')">Completed</button>
+        </div>
+
+        <div id="jobs-list">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <h3>No jobs assigned</h3>
+            <p>Job assignments will appear here</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Schedule Section -->
+      <section id="section-schedule" class="portal-section">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Upcoming Schedule</h2>
+          </div>
+          <div class="card-body" id="schedule-list">
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <h3>No scheduled jobs</h3>
+              <p>Upcoming assignments will appear here</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Documents Section -->
+      <section id="section-documents" class="portal-section">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Job Documents</h2>
+          </div>
+          <div class="card-body" id="documents-list">
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <h3>No documents</h3>
+              <p>Drawings, specs, and files will appear here</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Profile Section -->
+      <section id="section-profile" class="portal-section">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">My Profile</h2>
+          </div>
+          <div class="card-body" id="profile-content">
+            <!-- Profile loaded here -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Job Detail Modal -->
+  <div id="job-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-job-title">Job Details</h2>
+        <button class="modal-close" onclick="closeJobModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-job-content">
+        <!-- Job details loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Upload Modal -->
+  <div id="upload-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Upload Photos</h2>
+        <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <div style="margin-top: 12px; color: var(--text-secondary);">Click to select photos or drag & drop</div>
+          <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">JPG, PNG up to 10MB</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(event)">
+        <div id="upload-preview" style="margin-top: 16px;"></div>
+        <div style="margin-top: 16px; display: flex; gap: 12px;">
+          <button class="btn btn-secondary" style="flex:1" onclick="closeUploadModal()">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" id="upload-btn" onclick="uploadPhotos()" disabled>Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0OTk0MTcsImV4cCI6MjA2MDA3NTQxN30.ba0c5flH_CPxPsfDxnPxOBkLxutayDLKfFTsOGdDkqY';
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let contractorData = null;
+    let contractorJobs = [];
+    let inviteToken = null;
+    let currentJobFilter = 'all';
+    let selectedJobForUpload = null;
+    let selectedFiles = [];
+    let demoMode = false;
+
+    // Get token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    inviteToken = urlParams.get('token');
+    demoMode = urlParams.get('demo') === 'true';
+
+    // Demo data
+    const DEMO_CONTRACTOR = {
+      id: 'demo-contractor',
+      name: 'Mike Johnson',
+      company: 'Johnson Stone Works',
+      email: 'mike@johnstoneworks.com',
+      phone: '(555) 987-6543',
+      type: 'installer',
+      specialty: 'Countertop Installation',
+      license_number: 'ROC-123456',
+      trust_score: 85,
+      service_area: 'Phoenix Metro Area',
+      bio: 'Over 15 years of experience in granite and quartz countertop installation. Specialized in kitchen and bathroom projects.',
+      can_upload_files: true,
+      can_update_status: true
+    };
+
+    const DEMO_JOBS = [
+      {
+        id: 'demo-assign-1',
+        contractor_id: 'demo-contractor',
+        contractor_status: 'pending',
+        role: 'Lead Installer',
+        amount_quoted: 800,
+        estimated_hours: 6,
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        jobs: {
+          id: 'demo-job-1',
+          job_number: 'JOB-2024-015',
+          project_type: 'kitchen_countertop',
+          project_description: 'Kitchen Granite Countertops - White Ice',
+          status: 'scheduled',
+          address: '456 Oak Avenue',
+          city: 'Surprise',
+          state: 'AZ',
+          zip: '85374',
+          install_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          field_measure_date: null,
+          estimated_start_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          customer_notes: 'Gate code: 1234. Dogs will be inside.',
+          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          job_files: [
+            { id: 'f1', file_name: 'Kitchen Layout.pdf', file_url: '#', category: 'drawing' },
+            { id: 'f2', file_name: 'Slab Photo.jpg', file_url: '#', category: 'photo' }
+          ],
+          job_comments: [
+            { id: 'c1', content: 'Customer prefers morning installation if possible.', visible_to_contractors: true, created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+          ]
+        }
+      },
+      {
+        id: 'demo-assign-2',
+        contractor_id: 'demo-contractor',
+        contractor_status: 'accepted',
+        role: 'Installer',
+        amount_quoted: 600,
+        estimated_hours: 4,
+        check_in_time: null,
+        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        jobs: {
+          id: 'demo-job-2',
+          job_number: 'JOB-2024-012',
+          project_type: 'bathroom_vanity',
+          project_description: 'Master Bath Double Vanity - Calacatta',
+          status: 'in_production',
+          address: '789 Palm Drive',
+          city: 'Peoria',
+          state: 'AZ',
+          zip: '85382',
+          install_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          job_files: [
+            { id: 'f3', file_name: 'Vanity Specs.pdf', file_url: '#', category: 'document' }
+          ],
+          job_comments: []
+        }
+      },
+      {
+        id: 'demo-assign-3',
+        contractor_id: 'demo-contractor',
+        contractor_status: 'on_site',
+        role: 'Lead Installer',
+        amount_quoted: 950,
+        estimated_hours: 8,
+        check_in_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        jobs: {
+          id: 'demo-job-3',
+          job_number: 'JOB-2024-010',
+          project_type: 'kitchen_countertop',
+          project_description: 'Full Kitchen Remodel - Black Galaxy',
+          status: 'installing',
+          address: '321 Desert Rose Ln',
+          city: 'Surprise',
+          state: 'AZ',
+          zip: '85379',
+          install_date: new Date().toISOString(),
+          created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          job_files: [],
+          job_comments: []
+        }
+      },
+      {
+        id: 'demo-assign-4',
+        contractor_id: 'demo-contractor',
+        contractor_status: 'completed',
+        role: 'Installer',
+        amount_quoted: 550,
+        actual_hours: 5.5,
+        created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+        status_updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        jobs: {
+          id: 'demo-job-4',
+          job_number: 'JOB-2024-008',
+          project_type: 'kitchen_countertop',
+          project_description: 'Kitchen Island - Absolute Black',
+          status: 'completed',
+          address: '555 Cactus Way',
+          city: 'Glendale',
+          state: 'AZ',
+          zip: '85301',
+          created_at: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+          job_files: [],
+          job_comments: []
+        }
+      }
+    ];
+
+    async function initPortal() {
+      // Demo mode - load sample data
+      if (demoMode) {
+        contractorData = DEMO_CONTRACTOR;
+        contractorJobs = DEMO_JOBS;
+
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('portal-main').style.display = 'block';
+        document.getElementById('contractor-name').textContent = contractorData.company || contractorData.name;
+
+        // Add demo banner
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background: linear-gradient(90deg, #f59e0b, #d97706); color: #000; text-align: center; padding: 8px; font-size: 13px; font-weight: 600;';
+        banner.textContent = 'DEMO MODE - Viewing sample data';
+        document.getElementById('portal-main').prepend(banner);
+
+        // Check for pending actions
+        const pendingCount = contractorJobs.filter(j => j.contractor_status === 'pending').length;
+        const alertEl = document.getElementById('pending-actions-alert');
+        if (pendingCount > 0) {
+          alertEl.style.display = 'block';
+          document.getElementById('pending-count-text').textContent = `${pendingCount} job${pendingCount > 1 ? 's' : ''} need${pendingCount === 1 ? 's' : ''} your response`;
+        }
+
+        renderJobs();
+        updateStats();
+        loadTodaysJobs();
+        loadSchedule();
+        loadDocuments();
+        loadProfile();
+        return;
+      }
+
+      if (!inviteToken) {
+        showError('Invalid access link. Please use the link provided by Surprise Granite.');
+        return;
+      }
+
+      try {
+        // Look up contractor by invite token
+        const { data: contractor, error } = await supabaseClient
+          .from('contractors')
+          .select('*')
+          .eq('invite_token', inviteToken)
+          .single();
+
+        if (error || !contractor) {
+          showError('Access link not found or expired. Please contact Surprise Granite.');
+          return;
+        }
+
+        contractorData = contractor;
+
+        // Update last login
+        await supabaseClient
+          .from('contractors')
+          .update({ last_portal_login: new Date().toISOString() })
+          .eq('id', contractor.id);
+
+        // Load contractor jobs
+        await loadContractorJobs();
+
+        // Show portal
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('portal-main').style.display = 'block';
+        document.getElementById('contractor-name').textContent = contractor.company || contractor.name || 'Contractor';
+
+        updateStats();
+        loadTodaysJobs();
+        loadSchedule();
+        loadDocuments();
+        loadProfile();
+
+      } catch (err) {
+        console.error('Portal init error:', err);
+        showError('Something went wrong. Please try again later.');
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('loading-screen').innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="var(--error)" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div style="color: var(--error); max-width: 400px; text-align: center;">${message}</div>
+        <a href="/" class="btn btn-secondary" style="margin-top: 20px; text-decoration: none;">Go to Website</a>
+      `;
+    }
+
+    async function loadContractorJobs() {
+      try {
+        // Get job assignments for this contractor
+        const { data: assignments, error } = await supabaseClient
+          .from('job_contractors')
+          .select(`
+            *,
+            jobs!inner (
+              id,
+              job_number,
+              project_type,
+              project_description,
+              status,
+              customer_notes,
+              estimated_start_date,
+              install_date,
+              field_measure_date,
+              address,
+              city,
+              state,
+              zip,
+              created_at,
+              job_files (*),
+              job_comments (*)
+            )
+          `)
+          .eq('contractor_id', contractorData.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        contractorJobs = assignments || [];
+        renderJobs();
+
+        // Check for pending actions
+        const pendingCount = contractorJobs.filter(j => j.contractor_status === 'pending').length;
+        const alertEl = document.getElementById('pending-actions-alert');
+        if (pendingCount > 0) {
+          alertEl.style.display = 'block';
+          document.getElementById('pending-count-text').textContent = `${pendingCount} job${pendingCount > 1 ? 's' : ''} need${pendingCount === 1 ? 's' : ''} your response`;
+        } else {
+          alertEl.style.display = 'none';
+        }
+
+      } catch (err) {
+        console.error('Load jobs error:', err);
+      }
+    }
+
+    function updateStats() {
+      const pending = contractorJobs.filter(j => j.contractor_status === 'pending').length;
+      const active = contractorJobs.filter(j => ['accepted', 'en_route', 'on_site', 'working'].includes(j.contractor_status)).length;
+      const completed = contractorJobs.filter(j => j.contractor_status === 'completed').length;
+
+      // Calculate hours this month
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const hoursThisMonth = contractorJobs
+        .filter(j => j.actual_hours && new Date(j.status_updated_at) >= monthStart)
+        .reduce((sum, j) => sum + parseFloat(j.actual_hours || 0), 0);
+
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('stat-active').textContent = active;
+      document.getElementById('stat-completed').textContent = completed;
+      document.getElementById('stat-hours').textContent = hoursThisMonth.toFixed(1);
+    }
+
+    function loadTodaysJobs() {
+      const container = document.getElementById('todays-jobs');
+      const today = new Date().toDateString();
+
+      const todaysJobs = contractorJobs.filter(j => {
+        const job = j.jobs;
+        if (!job) return false;
+        const installDate = job.install_date ? new Date(job.install_date).toDateString() : null;
+        const measureDate = job.field_measure_date ? new Date(job.field_measure_date).toDateString() : null;
+        const startDate = job.estimated_start_date ? new Date(job.estimated_start_date).toDateString() : null;
+        return installDate === today || measureDate === today || startDate === today;
+      });
+
+      if (todaysJobs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No jobs scheduled for today</div>';
+        return;
+      }
+
+      container.innerHTML = todaysJobs.map(assignment => {
+        const job = assignment.jobs;
+        return `
+          <div class="job-card" onclick="openJobDetail('${assignment.id}')">
+            <div class="job-card-header">
+              <div class="job-number">${job.job_number}</div>
+              <span class="status-badge ${assignment.contractor_status}">${(assignment.contractor_status || 'pending').replace('_', ' ')}</span>
+            </div>
+            <div class="job-description">${job.project_description || 'Project'}</div>
+            ${job.address ? `
+              <div class="job-meta">
+                <div class="job-meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  ${job.address}, ${job.city || ''}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadSchedule() {
+      const container = document.getElementById('schedule-list');
+      const now = new Date();
+
+      const upcoming = contractorJobs
+        .filter(j => {
+          const job = j.jobs;
+          if (!job) return false;
+          const hasDate = job.install_date || job.field_measure_date || job.estimated_start_date;
+          const nextDate = new Date(job.install_date || job.field_measure_date || job.estimated_start_date);
+          return hasDate && nextDate >= now && j.contractor_status !== 'declined';
+        })
+        .sort((a, b) => {
+          const dateA = new Date(a.jobs.install_date || a.jobs.field_measure_date || a.jobs.estimated_start_date);
+          const dateB = new Date(b.jobs.install_date || b.jobs.field_measure_date || b.jobs.estimated_start_date);
+          return dateA - dateB;
+        });
+
+      if (upcoming.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <h3>No scheduled jobs</h3>
+            <p>Upcoming assignments will appear here</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = upcoming.map(assignment => {
+        const job = assignment.jobs;
+        const date = new Date(job.install_date || job.field_measure_date || job.estimated_start_date);
+        const eventType = job.install_date ? 'Installation' : job.field_measure_date ? 'Field Measure' : 'Scheduled';
+        return `
+          <div class="job-card" onclick="openJobDetail('${assignment.id}')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">${eventType}</div>
+                <div style="font-size: 18px; font-weight: 600; color: var(--gold-primary);">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+              </div>
+              <span class="status-badge ${assignment.contractor_status}">${(assignment.contractor_status || 'pending').replace('_', ' ')}</span>
+            </div>
+            <div class="job-number">${job.job_number}</div>
+            <div class="job-description">${job.project_description || 'Project'}</div>
+            ${job.address ? `<div style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">${job.address}, ${job.city || ''}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function loadDocuments() {
+      const container = document.getElementById('documents-list');
+
+      const allFiles = [];
+      contractorJobs.forEach(assignment => {
+        const job = assignment.jobs;
+        if (!job || assignment.contractor_status === 'declined') return;
+        (job.job_files || []).forEach(file => {
+          allFiles.push({ ...file, jobNumber: job.job_number, jobId: job.id });
+        });
+      });
+
+      if (allFiles.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <h3>No documents</h3>
+            <p>Drawings, specs, and files will appear here</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="file-grid">
+          ${allFiles.map(file => `
+            <div class="file-card" onclick="window.open('${file.file_url}', '_blank')">
+              <div class="file-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <div class="file-name">${file.file_name || 'Document'}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${file.jobNumber}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function loadProfile() {
+      const container = document.getElementById('profile-content');
+      const c = contractorData;
+
+      container.innerHTML = `
+        <div style="display: grid; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--dark-elevated); display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--gold-primary);">
+              ${(c.company || c.name || 'C').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-size: 20px; font-weight: 600;">${c.company || c.name || 'Contractor'}</div>
+              <div style="color: var(--text-secondary);">${c.specialty || 'General Contractor'}</div>
+              ${c.trust_score ? `
+                <div style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${c.trust_score >= 75 ? 'rgba(34,197,94,0.15)' : c.trust_score >= 50 ? 'rgba(245,158,11,0.15)' : 'rgba(161,161,170,0.15)'}; color: ${c.trust_score >= 75 ? '#22c55e' : c.trust_score >= 50 ? '#f59e0b' : 'var(--text-muted)'};">
+                  Trust Score: ${c.trust_score}%
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="background: var(--dark-elevated); padding: 16px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Email</div>
+              <div>${c.email || 'Not provided'}</div>
+            </div>
+            <div style="background: var(--dark-elevated); padding: 16px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Phone</div>
+              <div>${c.phone || 'Not provided'}</div>
+            </div>
+            <div style="background: var(--dark-elevated); padding: 16px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">License</div>
+              <div>${c.license_number || 'Not provided'}</div>
+            </div>
+            <div style="background: var(--dark-elevated); padding: 16px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Service Area</div>
+              <div>${c.service_area || 'Not specified'}</div>
+            </div>
+          </div>
+
+          ${c.bio ? `
+            <div style="background: var(--dark-elevated); padding: 16px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">About</div>
+              <div style="color: var(--text-secondary);">${c.bio}</div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderJobs() {
+      const container = document.getElementById('jobs-list');
+
+      let filtered = contractorJobs;
+      if (currentJobFilter !== 'all') {
+        if (currentJobFilter === 'in_progress') {
+          filtered = contractorJobs.filter(j => ['en_route', 'on_site', 'working'].includes(j.contractor_status));
+        } else {
+          filtered = contractorJobs.filter(j => j.contractor_status === currentJobFilter);
+        }
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <h3>No jobs found</h3>
+            <p>${currentJobFilter === 'all' ? 'Job assignments will appear here' : 'No jobs with this status'}</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(assignment => {
+        const job = assignment.jobs;
+        const needsAction = assignment.contractor_status === 'pending';
+        return `
+          <div class="job-card ${needsAction ? 'needs-action' : ''}" onclick="openJobDetail('${assignment.id}')">
+            <div class="job-card-header">
+              <div class="job-number">${job.job_number}</div>
+              <span class="status-badge ${assignment.contractor_status}">${(assignment.contractor_status || 'pending').replace('_', ' ')}</span>
+            </div>
+            <div class="job-description">${job.project_description || 'Project'}</div>
+            <div class="job-meta">
+              ${job.install_date || job.estimated_start_date ? `
+                <div class="job-meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  ${new Date(job.install_date || job.estimated_start_date).toLocaleDateString()}
+                </div>
+              ` : ''}
+              ${job.address ? `
+                <div class="job-meta-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                  ${job.city || job.address}
+                </div>
+              ` : ''}
+            </div>
+            ${needsAction ? `
+              <div class="action-buttons" onclick="event.stopPropagation()">
+                <button class="btn btn-success btn-sm" onclick="updateJobStatus('${assignment.id}', 'accepted')">Accept</button>
+                <button class="btn btn-danger btn-sm" onclick="updateJobStatus('${assignment.id}', 'declined')">Decline</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterJobs(filter) {
+      currentJobFilter = filter;
+      document.querySelectorAll('.job-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().replace(' ', '_') === filter || (btn.textContent === 'All' && filter === 'all'));
+      });
+      renderJobs();
+    }
+
+    function openJobDetail(assignmentId) {
+      const assignment = contractorJobs.find(j => j.id === assignmentId);
+      if (!assignment) return;
+
+      const job = assignment.jobs;
+      const modal = document.getElementById('job-modal');
+      document.getElementById('modal-job-title').textContent = `Job ${job.job_number}`;
+
+      const canSeeCustomerInfo = contractorData.can_see_customer_info;
+
+      document.getElementById('modal-job-content').innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <span class="status-badge ${assignment.contractor_status}">${(assignment.contractor_status || 'pending').replace('_', ' ')}</span>
+          <span style="color: var(--text-muted); font-size: 13px;">Assigned ${new Date(assignment.created_at).toLocaleDateString()}</span>
+        </div>
+
+        ${assignment.contractor_status === 'pending' ? `
+          <div style="background: rgba(245,158,11,0.1); border: 1px solid var(--warning); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: var(--warning);">Action Required</div>
+            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Please accept or decline this job assignment.</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-success" onclick="updateJobStatus('${assignment.id}', 'accepted'); closeJobModal();">Accept Job</button>
+              <button class="btn btn-danger" onclick="updateJobStatus('${assignment.id}', 'declined'); closeJobModal();">Decline</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${['accepted', 'en_route', 'on_site', 'working'].includes(assignment.contractor_status) ? `
+          <div class="status-update-bar">
+            <button class="btn ${assignment.contractor_status === 'en_route' ? 'btn-info' : 'btn-secondary'}" onclick="updateJobStatus('${assignment.id}', 'en_route')">En Route</button>
+            <button class="btn ${assignment.contractor_status === 'on_site' ? 'btn-info' : 'btn-secondary'}" onclick="updateJobStatus('${assignment.id}', 'on_site')">On Site</button>
+            <button class="btn ${assignment.contractor_status === 'working' ? 'btn-info' : 'btn-secondary'}" onclick="updateJobStatus('${assignment.id}', 'working')">Working</button>
+            <button class="btn btn-success" onclick="markCompleted('${assignment.id}')">Complete</button>
+          </div>
+
+          ${assignment.check_in_time && !assignment.check_out_time ? `
+            <div class="checkin-timer">
+              <div class="time" id="work-timer">00:00:00</div>
+              <div class="label">Time on job</div>
+            </div>
+            <script>
+              (function() {
+                const checkIn = new Date('${assignment.check_in_time}');
+                setInterval(() => {
+                  const diff = Date.now() - checkIn.getTime();
+                  const hours = Math.floor(diff / 3600000);
+                  const mins = Math.floor((diff % 3600000) / 60000);
+                  const secs = Math.floor((diff % 60000) / 1000);
+                  document.getElementById('work-timer').textContent =
+                    String(hours).padStart(2,'0') + ':' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+                }, 1000);
+              })();
+            <\/script>
+          ` : ''}
+        ` : ''}
+
+        <h3 style="margin-bottom: 8px;">${job.project_description || 'Project'}</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 24px;">${job.customer_notes || ''}</p>
+
+        ${job.address ? `
+          <div class="address-card">
+            <h4>Job Location</h4>
+            <p>${job.address}<br>${job.city || ''} ${job.state || ''} ${job.zip || ''}</p>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(job.address + ' ' + (job.city || '') + ' ' + (job.state || ''))}" target="_blank">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+              Open in Maps
+            </a>
+          </div>
+        ` : ''}
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+          ${job.install_date ? `
+            <div style="background: var(--dark-elevated); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Install Date</div>
+              <div style="font-weight: 600;">${new Date(job.install_date).toLocaleDateString()}</div>
+            </div>
+          ` : ''}
+          ${job.field_measure_date ? `
+            <div style="background: var(--dark-elevated); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Field Measure</div>
+              <div style="font-weight: 600;">${new Date(job.field_measure_date).toLocaleDateString()}</div>
+            </div>
+          ` : ''}
+          ${assignment.estimated_hours ? `
+            <div style="background: var(--dark-elevated); padding: 12px; border-radius: 8px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Est. Hours</div>
+              <div style="font-weight: 600;">${assignment.estimated_hours}</div>
+            </div>
+          ` : ''}
+        </div>
+
+        ${(job.job_files || []).length > 0 ? `
+          <div style="margin-bottom: 24px;">
+            <h4 style="margin-bottom: 12px; font-size: 14px;">Files & Drawings</h4>
+            <div class="file-grid">
+              ${job.job_files.map(file => `
+                <div class="file-card" onclick="window.open('${file.file_url}', '_blank')">
+                  <div class="file-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div class="file-name">${file.file_name || 'Document'}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${contractorData.can_upload_files && assignment.contractor_status !== 'pending' && assignment.contractor_status !== 'declined' ? `
+          <div style="margin-bottom: 24px;">
+            <button class="btn btn-secondary" onclick="openUploadModal('${job.id}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Upload Photos
+            </button>
+          </div>
+        ` : ''}
+
+        <div>
+          <h4 style="margin-bottom: 12px; font-size: 14px;">Notes & Updates</h4>
+          ${(job.job_comments || []).filter(c => c.visible_to_contractors).map(comment => `
+            <div class="comment-box">
+              <div class="comment-header">
+                <span class="comment-author">${comment.contractor_id === contractorData.id ? 'You' : 'Surprise Granite'}</span>
+                <span class="comment-date">${new Date(comment.created_at).toLocaleString()}</span>
+              </div>
+              <div class="comment-text">${comment.content}</div>
+            </div>
+          `).join('') || '<div style="color: var(--text-muted); font-size: 13px;">No notes yet</div>'}
+
+          ${assignment.contractor_status !== 'declined' ? `
+            <div class="comment-input-box">
+              <textarea id="job-note-${assignment.id}" rows="2" placeholder="Add a note..."></textarea>
+              <button class="btn btn-primary" onclick="addJobNote('${assignment.id}', '${job.id}')">Send</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    function closeJobModal() {
+      document.getElementById('job-modal').classList.remove('active');
+    }
+
+    async function updateJobStatus(assignmentId, status) {
+      try {
+        const updateData = {
+          contractor_status: status,
+          status_updated_at: new Date().toISOString()
+        };
+
+        // Set check-in time when going on site
+        if (status === 'on_site') {
+          updateData.check_in_time = new Date().toISOString();
+        }
+
+        await supabaseClient
+          .from('job_contractors')
+          .update(updateData)
+          .eq('id', assignmentId);
+
+        // Reload and refresh
+        await loadContractorJobs();
+        updateStats();
+        loadTodaysJobs();
+        loadSchedule();
+
+        // Re-render modal if open
+        const assignment = contractorJobs.find(j => j.id === assignmentId);
+        if (assignment && document.getElementById('job-modal').classList.contains('active')) {
+          openJobDetail(assignmentId);
+        }
+
+      } catch (err) {
+        console.error('Update status error:', err);
+        alert('Could not update status');
+      }
+    }
+
+    async function markCompleted(assignmentId) {
+      const assignment = contractorJobs.find(j => j.id === assignmentId);
+      if (!assignment) return;
+
+      let actualHours = null;
+      if (assignment.check_in_time) {
+        const checkIn = new Date(assignment.check_in_time);
+        const checkOut = new Date();
+        actualHours = ((checkOut - checkIn) / 3600000).toFixed(2);
+      }
+
+      try {
+        await supabaseClient
+          .from('job_contractors')
+          .update({
+            contractor_status: 'completed',
+            status_updated_at: new Date().toISOString(),
+            check_out_time: new Date().toISOString(),
+            actual_hours: actualHours
+          })
+          .eq('id', assignmentId);
+
+        closeJobModal();
+        await loadContractorJobs();
+        updateStats();
+        loadTodaysJobs();
+        loadSchedule();
+
+        alert('Job marked as completed! ' + (actualHours ? `Total time: ${actualHours} hours` : ''));
+
+      } catch (err) {
+        console.error('Mark completed error:', err);
+        alert('Could not update status');
+      }
+    }
+
+    async function addJobNote(assignmentId, jobId) {
+      const textarea = document.getElementById(`job-note-${assignmentId}`);
+      const content = textarea.value.trim();
+      if (!content) return;
+
+      try {
+        await supabaseClient.from('job_comments').insert([{
+          job_id: jobId,
+          contractor_id: contractorData.id,
+          content: content,
+          comment_type: 'comment',
+          visible_to_customer: false,
+          visible_to_contractors: true,
+          visible_to_admin: true
+        }]);
+
+        textarea.value = '';
+        await loadContractorJobs();
+        openJobDetail(assignmentId);
+
+      } catch (err) {
+        console.error('Add note error:', err);
+        alert('Could not add note');
+      }
+    }
+
+    function openUploadModal(jobId) {
+      selectedJobForUpload = jobId;
+      selectedFiles = [];
+      document.getElementById('upload-preview').innerHTML = '';
+      document.getElementById('upload-btn').disabled = true;
+      document.getElementById('upload-modal').classList.add('active');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('upload-modal').classList.remove('active');
+      selectedJobForUpload = null;
+      selectedFiles = [];
+    }
+
+    function handleFileSelect(event) {
+      const files = Array.from(event.target.files);
+      selectedFiles = files;
+
+      const preview = document.getElementById('upload-preview');
+      preview.innerHTML = files.map((file, i) => `
+        <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span style="flex: 1; font-size: 14px;">${file.name}</span>
+          <span style="font-size: 12px; color: var(--text-muted);">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+        </div>
+      `).join('');
+
+      document.getElementById('upload-btn').disabled = files.length === 0;
+    }
+
+    async function uploadPhotos() {
+      if (!selectedJobForUpload || selectedFiles.length === 0) return;
+
+      const btn = document.getElementById('upload-btn');
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+
+      try {
+        for (const file of selectedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${selectedJobForUpload}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+          // Upload to Supabase storage
+          const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('job-files')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          // Get public URL
+          const { data: urlData } = supabaseClient.storage
+            .from('job-files')
+            .getPublicUrl(fileName);
+
+          // Add to job_files
+          await supabaseClient.from('job_files').insert([{
+            job_id: selectedJobForUpload,
+            file_name: file.name,
+            file_url: urlData.publicUrl,
+            file_type: file.type,
+            uploaded_by: contractorData.claimed_by || null
+          }]);
+        }
+
+        closeUploadModal();
+        await loadContractorJobs();
+        loadDocuments();
+        alert('Photos uploaded successfully!');
+
+      } catch (err) {
+        console.error('Upload error:', err);
+        alert('Could not upload photos: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Upload';
+      }
+    }
+
+    function showSection(sectionId) {
+      document.querySelectorAll('.portal-nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.section === sectionId);
+      });
+
+      document.querySelectorAll('.portal-section').forEach(section => {
+        section.classList.toggle('active', section.id === `section-${sectionId}`);
+      });
+    }
+
+    // Drag and drop for upload zone
+    const uploadZone = document.getElementById('upload-zone');
+    if (uploadZone) {
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
+
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+      });
+
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        document.getElementById('file-input').files = files;
+        handleFileSelect({ target: { files } });
+      });
+    }
+
+    // Close modals on click outside
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+
+    // Initialize
+    initPortal();
+  </script>
+
+  <!-- Rate Limiter -->
+  <script src="/js/rate-limiter.js"></script>
+
+  <!-- Powered by Remodely Badge -->
+  <a href="https://remodely.ai" target="_blank" class="remodely-badge" style="
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-decoration: none;
+    z-index: 9999;
+    transition: all 0.3s;
+    font-family: 'Inter', system-ui, sans-serif;
+  ">
+    <span>Powered by</span>
+    <strong style="background: linear-gradient(135deg, #6366f1, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Remodely.ai</strong>
+  </a>
+</body>
+</html>

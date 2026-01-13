@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Locations | Distributor Dashboard</title>
+  <meta name="description" content="Manage your warehouse and showroom locations."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .dashboard-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .sidebar-logo img { height: 32px; }
+    .sidebar-logo span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover { background: var(--dark-elevated); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title { font-size: 28px; font-weight: 800; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Cards */
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title { font-size: 18px; font-weight: 700; }
+
+    /* Location Cards */
+    .locations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .location-card {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .location-card.primary {
+      border-color: var(--gold-primary);
+    }
+
+    .location-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .location-badge.primary {
+      background: rgba(249, 203, 0, 0.1);
+      color: var(--gold-primary);
+    }
+
+    .location-badge.warehouse {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--blue-accent);
+    }
+
+    .location-badge.showroom {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+    }
+
+    .location-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-right: 80px;
+    }
+
+    .location-type {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .location-address {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .location-meta {
+      display: flex;
+      gap: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta-item svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    .location-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid transparent;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--error);
+    }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active { display: flex; }
+
+    .modal {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-title { font-size: 20px; font-weight: 700; }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover { background: rgba(255,255,255,0.1); }
+    .modal-close svg { width: 20px; height: 20px; stroke: currentColor; }
+
+    .modal-body { padding: 24px; }
+
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .form-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold-primary);
+    }
+
+    .form-checkbox span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 20px 24px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--dark-elevated);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .empty-icon svg { width: 40px; height: 40px; stroke: var(--text-muted); }
+    .empty-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .empty-text { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+    /* User Section */
+    .user-section {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--dark-primary);
+      font-size: 16px;
+    }
+
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .locations-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite">
+        <span>Distributor Portal</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/distributor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Inventory</div>
+          <a href="/distributor/dashboard/inventory/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            All Slabs
+            <span class="nav-badge" id="slabCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/inventory/?status=available" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Available
+          </a>
+          <a href="/distributor/dashboard/inventory/add/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Slab
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Business</div>
+          <a href="/distributor/dashboard/inquiries/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Inquiries
+            <span class="nav-badge" id="inquiryCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/locations/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Locations
+          </a>
+          <a href="/distributor/dashboard/analytics/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/distributor/dashboard/settings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Company Profile
+          </a>
+          <a href="/distributor/dashboard/settings/api/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Keys
+          </a>
+        </div>
+      </nav>
+
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div>
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-email" id="userEmail"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Locations</h1>
+          <p class="page-subtitle">Manage your warehouses, showrooms, and distribution centers</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Location
+        </button>
+      </div>
+
+      <div id="locationsContent">
+        <div class="loading">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Location Modal -->
+  <div class="modal-backdrop" id="locationModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Add Location</h3>
+        <button class="modal-close" onclick="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="locationForm" onsubmit="saveLocation(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Location Name *</label>
+            <input type="text" class="form-input" id="locationName" placeholder="e.g., Phoenix Warehouse" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location Type *</label>
+              <select class="form-select" id="locationType" required>
+                <option value="">Select type...</option>
+                <option value="warehouse">Warehouse</option>
+                <option value="showroom">Showroom</option>
+                <option value="distribution_center">Distribution Center</option>
+                <option value="yard">Yard/Storage</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-input" id="locationPhone" placeholder="(555) 123-4567">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Street Address *</label>
+            <input type="text" class="form-input" id="locationAddress" placeholder="123 Main St" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">City *</label>
+              <input type="text" class="form-input" id="locationCity" placeholder="Phoenix" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">State *</label>
+              <input type="text" class="form-input" id="locationState" placeholder="AZ" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ZIP Code *</label>
+              <input type="text" class="form-input" id="locationZip" placeholder="85001" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Country</label>
+              <input type="text" class="form-input" id="locationCountry" value="USA" placeholder="USA">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" id="isPrimary">
+              <span>Set as primary location</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Save Location</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    let currentUser = null;
+    let distributorProfile = null;
+    let locations = [];
+    let editingId = null;
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = '/log-in/?redirect=/distributor/dashboard/locations/';
+        return;
+      }
+
+      currentUser = user;
+      await loadDistributor();
+      await loadLocations();
+    }
+
+    async function loadDistributor() {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (!profile) {
+        window.location.href = '/distributor/signup/';
+        return;
+      }
+
+      distributorProfile = profile;
+      document.getElementById('userName').textContent = profile.primary_contact_name;
+      document.getElementById('userEmail').textContent = profile.primary_contact_email;
+      document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
+    }
+
+    async function loadLocations() {
+      try {
+        const response = await fetch(`${API_BASE}/api/distributor/locations`, {
+          headers: { 'x-user-id': currentUser.id }
+        });
+        const data = await response.json();
+
+        locations = data.locations || [];
+        renderLocations();
+      } catch (err) {
+        console.error('Load locations error:', err);
+        document.getElementById('locationsContent').innerHTML = '<p style="color: var(--error); text-align: center; padding: 40px;">Error loading locations</p>';
+      }
+    }
+
+    function renderLocations() {
+      const container = document.getElementById('locationsContent');
+
+      if (locations.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <h3 class="empty-title">No Locations Yet</h3>
+            <p class="empty-text">Add your first warehouse or showroom location to help buyers find your inventory.</p>
+            <button class="btn btn-primary" onclick="openAddModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add First Location
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const html = `
+        <div class="locations-grid">
+          ${locations.map(loc => `
+            <div class="location-card ${loc.is_primary ? 'primary' : ''}">
+              ${loc.is_primary ? '<span class="location-badge primary">Primary</span>' : ''}
+              ${!loc.is_primary && loc.location_type ? `<span class="location-badge ${loc.location_type}">${formatLocationType(loc.location_type)}</span>` : ''}
+              <h3 class="location-name">${loc.location_name || 'Unnamed Location'}</h3>
+              <div class="location-type">${formatLocationType(loc.location_type)}</div>
+              <div class="location-address">
+                ${loc.address}<br>
+                ${loc.city}, ${loc.state} ${loc.zip_code}
+              </div>
+              <div class="location-meta">
+                ${loc.phone ? `
+                  <div class="meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    ${loc.phone}
+                  </div>
+                ` : ''}
+              </div>
+              <div class="location-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editLocation('${loc.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                ${!loc.is_primary ? `
+                  <button class="btn btn-danger btn-sm" onclick="deleteLocation('${loc.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function formatLocationType(type) {
+      const types = {
+        warehouse: 'Warehouse',
+        showroom: 'Showroom',
+        distribution_center: 'Distribution Center',
+        yard: 'Yard/Storage'
+      };
+      return types[type] || type || 'Location';
+    }
+
+    function openAddModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = 'Add Location';
+      document.getElementById('locationForm').reset();
+      document.getElementById('locationCountry').value = 'USA';
+      document.getElementById('locationModal').classList.add('active');
+    }
+
+    function editLocation(id) {
+      const loc = locations.find(l => l.id === id);
+      if (!loc) return;
+
+      editingId = id;
+      document.getElementById('modalTitle').textContent = 'Edit Location';
+      document.getElementById('locationName').value = loc.location_name || '';
+      document.getElementById('locationType').value = loc.location_type || '';
+      document.getElementById('locationPhone').value = loc.phone || '';
+      document.getElementById('locationAddress').value = loc.address || '';
+      document.getElementById('locationCity').value = loc.city || '';
+      document.getElementById('locationState').value = loc.state || '';
+      document.getElementById('locationZip').value = loc.zip_code || '';
+      document.getElementById('locationCountry').value = loc.country || 'USA';
+      document.getElementById('isPrimary').checked = loc.is_primary || false;
+      document.getElementById('locationModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('locationModal').classList.remove('active');
+    }
+
+    async function saveLocation(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const locationData = {
+        location_name: document.getElementById('locationName').value,
+        location_type: document.getElementById('locationType').value,
+        phone: document.getElementById('locationPhone').value || null,
+        address: document.getElementById('locationAddress').value,
+        city: document.getElementById('locationCity').value,
+        state: document.getElementById('locationState').value,
+        zip_code: document.getElementById('locationZip').value,
+        country: document.getElementById('locationCountry').value || 'USA',
+        is_primary: document.getElementById('isPrimary').checked
+      };
+
+      try {
+        let response;
+        if (editingId) {
+          response = await fetch(`${API_BASE}/api/distributor/locations/${editingId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': currentUser.id
+            },
+            body: JSON.stringify(locationData)
+          });
+        } else {
+          response = await fetch(`${API_BASE}/api/distributor/locations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': currentUser.id
+            },
+            body: JSON.stringify(locationData)
+          });
+        }
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to save location');
+        }
+
+        closeModal();
+        await loadLocations();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Location';
+      }
+    }
+
+    async function deleteLocation(id) {
+      if (!confirm('Are you sure you want to delete this location?')) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/distributor/locations/${id}`, {
+          method: 'DELETE',
+          headers: { 'x-user-id': currentUser.id }
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to delete');
+        }
+
+        await loadLocations();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('locationModal').addEventListener('click', (e) => {
+      if (e.target.id === 'locationModal') closeModal();
+    });
+
+    init();
+  </script>
+</body>
+</html>

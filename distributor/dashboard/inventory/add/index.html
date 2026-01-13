@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Add Slab | Distributor Dashboard</title>
+  <meta name="description" content="Add a new slab to your inventory."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .dashboard-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .sidebar-logo img { height: 32px; }
+    .sidebar-logo span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover { background: var(--dark-elevated); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 32px;
+      max-width: 900px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { color: var(--gold-primary); }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-title { font-size: 28px; font-weight: 800; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Form */
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title { font-size: 18px; font-weight: 700; }
+    .card-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-label .required { color: var(--gold-primary); }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Image Upload */
+    .image-upload-area {
+      border: 2px dashed var(--border-subtle);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .image-upload-area:hover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .image-upload-area.dragover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      background: var(--dark-elevated);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--text-muted);
+    }
+
+    .upload-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .image-previews {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .image-preview {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-preview-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-preview-remove svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 24px;
+    }
+
+    .form-actions-right {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Status Message */
+    .status-message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status-message.success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      display: block;
+    }
+
+    .status-message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+      display: block;
+    }
+
+    /* User Section */
+    .user-section {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--dark-primary);
+      font-size: 16px;
+    }
+
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .form-actions { flex-direction: column; }
+      .form-actions-right { width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite">
+        <span>Distributor Portal</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/distributor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Inventory</div>
+          <a href="/distributor/dashboard/inventory/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            All Slabs
+            <span class="nav-badge" id="slabCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/inventory/?status=available" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Available
+          </a>
+          <a href="/distributor/dashboard/inventory/add/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Slab
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Business</div>
+          <a href="/distributor/dashboard/inquiries/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Inquiries
+            <span class="nav-badge" id="inquiryCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/locations/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Locations
+          </a>
+          <a href="/distributor/dashboard/analytics/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/distributor/dashboard/settings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Company Profile
+          </a>
+          <a href="/distributor/dashboard/settings/api/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Keys
+          </a>
+        </div>
+      </nav>
+
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div>
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-email" id="userEmail"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="breadcrumb">
+        <a href="/distributor/dashboard/">Dashboard</a>
+        <span>/</span>
+        <a href="/distributor/dashboard/inventory/">Inventory</a>
+        <span>/</span>
+        <span>Add Slab</span>
+      </div>
+
+      <div class="page-header">
+        <h1 class="page-title">Add New Slab</h1>
+        <p class="page-subtitle">Add a single slab to your inventory</p>
+      </div>
+
+      <div id="statusMessage" class="status-message"></div>
+
+      <form id="slabForm" onsubmit="saveSlab(event)">
+        <!-- Basic Info -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Basic Information</h2>
+            <p class="card-subtitle">Product name and classification</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Product Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="productName" placeholder="e.g., White Ice Granite" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Material Type <span class="required">*</span></label>
+              <select class="form-select" id="materialType" required>
+                <option value="">Select material...</option>
+                <option value="granite">Granite</option>
+                <option value="quartz">Quartz</option>
+                <option value="marble">Marble</option>
+                <option value="quartzite">Quartzite</option>
+                <option value="porcelain">Porcelain</option>
+                <option value="soapstone">Soapstone</option>
+                <option value="travertine">Travertine</option>
+                <option value="onyx">Onyx</option>
+                <option value="dolomite">Dolomite</option>
+                <option value="limestone">Limestone</option>
+                <option value="slate">Slate</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Brand</label>
+              <input type="text" class="form-input" id="brand" placeholder="e.g., MSI, Cambria, Silestone">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Color Family</label>
+              <select class="form-select" id="colorFamily">
+                <option value="">Select color...</option>
+                <option value="White">White</option>
+                <option value="Black">Black</option>
+                <option value="Gray">Gray</option>
+                <option value="Brown">Brown</option>
+                <option value="Beige">Beige</option>
+                <option value="Blue">Blue</option>
+                <option value="Green">Green</option>
+                <option value="Gold">Gold</option>
+                <option value="Red">Red</option>
+                <option value="Multi">Multi-Color</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Finish</label>
+              <select class="form-select" id="finish">
+                <option value="">Select finish...</option>
+                <option value="polished">Polished</option>
+                <option value="honed">Honed</option>
+                <option value="leathered">Leathered</option>
+                <option value="brushed">Brushed</option>
+                <option value="flamed">Flamed</option>
+                <option value="natural">Natural</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="description" placeholder="Describe the slab, its unique features, veining patterns, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- Dimensions -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Dimensions</h2>
+            <p class="card-subtitle">Size and thickness specifications</p>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Length (inches)</label>
+              <input type="number" class="form-input" id="lengthInches" placeholder="120" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Width (inches)</label>
+              <input type="number" class="form-input" id="widthInches" placeholder="72" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Thickness (cm)</label>
+              <select class="form-select" id="thicknessCm">
+                <option value="">Select...</option>
+                <option value="2">2 cm</option>
+                <option value="3">3 cm</option>
+                <option value="4">4 cm</option>
+                <option value="5">5 cm</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Total Square Feet</label>
+              <input type="number" class="form-input" id="totalSqft" placeholder="Auto-calculated" min="0" step="0.01" readonly>
+              <p class="form-hint">Calculated from length x width</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lot Number / Batch</label>
+              <input type="text" class="form-input" id="lotNumber" placeholder="e.g., LOT-2024-001">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Pricing</h2>
+            <p class="card-subtitle">Set your pricing for different buyer types</p>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Price per Sq Ft <span class="required">*</span></label>
+              <input type="number" class="form-input" id="pricePerSqft" placeholder="45.00" min="0" step="0.01" required>
+              <p class="form-hint">Standard pricing</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Trade Price per Sq Ft</label>
+              <input type="number" class="form-input" id="tradePricePerSqft" placeholder="38.00" min="0" step="0.01">
+              <p class="form-hint">For verified fabricators</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Retail Price per Sq Ft</label>
+              <input type="number" class="form-input" id="retailPricePerSqft" placeholder="55.00" min="0" step="0.01">
+              <p class="form-hint">For end consumers</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status & Inventory -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Status & Inventory</h2>
+            <p class="card-subtitle">Availability and tracking information</p>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Status <span class="required">*</span></label>
+              <select class="form-select" id="status" required>
+                <option value="available">Available</option>
+                <option value="reserved">Reserved</option>
+                <option value="sold">Sold</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" class="form-input" id="quantity" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your SKU / External ID</label>
+              <input type="text" class="form-input" id="externalId" placeholder="Your internal product ID">
+              <p class="form-hint">For API sync</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <select class="form-select" id="locationId">
+              <option value="">Select location...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Images -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Images</h2>
+            <p class="card-subtitle">Upload photos or provide image URLs</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Image URLs (one per line)</label>
+            <textarea class="form-textarea" id="imageUrls" placeholder="https://example.com/slab1.jpg&#10;https://example.com/slab2.jpg"></textarea>
+            <p class="form-hint">Enter direct image URLs, one per line</p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="/distributor/dashboard/inventory/" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Cancel
+          </a>
+          <div class="form-actions-right">
+            <button type="button" class="btn btn-secondary" onclick="saveAndAddAnother()">Save & Add Another</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Slab
+            </button>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    let currentUser = null;
+    let addAnother = false;
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = '/log-in/?redirect=/distributor/dashboard/inventory/add/';
+        return;
+      }
+
+      currentUser = user;
+      await loadDistributor();
+      await loadLocations();
+      setupCalculations();
+    }
+
+    async function loadDistributor() {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (!profile) {
+        window.location.href = '/distributor/signup/';
+        return;
+      }
+
+      document.getElementById('userName').textContent = profile.primary_contact_name;
+      document.getElementById('userEmail').textContent = profile.primary_contact_email;
+      document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
+    }
+
+    async function loadLocations() {
+      try {
+        const response = await fetch(`${API_BASE}/api/distributor/locations`, {
+          headers: { 'x-user-id': currentUser.id }
+        });
+        const data = await response.json();
+
+        const select = document.getElementById('locationId');
+        (data.locations || []).forEach(loc => {
+          const option = document.createElement('option');
+          option.value = loc.id;
+          option.textContent = `${loc.location_name} (${loc.city}, ${loc.state})`;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Load locations error:', err);
+      }
+    }
+
+    function setupCalculations() {
+      const lengthInput = document.getElementById('lengthInches');
+      const widthInput = document.getElementById('widthInches');
+      const sqftInput = document.getElementById('totalSqft');
+
+      function calcSqft() {
+        const length = parseFloat(lengthInput.value) || 0;
+        const width = parseFloat(widthInput.value) || 0;
+        if (length && width) {
+          sqftInput.value = ((length * width) / 144).toFixed(2);
+        } else {
+          sqftInput.value = '';
+        }
+      }
+
+      lengthInput.addEventListener('input', calcSqft);
+      widthInput.addEventListener('input', calcSqft);
+    }
+
+    function saveAndAddAnother() {
+      addAnother = true;
+      document.getElementById('slabForm').requestSubmit();
+    }
+
+    async function saveSlab(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>Saving...</span>';
+
+      // Parse image URLs
+      const imageUrlsText = document.getElementById('imageUrls').value;
+      const images = imageUrlsText
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.startsWith('http'));
+
+      const slabData = {
+        product_name: document.getElementById('productName').value,
+        material_type: document.getElementById('materialType').value,
+        brand: document.getElementById('brand').value || null,
+        color_family: document.getElementById('colorFamily').value || null,
+        finish: document.getElementById('finish').value || null,
+        description: document.getElementById('description').value || null,
+        length_inches: parseFloat(document.getElementById('lengthInches').value) || null,
+        width_inches: parseFloat(document.getElementById('widthInches').value) || null,
+        thickness_cm: parseFloat(document.getElementById('thicknessCm').value) || null,
+        total_sqft: parseFloat(document.getElementById('totalSqft').value) || null,
+        lot_number: document.getElementById('lotNumber').value || null,
+        price_per_sqft: parseFloat(document.getElementById('pricePerSqft').value),
+        trade_price_per_sqft: parseFloat(document.getElementById('tradePricePerSqft').value) || null,
+        retail_price_per_sqft: parseFloat(document.getElementById('retailPricePerSqft').value) || null,
+        status: document.getElementById('status').value,
+        quantity: parseInt(document.getElementById('quantity').value) || 1,
+        external_id: document.getElementById('externalId').value || null,
+        location_id: document.getElementById('locationId').value || null,
+        images: images.length > 0 ? images : null
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/api/distributor/inventory`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': currentUser.id
+          },
+          body: JSON.stringify(slabData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to save slab');
+        }
+
+        if (addAnother) {
+          addAnother = false;
+          showStatus('Slab added successfully! Add another.', 'success');
+          document.getElementById('slabForm').reset();
+          document.getElementById('status').value = 'available';
+          document.getElementById('quantity').value = '1';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.location.href = '/distributor/dashboard/inventory/';
+        }
+
+      } catch (err) {
+        showStatus('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Slab`;
+      }
+    }
+
+    function showStatus(message, type) {
+      const el = document.getElementById('statusMessage');
+      el.textContent = message;
+      el.className = 'status-message ' + type;
+
+      setTimeout(() => {
+        el.className = 'status-message';
+      }, 5000);
+    }
+
+    init();
+  </script>
+</body>
+</html>

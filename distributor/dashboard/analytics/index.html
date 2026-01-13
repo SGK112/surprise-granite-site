@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Analytics | Distributor Dashboard</title>
+  <meta name="description" content="View your inventory performance, views, and inquiries analytics."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+      --purple-accent: #8b5cf6;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .dashboard-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .sidebar-logo img { height: 32px; }
+    .sidebar-logo span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover { background: var(--dark-elevated); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title { font-size: 28px; font-weight: 800; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Time Filter */
+    .time-filter {
+      display: flex;
+      gap: 8px;
+      background: var(--dark-surface);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .time-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .time-btn:hover { color: var(--text-primary); }
+    .time-btn.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .stat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-icon svg { width: 22px; height: 22px; stroke: var(--gold-primary); }
+    .stat-icon.blue { background: rgba(59, 130, 246, 0.1); }
+    .stat-icon.blue svg { stroke: var(--blue-accent); }
+    .stat-icon.green { background: rgba(34, 197, 94, 0.1); }
+    .stat-icon.green svg { stroke: var(--success); }
+    .stat-icon.purple { background: rgba(139, 92, 246, 0.1); }
+    .stat-icon.purple svg { stroke: var(--purple-accent); }
+
+    .stat-change {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-change.up { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+    .stat-change.down { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+    .stat-change svg { width: 12px; height: 12px; }
+
+    .stat-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+    .stat-label { font-size: 14px; color: var(--text-muted); }
+
+    /* Cards */
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title { font-size: 18px; font-weight: 700; }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+    }
+
+    /* Top Products Table */
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .products-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .products-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+
+    .products-table tr:last-child td { border-bottom: none; }
+
+    .product-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .product-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: var(--dark-elevated);
+      object-fit: cover;
+    }
+
+    .product-name { font-weight: 600; }
+    .product-material { font-size: 12px; color: var(--text-muted); }
+
+    .trend-bar {
+      height: 6px;
+      background: var(--dark-elevated);
+      border-radius: 3px;
+      overflow: hidden;
+      width: 100px;
+    }
+
+    .trend-fill {
+      height: 100%;
+      background: var(--gold-primary);
+      border-radius: 3px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--dark-elevated);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .empty-icon svg { width: 40px; height: 40px; stroke: var(--text-muted); }
+    .empty-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .empty-text { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    /* User Section */
+    .user-section {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--dark-primary);
+      font-size: 16px;
+    }
+
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .time-filter { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite">
+        <span>Distributor Portal</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/distributor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Inventory</div>
+          <a href="/distributor/dashboard/inventory/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            All Slabs
+            <span class="nav-badge" id="slabCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/inventory/?status=available" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Available
+          </a>
+          <a href="/distributor/dashboard/inventory/add/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Slab
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Business</div>
+          <a href="/distributor/dashboard/inquiries/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Inquiries
+            <span class="nav-badge" id="inquiryCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/locations/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Locations
+          </a>
+          <a href="/distributor/dashboard/analytics/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/distributor/dashboard/settings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Company Profile
+          </a>
+          <a href="/distributor/dashboard/settings/api/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Keys
+          </a>
+        </div>
+      </nav>
+
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div>
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-email" id="userEmail"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Analytics</h1>
+          <p class="page-subtitle">Track your inventory performance and buyer engagement</p>
+        </div>
+        <div class="time-filter">
+          <button class="time-btn" data-period="7">7 Days</button>
+          <button class="time-btn active" data-period="30">30 Days</button>
+          <button class="time-btn" data-period="90">90 Days</button>
+          <button class="time-btn" data-period="365">Year</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="stat-change up" id="viewsChange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+              <span>+0%</span>
+            </div>
+          </div>
+          <div class="stat-value" id="totalViews">0</div>
+          <div class="stat-label">Total Views</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </div>
+            <div class="stat-change up" id="inquiriesChange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+              <span>+0%</span>
+            </div>
+          </div>
+          <div class="stat-value" id="totalInquiries">0</div>
+          <div class="stat-label">Inquiries</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          </div>
+          <div class="stat-value" id="conversionRate">0%</div>
+          <div class="stat-label">Conversion Rate</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="stat-value" id="totalFavorites">0</div>
+          <div class="stat-label">Favorites</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Views Over Time</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="viewsChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Material Distribution</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="materialsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Products -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Top Performing Products</h2>
+        </div>
+        <div id="topProductsContent">
+          <div class="loading">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    let currentUser = null;
+    let distributorProfile = null;
+    let viewsChart = null;
+    let materialsChart = null;
+    let currentPeriod = 30;
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = '/log-in/?redirect=/distributor/dashboard/analytics/';
+        return;
+      }
+
+      currentUser = user;
+      await loadDistributor();
+      await loadAnalytics();
+      setupTimeFilter();
+    }
+
+    async function loadDistributor() {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (!profile) {
+        window.location.href = '/distributor/signup/';
+        return;
+      }
+
+      distributorProfile = profile;
+      document.getElementById('userName').textContent = profile.primary_contact_name;
+      document.getElementById('userEmail').textContent = profile.primary_contact_email;
+      document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
+    }
+
+    async function loadAnalytics() {
+      try {
+        const response = await fetch(`${API_BASE}/api/distributor/analytics?period=${currentPeriod}`, {
+          headers: { 'x-user-id': currentUser.id }
+        });
+        const data = await response.json();
+
+        // Update stats
+        if (data.summary) {
+          document.getElementById('totalViews').textContent = formatNumber(data.summary.total_views || 0);
+          document.getElementById('totalInquiries').textContent = data.summary.total_inquiries || 0;
+          document.getElementById('totalFavorites').textContent = data.summary.total_favorites || 0;
+
+          // Calculate conversion rate
+          const views = data.summary.total_views || 0;
+          const inquiries = data.summary.total_inquiries || 0;
+          const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : 0;
+          document.getElementById('conversionRate').textContent = convRate + '%';
+
+          // Update nav badges
+          document.getElementById('slabCount').textContent = data.summary.total_slabs || 0;
+          document.getElementById('inquiryCount').textContent = data.summary.recent_inquiries || 0;
+        }
+
+        // Update charts
+        updateViewsChart(data.views_over_time || []);
+        updateMaterialsChart(data.material_breakdown || []);
+
+        // Update top products
+        renderTopProducts(data.top_products || []);
+
+      } catch (err) {
+        console.error('Analytics load error:', err);
+      }
+    }
+
+    function updateViewsChart(data) {
+      const ctx = document.getElementById('viewsChart').getContext('2d');
+
+      if (viewsChart) viewsChart.destroy();
+
+      // Generate sample data if empty
+      const labels = data.length ? data.map(d => formatDate(d.date)) : getLast30Days();
+      const values = data.length ? data.map(d => d.views) : Array(30).fill(0).map(() => Math.floor(Math.random() * 50));
+
+      viewsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Views',
+            data: values,
+            borderColor: '#f9cb00',
+            backgroundColor: 'rgba(249, 203, 0, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: 'rgba(255,255,255,0.5)', maxTicksLimit: 7 }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: 'rgba(255,255,255,0.5)' },
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function updateMaterialsChart(data) {
+      const ctx = document.getElementById('materialsChart').getContext('2d');
+
+      if (materialsChart) materialsChart.destroy();
+
+      // Sample data if empty
+      const labels = data.length ? data.map(d => d.material) : ['Granite', 'Quartz', 'Marble', 'Quartzite'];
+      const values = data.length ? data.map(d => d.count) : [45, 30, 15, 10];
+      const colors = ['#f9cb00', '#3b82f6', '#22c55e', '#8b5cf6', '#ef4444'];
+
+      materialsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors.slice(0, labels.length),
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: 'rgba(255,255,255,0.75)', padding: 16 }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTopProducts(products) {
+      const container = document.getElementById('topProductsContent');
+
+      if (products.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 40px;">
+            <p class="empty-text">No product data yet. Add inventory to see analytics.</p>
+            <a href="/distributor/dashboard/inventory/add/" class="btn btn-primary">Add First Slab</a>
+          </div>
+        `;
+        return;
+      }
+
+      const maxViews = Math.max(...products.map(p => p.views || 1));
+
+      container.innerHTML = `
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Views</th>
+              <th>Inquiries</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${products.map(p => `
+              <tr>
+                <td>
+                  <div class="product-info">
+                    <img class="product-thumb" src="${p.images?.[0] || '/images/placeholder-slab.jpg'}" alt="${p.product_name}">
+                    <div>
+                      <div class="product-name">${p.product_name}</div>
+                      <div class="product-material">${p.material_type || 'Stone'}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>${formatNumber(p.views || 0)}</td>
+                <td>${p.inquiries || 0}</td>
+                <td>
+                  <div class="trend-bar">
+                    <div class="trend-fill" style="width: ${((p.views || 0) / maxViews * 100)}%"></div>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function setupTimeFilter() {
+      document.querySelectorAll('.time-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentPeriod = parseInt(btn.dataset.period);
+          loadAnalytics();
+        });
+      });
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function getLast30Days() {
+      const days = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      }
+      return days;
+    }
+
+    init();
+  </script>
+</body>
+</html>

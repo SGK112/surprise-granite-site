@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Partner With Us | Surprise Granite Marketplace</title>
+  <meta name="description" content="List your stone inventory on Surprise Granite Marketplace. Reach fabricators, contractors, and homeowners. Free to join - only pay when you sell."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Unified Navigation -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+  <script defer src="/js/unified-nav.js?v=20260110e"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding-top: 140px;
+    }
+
+    @media (max-width: 991px) {
+      body { padding-top: 64px; }
+    }
+
+    /* Hero Section */
+    .hero-section {
+      background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-primary) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 60px 24px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue-accent);
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--gold-primary);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Main Content */
+    .signup-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Progress Steps */
+    .progress-container {
+      margin-bottom: 40px;
+    }
+
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 60px;
+      right: 60px;
+      height: 2px;
+      background: var(--border-subtle);
+    }
+
+    .progress-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--dark-surface);
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .progress-step.active .step-circle {
+      border-color: var(--gold-primary);
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .progress-step.completed .step-circle {
+      border-color: var(--success);
+      background: var(--success);
+      color: white;
+    }
+
+    .step-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .progress-step.active .step-label,
+    .progress-step.completed .step-label {
+      color: var(--text-primary);
+    }
+
+    /* Form Card */
+    .form-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 40px;
+    }
+
+    @media (max-width: 600px) {
+      .form-card {
+        padding: 24px;
+        border-radius: 16px;
+      }
+    }
+
+    .form-step {
+      display: none;
+    }
+
+    .form-step.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-header {
+      margin-bottom: 32px;
+    }
+
+    .step-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .step-description {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Form Fields */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-label .required {
+      color: var(--error);
+      margin-left: 2px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f9cb00' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+    }
+
+    .form-error {
+      font-size: 12px;
+      color: var(--error);
+      margin-top: 6px;
+      display: none;
+    }
+
+    .form-group.has-error .form-error {
+      display: block;
+    }
+
+    .form-group.has-error .form-input,
+    .form-group.has-error .form-select {
+      border-color: var(--error);
+    }
+
+    /* Company Type Cards */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 700px) {
+      .type-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .type-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .type-card {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .type-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .type-card-inner {
+      background: var(--dark-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .type-card:hover .type-card-inner {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .type-card input:checked + .type-card-inner {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.08);
+    }
+
+    .type-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .type-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .type-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Checkbox Grid */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .checkbox-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .checkbox-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold-primary);
+    }
+
+    .checkbox-item input:checked + span {
+      color: var(--gold-primary);
+    }
+
+    .checkbox-item span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Benefits Section */
+    .benefits-section {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 32px 0;
+    }
+
+    .benefits-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .benefits-title svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--success);
+    }
+
+    .benefits-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .benefits-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .benefit-check {
+      width: 18px;
+      height: 18px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .benefit-check svg {
+      width: 10px;
+      height: 10px;
+      stroke: white;
+    }
+
+    /* Commission Info */
+    .commission-box {
+      background: var(--dark-elevated);
+      border: 1px solid var(--gold-primary);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .commission-title {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .commission-value {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--gold-primary);
+    }
+
+    .commission-value span {
+      font-size: 24px;
+    }
+
+    .commission-note {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    /* Buttons */
+    .button-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+      flex: 1;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+      box-shadow: 0 4px 20px var(--gold-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px var(--gold-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--dark-primary);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success State */
+    .success-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .success-icon {
+      width: 100px;
+      height: 100px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon svg {
+      width: 50px;
+      height: 50px;
+      stroke: white;
+    }
+
+    .success-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .success-text {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .next-steps {
+      background: var(--dark-elevated);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: left;
+      margin-top: 32px;
+    }
+
+    .next-steps h4 {
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    .next-step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .next-step-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-number {
+      width: 24px;
+      height: 24px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    /* Login Link */
+    .login-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .login-link a {
+      color: var(--gold-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Terms */
+    .terms-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+
+    .terms-text a {
+      color: var(--text-secondary);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      Distributor Partnership
+    </div>
+    <h1 class="hero-title">Sell Your Inventory to<br/>Thousands of Pros</h1>
+    <p class="hero-subtitle">List your slabs and materials on Surprise Granite Marketplace. Reach fabricators, contractors, designers, and homeowners across Arizona. Free to join.</p>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value">500+</div>
+        <div class="stat-label">Active Fabricators</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">10K+</div>
+        <div class="stat-label">Monthly Visitors</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">$2M+</div>
+        <div class="stat-label">Materials Sold</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="signup-container">
+    <!-- Progress Steps -->
+    <div class="progress-container">
+      <div class="progress-steps">
+        <div class="progress-step active" data-step="1">
+          <div class="step-circle">1</div>
+          <span class="step-label">Company</span>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="step-circle">2</div>
+          <span class="step-label">Products</span>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="step-circle">3</div>
+          <span class="step-label">Location</span>
+        </div>
+        <div class="progress-step" data-step="4">
+          <div class="step-circle">4</div>
+          <span class="step-label">Account</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="alert alert-error" id="errorAlert"></div>
+
+      <!-- Step 1: Company Type -->
+      <div class="form-step active" data-step="1">
+        <div class="step-header">
+          <h2 class="step-title">What type of company are you?</h2>
+          <p class="step-description">Select the option that best describes your business.</p>
+        </div>
+
+        <div class="type-grid">
+          <label class="type-card">
+            <input type="radio" name="company_type" value="distributor" required>
+            <div class="type-card-inner">
+              <div class="type-icon">🏢</div>
+              <div class="type-name">Distributor</div>
+              <div class="type-desc">Stone & tile distribution</div>
+            </div>
+          </label>
+
+          <label class="type-card">
+            <input type="radio" name="company_type" value="manufacturer">
+            <div class="type-card-inner">
+              <div class="type-icon">🏭</div>
+              <div class="type-name">Manufacturer</div>
+              <div class="type-desc">We make our own products</div>
+            </div>
+          </label>
+
+          <label class="type-card">
+            <input type="radio" name="company_type" value="importer">
+            <div class="type-card-inner">
+              <div class="type-icon">🚢</div>
+              <div class="type-name">Importer</div>
+              <div class="type-desc">International stone import</div>
+            </div>
+          </label>
+
+          <label class="type-card">
+            <input type="radio" name="company_type" value="wholesaler">
+            <div class="type-card-inner">
+              <div class="type-icon">📦</div>
+              <div class="type-name">Wholesaler</div>
+              <div class="type-desc">Wholesale to trade only</div>
+            </div>
+          </label>
+
+          <label class="type-card">
+            <input type="radio" name="company_type" value="quarry">
+            <div class="type-card-inner">
+              <div class="type-icon">⛏️</div>
+              <div class="type-name">Quarry</div>
+              <div class="type-desc">Direct from the source</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="benefits-section">
+          <div class="benefits-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Why Partner With Us
+          </div>
+          <div class="benefits-list">
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>Free to list your inventory</span>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>Reach 500+ local fabricators</span>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>API for live inventory sync</span>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>Only pay when you sell (5%)</span>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>Bulk CSV upload support</span>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <span>Analytics & reporting dashboard</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn btn-primary" onclick="nextStep(1)">
+            Continue
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Products & Materials -->
+      <div class="form-step" data-step="2">
+        <div class="step-header">
+          <h2 class="step-title">What products do you carry?</h2>
+          <p class="step-description">Select all material types and brands you offer.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Material Types <span class="required">*</span></label>
+          <div class="checkbox-grid">
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="quartz">
+              <span>Quartz</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="granite">
+              <span>Granite</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="marble">
+              <span>Marble</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="quartzite">
+              <span>Quartzite</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="porcelain">
+              <span>Porcelain</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="soapstone">
+              <span>Soapstone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="travertine">
+              <span>Travertine</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="limestone">
+              <span>Limestone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="materials" value="sintered">
+              <span>Sintered Stone</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 28px;">
+          <label class="form-label">Brands You Carry</label>
+          <div class="checkbox-grid">
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="msi">
+              <span>MSI</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="cambria">
+              <span>Cambria</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="caesarstone">
+              <span>Caesarstone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="silestone">
+              <span>Silestone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="dekton">
+              <span>Dekton</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="vicostone">
+              <span>Vicostone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="hanstone">
+              <span>Hanstone</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="lg_viatera">
+              <span>LG Viatera</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="brands" value="other">
+              <span>Other</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 28px;">
+          <label class="form-label">Estimated Slab Inventory Count</label>
+          <select class="form-select" id="inventorySize" name="inventory_size">
+            <option value="">Select range...</option>
+            <option value="1-100">1-100 slabs</option>
+            <option value="100-500">100-500 slabs</option>
+            <option value="500-1000">500-1,000 slabs</option>
+            <option value="1000-5000">1,000-5,000 slabs</option>
+            <option value="5000+">5,000+ slabs</option>
+          </select>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(2)">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Location -->
+      <div class="form-step" data-step="3">
+        <div class="step-header">
+          <h2 class="step-title">Where is your primary location?</h2>
+          <p class="step-description">You can add more locations after signup.</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label">Company Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="companyName" name="company_name" placeholder="Your Company Name" required>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Address <span class="required">*</span></label>
+            <input type="text" class="form-input" id="address" name="address" placeholder="Street address" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">City <span class="required">*</span></label>
+            <input type="text" class="form-input" id="city" name="city" placeholder="Phoenix" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">State <span class="required">*</span></label>
+            <select class="form-select" id="state" name="state" required>
+              <option value="AZ" selected>Arizona</option>
+              <option value="CA">California</option>
+              <option value="NV">Nevada</option>
+              <option value="NM">New Mexico</option>
+              <option value="TX">Texas</option>
+              <option value="CO">Colorado</option>
+              <option value="UT">Utah</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ZIP Code <span class="required">*</span></label>
+            <input type="text" class="form-input" id="zipCode" name="zip_code" placeholder="85001" required pattern="[0-9]{5}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Location Type</label>
+            <select class="form-select" id="locationType" name="location_type">
+              <option value="showroom">Showroom</option>
+              <option value="slab_yard">Slab Yard</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="distribution_center">Distribution Center</option>
+              <option value="headquarters">Headquarters</option>
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Website</label>
+            <input type="url" class="form-input" id="website" name="website" placeholder="https://www.yourcompany.com">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(3)">Back</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(3)">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Account -->
+      <div class="form-step" data-step="4">
+        <div class="step-header">
+          <h2 class="step-title">Create your account</h2>
+          <p class="step-description">Set up your login credentials and accept the partnership terms.</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Contact Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="contactName" name="contact_name" placeholder="John Smith" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phone <span class="required">*</span></label>
+            <input type="tel" class="form-input" id="phone" name="phone" placeholder="(602) 555-1234" required>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Email <span class="required">*</span></label>
+            <input type="email" class="form-input" id="email" name="email" placeholder="you@company.com" required>
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Password <span class="required">*</span></label>
+            <input type="password" class="form-input" id="password" name="password" placeholder="Min 8 characters" required minlength="8">
+          </div>
+        </div>
+
+        <div class="commission-box">
+          <div class="commission-title">Platform Commission</div>
+          <div class="commission-value">5<span>%</span></div>
+          <div class="commission-note">Only charged on sales made through our marketplace.<br/>No monthly fees. No listing fees.</div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Back</button>
+          <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitSignup()">
+            Create Partnership Account
+          </button>
+        </div>
+
+        <p class="terms-text">
+          By creating an account, you agree to our <a href="/legal/terms-of-use/">Terms of Service</a>, <a href="/legal/privacy-policy/">Privacy Policy</a>, and <a href="/legal/distributor-agreement/">Distributor Agreement</a>.
+        </p>
+      </div>
+
+      <!-- Success State -->
+      <div class="form-step" data-step="success">
+        <div class="success-state">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <h2 class="success-title">Welcome to the Marketplace!</h2>
+          <p class="success-text">
+            Your distributor account has been created. Check your email to verify your account, then start adding your inventory.
+          </p>
+
+          <a href="/distributor/dashboard/" class="btn btn-primary" style="max-width: 300px; margin: 0 auto;">
+            Go to Dashboard
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+
+          <div class="next-steps">
+            <h4>Next Steps:</h4>
+            <div class="next-step-item">
+              <span class="step-number">1</span>
+              <span>Verify your email address</span>
+            </div>
+            <div class="next-step-item">
+              <span class="step-number">2</span>
+              <span>Add your first slab or upload inventory CSV</span>
+            </div>
+            <div class="next-step-item">
+              <span class="step-number">3</span>
+              <span>Connect Stripe to receive payments</span>
+            </div>
+            <div class="next-step-item">
+              <span class="step-number">4</span>
+              <span>Set up API integration for live inventory sync</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-link">
+      Already have an account? <a href="/log-in/">Log in</a>
+    </div>
+  </div>
+
+  <script>
+    // Supabase Config
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentStep = 1;
+    let formData = {};
+
+    // Phone formatting
+    document.getElementById('phone').addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length >= 6) {
+        value = '(' + value.substring(0,3) + ') ' + value.substring(3,6) + '-' + value.substring(6,10);
+      } else if (value.length >= 3) {
+        value = '(' + value.substring(0,3) + ') ' + value.substring(3);
+      }
+      e.target.value = value;
+    });
+
+    function showError(message) {
+      const alert = document.getElementById('errorAlert');
+      alert.textContent = message;
+      alert.classList.add('show');
+      setTimeout(() => alert.classList.remove('show'), 5000);
+    }
+
+    function validateStep(step) {
+      if (step === 1) {
+        const companyType = document.querySelector('input[name="company_type"]:checked');
+        if (!companyType) {
+          showError('Please select your company type');
+          return false;
+        }
+        formData.company_type = companyType.value;
+        return true;
+      }
+
+      if (step === 2) {
+        const materials = Array.from(document.querySelectorAll('input[name="materials"]:checked')).map(cb => cb.value);
+        const brands = Array.from(document.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
+
+        if (materials.length === 0) {
+          showError('Please select at least one material type');
+          return false;
+        }
+
+        formData.material_types = materials;
+        formData.brands_carried = brands;
+        formData.inventory_size = document.getElementById('inventorySize').value;
+        return true;
+      }
+
+      if (step === 3) {
+        const companyName = document.getElementById('companyName').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const city = document.getElementById('city').value.trim();
+        const state = document.getElementById('state').value;
+        const zipCode = document.getElementById('zipCode').value.trim();
+
+        if (!companyName) {
+          showError('Please enter your company name');
+          return false;
+        }
+        if (!address) {
+          showError('Please enter your address');
+          return false;
+        }
+        if (!city) {
+          showError('Please enter your city');
+          return false;
+        }
+        if (!/^\d{5}$/.test(zipCode)) {
+          showError('Please enter a valid 5-digit ZIP code');
+          return false;
+        }
+
+        formData.company_name = companyName;
+        formData.address = address;
+        formData.city = city;
+        formData.state = state;
+        formData.zip_code = zipCode;
+        formData.location_type = document.getElementById('locationType').value;
+        formData.website = document.getElementById('website').value.trim();
+        return true;
+      }
+
+      if (step === 4) {
+        const contactName = document.getElementById('contactName').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!contactName) {
+          showError('Please enter your name');
+          return false;
+        }
+        if (phone.replace(/\D/g, '').length < 10) {
+          showError('Please enter a valid phone number');
+          return false;
+        }
+        if (!email.includes('@') || !email.includes('.')) {
+          showError('Please enter a valid email');
+          return false;
+        }
+        if (password.length < 8) {
+          showError('Password must be at least 8 characters');
+          return false;
+        }
+
+        formData.contact_name = contactName;
+        formData.phone = phone;
+        formData.email = email;
+        formData.password = password;
+        return true;
+      }
+
+      return true;
+    }
+
+    function nextStep(fromStep) {
+      if (!validateStep(fromStep)) return;
+
+      currentStep = fromStep + 1;
+      updateStepDisplay();
+    }
+
+    function prevStep(fromStep) {
+      currentStep = fromStep - 1;
+      updateStepDisplay();
+    }
+
+    function updateStepDisplay() {
+      // Hide all steps
+      document.querySelectorAll('.form-step').forEach(step => {
+        step.classList.remove('active');
+      });
+
+      // Show current step
+      const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+      if (currentStepEl) {
+        currentStepEl.classList.add('active');
+      }
+
+      // Update progress
+      document.querySelectorAll('.progress-step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        step.classList.remove('active', 'completed');
+        if (stepNum < currentStep) {
+          step.classList.add('completed');
+        } else if (stepNum === currentStep) {
+          step.classList.add('active');
+        }
+      });
+
+      // Scroll to top of form
+      document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function submitSignup() {
+      if (!validateStep(4)) return;
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="loading-spinner"></div> Creating Account...';
+
+      try {
+        // 1. Create auth user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.contact_name,
+              account_type: 'distributor',
+              company_name: formData.company_name
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        // 2. Create distributor profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('distributor_profiles')
+          .insert({
+            user_id: authData.user.id,
+            company_name: formData.company_name,
+            company_type: formData.company_type,
+            primary_contact_name: formData.contact_name,
+            primary_contact_email: formData.email,
+            primary_contact_phone: formData.phone,
+            website: formData.website || null,
+            material_types: formData.material_types,
+            brands_carried: formData.brands_carried,
+            service_regions: [formData.state],
+            onboarding_step: 4
+          })
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          // Continue anyway - profile can be created later via webhook
+        }
+
+        // 3. Create primary location
+        if (profileData) {
+          const { error: locationError } = await supabase
+            .from('distributor_locations')
+            .insert({
+              distributor_id: profileData.id,
+              location_name: formData.company_name + ' - ' + formData.city,
+              location_type: formData.location_type,
+              is_primary: true,
+              address_line1: formData.address,
+              city: formData.city,
+              state: formData.state,
+              zip_code: formData.zip_code,
+              phone: formData.phone,
+              email: formData.email
+            });
+
+          if (locationError) {
+            console.error('Location error:', locationError);
+          }
+        }
+
+        // 4. Store distributor ID for dashboard
+        localStorage.setItem('sg_distributor_signup', JSON.stringify({
+          distributor_id: profileData?.id || authData.user.id,
+          email: formData.email,
+          company_name: formData.company_name
+        }));
+
+        // Show success
+        document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+        document.querySelector('.form-step[data-step="success"]').classList.add('active');
+        document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));
+
+      } catch (error) {
+        console.error('Signup error:', error);
+        showError(error.message || 'Something went wrong. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Create Partnership Account';
+      }
+    }
+  </script>
+</body>
+</html>

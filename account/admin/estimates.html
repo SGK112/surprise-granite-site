@@ -559,11 +559,11 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeEstimateModal()">Cancel</button>
-        <button class="btn btn-secondary" onclick="saveEstimate('draft')">
+        <button class="btn btn-secondary" id="saveDraftBtn" onclick="saveEstimate('draft', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Save Draft
         </button>
-        <button class="btn btn-primary" onclick="saveEstimate('sent')">
+        <button class="btn btn-primary" id="saveSendBtn" onclick="saveEstimate('sent', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Save & Send
         </button>
@@ -920,11 +920,19 @@
       return { subtotal, discountAmount, taxAmount, grandTotal };
     }
 
-    async function saveEstimate(status = 'draft') {
+    async function saveEstimate(status = 'draft', btn = null) {
       const customerName = document.getElementById('customerName').value;
       if (!customerName) {
         alert('Customer name is required');
         return;
+      }
+
+      // Show loading state
+      const saveBtn = btn || document.getElementById(status === 'sent' ? 'saveSendBtn' : 'saveDraftBtn');
+      const originalText = saveBtn ? saveBtn.innerHTML : '';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;display:inline-block;vertical-align:middle;"></div> Saving...';
       }
 
       const totals = calculateTotals();
@@ -1023,14 +1031,24 @@
       } catch (e) {
         console.error('Save estimate error:', e);
         alert('Error saving estimate: ' + e.message);
+      } finally {
+        // Reset button state
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalText;
+        }
       }
     }
 
     async function sendEstimateEmail(estimateId, estimate) {
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
         const response = await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             name: estimate.customer_name,
             email: estimate.customer_email,
@@ -1040,9 +1058,11 @@
             message: `New estimate #${estimate.estimate_number} for $${estimate.total_amount.toFixed(2)}\n\nProject Address: ${estimate.project_address || 'N/A'}\nValid Until: ${estimate.valid_until || 'N/A'}\n\nNotes: ${estimate.notes || 'None'}`
           })
         });
+        clearTimeout(timeout);
         if (!response.ok) throw new Error('Email send failed');
       } catch (e) {
         console.error('Send email error:', e);
+        // Don't throw - estimate is saved, email just didn't send
       }
     }
 

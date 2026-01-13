@@ -30,18 +30,25 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Unified Nav Offset - account for fixed header */
+    :root {
+      --unified-nav-height: 155px; /* Actual measured height of unified nav */
+      --sidebar-width: 260px;
+      --sidebar-collapsed-width: 72px;
+    }
+
+    @media (max-width: 991px) {
+      :root {
+        --unified-nav-height: 64px; /* Match unified-nav.css --nav-height-mobile */
+      }
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       background: var(--dark-deep);
       min-height: 100vh;
       color: var(--text-primary);
-    }
-
-    /* Unified Nav Offset - account for fixed header */
-    :root {
-      --unified-nav-height: 155px; /* Fixed sidebar needs explicit top offset */
-      --sidebar-width: 260px;
-      --sidebar-collapsed-width: 72px;
+      padding-top: var(--unified-nav-height); /* Space for fixed unified nav */
     }
 
     /* Sidebar */
@@ -431,7 +438,7 @@
       align-items: center;
       justify-content: space-between;
       position: sticky;
-      top: 0;
+      top: var(--unified-nav-height); /* Stick below unified nav */
       z-index: 50;
     }
 
@@ -1052,12 +1059,17 @@
     .status-badge {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: capitalize;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+      vertical-align: middle;
     }
 
     .status-badge::before {
@@ -1065,7 +1077,48 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
+      flex-shrink: 0;
     }
+
+    /* Job Status Styles */
+    .status-badge.job-new { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-badge.job-new::before { background: #f59e0b; }
+
+    .status-badge.job-reviewing { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-badge.job-reviewing::before { background: #f59e0b; }
+
+    .status-badge.job-material_ordered { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+    .status-badge.job-material_ordered::before { background: #06b6d4; }
+
+    .status-badge.job-material_received { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+    .status-badge.job-material_received::before { background: #06b6d4; }
+
+    .status-badge.job-assigned { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-badge.job-assigned::before { background: #3b82f6; }
+
+    .status-badge.job-scheduled { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-badge.job-scheduled::before { background: #3b82f6; }
+
+    .status-badge.job-measured { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .status-badge.job-measured::before { background: #8b5cf6; }
+
+    .status-badge.job-in_production { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .status-badge.job-in_production::before { background: #8b5cf6; }
+
+    .status-badge.job-ready { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .status-badge.job-ready::before { background: #10b981; }
+
+    .status-badge.job-installing { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .status-badge.job-installing::before { background: #10b981; }
+
+    .status-badge.job-completed { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-badge.job-completed::before { background: #22c55e; }
+
+    .status-badge.job-on_hold { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+    .status-badge.job-on_hold::before { background: #6b7280; }
+
+    .status-badge.job-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-badge.job-cancelled::before { background: #ef4444; }
 
     .status-new { background: rgba(77, 166, 255, 0.15); color: var(--info); }
     .status-new::before { background: var(--info); }
@@ -1190,21 +1243,25 @@
       margin: 0 auto;
     }
 
-    /* Modal */
+    /* Modal - base styles, visibility controlled by .active class */
     .modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(4px);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 200;
+      z-index: 10000;
       padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
     }
 
     .modal-overlay.active {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
     }
 
     .modal {
@@ -2006,6 +2063,369 @@
       background: rgba(255, 255, 255, 0.02);
     }
 
+    /* Calendar Styles */
+    .calendar-container {
+      background: var(--dark-elevated);
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+    }
+
+    .calendar-header-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--dark-surface);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .calendar-header-cell {
+      padding: 16px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar-day {
+      min-height: 120px;
+      padding: 8px;
+      border-right: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--dark-elevated);
+      transition: background 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .calendar-day:nth-child(7n) {
+      border-right: none;
+    }
+
+    .calendar-day:hover {
+      background: var(--dark-surface);
+    }
+
+    .calendar-day.other-month {
+      background: rgba(0, 0, 0, 0.2);
+      opacity: 0.5;
+    }
+
+    .calendar-day.today {
+      background: rgba(212, 175, 55, 0.1);
+    }
+
+    .calendar-day.today .calendar-day-number {
+      background: var(--gold-primary);
+      color: var(--dark-bg);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-day-number {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .calendar-events {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .calendar-event {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .calendar-event:hover {
+      transform: translateX(2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .calendar-event.job {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-left: 3px solid #3b82f6;
+    }
+
+    .calendar-event.install {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border-left: 3px solid #10b981;
+    }
+
+    .calendar-event.measure {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border-left: 3px solid #f59e0b;
+    }
+
+    .calendar-event.production {
+      background: rgba(139, 92, 246, 0.2);
+      color: #a78bfa;
+      border-left: 3px solid #8b5cf6;
+    }
+
+    .calendar-event-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Trust Score Badge */
+    .trust-score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--dark-elevated) 0%, var(--dark-surface) 100%);
+      border: 2px solid var(--border-subtle);
+      border-radius: 12px;
+      min-width: 80px;
+    }
+
+    .trust-score-badge.verified {
+      border-color: var(--gold-primary);
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, var(--dark-surface) 100%);
+    }
+
+    .trust-score-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold-primary);
+      line-height: 1;
+    }
+
+    .trust-score-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Verification Checklist Item */
+    .verification-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .verification-item.completed {
+      border-color: rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .verification-item.pending {
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .verification-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .verification-icon.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .verification-icon.pending {
+      background: rgba(107, 114, 128, 0.2);
+      color: #6b7280;
+    }
+
+    .verification-item-text {
+      flex: 1;
+    }
+
+    .verification-item-title {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .verification-item-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .verification-item-points {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gold-primary);
+    }
+
+    /* Document Card */
+    .document-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    .document-card .doc-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--dark-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .document-card .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .document-card .doc-name {
+      font-weight: 500;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .document-card .doc-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .document-card .doc-status {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .document-card .doc-status.approved {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .document-card .doc-status.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    .document-card .doc-status.expired {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .calendar-event-more {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      cursor: pointer;
+    }
+
+    .calendar-event-more:hover {
+      color: var(--gold-primary);
+    }
+
+    /* Upcoming Events List */
+    .upcoming-event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .upcoming-event-item:last-child {
+      border-bottom: none;
+    }
+
+    .upcoming-event-item:hover {
+      background: var(--dark-surface);
+    }
+
+    .upcoming-event-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+      padding: 8px 12px;
+      background: var(--dark-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .upcoming-event-date .day {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--gold-primary);
+      line-height: 1;
+    }
+
+    .upcoming-event-date .month {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .upcoming-event-info {
+      flex: 1;
+    }
+
+    .upcoming-event-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .upcoming-event-details {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .upcoming-event-type {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
     /* Wallet Balance Cards */
     .wallet-balance-grid {
       display: grid;
@@ -2214,11 +2634,7 @@
     }
 
     /* Responsive */
-    @media (max-width: 1024px) {
-      :root {
-        --unified-nav-height: 64px; /* Match unified-nav mobile height */
-      }
-
+    @media (max-width: 991px) {
       .sidebar {
         transform: translateX(-100%);
         top: var(--unified-nav-height);
@@ -2738,30 +3154,7 @@
       justify-content: flex-end;
     }
 
-    /* Create Listing Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(4px);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
+    /* Create Listing Modal - modal-overlay styles consolidated above */
     .modal-content {
       background: var(--dark-surface);
       border: 1px solid var(--border-subtle);
@@ -3095,8 +3488,8 @@
     }
   </style>
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
-<script defer src="/js/unified-nav.js?v=20260110e"></script>
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260112b">
+<script defer src="/js/unified-nav.js?v=20260112b"></script>
 
 </head>
 <body>
@@ -3336,6 +3729,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             <span class="nav-item-text">Contractors</span>
           </a>
+          <a class="nav-item" data-page="calendar" onclick="showPage('calendar')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span class="nav-item-text">Calendar</span>
+          </a>
           <a class="nav-item" data-page="wallet" onclick="showPage('wallet')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             <span class="nav-item-text">Wallet</span>
@@ -3397,6 +3794,15 @@
         </button>
         <h1 class="topbar-title" id="page-title">Dashboard</h1>
         <div class="topbar-actions">
+          <!-- Role Switcher (for demo/testing - remove in production) -->
+          <div id="role-switcher" style="display: none; margin-right: 12px;">
+            <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;">
+              <option value="customer">Customer View</option>
+              <option value="contractor">Contractor View</option>
+              <option value="vendor">Vendor View</option>
+              <option value="admin">Admin View</option>
+            </select>
+          </div>
           <a href="/get-a-free-estimate/" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             Get Quote
@@ -3737,9 +4143,10 @@
             <div class="card-body">
               <div class="table-filters" style="margin-bottom: 20px;">
                 <button class="filter-btn active" data-job-status="all" onclick="filterJobs('all')">All</button>
-                <button class="filter-btn" data-job-status="pending" onclick="filterJobs('pending')">Pending</button>
+                <button class="filter-btn" data-job-status="new" onclick="filterJobs('new')">New</button>
                 <button class="filter-btn" data-job-status="scheduled" onclick="filterJobs('scheduled')">Scheduled</button>
-                <button class="filter-btn" data-job-status="in_progress" onclick="filterJobs('in_progress')">In Progress</button>
+                <button class="filter-btn" data-job-status="in_production" onclick="filterJobs('in_production')">In Production</button>
+                <button class="filter-btn" data-job-status="installing" onclick="filterJobs('installing')">Installing</button>
                 <button class="filter-btn" data-job-status="completed" onclick="filterJobs('completed')">Completed</button>
               </div>
               <div id="jobs-list">
@@ -3778,6 +4185,82 @@
                   <h3>No contractors yet</h3>
                   <p>Add your fabricators, installers, plumbers, and other team members.</p>
                   <button class="btn btn-primary" style="margin-top: 16px;" onclick="openNewContractorModal()">Add First Contractor</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Calendar Page -->
+        <section id="page-calendar" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Calendar</h3>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <button class="btn btn-secondary" id="calendar-prev" onclick="changeCalendarMonth(-1)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <span id="calendar-month-year" style="font-weight: 600; min-width: 150px; text-align: center;">January 2026</span>
+                <button class="btn btn-secondary" id="calendar-next" onclick="changeCalendarMonth(1)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <button class="btn btn-secondary" onclick="goToToday()" style="margin-left: 8px;">Today</button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="calendar-container">
+                <div class="calendar-header-row">
+                  <div class="calendar-header-cell">Sun</div>
+                  <div class="calendar-header-cell">Mon</div>
+                  <div class="calendar-header-cell">Tue</div>
+                  <div class="calendar-header-cell">Wed</div>
+                  <div class="calendar-header-cell">Thu</div>
+                  <div class="calendar-header-cell">Fri</div>
+                  <div class="calendar-header-cell">Sat</div>
+                </div>
+                <div class="calendar-grid" id="calendar-grid">
+                  <!-- Calendar days will be rendered here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar Legend -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+              <h3 class="card-title">Legend</h3>
+            </div>
+            <div class="card-body">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #3b82f6;"></span>
+                  <span style="font-size: 13px;">Scheduled</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #8b5cf6;"></span>
+                  <span style="font-size: 13px;">In Production</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #10b981;"></span>
+                  <span style="font-size: 13px;">Installing</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #f59e0b;"></span>
+                  <span style="font-size: 13px;">Field Measure</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-header">
+              <h3 class="card-title">Upcoming Events</h3>
+            </div>
+            <div class="card-body">
+              <div id="upcoming-events-list">
+                <div class="empty-state" style="padding: 30px;">
+                  <p style="color: var(--text-muted);">No upcoming events scheduled</p>
                 </div>
               </div>
             </div>
@@ -4555,7 +5038,7 @@
   </div>
 
   <!-- Create Estimate Modal - Professional Estimating System -->
-  <div id="create-estimate-modal" class="modal-overlay" onclick="if(event.target === this) closeCreateEstimateModal()" style="display: none;">
+  <div id="create-estimate-modal" class="modal-overlay" onclick="if(event.target === this) closeCreateEstimateModal()">
     <div class="modal-content" style="max-width: 1100px; max-height: 95vh; overflow-y: auto;">
       <!-- Professional Header -->
       <div class="modal-header" style="background: linear-gradient(135deg, rgba(249,203,0,0.15), rgba(249,203,0,0.05)); border-bottom: 2px solid var(--gold-primary); padding: 20px 24px;">
@@ -4950,7 +5433,7 @@
   </div>
 
   <!-- Business Settings Modal -->
-  <div id="business-settings-modal" class="modal-overlay" onclick="if(event.target === this) closeBusinessSettings()" style="display: none;">
+  <div id="business-settings-modal" class="modal-overlay" onclick="if(event.target === this) closeBusinessSettings()">
     <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Business Settings</h2>
@@ -5083,7 +5566,7 @@
   </div>
 
   <!-- New Job Modal -->
-  <div id="new-job-modal" class="modal-overlay" onclick="if(event.target === this) closeNewJobModal()" style="display: none;">
+  <div id="new-job-modal" class="modal-overlay" onclick="if(event.target === this) closeNewJobModal()">
     <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Create New Job</h2>
@@ -5205,7 +5688,7 @@
   </div>
 
   <!-- Job Detail Modal -->
-  <div id="job-detail-modal" class="modal-overlay" onclick="if(event.target === this) closeJobDetailModal()" style="display: none;">
+  <div id="job-detail-modal" class="modal-overlay" onclick="if(event.target === this) closeJobDetailModal()">
     <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Job Details - <span id="job-detail-number">JOB-0001</span></h2>
@@ -5217,9 +5700,16 @@
         <!-- Job Status Bar -->
         <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
           <select id="job-detail-status" onchange="updateJobStatus()" style="padding: 8px 16px; border-radius: 8px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary);">
-            <option value="pending">Pending</option>
+            <option value="new">New</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="material_ordered">Material Ordered</option>
+            <option value="material_received">Material Received</option>
+            <option value="assigned">Assigned</option>
             <option value="scheduled">Scheduled</option>
-            <option value="in_progress">In Progress</option>
+            <option value="measured">Measured</option>
+            <option value="in_production">In Production</option>
+            <option value="ready">Ready</option>
+            <option value="installing">Installing</option>
             <option value="completed">Completed</option>
             <option value="on_hold">On Hold</option>
             <option value="cancelled">Cancelled</option>
@@ -5243,7 +5733,13 @@
           <!-- Left Column - Customer & Job Info -->
           <div>
             <div class="form-section">
-              <div class="form-section-title">Customer</div>
+              <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                Customer
+                <button class="btn btn-secondary btn-sm" onclick="sendCustomerPortalLink()" title="Send portal access link">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                  Portal Link
+                </button>
+              </div>
               <div id="job-detail-customer" style="padding: 12px; background: var(--dark-elevated); border-radius: 8px;">
                 <div style="font-weight: 600;" id="job-customer-name-display">Loading...</div>
                 <div style="font-size: 13px; color: var(--text-muted);" id="job-customer-email-display"></div>
@@ -5279,7 +5775,29 @@
             </div>
 
             <div class="form-section">
-              <div class="form-section-title">Assigned Contractors</div>
+              <div class="form-section-title">Schedule</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Field Measure</label>
+                  <input type="datetime-local" id="job-field-measure-date" onchange="updateJobSchedule('field_measure_date')"
+                         style="width: 100%; padding: 8px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px;">
+                </div>
+                <div>
+                  <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Install Date</label>
+                  <input type="datetime-local" id="job-install-date" onchange="updateJobSchedule('install_date')"
+                         style="width: 100%; padding: 8px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px;">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                Team & Contractors
+                <button class="btn btn-secondary btn-sm" onclick="openAssignContractorModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  Add
+                </button>
+              </div>
               <div id="job-contractors-list" style="min-height: 60px;">
                 <div style="color: var(--text-muted); font-size: 13px;">No contractors assigned yet.</div>
               </div>
@@ -5322,7 +5840,7 @@
   </div>
 
   <!-- Customers Modal -->
-  <div id="customers-modal" class="modal-overlay" onclick="if(event.target === this) closeCustomersModal()" style="display: none;">
+  <div id="customers-modal" class="modal-overlay" onclick="if(event.target === this) closeCustomersModal()">
     <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Customer Database</h2>
@@ -5346,7 +5864,7 @@
   </div>
 
   <!-- New Contractor Modal -->
-  <div id="new-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeNewContractorModal()" style="display: none;">
+  <div id="new-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeNewContractorModal()">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
         <h2 class="modal-title">Add Contractor</h2>
@@ -5410,9 +5928,138 @@
     </div>
   </div>
 
+  <!-- Contractor Profile/Detail Modal -->
+  <div id="contractor-profile-modal" class="modal-overlay" onclick="if(event.target === this) closeContractorProfileModal()">
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Contractor Profile</h2>
+        <button class="modal-close" onclick="closeContractorProfileModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Trust Score Badge -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 16px; background: var(--dark-surface); border-radius: 12px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 700;" id="contractor-profile-name">Contractor Name</div>
+            <div style="font-size: 13px; color: var(--text-muted);" id="contractor-profile-company">Company Name</div>
+          </div>
+          <div style="text-align: center;">
+            <div class="trust-score-badge" id="contractor-trust-badge">
+              <span class="trust-score-value" id="contractor-trust-score">0</span>
+              <span class="trust-score-label">Trust Score</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite Link Section -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            Invite to Join Platform
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Share this link or QR code so the contractor can claim their profile, upload documents, and build their trust score.
+          </p>
+          <div style="display: flex; gap: 12px; align-items: stretch;">
+            <div style="flex: 1;">
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="contractor-invite-link" readonly
+                       style="flex: 1; padding: 10px 12px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 12px;"
+                       value="Generating link...">
+                <button class="btn btn-secondary" onclick="copyInviteLink()" title="Copy Link">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </button>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="btn btn-secondary btn-sm" onclick="sendInviteEmail()" style="flex: 1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  Email Invite
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="sendInviteSMS()" style="flex: 1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  Text Invite
+                </button>
+              </div>
+            </div>
+            <div style="width: 100px; height: 100px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center;" id="contractor-qr-code">
+              <div style="color: #333; font-size: 10px; text-align: center;">QR Code</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verification Checklist -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Verification Status
+          </div>
+          <div id="contractor-verification-checklist" style="display: grid; gap: 8px;">
+            <!-- Checklist items will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="form-section">
+          <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Documents
+            </span>
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Upload
+              <input type="file" id="contractor-doc-upload" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="uploadContractorDocument(event)">
+            </label>
+          </div>
+          <div id="contractor-documents-list" style="min-height: 60px;">
+            <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">
+              No documents uploaded yet
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="form-section">
+          <div class="form-section-title">Contact Information</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Email</label>
+              <div id="contractor-profile-email" style="font-size: 14px;">-</div>
+            </div>
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Phone</label>
+              <div id="contractor-profile-phone" style="font-size: 14px;">-</div>
+            </div>
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Type</label>
+              <div id="contractor-profile-type" style="font-size: 14px;">-</div>
+            </div>
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">License #</label>
+              <div id="contractor-profile-license" style="font-size: 14px;">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Job History -->
+        <div class="form-section">
+          <div class="form-section-title">Job History</div>
+          <div id="contractor-job-history" style="max-height: 150px; overflow-y: auto;">
+            <div style="color: var(--text-muted); font-size: 13px;">No jobs assigned yet</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeContractorProfileModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="editContractorDetails()">Edit Details</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Assign Contractor Modal -->
-  <div id="assign-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeAssignContractorModal()" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
+  <div id="assign-contractor-modal" class="modal-overlay" onclick="if(event.target === this) closeAssignContractorModal()">
+    <div class="modal-content" style="max-width: 550px;">
       <div class="modal-header">
         <h2 class="modal-title">Assign Contractor to Job</h2>
         <button class="modal-close" onclick="closeAssignContractorModal()">
@@ -5421,18 +6068,52 @@
       </div>
       <form id="assign-contractor-form" onsubmit="assignContractor(event)">
         <div class="modal-body">
-          <div class="form-group">
-            <label>Select Contractor *</label>
-            <select id="assign-contractor-select" required>
-              <option value="">-- Select Contractor --</option>
-            </select>
+          <!-- Existing Contractor Selection -->
+          <div id="select-existing-contractor">
+            <div class="form-group">
+              <label>Select Contractor *</label>
+              <select id="assign-contractor-select" onchange="toggleNewContractorInAssign()">
+                <option value="">-- Select Contractor --</option>
+                <option value="__new__">+ Add New Contractor</option>
+              </select>
+            </div>
           </div>
+
+          <!-- New Contractor Form (hidden by default) -->
+          <div id="new-contractor-inline" style="display: none; padding: 16px; background: var(--dark-surface); border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--gold-primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-weight: 600; color: var(--gold-primary);">New Contractor Details</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="cancelNewContractorInline()" style="padding: 4px 8px; font-size: 11px;">Cancel</button>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Name *</label>
+                <input type="text" id="inline-contractor-name" placeholder="John Smith">
+              </div>
+              <div class="form-group">
+                <label>Company</label>
+                <input type="text" id="inline-contractor-company" placeholder="ABC Stoneworks">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="inline-contractor-email" placeholder="john@example.com">
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="inline-contractor-phone" placeholder="(555) 123-4567">
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Role on this Job</label>
             <select id="assign-contractor-role">
               <option value="fabricator">Fabricator</option>
               <option value="installer">Installer</option>
               <option value="plumber">Plumber</option>
+              <option value="electrician">Electrician</option>
               <option value="template">Template Tech</option>
               <option value="other">Other</option>
             </select>
@@ -5442,8 +6123,8 @@
             <input type="number" id="assign-contractor-amount" step="0.01" min="0" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label>
-              <input type="checkbox" id="assign-contractor-notify" checked>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="assign-contractor-notify" checked style="width: 18px; height: 18px;">
               Send email invitation to contractor
             </label>
           </div>
@@ -5457,7 +6138,7 @@
   </div>
 
   <!-- Service Catalog Modal -->
-  <div id="service-catalog-modal" class="modal-overlay" onclick="if(event.target === this) closeServiceCatalog()" style="display: none;">
+  <div id="service-catalog-modal" class="modal-overlay" onclick="if(event.target === this) closeServiceCatalog()">
     <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Service & Material Catalog</h2>
@@ -5494,7 +6175,7 @@
   </div>
 
   <!-- Add Catalog Item Modal -->
-  <div id="add-catalog-item-modal" class="modal-overlay" onclick="if(event.target === this) closeAddCatalogItem()" style="display: none; z-index: 1001;">
+  <div id="add-catalog-item-modal" class="modal-overlay" onclick="if(event.target === this) closeAddCatalogItem()" style="z-index: 10001;">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-header">
         <h2 class="modal-title">Add Catalog Item</h2>
@@ -5606,6 +6287,110 @@
     let userProfile = null;
     let isAdmin = false;
     let isSuperAdmin = false;
+    let userRole = 'customer'; // customer, contractor, vendor, admin
+
+    // Role-based feature permissions
+    const ROLE_PERMISSIONS = {
+      customer: {
+        nav: ['dashboard', 'profile', 'favorites', 'listings', 'calendar', 'messages'],
+        features: ['view_own_jobs', 'view_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews']
+      },
+      contractor: {
+        nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'products', 'orders', 'messages'],
+        features: ['view_own_jobs', 'create_jobs', 'view_estimates', 'send_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews', 'view_contractors', 'manage_customers', 'view_leads', 'hire_subcontractors', 'ai_tools', 'analytics']
+      },
+      vendor: {
+        nav: ['dashboard', 'profile', 'products', 'orders', 'messages', 'calendar', 'wallet'],
+        features: ['list_products', 'receive_orders', 'view_analytics', 'message_team', 'manage_inventory', 'connect_contractors']
+      },
+      admin: {
+        nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'admin-users', 'products', 'orders', 'messages'],
+        features: ['full_access']
+      }
+    };
+
+    // Apply role-based navigation visibility
+    function applyRoleBasedNav(role) {
+      const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.customer;
+      const allowedNavItems = permissions.nav;
+
+      // Get all nav items
+      const navItems = document.querySelectorAll('.nav-item[data-page]');
+
+      navItems.forEach(item => {
+        const page = item.dataset.page;
+        if (allowedNavItems.includes(page)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      // Show/hide nav sections based on role
+      const adminNavEl = document.getElementById('admin-nav');
+      const vendorNavEl = document.getElementById('vendor-nav');
+
+      // Admin section - visible to contractors and admins
+      if (adminNavEl) {
+        const showAdminNav = ['contractor', 'admin'].includes(role);
+        adminNavEl.style.display = showAdminNav ? 'block' : 'none';
+
+        // Update section title based on role
+        const adminTitle = adminNavEl.querySelector('.nav-section-title');
+        if (adminTitle) {
+          adminTitle.textContent = role === 'admin' ? 'Admin' : 'Business';
+        }
+      }
+
+      // Vendor/Store section
+      if (vendorNavEl) {
+        const showVendorNav = ['contractor', 'vendor', 'admin'].includes(role);
+        vendorNavEl.style.display = showVendorNav ? 'block' : 'none';
+      }
+
+      // Add role indicator to body for CSS targeting
+      document.body.dataset.userRole = role;
+
+      console.log('Applied role-based nav for:', role);
+    }
+
+    // Check if user has permission for a feature
+    function hasPermission(feature) {
+      const permissions = ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.customer;
+      return permissions.features.includes('full_access') || permissions.features.includes(feature);
+    }
+
+    // Switch role (for demo/testing)
+    function switchRole(newRole) {
+      if (!ROLE_PERMISSIONS[newRole]) return;
+
+      userRole = newRole;
+      applyRoleBasedNav(newRole);
+
+      // Update role display
+      const roleEl = document.getElementById('user-role');
+      const roleLabels = { customer: 'Customer', contractor: 'Contractor', vendor: 'Vendor', admin: 'Admin' };
+      if (roleEl) roleEl.textContent = roleLabels[newRole] || 'Member';
+
+      // Show notification
+      showToast(`Switched to ${roleLabels[newRole]} view`);
+
+      // Refresh dashboard to show role-specific content
+      if (document.getElementById('page-dashboard').classList.contains('active')) {
+        loadDashboardStats();
+      }
+    }
+
+    // Show role switcher for admins or demo mode
+    function enableRoleSwitcher() {
+      const switcher = document.getElementById('role-switcher');
+      const select = document.getElementById('role-select');
+      if (switcher && select) {
+        switcher.style.display = 'block';
+        select.value = userRole;
+      }
+    }
+
     let allLeads = [];
     let currentFilter = 'all';
     let selectedLead = null;
@@ -5962,28 +6747,49 @@
         isSuperAdmin = SUPER_ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
         isAdmin = isSuperAdmin || ['admin', 'super_admin'].includes(accountType);
 
+        // Determine user role (from profile or derived from account type)
+        if (isAdmin) {
+          userRole = 'admin';
+        } else if (profile?.user_role) {
+          userRole = profile.user_role;
+        } else if (accountType.startsWith('pro_')) {
+          userRole = 'contractor';
+        } else {
+          userRole = 'customer';
+        }
+
         // Safely update sidebar user info
         const avatarEl = document.getElementById('user-avatar');
         const nameEl = document.getElementById('user-name');
         const roleEl = document.getElementById('user-role');
 
+        const roleLabels = {
+          customer: 'Customer',
+          contractor: 'Contractor',
+          vendor: 'Vendor',
+          admin: 'Admin'
+        };
+
         if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
         if (nameEl) nameEl.textContent = name;
-        if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : (isAdmin ? 'Admin' : (accountType === 'homeowner' ? 'Member' : accountType.replace('pro_', 'Pro ')));
+        if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : roleLabels[userRole] || 'Member';
 
         // Update account type label in sidebar header
         const accountTypeLabel = document.getElementById('account-type-label');
         if (accountTypeLabel) {
           const typeLabels = {
-            'homeowner': 'Homeowner Account',
+            'customer': 'Customer Account',
+            'contractor': 'Contractor Account',
+            'vendor': 'Vendor Account',
+            'admin': 'Admin Account',
+            'homeowner': 'Customer Account',
             'pro_contractor': 'Contractor Account',
             'pro_fabricator': 'Fabricator Account',
             'pro_designer': 'Designer Account',
             'pro_builder': 'Builder Account',
-            'admin': 'Admin Account',
             'super_admin': 'Admin Account'
           };
-          accountTypeLabel.textContent = typeLabels[accountType] || 'Account';
+          accountTypeLabel.textContent = typeLabels[userRole] || typeLabels[accountType] || 'Account';
         }
 
         // Safely update profile form
@@ -5997,16 +6803,12 @@
         if (profilePhoneEl) profilePhoneEl.value = profile?.phone || meta.phone || '';
         if (profileCompanyEl) profileCompanyEl.value = profile?.company_name || '';
 
-        // Show admin nav if admin
-        const adminNavEl = document.getElementById('admin-nav');
-        if (isAdmin && adminNavEl) {
-          adminNavEl.style.display = 'block';
-        }
+        // Apply role-based navigation
+        applyRoleBasedNav(userRole);
 
-        // Show store/vendor nav for admins and pro accounts
-        const vendorNavEl = document.getElementById('vendor-nav');
-        if ((isAdmin || accountType.startsWith('pro_')) && vendorNavEl) {
-          vendorNavEl.style.display = 'block';
+        // Enable role switcher for admins (for testing different views)
+        if (isAdmin) {
+          enableRoleSwitcher();
         }
 
       } catch (err) {
@@ -8008,6 +8810,15 @@
       if (page === 'wallet' && isAdmin) {
         loadWalletData();
       }
+      if (page === 'calendar') {
+        initCalendar();
+      }
+      if (page === 'jobs') {
+        loadJobs();
+      }
+      if (page === 'contractors') {
+        loadContractors();
+      }
     };
 
     // ============ WALLET MANAGEMENT ============
@@ -9134,9 +9945,7 @@
 
     async function openCreateEstimateModal() {
       const modal = document.getElementById('create-estimate-modal');
-      modal.style.display = 'flex';
-      modal.style.opacity = '1';
-      modal.style.visibility = 'visible';
+      modal.classList.add('active');
       document.getElementById('create-estimate-form').reset();
 
       // Reset line items container with empty message
@@ -9446,9 +10255,7 @@
 
     function closeCreateEstimateModal() {
       const modal = document.getElementById('create-estimate-modal');
-      modal.style.display = 'none';
-      modal.style.opacity = '0';
-      modal.style.visibility = 'hidden';
+      modal.classList.remove('active');
     }
 
     async function loadBusinessDefaults() {
@@ -9813,9 +10620,12 @@
         // Try to send email via API, but don't fail if it doesn't work
         if (customerEmail) {
           try {
+            const emailController = new AbortController();
+            const emailTimeout = setTimeout(() => emailController.abort(), 10000); // 10 sec timeout
             await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: emailController.signal,
               body: JSON.stringify({
                 to: customerEmail,
                 customerName: estimateData.customer_name,
@@ -9825,15 +10635,17 @@
                 approvalUrl: viewLink
               })
             });
+            clearTimeout(emailTimeout);
             showToast('Estimate created and email sent!');
           } catch (emailErr) {
-            console.log('Email API unavailable, showing manual send option');
+            console.log('Email API unavailable:', emailErr.message);
             // Fallback: offer to copy link or open email client
             const sendManually = confirm(
               `Estimate created successfully!\n\n` +
-              `Email service is not configured. Would you like to:\n\n` +
+              `The email server is temporarily unavailable (starting up). Would you like to:\n\n` +
               `• Click OK to open your email client with the estimate link\n` +
-              `• Click Cancel to just copy the link`
+              `• Click Cancel to just copy the link\n\n` +
+              `(The email will be sent automatically on future attempts)`
             );
 
             if (sendManually) {
@@ -10079,13 +10891,17 @@
           } catch (e) {}
         }
 
-        // Try to send email via API
+        // Try to send email via API with timeout
         try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
           const response = await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify(emailData)
           });
+          clearTimeout(timeout);
 
           const result = await response.json();
 
@@ -10382,17 +11198,13 @@
 
     function openBusinessSettings() {
       const modal = document.getElementById('business-settings-modal');
-      modal.style.display = 'flex';
-      modal.style.opacity = '1';
-      modal.style.visibility = 'visible';
+      modal.classList.add('active');
       loadBusinessSettings();
     }
 
     function closeBusinessSettings() {
       const modal = document.getElementById('business-settings-modal');
-      modal.style.display = 'none';
-      modal.style.opacity = '0';
-      modal.style.visibility = 'hidden';
+      modal.classList.remove('active');
     }
 
     async function loadBusinessSettings() {
@@ -10674,9 +11486,16 @@
       }
 
       const statusColors = {
-        pending: '#f59e0b',
+        new: '#f59e0b',
+        reviewing: '#f59e0b',
+        material_ordered: '#06b6d4',
+        material_received: '#06b6d4',
+        assigned: '#3b82f6',
         scheduled: '#3b82f6',
-        in_progress: '#8b5cf6',
+        measured: '#8b5cf6',
+        in_production: '#8b5cf6',
+        ready: '#10b981',
+        installing: '#10b981',
         completed: '#22c55e',
         on_hold: '#6b7280',
         cancelled: '#ef4444'
@@ -10703,13 +11522,13 @@
                   <div>${job.customers?.name || 'Unknown'}</div>
                   <div style="font-size: 12px; color: var(--text-muted);">${job.customers?.email || ''}</div>
                 </td>
-                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${job.title || job.description || '-'}</td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${job.project_description || '-'}</td>
                 <td>
-                  <span class="status-badge" style="background: ${statusColors[job.status] || '#6b7280'}20; color: ${statusColors[job.status] || '#6b7280'};">
-                    ${(job.status || 'pending').replace('_', ' ')}
+                  <span class="status-badge job-${job.status || 'new'}">
+                    ${(job.status || 'new').replace('_', ' ')}
                   </span>
                 </td>
-                <td style="font-weight: 600; color: var(--gold-primary);">$${(job.total_amount || 0).toFixed(2)}</td>
+                <td style="font-weight: 600; color: var(--gold-primary);">$${(job.contract_amount || 0).toFixed(2)}</td>
                 <td>${new Date(job.created_at).toLocaleDateString()}</td>
                 <td style="text-align: right;" onclick="event.stopPropagation();">
                   <div class="lead-actions" style="justify-content: flex-end;">
@@ -10726,14 +11545,14 @@
     }
 
     function openNewJobModal() {
-      document.getElementById('new-job-modal').style.display = 'flex';
+      document.getElementById('new-job-modal').classList.add('active');
       document.getElementById('new-job-form').reset();
       document.getElementById('new-customer-fields').style.display = 'none';
       loadCustomersForSelect();
     }
 
     function closeNewJobModal() {
-      document.getElementById('new-job-modal').style.display = 'none';
+      document.getElementById('new-job-modal').classList.remove('active');
     }
 
     function toggleNewCustomerFields() {
@@ -10752,7 +11571,7 @@
 
         const { data: customers } = await supabaseClient
           .from('customers')
-          .select('id, name, email')
+          .select('id, name, email, phone, address, city, state, zip')
           .eq('user_id', user.id)
           .order('name');
 
@@ -10777,21 +11596,34 @@
         if (!user) throw new Error('Please log in');
 
         let customerId = document.getElementById('job-customer-select').value;
+        let customerName = '';
+        let customerEmail = '';
+        let customerPhone = '';
+        let customerAddress = '';
 
         // Create new customer if needed
         if (customerId === 'new') {
+          customerName = document.getElementById('job-customer-name').value.trim();
+          customerEmail = document.getElementById('job-customer-email').value.trim() || null;
+          customerPhone = document.getElementById('job-customer-phone').value.trim() || null;
+          const addr = document.getElementById('job-customer-address').value.trim() || '';
+          const city = document.getElementById('job-customer-city').value.trim() || '';
+          const state = document.getElementById('job-customer-state').value.trim() || '';
+          const zip = document.getElementById('job-customer-zip').value.trim() || '';
+          customerAddress = [addr, city, state, zip].filter(Boolean).join(', ');
+
+          if (!customerName) throw new Error('Customer name is required');
+
           const customerData = {
             user_id: user.id,
-            name: document.getElementById('job-customer-name').value.trim(),
-            email: document.getElementById('job-customer-email').value.trim() || null,
-            phone: document.getElementById('job-customer-phone').value.trim() || null,
-            address: document.getElementById('job-customer-address').value.trim() || null,
-            city: document.getElementById('job-customer-city').value.trim() || null,
-            state: document.getElementById('job-customer-state').value.trim() || null,
-            zip: document.getElementById('job-customer-zip').value.trim() || null
+            name: customerName,
+            email: customerEmail,
+            phone: customerPhone,
+            address: addr || null,
+            city: city || null,
+            state: state || null,
+            zip: zip || null
           };
-
-          if (!customerData.name) throw new Error('Customer name is required');
 
           const { data: newCustomer, error: custError } = await supabaseClient
             .from('customers')
@@ -10801,25 +11633,42 @@
 
           if (custError) throw custError;
           customerId = newCustomer.id;
+        } else {
+          // Get existing customer info
+          const customer = allCustomers.find(c => c.id === customerId);
+          if (customer) {
+            customerName = customer.name || '';
+            customerEmail = customer.email || '';
+            customerPhone = customer.phone || '';
+            customerAddress = [customer.address, customer.city, customer.state, customer.zip].filter(Boolean).join(', ');
+          }
         }
 
         if (!customerId) throw new Error('Please select or create a customer');
+        if (!customerName) throw new Error('Customer name is required');
 
         // Get next job number
         const { data: jobNumber } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
 
+        const scheduledDate = document.getElementById('job-scheduled-date').value || null;
+        const depositAmount = parseFloat(document.getElementById('job-deposit').value) || 0;
+
         const jobData = {
           user_id: user.id,
           customer_id: customerId,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          customer_phone: customerPhone,
+          customer_address: customerAddress,
           job_number: jobNumber || `JOB-${Date.now()}`,
-          title: document.getElementById('job-title').value.trim(),
-          job_type: document.getElementById('job-type').value,
-          priority: document.getElementById('job-priority').value,
-          total_amount: parseFloat(document.getElementById('job-total').value) || 0,
-          deposit_paid: parseFloat(document.getElementById('job-deposit').value) || 0,
-          notes: document.getElementById('job-notes').value.trim() || null,
-          scheduled_date: document.getElementById('job-scheduled-date').value || null,
-          status: document.getElementById('job-scheduled-date').value ? 'scheduled' : 'pending'
+          project_description: document.getElementById('job-title').value.trim(),
+          project_type: document.getElementById('job-type').value,
+          contract_amount: parseFloat(document.getElementById('job-total').value) || 0,
+          deposit_amount: depositAmount,
+          deposit_paid: depositAmount > 0,
+          internal_notes: document.getElementById('job-notes').value.trim() || null,
+          estimated_start_date: scheduledDate,
+          status: scheduledDate ? 'scheduled' : 'new'
         };
 
         const { error } = await supabaseClient.from('jobs').insert([jobData]);
@@ -10837,7 +11686,7 @@
     async function openJobDetail(jobId) {
       currentJobId = jobId;
       const modal = document.getElementById('job-detail-modal');
-      modal.style.display = 'flex';
+      modal.classList.add('active');
 
       // Find job in allJobs
       const job = allJobs.find(j => j.id === jobId);
@@ -10848,36 +11697,55 @@
 
       // Populate job details
       document.getElementById('job-detail-number').textContent = job.job_number || 'N/A';
-      document.getElementById('job-detail-status').value = job.status || 'pending';
-      document.getElementById('job-detail-type').textContent = (job.job_type || 'N/A').replace('_', ' ');
-      document.getElementById('job-detail-priority').textContent = job.priority || 'Normal';
-      document.getElementById('job-detail-total').textContent = '$' + (job.total_amount || 0).toFixed(2);
-      document.getElementById('job-detail-balance').textContent = '$' + ((job.total_amount || 0) - (job.total_paid || 0)).toFixed(2);
-      document.getElementById('job-detail-notes').textContent = job.notes || '-';
+      document.getElementById('job-detail-status').value = job.status || 'new';
+      document.getElementById('job-detail-type').textContent = (job.project_type || 'N/A').replace('_', ' ');
+      document.getElementById('job-detail-priority').textContent = job.project_description || '-';
+      document.getElementById('job-detail-total').textContent = '$' + (job.contract_amount || 0).toFixed(2);
+      document.getElementById('job-detail-balance').textContent = '$' + ((job.contract_amount || 0) - (job.total_paid || 0)).toFixed(2);
+      document.getElementById('job-detail-notes').textContent = job.internal_notes || '-';
 
-      // Customer info
-      if (job.customers) {
-        document.getElementById('job-customer-name-display').textContent = job.customers.name || 'Unknown';
-        document.getElementById('job-customer-email-display').textContent = job.customers.email || '';
-        document.getElementById('job-customer-phone-display').textContent = job.customers.phone || '';
-        const addr = [job.customers.address, job.customers.city, job.customers.state, job.customers.zip].filter(Boolean).join(', ');
-        document.getElementById('job-customer-address-display').textContent = addr || '';
-      }
+      // Customer info - use relation if available, otherwise use denormalized fields
+      const customerName = job.customers?.name || job.customer_name || 'Unknown';
+      const customerEmail = job.customers?.email || job.customer_email || '';
+      const customerPhone = job.customers?.phone || job.customer_phone || '';
+      const customerAddr = job.customers
+        ? [job.customers.address, job.customers.city, job.customers.state, job.customers.zip].filter(Boolean).join(', ')
+        : job.customer_address || '';
+      document.getElementById('job-customer-name-display').textContent = customerName;
+      document.getElementById('job-customer-email-display').textContent = customerEmail;
+      document.getElementById('job-customer-phone-display').textContent = customerPhone;
+      document.getElementById('job-customer-address-display').textContent = customerAddr;
 
       // Assigned contractors
       const contractorsList = document.getElementById('job-contractors-list');
       if (job.job_contractors && job.job_contractors.length > 0) {
         contractorsList.innerHTML = job.job_contractors.map(jc => `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 8px;">
-            <div>
+            <div style="flex: 1; cursor: pointer;" onclick="openContractorProfile('${jc.contractor_id}')">
               <div style="font-weight: 500;">${jc.contractors?.name || 'Unknown'}</div>
               <div style="font-size: 12px; color: var(--text-muted);">${jc.role || jc.contractors?.type || ''} - $${(jc.amount_quoted || 0).toFixed(2)}</div>
             </div>
-            <span class="status-badge" style="font-size: 10px; background: ${jc.status === 'accepted' ? 'rgba(34,197,94,0.15)' : jc.status === 'declined' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color: ${jc.status === 'accepted' ? '#22c55e' : jc.status === 'declined' ? '#ef4444' : '#f59e0b'};">${jc.status || 'pending'}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button class="action-btn" onclick="sendContractorPortalLink('${jc.contractor_id}')" title="Send Portal Link" style="padding: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+              </button>
+              <span class="status-badge" style="font-size: 10px; background: ${jc.contractor_status === 'accepted' ? 'rgba(34,197,94,0.15)' : jc.contractor_status === 'declined' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color: ${jc.contractor_status === 'accepted' ? '#22c55e' : jc.contractor_status === 'declined' ? '#ef4444' : '#f59e0b'};">${jc.contractor_status || 'pending'}</span>
+            </div>
           </div>
         `).join('');
       } else {
         contractorsList.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No contractors assigned yet.</div>';
+      }
+
+      // Populate schedule fields
+      const fieldMeasureInput = document.getElementById('job-field-measure-date');
+      const installDateInput = document.getElementById('job-install-date');
+
+      if (fieldMeasureInput) {
+        fieldMeasureInput.value = job.field_measure_date ? job.field_measure_date.slice(0, 16) : '';
+      }
+      if (installDateInput) {
+        installDateInput.value = job.install_date ? job.install_date.slice(0, 16) : '';
       }
 
       // Load files
@@ -10888,7 +11756,7 @@
     }
 
     function closeJobDetailModal() {
-      document.getElementById('job-detail-modal').style.display = 'none';
+      document.getElementById('job-detail-modal').classList.remove('active');
       currentJobId = null;
     }
 
@@ -10907,9 +11775,47 @@
 
         showToast('Status updated');
         loadJobs();
+        // Refresh calendar if it's been loaded
+        if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
       } catch (err) {
         console.error('Update status error:', err);
         alert('Error updating status: ' + err.message);
+      }
+    }
+
+    async function updateJobSchedule(field) {
+      if (!currentJobId) return;
+
+      const fieldMeasureInput = document.getElementById('job-field-measure-date');
+      const installDateInput = document.getElementById('job-install-date');
+
+      const updateData = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (field === 'field_measure_date' && fieldMeasureInput) {
+        updateData.field_measure_date = fieldMeasureInput.value ? new Date(fieldMeasureInput.value).toISOString() : null;
+      }
+
+      if (field === 'install_date' && installDateInput) {
+        updateData.install_date = installDateInput.value ? new Date(installDateInput.value).toISOString() : null;
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('jobs')
+          .update(updateData)
+          .eq('id', currentJobId);
+
+        if (error) throw error;
+
+        showToast('Schedule updated');
+        loadJobs();
+        // Refresh calendar to show the new event
+        if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
+      } catch (err) {
+        console.error('Update schedule error:', err);
+        alert('Error updating schedule: ' + err.message);
       }
     }
 
@@ -11042,6 +11948,145 @@
       }
     }
 
+    async function sendCustomerPortalLink() {
+      if (!currentJobId) return;
+
+      const job = allJobs.find(j => j.id === currentJobId);
+      if (!job || !job.customer_id) {
+        alert('No customer associated with this job');
+        return;
+      }
+
+      try {
+        // Get or create customer portal token
+        const { data: customer, error: fetchError } = await supabaseClient
+          .from('customers')
+          .select('id, name, email, phone, portal_token')
+          .eq('id', job.customer_id)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (!customer) throw new Error('Customer not found');
+
+        let token = customer.portal_token;
+        if (!token) {
+          // Generate new token
+          token = btoa(customer.id + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+
+          const { error: updateError } = await supabaseClient
+            .from('customers')
+            .update({ portal_token: token })
+            .eq('id', customer.id);
+
+          if (updateError) throw updateError;
+        }
+
+        const portalUrl = `${window.location.origin}/customer-portal/?token=${token}`;
+
+        // Show options modal
+        const action = prompt(
+          `Customer Portal Link for ${customer.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
+          'copy'
+        );
+
+        if (action === 'copy') {
+          navigator.clipboard.writeText(portalUrl);
+          showToast('Portal link copied to clipboard!');
+        } else if (action === 'email' && customer.email) {
+          try {
+            await fetch(`${API_URL}/api/customers/send-portal-link`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                customer_id: customer.id,
+                email: customer.email,
+                portal_link: portalUrl,
+                job_number: job.job_number
+              })
+            });
+            showToast('Portal link sent via email!');
+          } catch (err) {
+            navigator.clipboard.writeText(portalUrl);
+            showToast('Could not send email. Link copied instead.');
+          }
+        } else if (action === 'text' && customer.phone) {
+          const message = encodeURIComponent(`Track your project with Surprise Granite: ${portalUrl}`);
+          window.open(`sms:${customer.phone}?body=${message}`, '_blank');
+        } else if (action) {
+          navigator.clipboard.writeText(portalUrl);
+          showToast('Link copied to clipboard!');
+        }
+
+      } catch (err) {
+        console.error('Send portal link error:', err);
+        alert('Error generating portal link: ' + err.message);
+      }
+    }
+
+    async function sendContractorPortalLink(contractorId) {
+      try {
+        // Get or create contractor portal token
+        const { data: contractor, error: fetchError } = await supabaseClient
+          .from('contractors')
+          .select('id, name, company, email, phone, invite_token')
+          .eq('id', contractorId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (!contractor) throw new Error('Contractor not found');
+
+        let token = contractor.invite_token;
+        if (!token) {
+          token = btoa(contractor.id + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
+
+          const { error: updateError } = await supabaseClient
+            .from('contractors')
+            .update({ invite_token: token })
+            .eq('id', contractor.id);
+
+          if (updateError) throw updateError;
+        }
+
+        const portalUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
+
+        const action = prompt(
+          `Contractor Portal Link for ${contractor.company || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
+          'copy'
+        );
+
+        if (action === 'copy') {
+          navigator.clipboard.writeText(portalUrl);
+          showToast('Portal link copied!');
+        } else if (action === 'email' && contractor.email) {
+          try {
+            await fetch(`${API_URL}/api/contractors/send-invite`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contractor_id: contractor.id,
+                email: contractor.email,
+                invite_link: portalUrl
+              })
+            });
+            showToast('Portal link sent via email!');
+          } catch (err) {
+            navigator.clipboard.writeText(portalUrl);
+            showToast('Could not send email. Link copied instead.');
+          }
+        } else if (action === 'text' && contractor.phone) {
+          const message = encodeURIComponent(`Access your contractor portal at Surprise Granite: ${portalUrl}`);
+          window.open(`sms:${contractor.phone}?body=${message}`, '_blank');
+        } else if (action) {
+          navigator.clipboard.writeText(portalUrl);
+          showToast('Link copied!');
+        }
+
+      } catch (err) {
+        console.error('Send contractor portal link error:', err);
+        alert('Error generating portal link: ' + err.message);
+      }
+    }
+
     // =============================================
     // CONTRACTORS
     // =============================================
@@ -11100,44 +12145,117 @@
         return;
       }
 
+      const getTrustBadgeColor = (score) => {
+        if (score >= 70) return { bg: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', label: 'Verified' };
+        if (score >= 40) return { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', label: 'Partial' };
+        return { bg: 'rgba(107, 114, 128, 0.15)', color: '#6b7280', label: 'New' };
+      };
+
       container.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-          ${filtered.map(c => `
-            <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; border: 1px solid var(--border-subtle);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+          ${filtered.map(c => {
+            const trust = getTrustBadgeColor(c.trust_score || 0);
+            const isClaimed = !!c.claimed_by;
+            return `
+            <div class="contractor-card" onclick="openContractorProfile('${c.id}')" style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; border: 1px solid ${isClaimed ? 'var(--gold-primary)' : 'var(--border-subtle)'}; cursor: pointer; transition: all 0.2s;">
               <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                <div>
-                  <div style="font-weight: 600; font-size: 15px;">${c.name}</div>
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 600; font-size: 15px;">${c.name}</span>
+                    ${isClaimed ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--gold-primary)" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>' : ''}
+                  </div>
                   <div style="font-size: 12px; color: var(--text-muted);">${c.company || ''}</div>
                 </div>
-                <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px;">${c.type || 'other'}</span>
-              </div>
-              <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
-                ${c.email ? `<div>${c.email}</div>` : ''}
-                ${c.phone ? `<div>${c.phone}</div>` : ''}
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
-                <div style="font-size: 12px; color: var(--text-muted);">
-                  ${c.total_jobs || 0} jobs | $${(c.total_earned || 0).toFixed(0)} earned
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                  <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px; padding: 4px 10px;">${c.type || 'other'}</span>
+                  <div style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 10px; background: ${trust.bg};">
+                    <span style="font-size: 11px; font-weight: 700; color: ${trust.color};">${c.trust_score || 0}</span>
+                    <span style="font-size: 9px; color: ${trust.color};">${trust.label}</span>
+                  </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                  <button class="action-btn" onclick="editContractor('${c.id}')" title="Edit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; min-height: 36px;">
+                ${c.email ? `<div style="display: flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>${c.email}</div>` : ''}
+                ${c.phone ? `<div style="display: flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>${c.phone}</div>` : ''}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  ${c.total_jobs || 0} jobs assigned
+                </div>
+                <div style="display: flex; gap: 6px;" onclick="event.stopPropagation();">
+                  <button class="action-btn" onclick="openContractorProfile('${c.id}')" title="View Profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  </button>
+                  <button class="action-btn" onclick="quickInviteContractor('${c.id}')" title="Send Invite" style="color: var(--gold-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                   </button>
                 </div>
               </div>
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
       `;
     }
 
     function openNewContractorModal() {
-      document.getElementById('new-contractor-modal').style.display = 'flex';
+      document.getElementById('new-contractor-modal').classList.add('active');
       document.getElementById('new-contractor-form').reset();
     }
 
+    async function quickInviteContractor(contractorId) {
+      const contractor = allContractors.find(c => c.id === contractorId);
+      if (!contractor) return;
+
+      // Generate invite link
+      let token = contractor.invite_token;
+      if (!token) {
+        token = btoa(contractorId + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
+        try {
+          await supabaseClient.from('contractors').update({ invite_token: token }).eq('id', contractorId);
+        } catch (e) { console.log('Could not save token:', e); }
+      }
+
+      const inviteUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
+
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+        showToast('Invite link copied!');
+      } catch (e) {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = inviteUrl;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Invite link copied!');
+      }
+
+      // If they have email, offer to send
+      if (contractor.email) {
+        const sendEmail = confirm(`Link copied! Also send invite email to ${contractor.email}?`);
+        if (sendEmail) {
+          try {
+            await fetch(`${API_URL}/api/contractors/send-invite`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contractor_id: contractorId,
+                email: contractor.email,
+                invite_link: inviteUrl
+              })
+            });
+            showToast('Email sent!');
+          } catch (err) {
+            console.log('Could not send email:', err);
+          }
+        }
+      }
+    }
+
     function closeNewContractorModal() {
-      document.getElementById('new-contractor-modal').style.display = 'none';
+      document.getElementById('new-contractor-modal').classList.remove('active');
     }
 
     async function createContractor(event) {
@@ -11173,19 +12291,53 @@
 
     function openAssignContractorModal() {
       if (!currentJobId) return;
-      document.getElementById('assign-contractor-modal').style.display = 'flex';
+      document.getElementById('assign-contractor-modal').classList.add('active');
+      // Reset inline form
+      document.getElementById('new-contractor-inline').style.display = 'none';
+      document.getElementById('assign-contractor-select').style.display = 'block';
+      document.getElementById('assign-contractor-select').removeAttribute('disabled');
       loadContractorsForSelect();
     }
 
     function closeAssignContractorModal() {
-      document.getElementById('assign-contractor-modal').style.display = 'none';
+      document.getElementById('assign-contractor-modal').classList.remove('active');
+      cancelNewContractorInline();
+    }
+
+    function toggleNewContractorInAssign() {
+      const select = document.getElementById('assign-contractor-select');
+      const inlineForm = document.getElementById('new-contractor-inline');
+
+      if (select.value === '__new__') {
+        inlineForm.style.display = 'block';
+        // Clear inline form fields
+        document.getElementById('inline-contractor-name').value = '';
+        document.getElementById('inline-contractor-company').value = '';
+        document.getElementById('inline-contractor-email').value = '';
+        document.getElementById('inline-contractor-phone').value = '';
+        // Set role based on selection
+        const role = document.getElementById('assign-contractor-role').value;
+        document.getElementById('inline-contractor-name').focus();
+      } else {
+        inlineForm.style.display = 'none';
+      }
+    }
+
+    function cancelNewContractorInline() {
+      const select = document.getElementById('assign-contractor-select');
+      const inlineForm = document.getElementById('new-contractor-inline');
+      inlineForm.style.display = 'none';
+      select.value = '';
     }
 
     async function loadContractorsForSelect() {
       const select = document.getElementById('assign-contractor-select');
       if (!select) return;
 
-      select.innerHTML = '<option value="">-- Select Contractor --</option>';
+      select.innerHTML = `
+        <option value="">-- Select Contractor --</option>
+        <option value="__new__" style="color: var(--gold-primary); font-weight: 600;">+ Add New Contractor</option>
+      `;
 
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
@@ -11193,13 +12345,17 @@
 
         const { data: contractors } = await supabaseClient
           .from('contractors')
-          .select('id, name, type')
+          .select('id, name, type, company')
           .eq('user_id', user.id)
           .order('name');
 
-        (contractors || []).forEach(c => {
-          select.innerHTML += `<option value="${c.id}">${c.name} (${c.type})</option>`;
-        });
+        if (contractors && contractors.length > 0) {
+          select.innerHTML += '<option disabled>──────────────</option>';
+          (contractors || []).forEach(c => {
+            const displayName = c.company ? `${c.name} - ${c.company}` : c.name;
+            select.innerHTML += `<option value="${c.id}">${displayName} (${c.type})</option>`;
+          });
+        }
       } catch (err) {
         console.error('Load contractors for select error:', err);
       }
@@ -11211,11 +12367,40 @@
       if (!currentJobId) return;
 
       try {
-        const contractorId = document.getElementById('assign-contractor-select').value;
-        if (!contractorId) throw new Error('Please select a contractor');
-
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error('Please log in');
+
+        let contractorId = document.getElementById('assign-contractor-select').value;
+
+        // Check if we need to create a new contractor first
+        if (contractorId === '__new__') {
+          const newName = document.getElementById('inline-contractor-name').value.trim();
+          if (!newName) throw new Error('Please enter contractor name');
+
+          const role = document.getElementById('assign-contractor-role').value;
+          const contractorData = {
+            user_id: user.id,
+            name: newName,
+            type: role, // Use the selected role as the contractor type
+            company: document.getElementById('inline-contractor-company').value.trim() || null,
+            email: document.getElementById('inline-contractor-email').value.trim() || null,
+            phone: document.getElementById('inline-contractor-phone').value.trim() || null
+          };
+
+          const { data: newContractor, error: createError } = await supabaseClient
+            .from('contractors')
+            .insert([contractorData])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          contractorId = newContractor.id;
+          showToast('Contractor created!');
+        }
+
+        if (!contractorId || contractorId === '__new__') {
+          throw new Error('Please select or create a contractor');
+        }
 
         const assignData = {
           job_id: currentJobId,
@@ -11245,6 +12430,7 @@
         closeAssignContractorModal();
         showToast('Contractor assigned!');
         loadJobs();
+        loadContractors(); // Refresh contractors list too
         if (currentJobId) {
           const job = allJobs.find(j => j.id === currentJobId);
           if (job) openJobDetail(currentJobId);
@@ -11256,16 +12442,239 @@
     }
 
     // =============================================
+    // CALENDAR
+    // =============================================
+
+    let currentCalendarDate = new Date();
+    let calendarEvents = [];
+
+    function initCalendar() {
+      renderCalendar();
+      loadCalendarEvents();
+    }
+
+    function changeCalendarMonth(delta) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+      renderCalendar();
+      loadCalendarEvents();
+    }
+
+    function goToToday() {
+      currentCalendarDate = new Date();
+      renderCalendar();
+      loadCalendarEvents();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const monthYearEl = document.getElementById('calendar-month-year');
+      if (!grid || !monthYearEl) return;
+
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      monthYearEl.textContent = `${monthNames[month]} ${year}`;
+
+      // Get first day of month and total days
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDayOfWeek = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      // Get previous month's days to show
+      const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      let html = '';
+      let dayCount = 1;
+      let nextMonthDay = 1;
+
+      // Generate 6 weeks (42 days)
+      for (let i = 0; i < 42; i++) {
+        let dayNumber, dateStr, isOtherMonth = false;
+
+        if (i < startDayOfWeek) {
+          // Previous month days
+          dayNumber = prevMonthLastDay - startDayOfWeek + i + 1;
+          const prevMonth = month === 0 ? 12 : month;
+          const prevYear = month === 0 ? year - 1 : year;
+          dateStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          isOtherMonth = true;
+        } else if (dayCount <= totalDays) {
+          // Current month days
+          dayNumber = dayCount;
+          dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          dayCount++;
+        } else {
+          // Next month days
+          dayNumber = nextMonthDay;
+          const nextMonth = month === 11 ? 1 : month + 2;
+          const nextYear = month === 11 ? year + 1 : year;
+          dateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          nextMonthDay++;
+          isOtherMonth = true;
+        }
+
+        const isToday = dateStr === todayStr;
+        const dayEvents = calendarEvents.filter(e => e.date === dateStr);
+
+        html += `
+          <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}"
+               data-date="${dateStr}" onclick="showDayEvents('${dateStr}')">
+            <div class="calendar-day-number">${dayNumber}</div>
+            <div class="calendar-events">
+              ${dayEvents.slice(0, 3).map(e => `
+                <div class="calendar-event ${e.type}" onclick="event.stopPropagation(); openJobDetail('${e.jobId}')">
+                  ${e.title}
+                </div>
+              `).join('')}
+              ${dayEvents.length > 3 ? `<div class="calendar-event-more">+${dayEvents.length - 3} more</div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    async function loadCalendarEvents() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        // Get jobs with dates
+        const { data: jobs, error } = await supabaseClient
+          .from('jobs')
+          .select('id, job_number, customer_name, project_description, status, estimated_start_date, field_measure_date, install_date')
+          .eq('user_id', user.id)
+          .not('status', 'in', '("completed","cancelled")');
+
+        if (error) throw error;
+
+        calendarEvents = [];
+
+        (jobs || []).forEach(job => {
+          const title = job.customer_name || job.project_description || job.job_number;
+
+          if (job.estimated_start_date) {
+            calendarEvents.push({
+              date: job.estimated_start_date,
+              title: title,
+              type: 'job',
+              jobId: job.id,
+              status: job.status
+            });
+          }
+
+          if (job.field_measure_date) {
+            const measureDate = job.field_measure_date.split('T')[0];
+            calendarEvents.push({
+              date: measureDate,
+              title: `Measure: ${title}`,
+              type: 'measure',
+              jobId: job.id,
+              status: job.status
+            });
+          }
+
+          if (job.install_date) {
+            const installDate = job.install_date.split('T')[0];
+            calendarEvents.push({
+              date: installDate,
+              title: `Install: ${title}`,
+              type: 'install',
+              jobId: job.id,
+              status: job.status
+            });
+          }
+        });
+
+        renderCalendar();
+        renderUpcomingEvents();
+      } catch (err) {
+        console.error('Load calendar events error:', err);
+      }
+    }
+
+    function renderUpcomingEvents() {
+      const container = document.getElementById('upcoming-events-list');
+      if (!container) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const upcoming = calendarEvents
+        .filter(e => new Date(e.date) >= today)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 10);
+
+      if (upcoming.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 30px;">
+            <p style="color: var(--text-muted);">No upcoming events scheduled</p>
+          </div>
+        `;
+        return;
+      }
+
+      const typeColors = {
+        job: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+        install: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
+        measure: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
+        production: { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }
+      };
+
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      container.innerHTML = upcoming.map(event => {
+        const date = new Date(event.date + 'T00:00:00');
+        const colors = typeColors[event.type] || typeColors.job;
+        const typeName = event.type === 'measure' ? 'Field Measure' :
+                        event.type === 'install' ? 'Installation' :
+                        event.type === 'production' ? 'In Production' : 'Scheduled';
+
+        return `
+          <div class="upcoming-event-item" onclick="openJobDetail('${event.jobId}')">
+            <div class="upcoming-event-date">
+              <span class="day">${date.getDate()}</span>
+              <span class="month">${monthNames[date.getMonth()]}</span>
+            </div>
+            <div class="upcoming-event-info">
+              <div class="upcoming-event-title">${event.title}</div>
+              <div class="upcoming-event-details">
+                <span class="upcoming-event-type" style="background: ${colors.bg}; color: ${colors.color};">${typeName}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showDayEvents(dateStr) {
+      const dayEvents = calendarEvents.filter(e => e.date === dateStr);
+      if (dayEvents.length === 1) {
+        openJobDetail(dayEvents[0].jobId);
+      } else if (dayEvents.length > 1) {
+        // Could open a modal with all events for the day
+        console.log('Events on', dateStr, dayEvents);
+      }
+    }
+
+    // =============================================
     // CUSTOMERS MODAL
     // =============================================
 
     function openCustomersModal() {
-      document.getElementById('customers-modal').style.display = 'flex';
+      document.getElementById('customers-modal').classList.add('active');
       loadCustomersModal();
     }
 
     function closeCustomersModal() {
-      document.getElementById('customers-modal').style.display = 'none';
+      document.getElementById('customers-modal').classList.remove('active');
     }
 
     async function loadCustomersModal() {
@@ -11347,8 +12756,338 @@
       closeJobDetailModal();
     }
 
+    let currentContractorId = null;
+
     function editContractor(contractorId) {
-      showToast('Edit contractor feature coming soon!', 'info');
+      openContractorProfile(contractorId);
+    }
+
+    async function openContractorProfile(contractorId) {
+      currentContractorId = contractorId;
+      const modal = document.getElementById('contractor-profile-modal');
+      modal.classList.add('active');
+
+      // Find contractor in allContractors
+      let contractor = allContractors.find(c => c.id === contractorId);
+
+      // If not found, fetch from database
+      if (!contractor) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('contractors')
+            .select('*')
+            .eq('id', contractorId)
+            .single();
+          if (error) throw error;
+          contractor = data;
+        } catch (err) {
+          console.error('Load contractor error:', err);
+          alert('Could not load contractor');
+          return;
+        }
+      }
+
+      // Populate profile
+      document.getElementById('contractor-profile-name').textContent = contractor.name || 'Unknown';
+      document.getElementById('contractor-profile-company').textContent = contractor.company || '';
+      document.getElementById('contractor-profile-email').textContent = contractor.email || '-';
+      document.getElementById('contractor-profile-phone').textContent = contractor.phone || '-';
+      document.getElementById('contractor-profile-type').textContent = (contractor.type || '-').replace('_', ' ');
+      document.getElementById('contractor-profile-license').textContent = contractor.license_number || '-';
+
+      // Trust score
+      const trustScore = contractor.trust_score || 0;
+      document.getElementById('contractor-trust-score').textContent = trustScore;
+      const badge = document.getElementById('contractor-trust-badge');
+      badge.classList.toggle('verified', trustScore >= 70);
+
+      // Generate invite link
+      generateInviteLink(contractorId, contractor);
+
+      // Render verification checklist
+      renderVerificationChecklist(contractor);
+
+      // Load documents
+      loadContractorDocuments(contractorId);
+
+      // Load job history
+      loadContractorJobHistory(contractorId);
+    }
+
+    function closeContractorProfileModal() {
+      document.getElementById('contractor-profile-modal').classList.remove('active');
+      currentContractorId = null;
+    }
+
+    async function generateInviteLink(contractorId, contractor) {
+      const linkInput = document.getElementById('contractor-invite-link');
+      const qrContainer = document.getElementById('contractor-qr-code');
+
+      // Generate a simple token if not exists
+      let token = contractor.invite_token;
+      if (!token) {
+        token = btoa(contractorId + '-' + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 24);
+
+        // Save token to database
+        try {
+          await supabaseClient
+            .from('contractors')
+            .update({ invite_token: token })
+            .eq('id', contractorId);
+        } catch (err) {
+          console.log('Could not save invite token:', err);
+        }
+      }
+
+      const inviteUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
+      linkInput.value = inviteUrl;
+
+      // Generate QR code (using a simple QR code API)
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(inviteUrl)}`;
+      qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 100px; height: 100px; border-radius: 4px;">`;
+    }
+
+    function copyInviteLink() {
+      const linkInput = document.getElementById('contractor-invite-link');
+      linkInput.select();
+      document.execCommand('copy');
+      showToast('Link copied to clipboard!');
+    }
+
+    async function sendInviteEmail() {
+      if (!currentContractorId) return;
+
+      const contractor = allContractors.find(c => c.id === currentContractorId);
+      if (!contractor?.email) {
+        alert('No email address for this contractor');
+        return;
+      }
+
+      try {
+        const inviteLink = document.getElementById('contractor-invite-link').value;
+        await fetch(`${API_URL}/api/contractors/send-invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contractor_id: currentContractorId,
+            email: contractor.email,
+            invite_link: inviteLink
+          })
+        });
+        showToast('Invite email sent!');
+      } catch (err) {
+        console.error('Send invite error:', err);
+        showToast('Could not send email. Link copied instead.');
+        copyInviteLink();
+      }
+    }
+
+    function sendInviteSMS() {
+      const contractor = allContractors.find(c => c.id === currentContractorId);
+      const inviteLink = document.getElementById('contractor-invite-link').value;
+
+      if (contractor?.phone) {
+        // Open SMS app with pre-filled message
+        const message = encodeURIComponent(`You've been invited to join Surprise Granite's contractor network! Complete your profile here: ${inviteLink}`);
+        window.open(`sms:${contractor.phone}?body=${message}`, '_blank');
+      } else {
+        copyInviteLink();
+        showToast('No phone number. Link copied instead.');
+      }
+    }
+
+    function renderVerificationChecklist(contractor) {
+      const container = document.getElementById('contractor-verification-checklist');
+
+      const checklistItems = [
+        { key: 'email', label: 'Email Address', subtitle: 'Contact information', points: 5, completed: !!contractor.email },
+        { key: 'phone', label: 'Phone Number', subtitle: 'Contact information', points: 5, completed: !!contractor.phone },
+        { key: 'company', label: 'Business Name', subtitle: 'Company details', points: 5, completed: !!contractor.company },
+        { key: 'license', label: 'License Number', subtitle: 'Trade license', points: 10, completed: !!contractor.license_number },
+        { key: 'claimed', label: 'Profile Claimed', subtitle: 'Account linked', points: 10, completed: !!contractor.claimed_by },
+        { key: 'insurance', label: 'Insurance Certificate', subtitle: 'General liability', points: 25, completed: false }, // Check docs
+        { key: 'w9', label: 'W-9 Form', subtitle: 'Tax documentation', points: 10, completed: false }, // Check docs
+      ];
+
+      container.innerHTML = checklistItems.map(item => `
+        <div class="verification-item ${item.completed ? 'completed' : 'pending'}">
+          <div class="verification-icon ${item.completed ? 'completed' : 'pending'}">
+            ${item.completed
+              ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+              : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>'
+            }
+          </div>
+          <div class="verification-item-text">
+            <div class="verification-item-title">${item.label}</div>
+            <div class="verification-item-subtitle">${item.subtitle}</div>
+          </div>
+          <div class="verification-item-points">+${item.points} pts</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadContractorDocuments(contractorId) {
+      const container = document.getElementById('contractor-documents-list');
+
+      try {
+        const { data: docs, error } = await supabaseClient
+          .from('contractor_documents')
+          .select('*')
+          .eq('contractor_id', contractorId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!docs || docs.length === 0) {
+          container.innerHTML = `
+            <div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">
+              No documents uploaded yet.<br>
+              <span style="font-size: 12px;">Upload insurance, license, W-9, and other documents.</span>
+            </div>
+          `;
+          return;
+        }
+
+        const docTypeLabels = {
+          'insurance_general_liability': 'General Liability Insurance',
+          'insurance_workers_comp': 'Workers Comp Insurance',
+          'insurance_auto': 'Auto Insurance',
+          'license_contractor': 'Contractor License',
+          'license_trade': 'Trade License',
+          'w9': 'W-9 Form',
+          'certification': 'Certification',
+          'bond': 'Bond',
+          'other': 'Other Document'
+        };
+
+        container.innerHTML = docs.map(doc => `
+          <div class="document-card">
+            <div class="doc-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">${doc.document_name}</div>
+              <div class="doc-meta">${docTypeLabels[doc.document_type] || doc.document_type}${doc.expiration_date ? ' | Exp: ' + new Date(doc.expiration_date).toLocaleDateString() : ''}</div>
+            </div>
+            <span class="doc-status ${doc.status}">${doc.status}</span>
+            <a href="${doc.file_url}" target="_blank" class="action-btn" title="View">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load contractor documents error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Could not load documents</div>';
+      }
+    }
+
+    async function loadContractorJobHistory(contractorId) {
+      const container = document.getElementById('contractor-job-history');
+
+      try {
+        const { data: jobs, error } = await supabaseClient
+          .from('job_contractors')
+          .select(`
+            id, role, amount_quoted, status,
+            jobs (id, job_number, customer_name, status)
+          `)
+          .eq('contractor_id', contractorId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        if (!jobs || jobs.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No jobs assigned yet</div>';
+          return;
+        }
+
+        container.innerHTML = jobs.map(jc => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 6px; cursor: pointer;" onclick="openJobDetail('${jc.jobs?.id}')">
+            <div>
+              <div style="font-weight: 500; font-size: 13px;">${jc.jobs?.job_number || 'Unknown'}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${jc.jobs?.customer_name || ''} - ${jc.role}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 600; font-size: 13px; color: var(--gold-primary);">$${(jc.amount_quoted || 0).toFixed(0)}</div>
+              <span class="status-badge job-${jc.jobs?.status || 'new'}" style="font-size: 9px; padding: 2px 8px;">${jc.jobs?.status || 'new'}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load job history error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">Could not load job history</div>';
+      }
+    }
+
+    async function uploadContractorDocument(event) {
+      const file = event.target.files[0];
+      if (!file || !currentContractorId) return;
+
+      // Ask for document type
+      const docType = prompt('Document type? (insurance, license, w9, certification, other)', 'insurance');
+      if (!docType) return;
+
+      const docTypeMap = {
+        'insurance': 'insurance_general_liability',
+        'workers comp': 'insurance_workers_comp',
+        'license': 'license_contractor',
+        'w9': 'w9',
+        'certification': 'certification',
+        'bond': 'bond',
+        'other': 'other'
+      };
+
+      const documentType = docTypeMap[docType.toLowerCase()] || 'other';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in');
+
+        // Upload file to storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `contractors/${currentContractorId}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+          .from('lead-images')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabaseClient.storage.from('lead-images').getPublicUrl(fileName);
+
+        // Create document record
+        const { error: docError } = await supabaseClient.from('contractor_documents').insert([{
+          contractor_id: currentContractorId,
+          user_id: user.id,
+          document_type: documentType,
+          document_name: file.name,
+          file_url: urlData.publicUrl,
+          file_type: fileExt,
+          status: 'pending'
+        }]);
+
+        if (docError) throw docError;
+
+        showToast('Document uploaded!');
+        loadContractorDocuments(currentContractorId);
+
+        // Recalculate trust score
+        try {
+          await supabaseClient.rpc('calculate_contractor_trust_score', { contractor_uuid: currentContractorId });
+        } catch (e) {
+          console.log('Could not update trust score:', e);
+        }
+      } catch (err) {
+        console.error('Upload document error:', err);
+        alert('Error uploading document: ' + err.message);
+      }
+
+      event.target.value = '';
+    }
+
+    function editContractorDetails() {
+      showToast('Edit feature coming soon!', 'info');
     }
 
     function openNewCustomerModal() {
@@ -11364,17 +13103,13 @@
 
     function openServiceCatalog() {
       const modal = document.getElementById('service-catalog-modal');
-      modal.style.display = 'flex';
-      modal.style.opacity = '1';
-      modal.style.visibility = 'visible';
+      modal.classList.add('active');
       loadServiceCatalog();
     }
 
     function closeServiceCatalog() {
       const modal = document.getElementById('service-catalog-modal');
-      modal.style.display = 'none';
-      modal.style.opacity = '0';
-      modal.style.visibility = 'hidden';
+      modal.classList.remove('active');
     }
 
     async function loadServiceCatalog() {
@@ -11442,17 +13177,13 @@
 
     function openAddCatalogItem() {
       const modal = document.getElementById('add-catalog-item-modal');
-      modal.style.display = 'flex';
-      modal.style.opacity = '1';
-      modal.style.visibility = 'visible';
+      modal.classList.add('active');
       document.getElementById('add-catalog-item-form').reset();
     }
 
     function closeAddCatalogItem() {
       const modal = document.getElementById('add-catalog-item-modal');
-      modal.style.display = 'none';
-      modal.style.opacity = '0';
-      modal.style.visibility = 'hidden';
+      modal.classList.remove('active');
     }
 
     async function saveCatalogItem(event) {
@@ -11600,5 +13331,41 @@
 <script src="/js/sg-auth.js"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js"></script>
+
+<!-- Remodely.ai Integration -->
+<script src="/remodely-platform/config/tenants.js"></script>
+<script>
+  // Initialize Remodely tenant integration
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.REMODELY_TENANTS) {
+      const tenant = window.REMODELY_TENANTS.initializeTenant();
+      console.log('Remodely tenant initialized:', tenant.name);
+    }
+  });
+</script>
+
+<!-- Powered by Remodely Badge -->
+<a href="https://remodely.ai" target="_blank" id="remodely-badge" style="
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-decoration: none;
+  z-index: 9999;
+  transition: all 0.3s;
+  font-family: 'Inter', sans-serif;
+">
+  <span>Powered by</span>
+  <strong style="background: linear-gradient(135deg, #6366f1, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Remodely.ai</strong>
+</a>
 </body>
 </html>

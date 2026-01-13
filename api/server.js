@@ -6,6 +6,117 @@ const PDFDocument = require('pdfkit');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
+// ============================================
+// REMODELY.AI RATE LIMITER (SERVER-SIDE)
+// ============================================
+// Protects AI endpoints from abuse
+
+const rateLimitStore = new Map();
+
+const RATE_LIMITS = {
+  free: {
+    ai_blueprint: { perHour: 3, perDay: 5 },
+    ai_chat: { perHour: 5, perDay: 10 },
+    ai_vision: { perHour: 3, perDay: 5 }
+  },
+  pro: {
+    ai_blueprint: { perHour: 20, perDay: 50 },
+    ai_chat: { perHour: 30, perDay: 100 },
+    ai_vision: { perHour: 20, perDay: 50 }
+  },
+  enterprise: {
+    ai_blueprint: { perHour: -1, perDay: -1 }, // unlimited
+    ai_chat: { perHour: -1, perDay: -1 },
+    ai_vision: { perHour: -1, perDay: -1 }
+  }
+};
+
+function getRateLimitKey(req) {
+  // Use user ID if authenticated, otherwise IP
+  const userId = req.headers['x-user-id'] || req.ip || 'anonymous';
+  return userId;
+}
+
+function checkRateLimit(key, feature, plan = 'free') {
+  const limits = RATE_LIMITS[plan]?.[feature] || RATE_LIMITS.free[feature] || { perHour: 5, perDay: 10 };
+
+  // Unlimited plan
+  if (limits.perHour === -1) return { allowed: true, remaining: -1 };
+
+  const now = Date.now();
+  const hourAgo = now - 3600000;
+  const dayAgo = now - 86400000;
+
+  const storeKey = `${key}:${feature}`;
+  let usage = rateLimitStore.get(storeKey) || { timestamps: [] };
+
+  // Clean old entries
+  usage.timestamps = usage.timestamps.filter(ts => ts > dayAgo);
+
+  const usageLastHour = usage.timestamps.filter(ts => ts > hourAgo).length;
+  const usageLastDay = usage.timestamps.length;
+
+  if (usageLastHour >= limits.perHour) {
+    return { allowed: false, reason: 'hourly_limit', message: 'Hourly limit reached. Please try again later.' };
+  }
+
+  if (usageLastDay >= limits.perDay) {
+    return { allowed: false, reason: 'daily_limit', message: 'Daily limit reached. Upgrade to Pro for more usage.' };
+  }
+
+  return {
+    allowed: true,
+    remaining: { hourly: limits.perHour - usageLastHour, daily: limits.perDay - usageLastDay }
+  };
+}
+
+function recordUsage(key, feature) {
+  const storeKey = `${key}:${feature}`;
+  let usage = rateLimitStore.get(storeKey) || { timestamps: [] };
+  usage.timestamps.push(Date.now());
+  rateLimitStore.set(storeKey, usage);
+}
+
+// Rate limit middleware for AI endpoints
+function aiRateLimiter(feature) {
+  return (req, res, next) => {
+    const key = getRateLimitKey(req);
+    const plan = req.headers['x-user-plan'] || 'free';
+    const check = checkRateLimit(key, feature, plan);
+
+    if (!check.allowed) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        message: check.message,
+        reason: check.reason,
+        upgrade_url: 'https://remodely.ai/pricing'
+      });
+    }
+
+    // Record usage after successful response
+    res.on('finish', () => {
+      if (res.statusCode < 400) {
+        recordUsage(key, feature);
+      }
+    });
+
+    next();
+  };
+}
+
+// Clean up old rate limit entries every hour
+setInterval(() => {
+  const dayAgo = Date.now() - 86400000;
+  for (const [key, usage] of rateLimitStore.entries()) {
+    usage.timestamps = usage.timestamps.filter(ts => ts > dayAgo);
+    if (usage.timestamps.length === 0) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 3600000);
+
+// ============================================
+
 // Initialize Supabase client (service role for backend operations)
 const supabaseUrl = process.env.SUPABASE_URL || 'https://htjvyzmuqsrjpesdurni.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -1304,6 +1415,196 @@ const emailTemplates = {
   invoiceCustomer: (invoice, items, customerName, templateName = 'classic') => ({
     subject: `Invoice #${invoice.number} from ${COMPANY.name}`,
     html: getInvoiceTemplate(templateName, invoice, items, customerName)
+  }),
+
+  // Premium appointment confirmation email for customers
+  appointmentConfirmation: (data) => ({
+    subject: `Appointment Confirmed - ${data.appointment_date} | Surprise Granite`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="560" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
+
+          <!-- Logo Header -->
+          <tr>
+            <td style="padding: 0 0 32px; border-bottom: 1px solid #e5e7eb;">
+              <table cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 12px;">
+                    <img src="${COMPANY.logo}" alt="Surprise Granite" style="height: 36px; width: auto;">
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <p style="margin: 0; color: #1a2b3c; font-size: 16px; font-weight: 600; letter-spacing: 0.3px;">SURPRISE GRANITE</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px 0;">
+
+              <!-- Confirmation Badge -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td align="center">
+                    <table cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="background-color: #f0fdf4; padding: 8px 16px; border-radius: 20px;">
+                          <p style="margin: 0; color: #166534; font-size: 12px; font-weight: 600; letter-spacing: 0.3px;">&#10003; APPOINTMENT CONFIRMED</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Greeting -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 8px; color: #1a2b3c; font-size: 24px; font-weight: 600;">Hi ${data.homeowner_name.split(' ')[0]},</p>
+                    <p style="margin: 0; color: #6b7280; font-size: 15px; line-height: 1.6;">Your free estimate has been scheduled.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Appointment Card -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr><td style="background-color: #f9cb00; height: 4px;"></td></tr>
+                    </table>
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 28px;">
+                          <table width="100%" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td style="vertical-align: top; width: 50%;">
+                                <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
+                                <p style="margin: 0; color: #1a2b3c; font-size: 16px; font-weight: 600;">${data.appointment_date}</p>
+                              </td>
+                              <td style="vertical-align: top; width: 50%;">
+                                <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Time</p>
+                                <p style="margin: 0; color: #1a2b3c; font-size: 16px; font-weight: 600;">${data.appointment_time}</p>
+                              </td>
+                            </tr>
+                          </table>
+                          ${data.project_address ? `
+                          <table width="100%" cellspacing="0" cellpadding="0" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f3f4f6;">
+                            <tr>
+                              <td>
+                                <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Location</p>
+                                <p style="margin: 0; color: #1a2b3c; font-size: 14px;">${data.project_address}</p>
+                              </td>
+                            </tr>
+                          </table>
+                          ` : ''}
+                          ${data.project_type ? `
+                          <table width="100%" cellspacing="0" cellpadding="0" style="margin-top: 16px;">
+                            <tr>
+                              <td>
+                                <p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Project</p>
+                                <p style="margin: 0; color: #1a2b3c; font-size: 14px;">${data.project_type}</p>
+                              </td>
+                            </tr>
+                          </table>
+                          ` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- What to Expect -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 32px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 16px; color: #1a2b3c; font-size: 14px; font-weight: 600;">What to expect</p>
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                          <p style="margin: 0; color: #f9cb00; font-size: 14px; font-weight: 600;">1</p>
+                        </td>
+                        <td style="padding: 8px 0; padding-left: 8px;">
+                          <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.5;">We'll call to confirm within 24 hours</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                          <p style="margin: 0; color: #f9cb00; font-size: 14px; font-weight: 600;">2</p>
+                        </td>
+                        <td style="padding: 8px 0; padding-left: 8px;">
+                          <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.5;">Our specialist will visit and take measurements</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                          <p style="margin: 0; color: #f9cb00; font-size: 14px; font-weight: 600;">3</p>
+                        </td>
+                        <td style="padding: 8px 0; padding-left: 8px;">
+                          <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.5;">You'll receive a detailed quote with options</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://www.surprisegranite.com/countertops" style="display: inline-block; background-color: #1a2b3c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 14px; font-weight: 500;">Browse Materials</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Reschedule Note -->
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; color: #9ca3af; font-size: 13px;">Need to reschedule? Call <a href="tel:+16028333189" style="color: #1a2b3c; text-decoration: none; font-weight: 500;">(602) 833-3189</a></p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 0; border-top: 1px solid #e5e7eb;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 4px; color: #1a2b3c; font-size: 13px; font-weight: 500;">Surprise Granite</p>
+                    <p style="margin: 0 0 2px; color: #9ca3af; font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
+                    <p style="margin: 0; color: #9ca3af; font-size: 11px;">AZ ROC# 341113 · Licensed & Insured</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
   })
 };
 
@@ -3145,10 +3446,30 @@ app.post('/api/leads', async (req, res) => {
     };
     await sendNotification(ADMIN_EMAIL, adminEmail.subject, adminEmail.html);
 
+    // Send customer confirmation email for appointments
+    if (isAppointment && homeowner_email) {
+      try {
+        const customerEmail = emailTemplates.appointmentConfirmation({
+          homeowner_name: homeowner_name,
+          homeowner_email: homeowner_email,
+          appointment_date: appointment_date || 'To be confirmed',
+          appointment_time: appointment_time || 'To be confirmed',
+          project_address: project_address,
+          project_type: project_type
+        });
+        await sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
+        console.log('Customer confirmation email sent to:', homeowner_email);
+      } catch (emailError) {
+        // Don't fail the request if customer email fails
+        console.error('Failed to send customer confirmation email:', emailError.message);
+      }
+    }
+
     res.json({
       success: true,
-      message: 'Lead submitted successfully',
-      lead_id: `lead_${Date.now()}`
+      message: isAppointment ? 'Appointment booked successfully! Check your email for confirmation.' : 'Lead submitted successfully',
+      lead_id: `lead_${Date.now()}`,
+      confirmation_sent: isAppointment
     });
 
   } catch (error) {
@@ -3210,8 +3531,9 @@ app.post('/api/purchase-lead', async (req, res) => {
 
 // ============ AI VISUALIZER ============
 
-// AI Visualize endpoint using Replicate
-app.post('/api/visualize', async (req, res) => {
+// AI Visualize endpoint using Replicate - Powered by Remodely.ai
+// Rate limited to protect API credits
+app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
   try {
     const { image, prompt, style, material } = req.body;
 
@@ -3299,7 +3621,8 @@ app.post('/api/visualize', async (req, res) => {
 // ============ BLUEPRINT TAKEOFF ============
 
 // Analyze blueprint using AI vision (GPT-4 Vision or Ollama)
-app.post('/api/analyze-blueprint', async (req, res) => {
+// Rate limited to protect API credits - Powered by Remodely.ai
+app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, res) => {
   try {
     const {
       image,
@@ -4958,6 +5281,984 @@ app.get('/api/customers-list', async (req, res) => {
     res.json({ customers: customers || [] });
   } catch (error) {
     console.error('Get customers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ DISTRIBUTOR MARKETPLACE API ============
+
+// Helper: Verify distributor owns the resource
+async function verifyDistributorOwnership(distributorId, userId) {
+  if (!supabase) return false;
+  const { data } = await supabase
+    .from('distributor_profiles')
+    .select('id')
+    .eq('id', distributorId)
+    .eq('user_id', userId)
+    .single();
+  return !!data;
+}
+
+// Helper: Verify API key
+async function verifyDistributorApiKey(apiKey) {
+  if (!supabase || !apiKey) return null;
+
+  const crypto = require('crypto');
+  const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+  const keyPrefix = apiKey.substring(0, 8);
+
+  const { data } = await supabase
+    .from('distributor_api_keys')
+    .select('distributor_id, permissions, rate_limit_per_hour')
+    .eq('key_prefix', keyPrefix)
+    .eq('key_hash', keyHash)
+    .eq('is_active', true)
+    .single();
+
+  if (data) {
+    // Update last used
+    await supabase
+      .from('distributor_api_keys')
+      .update({
+        last_used_at: new Date().toISOString(),
+        total_requests: supabase.sql`total_requests + 1`
+      })
+      .eq('key_prefix', keyPrefix);
+  }
+
+  return data;
+}
+
+// Get distributor profile
+app.get('/api/distributor/profile', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile, error } = await supabase
+      .from('distributor_profiles')
+      .select(`
+        *,
+        distributor_locations(*),
+        distributor_analytics(*)
+      `)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) throw error;
+    if (!profile) return res.status(404).json({ error: 'Distributor profile not found' });
+
+    res.json({ profile });
+  } catch (error) {
+    console.error('Get distributor profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update distributor profile
+app.patch('/api/distributor/profile', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id;
+    delete updates.user_id;
+    delete updates.stripe_connect_id;
+    delete updates.verification_status;
+
+    const { data: profile, error } = await supabase
+      .from('distributor_profiles')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ profile });
+  } catch (error) {
+    console.error('Update distributor profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ SLAB INVENTORY API ============
+
+// Get all slabs for a distributor
+app.get('/api/distributor/inventory', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    const apiKey = req.headers['x-api-key'];
+
+    let distributorId;
+
+    // Auth via API key or user ID
+    if (apiKey) {
+      const keyData = await verifyDistributorApiKey(apiKey);
+      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
+      distributorId = keyData.distributor_id;
+    } else if (userId) {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+      distributorId = profile.id;
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { status, material_type, brand, location_id, limit = 100, offset = 0 } = req.query;
+
+    let query = supabase
+      .from('slab_inventory')
+      .select('*, distributor_locations(location_name, city, state)')
+      .eq('distributor_id', distributorId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status) query = query.eq('status', status);
+    if (material_type) query = query.eq('material_type', material_type);
+    if (brand) query = query.ilike('brand', `%${brand}%`);
+    if (location_id) query = query.eq('location_id', location_id);
+
+    const { data: slabs, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({ slabs: slabs || [], total: count });
+  } catch (error) {
+    console.error('Get inventory error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single slab
+app.get('/api/distributor/inventory/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: slab, error } = await supabase
+      .from('slab_inventory')
+      .select('*, distributor_profiles(company_name, logo_url), distributor_locations(*)')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw error;
+    if (!slab) return res.status(404).json({ error: 'Slab not found' });
+
+    // Increment view count
+    await supabase.rpc('increment_slab_view', { p_slab_id: req.params.id });
+
+    res.json({ slab });
+  } catch (error) {
+    console.error('Get slab error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new slab
+app.post('/api/distributor/inventory', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    const apiKey = req.headers['x-api-key'];
+
+    let distributorId;
+
+    if (apiKey) {
+      const keyData = await verifyDistributorApiKey(apiKey);
+      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
+      if (!keyData.permissions.includes('write')) {
+        return res.status(403).json({ error: 'API key does not have write permission' });
+      }
+      distributorId = keyData.distributor_id;
+    } else if (userId) {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+      distributorId = profile.id;
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const slabData = {
+      ...req.body,
+      distributor_id: distributorId,
+      sync_source: apiKey ? 'api' : 'manual',
+      listed_at: new Date().toISOString()
+    };
+
+    const { data: slab, error } = await supabase
+      .from('slab_inventory')
+      .insert(slabData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update distributor stats
+    await supabase.rpc('update_distributor_stats', { p_distributor_id: distributorId });
+
+    res.status(201).json({ slab });
+  } catch (error) {
+    console.error('Create slab error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update slab
+app.patch('/api/distributor/inventory/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    const apiKey = req.headers['x-api-key'];
+
+    let distributorId;
+
+    if (apiKey) {
+      const keyData = await verifyDistributorApiKey(apiKey);
+      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
+      if (!keyData.permissions.includes('write')) {
+        return res.status(403).json({ error: 'API key does not have write permission' });
+      }
+      distributorId = keyData.distributor_id;
+    } else if (userId) {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+      distributorId = profile.id;
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('slab_inventory')
+      .select('distributor_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized to update this slab' });
+    }
+
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id;
+    delete updates.distributor_id;
+
+    const { data: slab, error } = await supabase
+      .from('slab_inventory')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ slab });
+  } catch (error) {
+    console.error('Update slab error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete slab
+app.delete('/api/distributor/inventory/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    const apiKey = req.headers['x-api-key'];
+
+    let distributorId;
+
+    if (apiKey) {
+      const keyData = await verifyDistributorApiKey(apiKey);
+      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
+      if (!keyData.permissions.includes('delete')) {
+        return res.status(403).json({ error: 'API key does not have delete permission' });
+      }
+      distributorId = keyData.distributor_id;
+    } else if (userId) {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+      distributorId = profile.id;
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('slab_inventory')
+      .select('distributor_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized to delete this slab' });
+    }
+
+    const { error } = await supabase
+      .from('slab_inventory')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+
+    // Update distributor stats
+    await supabase.rpc('update_distributor_stats', { p_distributor_id: distributorId });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete slab error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ BULK INVENTORY IMPORT ============
+
+// Bulk import slabs from CSV data
+app.post('/api/distributor/inventory/bulk', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    const apiKey = req.headers['x-api-key'];
+
+    let distributorId;
+
+    if (apiKey) {
+      const keyData = await verifyDistributorApiKey(apiKey);
+      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
+      if (!keyData.permissions.includes('write')) {
+        return res.status(403).json({ error: 'API key does not have write permission' });
+      }
+      distributorId = keyData.distributor_id;
+    } else if (userId) {
+      const { data: profile } = await supabase
+        .from('distributor_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+      distributorId = profile.id;
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { slabs, sync_type = 'incremental' } = req.body;
+
+    if (!Array.isArray(slabs) || slabs.length === 0) {
+      return res.status(400).json({ error: 'No slabs provided' });
+    }
+
+    // Create sync log
+    const { data: syncLog } = await supabase
+      .from('inventory_sync_logs')
+      .insert({
+        distributor_id: distributorId,
+        sync_type,
+        sync_source: apiKey ? 'api' : 'csv_upload',
+        status: 'processing',
+        records_processed: 0,
+        initiated_by: userId || null
+      })
+      .select()
+      .single();
+
+    const results = {
+      created: 0,
+      updated: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Process each slab
+    for (const slab of slabs) {
+      try {
+        const slabData = {
+          ...slab,
+          distributor_id: distributorId,
+          sync_source: apiKey ? 'api' : 'csv_upload',
+          last_synced_at: new Date().toISOString()
+        };
+
+        // Check if slab exists by external_id
+        if (slab.external_id) {
+          const { data: existing } = await supabase
+            .from('slab_inventory')
+            .select('id')
+            .eq('distributor_id', distributorId)
+            .eq('external_id', slab.external_id)
+            .single();
+
+          if (existing) {
+            // Update existing
+            delete slabData.distributor_id;
+            await supabase
+              .from('slab_inventory')
+              .update(slabData)
+              .eq('id', existing.id);
+            results.updated++;
+            continue;
+          }
+        }
+
+        // Insert new
+        slabData.listed_at = new Date().toISOString();
+        await supabase
+          .from('slab_inventory')
+          .insert(slabData);
+        results.created++;
+
+      } catch (err) {
+        results.failed++;
+        results.errors.push({
+          slab: slab.external_id || slab.product_name,
+          error: err.message
+        });
+      }
+    }
+
+    // Update sync log
+    await supabase
+      .from('inventory_sync_logs')
+      .update({
+        status: results.failed > 0 ? 'partial' : 'completed',
+        records_processed: slabs.length,
+        records_created: results.created,
+        records_updated: results.updated,
+        records_failed: results.failed,
+        error_details: results.errors.length > 0 ? results.errors : null,
+        completed_at: new Date().toISOString(),
+        duration_seconds: Math.floor((Date.now() - new Date(syncLog.started_at).getTime()) / 1000)
+      })
+      .eq('id', syncLog.id);
+
+    // Update distributor stats
+    await supabase.rpc('update_distributor_stats', { p_distributor_id: distributorId });
+
+    res.json({
+      success: true,
+      sync_id: syncLog.id,
+      results
+    });
+  } catch (error) {
+    console.error('Bulk import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ DISTRIBUTOR LOCATIONS ============
+
+// Get all locations for distributor
+app.get('/api/distributor/locations', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { data: locations, error } = await supabase
+      .from('distributor_locations')
+      .select('*')
+      .eq('distributor_id', profile.id)
+      .order('is_primary', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ locations: locations || [] });
+  } catch (error) {
+    console.error('Get locations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add location
+app.post('/api/distributor/locations', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const locationData = {
+      ...req.body,
+      distributor_id: profile.id
+    };
+
+    const { data: location, error } = await supabase
+      .from('distributor_locations')
+      .insert(locationData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ location });
+  } catch (error) {
+    console.error('Add location error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update location
+app.patch('/api/distributor/locations/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    delete updates.id;
+    delete updates.distributor_id;
+
+    const { data: location, error } = await supabase
+      .from('distributor_locations')
+      .update(updates)
+      .eq('id', req.params.id)
+      .eq('distributor_id', profile.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ location });
+  } catch (error) {
+    console.error('Update location error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete location
+app.delete('/api/distributor/locations/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { error } = await supabase
+      .from('distributor_locations')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('distributor_id', profile.id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete location error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ PUBLIC MARKETPLACE API ============
+
+// Search slabs (public)
+app.get('/api/marketplace/slabs', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const {
+      material_type,
+      brand,
+      color,
+      min_price,
+      max_price,
+      min_sqft,
+      max_sqft,
+      state,
+      search,
+      limit = 50,
+      offset = 0
+    } = req.query;
+
+    // Use the search function
+    const { data: slabs, error } = await supabase.rpc('search_slabs', {
+      p_material_type: material_type || null,
+      p_brand: brand || null,
+      p_color: color || null,
+      p_min_price: min_price ? parseFloat(min_price) : null,
+      p_max_price: max_price ? parseFloat(max_price) : null,
+      p_min_sqft: min_sqft ? parseFloat(min_sqft) : null,
+      p_max_sqft: max_sqft ? parseFloat(max_sqft) : null,
+      p_location_state: state || null,
+      p_search_term: search || null,
+      p_limit: parseInt(limit),
+      p_offset: parseInt(offset)
+    });
+
+    if (error) throw error;
+
+    res.json({ slabs: slabs || [] });
+  } catch (error) {
+    console.error('Search slabs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get slab detail (public)
+app.get('/api/marketplace/slabs/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: slab, error } = await supabase
+      .from('slab_inventory')
+      .select(`
+        *,
+        distributor_profiles(
+          id, company_name, logo_url, website,
+          average_rating, review_count, verification_status
+        ),
+        distributor_locations(
+          id, location_name, city, state, zip_code, phone,
+          has_showroom, has_slab_yard
+        )
+      `)
+      .eq('id', req.params.id)
+      .eq('status', 'available')
+      .single();
+
+    if (error) throw error;
+    if (!slab) return res.status(404).json({ error: 'Slab not found' });
+
+    // Increment view count
+    await supabase.rpc('increment_slab_view', { p_slab_id: req.params.id });
+
+    res.json({ slab });
+  } catch (error) {
+    console.error('Get slab detail error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit slab inquiry
+app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { name, email, phone, company_name, inquirer_type, message, project_type, project_zip, estimated_sqft, timeline } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    // Get slab and distributor info
+    const { data: slab } = await supabase
+      .from('slab_inventory')
+      .select('distributor_id, product_name, brand, price_per_sqft')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!slab) return res.status(404).json({ error: 'Slab not found' });
+
+    // Create inquiry
+    const { data: inquiry, error } = await supabase
+      .from('slab_inquiries')
+      .insert({
+        slab_id: req.params.id,
+        distributor_id: slab.distributor_id,
+        user_id: req.headers['x-user-id'] || null,
+        inquirer_type: inquirer_type || 'homeowner',
+        name,
+        email,
+        phone,
+        company_name,
+        message,
+        project_type,
+        project_zip,
+        estimated_sqft,
+        timeline,
+        source: 'marketplace',
+        source_url: req.headers.referer
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Increment inquiry count on slab
+    await supabase
+      .from('slab_inventory')
+      .update({ inquiry_count: supabase.sql`inquiry_count + 1` })
+      .eq('id', req.params.id);
+
+    // Get distributor email and send notification
+    const { data: distributor } = await supabase
+      .from('distributor_profiles')
+      .select('primary_contact_email, company_name')
+      .eq('id', slab.distributor_id)
+      .single();
+
+    if (distributor?.primary_contact_email) {
+      await sendNotification(
+        distributor.primary_contact_email,
+        `New Inquiry for ${slab.product_name}`,
+        `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1a1a2e;">New Slab Inquiry</h2>
+          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>Product:</strong> ${slab.product_name} ${slab.brand ? `(${slab.brand})` : ''}</p>
+            <p><strong>Price:</strong> $${slab.price_per_sqft}/sqft</p>
+          </div>
+          <h3>Contact Information</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+          ${company_name ? `<p><strong>Company:</strong> ${company_name}</p>` : ''}
+          ${inquirer_type ? `<p><strong>Type:</strong> ${inquirer_type}</p>` : ''}
+          ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
+          ${project_type ? `<p><strong>Project:</strong> ${project_type}</p>` : ''}
+          ${estimated_sqft ? `<p><strong>Est. Sqft:</strong> ${estimated_sqft}</p>` : ''}
+          <div style="margin-top: 30px;">
+            <a href="https://www.surprisegranite.com/distributor/dashboard/inquiries/" style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View All Inquiries</a>
+          </div>
+        </div>
+        `
+      );
+    }
+
+    res.status(201).json({ inquiry, message: 'Inquiry submitted successfully' });
+  } catch (error) {
+    console.error('Submit inquiry error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ DISTRIBUTOR API KEYS ============
+
+// Generate new API key
+app.post('/api/distributor/api-keys', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const crypto = require('crypto');
+    const apiKey = 'sg_' + crypto.randomBytes(32).toString('hex');
+    const keyPrefix = apiKey.substring(0, 11); // 'sg_' + 8 chars
+    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+
+    const { key_name = 'API Key', permissions = ['read', 'write'], allowed_ips } = req.body;
+
+    const { data: keyRecord, error } = await supabase
+      .from('distributor_api_keys')
+      .insert({
+        distributor_id: profile.id,
+        key_name,
+        key_prefix: keyPrefix,
+        key_hash: keyHash,
+        permissions,
+        allowed_ips: allowed_ips || null,
+        created_by: userId
+      })
+      .select('id, key_name, key_prefix, permissions, created_at')
+      .single();
+
+    if (error) throw error;
+
+    // Return the full key only once - it cannot be retrieved again
+    res.status(201).json({
+      key: keyRecord,
+      api_key: apiKey,
+      warning: 'Save this API key now. It cannot be retrieved again.'
+    });
+  } catch (error) {
+    console.error('Generate API key error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// List API keys
+app.get('/api/distributor/api-keys', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { data: keys, error } = await supabase
+      .from('distributor_api_keys')
+      .select('id, key_name, key_prefix, permissions, last_used_at, total_requests, is_active, created_at')
+      .eq('distributor_id', profile.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ keys: keys || [] });
+  } catch (error) {
+    console.error('List API keys error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Revoke API key
+app.delete('/api/distributor/api-keys/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { error } = await supabase
+      .from('distributor_api_keys')
+      .update({
+        is_active: false,
+        revoked_at: new Date().toISOString(),
+        revoked_reason: req.body.reason || 'User revoked'
+      })
+      .eq('id', req.params.id)
+      .eq('distributor_id', profile.id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Revoke API key error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ DISTRIBUTOR ANALYTICS ============
+
+// Get analytics summary
+app.get('/api/distributor/analytics', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id, total_slabs, total_products, total_orders, total_revenue')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { days = 30 } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+
+    // Get daily analytics
+    const { data: dailyStats } = await supabase
+      .from('distributor_analytics')
+      .select('*')
+      .eq('distributor_id', profile.id)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .order('date', { ascending: true });
+
+    // Get recent inquiries count
+    const { count: recentInquiries } = await supabase
+      .from('slab_inquiries')
+      .select('id', { count: 'exact' })
+      .eq('distributor_id', profile.id)
+      .gte('created_at', startDate.toISOString());
+
+    // Get total views across all slabs
+    const { data: viewStats } = await supabase
+      .from('slab_inventory')
+      .select('view_count, inquiry_count')
+      .eq('distributor_id', profile.id);
+
+    const totalViews = viewStats?.reduce((sum, s) => sum + (s.view_count || 0), 0) || 0;
+    const totalInquiries = viewStats?.reduce((sum, s) => sum + (s.inquiry_count || 0), 0) || 0;
+
+    res.json({
+      summary: {
+        total_slabs: profile.total_slabs,
+        total_products: profile.total_products,
+        total_orders: profile.total_orders,
+        total_revenue: profile.total_revenue,
+        total_views: totalViews,
+        total_inquiries: totalInquiries,
+        recent_inquiries: recentInquiries
+      },
+      daily: dailyStats || []
+    });
+  } catch (error) {
+    console.error('Get analytics error:', error);
     res.status(500).json({ error: error.message });
   }
 });

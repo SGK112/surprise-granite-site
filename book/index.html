@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
   <!-- Unified Navigation -->
-  <link rel="stylesheet" href="/css/unified-nav.css?v=20260111c">
-  <script defer src="/js/unified-nav.js?v=20260111c"></script>
+  <link rel="stylesheet" href="../css/unified-nav.css?v=20260113">
+  <script defer src="../js/unified-nav.js?v=20260113"></script>
 
   <style>
     :root {
@@ -30,22 +30,31 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Unified nav height for positioning */
+    :root {
+      --unified-nav-height: 155px;
+    }
+
+    @media (max-width: 991px) {
+      :root {
+        --unified-nav-height: 64px;
+      }
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       background: var(--dark);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
+      padding-top: var(--unified-nav-height); /* Space for fixed unified nav */
     }
 
-    /* Header */
     .book-header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      padding: 20px 24px;
+      margin-top: 20px; /* Extra spacing below unified nav */
     }
 
     .book-header-inner {
@@ -115,6 +124,69 @@
       color: var(--text-secondary);
       max-width: 500px;
       margin: 0 auto;
+    }
+
+    /* Trust Badges */
+    .trust-badges {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .trust-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .trust-badge svg {
+      color: var(--gold);
+    }
+
+    /* Urgency Banner */
+    .urgency-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.15) 0%, rgba(249, 203, 0, 0.05) 100%);
+      border: 1px solid rgba(249, 203, 0, 0.3);
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .urgency-banner svg {
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .urgency-banner strong {
+      color: var(--gold);
+    }
+
+    /* Privacy Note */
+    .privacy-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .privacy-note svg {
+      flex-shrink: 0;
+      opacity: 0.6;
     }
 
     /* Progress Steps */
@@ -244,14 +316,15 @@
     .calendar-days {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
+      gap: 6px;
+      min-height: 300px;
     }
 
     .calendar-day {
       aspect-ratio: 1;
       border-radius: 12px;
-      border: none;
-      background: transparent;
+      border: 1px solid var(--border);
+      background: var(--surface-elevated);
       color: var(--text);
       font-size: 14px;
       font-weight: 500;
@@ -260,29 +333,36 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 48px;
     }
 
     .calendar-day:hover:not(:disabled):not(.selected) {
-      background: var(--surface-elevated);
+      background: rgba(249, 203, 0, 0.15);
+      border-color: var(--gold);
     }
 
     .calendar-day.today {
       border: 2px solid var(--gold);
+      background: rgba(249, 203, 0, 0.1);
     }
 
     .calendar-day.selected {
       background: var(--gold);
       color: #000;
       font-weight: 700;
+      border-color: var(--gold);
     }
 
     .calendar-day:disabled {
-      opacity: 0.3;
+      opacity: 0.4;
       cursor: not-allowed;
+      background: var(--surface);
     }
 
     .calendar-day.other-month {
       opacity: 0.3;
+      background: transparent;
+      border-color: transparent;
     }
 
     /* Time Slots */
@@ -569,6 +649,63 @@
       font-weight: 600;
     }
 
+    /* What's Next Section */
+    .whats-next {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      margin: 0 auto 32px;
+      text-align: left;
+    }
+
+    .whats-next h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+      color: var(--text);
+    }
+
+    .next-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .next-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .next-step-num {
+      width: 24px;
+      height: 24px;
+      background: var(--gold);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .next-step-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .success-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     /* Loading Spinner */
     .spinner {
       width: 20px;
@@ -612,7 +749,8 @@
   <header class="book-header">
     <div class="book-header-inner">
       <a href="/" class="book-logo">
-        <svg class="book-logo-icon" viewBox="0 0 390 402" fill="var(--gold)">
+        <!-- Surprise Granite Yellow House Icon -->
+        <svg class="book-logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 402" width="40" height="41" fill="#f9cb00">
           <g transform="translate(0.269 0.052)">
             <path d="M194.6,32.106l166.79,96.3V373.463H27.807V128.406l166.79-96.3M194.6,0,0,112.353V401.271H389.213V112.353L194.6,0Z"/>
             <path d="M257.77,133.82,87.52,34.06,61.3,51.7l168.663,98.173V374.579H257.77Z" transform="translate(48.039 26.692)"/>
@@ -620,7 +758,10 @@
             <path d="M129.182,173.571,12.53,106.22v32.106l88.862,51.3V318.03h27.789Z" transform="translate(9.819 83.241)"/>
           </g>
         </svg>
-        <span class="book-logo-text">Surprise Granite</span>
+        <div style="display: flex; flex-direction: column;">
+          <span class="book-logo-text">SURPRISE GRANITE</span>
+          <span style="font-size: 10px; font-weight: 600; color: #f9cb00; letter-spacing: 1.5px; margin-top: -2px;">MARBLE & QUARTZ</span>
+        </div>
       </a>
       <a href="/" class="book-back">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -636,6 +777,30 @@
     <div class="book-title">
       <h1>Schedule Your Free Estimate</h1>
       <p>Pick a date and time that works for you. We'll come to your home and provide a detailed quote.</p>
+
+      <!-- Trust Badges -->
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+          <span>100% Free</span>
+        </div>
+        <div class="trust-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>30-Min Consultation</span>
+        </div>
+        <div class="trust-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+          </svg>
+          <span>No Obligation</span>
+        </div>
+      </div>
     </div>
 
     <!-- Progress Steps -->
@@ -656,6 +821,14 @@
 
     <!-- Step 1: Date & Time -->
     <section class="book-section active" id="step1">
+      <!-- Urgency Banner -->
+      <div class="urgency-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <span><strong>Limited Availability</strong> — Book now to secure your preferred time slot</span>
+      </div>
+
       <div class="calendar-container">
         <div class="calendar-header">
           <span class="calendar-month" id="calendarMonth"></span>
@@ -760,6 +933,15 @@
         </div>
       </div>
 
+      <!-- Privacy Note -->
+      <div class="privacy-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>Your information is secure and will never be shared with third parties.</span>
+      </div>
+
       <div class="book-buttons">
         <button class="book-btn secondary" id="backToStep1">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -839,7 +1021,15 @@
           </svg>
         </div>
         <h2 class="success-title">Appointment Requested!</h2>
-        <p class="success-message">We've received your booking request. You'll receive a confirmation email shortly.</p>
+        <p class="success-message">We've received your booking request and sent a confirmation to your email.</p>
+
+        <!-- Email Sent Badge -->
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 10px 16px; border-radius: 20px; margin-bottom: 24px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+          <span style="color: #22c55e; font-size: 13px; font-weight: 600;">Confirmation email sent to <span id="successEmail" style="color: #fff;">your inbox</span></span>
+        </div>
 
         <div class="success-details">
           <div class="success-detail">
@@ -870,20 +1060,44 @@
           </div>
         </div>
 
-        <a href="/" class="book-btn primary" style="display:inline-flex; text-decoration:none;">
-          Return to Home
-        </a>
+        <!-- What's Next Section -->
+        <div class="whats-next">
+          <h3>What's Next?</h3>
+          <div class="next-steps">
+            <div class="next-step">
+              <div class="next-step-num">1</div>
+              <div class="next-step-text">We'll call to confirm your appointment within 24 hours</div>
+            </div>
+            <div class="next-step">
+              <div class="next-step-num">2</div>
+              <div class="next-step-text">Our expert will visit your home at the scheduled time</div>
+            </div>
+            <div class="next-step">
+              <div class="next-step-num">3</div>
+              <div class="next-step-text">You'll receive a detailed quote with material options</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <a href="/" class="book-btn primary" style="display:inline-flex; text-decoration:none;">
+            Return to Home
+          </a>
+          <a href="tel:+16028333189" class="book-btn secondary" style="display:inline-flex; text-decoration:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            Call Us Now
+          </a>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Calendar Script - runs first, no dependencies -->
   <script>
-    // Supabase Config
-    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  (function() {
+    'use strict';
 
     // State
     let currentDate = new Date();
@@ -891,32 +1105,25 @@
     let selectedTime = null;
 
     // Available time slots
-    const timeSlots = [
-      '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-      '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
-    ];
-
-    // DOM Elements
-    const calendarMonth = document.getElementById('calendarMonth');
-    const calendarDays = document.getElementById('calendarDays');
-    const prevMonth = document.getElementById('prevMonth');
-    const nextMonth = document.getElementById('nextMonth');
-    const timeSlotsContainer = document.getElementById('timeSlots');
-    const timeSlotsGrid = document.getElementById('timeSlotsGrid');
-    const selectedDateText = document.getElementById('selectedDateText');
-
-    // Progress steps
-    const progressSteps = document.querySelectorAll('.progress-step');
+    const timeSlots = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
     // Render Calendar
     function renderCalendar() {
+      const calendarMonth = document.getElementById('calendarMonth');
+      const calendarDays = document.getElementById('calendarDays');
+      const prevBtn = document.getElementById('prevMonth');
+
+      if (!calendarMonth || !calendarDays) {
+        console.error('Calendar elements not found');
+        return;
+      }
+
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
 
       // Update month display
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                          'July', 'August', 'September', 'October', 'November', 'December'];
-      calendarMonth.textContent = `${monthNames[month]} ${year}`;
+      calendarMonth.textContent = monthNames[month] + ' ' + year;
 
       // Get first day of month and total days
       const firstDay = new Date(year, month, 1).getDay();
@@ -959,7 +1166,9 @@
           dateBtn.classList.add('selected');
         }
 
-        dateBtn.addEventListener('click', () => selectDate(thisDate));
+        dateBtn.addEventListener('click', function() {
+          selectDate(thisDate);
+        });
         calendarDays.appendChild(dateBtn);
       }
 
@@ -968,47 +1177,43 @@
       thisMonth.setDate(1);
       thisMonth.setHours(0, 0, 0, 0);
       const currentMonth = new Date(year, month, 1);
-      prevMonth.disabled = currentMonth <= thisMonth;
+      if (prevBtn) prevBtn.disabled = currentMonth <= thisMonth;
     }
 
     // Select Date
     function selectDate(date) {
       selectedDate = date;
       selectedTime = null;
-
-      // Re-render calendar to show selection
       renderCalendar();
+
+      const timeSlotsContainer = document.getElementById('timeSlots');
+      const selectedDateText = document.getElementById('selectedDateText');
+      const timeSlotsGrid = document.getElementById('timeSlotsGrid');
 
       // Show time slots
       const options = { weekday: 'long', month: 'long', day: 'numeric' };
-      selectedDateText.textContent = date.toLocaleDateString('en-US', options);
-
+      if (selectedDateText) selectedDateText.textContent = date.toLocaleDateString('en-US', options);
       renderTimeSlots();
-      timeSlotsContainer.style.display = 'block';
-
-      // Update button state
+      if (timeSlotsContainer) timeSlotsContainer.style.display = 'block';
       updateStep1Button();
     }
 
     // Render Time Slots
     function renderTimeSlots() {
-      timeSlotsGrid.innerHTML = '';
+      const timeSlotsGrid = document.getElementById('timeSlotsGrid');
+      if (!timeSlotsGrid) return;
 
-      timeSlots.forEach(time => {
+      timeSlotsGrid.innerHTML = '';
+      timeSlots.forEach(function(time) {
         const btn = document.createElement('button');
         btn.className = 'time-slot';
         btn.textContent = time;
-
-        if (selectedTime === time) {
-          btn.classList.add('selected');
-        }
-
-        btn.addEventListener('click', () => {
+        if (selectedTime === time) btn.classList.add('selected');
+        btn.addEventListener('click', function() {
           selectedTime = time;
           renderTimeSlots();
           updateStep1Button();
         });
-
         timeSlotsGrid.appendChild(btn);
       });
     }
@@ -1016,26 +1221,70 @@
     // Update Step 1 Button
     function updateStep1Button() {
       const btn = document.getElementById('toStep2');
-      btn.disabled = !selectedDate || !selectedTime;
+      if (btn) btn.disabled = !selectedDate || !selectedTime;
     }
 
-    // Navigation
-    prevMonth.addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      renderCalendar();
-    });
+    // Format date for display
+    function formatDate(date) {
+      const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    }
 
-    nextMonth.addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
+    // Make functions globally available
+    window.BookingCalendar = {
+      currentDate: function() { return currentDate; },
+      selectedDate: function() { return selectedDate; },
+      selectedTime: function() { return selectedTime; },
+      formatDate: formatDate,
+      renderCalendar: renderCalendar,
+      prev: function() { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); },
+      next: function() { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); }
+    };
+
+    // Initialize when DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initializing calendar...');
       renderCalendar();
+
+      // Nav buttons
+      var prevBtn = document.getElementById('prevMonth');
+      var nextBtn = document.getElementById('nextMonth');
+      if (prevBtn) prevBtn.addEventListener('click', function() { window.BookingCalendar.prev(); });
+      if (nextBtn) nextBtn.addEventListener('click', function() { window.BookingCalendar.next(); });
+
+      console.log('Calendar initialized');
     });
+  })();
+  </script>
+
+  <!-- Supabase - use global client from unified-nav -->
+  <script>
+    // Supabase Config - use global client to avoid duplicate declarations
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+    function getSupabaseClient() {
+      if (window._sgSupabaseClient) return window._sgSupabaseClient;
+      if (window.supabase && window.supabase.createClient) {
+        window._sgSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true }
+        });
+        return window._sgSupabaseClient;
+      }
+      return null;
+    }
+
+    // Get booking calendar state (from the calendar module)
+    function getSelectedDate() { return window.BookingCalendar ? window.BookingCalendar.selectedDate() : null; }
+    function getSelectedTime() { return window.BookingCalendar ? window.BookingCalendar.selectedTime() : null; }
+    function formatDate(date) { return window.BookingCalendar ? window.BookingCalendar.formatDate(date) : date.toLocaleDateString(); }
 
     // Step Navigation
     function showStep(stepNum) {
       document.querySelectorAll('.book-section').forEach(s => s.classList.remove('active'));
       document.getElementById(`step${stepNum}`).classList.add('active');
 
-      progressSteps.forEach((step, i) => {
+      document.querySelectorAll('.progress-step').forEach((step, i) => {
         step.classList.remove('active', 'completed');
         if (i + 1 < stepNum) step.classList.add('completed');
         if (i + 1 === stepNum) step.classList.add('active');
@@ -1045,144 +1294,158 @@
     function showSuccess() {
       document.querySelectorAll('.book-section').forEach(s => s.classList.remove('active'));
       document.getElementById('stepSuccess').classList.add('active');
-      progressSteps.forEach(step => step.classList.add('completed'));
+      document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));
     }
 
-    // Format date for display
-    function formatDate(date) {
-      const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
-      return date.toLocaleDateString('en-US', options);
-    }
+    // Initialize step navigation when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Setting up step navigation...');
 
-    // Step 1 -> Step 2
-    document.getElementById('toStep2').addEventListener('click', () => {
-      document.getElementById('summaryDate').textContent = formatDate(selectedDate);
-      document.getElementById('summaryTime').textContent = selectedTime;
-      showStep(2);
-    });
-
-    // Step 2 -> Step 1
-    document.getElementById('backToStep1').addEventListener('click', () => {
-      showStep(1);
-    });
-
-    // Step 2 -> Step 3
-    document.getElementById('toStep3').addEventListener('click', () => {
-      // Validate required fields
-      const name = document.getElementById('inputName').value.trim();
-      const phone = document.getElementById('inputPhone').value.trim();
-      const email = document.getElementById('inputEmail').value.trim();
-      const address = document.getElementById('inputAddress').value.trim();
-
-      if (!name || !phone || !email || !address) {
-        alert('Please fill in all required fields.');
-        return;
-      }
-
-      // Update confirmation
-      document.getElementById('confirmDate').textContent = formatDate(selectedDate);
-      document.getElementById('confirmTime').textContent = selectedTime;
-      document.getElementById('confirmName').textContent = name;
-      document.getElementById('confirmPhone').textContent = phone;
-      document.getElementById('confirmEmail').textContent = email;
-      document.getElementById('confirmAddress').textContent = address;
-
-      const projectType = document.getElementById('inputProjectType').value;
-      const projectMap = {
-        'kitchen': 'Kitchen Countertops',
-        'bathroom': 'Bathroom Vanity',
-        'outdoor': 'Outdoor Kitchen',
-        'flooring': 'Flooring',
-        'tile': 'Tile/Backsplash',
-        'other': 'Other'
-      };
-      document.getElementById('confirmProject').textContent = projectMap[projectType] || 'Not specified';
-
-      showStep(3);
-    });
-
-    // Step 3 -> Step 2
-    document.getElementById('backToStep2').addEventListener('click', () => {
-      showStep(2);
-    });
-
-    // Submit Booking
-    document.getElementById('submitBooking').addEventListener('click', async () => {
-      const submitBtn = document.getElementById('submitBooking');
-      const submitText = document.getElementById('submitText');
-      const submitSpinner = document.getElementById('submitSpinner');
-
-      // Show loading
-      submitBtn.disabled = true;
-      submitText.style.display = 'none';
-      submitSpinner.style.display = 'block';
-
-      try {
-        // Prepare data - matching existing leads table schema
-        const fullName = document.getElementById('inputName').value.trim();
-        const nameParts = fullName.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        const appointmentDetails = {
-          preferred_date: selectedDate.toISOString().split('T')[0],
-          preferred_time: selectedTime,
-          formatted_date: formatDate(selectedDate),
-          project_address: document.getElementById('inputAddress').value.trim(),
-          estimated_sqft: document.getElementById('inputSqft').value.trim() || null,
-          appointment_type: 'free_estimate'
-        };
-
-        const leadData = {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: fullName,
-          email: document.getElementById('inputEmail').value.trim(),
-          phone: document.getElementById('inputPhone').value.trim(),
-          project_type: document.getElementById('inputProjectType').value || 'Not specified',
-          message: `APPOINTMENT REQUEST\nDate: ${formatDate(selectedDate)}\nTime: ${selectedTime}\nAddress: ${document.getElementById('inputAddress').value.trim()}\n\n${document.getElementById('inputNotes').value.trim() || ''}`,
-          source: 'Booking Calendar',
-          form_name: 'appointment-booking',
-          page_url: window.location.href,
-          raw_data: appointmentDetails
-        };
-
-        // Insert into Supabase leads table using fetch (like estimate form)
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(leadData)
+      // Step 1 -> Step 2
+      var toStep2Btn = document.getElementById('toStep2');
+      if (toStep2Btn) {
+        toStep2Btn.addEventListener('click', function() {
+          var selDate = getSelectedDate();
+          var selTime = getSelectedTime();
+          if (selDate && selTime) {
+            document.getElementById('summaryDate').textContent = formatDate(selDate);
+            document.getElementById('summaryTime').textContent = selTime;
+            showStep(2);
+          }
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to submit booking');
-        }
-
-        // Update success screen
-        document.getElementById('successDateTime').textContent =
-          `${formatDate(selectedDate)} at ${selectedTime}`;
-        document.getElementById('successAddress').textContent =
-          document.getElementById('inputAddress').value.trim();
-
-        // Show success
-        showSuccess();
-
-        // Send notification email (via webhook or edge function)
-        await sendNotificationEmail(leadData);
-
-      } catch (error) {
-        console.error('Booking error:', error);
-        alert('Something went wrong. Please try again or call us at (602) 833-3189.');
-
-        // Reset button
-        submitBtn.disabled = false;
-        submitText.style.display = 'inline';
-        submitSpinner.style.display = 'none';
       }
+
+      // Step 2 -> Step 1
+      var backToStep1Btn = document.getElementById('backToStep1');
+      if (backToStep1Btn) {
+        backToStep1Btn.addEventListener('click', function() {
+          showStep(1);
+        });
+      }
+
+      // Step 2 -> Step 3
+      var toStep3Btn = document.getElementById('toStep3');
+      if (toStep3Btn) {
+        toStep3Btn.addEventListener('click', function() {
+          var name = document.getElementById('inputName').value.trim();
+          var phone = document.getElementById('inputPhone').value.trim();
+          var email = document.getElementById('inputEmail').value.trim();
+          var address = document.getElementById('inputAddress').value.trim();
+
+          if (!name || !phone || !email || !address) {
+            alert('Please fill in all required fields.');
+            return;
+          }
+
+          var selDate = getSelectedDate();
+          var selTime = getSelectedTime();
+
+          document.getElementById('confirmDate').textContent = formatDate(selDate);
+          document.getElementById('confirmTime').textContent = selTime;
+          document.getElementById('confirmName').textContent = name;
+          document.getElementById('confirmPhone').textContent = phone;
+          document.getElementById('confirmEmail').textContent = email;
+          document.getElementById('confirmAddress').textContent = address;
+
+          var projectType = document.getElementById('inputProjectType').value;
+          var projectMap = {
+            'kitchen': 'Kitchen Countertops',
+            'bathroom': 'Bathroom Vanity',
+            'outdoor': 'Outdoor Kitchen',
+            'flooring': 'Flooring',
+            'tile': 'Tile/Backsplash',
+            'other': 'Other'
+          };
+          document.getElementById('confirmProject').textContent = projectMap[projectType] || 'Not specified';
+
+          showStep(3);
+        });
+      }
+
+      // Step 3 -> Step 2
+      var backToStep2Btn = document.getElementById('backToStep2');
+      if (backToStep2Btn) {
+        backToStep2Btn.addEventListener('click', function() {
+          showStep(2);
+        });
+      }
+
+      // Submit Booking
+      var submitBookingBtn = document.getElementById('submitBooking');
+      if (submitBookingBtn) {
+        submitBookingBtn.addEventListener('click', async function() {
+          var submitBtn = document.getElementById('submitBooking');
+          var submitText = document.getElementById('submitText');
+          var submitSpinner = document.getElementById('submitSpinner');
+
+          submitBtn.disabled = true;
+          submitText.style.display = 'none';
+          submitSpinner.style.display = 'block';
+
+          try {
+            var fullName = document.getElementById('inputName').value.trim();
+            var nameParts = fullName.split(' ');
+            var firstName = nameParts[0] || '';
+            var lastName = nameParts.slice(1).join(' ') || '';
+
+            var selDate = getSelectedDate();
+            var selTime = getSelectedTime();
+
+            var appointmentDetails = {
+              preferred_date: selDate.toISOString().split('T')[0],
+              preferred_time: selTime,
+              formatted_date: formatDate(selDate),
+              project_address: document.getElementById('inputAddress').value.trim(),
+              estimated_sqft: document.getElementById('inputSqft').value.trim() || null,
+              appointment_type: 'free_estimate'
+            };
+
+            var leadData = {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: fullName,
+              email: document.getElementById('inputEmail').value.trim(),
+              phone: document.getElementById('inputPhone').value.trim(),
+              project_type: document.getElementById('inputProjectType').value || 'Not specified',
+              message: 'APPOINTMENT REQUEST\nDate: ' + formatDate(selDate) + '\nTime: ' + selTime + '\nAddress: ' + document.getElementById('inputAddress').value.trim() + '\n\n' + (document.getElementById('inputNotes').value.trim() || ''),
+              source: 'Booking Calendar',
+              form_name: 'appointment-booking',
+              page_url: window.location.href,
+              raw_data: appointmentDetails
+            };
+
+            var response = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify(leadData)
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to submit booking');
+            }
+
+            document.getElementById('successDateTime').textContent = formatDate(selDate) + ' at ' + selTime;
+            document.getElementById('successAddress').textContent = document.getElementById('inputAddress').value.trim();
+            document.getElementById('successEmail').textContent = document.getElementById('inputEmail').value.trim();
+
+            showSuccess();
+            await sendNotificationEmail(leadData);
+
+          } catch (error) {
+            console.error('Booking error:', error);
+            alert('Something went wrong. Please try again or call us at (602) 833-3189.');
+            submitBtn.disabled = false;
+            submitText.style.display = 'inline';
+            submitSpinner.style.display = 'none';
+          }
+        });
+      }
+
+      console.log('Step navigation ready');
     });
 
     // Send notification email via API
@@ -1236,8 +1499,9 @@
       }
     }
 
-    // Initialize
-    renderCalendar();
   </script>
+
+  <!-- Remodely AI Widgets (Aria Voice) -->
+  <script defer src="../js/remodely-widgets.js?v=20260113b"></script>
 </body>
 </html>
