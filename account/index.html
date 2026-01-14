@@ -3813,10 +3813,10 @@
               <option value="admin">Admin View</option>
             </select>
           </div>
-          <a href="/get-a-free-estimate/" class="btn btn-primary">
+          <button class="btn btn-primary" onclick="openAddLeadModal()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Get Quote
-          </a>
+            Add New Lead
+          </button>
         </div>
       </div>
 
@@ -4595,6 +4595,97 @@
           Create Estimate
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Add New Lead Modal -->
+  <div class="modal-overlay" id="add-lead-modal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Add New Lead</h2>
+        <button class="modal-close" onclick="closeAddLeadModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="add-lead-form" onsubmit="saveNewLead(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" id="new-lead-first-name" required placeholder="John"/>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" id="new-lead-last-name" required placeholder="Smith"/>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" id="new-lead-email" required placeholder="john@example.com"/>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="new-lead-phone" placeholder="(555) 123-4567"/>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Project Type</label>
+              <select id="new-lead-project-type">
+                <option value="">Select Type</option>
+                <option value="kitchen">Kitchen Countertops</option>
+                <option value="bathroom">Bathroom Vanity</option>
+                <option value="flooring">Flooring</option>
+                <option value="fireplace">Fireplace</option>
+                <option value="outdoor">Outdoor Kitchen</option>
+                <option value="commercial">Commercial</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ZIP Code</label>
+              <input type="text" id="new-lead-zip" placeholder="85374"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Project Details / Notes</label>
+            <textarea id="new-lead-message" rows="3" placeholder="Describe the project or add notes..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Lead Source</label>
+              <select id="new-lead-source">
+                <option value="phone">Phone Call</option>
+                <option value="walk-in">Walk-in</option>
+                <option value="referral">Referral</option>
+                <option value="website">Website</option>
+                <option value="social">Social Media</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="new-lead-status">
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="qualified">Qualified</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddLeadModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-lead-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Save Lead
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -8040,6 +8131,71 @@
       document.getElementById('lead-modal').classList.remove('active');
       selectedLead = null;
     }
+
+    function openAddLeadModal() {
+      document.getElementById('add-lead-form').reset();
+      document.getElementById('add-lead-modal').classList.add('active');
+    }
+
+    function closeAddLeadModal() {
+      document.getElementById('add-lead-modal').classList.remove('active');
+    }
+
+    async function saveNewLead(event) {
+      event.preventDefault();
+
+      const btn = document.getElementById('save-lead-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      try {
+        const firstName = document.getElementById('new-lead-first-name').value.trim();
+        const lastName = document.getElementById('new-lead-last-name').value.trim();
+        const fullName = `${firstName} ${lastName}`.trim();
+
+        const leadData = {
+          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
+          email: document.getElementById('new-lead-email').value.trim(),
+          phone: document.getElementById('new-lead-phone').value.trim() || null,
+          project_type: document.getElementById('new-lead-project-type').value || null,
+          zip_code: document.getElementById('new-lead-zip').value.trim() || null,
+          message: document.getElementById('new-lead-message').value.trim() || null,
+          source: document.getElementById('new-lead-source').value,
+          status: document.getElementById('new-lead-status').value,
+          form_name: 'manual-entry',
+          created_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabaseClient
+          .from('leads')
+          .insert([leadData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to local array and refresh display
+        allLeads.unshift(data);
+        updateStats();
+        renderLeads();
+        closeAddLeadModal();
+        showToast('Lead added successfully!', 'success');
+
+      } catch (err) {
+        console.error('Error saving lead:', err);
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Save Lead';
+      }
+    }
+
+    // Close add lead modal when clicking overlay
+    document.getElementById('add-lead-modal')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) closeAddLeadModal();
+    });
 
     async function updateLeadStatus() {
       if (!selectedLead) return;
