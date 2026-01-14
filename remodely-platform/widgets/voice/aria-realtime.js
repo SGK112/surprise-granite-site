@@ -947,7 +947,7 @@
         this.audioQueue = [];
         this.isPlaying = false;
         this.pendingBuffers = []; // Pre-buffer before playing
-        this.preBufferCount = 3; // Wait for 3 chunks before starting
+        this.preBufferCount = 5; // Wait for 5 chunks before starting (smoother)
 
         // Create gain node for smooth audio
         this.gainNode = this.playbackContext.createGain();
@@ -1012,7 +1012,7 @@
 
       this.isPlaying = true;
       this.animateVisualizer(true);
-      this.nextPlayTime = this.playbackContext.currentTime + 0.05; // Small initial delay
+      this.nextPlayTime = this.playbackContext.currentTime + 0.15; // Buffer delay for smoother start
       this.scheduleNextBuffers();
     }
 
