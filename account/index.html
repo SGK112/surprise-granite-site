@@ -1138,6 +1138,9 @@
     .status-lost { background: rgba(255, 107, 107, 0.15); color: var(--error); }
     .status-lost::before { background: var(--error); }
 
+    .status-archived { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+    .status-archived::before { background: #6b7280; }
+
     /* Estimate statuses */
     .status-draft { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
     .status-draft::before { background: #9ca3af; }
@@ -4020,6 +4023,8 @@
                 <button class="filter-btn" data-status="contacted">Contacted</button>
                 <button class="filter-btn" data-status="qualified">Qualified</button>
                 <button class="filter-btn" data-status="won">Won</button>
+                <button class="filter-btn" data-status="lost">Lost</button>
+                <button class="filter-btn" data-status="archived">Archived</button>
               </div>
               <div class="search-box">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -4581,8 +4586,9 @@
           <option value="contacted">Contacted</option>
           <option value="qualified">Qualified</option>
           <option value="quoted">Quoted</option>
-          <option value="won">Won</option>
+          <option value="won">Won - Converted</option>
           <option value="lost">Lost</option>
+          <option value="archived">Archived</option>
         </select>
         <button class="btn btn-primary" onclick="updateLeadStatus()">Update Status</button>
         <div style="flex: 1;"></div>
@@ -4593,6 +4599,10 @@
         <button class="btn btn-primary" onclick="createEstimateFromLead()" title="Create estimate for this lead">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Create Estimate
+        </button>
+        <button class="btn btn-danger" onclick="deleteLead()" title="Permanently delete this lead" style="background: #dc2626;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete
         </button>
       </div>
     </div>
@@ -8084,6 +8094,12 @@
                     <button class="action-btn" onclick="quickConvertLead('${lead.id}', 'estimate')" title="Create Estimate" style="color: var(--gold-primary);">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </button>
+                    <button class="action-btn" onclick="quickArchiveLead('${lead.id}')" title="Archive Lead" style="color: #6b7280;">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                    </button>
+                    <button class="action-btn" onclick="quickDeleteLead('${lead.id}')" title="Delete Lead" style="color: #dc2626;">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -8216,8 +8232,78 @@
         updateStats();
         renderLeads();
         closeLeadModal();
+        showToast('Status updated', 'success');
       } catch (err) {
-        alert('Error: ' + err.message);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteLead() {
+      if (!selectedLead) return;
+
+      const confirmed = confirm(`Are you sure you want to permanently delete this lead?\n\n${selectedLead.full_name || 'Unknown'}\n${selectedLead.email || ''}\n\nThis action cannot be undone.`);
+      if (!confirmed) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .delete()
+          .eq('id', selectedLead.id);
+
+        if (error) throw error;
+
+        // Remove from local array
+        allLeads = allLeads.filter(l => l.id !== selectedLead.id);
+        updateStats();
+        renderLeads();
+        closeLeadModal();
+        showToast('Lead deleted', 'success');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function quickDeleteLead(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const confirmed = confirm(`Delete this lead?\n\n${lead.full_name || 'Unknown'}\n${lead.email || ''}`);
+      if (!confirmed) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .delete()
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        allLeads = allLeads.filter(l => l.id !== leadId);
+        updateStats();
+        renderLeads();
+        showToast('Lead deleted', 'success');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function quickArchiveLead(leadId) {
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: 'archived', updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        const idx = allLeads.findIndex(l => l.id === leadId);
+        if (idx !== -1) allLeads[idx].status = 'archived';
+
+        updateStats();
+        renderLeads();
+        showToast('Lead archived', 'success');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
