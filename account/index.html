@@ -976,6 +976,27 @@
       border-color: var(--gold-primary);
     }
 
+    .tab-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--gold-primary);
+      border-bottom-color: var(--gold-primary);
+    }
+
     .search-box {
       display: flex;
       align-items: center;
@@ -3724,6 +3745,11 @@
             <span class="nav-item-text">Leads</span>
             <span class="nav-badge" id="leads-count" data-count="0">0</span>
           </a>
+          <a class="nav-item" data-page="customers" onclick="showPage('customers')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <span class="nav-item-text">Customers</span>
+            <span class="nav-badge" id="customers-count" data-count="0">0</span>
+          </a>
           <a class="nav-item" data-page="estimates" onclick="showPage('estimates')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             <span class="nav-item-text">Estimates</span>
@@ -4035,6 +4061,34 @@
               <div class="empty-state">
                 <div class="spinner"></div>
                 <p>Loading leads...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Customers Page (Admin Only) -->
+        <section id="page-customers" class="page-section">
+          <div class="table-container">
+            <div class="table-header">
+              <h2 class="table-title">Customers</h2>
+              <div class="table-filters">
+                <button class="filter-btn active" data-customer-filter="all" onclick="filterCustomers('all')">All</button>
+                <button class="filter-btn" data-customer-filter="active" onclick="filterCustomers('active')">Active</button>
+                <button class="filter-btn" data-customer-filter="recent" onclick="filterCustomers('recent')">Recent Jobs</button>
+              </div>
+              <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="customers-search" placeholder="Search customers..." oninput="searchCustomersPage()">
+              </div>
+              <button class="btn btn-primary" onclick="openAddCustomerModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add Customer
+              </button>
+            </div>
+            <div id="customers-table">
+              <div class="empty-state">
+                <div class="spinner"></div>
+                <p>Loading customers...</p>
               </div>
             </div>
           </div>
@@ -4693,6 +4747,135 @@
           <button type="submit" class="btn btn-primary" id="save-lead-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
             Save Lead
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer Detail Modal -->
+  <div class="modal-overlay" id="customer-modal">
+    <div class="modal" style="max-width: 900px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="customer-modal-title">Customer Details</h2>
+        <button class="modal-close" onclick="closeCustomerModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <!-- Customer Info Section -->
+        <div id="customer-info" style="margin-bottom: 24px;"></div>
+
+        <!-- Tabs -->
+        <div class="customer-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px;">
+          <button class="tab-btn active" onclick="showCustomerTab('jobs')" data-tab="jobs">Jobs</button>
+          <button class="tab-btn" onclick="showCustomerTab('estimates')" data-tab="estimates">Estimates</button>
+          <button class="tab-btn" onclick="showCustomerTab('invoices')" data-tab="invoices">Invoices</button>
+          <button class="tab-btn" onclick="showCustomerTab('notes')" data-tab="notes">Notes</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="customer-tab-content">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="editCustomer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Edit Customer
+        </button>
+        <button class="btn btn-primary" onclick="createJobForCustomer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          New Job
+        </button>
+        <button class="btn btn-primary" onclick="createEstimateForCustomer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          New Estimate
+        </button>
+        <div style="flex: 1;"></div>
+        <button class="btn btn-danger" onclick="deleteCustomer()" style="background: #dc2626;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Customer Modal -->
+  <div class="modal-overlay" id="edit-customer-modal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="edit-customer-title">Add Customer</h2>
+        <button class="modal-close" onclick="closeEditCustomerModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="edit-customer-form" onsubmit="saveCustomerForm(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name *</label>
+              <input type="text" id="customer-name" required placeholder="John Smith"/>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="customer-email" placeholder="john@example.com"/>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="customer-phone" placeholder="(555) 123-4567"/>
+            </div>
+            <div class="form-group">
+              <label>Source</label>
+              <select id="customer-source">
+                <option value="">Select Source</option>
+                <option value="website">Website</option>
+                <option value="referral">Referral</option>
+                <option value="google">Google</option>
+                <option value="walk-in">Walk-in</option>
+                <option value="phone">Phone Call</option>
+                <option value="social">Social Media</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="customer-address" placeholder="123 Main Street"/>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" id="customer-city" placeholder="Surprise"/>
+            </div>
+            <div class="form-group" style="width: 100px;">
+              <label>State</label>
+              <input type="text" id="customer-state" placeholder="AZ" maxlength="2"/>
+            </div>
+            <div class="form-group" style="width: 120px;">
+              <label>ZIP</label>
+              <input type="text" id="customer-zip" placeholder="85374"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="customer-notes" rows="3" placeholder="Additional notes about this customer..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditCustomerModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-customer-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Save Customer
           </button>
         </div>
       </form>
@@ -6654,6 +6837,11 @@
     let currentFilter = 'all';
     let selectedLead = null;
 
+    let allCustomers = [];
+    let selectedCustomer = null;
+    let customerFilter = 'all';
+    let currentCustomerTab = 'jobs';
+
     // Initialize with timeout fallback
     document.addEventListener('DOMContentLoaded', async () => {
       // Fallback timer - show dashboard/auth if things take too long
@@ -6818,7 +7006,7 @@
 
     function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
-      const validPages = ['favorites', 'profile', 'leads', 'invoices', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users'];
+      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar'];
       if (hash && validPages.includes(hash)) {
         showPage(hash);
       }
@@ -7559,6 +7747,7 @@
 
       if (isAdmin) {
         loadLeads();
+        loadCustomers();
         setupLeadsRealtime();
         // Also refresh leads every 30 seconds to catch any missed updates
         setInterval(loadLeads, 30000);
@@ -7780,10 +7969,12 @@
         'favorites': 'My Favorites',
         'listings': 'My Listings',
         'leads': 'Leads',
+        'customers': 'Customers',
         'estimates': 'Estimates',
         'invoices': 'Invoices',
         'jobs': 'Jobs & Projects',
         'contractors': 'Contractors & Team',
+        'calendar': 'Calendar',
         'wallet': 'Wallet',
         'admin-users': 'Manage Admins',
         'products': 'Products',
@@ -7815,6 +8006,11 @@
       // Load contractors when that page is shown
       if (page === 'contractors') {
         loadContractors();
+      }
+
+      // Load customers when that page is shown
+      if (page === 'customers') {
+        loadCustomers();
       }
 
       // Close mobile sidebar
@@ -8455,6 +8651,506 @@
         await createEstimateFromLead();
       }
     }
+
+    // ==========================================
+    // CUSTOMER MANAGEMENT FUNCTIONS
+    // ==========================================
+
+    async function loadCustomers() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+
+        if (error) throw error;
+
+        allCustomers = data || [];
+        updateCustomersCount();
+        renderCustomers();
+      } catch (err) {
+        console.error('Error loading customers:', err);
+        document.getElementById('customers-table').innerHTML = `
+          <div class="empty-state">
+            <h3>Error loading customers</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function updateCustomersCount() {
+      const countEl = document.getElementById('customers-count');
+      if (countEl) {
+        countEl.textContent = allCustomers.length;
+        countEl.style.display = allCustomers.length > 0 ? '' : 'none';
+      }
+    }
+
+    function filterCustomers(filter) {
+      customerFilter = filter;
+      document.querySelectorAll('[data-customer-filter]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.customerFilter === filter);
+      });
+      renderCustomers();
+    }
+
+    function searchCustomersPage() {
+      renderCustomers();
+    }
+
+    function renderCustomers() {
+      const searchTerm = (document.getElementById('customers-search')?.value || '').toLowerCase();
+      let filtered = allCustomers;
+
+      // Apply filter
+      if (customerFilter === 'active') {
+        filtered = filtered.filter(c => c.total_jobs > 0);
+      } else if (customerFilter === 'recent') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        filtered = filtered.filter(c => new Date(c.updated_at) > thirtyDaysAgo);
+      }
+
+      // Apply search
+      if (searchTerm) {
+        filtered = filtered.filter(c =>
+          (c.name || '').toLowerCase().includes(searchTerm) ||
+          (c.email || '').toLowerCase().includes(searchTerm) ||
+          (c.phone || '').toLowerCase().includes(searchTerm) ||
+          (c.city || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (filtered.length === 0) {
+        document.getElementById('customers-table').innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <h3>No customers found</h3>
+            <p>${allCustomers.length === 0 ? 'Convert leads to customers or add them manually.' : 'Try a different search term.'}</p>
+            <button class="btn btn-primary" onclick="openAddCustomerModal()" style="margin-top: 16px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Add Customer
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById('customers-table').innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact</th>
+              <th>Location</th>
+              <th>Jobs</th>
+              <th>Total Spent</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(c => `
+              <tr onclick="viewCustomer('${c.id}')" style="cursor: pointer;">
+                <td>
+                  <div style="font-weight: 600;">${c.name || 'Unknown'}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">${c.source || 'Direct'}</div>
+                </td>
+                <td>
+                  <div>${c.email || '-'}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.phone || ''}</div>
+                </td>
+                <td>
+                  <div>${c.city || '-'}${c.state ? ', ' + c.state : ''}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.zip || ''}</div>
+                </td>
+                <td>
+                  <span class="status-badge ${c.total_jobs > 0 ? 'status-won' : 'status-new'}">${c.total_jobs || 0}</span>
+                </td>
+                <td style="font-weight: 600; color: var(--gold-primary);">
+                  $${(c.total_spent || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td>
+                  <div class="lead-actions" onclick="event.stopPropagation();">
+                    <button class="action-btn" onclick="viewCustomer('${c.id}')" title="View Details">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                    ${c.email ? `<a class="action-btn" href="mailto:${c.email}" title="Email"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></a>` : ''}
+                    ${c.phone ? `<a class="action-btn" href="tel:${c.phone}" title="Call"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></a>` : ''}
+                    <button class="action-btn" onclick="quickNewJobForCustomer('${c.id}')" title="Create Job" style="color: var(--gold-primary);">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </button>
+                    <button class="action-btn" onclick="quickNewEstimateForCustomer('${c.id}')" title="Create Estimate" style="color: #22c55e;">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function viewCustomer(customerId) {
+      selectedCustomer = allCustomers.find(c => c.id === customerId);
+      if (!selectedCustomer) {
+        // Try loading from database
+        const { data } = await supabaseClient.from('customers').select('*').eq('id', customerId).single();
+        if (data) selectedCustomer = data;
+        else return;
+      }
+
+      // Update modal title
+      document.getElementById('customer-modal-title').textContent = selectedCustomer.name || 'Customer Details';
+
+      // Render customer info
+      document.getElementById('customer-info').innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${selectedCustomer.email ? `<a href="mailto:${selectedCustomer.email}" style="color: var(--gold-primary);">${selectedCustomer.email}</a>` : 'Not provided'}</div></div>
+          <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${selectedCustomer.phone ? `<a href="tel:${selectedCustomer.phone}" style="color: var(--gold-primary);">${selectedCustomer.phone}</a>` : 'Not provided'}</div></div>
+          <div class="detail-row"><div class="detail-label">Address</div><div class="detail-value">${selectedCustomer.address || '-'}</div></div>
+          <div class="detail-row"><div class="detail-label">City/State/ZIP</div><div class="detail-value">${[selectedCustomer.city, selectedCustomer.state, selectedCustomer.zip].filter(Boolean).join(', ') || '-'}</div></div>
+          <div class="detail-row"><div class="detail-label">Source</div><div class="detail-value">${selectedCustomer.source || 'Direct'}</div></div>
+          <div class="detail-row"><div class="detail-label">Customer Since</div><div class="detail-value">${new Date(selectedCustomer.created_at).toLocaleDateString()}</div></div>
+        </div>
+      `;
+
+      // Reset to jobs tab and load content
+      currentCustomerTab = 'jobs';
+      document.querySelectorAll('.customer-tabs .tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'jobs');
+      });
+      loadCustomerTabContent('jobs');
+
+      // Show modal
+      document.getElementById('customer-modal').classList.add('active');
+    }
+
+    function closeCustomerModal() {
+      document.getElementById('customer-modal').classList.remove('active');
+      selectedCustomer = null;
+    }
+
+    function showCustomerTab(tab) {
+      currentCustomerTab = tab;
+      document.querySelectorAll('.customer-tabs .tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      loadCustomerTabContent(tab);
+    }
+
+    async function loadCustomerTabContent(tab) {
+      const container = document.getElementById('customer-tab-content');
+      container.innerHTML = '<div class="empty-state"><div class="spinner"></div><p>Loading...</p></div>';
+
+      if (!selectedCustomer) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        if (tab === 'jobs') {
+          const { data: jobs } = await supabaseClient
+            .from('jobs')
+            .select('*')
+            .eq('customer_id', selectedCustomer.id)
+            .order('created_at', { ascending: false });
+
+          if (!jobs || jobs.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <p>No jobs for this customer yet.</p>
+                <button class="btn btn-primary" onclick="createJobForCustomer()" style="margin-top: 12px;">Create First Job</button>
+              </div>
+            `;
+          } else {
+            container.innerHTML = `
+              <table>
+                <thead><tr><th>Job #</th><th>Description</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+                <tbody>
+                  ${jobs.map(j => `
+                    <tr style="cursor: pointer;" onclick="viewJob && viewJob('${j.id}')">
+                      <td style="font-weight: 600;">${j.job_number || '-'}</td>
+                      <td>${j.project_description || '-'}</td>
+                      <td><span class="status-badge job-${j.status || 'new'}">${(j.status || 'new').replace('_', ' ')}</span></td>
+                      <td style="color: var(--gold-primary); font-weight: 600;">$${(j.total_price || 0).toFixed(2)}</td>
+                      <td>${new Date(j.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
+        } else if (tab === 'estimates') {
+          const { data: estimates } = await supabaseClient
+            .from('estimates')
+            .select('*')
+            .or(`customer_email.eq.${selectedCustomer.email},customer_id.eq.${selectedCustomer.id}`)
+            .order('created_at', { ascending: false });
+
+          if (!estimates || estimates.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <p>No estimates for this customer yet.</p>
+                <button class="btn btn-primary" onclick="createEstimateForCustomer()" style="margin-top: 12px;">Create Estimate</button>
+              </div>
+            `;
+          } else {
+            container.innerHTML = `
+              <table>
+                <thead><tr><th>Estimate #</th><th>Project</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+                <tbody>
+                  ${estimates.map(e => `
+                    <tr style="cursor: pointer;" onclick="viewEstimate && viewEstimate('${e.id}')">
+                      <td style="font-weight: 600;">${e.estimate_number || 'Draft'}</td>
+                      <td>${e.project_name || '-'}</td>
+                      <td><span class="status-badge status-${e.status}">${e.status}</span></td>
+                      <td style="color: var(--gold-primary); font-weight: 600;">$${(e.total || 0).toFixed(2)}</td>
+                      <td>${new Date(e.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
+        } else if (tab === 'invoices') {
+          const { data: invoices } = await supabaseClient
+            .from('invoices')
+            .select('*')
+            .or(`customer_email.eq.${selectedCustomer.email},customer_id.eq.${selectedCustomer.id}`)
+            .order('created_at', { ascending: false });
+
+          if (!invoices || invoices.length === 0) {
+            container.innerHTML = `<div class="empty-state"><p>No invoices for this customer yet.</p></div>`;
+          } else {
+            container.innerHTML = `
+              <table>
+                <thead><tr><th>Invoice #</th><th>Status</th><th>Amount</th><th>Due Date</th></tr></thead>
+                <tbody>
+                  ${invoices.map(inv => `
+                    <tr>
+                      <td style="font-weight: 600;">${inv.invoice_number || '-'}</td>
+                      <td><span class="status-badge status-${inv.status === 'paid' ? 'won' : inv.status === 'open' ? 'new' : 'lost'}">${inv.status}</span></td>
+                      <td style="color: var(--gold-primary); font-weight: 600;">$${(inv.amount_due || 0).toFixed(2)}</td>
+                      <td>${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
+        } else if (tab === 'notes') {
+          container.innerHTML = `
+            <div style="padding: 16px;">
+              <textarea id="customer-notes-edit" rows="6" style="width: 100%; padding: 12px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); resize: vertical;">${selectedCustomer.notes || ''}</textarea>
+              <button class="btn btn-primary" onclick="saveCustomerNotes()" style="margin-top: 12px;">Save Notes</button>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading tab content:', err);
+        container.innerHTML = `<div class="empty-state"><p style="color: var(--error);">Error: ${err.message}</p></div>`;
+      }
+    }
+
+    async function saveCustomerNotes() {
+      if (!selectedCustomer) return;
+      const notes = document.getElementById('customer-notes-edit')?.value || '';
+
+      try {
+        const { error } = await supabaseClient
+          .from('customers')
+          .update({ notes, updated_at: new Date().toISOString() })
+          .eq('id', selectedCustomer.id);
+
+        if (error) throw error;
+        selectedCustomer.notes = notes;
+        showToast('Notes saved!');
+      } catch (err) {
+        showToast('Error saving notes: ' + err.message, 'error');
+      }
+    }
+
+    function openAddCustomerModal() {
+      selectedCustomer = null;
+      document.getElementById('edit-customer-title').textContent = 'Add Customer';
+      document.getElementById('edit-customer-form').reset();
+      document.getElementById('edit-customer-modal').classList.add('active');
+    }
+
+    function editCustomer() {
+      if (!selectedCustomer) return;
+      document.getElementById('edit-customer-title').textContent = 'Edit Customer';
+
+      // Populate form
+      document.getElementById('customer-name').value = selectedCustomer.name || '';
+      document.getElementById('customer-email').value = selectedCustomer.email || '';
+      document.getElementById('customer-phone').value = selectedCustomer.phone || '';
+      document.getElementById('customer-source').value = selectedCustomer.source || '';
+      document.getElementById('customer-address').value = selectedCustomer.address || '';
+      document.getElementById('customer-city').value = selectedCustomer.city || '';
+      document.getElementById('customer-state').value = selectedCustomer.state || '';
+      document.getElementById('customer-zip').value = selectedCustomer.zip || '';
+      document.getElementById('customer-notes').value = selectedCustomer.notes || '';
+
+      closeCustomerModal();
+      document.getElementById('edit-customer-modal').classList.add('active');
+    }
+
+    function closeEditCustomerModal() {
+      document.getElementById('edit-customer-modal').classList.remove('active');
+    }
+
+    async function saveCustomerForm(event) {
+      event.preventDefault();
+
+      const btn = document.getElementById('save-customer-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        const customerData = {
+          user_id: user.id,
+          name: document.getElementById('customer-name').value.trim(),
+          email: document.getElementById('customer-email').value.trim() || null,
+          phone: document.getElementById('customer-phone').value.trim() || null,
+          source: document.getElementById('customer-source').value || null,
+          address: document.getElementById('customer-address').value.trim() || null,
+          city: document.getElementById('customer-city').value.trim() || null,
+          state: document.getElementById('customer-state').value.trim() || null,
+          zip: document.getElementById('customer-zip').value.trim() || null,
+          notes: document.getElementById('customer-notes').value.trim() || null,
+          updated_at: new Date().toISOString()
+        };
+
+        let result;
+        if (selectedCustomer) {
+          // Update existing
+          result = await supabaseClient
+            .from('customers')
+            .update(customerData)
+            .eq('id', selectedCustomer.id)
+            .select()
+            .single();
+        } else {
+          // Insert new
+          result = await supabaseClient
+            .from('customers')
+            .insert([customerData])
+            .select()
+            .single();
+        }
+
+        if (result.error) throw result.error;
+
+        closeEditCustomerModal();
+        showToast(selectedCustomer ? 'Customer updated!' : 'Customer added!');
+        await loadCustomers();
+
+        // If we were viewing this customer, refresh the view
+        if (selectedCustomer) {
+          viewCustomer(result.data.id);
+        }
+      } catch (err) {
+        console.error('Save customer error:', err);
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Save Customer';
+      }
+    }
+
+    async function deleteCustomer() {
+      if (!selectedCustomer) return;
+
+      const confirmed = confirm(`Are you sure you want to delete this customer?\n\n${selectedCustomer.name}\n${selectedCustomer.email || ''}\n\nThis will NOT delete their jobs, estimates, or invoices.`);
+      if (!confirmed) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('customers')
+          .delete()
+          .eq('id', selectedCustomer.id);
+
+        if (error) throw error;
+
+        closeCustomerModal();
+        allCustomers = allCustomers.filter(c => c.id !== selectedCustomer.id);
+        updateCustomersCount();
+        renderCustomers();
+        showToast('Customer deleted');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function createJobForCustomer() {
+      if (!selectedCustomer) return;
+      closeCustomerModal();
+      showPage('jobs');
+
+      setTimeout(() => {
+        if (typeof openCreateJobModal === 'function') {
+          openCreateJobModal(selectedCustomer);
+        } else {
+          showToast('Navigate to Jobs page to create a job', 'info');
+        }
+      }, 100);
+    }
+
+    function createEstimateForCustomer(customerId) {
+      const customer = customerId ? allCustomers.find(c => c.id === customerId) : selectedCustomer;
+      if (customer) selectedCustomer = customer;
+
+      closeCustomerModal();
+      showPage('estimates');
+
+      setTimeout(() => {
+        if (typeof openCreateEstimateModal === 'function') {
+          openCreateEstimateModal();
+
+          // Pre-fill customer info
+          setTimeout(() => {
+            const nameField = document.getElementById('estimate-customer-name');
+            const emailField = document.getElementById('estimate-customer-email');
+            const phoneField = document.getElementById('estimate-customer-phone');
+            const addressField = document.getElementById('estimate-customer-address');
+            const cityField = document.getElementById('estimate-customer-city');
+
+            if (nameField && selectedCustomer) nameField.value = selectedCustomer.name || '';
+            if (emailField && selectedCustomer) emailField.value = selectedCustomer.email || '';
+            if (phoneField && selectedCustomer) phoneField.value = selectedCustomer.phone || '';
+            if (addressField && selectedCustomer) addressField.value = selectedCustomer.address || '';
+            if (cityField && selectedCustomer) cityField.value = [selectedCustomer.city, selectedCustomer.state, selectedCustomer.zip].filter(Boolean).join(', ');
+          }, 100);
+        }
+      }, 100);
+    }
+
+    function quickNewJobForCustomer(customerId) {
+      selectedCustomer = allCustomers.find(c => c.id === customerId);
+      createJobForCustomer();
+    }
+
+    function quickNewEstimateForCustomer(customerId) {
+      createEstimateForCustomer(customerId);
+    }
+
+    // Close modals on overlay click
+    document.getElementById('customer-modal')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) closeCustomerModal();
+    });
+    document.getElementById('edit-customer-modal')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) closeEditCustomerModal();
+    });
 
     // Admin Users Functions
     let adminUsers = [];
