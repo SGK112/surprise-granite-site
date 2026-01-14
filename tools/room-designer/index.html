@@ -3,23 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Room Designer & Quote Tool | Surprise Granite</title>
+  <title>Room Designer Pro | Powered by Remodely.ai | Surprise Granite</title>
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Fabric.js for canvas manipulation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Konva for 2D Canvas -->
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <script src="https://unpkg.com/react-konva@18/umd/react-konva.min.js"></script>
+
+  <!-- Three.js for 3D -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+
   <style>
     :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
       --gold: #f9cb00;
       --gold-dark: #d4ab00;
-      --dark: #1a1a2e;
-      --dark-surface: #252538;
-      --dark-elevated: #2d2d44;
+      --dark: #0f0f1a;
+      --dark-surface: #1a1a2e;
+      --dark-elevated: #252540;
+      --dark-hover: #2d2d4a;
       --text: #ffffff;
-      --text-muted: rgba(255,255,255,0.6);
+      --text-secondary: rgba(255,255,255,0.7);
+      --text-muted: rgba(255,255,255,0.5);
       --border: rgba(255,255,255,0.1);
-      --success: #22c55e;
+      --success: #10b981;
+      --warning: #f59e0b;
       --error: #ef4444;
+      --remodely-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,66 +50,129 @@
       background: var(--dark);
       color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow: hidden;
+    }
+
+    #root {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Header */
     .header {
       background: var(--dark-surface);
       border-bottom: 1px solid var(--border);
-      padding: 12px 20px;
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      height: 60px;
+      height: 56px;
+      flex-shrink: 0;
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 20px;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       text-decoration: none;
-      color: var(--text);
     }
 
     .logo img {
-      height: 32px;
+      height: 28px;
     }
 
-    .logo-text {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--gold);
+    .logo-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
     }
 
-    .project-name {
-      padding: 6px 12px;
+    .powered-by {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .powered-by .remodely-badge {
+      background: var(--remodely-gradient);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+      color: white;
+    }
+
+    .project-input {
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 6px;
+      padding: 6px 12px;
       color: var(--text);
       font-size: 14px;
+      font-weight: 500;
       min-width: 200px;
     }
 
-    .header-actions {
+    .project-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .header-center {
       display: flex;
-      gap: 10px;
+      gap: 4px;
+      background: var(--dark-elevated);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .view-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .view-btn:hover {
+      color: var(--text);
+      background: var(--dark-hover);
+    }
+
+    .view-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 8px;
     }
 
     .btn {
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-radius: 6px;
       font-size: 13px;
       font-weight: 600;
@@ -100,6 +184,16 @@
       transition: all 0.2s;
     }
 
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover {
+      background: var(--dark-elevated);
+      color: var(--text);
+    }
+
     .btn-secondary {
       background: var(--dark-elevated);
       color: var(--text);
@@ -107,50 +201,73 @@
     }
 
     .btn-secondary:hover {
-      background: var(--dark-surface);
+      background: var(--dark-hover);
     }
 
     .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-gold {
       background: var(--gold);
       color: var(--dark);
     }
 
-    .btn-primary:hover {
+    .btn-gold:hover {
       background: var(--gold-dark);
     }
 
-    /* Main Layout */
-    .main-container {
-      display: flex;
-      height: calc(100vh - 60px);
-      margin-top: 60px;
+    .btn-gradient {
+      background: var(--remodely-gradient);
+      color: white;
     }
 
-    /* Left Sidebar - Tools */
-    .sidebar-left {
-      width: 260px;
+    /* Main Layout */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
       background: var(--dark-surface);
       border-right: 1px solid var(--border);
-      overflow-y: auto;
-      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .sidebar-section {
       border-bottom: 1px solid var(--border);
     }
 
-    .sidebar-section-header {
+    .sidebar-header {
       padding: 12px 16px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: var(--text-muted);
-      background: var(--dark-elevated);
+      background: rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .sidebar-section-content {
+    .sidebar-content {
       padding: 12px;
+    }
+
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
     }
 
     /* Element Palette */
@@ -163,8 +280,8 @@
     .element-item {
       aspect-ratio: 1;
       background: var(--dark-elevated);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: 2px solid transparent;
+      border-radius: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -172,131 +289,115 @@
       cursor: grab;
       transition: all 0.2s;
       padding: 8px;
+      position: relative;
     }
 
     .element-item:hover {
-      border-color: var(--gold);
+      border-color: var(--primary);
       transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
     }
 
-    .element-item.active {
-      border-color: var(--gold);
-      background: rgba(249, 203, 0, 0.1);
+    .element-item:active {
+      cursor: grabbing;
     }
 
     .element-item svg {
-      width: 24px;
-      height: 24px;
-      margin-bottom: 4px;
-      color: var(--text-muted);
+      width: 26px;
+      height: 26px;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
     }
 
     .element-item:hover svg {
-      color: var(--gold);
+      color: var(--primary);
     }
 
     .element-item span {
-      font-size: 9px;
+      font-size: 10px;
+      font-weight: 500;
       color: var(--text-muted);
       text-align: center;
     }
 
-    /* Room Type Selector */
-    .room-types {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .room-type-btn {
-      padding: 6px 12px;
-      background: var(--dark-elevated);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--text-muted);
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .room-type-btn:hover, .room-type-btn.active {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    /* Dimension Inputs */
-    .dimension-row {
-      display: flex;
+    /* Room Controls */
+    .room-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 8px;
     }
 
-    .dimension-input {
-      flex: 1;
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .dimension-input label {
-      display: block;
+    .control-group label {
       font-size: 11px;
       color: var(--text-muted);
-      margin-bottom: 4px;
+      font-weight: 500;
     }
 
-    .dimension-input input {
-      width: 100%;
-      padding: 8px;
+    .control-input {
+      padding: 8px 10px;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 6px;
       color: var(--text);
-      font-size: 14px;
+      font-size: 13px;
     }
 
-    .dimension-input input:focus {
+    .control-input:focus {
       outline: none;
-      border-color: var(--gold);
+      border-color: var(--primary);
+    }
+
+    .control-select {
+      padding: 8px 10px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
     }
 
     /* Canvas Area */
-    .canvas-container {
+    .canvas-area {
       flex: 1;
-      background: #1a1a24;
+      background: #12121f;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
     }
 
     .canvas-wrapper {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #designer-canvas {
-      background: #2a2a3a;
-      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      position: relative;
+      box-shadow: 0 0 60px rgba(0,0,0,0.5);
     }
 
     /* Canvas Toolbar */
     .canvas-toolbar {
       position: absolute;
-      top: 16px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--dark-surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 8px;
       display: flex;
       gap: 4px;
       z-index: 10;
     }
 
-    .toolbar-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 6px;
+    .tool-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
       background: transparent;
       border: none;
       color: var(--text-muted);
@@ -307,27 +408,27 @@
       transition: all 0.2s;
     }
 
-    .toolbar-btn:hover {
+    .tool-btn:hover {
       background: var(--dark-elevated);
       color: var(--text);
     }
 
-    .toolbar-btn.active {
-      background: var(--gold);
-      color: var(--dark);
+    .tool-btn.active {
+      background: var(--primary);
+      color: white;
     }
 
-    .toolbar-divider {
+    .tool-divider {
       width: 1px;
       background: var(--border);
-      margin: 0 4px;
+      margin: 4px 8px;
     }
 
     /* Zoom Controls */
     .zoom-controls {
       position: absolute;
-      bottom: 16px;
-      left: 16px;
+      bottom: 20px;
+      right: 20px;
       background: var(--dark-surface);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -338,9 +439,9 @@
     }
 
     .zoom-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
       background: transparent;
       border: none;
       color: var(--text-muted);
@@ -358,60 +459,87 @@
     .zoom-level {
       text-align: center;
       font-size: 11px;
+      font-weight: 600;
       color: var(--text-muted);
       padding: 4px;
     }
 
-    /* Right Sidebar - Properties */
-    .sidebar-right {
-      width: 300px;
+    /* Right Panel */
+    .right-panel {
+      width: 320px;
       background: var(--dark-surface);
       border-left: 1px solid var(--border);
-      overflow-y: auto;
-      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Properties Panel */
-    .properties-empty {
-      padding: 40px 20px;
-      text-align: center;
-      color: var(--text-muted);
-    }
-
-    .properties-empty svg {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 12px;
-      opacity: 0.3;
-    }
-
-    .property-group {
-      padding: 16px;
+    .panel-tabs {
+      display: flex;
+      background: rgba(0,0,0,0.2);
       border-bottom: 1px solid var(--border);
     }
 
-    .property-group h4 {
+    .panel-tab {
+      flex: 1;
+      padding: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
       font-size: 12px;
       font-weight: 600;
-      margin-bottom: 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .panel-tab:hover {
       color: var(--text);
+    }
+
+    .panel-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Properties Panel */
+    .property-section {
+      margin-bottom: 20px;
+    }
+
+    .property-section h4 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .property-row {
       display: flex;
       align-items: center;
+      gap: 12px;
       margin-bottom: 10px;
     }
 
     .property-row label {
-      width: 80px;
+      width: 70px;
       font-size: 12px;
       color: var(--text-muted);
     }
 
-    .property-row input, .property-row select {
+    .property-row input,
+    .property-row select {
       flex: 1;
-      padding: 8px;
+      padding: 8px 10px;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -419,72 +547,52 @@
       font-size: 13px;
     }
 
-    .property-row input:focus, .property-row select:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-
-    /* Material Picker */
+    /* Material Swatches */
     .material-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 6px;
     }
 
     .material-swatch {
       aspect-ratio: 1;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       border: 2px solid transparent;
       background-size: cover;
       background-position: center;
       transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
     }
 
     .material-swatch:hover {
       transform: scale(1.1);
+      z-index: 1;
     }
 
     .material-swatch.selected {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.3);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
     }
 
-    /* Color Picker */
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-    }
-
-    .color-swatch {
-      aspect-ratio: 1;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .color-swatch:hover {
-      transform: scale(1.1);
-    }
-
-    .color-swatch.selected {
-      border-color: var(--text);
+    .material-swatch img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* Quote Summary */
-    .quote-summary {
+    .quote-card {
       background: var(--dark-elevated);
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 16px;
-      margin: 16px;
     }
 
     .quote-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 10px 0;
       font-size: 13px;
       border-bottom: 1px solid var(--border);
     }
@@ -497,45 +605,97 @@
       font-weight: 700;
       font-size: 16px;
       color: var(--gold);
-      padding-top: 12px;
+      padding-top: 16px;
       margin-top: 8px;
       border-top: 2px solid var(--border);
+      border-bottom: none;
     }
 
-    /* Measurement Display on Canvas */
-    .measurement-label {
-      position: absolute;
-      background: var(--dark);
-      color: var(--gold);
-      padding: 2px 8px;
-      font-size: 11px;
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      min-width: 180px;
+      z-index: 1000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .context-menu-item {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.15s;
+    }
+
+    .context-menu-item:hover {
+      background: var(--dark-elevated);
+    }
+
+    .context-menu-item.danger {
+      color: var(--error);
+    }
+
+    .context-menu-item svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0;
+    }
+
+    .context-menu-label {
+      padding: 6px 14px;
+      font-size: 10px;
       font-weight: 600;
-      border-radius: 4px;
-      pointer-events: none;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    /* Templates Modal */
+    /* Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.8);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
     }
 
     .modal-overlay.active {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
     }
 
     .modal {
       background: var(--dark-surface);
       border-radius: 16px;
       width: 90%;
-      max-width: 800px;
-      max-height: 80vh;
+      max-width: 600px;
+      max-height: 85vh;
       overflow: hidden;
+      transform: scale(0.95);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
     }
 
     .modal-header {
@@ -548,14 +708,25 @@
 
     .modal-header h3 {
       font-size: 18px;
+      font-weight: 700;
     }
 
     .modal-close {
-      background: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--dark-elevated);
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: var(--dark-hover);
+      color: var(--text);
     }
 
     .modal-body {
@@ -564,1553 +735,1527 @@
       max-height: 60vh;
     }
 
-    .template-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
     }
 
-    .template-card {
+    /* Share Modal */
+    .share-link-box {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .share-link-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .share-link-input:focus {
+      outline: none;
+    }
+
+    .share-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .share-option {
+      padding: 16px;
       background: var(--dark-elevated);
       border: 2px solid var(--border);
       border-radius: 12px;
-      overflow: hidden;
       cursor: pointer;
+      text-align: center;
       transition: all 0.2s;
     }
 
-    .template-card:hover {
-      border-color: var(--gold);
-      transform: translateY(-4px);
+    .share-option:hover {
+      border-color: var(--primary);
     }
 
-    .template-preview {
-      height: 120px;
-      background: var(--dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .share-option.selected {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
     }
 
-    .template-preview svg {
-      width: 60px;
-      height: 60px;
-      color: var(--text-muted);
+    .share-option svg {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 8px;
+      color: var(--primary);
     }
 
-    .template-info {
-      padding: 12px;
-    }
-
-    .template-info h4 {
+    .share-option h5 {
       font-size: 14px;
       margin-bottom: 4px;
     }
 
-    .template-info p {
-      font-size: 12px;
+    .share-option p {
+      font-size: 11px;
       color: var(--text-muted);
+    }
+
+    /* 3D View Specific */
+    .three-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .empty-state h4 {
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      max-width: 240px;
+    }
+
+    /* Collaboration Indicator */
+    .collab-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--success);
+    }
+
+    .collab-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .collab-avatars {
+      display: flex;
+      margin-left: 8px;
+    }
+
+    .collab-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--dark-surface);
+      margin-left: -8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toast.success {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .toast.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--dark-elevated);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--dark-hover);
     }
 
     /* Responsive */
     @media (max-width: 1200px) {
-      .sidebar-left { width: 220px; }
-      .sidebar-right { width: 260px; }
+      .sidebar { width: 240px; }
+      .right-panel { width: 280px; }
     }
 
     @media (max-width: 992px) {
-      .sidebar-left, .sidebar-right {
-        position: fixed;
-        top: 60px;
-        bottom: 0;
-        z-index: 50;
-        transform: translateX(-100%);
-        transition: transform 0.3s;
-      }
-      .sidebar-left.open { transform: translateX(0); }
-      .sidebar-right {
-        right: 0;
-        left: auto;
-        transform: translateX(100%);
-      }
-      .sidebar-right.open { transform: translateX(0); }
-    }
-
-    /* Tooltip */
-    .tooltip {
-      position: absolute;
-      background: var(--dark);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 1000;
-      white-space: nowrap;
+      .header-center { display: none; }
+      .sidebar, .right-panel { display: none; }
     }
   </style>
 </head>
 <body>
+  <div id="root"></div>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <a href="/" class="logo">
-        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" alt="Logo">
-        <span class="logo-text">Room Designer</span>
-      </a>
-      <input type="text" class="project-name" id="project-name" placeholder="Untitled Project" value="Kitchen Remodel">
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-secondary" onclick="openTemplates()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M14 7v6a2 2 0 01-2 2H6"/></svg>
-        Templates
-      </button>
-      <button class="btn btn-secondary" onclick="saveProject()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
-        Save
-      </button>
-      <button class="btn btn-primary" onclick="generateQuote()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Generate Quote
-      </button>
-    </div>
-  </header>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const { Stage, Layer, Rect, Text, Group, Transformer, Line } = ReactKonva;
 
-  <!-- Main Container -->
-  <div class="main-container">
-
-    <!-- Left Sidebar - Elements -->
-    <aside class="sidebar-left" id="sidebar-left">
-
-      <!-- Room Settings -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Room Settings</div>
-        <div class="sidebar-section-content">
-          <div class="room-types" id="room-types">
-            <button class="room-type-btn active" data-room="kitchen">Kitchen</button>
-            <button class="room-type-btn" data-room="bathroom">Bathroom</button>
-            <button class="room-type-btn" data-room="laundry">Laundry</button>
-            <button class="room-type-btn" data-room="office">Office</button>
-            <button class="room-type-btn" data-room="commercial">Commercial</button>
-          </div>
-          <div class="dimension-row" style="margin-top: 12px;">
-            <div class="dimension-input">
-              <label>Width (ft)</label>
-              <input type="number" id="room-width" value="12" min="1" max="100" onchange="updateRoomSize()">
-            </div>
-            <div class="dimension-input">
-              <label>Depth (ft)</label>
-              <input type="number" id="room-depth" value="10" min="1" max="100" onchange="updateRoomSize()">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Structure Elements -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Structure</div>
-        <div class="sidebar-section-content">
-          <div class="element-grid">
-            <div class="element-item" data-element="wall" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
-              <span>Wall</span>
-            </div>
-            <div class="element-item" data-element="door" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 21V3h18v18H3z"/><path d="M9 21V9h6v12"/></svg>
-              <span>Door</span>
-            </div>
-            <div class="element-item" data-element="window" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
-              <span>Window</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cabinets -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Cabinets</div>
-        <div class="sidebar-section-content">
-          <div class="element-grid">
-            <div class="element-item" data-element="base-cabinet" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="12" rx="1"/><line x1="12" y1="8" x2="12" y2="20"/></svg>
-              <span>Base</span>
-            </div>
-            <div class="element-item" data-element="wall-cabinet" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="10" rx="1"/><line x1="12" y1="4" x2="12" y2="14"/></svg>
-              <span>Wall</span>
-            </div>
-            <div class="element-item" data-element="tall-cabinet" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="1"/></svg>
-              <span>Tall</span>
-            </div>
-            <div class="element-item" data-element="corner-cabinet" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 20V4h8v8h8v8H4z"/></svg>
-              <span>Corner</span>
-            </div>
-            <div class="element-item" data-element="island" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1"/></svg>
-              <span>Island</span>
-            </div>
-            <div class="element-item" data-element="peninsula" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 8h12v8H3V8zM15 12h6"/></svg>
-              <span>Peninsula</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Countertops -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Countertops</div>
-        <div class="sidebar-section-content">
-          <div class="element-grid">
-            <div class="element-item" data-element="countertop-straight" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="1"/></svg>
-              <span>Straight</span>
-            </div>
-            <div class="element-item" data-element="countertop-l" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v16h16v-8H12V4H4z"/></svg>
-              <span>L-Shape</span>
-            </div>
-            <div class="element-item" data-element="countertop-u" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v16h16V4h-4v8H8V4H4z"/></svg>
-              <span>U-Shape</span>
-            </div>
-            <div class="element-item" data-element="backsplash" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-              <span>Backsplash</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Appliances -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Appliances</div>
-        <div class="sidebar-section-content">
-          <div class="element-grid">
-            <div class="element-item" data-element="sink" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="4"/><path d="M12 16v4"/></svg>
-              <span>Sink</span>
-            </div>
-            <div class="element-item" data-element="stove" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/></svg>
-              <span>Stove</span>
-            </div>
-            <div class="element-item" data-element="refrigerator" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="1"/><line x1="5" y1="10" x2="19" y2="10"/></svg>
-              <span>Fridge</span>
-            </div>
-            <div class="element-item" data-element="dishwasher" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><line x1="4" y1="8" x2="20" y2="8"/></svg>
-              <span>Dishwasher</span>
-            </div>
-            <div class="element-item" data-element="toilet" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="6" ry="4"/><rect x="8" y="6" width="8" height="6" rx="1"/></svg>
-              <span>Toilet</span>
-            </div>
-            <div class="element-item" data-element="bathtub" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="8" rx="2"/><path d="M6 10V6a2 2 0 012-2h0a2 2 0 012 2v4"/></svg>
-              <span>Bathtub</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Flooring -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Flooring & Tile</div>
-        <div class="sidebar-section-content">
-          <div class="element-grid">
-            <div class="element-item" data-element="flooring-area" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-              <span>Floor Area</span>
-            </div>
-            <div class="element-item" data-element="tile-area" draggable="true">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
-              <span>Tile Area</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- Canvas Area -->
-    <main class="canvas-container">
-      <!-- Canvas Toolbar -->
-      <div class="canvas-toolbar">
-        <button class="toolbar-btn active" id="tool-select" title="Select (V)" onclick="setTool('select')">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
-        </button>
-        <button class="toolbar-btn" id="tool-draw" title="Draw Wall (W)" onclick="setTool('draw')">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-        </button>
-        <button class="toolbar-btn" id="tool-measure" title="Measure (M)" onclick="setTool('measure')">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/></svg>
-        </button>
-        <div class="toolbar-divider"></div>
-        <button class="toolbar-btn" title="Undo (Ctrl+Z)" onclick="undo()">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1018 0 9 9 0 00-18 0z"/></svg>
-        </button>
-        <button class="toolbar-btn" title="Redo (Ctrl+Y)" onclick="redo()">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </button>
-        <div class="toolbar-divider"></div>
-        <button class="toolbar-btn" title="Delete Selected" onclick="deleteSelected()">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-        </button>
-        <button class="toolbar-btn" title="Clear All" onclick="clearCanvas()">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-        </button>
-      </div>
-
-      <!-- Canvas -->
-      <div class="canvas-wrapper">
-        <canvas id="designer-canvas"></canvas>
-      </div>
-
-      <!-- Zoom Controls -->
-      <div class="zoom-controls">
-        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        </button>
-        <div class="zoom-level" id="zoom-level">100%</div>
-        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        </button>
-        <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">
-          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-        </button>
-      </div>
-    </main>
-
-    <!-- Right Sidebar - Properties -->
-    <aside class="sidebar-right" id="sidebar-right">
-
-      <!-- Selected Element Properties -->
-      <div id="properties-panel">
-        <div class="properties-empty">
-          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
-          <p>Select an element to edit its properties</p>
-        </div>
-      </div>
-
-      <!-- Quote Summary -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">Quote Summary</div>
-        <div class="quote-summary" id="quote-summary">
-          <div class="quote-row">
-            <span>Cabinets</span>
-            <span id="quote-cabinets">0 LF</span>
-          </div>
-          <div class="quote-row">
-            <span>Countertops</span>
-            <span id="quote-countertops">0 SF</span>
-          </div>
-          <div class="quote-row">
-            <span>Backsplash</span>
-            <span id="quote-backsplash">0 SF</span>
-          </div>
-          <div class="quote-row">
-            <span>Flooring</span>
-            <span id="quote-flooring">0 SF</span>
-          </div>
-          <div class="quote-row total">
-            <span>Estimated Total</span>
-            <span id="quote-total">$0.00</span>
-          </div>
-        </div>
-        <div style="padding: 0 16px 16px;">
-          <button class="btn btn-primary" style="width: 100%;" onclick="generateQuote()">
-            Generate Detailed Quote
-          </button>
-        </div>
-      </div>
-
-    </aside>
-
-  </div>
-
-  <!-- Templates Modal -->
-  <div class="modal-overlay" id="templates-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Choose a Template</h3>
-        <button class="modal-close" onclick="closeTemplates()">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="template-grid">
-          <div class="template-card" onclick="loadTemplate('galley-kitchen')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="4"/><rect x="2" y="14" width="20" height="4"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>Galley Kitchen</h4>
-              <p>10' x 8' parallel counters</p>
-            </div>
-          </div>
-          <div class="template-card" onclick="loadTemplate('l-shaped-kitchen')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 4v16h8V12h8V4H4z"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>L-Shaped Kitchen</h4>
-              <p>12' x 10' with island</p>
-            </div>
-          </div>
-          <div class="template-card" onclick="loadTemplate('u-shaped-kitchen')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 4v16h16V4h-4v10H8V4H4z"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>U-Shaped Kitchen</h4>
-              <p>14' x 12' wraparound</p>
-            </div>
-          </div>
-          <div class="template-card" onclick="loadTemplate('master-bathroom')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><ellipse cx="8" cy="10" rx="2" ry="3"/><rect x="14" y="14" width="4" height="4"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>Master Bathroom</h4>
-              <p>10' x 8' with tub & vanity</p>
-            </div>
-          </div>
-          <div class="template-card" onclick="loadTemplate('commercial-restroom')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20"/><circle cx="6" cy="8" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="18" cy="8" r="2"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>Commercial Restroom</h4>
-              <p>Multi-stall layout</p>
-            </div>
-          </div>
-          <div class="template-card" onclick="loadTemplate('blank')">
-            <div class="template-preview">
-              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            </div>
-            <div class="template-info">
-              <h4>Blank Canvas</h4>
-              <p>Start from scratch</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quote Modal -->
-  <div class="modal-overlay" id="quote-modal">
-    <div class="modal" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3>Project Quote</h3>
-        <button class="modal-close" onclick="closeQuoteModal()">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body" id="quote-modal-body">
-        <!-- Quote content populated by JS -->
-      </div>
-      <div style="padding: 16px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid var(--border);">
-        <button class="btn btn-secondary" onclick="printQuote()">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Print
-        </button>
-        <button class="btn btn-primary" onclick="sendQuote()">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9 22,2"/></svg>
-          Send to Customer
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ===== ROOM DESIGNER APPLICATION =====
-
-    // Configuration
+    // ===== CONFIGURATION =====
     const CONFIG = {
-      pixelsPerFoot: 40, // Scale: 40 pixels = 1 foot
-      gridSize: 10, // Grid snap in pixels
-      canvasWidth: 800,
-      canvasHeight: 600,
-
-      // Pricing (per unit)
-      pricing: {
-        cabinets: { base: 150, wall: 120, tall: 300, corner: 200, island: 400 }, // per LF
-        countertops: { granite: 65, quartz: 75, marble: 85, quartzite: 95 }, // per SF
-        backsplash: { tile: 25, stone: 45 }, // per SF
-        flooring: { lvp: 8, tile: 15, hardwood: 12 }, // per SF
-        appliances: { sink: 350, stove: 800, refrigerator: 1500, dishwasher: 600 }
+      SUPABASE_URL: 'https://ypeypgwsycxcagncgdur.supabase.co',
+      SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+      PIXELS_PER_FOOT: 40,
+      GRID_SIZE: 20,
+      CANVAS_WIDTH: 800,
+      CANVAS_HEIGHT: 600,
+      PRICING: {
+        cabinets: { base: 150, wall: 120, tall: 300, corner: 200, island: 400 },
+        countertops: { granite: 65, quartz: 75, marble: 85, quartzite: 95 },
+        backsplash: { tile: 25, stone: 45 },
+        flooring: { lvp: 8, tile: 15, hardwood: 12 }
       },
-
-      // Element dimensions (in feet)
-      elementSizes: {
-        'base-cabinet': { width: 3, height: 2 },
-        'wall-cabinet': { width: 3, height: 1.5 },
-        'tall-cabinet': { width: 2, height: 7 },
-        'corner-cabinet': { width: 3, height: 3 },
-        'island': { width: 6, height: 3 },
-        'peninsula': { width: 4, height: 2 },
-        'countertop-straight': { width: 8, height: 2 },
-        'countertop-l': { width: 6, height: 6 },
-        'countertop-u': { width: 8, height: 8 },
-        'sink': { width: 2.5, height: 1.5 },
-        'stove': { width: 2.5, height: 2 },
-        'refrigerator': { width: 3, height: 2.5 },
-        'dishwasher': { width: 2, height: 2 },
-        'door': { width: 3, height: 0.5 },
-        'window': { width: 3, height: 0.5 },
-        'toilet': { width: 1.5, height: 2.5 },
-        'bathtub': { width: 5, height: 2.5 },
-        'flooring-area': { width: 4, height: 4 },
-        'tile-area': { width: 3, height: 3 },
-        'backsplash': { width: 6, height: 1.5 }
-      },
-
-      // Element colors
-      colors: {
-        'base-cabinet': '#8B4513',
-        'wall-cabinet': '#A0522D',
-        'tall-cabinet': '#8B4513',
-        'corner-cabinet': '#8B4513',
-        'island': '#654321',
-        'peninsula': '#654321',
-        'countertop-straight': '#708090',
-        'countertop-l': '#708090',
-        'countertop-u': '#708090',
-        'backsplash': '#B8860B',
-        'sink': '#C0C0C0',
-        'stove': '#2F2F2F',
-        'refrigerator': '#C0C0C0',
-        'dishwasher': '#A9A9A9',
-        'door': '#DEB887',
-        'window': '#87CEEB',
-        'wall': '#4A4A4A',
-        'toilet': '#F5F5F5',
-        'bathtub': '#F5F5F5',
-        'flooring-area': '#D2691E',
-        'tile-area': '#DDD'
+      ELEMENT_DEFAULTS: {
+        'base-cabinet': { width: 3, height: 2, color: '#8B4513', label: 'Base Cabinet' },
+        'wall-cabinet': { width: 3, height: 1.5, color: '#A0522D', label: 'Wall Cabinet' },
+        'tall-cabinet': { width: 2, height: 6, color: '#8B4513', label: 'Tall Cabinet' },
+        'corner-cabinet': { width: 3, height: 3, color: '#8B4513', label: 'Corner Cabinet' },
+        'island': { width: 6, height: 3, color: '#654321', label: 'Island' },
+        'countertop': { width: 8, height: 2, color: '#708090', label: 'Countertop' },
+        'backsplash': { width: 6, height: 1.5, color: '#B8860B', label: 'Backsplash' },
+        'sink': { width: 2.5, height: 1.5, color: '#C0C0C0', label: 'Sink' },
+        'stove': { width: 2.5, height: 2, color: '#2F2F2F', label: 'Stove' },
+        'refrigerator': { width: 3, height: 2.5, color: '#A9A9A9', label: 'Fridge' },
+        'dishwasher': { width: 2, height: 2, color: '#808080', label: 'Dishwasher' },
+        'flooring': { width: 4, height: 4, color: '#D2691E', label: 'Flooring' },
+        'tile': { width: 3, height: 3, color: '#CCC', label: 'Tile Area' },
+        'door': { width: 3, height: 0.5, color: '#DEB887', label: 'Door' },
+        'window': { width: 4, height: 0.5, color: '#87CEEB', label: 'Window' },
       }
     };
 
-    // State
-    let canvas;
-    let currentTool = 'select';
-    let selectedElement = null;
-    let roomType = 'kitchen';
-    let zoomLevel = 1;
-    let projectData = {
-      name: 'Kitchen Remodel',
-      roomWidth: 12,
-      roomDepth: 10,
-      elements: []
+    // Initialize Supabase
+    const supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
+    // ===== ICONS =====
+    const Icons = {
+      Select: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+        </svg>
+      ),
+      Move: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
+        </svg>
+      ),
+      Draw: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+        </svg>
+      ),
+      Measure: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/>
+        </svg>
+      ),
+      Undo: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 7v6h6"/><path d="M3 13c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9"/>
+        </svg>
+      ),
+      Redo: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 7v6h-6"/><path d="M21 13c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9"/>
+        </svg>
+      ),
+      Delete: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      ),
+      Rotate: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+        </svg>
+      ),
+      Duplicate: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+      ),
+      Upload: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      ),
+      Share: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+      ),
+      View3D: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      ),
+      View2D: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+      ),
+      Save: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/>
+        </svg>
+      ),
+      Quote: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      ),
+      ZoomIn: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      ),
+      ZoomOut: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      ),
+      FitView: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+        </svg>
+      ),
+      Lock: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      ),
+      Link: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        </svg>
+      ),
+      Eye: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      ),
+      Edit: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      ),
+      Close: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      ),
+      Copy: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+      ),
+      Check: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="20,6 9,17 4,12"/>
+        </svg>
+      ),
     };
-    let history = [];
-    let historyIndex = -1;
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      initCanvas();
-      initEventListeners();
-      drawGrid();
-      drawRoom();
-      updateQuoteSummary();
-    });
-
-    // Initialize Fabric.js canvas
-    function initCanvas() {
-      canvas = new fabric.Canvas('designer-canvas', {
-        width: CONFIG.canvasWidth,
-        height: CONFIG.canvasHeight,
-        backgroundColor: '#2a2a3a',
-        selection: true,
-        preserveObjectStacking: true
-      });
-
-      // Selection events
-      canvas.on('selection:created', onObjectSelected);
-      canvas.on('selection:updated', onObjectSelected);
-      canvas.on('selection:cleared', onObjectDeselected);
-      canvas.on('object:modified', onObjectModified);
-      canvas.on('object:moving', onObjectMoving);
-
-      // Enable snapping
-      canvas.on('object:moving', snapToGrid);
-    }
-
-    // Event Listeners
-    function initEventListeners() {
-      // Room type buttons
-      document.querySelectorAll('.room-type-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.room-type-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          roomType = btn.dataset.room;
-        });
-      });
-
-      // Draggable elements
-      document.querySelectorAll('.element-item[draggable="true"]').forEach(el => {
-        el.addEventListener('dragstart', onDragStart);
-        el.addEventListener('click', () => addElement(el.dataset.element));
-      });
-
-      // Canvas drop zone
-      const canvasWrapper = document.querySelector('.canvas-wrapper');
-      canvasWrapper.addEventListener('dragover', (e) => e.preventDefault());
-      canvasWrapper.addEventListener('drop', onDrop);
-
-      // Keyboard shortcuts
-      document.addEventListener('keydown', handleKeyboard);
-    }
-
-    // Draw grid
-    function drawGrid() {
-      const gridGroup = [];
-      const gridColor = 'rgba(255,255,255,0.05)';
-
-      // Vertical lines
-      for (let x = 0; x <= CONFIG.canvasWidth; x += CONFIG.pixelsPerFoot) {
-        gridGroup.push(new fabric.Line([x, 0, x, CONFIG.canvasHeight], {
-          stroke: gridColor,
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        }));
-      }
-
-      // Horizontal lines
-      for (let y = 0; y <= CONFIG.canvasHeight; y += CONFIG.pixelsPerFoot) {
-        gridGroup.push(new fabric.Line([0, y, CONFIG.canvasWidth, y], {
-          stroke: gridColor,
-          strokeWidth: 1,
-          selectable: false,
-          evented: false
-        }));
-      }
-
-      const grid = new fabric.Group(gridGroup, {
-        selectable: false,
-        evented: false
-      });
-
-      canvas.add(grid);
-      canvas.sendToBack(grid);
-    }
-
-    // Draw room outline
-    function drawRoom() {
-      const width = projectData.roomWidth * CONFIG.pixelsPerFoot;
-      const height = projectData.roomDepth * CONFIG.pixelsPerFoot;
-      const offsetX = (CONFIG.canvasWidth - width) / 2;
-      const offsetY = (CONFIG.canvasHeight - height) / 2;
-
-      // Remove existing room outline
-      canvas.getObjects().forEach(obj => {
-        if (obj.isRoomOutline) canvas.remove(obj);
-      });
-
-      // Room floor
-      const floor = new fabric.Rect({
-        left: offsetX,
-        top: offsetY,
-        width: width,
-        height: height,
-        fill: 'rgba(60, 60, 80, 0.3)',
-        stroke: '#f9cb00',
-        strokeWidth: 3,
-        selectable: false,
-        evented: false,
-        isRoomOutline: true
-      });
-
-      // Dimension labels
-      const widthLabel = new fabric.Text(`${projectData.roomWidth}'`, {
-        left: offsetX + width / 2,
-        top: offsetY - 25,
-        fontSize: 14,
-        fill: '#f9cb00',
-        fontFamily: 'Inter',
-        fontWeight: '600',
-        originX: 'center',
-        selectable: false,
-        evented: false,
-        isRoomOutline: true
-      });
-
-      const heightLabel = new fabric.Text(`${projectData.roomDepth}'`, {
-        left: offsetX - 25,
-        top: offsetY + height / 2,
-        fontSize: 14,
-        fill: '#f9cb00',
-        fontFamily: 'Inter',
-        fontWeight: '600',
-        originY: 'center',
-        angle: -90,
-        selectable: false,
-        evented: false,
-        isRoomOutline: true
-      });
-
-      canvas.add(floor, widthLabel, heightLabel);
-      canvas.sendToBack(floor);
-    }
-
-    // Update room size
-    function updateRoomSize() {
-      projectData.roomWidth = parseFloat(document.getElementById('room-width').value) || 12;
-      projectData.roomDepth = parseFloat(document.getElementById('room-depth').value) || 10;
-      drawRoom();
-      updateQuoteSummary();
-    }
-
-    // Add element to canvas
-    function addElement(type, x, y) {
-      const size = CONFIG.elementSizes[type] || { width: 2, height: 2 };
-      const color = CONFIG.colors[type] || '#666';
-
-      const width = size.width * CONFIG.pixelsPerFoot;
-      const height = size.height * CONFIG.pixelsPerFoot;
-
-      // Default position (center of canvas)
-      const posX = x || (CONFIG.canvasWidth - width) / 2;
-      const posY = y || (CONFIG.canvasHeight - height) / 2;
-
-      // Create element based on type
-      let element;
-
-      if (type.includes('countertop') || type === 'backsplash') {
-        element = createCountertop(type, posX, posY, width, height, color);
-      } else if (type.includes('cabinet') || type === 'island' || type === 'peninsula') {
-        element = createCabinet(type, posX, posY, width, height, color);
-      } else if (type === 'flooring-area' || type === 'tile-area') {
-        element = createFlooringArea(type, posX, posY, width, height);
-      } else {
-        element = createAppliance(type, posX, posY, width, height, color);
-      }
-
-      element.elementType = type;
-      element.elementData = {
-        type: type,
-        width: size.width,
-        height: size.height,
-        material: 'default',
-        color: color
+    // ===== ELEMENT ICON COMPONENT =====
+    const ElementIcon = ({ type }) => {
+      const icons = {
+        'base-cabinet': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="12" rx="1"/><line x1="12" y1="8" x2="12" y2="20"/></svg>,
+        'wall-cabinet': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="10" rx="1"/><line x1="12" y1="4" x2="12" y2="14"/></svg>,
+        'tall-cabinet': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="1"/></svg>,
+        'corner-cabinet': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 20V4h8v8h8v8H4z"/></svg>,
+        'island': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1"/></svg>,
+        'countertop': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="1"/></svg>,
+        'backsplash': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12"/><line x1="2" y1="12" x2="22" y2="12"/></svg>,
+        'sink': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="4"/><path d="M12 16v4"/></svg>,
+        'stove': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/></svg>,
+        'refrigerator': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="1"/><line x1="5" y1="10" x2="19" y2="10"/></svg>,
+        'dishwasher': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><line x1="4" y1="8" x2="20" y2="8"/></svg>,
+        'flooring': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
+        'tile': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>,
+        'door': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 21V3h18v18H3z"/><path d="M9 21V9h6v12"/></svg>,
+        'window': <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>,
       };
+      return icons[type] || icons['base-cabinet'];
+    };
 
-      canvas.add(element);
-      canvas.setActiveObject(element);
-      saveState();
-      updateQuoteSummary();
+    // ===== CONTEXT MENU COMPONENT =====
+    const ContextMenu = ({ x, y, element, onAction, onClose }) => {
+      useEffect(() => {
+        const handleClick = () => onClose();
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+      }, [onClose]);
 
-      return element;
-    }
-
-    // Create cabinet element
-    function createCabinet(type, x, y, width, height, color) {
-      const rect = new fabric.Rect({
-        width: width - 4,
-        height: height - 4,
-        fill: color,
-        stroke: '#333',
-        strokeWidth: 2,
-        rx: 4,
-        ry: 4
-      });
-
-      const label = new fabric.Text(type.replace('-', '\n').toUpperCase(), {
-        fontSize: 10,
-        fill: '#fff',
-        fontFamily: 'Inter',
-        textAlign: 'center',
-        originX: 'center',
-        originY: 'center'
-      });
-
-      const group = new fabric.Group([rect, label], {
-        left: x,
-        top: y,
-        hasControls: true,
-        hasBorders: true,
-        lockRotation: false
-      });
-
-      return group;
-    }
-
-    // Create countertop element
-    function createCountertop(type, x, y, width, height, color) {
-      let shape;
-
-      if (type === 'countertop-l') {
-        // L-shaped countertop
-        const path = new fabric.Path(`M 0 0 L ${width} 0 L ${width} ${height * 0.4} L ${width * 0.4} ${height * 0.4} L ${width * 0.4} ${height} L 0 ${height} Z`, {
-          fill: color,
-          stroke: '#222',
-          strokeWidth: 2
-        });
-        shape = path;
-      } else if (type === 'countertop-u') {
-        // U-shaped countertop
-        const path = new fabric.Path(`M 0 0 L ${width} 0 L ${width} ${height} L ${width * 0.7} ${height} L ${width * 0.7} ${height * 0.3} L ${width * 0.3} ${height * 0.3} L ${width * 0.3} ${height} L 0 ${height} Z`, {
-          fill: color,
-          stroke: '#222',
-          strokeWidth: 2
-        });
-        shape = path;
-      } else {
-        // Straight countertop
-        shape = new fabric.Rect({
-          width: width,
-          height: height,
-          fill: color,
-          stroke: '#222',
-          strokeWidth: 2,
-          rx: 2,
-          ry: 2
-        });
-      }
-
-      const label = new fabric.Text(`${(width / CONFIG.pixelsPerFoot).toFixed(1)}' x ${(height / CONFIG.pixelsPerFoot).toFixed(1)}'`, {
-        fontSize: 11,
-        fill: '#fff',
-        fontFamily: 'Inter',
-        fontWeight: '600',
-        originX: 'center',
-        originY: 'center',
-        left: width / 2,
-        top: height / 2
-      });
-
-      const group = new fabric.Group([shape, label], {
-        left: x,
-        top: y
-      });
-
-      return group;
-    }
-
-    // Create appliance element
-    function createAppliance(type, x, y, width, height, color) {
-      const rect = new fabric.Rect({
-        width: width,
-        height: height,
-        fill: color,
-        stroke: '#333',
-        strokeWidth: 2,
-        rx: 4,
-        ry: 4
-      });
-
-      const displayName = type.charAt(0).toUpperCase() + type.slice(1);
-      const label = new fabric.Text(displayName, {
-        fontSize: 11,
-        fill: type === 'stove' ? '#fff' : '#333',
-        fontFamily: 'Inter',
-        fontWeight: '500',
-        originX: 'center',
-        originY: 'center',
-        left: width / 2,
-        top: height / 2
-      });
-
-      return new fabric.Group([rect, label], {
-        left: x,
-        top: y
-      });
-    }
-
-    // Create flooring area
-    function createFlooringArea(type, x, y, width, height) {
-      const pattern = type === 'tile-area' ? createTilePattern() : createWoodPattern();
-
-      const rect = new fabric.Rect({
-        width: width,
-        height: height,
-        fill: pattern || (type === 'tile-area' ? '#ccc' : '#a0826d'),
-        stroke: '#f9cb00',
-        strokeWidth: 2,
-        strokeDashArray: [5, 5],
-        rx: 0,
-        ry: 0
-      });
-
-      const sqft = ((width / CONFIG.pixelsPerFoot) * (height / CONFIG.pixelsPerFoot)).toFixed(1);
-      const label = new fabric.Text(`${sqft} SF`, {
-        fontSize: 14,
-        fill: '#fff',
-        fontFamily: 'Inter',
-        fontWeight: '700',
-        originX: 'center',
-        originY: 'center',
-        left: width / 2,
-        top: height / 2,
-        shadow: '0 0 4px rgba(0,0,0,0.8)'
-      });
-
-      return new fabric.Group([rect, label], {
-        left: x,
-        top: y
-      });
-    }
-
-    function createTilePattern() {
-      // Simple tile-like color
-      return '#c9c9c9';
-    }
-
-    function createWoodPattern() {
-      // Wood-like color
-      return '#a0826d';
-    }
-
-    // Drag and drop handlers
-    function onDragStart(e) {
-      e.dataTransfer.setData('element-type', e.target.dataset.element);
-    }
-
-    function onDrop(e) {
-      e.preventDefault();
-      const type = e.dataTransfer.getData('element-type');
-      if (!type) return;
-
-      const rect = canvas.getElement().getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoomLevel;
-      const y = (e.clientY - rect.top) / zoomLevel;
-
-      addElement(type, x, y);
-    }
-
-    // Tool selection
-    function setTool(tool) {
-      currentTool = tool;
-      document.querySelectorAll('.toolbar-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.id === `tool-${tool}`);
-      });
-
-      if (tool === 'select') {
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-      } else if (tool === 'draw') {
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-      } else if (tool === 'measure') {
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-      }
-    }
-
-    // Object selection handlers
-    function onObjectSelected(e) {
-      selectedElement = e.selected[0];
-      showProperties(selectedElement);
-    }
-
-    function onObjectDeselected() {
-      selectedElement = null;
-      hideProperties();
-    }
-
-    function onObjectModified(e) {
-      updateQuoteSummary();
-      saveState();
-    }
-
-    function onObjectMoving(e) {
-      // Update dimension labels if needed
-    }
-
-    // Snap to grid
-    function snapToGrid(e) {
-      const obj = e.target;
-      obj.set({
-        left: Math.round(obj.left / CONFIG.gridSize) * CONFIG.gridSize,
-        top: Math.round(obj.top / CONFIG.gridSize) * CONFIG.gridSize
-      });
-    }
-
-    // Properties panel
-    function showProperties(obj) {
-      if (!obj || !obj.elementData) {
-        hideProperties();
-        return;
-      }
-
-      const data = obj.elementData;
-      const panel = document.getElementById('properties-panel');
-
-      panel.innerHTML = `
-        <div class="property-group">
-          <h4>${data.type.replace('-', ' ').toUpperCase()}</h4>
-          <div class="property-row">
-            <label>Width (ft)</label>
-            <input type="number" id="prop-width" value="${data.width}" step="0.5" min="0.5" onchange="updateElementSize()">
+      return (
+        <div className="context-menu" style={{ left: x, top: y }} onClick={e => e.stopPropagation()}>
+          <div className="context-menu-label">Element: {element?.label || 'Unknown'}</div>
+          <div className="context-menu-item" onClick={() => onAction('rotate')}>
+            <Icons.Rotate /> Rotate 90°
           </div>
-          <div class="property-row">
-            <label>Depth (ft)</label>
-            <input type="number" id="prop-height" value="${data.height}" step="0.5" min="0.5" onchange="updateElementSize()">
+          <div className="context-menu-item" onClick={() => onAction('duplicate')}>
+            <Icons.Duplicate /> Duplicate
+          </div>
+          <div className="context-menu-item" onClick={() => onAction('upload')}>
+            <Icons.Upload /> Upload Image
+          </div>
+          <div className="context-menu-item" onClick={() => onAction('lock')}>
+            <Icons.Lock /> {element?.locked ? 'Unlock' : 'Lock'}
+          </div>
+          <div className="context-menu-divider" />
+          <div className="context-menu-item" onClick={() => onAction('bringFront')}>
+            Bring to Front
+          </div>
+          <div className="context-menu-item" onClick={() => onAction('sendBack')}>
+            Send to Back
+          </div>
+          <div className="context-menu-divider" />
+          <div className="context-menu-item danger" onClick={() => onAction('delete')}>
+            <Icons.Delete /> Delete
           </div>
         </div>
+      );
+    };
 
-        <div class="property-group">
-          <h4>Material</h4>
-          <div class="property-row">
-            <label>Type</label>
-            <select id="prop-material" onchange="updateElementMaterial()">
-              ${getMaterialOptions(data.type)}
-            </select>
-          </div>
-          <div style="margin-top: 12px;">
-            <div class="material-grid" id="material-swatches">
-              ${getMaterialSwatches(data.type)}
+    // ===== SHARE MODAL COMPONENT =====
+    const ShareModal = ({ isOpen, onClose, projectId, projectName }) => {
+      const [shareMode, setShareMode] = useState('view');
+      const [copied, setCopied] = useState(false);
+      const shareUrl = `${window.location.origin}/tools/room-designer/view/${projectId}`;
+
+      const copyLink = () => {
+        navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <div className={`modal-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Share Project</h3>
+              <button className="modal-close" onClick={onClose}>
+                <Icons.Close />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: 16, color: 'var(--text-muted)', fontSize: 13 }}>
+                Share "{projectName}" with your customer to collaborate in real-time.
+              </p>
+
+              <div className="share-link-box">
+                <input
+                  className="share-link-input"
+                  value={shareUrl}
+                  readOnly
+                  onClick={e => e.target.select()}
+                />
+                <button className="btn btn-secondary" onClick={copyLink}>
+                  {copied ? <Icons.Check /> : <Icons.Copy />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="share-options">
+                <div
+                  className={`share-option ${shareMode === 'view' ? 'selected' : ''}`}
+                  onClick={() => setShareMode('view')}
+                >
+                  <Icons.Eye />
+                  <h5>View Only</h5>
+                  <p>Customer can view and comment</p>
+                </div>
+                <div
+                  className={`share-option ${shareMode === 'edit' ? 'selected' : ''}`}
+                  onClick={() => setShareMode('edit')}
+                >
+                  <Icons.Edit />
+                  <h5>Can Edit</h5>
+                  <p>Customer can make changes</p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 20, padding: 16, background: 'var(--dark-elevated)', borderRadius: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span className="collab-dot" />
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Real-time Collaboration</span>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  When your customer opens this link, you'll see their cursor and changes in real-time.
+                  Powered by Remodely.ai collaboration engine.
+                </p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+              <button className="btn btn-gradient">
+                <Icons.Share /> Generate Secure Link
+              </button>
             </div>
           </div>
         </div>
+      );
+    };
 
-        <div class="property-group">
-          <h4>Actions</h4>
-          <button class="btn btn-secondary" style="width: 100%; margin-bottom: 8px;" onclick="duplicateElement()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            Duplicate
-          </button>
-          <button class="btn btn-secondary" style="width: 100%; color: #ef4444;" onclick="deleteSelected()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-            Delete
-          </button>
-        </div>
-      `;
-    }
+    // ===== DESIGN ELEMENT COMPONENT =====
+    const DesignElement = ({ element, isSelected, onSelect, onDragEnd, onTransformEnd, onContextMenu }) => {
+      const shapeRef = useRef();
+      const trRef = useRef();
 
-    function hideProperties() {
-      document.getElementById('properties-panel').innerHTML = `
-        <div class="properties-empty">
-          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
-          <p>Select an element to edit its properties</p>
-        </div>
-      `;
-    }
+      useEffect(() => {
+        if (isSelected && trRef.current && shapeRef.current) {
+          trRef.current.nodes([shapeRef.current]);
+          trRef.current.getLayer().batchDraw();
+        }
+      }, [isSelected]);
 
-    function getMaterialOptions(type) {
-      if (type.includes('countertop')) {
-        return `
-          <option value="granite">Granite</option>
-          <option value="quartz">Quartz</option>
-          <option value="marble">Marble</option>
-          <option value="quartzite">Quartzite</option>
-        `;
-      } else if (type.includes('cabinet')) {
-        return `
-          <option value="oak">Oak</option>
-          <option value="maple">Maple</option>
-          <option value="cherry">Cherry</option>
-          <option value="white">White Shaker</option>
-          <option value="gray">Gray Shaker</option>
-        `;
-      } else if (type.includes('flooring') || type.includes('tile')) {
-        return `
-          <option value="lvp">Luxury Vinyl Plank</option>
-          <option value="tile">Ceramic Tile</option>
-          <option value="porcelain">Porcelain Tile</option>
-          <option value="hardwood">Hardwood</option>
-        `;
-      }
-      return '<option value="default">Standard</option>';
-    }
+      const width = element.width * CONFIG.PIXELS_PER_FOOT;
+      const height = element.height * CONFIG.PIXELS_PER_FOOT;
 
-    function getMaterialSwatches(type) {
-      const swatches = {
-        countertop: [
-          { color: '#4a4a4a', name: 'Steel Gray' },
-          { color: '#f5f5dc', name: 'Calacatta' },
-          { color: '#2f2f2f', name: 'Absolute Black' },
-          { color: '#d4a574', name: 'Santa Cecilia' },
-          { color: '#c9c9c9', name: 'White Ice' },
-          { color: '#8b7355', name: 'Giallo Ornamental' },
-          { color: '#5c4033', name: 'Tan Brown' },
-          { color: '#e8e4d9', name: 'Bianco Romano' }
-        ],
-        cabinet: [
-          { color: '#f5f5f5', name: 'White' },
-          { color: '#4a4a4a', name: 'Charcoal' },
-          { color: '#d4a574', name: 'Natural Oak' },
-          { color: '#8b4513', name: 'Cherry' },
-          { color: '#2f2f2f', name: 'Espresso' },
-          { color: '#a0a0a0', name: 'Gray' }
-        ],
-        default: [
-          { color: '#c9c9c9', name: 'Light' },
-          { color: '#808080', name: 'Medium' },
-          { color: '#4a4a4a', name: 'Dark' }
-        ]
-      };
+      return (
+        <>
+          <Group
+            ref={shapeRef}
+            x={element.x}
+            y={element.y}
+            rotation={element.rotation || 0}
+            draggable={!element.locked}
+            onClick={onSelect}
+            onTap={onSelect}
+            onDragEnd={(e) => onDragEnd(e, element.id)}
+            onTransformEnd={(e) => onTransformEnd(e, element.id)}
+            onContextMenu={(e) => {
+              e.evt.preventDefault();
+              onContextMenu(e.evt.clientX, e.evt.clientY, element);
+            }}
+          >
+            <Rect
+              width={width}
+              height={height}
+              fill={element.imageUrl ? undefined : element.color}
+              stroke={isSelected ? '#6366f1' : '#333'}
+              strokeWidth={isSelected ? 3 : 2}
+              cornerRadius={4}
+              shadowColor="black"
+              shadowBlur={isSelected ? 10 : 0}
+              shadowOpacity={0.3}
+            />
+            {element.imageUrl && (
+              <Rect
+                width={width}
+                height={height}
+                fillPatternImage={element.image}
+                fillPatternScale={{ x: 0.5, y: 0.5 }}
+                cornerRadius={4}
+              />
+            )}
+            <Text
+              text={`${element.label}\n${element.width}' x ${element.height}'`}
+              width={width}
+              height={height}
+              align="center"
+              verticalAlign="middle"
+              fontSize={11}
+              fontFamily="Inter"
+              fontStyle="bold"
+              fill={element.color === '#2F2F2F' ? '#fff' : '#333'}
+              listening={false}
+            />
+          </Group>
+          {isSelected && (
+            <Transformer
+              ref={trRef}
+              rotateEnabled={true}
+              enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
+              boundBoxFunc={(oldBox, newBox) => {
+                const minSize = 20;
+                if (newBox.width < minSize || newBox.height < minSize) {
+                  return oldBox;
+                }
+                return newBox;
+              }}
+            />
+          )}
+        </>
+      );
+    };
 
-      let category = 'default';
-      if (type.includes('countertop')) category = 'countertop';
-      else if (type.includes('cabinet')) category = 'cabinet';
+    // ===== 3D VIEW COMPONENT =====
+    const ThreeDView = ({ elements, roomWidth, roomDepth }) => {
+      const containerRef = useRef();
+      const rendererRef = useRef();
+      const sceneRef = useRef();
+      const cameraRef = useRef();
+      const controlsRef = useRef();
 
-      return swatches[category].map(s =>
-        `<div class="material-swatch" style="background: ${s.color};" title="${s.name}" onclick="applyMaterialColor('${s.color}')"></div>`
-      ).join('');
-    }
+      useEffect(() => {
+        if (!containerRef.current) return;
 
-    function applyMaterialColor(color) {
-      if (!selectedElement) return;
+        // Setup scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+        sceneRef.current = scene;
 
-      // Update the fill color of the element
-      if (selectedElement.type === 'group') {
-        const rect = selectedElement.getObjects()[0];
-        if (rect) rect.set('fill', color);
-      } else {
-        selectedElement.set('fill', color);
-      }
+        // Camera
+        const camera = new THREE.PerspectiveCamera(
+          60,
+          containerRef.current.clientWidth / containerRef.current.clientHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(roomWidth * 0.8, roomDepth * 0.6, roomWidth * 0.8);
+        camera.lookAt(0, 0, 0);
+        cameraRef.current = camera;
 
-      selectedElement.elementData.color = color;
-      canvas.renderAll();
-      saveState();
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+        renderer.shadowMap.enabled = true;
+        containerRef.current.appendChild(renderer.domElement);
+        rendererRef.current = renderer;
 
-      // Update selected state
-      document.querySelectorAll('.material-swatch').forEach(s => s.classList.remove('selected'));
-      event.target.classList.add('selected');
-    }
+        // Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controlsRef.current = controls;
 
-    function updateElementSize() {
-      if (!selectedElement) return;
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
 
-      const newWidth = parseFloat(document.getElementById('prop-width').value) * CONFIG.pixelsPerFoot;
-      const newHeight = parseFloat(document.getElementById('prop-height').value) * CONFIG.pixelsPerFoot;
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 10);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
 
-      selectedElement.scaleX = newWidth / (selectedElement.width * selectedElement.scaleX) * selectedElement.scaleX;
-      selectedElement.scaleY = newHeight / (selectedElement.height * selectedElement.scaleY) * selectedElement.scaleY;
-
-      selectedElement.elementData.width = parseFloat(document.getElementById('prop-width').value);
-      selectedElement.elementData.height = parseFloat(document.getElementById('prop-height').value);
-
-      canvas.renderAll();
-      updateQuoteSummary();
-      saveState();
-    }
-
-    function updateElementMaterial() {
-      if (!selectedElement) return;
-      selectedElement.elementData.material = document.getElementById('prop-material').value;
-      updateQuoteSummary();
-    }
-
-    // Element actions
-    function duplicateElement() {
-      if (!selectedElement) return;
-
-      selectedElement.clone((cloned) => {
-        cloned.set({
-          left: selectedElement.left + 20,
-          top: selectedElement.top + 20
+        // Floor
+        const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
+        const floorMaterial = new THREE.MeshStandardMaterial({
+          color: 0x3a3a4a,
+          roughness: 0.8
         });
-        cloned.elementType = selectedElement.elementType;
-        cloned.elementData = { ...selectedElement.elementData };
-        canvas.add(cloned);
-        canvas.setActiveObject(cloned);
-        saveState();
-        updateQuoteSummary();
-      });
-    }
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
 
-    function deleteSelected() {
-      const active = canvas.getActiveObject();
-      if (active) {
-        canvas.remove(active);
-        hideProperties();
-        saveState();
-        updateQuoteSummary();
-      }
-    }
+        // Walls
+        const wallMaterial = new THREE.MeshStandardMaterial({
+          color: 0x4a4a5a,
+          side: THREE.DoubleSide
+        });
 
-    function clearCanvas() {
-      if (!confirm('Clear all elements? This cannot be undone.')) return;
+        // Back wall
+        const backWall = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth, 8),
+          wallMaterial
+        );
+        backWall.position.set(0, 4, -roomDepth / 2);
+        scene.add(backWall);
 
-      canvas.getObjects().forEach(obj => {
-        if (!obj.isRoomOutline && obj.selectable !== false) {
-          canvas.remove(obj);
-        }
-      });
+        // Left wall
+        const leftWall = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomDepth, 8),
+          wallMaterial
+        );
+        leftWall.rotation.y = Math.PI / 2;
+        leftWall.position.set(-roomWidth / 2, 4, 0);
+        scene.add(leftWall);
 
-      saveState();
-      updateQuoteSummary();
-    }
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(Math.max(roomWidth, roomDepth) + 4, 20, 0x444444, 0x333333);
+        scene.add(gridHelper);
 
-    // Zoom controls
-    function zoomIn() {
-      zoomLevel = Math.min(zoomLevel + 0.1, 2);
-      applyZoom();
-    }
+        // Add elements as 3D objects
+        elements.forEach(el => {
+          const elWidth = el.width;
+          const elDepth = el.height;
+          const elHeight = el.type.includes('tall') ? 6 : el.type.includes('wall') ? 2 : 3;
 
-    function zoomOut() {
-      zoomLevel = Math.max(zoomLevel - 0.1, 0.5);
-      applyZoom();
-    }
-
-    function resetZoom() {
-      zoomLevel = 1;
-      applyZoom();
-    }
-
-    function applyZoom() {
-      canvas.setZoom(zoomLevel);
-      canvas.setWidth(CONFIG.canvasWidth * zoomLevel);
-      canvas.setHeight(CONFIG.canvasHeight * zoomLevel);
-      document.getElementById('zoom-level').textContent = Math.round(zoomLevel * 100) + '%';
-    }
-
-    // History (undo/redo)
-    function saveState() {
-      const state = JSON.stringify(canvas.toJSON(['elementType', 'elementData', 'isRoomOutline']));
-      history = history.slice(0, historyIndex + 1);
-      history.push(state);
-      historyIndex++;
-    }
-
-    function undo() {
-      if (historyIndex > 0) {
-        historyIndex--;
-        loadState(history[historyIndex]);
-      }
-    }
-
-    function redo() {
-      if (historyIndex < history.length - 1) {
-        historyIndex++;
-        loadState(history[historyIndex]);
-      }
-    }
-
-    function loadState(state) {
-      canvas.loadFromJSON(state, () => {
-        canvas.renderAll();
-        updateQuoteSummary();
-      });
-    }
-
-    // Keyboard shortcuts
-    function handleKeyboard(e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        deleteSelected();
-      } else if (e.key === 'v') {
-        setTool('select');
-      } else if (e.key === 'w') {
-        setTool('draw');
-      } else if (e.key === 'm') {
-        setTool('measure');
-      } else if (e.ctrlKey && e.key === 'z') {
-        undo();
-      } else if (e.ctrlKey && e.key === 'y') {
-        redo();
-      }
-    }
-
-    // Quote calculations
-    function updateQuoteSummary() {
-      let cabinetsLF = 0;
-      let countertopsSF = 0;
-      let backsplashSF = 0;
-      let flooringSF = 0;
-
-      canvas.getObjects().forEach(obj => {
-        if (!obj.elementData) return;
-
-        const data = obj.elementData;
-        const actualWidth = data.width * (obj.scaleX || 1);
-        const actualHeight = data.height * (obj.scaleY || 1);
-
-        if (data.type.includes('cabinet') || data.type === 'island' || data.type === 'peninsula') {
-          cabinetsLF += actualWidth;
-        } else if (data.type.includes('countertop')) {
-          countertopsSF += actualWidth * actualHeight;
-        } else if (data.type === 'backsplash') {
-          backsplashSF += actualWidth * actualHeight;
-        } else if (data.type.includes('flooring') || data.type.includes('tile-area')) {
-          flooringSF += actualWidth * actualHeight;
-        }
-      });
-
-      document.getElementById('quote-cabinets').textContent = cabinetsLF.toFixed(1) + ' LF';
-      document.getElementById('quote-countertops').textContent = countertopsSF.toFixed(1) + ' SF';
-      document.getElementById('quote-backsplash').textContent = backsplashSF.toFixed(1) + ' SF';
-      document.getElementById('quote-flooring').textContent = flooringSF.toFixed(1) + ' SF';
-
-      // Calculate estimated total
-      const cabinetCost = cabinetsLF * CONFIG.pricing.cabinets.base;
-      const countertopCost = countertopsSF * CONFIG.pricing.countertops.granite;
-      const backsplashCost = backsplashSF * CONFIG.pricing.backsplash.tile;
-      const flooringCost = flooringSF * CONFIG.pricing.flooring.tile;
-
-      const total = cabinetCost + countertopCost + backsplashCost + flooringCost;
-      document.getElementById('quote-total').textContent = '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    // Templates
-    function openTemplates() {
-      document.getElementById('templates-modal').classList.add('active');
-    }
-
-    function closeTemplates() {
-      document.getElementById('templates-modal').classList.remove('active');
-    }
-
-    function loadTemplate(template) {
-      clearCanvas();
-      closeTemplates();
-
-      const templates = {
-        'galley-kitchen': () => {
-          projectData.roomWidth = 10;
-          projectData.roomDepth = 8;
-          document.getElementById('room-width').value = 10;
-          document.getElementById('room-depth').value = 8;
-          drawRoom();
-
-          // Add elements
-          addElement('base-cabinet', 80, 120);
-          addElement('base-cabinet', 200, 120);
-          addElement('countertop-straight', 80, 100);
-          addElement('sink', 140, 100);
-          addElement('base-cabinet', 80, 340);
-          addElement('base-cabinet', 200, 340);
-          addElement('stove', 240, 340);
-        },
-        'l-shaped-kitchen': () => {
-          projectData.roomWidth = 12;
-          projectData.roomDepth = 10;
-          document.getElementById('room-width').value = 12;
-          document.getElementById('room-depth').value = 10;
-          drawRoom();
-
-          addElement('countertop-l', 100, 100);
-          addElement('base-cabinet', 100, 180);
-          addElement('base-cabinet', 220, 180);
-          addElement('island', 250, 300);
-          addElement('sink', 160, 100);
-          addElement('stove', 360, 180);
-          addElement('refrigerator', 100, 380);
-        },
-        'u-shaped-kitchen': () => {
-          projectData.roomWidth = 14;
-          projectData.roomDepth = 12;
-          document.getElementById('room-width').value = 14;
-          document.getElementById('room-depth').value = 12;
-          drawRoom();
-
-          addElement('countertop-u', 80, 80);
-          addElement('base-cabinet', 80, 200);
-          addElement('base-cabinet', 200, 200);
-          addElement('base-cabinet', 400, 200);
-          addElement('sink', 240, 80);
-          addElement('stove', 320, 200);
-        },
-        'master-bathroom': () => {
-          projectData.roomWidth = 10;
-          projectData.roomDepth = 8;
-          document.getElementById('room-width').value = 10;
-          document.getElementById('room-depth').value = 8;
-          drawRoom();
-
-          addElement('bathtub', 100, 100);
-          addElement('toilet', 350, 100);
-          addElement('base-cabinet', 100, 340);
-          addElement('sink', 140, 300);
-          addElement('tile-area', 200, 200);
-        },
-        'commercial-restroom': () => {
-          projectData.roomWidth = 20;
-          projectData.roomDepth = 15;
-          document.getElementById('room-width').value = 20;
-          document.getElementById('room-depth').value = 15;
-          drawRoom();
-
-          addElement('toilet', 100, 100);
-          addElement('toilet', 200, 100);
-          addElement('toilet', 300, 100);
-          addElement('sink', 500, 100);
-          addElement('sink', 600, 100);
-          addElement('tile-area', 100, 300);
-        },
-        'blank': () => {
-          // Already cleared
-        }
-      };
-
-      if (templates[template]) {
-        templates[template]();
-      }
-
-      updateQuoteSummary();
-      saveState();
-    }
-
-    // Quote generation
-    function generateQuote() {
-      const projectName = document.getElementById('project-name').value || 'Untitled Project';
-
-      let items = [];
-      let total = 0;
-
-      canvas.getObjects().forEach(obj => {
-        if (!obj.elementData) return;
-
-        const data = obj.elementData;
-        const actualWidth = data.width * (obj.scaleX || 1);
-        const actualHeight = data.height * (obj.scaleY || 1);
-        const area = actualWidth * actualHeight;
-
-        let price = 0;
-        let unit = '';
-        let quantity = 0;
-
-        if (data.type.includes('cabinet') || data.type === 'island' || data.type === 'peninsula') {
-          price = CONFIG.pricing.cabinets.base * actualWidth;
-          unit = 'LF';
-          quantity = actualWidth;
-        } else if (data.type.includes('countertop')) {
-          price = CONFIG.pricing.countertops.granite * area;
-          unit = 'SF';
-          quantity = area;
-        } else if (data.type === 'backsplash') {
-          price = CONFIG.pricing.backsplash.tile * area;
-          unit = 'SF';
-          quantity = area;
-        } else if (data.type.includes('flooring') || data.type.includes('tile')) {
-          price = CONFIG.pricing.flooring.tile * area;
-          unit = 'SF';
-          quantity = area;
-        } else if (CONFIG.pricing.appliances[data.type]) {
-          price = CONFIG.pricing.appliances[data.type];
-          unit = 'ea';
-          quantity = 1;
-        }
-
-        if (price > 0) {
-          items.push({
-            name: data.type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            quantity: quantity.toFixed(1),
-            unit: unit,
-            price: price
+          const geometry = new THREE.BoxGeometry(elWidth, elHeight, elDepth);
+          const material = new THREE.MeshStandardMaterial({
+            color: el.color,
+            roughness: 0.7
           });
-          total += price;
-        }
-      });
+          const mesh = new THREE.Mesh(geometry, material);
 
-      // Group similar items
-      const grouped = {};
-      items.forEach(item => {
-        if (grouped[item.name]) {
-          grouped[item.name].quantity = (parseFloat(grouped[item.name].quantity) + parseFloat(item.quantity)).toFixed(1);
-          grouped[item.name].price += item.price;
-        } else {
-          grouped[item.name] = { ...item };
-        }
-      });
+          const posX = (el.x / CONFIG.PIXELS_PER_FOOT) - roomWidth / 2 + elWidth / 2;
+          const posZ = (el.y / CONFIG.PIXELS_PER_FOOT) - roomDepth / 2 + elDepth / 2;
+          const posY = elHeight / 2;
 
-      const modalBody = document.getElementById('quote-modal-body');
-      modalBody.innerHTML = `
-        <div style="margin-bottom: 20px;">
-          <h4 style="color: var(--gold); margin-bottom: 8px;">${projectName}</h4>
-          <p style="color: var(--text-muted); font-size: 13px;">Room: ${projectData.roomWidth}' x ${projectData.roomDepth}' ${roomType}</p>
-          <p style="color: var(--text-muted); font-size: 13px;">Generated: ${new Date().toLocaleDateString()}</p>
-        </div>
+          mesh.position.set(posX, posY, posZ);
+          mesh.rotation.y = (el.rotation || 0) * Math.PI / 180;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          scene.add(mesh);
+        });
 
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border);">
-              <th style="text-align: left; padding: 10px 0; color: var(--text-muted); font-size: 12px;">Item</th>
-              <th style="text-align: right; padding: 10px 0; color: var(--text-muted); font-size: 12px;">Qty</th>
-              <th style="text-align: right; padding: 10px 0; color: var(--text-muted); font-size: 12px;">Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${Object.values(grouped).map(item => `
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 12px 0;">${item.name}</td>
-                <td style="text-align: right; padding: 12px 0; color: var(--text-muted);">${item.quantity} ${item.unit}</td>
-                <td style="text-align: right; padding: 12px 0; font-weight: 600;">$${item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr style="border-top: 2px solid var(--gold);">
-              <td colspan="2" style="padding: 16px 0; font-weight: 700; font-size: 16px;">Estimated Total</td>
-              <td style="text-align: right; padding: 16px 0; font-weight: 700; font-size: 18px; color: var(--gold);">$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-            </tr>
-          </tfoot>
-        </table>
+        // Animation loop
+        const animate = () => {
+          requestAnimationFrame(animate);
+          controls.update();
+          renderer.render(scene, camera);
+        };
+        animate();
 
-        <div style="margin-top: 20px; padding: 16px; background: var(--dark-elevated); border-radius: 8px;">
-          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
-            * This is an estimate based on standard pricing. Final quote may vary based on material selection, site conditions, and labor requirements.
-          </p>
-        </div>
-      `;
+        // Handle resize
+        const handleResize = () => {
+          if (!containerRef.current) return;
+          camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+        };
+        window.addEventListener('resize', handleResize);
 
-      document.getElementById('quote-modal').classList.add('active');
-    }
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          if (containerRef.current && renderer.domElement) {
+            containerRef.current.removeChild(renderer.domElement);
+          }
+          renderer.dispose();
+        };
+      }, [elements, roomWidth, roomDepth]);
 
-    function closeQuoteModal() {
-      document.getElementById('quote-modal').classList.remove('active');
-    }
+      return <div ref={containerRef} className="three-container" />;
+    };
 
-    function printQuote() {
-      window.print();
-    }
+    // ===== MAIN APP COMPONENT =====
+    const RoomDesignerApp = () => {
+      // State
+      const [projectName, setProjectName] = useState('Kitchen Remodel');
+      const [projectId, setProjectId] = useState(null);
+      const [viewMode, setViewMode] = useState('2d'); // '2d' or '3d'
+      const [currentTool, setCurrentTool] = useState('select');
+      const [roomWidth, setRoomWidth] = useState(12);
+      const [roomDepth, setRoomDepth] = useState(10);
+      const [roomType, setRoomType] = useState('kitchen');
+      const [elements, setElements] = useState([]);
+      const [selectedId, setSelectedId] = useState(null);
+      const [contextMenu, setContextMenu] = useState(null);
+      const [zoom, setZoom] = useState(1);
+      const [showShareModal, setShowShareModal] = useState(false);
+      const [toasts, setToasts] = useState([]);
 
-    function sendQuote() {
-      // Would integrate with your API to send quote
-      alert('Quote sending would integrate with your email/estimate system.');
-    }
+      const stageRef = useRef();
+      const fileInputRef = useRef();
 
-    // Save/Load project
-    function saveProject() {
-      const data = {
-        name: document.getElementById('project-name').value,
-        roomType: roomType,
-        roomWidth: projectData.roomWidth,
-        roomDepth: projectData.roomDepth,
-        canvas: canvas.toJSON(['elementType', 'elementData', 'isRoomOutline']),
-        savedAt: new Date().toISOString()
+      // Generate unique ID
+      const generateId = () => Math.random().toString(36).substr(2, 9);
+
+      // Show toast notification
+      const showToast = (message, type = 'success') => {
+        const id = generateId();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
       };
 
-      localStorage.setItem('roomDesignerProject', JSON.stringify(data));
-      alert('Project saved!');
-    }
+      // Add element
+      const addElement = (type, x, y) => {
+        const defaults = CONFIG.ELEMENT_DEFAULTS[type];
+        if (!defaults) return;
 
-    function loadProject() {
-      const saved = localStorage.getItem('roomDesignerProject');
-      if (saved) {
-        const data = JSON.parse(saved);
-        document.getElementById('project-name').value = data.name;
-        projectData.roomWidth = data.roomWidth;
-        projectData.roomDepth = data.roomDepth;
-        document.getElementById('room-width').value = data.roomWidth;
-        document.getElementById('room-depth').value = data.roomDepth;
+        const newElement = {
+          id: generateId(),
+          type,
+          label: defaults.label,
+          x: x || (CONFIG.CANVAS_WIDTH - defaults.width * CONFIG.PIXELS_PER_FOOT) / 2,
+          y: y || (CONFIG.CANVAS_HEIGHT - defaults.height * CONFIG.PIXELS_PER_FOOT) / 2,
+          width: defaults.width,
+          height: defaults.height,
+          color: defaults.color,
+          rotation: 0,
+          locked: false,
+          imageUrl: null
+        };
 
-        canvas.loadFromJSON(data.canvas, () => {
-          canvas.renderAll();
-          updateQuoteSummary();
+        setElements(prev => [...prev, newElement]);
+        setSelectedId(newElement.id);
+        showToast(`Added ${defaults.label}`);
+      };
+
+      // Handle drag end
+      const handleDragEnd = (e, id) => {
+        const node = e.target;
+        setElements(prev => prev.map(el =>
+          el.id === id ? {
+            ...el,
+            x: Math.round(node.x() / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE,
+            y: Math.round(node.y() / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE
+          } : el
+        ));
+      };
+
+      // Handle transform end
+      const handleTransformEnd = (e, id) => {
+        const node = e.target;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+
+        node.scaleX(1);
+        node.scaleY(1);
+
+        setElements(prev => prev.map(el => {
+          if (el.id !== id) return el;
+          const newWidth = Math.max(0.5, el.width * scaleX);
+          const newHeight = Math.max(0.5, el.height * scaleY);
+          return {
+            ...el,
+            x: node.x(),
+            y: node.y(),
+            width: Math.round(newWidth * 2) / 2, // Round to 0.5
+            height: Math.round(newHeight * 2) / 2,
+            rotation: node.rotation()
+          };
+        }));
+      };
+
+      // Context menu actions
+      const handleContextAction = (action) => {
+        const element = contextMenu?.element;
+        if (!element) return;
+
+        switch (action) {
+          case 'rotate':
+            setElements(prev => prev.map(el =>
+              el.id === element.id ? { ...el, rotation: (el.rotation || 0) + 90 } : el
+            ));
+            break;
+          case 'duplicate':
+            const newEl = {
+              ...element,
+              id: generateId(),
+              x: element.x + 20,
+              y: element.y + 20
+            };
+            setElements(prev => [...prev, newEl]);
+            setSelectedId(newEl.id);
+            showToast('Element duplicated');
+            break;
+          case 'delete':
+            setElements(prev => prev.filter(el => el.id !== element.id));
+            setSelectedId(null);
+            showToast('Element deleted');
+            break;
+          case 'lock':
+            setElements(prev => prev.map(el =>
+              el.id === element.id ? { ...el, locked: !el.locked } : el
+            ));
+            showToast(element.locked ? 'Element unlocked' : 'Element locked');
+            break;
+          case 'upload':
+            setSelectedId(element.id);
+            fileInputRef.current?.click();
+            break;
+          case 'bringFront':
+            setElements(prev => {
+              const idx = prev.findIndex(el => el.id === element.id);
+              if (idx === -1) return prev;
+              const newArr = [...prev];
+              const [removed] = newArr.splice(idx, 1);
+              newArr.push(removed);
+              return newArr;
+            });
+            break;
+          case 'sendBack':
+            setElements(prev => {
+              const idx = prev.findIndex(el => el.id === element.id);
+              if (idx === -1) return prev;
+              const newArr = [...prev];
+              const [removed] = newArr.splice(idx, 1);
+              newArr.unshift(removed);
+              return newArr;
+            });
+            break;
+        }
+        setContextMenu(null);
+      };
+
+      // Handle image upload
+      const handleImageUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedId) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.src = reader.result;
+          img.onload = () => {
+            setElements(prev => prev.map(el =>
+              el.id === selectedId ? { ...el, imageUrl: reader.result, image: img } : el
+            ));
+            showToast('Image applied to element');
+          };
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // Calculate quote
+      const calculateQuote = () => {
+        let totals = { cabinets: 0, countertops: 0, backsplash: 0, flooring: 0 };
+
+        elements.forEach(el => {
+          const area = el.width * el.height;
+          if (el.type.includes('cabinet') || el.type === 'island') {
+            totals.cabinets += el.width;
+          } else if (el.type === 'countertop') {
+            totals.countertops += area;
+          } else if (el.type === 'backsplash') {
+            totals.backsplash += area;
+          } else if (el.type === 'flooring' || el.type === 'tile') {
+            totals.flooring += area;
+          }
         });
-      }
-    }
 
-    // Load saved project on startup
-    setTimeout(() => {
-      const saved = localStorage.getItem('roomDesignerProject');
-      if (saved && confirm('Load previously saved project?')) {
-        loadProject();
-      }
-    }, 500);
+        const costs = {
+          cabinets: totals.cabinets * CONFIG.PRICING.cabinets.base,
+          countertops: totals.countertops * CONFIG.PRICING.countertops.granite,
+          backsplash: totals.backsplash * CONFIG.PRICING.backsplash.tile,
+          flooring: totals.flooring * CONFIG.PRICING.flooring.tile
+        };
+
+        return { totals, costs, total: Object.values(costs).reduce((a, b) => a + b, 0) };
+      };
+
+      const quote = calculateQuote();
+
+      // Save project
+      const saveProject = async () => {
+        try {
+          const projectData = {
+            name: projectName,
+            room_type: roomType,
+            room_width: roomWidth,
+            room_depth: roomDepth,
+            elements: elements,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          if (projectId) {
+            await supabase.from('room_designs').update(projectData).eq('id', projectId);
+          } else {
+            const { data } = await supabase.from('room_designs').insert([projectData]).select().single();
+            if (data) setProjectId(data.id);
+          }
+
+          showToast('Project saved successfully!');
+        } catch (err) {
+          console.error('Save error:', err);
+          // Fallback to localStorage
+          localStorage.setItem('roomDesignerProject', JSON.stringify({
+            name: projectName, roomType, roomWidth, roomDepth, elements
+          }));
+          showToast('Saved locally');
+        }
+      };
+
+      // Draw grid
+      const renderGrid = () => {
+        const lines = [];
+        const gridColor = 'rgba(255,255,255,0.03)';
+
+        for (let x = 0; x <= CONFIG.CANVAS_WIDTH; x += CONFIG.PIXELS_PER_FOOT) {
+          lines.push(
+            <Line key={`v${x}`} points={[x, 0, x, CONFIG.CANVAS_HEIGHT]} stroke={gridColor} strokeWidth={1} />
+          );
+        }
+        for (let y = 0; y <= CONFIG.CANVAS_HEIGHT; y += CONFIG.PIXELS_PER_FOOT) {
+          lines.push(
+            <Line key={`h${y}`} points={[0, y, CONFIG.CANVAS_WIDTH, y]} stroke={gridColor} strokeWidth={1} />
+          );
+        }
+        return lines;
+      };
+
+      // Render room outline
+      const renderRoom = () => {
+        const width = roomWidth * CONFIG.PIXELS_PER_FOOT;
+        const height = roomDepth * CONFIG.PIXELS_PER_FOOT;
+        const x = (CONFIG.CANVAS_WIDTH - width) / 2;
+        const y = (CONFIG.CANVAS_HEIGHT - height) / 2;
+
+        return (
+          <>
+            <Rect
+              x={x}
+              y={y}
+              width={width}
+              height={height}
+              fill="rgba(60, 60, 80, 0.3)"
+              stroke="#6366f1"
+              strokeWidth={3}
+              cornerRadius={2}
+            />
+            <Text
+              x={x + width / 2}
+              y={y - 24}
+              text={`${roomWidth}'`}
+              fontSize={14}
+              fontFamily="Inter"
+              fontStyle="bold"
+              fill="#6366f1"
+              align="center"
+              offsetX={20}
+            />
+            <Text
+              x={x - 24}
+              y={y + height / 2}
+              text={`${roomDepth}'`}
+              fontSize={14}
+              fontFamily="Inter"
+              fontStyle="bold"
+              fill="#6366f1"
+              rotation={-90}
+              offsetY={10}
+            />
+          </>
+        );
+      };
+
+      const selectedElement = elements.find(el => el.id === selectedId);
+
+      return (
+        <>
+          {/* Header */}
+          <header className="header">
+            <div className="header-left">
+              <div className="logo-group">
+                <a href="/" className="logo">
+                  <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" alt="Logo" />
+                </a>
+                <div className="logo-divider" />
+                <div className="powered-by">
+                  <span>Powered by</span>
+                  <span className="remodely-badge">Remodely.ai</span>
+                </div>
+              </div>
+              <input
+                className="project-input"
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                placeholder="Project Name"
+              />
+            </div>
+
+            <div className="header-center">
+              <button
+                className={`view-btn ${viewMode === '2d' ? 'active' : ''}`}
+                onClick={() => setViewMode('2d')}
+              >
+                <Icons.View2D /> 2D Plan
+              </button>
+              <button
+                className={`view-btn ${viewMode === '3d' ? 'active' : ''}`}
+                onClick={() => setViewMode('3d')}
+              >
+                <Icons.View3D /> 3D View
+              </button>
+            </div>
+
+            <div className="header-right">
+              <button className="btn btn-ghost" onClick={saveProject}>
+                <Icons.Save /> Save
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowShareModal(true)}>
+                <Icons.Share /> Share
+              </button>
+              <button className="btn btn-gold">
+                <Icons.Quote /> Generate Quote
+              </button>
+            </div>
+          </header>
+
+          {/* Main Layout */}
+          <div className="main-layout">
+            {/* Left Sidebar */}
+            <aside className="sidebar">
+              <div className="sidebar-scroll">
+                {/* Room Settings */}
+                <div className="sidebar-section">
+                  <div className="sidebar-header">Room Settings</div>
+                  <div className="sidebar-content">
+                    <div className="room-controls">
+                      <div className="control-group">
+                        <label>Room Type</label>
+                        <select
+                          className="control-select"
+                          value={roomType}
+                          onChange={e => setRoomType(e.target.value)}
+                        >
+                          <option value="kitchen">Kitchen</option>
+                          <option value="bathroom">Bathroom</option>
+                          <option value="laundry">Laundry</option>
+                          <option value="office">Office</option>
+                          <option value="commercial">Commercial</option>
+                        </select>
+                      </div>
+                      <div className="control-group">
+                        <label>Width (ft)</label>
+                        <input
+                          type="number"
+                          className="control-input"
+                          value={roomWidth}
+                          onChange={e => setRoomWidth(Number(e.target.value))}
+                          min="4" max="50"
+                        />
+                      </div>
+                      <div className="control-group">
+                        <label>Depth (ft)</label>
+                        <input
+                          type="number"
+                          className="control-input"
+                          value={roomDepth}
+                          onChange={e => setRoomDepth(Number(e.target.value))}
+                          min="4" max="50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cabinets */}
+                <div className="sidebar-section">
+                  <div className="sidebar-header">Cabinets</div>
+                  <div className="sidebar-content">
+                    <div className="element-grid">
+                      {['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'island'].map(type => (
+                        <div
+                          key={type}
+                          className="element-item"
+                          onClick={() => addElement(type)}
+                        >
+                          <ElementIcon type={type} />
+                          <span>{CONFIG.ELEMENT_DEFAULTS[type].label.split(' ')[0]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Surfaces */}
+                <div className="sidebar-section">
+                  <div className="sidebar-header">Surfaces</div>
+                  <div className="sidebar-content">
+                    <div className="element-grid">
+                      {['countertop', 'backsplash', 'flooring', 'tile'].map(type => (
+                        <div
+                          key={type}
+                          className="element-item"
+                          onClick={() => addElement(type)}
+                        >
+                          <ElementIcon type={type} />
+                          <span>{CONFIG.ELEMENT_DEFAULTS[type].label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Appliances */}
+                <div className="sidebar-section">
+                  <div className="sidebar-header">Appliances</div>
+                  <div className="sidebar-content">
+                    <div className="element-grid">
+                      {['sink', 'stove', 'refrigerator', 'dishwasher'].map(type => (
+                        <div
+                          key={type}
+                          className="element-item"
+                          onClick={() => addElement(type)}
+                        >
+                          <ElementIcon type={type} />
+                          <span>{CONFIG.ELEMENT_DEFAULTS[type].label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Structure */}
+                <div className="sidebar-section">
+                  <div className="sidebar-header">Structure</div>
+                  <div className="sidebar-content">
+                    <div className="element-grid">
+                      {['door', 'window'].map(type => (
+                        <div
+                          key={type}
+                          className="element-item"
+                          onClick={() => addElement(type)}
+                        >
+                          <ElementIcon type={type} />
+                          <span>{CONFIG.ELEMENT_DEFAULTS[type].label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Canvas Area */}
+            <main className="canvas-area">
+              {viewMode === '2d' ? (
+                <>
+                  <div className="canvas-wrapper">
+                    <Stage
+                      ref={stageRef}
+                      width={CONFIG.CANVAS_WIDTH}
+                      height={CONFIG.CANVAS_HEIGHT}
+                      scaleX={zoom}
+                      scaleY={zoom}
+                      onClick={(e) => {
+                        if (e.target === e.target.getStage()) {
+                          setSelectedId(null);
+                        }
+                      }}
+                      style={{ background: '#1e1e30' }}
+                    >
+                      <Layer>
+                        {renderGrid()}
+                        {renderRoom()}
+                        {elements.map(el => (
+                          <DesignElement
+                            key={el.id}
+                            element={el}
+                            isSelected={el.id === selectedId}
+                            onSelect={() => setSelectedId(el.id)}
+                            onDragEnd={handleDragEnd}
+                            onTransformEnd={handleTransformEnd}
+                            onContextMenu={(x, y, element) => setContextMenu({ x, y, element })}
+                          />
+                        ))}
+                      </Layer>
+                    </Stage>
+                  </div>
+
+                  {/* Canvas Toolbar */}
+                  <div className="canvas-toolbar">
+                    <button
+                      className={`tool-btn ${currentTool === 'select' ? 'active' : ''}`}
+                      onClick={() => setCurrentTool('select')}
+                      title="Select (V)"
+                    >
+                      <Icons.Select />
+                    </button>
+                    <button
+                      className={`tool-btn ${currentTool === 'move' ? 'active' : ''}`}
+                      onClick={() => setCurrentTool('move')}
+                      title="Move"
+                    >
+                      <Icons.Move />
+                    </button>
+                    <button
+                      className={`tool-btn ${currentTool === 'draw' ? 'active' : ''}`}
+                      onClick={() => setCurrentTool('draw')}
+                      title="Draw (W)"
+                    >
+                      <Icons.Draw />
+                    </button>
+                    <button
+                      className={`tool-btn ${currentTool === 'measure' ? 'active' : ''}`}
+                      onClick={() => setCurrentTool('measure')}
+                      title="Measure (M)"
+                    >
+                      <Icons.Measure />
+                    </button>
+                    <div className="tool-divider" />
+                    <button className="tool-btn" title="Undo (Ctrl+Z)">
+                      <Icons.Undo />
+                    </button>
+                    <button className="tool-btn" title="Redo (Ctrl+Y)">
+                      <Icons.Redo />
+                    </button>
+                    <div className="tool-divider" />
+                    <button
+                      className="tool-btn"
+                      onClick={() => selectedId && handleContextAction('delete')}
+                      title="Delete"
+                    >
+                      <Icons.Delete />
+                    </button>
+                  </div>
+
+                  {/* Zoom Controls */}
+                  <div className="zoom-controls">
+                    <button className="zoom-btn" onClick={() => setZoom(z => Math.min(z + 0.1, 2))}>
+                      <Icons.ZoomIn />
+                    </button>
+                    <div className="zoom-level">{Math.round(zoom * 100)}%</div>
+                    <button className="zoom-btn" onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))}>
+                      <Icons.ZoomOut />
+                    </button>
+                    <button className="zoom-btn" onClick={() => setZoom(1)}>
+                      <Icons.FitView />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <ThreeDView
+                  elements={elements}
+                  roomWidth={roomWidth}
+                  roomDepth={roomDepth}
+                />
+              )}
+            </main>
+
+            {/* Right Panel */}
+            <aside className="right-panel">
+              <div className="panel-tabs">
+                <button className="panel-tab active">Properties</button>
+                <button className="panel-tab">Materials</button>
+                <button className="panel-tab">Quote</button>
+              </div>
+
+              <div className="panel-content">
+                {selectedElement ? (
+                  <>
+                    <div className="property-section">
+                      <h4>{selectedElement.label}</h4>
+                      <div className="property-row">
+                        <label>Width</label>
+                        <input
+                          type="number"
+                          value={selectedElement.width}
+                          onChange={e => setElements(prev => prev.map(el =>
+                            el.id === selectedId ? { ...el, width: Number(e.target.value) } : el
+                          ))}
+                          step="0.5"
+                          min="0.5"
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>ft</span>
+                      </div>
+                      <div className="property-row">
+                        <label>Depth</label>
+                        <input
+                          type="number"
+                          value={selectedElement.height}
+                          onChange={e => setElements(prev => prev.map(el =>
+                            el.id === selectedId ? { ...el, height: Number(e.target.value) } : el
+                          ))}
+                          step="0.5"
+                          min="0.5"
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>ft</span>
+                      </div>
+                      <div className="property-row">
+                        <label>Rotation</label>
+                        <input
+                          type="number"
+                          value={selectedElement.rotation || 0}
+                          onChange={e => setElements(prev => prev.map(el =>
+                            el.id === selectedId ? { ...el, rotation: Number(e.target.value) } : el
+                          ))}
+                          step="15"
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>°</span>
+                      </div>
+                    </div>
+
+                    <div className="property-section">
+                      <h4>Material</h4>
+                      <div className="material-grid">
+                        {['#708090', '#f5f5dc', '#2f2f2f', '#d4a574', '#8b4513', '#c9c9c9', '#4a4a4a', '#a0826d', '#DEB887', '#654321'].map(color => (
+                          <div
+                            key={color}
+                            className={`material-swatch ${selectedElement.color === color ? 'selected' : ''}`}
+                            style={{ background: color }}
+                            onClick={() => setElements(prev => prev.map(el =>
+                              el.id === selectedId ? { ...el, color } : el
+                            ))}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="property-section">
+                      <button
+                        className="btn btn-secondary"
+                        style={{ width: '100%', marginBottom: 8 }}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Icons.Upload /> Upload Texture Image
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ width: '100%', color: 'var(--error)' }}
+                        onClick={() => handleContextAction('delete')}
+                      >
+                        <Icons.Delete /> Delete Element
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <Icons.Select />
+                    <h4>No Element Selected</h4>
+                    <p>Click an element to view and edit its properties</p>
+                  </div>
+                )}
+
+                {/* Quote Summary */}
+                <div style={{ marginTop: 'auto', paddingTop: 20 }}>
+                  <h4 style={{ fontSize: 12, fontWeight: 600, marginBottom: 12, color: 'var(--text-secondary)' }}>
+                    Quote Summary
+                  </h4>
+                  <div className="quote-card">
+                    <div className="quote-row">
+                      <span>Cabinets</span>
+                      <span>{quote.totals.cabinets.toFixed(1)} LF</span>
+                    </div>
+                    <div className="quote-row">
+                      <span>Countertops</span>
+                      <span>{quote.totals.countertops.toFixed(1)} SF</span>
+                    </div>
+                    <div className="quote-row">
+                      <span>Backsplash</span>
+                      <span>{quote.totals.backsplash.toFixed(1)} SF</span>
+                    </div>
+                    <div className="quote-row">
+                      <span>Flooring</span>
+                      <span>{quote.totals.flooring.toFixed(1)} SF</span>
+                    </div>
+                    <div className="quote-row total">
+                      <span>Estimated Total</span>
+                      <span>${quote.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          {/* Context Menu */}
+          {contextMenu && (
+            <ContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              element={contextMenu.element}
+              onAction={handleContextAction}
+              onClose={() => setContextMenu(null)}
+            />
+          )}
+
+          {/* Share Modal */}
+          <ShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            projectId={projectId || 'demo-123'}
+            projectName={projectName}
+          />
+
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleImageUpload}
+          />
+
+          {/* Toast Notifications */}
+          <div className="toast-container">
+            {toasts.map(toast => (
+              <div key={toast.id} className={`toast ${toast.type}`}>
+                {toast.type === 'success' && <Icons.Check />}
+                {toast.message}
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    };
+
+    // Render App
+    ReactDOM.createRoot(document.getElementById('root')).render(<RoomDesignerApp />);
   </script>
-
 </body>
 </html>
