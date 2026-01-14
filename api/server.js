@@ -7839,17 +7839,53 @@ wss.on('connection', (clientWs) => {
             voice: sessionConfig?.voice || 'coral',
             input_audio_format: 'pcm16',
             output_audio_format: 'pcm16',
-            input_audio_transcription: { model: 'whisper-1' },
+            input_audio_transcription: { model: 'whisper-1', language: 'en' },
             turn_detection: {
               type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
+              threshold: 0.6,
+              prefix_padding_ms: 400,
+              silence_duration_ms: 800,
               create_response: true
             },
             instructions: sessionConfig?.systemInstructions || buildDefaultInstructions(),
             temperature: 0.7,
-            max_response_output_tokens: 300
+            max_response_output_tokens: 300,
+            tools: [
+              {
+                type: 'function',
+                name: 'capture_lead',
+                description: 'Capture customer contact information for follow-up. Use when customer provides their name, phone, email, or expresses interest in getting a quote.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string', description: 'Customer name' },
+                    phone: { type: 'string', description: 'Phone number' },
+                    email: { type: 'string', description: 'Email address' },
+                    project_type: { type: 'string', description: 'Type of project (countertops, flooring, tile, cabinets, full remodel)' },
+                    project_details: { type: 'string', description: 'Brief description of what they need' },
+                    preferred_contact_time: { type: 'string', description: 'When they prefer to be contacted' }
+                  },
+                  required: []
+                }
+              },
+              {
+                type: 'function',
+                name: 'schedule_estimate',
+                description: 'Schedule a free estimate appointment',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string', description: 'Customer name' },
+                    phone: { type: 'string', description: 'Phone number' },
+                    email: { type: 'string', description: 'Email address' },
+                    preferred_date: { type: 'string', description: 'Preferred date/time' },
+                    project_type: { type: 'string', description: 'Type of project' },
+                    address: { type: 'string', description: 'Project address' }
+                  },
+                  required: ['name', 'phone']
+                }
+              }
+            ]
           }
         };
 
@@ -7941,6 +7977,11 @@ wss.on('connection', (clientWs) => {
         clientWs.send(JSON.stringify({ type: 'speaking_start' }));
         break;
 
+      case 'response.function_call_arguments.done':
+        // Handle tool calls
+        handleToolCall(response);
+        break;
+
       case 'error':
         console.error('[Aria Realtime] OpenAI error:', response.error);
         clientWs.send(JSON.stringify({
@@ -7949,6 +7990,173 @@ wss.on('connection', (clientWs) => {
         }));
         break;
     }
+  }
+
+  // Handle tool calls from OpenAI
+  async function handleToolCall(response) {
+    const functionName = response.name;
+    let args = {};
+
+    try {
+      args = JSON.parse(response.arguments || '{}');
+    } catch (e) {
+      console.error('[Aria Realtime] Failed to parse tool args:', e);
+      return;
+    }
+
+    console.log(`[Aria Realtime] Tool call: ${functionName}`, args);
+
+    if (functionName === 'capture_lead' || functionName === 'schedule_estimate') {
+      // Get admin email from session config or use default
+      const adminEmail = sessionConfig?.adminEmail || ADMIN_EMAIL;
+      const businessName = sessionConfig?.businessName || 'Surprise Granite';
+
+      // Build lead data
+      const leadData = {
+        name: args.name || '',
+        phone: args.phone || '',
+        email: args.email || '',
+        project_type: args.project_type || '',
+        project_details: args.project_details || args.address || '',
+        preferred_contact_time: args.preferred_contact_time || args.preferred_date || '',
+        notes: functionName === 'schedule_estimate' ? `Estimate requested for ${args.preferred_date || 'ASAP'}` : '',
+        source: `Aria Voice Chat - ${businessName}`,
+        tool: functionName,
+        timestamp: new Date().toISOString()
+      };
+
+      // Only send if we have at least some contact info
+      if (leadData.name || leadData.phone || leadData.email) {
+        try {
+          // Build and send the lead notification email
+          const leadHtml = buildLeadEmailHtml(leadData, businessName, functionName);
+
+          await sendNotification(
+            adminEmail,
+            `🎤 New Voice Lead: ${leadData.name || 'Unknown'} - ${leadData.project_type || 'Inquiry'}`,
+            leadHtml
+          );
+
+          console.log(`[Aria Realtime] Lead sent to ${adminEmail}`);
+
+          // Also save to database if available
+          if (supabase) {
+            try {
+              await supabase.from('aria_leads').insert([{
+                ...leadData,
+                admin_email: adminEmail,
+                business_name: businessName
+              }]);
+            } catch (dbErr) {
+              console.log('[Aria Realtime] DB save skipped:', dbErr.message);
+            }
+          }
+
+          // Notify client that lead was captured
+          clientWs.send(JSON.stringify({
+            type: 'lead_captured',
+            data: { name: leadData.name, phone: leadData.phone, email: leadData.email }
+          }));
+
+        } catch (error) {
+          console.error('[Aria Realtime] Failed to send lead:', error);
+        }
+      }
+
+      // Send function output back to OpenAI so it can continue the conversation
+      if (openAiWs?.readyState === WebSocket.OPEN) {
+        openAiWs.send(JSON.stringify({
+          type: 'conversation.item.create',
+          item: {
+            type: 'function_call_output',
+            call_id: response.call_id,
+            output: JSON.stringify({ success: true, message: 'Lead captured successfully' })
+          }
+        }));
+        // Trigger a response
+        openAiWs.send(JSON.stringify({
+          type: 'response.create',
+          response: { modalities: ['text', 'audio'] }
+        }));
+      }
+    }
+  }
+
+  // Build lead email HTML
+  function buildLeadEmailHtml(lead, businessName, tool) {
+    return `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); padding: 25px; text-align: center;">
+              <h1 style="margin: 0; color: #1a1a2e; font-size: 24px; font-weight: 700;">🎤 New Voice Lead from Aria</h1>
+              <p style="margin: 8px 0 0; color: #1a1a2e; opacity: 0.8;">${businessName}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Contact Information</h2>
+              <table width="100%" cellspacing="0" cellpadding="8">
+                <tr>
+                  <td style="color: #666; font-weight: 600; width: 140px;">Name:</td>
+                  <td style="color: #1a1a2e;">${lead.name || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Phone:</td>
+                  <td style="color: #1a1a2e;"><a href="tel:${lead.phone}" style="color: #1a1a2e; font-weight: 600;">${lead.phone || 'Not provided'}</a></td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Email:</td>
+                  <td style="color: #1a1a2e;"><a href="mailto:${lead.email}" style="color: #1a1a2e;">${lead.email || 'Not provided'}</a></td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Best Time:</td>
+                  <td style="color: #1a1a2e;">${lead.preferred_contact_time || 'Not specified'}</td>
+                </tr>
+              </table>
+
+              <h2 style="margin: 25px 0 15px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Project Details</h2>
+              <table width="100%" cellspacing="0" cellpadding="8">
+                <tr>
+                  <td style="color: #666; font-weight: 600; width: 140px;">Project Type:</td>
+                  <td style="color: #1a1a2e;">${lead.project_type || 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Details:</td>
+                  <td style="color: #1a1a2e;">${lead.project_details || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Notes:</td>
+                  <td style="color: #1a1a2e;">${lead.notes || 'None'}</td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 25px; padding: 15px; background: #f8f8f8; border-radius: 8px; border-left: 4px solid #f9cb00;">
+                <p style="margin: 0; color: #666; font-size: 12px;">
+                  <strong>Source:</strong> ${lead.source || 'Aria Voice Chat'}<br>
+                  <strong>Action:</strong> ${tool || 'Lead Capture'}<br>
+                  <strong>Time:</strong> ${lead.timestamp || new Date().toISOString()}
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #1a1a2e; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #f9cb00; font-size: 14px; font-weight: 600;">Follow up ASAP!</p>
+              <p style="margin: 5px 0 0; color: #888; font-size: 12px;">This lead came from the Aria AI voice assistant.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
   }
 
   // Build default instructions
@@ -7975,6 +8183,18 @@ CAPABILITIES:
 - Help schedule free estimates
 - Provide general pricing info
 - Transfer to human if needed
+
+LEAD CAPTURE - CRITICAL:
+When a customer provides ANY of the following information, IMMEDIATELY use the capture_lead function:
+- Their name
+- Their phone number
+- Their email address
+- Expresses interest in a quote or estimate
+- Mentions a specific project they want done
+
+You MUST capture leads proactively. Even partial info is valuable. After capturing, continue the conversation naturally and try to gather more details.
+
+If they want to schedule an estimate, use schedule_estimate function.
 
 Be helpful and guide users toward scheduling an appointment or getting a quote.`;
   }

@@ -2,7 +2,7 @@
  * ARIA REALTIME - OpenAI Realtime Voice Chat
  * Natural AI voice using OpenAI's Realtime API
  * Powered by Remodely AI
- * Version: 2.1 - Fixed audio playback
+ * Version: 2.2 - Text + Voice, Improved UI, Better audio
  */
 
 (function() {
@@ -155,11 +155,14 @@
           background: ${isDark ? secondary : '#ffffff'};
           border-radius: 24px;
           width: 100%;
-          max-width: 440px;
+          max-width: 420px;
+          max-height: 90vh;
           overflow: hidden;
           transform: translateY(30px) scale(0.9);
           transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         .aria-rt-overlay.open .aria-rt-modal { transform: translateY(0) scale(1); }
 
@@ -232,18 +235,27 @@
         .aria-rt-status.connected { color: #22c55e; opacity: 1; }
 
         .aria-rt-body {
-          padding: 24px;
+          padding: 16px 20px;
           color: ${isDark ? '#fff' : '#1a1a2e'};
+          flex: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
         }
 
         .aria-rt-conversation {
-          max-height: 180px;
+          flex: 1;
+          min-height: 120px;
+          max-height: 250px;
           overflow-y: auto;
-          margin-bottom: 20px;
+          margin-bottom: 12px;
           display: flex;
           flex-direction: column;
           gap: 10px;
+          padding-right: 4px;
         }
+        .aria-rt-conversation::-webkit-scrollbar { width: 4px; }
+        .aria-rt-conversation::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}; border-radius: 2px; }
 
         .aria-rt-msg {
           padding: 12px 16px;
@@ -275,51 +287,107 @@
         }
         .aria-rt-live.active { border: 2px solid ${primary}; }
 
-        .aria-rt-controls { display: flex; gap: 12px; justify-content: center; }
+        .aria-rt-input-area {
+          padding: 16px 20px;
+          border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'};
+          background: ${isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'};
+        }
 
-        .aria-rt-talk-btn {
-          width: 80px;
-          height: 80px;
+        .aria-rt-input-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .aria-rt-text-input {
+          flex: 1;
+          padding: 12px 16px;
+          border-radius: 24px;
+          border: 2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          background: ${isDark ? 'rgba(255,255,255,0.05)' : '#fff'};
+          color: ${isDark ? '#fff' : '#1a1a2e'};
+          font-size: 15px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .aria-rt-text-input:focus {
+          border-color: ${primary};
+        }
+        .aria-rt-text-input::placeholder {
+          color: ${isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'};
+        }
+
+        .aria-rt-send-btn, .aria-rt-voice-btn {
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
           border-radius: 50%;
-          background: linear-gradient(135deg, ${primary}, ${this.adjustColor(primary, -20)});
           border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.3s;
-          box-shadow: 0 4px 20px ${this.hexToRgba(primary, 0.4)};
+          transition: all 0.2s;
         }
-        .aria-rt-talk-btn:hover { transform: scale(1.05); }
-        .aria-rt-talk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .aria-rt-talk-btn svg { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; max-width: 36px !important; max-height: 36px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
-        .aria-rt-talk-btn.listening { background: #ef4444; animation: ariaPulse 1.5s infinite; }
-        .aria-rt-talk-btn.listening svg { color: #fff !important; }
+
+        .aria-rt-send-btn {
+          background: ${primary};
+        }
+        .aria-rt-send-btn:hover { transform: scale(1.08); }
+        .aria-rt-send-btn svg {
+          width: 20px !important;
+          height: 20px !important;
+          color: ${secondary} !important;
+        }
+
+        .aria-rt-voice-btn {
+          background: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
+        }
+        .aria-rt-voice-btn:hover { background: ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}; transform: scale(1.08); }
+        .aria-rt-voice-btn svg {
+          width: 22px !important;
+          height: 22px !important;
+          color: ${isDark ? '#fff' : '#1a1a2e'} !important;
+        }
+        .aria-rt-voice-btn.listening {
+          background: #ef4444 !important;
+          animation: ariaPulse 1.5s infinite;
+        }
+        .aria-rt-voice-btn.listening svg { color: #fff !important; }
+
+        .aria-rt-mode-hint {
+          text-align: center;
+          font-size: 12px;
+          color: ${isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'};
+          margin-top: 8px;
+        }
 
         .aria-rt-actions {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 20px;
+          gap: 6px;
           justify-content: center;
+          margin-top: auto;
+          padding-top: 8px;
         }
         .aria-rt-action {
-          padding: 8px 16px;
-          border-radius: 20px;
-          background: ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'};
-          border: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          padding: 6px 12px;
+          border-radius: 16px;
+          background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'};
+          border: 1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'};
           cursor: pointer;
-          font-size: 13px;
+          font-size: 12px;
           color: ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)'};
+          transition: all 0.2s;
         }
-        .aria-rt-action:hover { background: ${this.hexToRgba(primary, 0.15)}; border-color: ${primary}; color: ${primary}; }
+        .aria-rt-action:hover { background: ${this.hexToRgba(primary, 0.2)}; border-color: ${primary}; color: ${primary}; transform: translateY(-1px); }
 
         .aria-rt-footer {
-          padding: 16px 24px;
+          padding: 10px 20px;
           border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
           text-align: center;
         }
-        .aria-rt-powered { font-size: 11px; color: ${isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}; }
+        .aria-rt-powered { font-size: 10px; color: ${isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}; }
         .aria-rt-powered a { color: ${primary}; text-decoration: none; }
 
         .aria-rt-visualizer {
@@ -338,8 +406,14 @@
         }
 
         @media (max-width: 480px) {
-          .aria-rt-modal { max-width: 100%; border-radius: 20px 20px 0 0; }
+          .aria-rt-modal { max-width: 100%; max-height: 85vh; border-radius: 20px 20px 0 0; }
           .aria-rt-overlay { align-items: flex-end; padding: 0; }
+          .aria-rt-header { padding: 24px 20px; }
+          .aria-rt-avatar { width: 80px; height: 80px; }
+          .aria-rt-avatar svg { width: 40px !important; height: 40px !important; }
+          .aria-rt-name { font-size: 24px; }
+          .aria-rt-conversation { max-height: 180px; }
+          .aria-rt-input-area { padding: 12px 16px; }
         }
       `;
 
@@ -387,7 +461,7 @@
               </svg>
             </div>
             <div class="aria-rt-name">${this.config.assistantName}</div>
-            <div class="aria-rt-status" id="ariaRtStatus">Tap to start talking</div>
+            <div class="aria-rt-status" id="ariaRtStatus">Ready to chat</div>
             <div class="aria-rt-visualizer" id="ariaRtVisualizer">
               ${Array(12).fill().map(() => '<div class="aria-rt-bar" style="height: 8px;"></div>').join('')}
             </div>
@@ -396,26 +470,29 @@
           <div class="aria-rt-body">
             <div class="aria-rt-conversation" id="ariaRtConversation"></div>
 
-            <div class="aria-rt-live" id="ariaRtLive">
-              Press the button and speak naturally. Aria will respond with a real voice.
-            </div>
-
-            <div class="aria-rt-controls">
-              <button class="aria-rt-talk-btn" id="ariaRtTalkBtn" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
-                </svg>
-              </button>
-            </div>
-
             <div class="aria-rt-actions">
               <button class="aria-rt-action" data-action="schedule" type="button">Schedule Visit</button>
               <button class="aria-rt-action" data-action="quote" type="button">Get Quote</button>
-              <button class="aria-rt-action" data-action="hours" type="button">Business Hours</button>
+              <button class="aria-rt-action" data-action="hours" type="button">Hours</button>
             </div>
+          </div>
+
+          <div class="aria-rt-input-area">
+            <div class="aria-rt-input-row">
+              <input type="text" class="aria-rt-text-input" id="ariaRtTextInput" placeholder="Type a message..." autocomplete="off" />
+              <button class="aria-rt-send-btn" id="ariaRtSendBtn" type="button" aria-label="Send">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+              <button class="aria-rt-voice-btn" id="ariaRtTalkBtn" type="button" aria-label="Voice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                </svg>
+              </button>
+            </div>
+            <div class="aria-rt-mode-hint" id="ariaRtModeHint">Type or tap mic to talk</div>
           </div>
 
           <div class="aria-rt-footer">
@@ -479,9 +556,26 @@
         });
       }
 
-      // Talk button
+      // Talk button (voice)
       const talkBtn = container.querySelector('#ariaRtTalkBtn');
       if (talkBtn) talkBtn.onclick = () => this.toggleTalk();
+
+      // Text input
+      const textInput = container.querySelector('#ariaRtTextInput');
+      const sendBtn = container.querySelector('#ariaRtSendBtn');
+
+      if (textInput) {
+        textInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.sendTextMessage();
+          }
+        });
+      }
+
+      if (sendBtn) {
+        sendBtn.onclick = () => this.sendTextMessage();
+      }
 
       // Quick actions
       container.querySelectorAll('.aria-rt-action').forEach(btn => {
@@ -489,60 +583,117 @@
       });
     }
 
-    // Connect to OpenAI Realtime via relay
-    async connect() {
-      try {
-        this.updateStatus('Connecting...');
+    // Send text message
+    async sendTextMessage() {
+      const container = this.modalOverlay || this.container;
+      const textInput = container?.querySelector('#ariaRtTextInput');
+      if (!textInput) return;
 
-        // Build WebSocket URL - support both full URLs and paths
-        let wsUrl = this.config.relayEndpoint;
-        if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
-          const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          wsUrl = `${wsProtocol}//${window.location.host}${this.config.relayEndpoint}`;
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      // Clear input
+      textInput.value = '';
+
+      // Connect if not connected
+      if (!this.state.isConnected) {
+        try {
+          await this.connect();
+        } catch (err) {
+          console.error('[Aria] Connection failed:', err);
+          this.updateStatus('Connection failed');
+          return;
         }
-
-        console.log('[Aria] Connecting to:', wsUrl);
-        this.ws = new WebSocket(wsUrl);
-
-        this.ws.onopen = () => {
-          console.log('[Aria] WebSocket connected');
-
-          // Send configuration to relay
-          this.ws.send(JSON.stringify({
-            type: 'config',
-            voice: this.config.voice,
-            businessName: this.config.businessName,
-            businessContext: this.config.businessContext,
-            systemInstructions: this.config.systemInstructions || this.buildSystemInstructions()
-          }));
-        };
-
-        this.ws.onmessage = (event) => {
-          try {
-            this.handleMessage(JSON.parse(event.data));
-          } catch (e) {
-            console.error('[Aria] Failed to parse message:', e);
-          }
-        };
-
-        this.ws.onerror = (error) => {
-          console.error('[Aria] WebSocket error:', error);
-          this.updateStatus('Connection error');
-          if (this.config.onError) this.config.onError(error);
-        };
-
-        this.ws.onclose = (event) => {
-          console.log('[Aria] WebSocket closed:', event.code, event.reason);
-          this.state.isConnected = false;
-          this.updateStatus('Disconnected');
-          this.updateAvatar();
-          if (this.config.onDisconnect) this.config.onDisconnect();
-        };
-
-      } catch (error) {
-        console.error('[Aria] Connection failed:', error);
-        this.updateStatus('Failed to connect');
       }
+
+      // Add to conversation UI
+      this.addMessage('user', text);
+
+      // Send to server
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({
+          type: 'text_input',
+          text: text
+        }));
+        this.updateStatus('Processing...');
+      } else {
+        this.updateStatus('Connection failed - try again');
+      }
+    }
+
+    // Connect to OpenAI Realtime via relay
+    connect() {
+      return new Promise((resolve, reject) => {
+        try {
+          this.updateStatus('Connecting...');
+
+          // Build WebSocket URL - support both full URLs and paths
+          let wsUrl = this.config.relayEndpoint;
+          if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            wsUrl = `${wsProtocol}//${window.location.host}${this.config.relayEndpoint}`;
+          }
+
+          console.log('[Aria] Connecting to:', wsUrl);
+          this.ws = new WebSocket(wsUrl);
+
+          // Store resolve for when we get 'connected' message
+          this._connectResolve = resolve;
+          this._connectReject = reject;
+
+          // Timeout for connection
+          this._connectTimeout = setTimeout(() => {
+            if (!this.state.isConnected) {
+              reject(new Error('Connection timeout'));
+              this.updateStatus('Connection timeout');
+            }
+          }, 10000);
+
+          this.ws.onopen = () => {
+            console.log('[Aria] WebSocket connected');
+
+            // Send configuration to relay
+            this.ws.send(JSON.stringify({
+              type: 'config',
+              voice: this.config.voice,
+              businessName: this.config.businessName,
+              businessContext: this.config.businessContext,
+              systemInstructions: this.config.systemInstructions || this.buildSystemInstructions()
+            }));
+          };
+
+          this.ws.onmessage = (event) => {
+            try {
+              this.handleMessage(JSON.parse(event.data));
+            } catch (e) {
+              console.error('[Aria] Failed to parse message:', e);
+            }
+          };
+
+          this.ws.onerror = (error) => {
+            console.error('[Aria] WebSocket error:', error);
+            this.updateStatus('Connection error');
+            if (this.config.onError) this.config.onError(error);
+            if (this._connectReject) {
+              this._connectReject(error);
+              this._connectReject = null;
+            }
+          };
+
+          this.ws.onclose = (event) => {
+            console.log('[Aria] WebSocket closed:', event.code, event.reason);
+            this.state.isConnected = false;
+            this.updateStatus('Disconnected');
+            this.updateAvatar();
+            if (this.config.onDisconnect) this.config.onDisconnect();
+          };
+
+        } catch (error) {
+          console.error('[Aria] Connection failed:', error);
+          this.updateStatus('Failed to connect');
+          reject(error);
+        }
+      });
     }
 
     // Handle messages from relay
@@ -552,14 +703,24 @@
       switch (msg.type) {
         case 'connected':
           this.state.isConnected = true;
-          this.updateStatus('Press the button to talk');
+          this.updateStatus('Ready to chat');
           this.updateAvatar();
           if (this.config.onConnect) this.config.onConnect();
 
           // Initialize playback context
           this.initPlaybackContext();
 
-          // Don't auto-trigger greeting - wait for user to press talk button
+          // Resolve connection promise
+          if (this._connectTimeout) {
+            clearTimeout(this._connectTimeout);
+            this._connectTimeout = null;
+          }
+          if (this._connectResolve) {
+            this._connectResolve();
+            this._connectResolve = null;
+          }
+
+          // Don't auto-trigger greeting - wait for user interaction
           // Greeting will be triggered on first startListening() call
           break;
 
@@ -570,9 +731,20 @@
           break;
 
         case 'response_text':
-          // Aria's response text
-          this.addMessage('assistant', msg.text);
+          // Aria's response text (can be partial or complete)
+          if (msg.partial) {
+            // Update the last assistant message or create new one
+            this.updateOrAddAssistantMessage(msg.text);
+          } else {
+            // Final complete message - replace the partial one
+            this.finalizeAssistantMessage(msg.text);
+          }
           if (this.config.onTranscript) this.config.onTranscript('assistant', msg.text);
+          break;
+
+        case 'lead_captured':
+          // Lead was captured - show brief notification
+          console.log('[Aria] Lead captured:', msg.data);
           break;
 
         case 'audio':
@@ -606,14 +778,20 @@
         this.ws.close();
         this.ws = null;
       }
+      if (this.playbackCheckTimer) {
+        clearTimeout(this.playbackCheckTimer);
+        this.playbackCheckTimer = null;
+      }
       if (this.playbackContext) {
         this.playbackContext.close().catch(() => {});
         this.playbackContext = null;
+        this.gainNode = null;
       }
       this.audioQueue = [];
       this.isPlaying = false;
       this.state.isConnected = false;
       this.state.isListening = false;
+      this.state.hasGreeted = false;
     }
 
     // Toggle talk
@@ -755,10 +933,17 @@
     // Initialize playback context
     initPlaybackContext() {
       if (!this.playbackContext) {
-        this.playbackContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.playbackContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
         this.nextPlayTime = 0;
         this.audioQueue = [];
         this.isPlaying = false;
+        this.pendingBuffers = []; // Pre-buffer before playing
+        this.preBufferCount = 3; // Wait for 3 chunks before starting
+
+        // Create gain node for smooth audio
+        this.gainNode = this.playbackContext.createGain();
+        this.gainNode.gain.value = 1.0;
+        this.gainNode.connect(this.playbackContext.destination);
       }
       // Resume if suspended (browsers require user interaction)
       if (this.playbackContext.state === 'suspended') {
@@ -786,7 +971,7 @@
         const audioData = this.base64ToArrayBuffer(base64Audio);
         const pcm16 = new Int16Array(audioData);
 
-        // Convert to float32
+        // Convert to float32 with slight normalization
         const float32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) {
           float32[i] = pcm16[i] / 32768;
@@ -798,11 +983,13 @@
 
         // Add to queue
         this.audioQueue.push(audioBuffer);
-        console.log('[Aria] Audio queued, queue length:', this.audioQueue.length);
 
-        // Start playback if not already playing
+        // Start playback after pre-buffering
         if (!this.isPlaying) {
-          this.playNextInQueue();
+          if (this.audioQueue.length >= this.preBufferCount) {
+            console.log('[Aria] Pre-buffer ready, starting playback');
+            this.startContinuousPlayback();
+          }
         }
 
       } catch (error) {
@@ -810,7 +997,54 @@
       }
     }
 
-    // Play next audio buffer in queue
+    // Start continuous playback with scheduling
+    startContinuousPlayback() {
+      if (this.isPlaying) return;
+
+      this.isPlaying = true;
+      this.animateVisualizer(true);
+      this.nextPlayTime = this.playbackContext.currentTime + 0.05; // Small initial delay
+      this.scheduleNextBuffers();
+    }
+
+    // Schedule multiple buffers ahead for smooth playback
+    scheduleNextBuffers() {
+      if (!this.isPlaying) return;
+
+      // Ensure context is running
+      if (this.playbackContext.state === 'suspended') {
+        this.playbackContext.resume();
+      }
+
+      // Schedule all available buffers
+      while (this.audioQueue.length > 0) {
+        const audioBuffer = this.audioQueue.shift();
+        const source = this.playbackContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(this.gainNode);
+
+        // Schedule this buffer
+        const startTime = Math.max(this.playbackContext.currentTime, this.nextPlayTime);
+        source.start(startTime);
+        this.nextPlayTime = startTime + audioBuffer.duration;
+      }
+
+      // Check again soon for new buffers
+      this.playbackCheckTimer = setTimeout(() => {
+        if (this.audioQueue.length > 0) {
+          this.scheduleNextBuffers();
+        } else if (this.playbackContext.currentTime >= this.nextPlayTime - 0.1) {
+          // No more audio and playback finished
+          this.isPlaying = false;
+          this.animateVisualizer(false);
+        } else {
+          // Still playing, check again
+          this.scheduleNextBuffers();
+        }
+      }, 50);
+    }
+
+    // Play next audio buffer in queue (legacy fallback)
     playNextInQueue() {
       if (this.audioQueue.length === 0) {
         this.isPlaying = false;
@@ -820,7 +1054,6 @@
 
       // Ensure context is running
       if (this.playbackContext.state === 'suspended') {
-        console.log('[Aria] Resuming suspended AudioContext before playback');
         this.playbackContext.resume();
       }
 
@@ -830,7 +1063,7 @@
       const audioBuffer = this.audioQueue.shift();
       const source = this.playbackContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(this.playbackContext.destination);
+      source.connect(this.gainNode || this.playbackContext.destination);
 
       // Calculate when to start this buffer
       const currentTime = this.playbackContext.currentTime;
@@ -901,10 +1134,26 @@ Always be helpful and guide users toward scheduling or getting a quote.`;
 
     // Update status text
     updateStatus(text) {
-      const status = (this.modalOverlay || this.container)?.querySelector('#ariaRtStatus');
+      const container = this.modalOverlay || this.container;
+      const status = container?.querySelector('#ariaRtStatus');
+      const hint = container?.querySelector('#ariaRtModeHint');
+
       if (status) {
         status.textContent = text;
         status.classList.toggle('connected', this.state.isConnected);
+      }
+
+      // Update hint based on state
+      if (hint) {
+        if (this.state.isListening) {
+          hint.textContent = 'Listening... tap mic to stop';
+        } else if (this.state.isSpeaking) {
+          hint.textContent = 'Aria is speaking...';
+        } else if (this.state.isConnected) {
+          hint.textContent = 'Type a message or tap mic to talk';
+        } else {
+          hint.textContent = 'Connecting...';
+        }
       }
     }
 
@@ -961,6 +1210,48 @@ Always be helpful and guide users toward scheduling or getting a quote.`;
       }
 
       this.state.conversationHistory.push({ role, content: text });
+    }
+
+    // Update or add assistant message (for streaming partial responses)
+    updateOrAddAssistantMessage(text) {
+      const conversation = (this.modalOverlay || this.container)?.querySelector('#ariaRtConversation');
+      if (!conversation) return;
+
+      // Find the last assistant message that's being streamed
+      let lastMsg = conversation.querySelector('.aria-rt-msg.assistant.streaming');
+
+      if (!lastMsg) {
+        // Create new streaming message
+        lastMsg = document.createElement('div');
+        lastMsg.className = 'aria-rt-msg assistant streaming';
+        conversation.appendChild(lastMsg);
+      }
+
+      // Append text to the message
+      lastMsg.textContent += text;
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    // Finalize assistant message (streaming complete)
+    finalizeAssistantMessage(text) {
+      const conversation = (this.modalOverlay || this.container)?.querySelector('#ariaRtConversation');
+      if (!conversation) return;
+
+      // Find the streaming message
+      const streamingMsg = conversation.querySelector('.aria-rt-msg.assistant.streaming');
+
+      if (streamingMsg) {
+        // Replace with final text and remove streaming class
+        streamingMsg.textContent = text;
+        streamingMsg.classList.remove('streaming');
+      } else {
+        // No streaming message, just add normally
+        this.addMessage('assistant', text);
+        return;
+      }
+
+      // Add to conversation history
+      this.state.conversationHistory.push({ role: 'assistant', content: text });
     }
 
     // Utilities
