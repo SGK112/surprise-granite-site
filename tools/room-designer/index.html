@@ -527,15 +527,15 @@
       flex: 1;
       position: relative;
       overflow: hidden;
+      cursor: crosshair;
     }
 
     #canvas {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 4px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
     }
 
     /* 3D View */
@@ -1495,6 +1495,12 @@
     let elementTextures = {}; // Store custom textures for element types
     let customMaterials = []; // User uploaded materials
 
+    // Pan offset (for infinite canvas navigation)
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+
     // Wall drawing
     let isDrawingWall = false;
     let wallStart = null;
@@ -1618,14 +1624,19 @@
 
     function fitToScreen() {
       const wrapper = document.getElementById('canvasWrapper');
-      const availableWidth = wrapper.clientWidth - 60;
-      const availableHeight = wrapper.clientHeight - 60;
+      const padding = 80;
+      const availableWidth = wrapper.clientWidth - padding;
+      const availableHeight = wrapper.clientHeight - padding;
 
       const scaleX = availableWidth / roomWidth;
       const scaleY = availableHeight / roomDepth;
 
-      pixelsPerFoot = Math.min(scaleX, scaleY, 60);
+      pixelsPerFoot = Math.min(scaleX, scaleY, 80);
       pixelsPerFoot = Math.max(pixelsPerFoot, CONFIG.MIN_PIXELS_PER_FOOT);
+
+      // Center the room in the canvas
+      panX = (wrapper.clientWidth - roomWidth * pixelsPerFoot) / 2;
+      panY = (wrapper.clientHeight - roomDepth * pixelsPerFoot) / 2;
 
       document.getElementById('scaleMode').value = 'fit';
       updateCanvasSize();
@@ -1637,16 +1648,20 @@
         fitToScreen();
       } else {
         pixelsPerFoot = parseInt(mode);
+        // Re-center when changing scale
+        const wrapper = document.getElementById('canvasWrapper');
+        panX = (wrapper.clientWidth - roomWidth * pixelsPerFoot) / 2;
+        panY = (wrapper.clientHeight - roomDepth * pixelsPerFoot) / 2;
         updateCanvasSize();
       }
     }
 
     function updateCanvasSize() {
-      const canvasWidth = roomWidth * pixelsPerFoot;
-      const canvasHeight = roomDepth * pixelsPerFoot;
+      const wrapper = document.getElementById('canvasWrapper');
 
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
+      // Canvas fills entire workspace
+      canvas.width = wrapper.clientWidth;
+      canvas.height = wrapper.clientHeight;
 
       document.getElementById('canvasSize').textContent = `${roomWidth}' × ${roomDepth}'`;
 
@@ -1657,9 +1672,13 @@
       canvas.addEventListener('mousedown', onMouseDown);
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseup', onMouseUp);
+      canvas.addEventListener('mouseleave', onMouseUp);
       canvas.addEventListener('contextmenu', onContextMenu);
       canvas.addEventListener('dblclick', onDoubleClick);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
+
       document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup', onKeyUp);
 
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.context-menu')) {
@@ -1668,6 +1687,7 @@
       });
 
       window.addEventListener('resize', () => {
+        updateCanvasSize();
         if (document.getElementById('scaleMode').value === 'fit') {
           fitToScreen();
         }
@@ -1696,13 +1716,30 @@
     function draw() {
       if (!ctx) return;
 
-      ctx.fillStyle = '#1a1a2e';
+      // Clear entire canvas with dark background
+      ctx.fillStyle = '#0d0d15';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Apply pan transformation
+      ctx.save();
+      ctx.translate(panX, panY);
+
+      // Draw infinite grid
       drawGrid();
+
+      // Draw room boundary (the actual room shape)
+      drawRoomBoundary();
+
+      // Draw floor plan areas
       drawFloorPlanAreas();
+
+      // Draw walls
       drawWalls();
+
+      // Draw elements
       drawElements();
+
+      ctx.restore();
 
       document.getElementById('elementCount').textContent = `${elements.length} element${elements.length !== 1 ? 's' : ''}`;
       calculateQuote();
@@ -1710,57 +1747,121 @@
 
     function drawGrid() {
       const gridSize = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
+      const roomW = roomWidth * pixelsPerFoot;
+      const roomH = roomDepth * pixelsPerFoot;
 
-      // Sub-grid
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      // Calculate visible area for grid
+      const startX = -panX - pixelsPerFoot;
+      const startY = -panY - pixelsPerFoot;
+      const endX = canvas.width - panX + pixelsPerFoot;
+      const endY = canvas.height - panY + pixelsPerFoot;
+
+      // Sub-grid (faint lines)
+      ctx.strokeStyle = 'rgba(255,255,255,0.02)';
       ctx.lineWidth = 1;
-      for (let x = gridSize; x < canvas.width; x += gridSize) {
+
+      const gridStartX = Math.floor(startX / gridSize) * gridSize;
+      const gridStartY = Math.floor(startY / gridSize) * gridSize;
+
+      for (let x = gridStartX; x < endX; x += gridSize) {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
         ctx.stroke();
       }
-      for (let y = gridSize; y < canvas.height; y += gridSize) {
+      for (let y = gridStartY; y < endY; y += gridSize) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
         ctx.stroke();
       }
 
-      // Main grid (feet)
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      for (let x = pixelsPerFoot; x < canvas.width; x += pixelsPerFoot) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = pixelsPerFoot; y < canvas.height; y += pixelsPerFoot) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
+      // Main grid (1ft lines)
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      const mainStartX = Math.floor(startX / pixelsPerFoot) * pixelsPerFoot;
+      const mainStartY = Math.floor(startY / pixelsPerFoot) * pixelsPerFoot;
 
-      // Labels
+      for (let x = mainStartX; x < endX; x += pixelsPerFoot) {
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+        ctx.stroke();
+      }
+      for (let y = mainStartY; y < endY; y += pixelsPerFoot) {
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawRoomBoundary() {
+      const roomW = roomWidth * pixelsPerFoot;
+      const roomH = roomDepth * pixelsPerFoot;
+
+      // Room floor (lighter area)
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, roomW, roomH);
+
+      // Room border with measurements
+      ctx.strokeStyle = '#4a4a6a';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, roomW, roomH);
+
+      // Corner markers
+      const markerSize = 12;
+      ctx.fillStyle = '#6366f1';
+      ctx.fillRect(-markerSize/2, -markerSize/2, markerSize, markerSize);
+      ctx.fillRect(roomW - markerSize/2, -markerSize/2, markerSize, markerSize);
+      ctx.fillRect(-markerSize/2, roomH - markerSize/2, markerSize, markerSize);
+      ctx.fillRect(roomW - markerSize/2, roomH - markerSize/2, markerSize, markerSize);
+
+      // Dimension labels along edges
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = `bold ${Math.max(12, pixelsPerFoot / 3)}px Inter`;
+      ctx.textAlign = 'center';
+
+      // Top dimension
+      ctx.fillText(`${roomWidth}'`, roomW / 2, -10);
+      // Left dimension
+      ctx.save();
+      ctx.translate(-10, roomH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(`${roomDepth}'`, 0, 0);
+      ctx.restore();
+
+      // Foot markers along room edges
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.font = `${Math.max(10, pixelsPerFoot / 4)}px Inter`;
-      for (let x = pixelsPerFoot; x < canvas.width; x += pixelsPerFoot) {
-        ctx.fillText(`${Math.round(x / pixelsPerFoot)}'`, x + 3, 14);
+      ctx.font = `${Math.max(9, pixelsPerFoot / 5)}px Inter`;
+      for (let x = pixelsPerFoot; x < roomW; x += pixelsPerFoot) {
+        ctx.fillText(`${Math.round(x / pixelsPerFoot)}'`, x, -25);
+        // Tick mark
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, -6);
+        ctx.stroke();
       }
-      for (let y = pixelsPerFoot; y < canvas.height; y += pixelsPerFoot) {
-        ctx.fillText(`${Math.round(y / pixelsPerFoot)}'`, 3, y - 3);
+      for (let y = pixelsPerFoot; y < roomH; y += pixelsPerFoot) {
+        ctx.save();
+        ctx.translate(-25, y);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(`${Math.round(y / pixelsPerFoot)}'`, 0, 0);
+        ctx.restore();
+        // Tick mark
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(-6, y);
+        ctx.stroke();
       }
-
-      // Border
-      ctx.strokeStyle = '#555';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
     }
 
     function drawFloorPlanAreas() {
       walls.filter(w => w.type === 'area').forEach(area => {
-        ctx.fillStyle = 'rgba(60, 60, 80, 0.5)';
+        ctx.fillStyle = 'rgba(60, 60, 80, 0.6)';
         ctx.fillRect(area.x, area.y, area.width, area.height);
         ctx.strokeStyle = '#666';
         ctx.lineWidth = 2;
@@ -1792,45 +1893,62 @@
       ctx.rotate((el.rotation || 0) * Math.PI / 180);
       ctx.translate(-(x + w/2), -(y + h/2));
 
-      // Background
+      // Background with slight shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+
       if (el.textureImg) {
         ctx.drawImage(el.textureImg, x, y, w, h);
-      } else if (el.texture) {
-        ctx.fillStyle = el.color;
-        ctx.fillRect(x, y, w, h);
       } else {
         ctx.fillStyle = el.color;
         ctx.fillRect(x, y, w, h);
       }
 
+      // Reset shadow for borders/text
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
       // Border
-      ctx.strokeStyle = isSelected ? '#6366f1' : 'rgba(255,255,255,0.2)';
+      ctx.strokeStyle = isSelected ? '#6366f1' : 'rgba(255,255,255,0.25)';
       ctx.lineWidth = isSelected ? 3 : 1;
       ctx.strokeRect(x, y, w, h);
 
-      // Label
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.font = `${Math.max(10, pixelsPerFoot / 3)}px Inter`;
+      // Label background for readability
+      const labelFontSize = Math.max(10, pixelsPerFoot / 3);
+      ctx.font = `${labelFontSize}px Inter`;
+      const labelWidth = ctx.measureText(el.label).width + 10;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(x + w/2 - labelWidth/2, y + h/2 - labelFontSize/2 - 2, labelWidth, labelFontSize + 4);
+
+      // Label text
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.textAlign = 'center';
       ctx.fillText(el.label, x + w/2, y + h/2 + 4);
 
       // Dimensions
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
       ctx.font = `${Math.max(8, pixelsPerFoot / 4)}px Inter`;
-      ctx.fillText(`${el.width}' × ${el.height}'`, x + w/2, y + h/2 + 16);
+      ctx.fillText(`${el.width}' × ${el.height}'`, x + w/2, y + h/2 + 18);
 
       // Selection handles
       if (isSelected) {
-        const hs = 8;
+        const hs = 10;
         ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
         [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([hx, hy]) => {
           ctx.fillRect(hx - hs/2, hy - hs/2, hs, hs);
+          ctx.strokeRect(hx - hs/2, hy - hs/2, hs, hs);
         });
 
         if (el.locked) {
           ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
-          ctx.font = '12px Inter';
-          ctx.fillText('🔒', x + w - 10, y + 14);
+          ctx.font = '14px Inter';
+          ctx.fillText('🔒', x + w - 12, y + 16);
         }
       }
 
@@ -1838,10 +1956,34 @@
     }
 
     // ===== MOUSE EVENTS =====
+    // Convert screen coordinates to world coordinates (accounting for pan)
+    function screenToWorld(screenX, screenY) {
+      return {
+        x: screenX - panX,
+        y: screenY - panY
+      };
+    }
+
     function onMouseDown(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left);
-      const y = (e.clientY - rect.top);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const { x, y } = screenToWorld(screenX, screenY);
+
+      // Pan tool or middle mouse button
+      if (currentTool === 'pan' || e.button === 1) {
+        isPanning = true;
+        panStart = { x: screenX - panX, y: screenY - panY };
+        canvas.style.cursor = 'grabbing';
+        return;
+      }
+
+      // Space + drag to pan
+      if (e.spaceKey) {
+        isPanning = true;
+        panStart = { x: screenX - panX, y: screenY - panY };
+        return;
+      }
 
       if (currentTool === 'wall') {
         isDrawingWall = true;
@@ -1870,18 +2012,30 @@
 
     function onMouseMove(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left);
-      const y = (e.clientY - rect.top);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const { x, y } = screenToWorld(screenX, screenY);
+
+      // Handle panning
+      if (isPanning) {
+        panX = screenX - panStart.x;
+        panY = screenY - panStart.y;
+        draw();
+        return;
+      }
 
       if (isDrawingWall && wallStart) {
         // Preview wall while drawing
         draw();
+        ctx.save();
+        ctx.translate(panX, panY);
         ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
         const wx = Math.min(wallStart.x, x);
         const wy = Math.min(wallStart.y, y);
         const ww = Math.abs(x - wallStart.x) || CONFIG.WALL_THICKNESS;
         const wh = Math.abs(y - wallStart.y) || CONFIG.WALL_THICKNESS;
         ctx.fillRect(wx, wy, ww, wh);
+        ctx.restore();
         return;
       }
 
@@ -1891,17 +2045,25 @@
       const snapX = Math.round((x - dragOffset.x) / gridSnap) * gridSnap;
       const snapY = Math.round((y - dragOffset.y) / gridSnap) * gridSnap;
 
-      selectedElement.x = Math.max(0, Math.min(snapX, canvas.width - selectedElement.width * pixelsPerFoot));
-      selectedElement.y = Math.max(0, Math.min(snapY, canvas.height - selectedElement.height * pixelsPerFoot));
+      // Allow elements to be placed anywhere (no canvas boundary restriction)
+      selectedElement.x = snapX;
+      selectedElement.y = snapY;
 
       draw();
     }
 
     function onMouseUp(e) {
+      if (isPanning) {
+        isPanning = false;
+        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
+        return;
+      }
+
       if (isDrawingWall && wallStart) {
         const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left);
-        const y = (e.clientY - rect.top);
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const { x, y } = screenToWorld(screenX, screenY);
 
         const wx = Math.min(wallStart.x, x);
         const wy = Math.min(wallStart.y, y);
@@ -1931,8 +2093,9 @@
     function onContextMenu(e) {
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left);
-      const y = (e.clientY - rect.top);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const { x, y } = screenToWorld(screenX, screenY);
 
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
@@ -1946,8 +2109,9 @@
 
     function onDoubleClick(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left);
-      const y = (e.clientY - rect.top);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const { x, y } = screenToWorld(screenX, screenY);
 
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
@@ -1967,12 +2131,24 @@
     }
 
     // ===== KEYBOARD EVENTS =====
+    let spacePressed = false;
+
     function onKeyDown(e) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+      // Space to pan
+      if (e.code === 'Space' && !spacePressed) {
+        spacePressed = true;
+        canvas.style.cursor = 'grab';
+        e.preventDefault();
+        return;
+      }
 
       switch(e.key.toLowerCase()) {
         case 'v': setTool('select'); break;
         case 'w': setTool('wall'); break;
+        case 'h': setTool('pan'); break;
+        case 'f': fitToScreen(); break; // F to fit
         case 'delete':
         case 'backspace':
           if (selectedElement && !selectedElement.locked) {
@@ -2001,7 +2177,61 @@
           updateProperties();
           draw();
           break;
+        case '=':
+        case '+':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoomIn();
+          }
+          break;
+        case '-':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoomOut();
+          }
+          break;
+        case '0':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            fitToScreen();
+          }
+          break;
       }
+    }
+
+    function onKeyUp(e) {
+      if (e.code === 'Space') {
+        spacePressed = false;
+        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
+      }
+    }
+
+    // Mouse wheel zoom
+    function onWheel(e) {
+      e.preventDefault();
+
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      // Get world position before zoom
+      const worldX = (mouseX - panX) / pixelsPerFoot;
+      const worldY = (mouseY - panY) / pixelsPerFoot;
+
+      // Adjust pixels per foot
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      const newPixelsPerFoot = Math.max(15, Math.min(100, pixelsPerFoot * zoomFactor));
+
+      // Adjust pan to zoom toward mouse position
+      panX = mouseX - worldX * newPixelsPerFoot;
+      panY = mouseY - worldY * newPixelsPerFoot;
+
+      pixelsPerFoot = newPixelsPerFoot;
+
+      document.getElementById('scaleMode').value = 'fit'; // Reset dropdown
+      document.getElementById('zoomLevel').textContent = Math.round(pixelsPerFoot / 40 * 100) + '%';
+
+      draw();
     }
 
     // ===== DRAG & DROP =====
@@ -2011,8 +2241,9 @@
       if (!type) return;
 
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left);
-      const y = (e.clientY - rect.top);
+      const screenX = e.clientX - rect.left;
+      const screenY = e.clientY - rect.top;
+      const { x, y } = screenToWorld(screenX, screenY);
 
       createElement(type, x, y);
     }
@@ -2258,18 +2489,42 @@
 
     // ===== ZOOM =====
     function zoomIn() {
-      zoom = Math.min(zoom + 0.1, 2);
-      updateZoom();
+      const wrapper = document.getElementById('canvasWrapper');
+      const centerX = wrapper.clientWidth / 2;
+      const centerY = wrapper.clientHeight / 2;
+
+      const worldX = (centerX - panX) / pixelsPerFoot;
+      const worldY = (centerY - panY) / pixelsPerFoot;
+
+      pixelsPerFoot = Math.min(pixelsPerFoot * 1.2, 100);
+
+      panX = centerX - worldX * pixelsPerFoot;
+      panY = centerY - worldY * pixelsPerFoot;
+
+      updateZoomDisplay();
+      draw();
     }
 
     function zoomOut() {
-      zoom = Math.max(zoom - 0.1, 0.5);
-      updateZoom();
+      const wrapper = document.getElementById('canvasWrapper');
+      const centerX = wrapper.clientWidth / 2;
+      const centerY = wrapper.clientHeight / 2;
+
+      const worldX = (centerX - panX) / pixelsPerFoot;
+      const worldY = (centerY - panY) / pixelsPerFoot;
+
+      pixelsPerFoot = Math.max(pixelsPerFoot / 1.2, 15);
+
+      panX = centerX - worldX * pixelsPerFoot;
+      panY = centerY - worldY * pixelsPerFoot;
+
+      updateZoomDisplay();
+      draw();
     }
 
-    function updateZoom() {
-      document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
-      canvas.style.transform = `translate(-50%, -50%) scale(${zoom})`;
+    function updateZoomDisplay() {
+      const zoomPercent = Math.round(pixelsPerFoot / 40 * 100);
+      document.getElementById('zoomLevel').textContent = zoomPercent + '%';
     }
 
     // ===== ROOM =====
