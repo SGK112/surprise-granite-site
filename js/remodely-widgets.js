@@ -105,45 +105,89 @@
   }
 
   /**
-   * Initialize Aria Voice Widget
+   * Initialize Aria Realtime Voice Widget (OpenAI Realtime API)
+   * Uses natural AI voices instead of browser speech synthesis
    */
   async function initAriaVoice(containerId = null, options = {}) {
     if (!widgets.voice.loaded) {
-      await loadScript(`${WIDGET_BASE}/voice/aria-voice.js`);
+      await loadScript(`${WIDGET_BASE}/voice/aria-realtime.js`);
       widgets.voice.loaded = true;
     }
 
-    if (window.AriaVoice) {
+    if (window.AriaRealtime) {
       const config = {
-        ...SG_CONFIG,
-        triggerType: 'floating', // Show Aria mic button
+        businessName: SG_CONFIG.businessName,
         assistantName: 'Aria',
-        greeting: "Hi! I'm Aria, your virtual assistant at Surprise Granite. How can I help you today? You can ask me about countertops, scheduling, or getting a quote.",
-        personality: 'professional',
+        primaryColor: SG_CONFIG.primaryColor,
+        secondaryColor: SG_CONFIG.secondaryColor,
+        theme: SG_CONFIG.theme,
+        position: 'right',
+        triggerType: 'floating',
+
+        // OpenAI Realtime voice - natural sounding
+        voice: 'coral', // Options: alloy, coral, echo, fable, onyx, nova, shimmer
+
+        // WebSocket relay endpoint (aria-bridge service)
+        relayEndpoint: 'wss://aria-bridge.onrender.com/web-chat',
+
+        // Greeting
+        greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today?",
+
+        // Business context for AI
         businessContext: {
           industry: 'countertops',
           services: SG_CONFIG.services.map(s => s.name),
           serviceArea: SG_CONFIG.serviceAreas.join(', '),
           businessHours: SG_CONFIG.businessHours
         },
-        faqs: [
-          { question: 'hours', answer: "We're open Monday through Saturday, 8am to 6pm. Would you like to schedule a visit?" },
-          { question: 'location', answer: "We're located at 15084 W Bell Rd in Surprise, AZ. We serve the entire Phoenix metro area including Peoria, Glendale, Scottsdale, and more." },
-          { question: 'estimate', answer: "We offer free in-home estimates! Would you like me to help you schedule one?" },
-          { question: 'materials', answer: "We specialize in granite, quartz, marble, and quartzite countertops. We also do tile, cabinets, and full kitchen remodels." },
-          { question: 'price', answer: "Countertop prices typically range from $40-150 per square foot depending on the material. Would you like a free estimate for your specific project?" }
-        ],
-        position: 'right',
+
+        // Custom system instructions
+        systemInstructions: `You are Aria, a friendly and knowledgeable AI voice assistant for Surprise Granite, a premier countertop and remodeling company in the Phoenix metro area.
+
+PERSONALITY:
+- Warm, helpful, and professional but conversational
+- Keep responses SHORT - 1-2 sentences max
+- Use natural language with contractions (I'm, we're, you'll)
+- Be direct and get to the point quickly
+- Sound like a real person, not a robot
+
+BUSINESS INFO:
+- Company: Surprise Granite
+- Location: 15084 W Bell Rd, Surprise, AZ 85374
+- Phone: (602) 833-7194
+- Hours: Monday-Saturday 8am-6pm
+- Service Areas: ${SG_CONFIG.serviceAreas.join(', ')}
+
+SERVICES:
+- Countertops: Granite, Quartz, Marble, Quartzite, Porcelain
+- Tile & Backsplash installation
+- Cabinet installation
+- Flooring (Hardwood, LVP, Tile)
+- Full kitchen & bathroom remodels
+
+PRICING (general ranges):
+- Countertops: $40-150 per square foot depending on material
+- Free in-home estimates available
+
+GOALS:
+1. Answer questions helpfully and accurately
+2. Guide users toward scheduling a FREE estimate
+3. Collect contact info when appropriate
+4. Transfer to human if they request it
+
+Remember: Keep responses brief and conversational!`,
+
         ...options
       };
 
-      widgets.voice.instance = new window.AriaVoice(config);
+      widgets.voice.instance = new window.AriaRealtime(config);
       widgets.voice.instance.init(containerId);
 
       // Store globally for access
       window.ariaVoice = widgets.voice.instance;
+      window.ariaRealtime = widgets.voice.instance;
 
-      console.log('Aria Voice Widget initialized for Surprise Granite');
+      console.log('Aria Realtime Voice Widget initialized for Surprise Granite');
       return widgets.voice.instance;
     }
   }
