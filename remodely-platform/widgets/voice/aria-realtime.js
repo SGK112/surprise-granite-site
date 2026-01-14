@@ -119,7 +119,7 @@
           transition: all 0.3s ease;
         }
         .aria-rt-btn:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-        .aria-rt-btn svg { width: 28px; height: 28px; color: ${secondary}; }
+        .aria-rt-btn svg { width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important; max-width: 28px !important; max-height: 28px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
         .aria-rt-btn.active { animation: ariaPulse 1.5s infinite; background: #22c55e; }
         .aria-rt-btn.listening { animation: ariaPulse 1.5s infinite; background: #ef4444; }
 
@@ -176,7 +176,7 @@
           position: relative;
           transition: all 0.3s;
         }
-        .aria-rt-avatar svg { width: 48px; height: 48px; color: ${secondary}; }
+        .aria-rt-avatar svg { width: 48px !important; height: 48px !important; min-width: 48px !important; min-height: 48px !important; max-width: 48px !important; max-height: 48px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
         .aria-rt-avatar.listening { background: #ef4444; }
         .aria-rt-avatar.listening svg { color: #fff; }
         .aria-rt-avatar.speaking { animation: speakingPulse 0.8s infinite; }
@@ -279,7 +279,7 @@
         }
         .aria-rt-talk-btn:hover { transform: scale(1.05); }
         .aria-rt-talk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .aria-rt-talk-btn svg { width: 36px; height: 36px; color: ${secondary}; }
+        .aria-rt-talk-btn svg { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; max-width: 36px !important; max-height: 36px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
         .aria-rt-talk-btn.listening { background: #ef4444; animation: ariaPulse 1.5s infinite; }
         .aria-rt-talk-btn.listening svg { color: #fff; }
 
