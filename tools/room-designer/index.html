@@ -7,9 +7,6 @@
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Fabric.js for Canvas -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-
   <!-- Three.js for 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -194,6 +191,11 @@
       background: var(--gold-dark);
     }
 
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
     /* Main Layout */
     .main {
       flex: 1;
@@ -203,32 +205,103 @@
 
     /* Sidebar */
     .sidebar {
-      width: 260px;
+      width: 220px;
       background: var(--dark-surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      overflow-y: auto;
     }
 
-    .sidebar-header {
-      padding: 16px;
+    .sidebar-section {
       border-bottom: 1px solid var(--border);
     }
 
+    .sidebar-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .sidebar-header:hover {
+      background: var(--dark-hover);
+    }
+
     .sidebar-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
+    .sidebar-toggle {
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .sidebar-content {
+      padding: 0 12px 12px;
+    }
+
+    .sidebar-content.collapsed {
+      display: none;
+    }
+
+    /* Floor Plans Grid */
+    .floorplan-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .floorplan-item {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .floorplan-item:hover {
+      background: var(--dark-hover);
+      border-color: var(--primary);
+    }
+
+    .floorplan-item.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    .floorplan-preview {
+      width: 100%;
+      height: 40px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .floorplan-preview svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .floorplan-name {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    /* Tool Grid */
     .tool-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 4px;
-      padding: 12px;
     }
 
     .tool-btn {
@@ -239,11 +312,11 @@
       justify-content: center;
       background: var(--dark-elevated);
       border: 1px solid transparent;
-      border-radius: 8px;
+      border-radius: 6px;
       color: var(--text-muted);
       cursor: pointer;
       transition: all 0.2s;
-      padding: 8px;
+      padding: 6px;
     }
 
     .tool-btn:hover {
@@ -258,72 +331,132 @@
     }
 
     .tool-btn svg {
-      width: 20px;
-      height: 20px;
-      margin-bottom: 4px;
+      width: 18px;
+      height: 18px;
+      margin-bottom: 2px;
     }
 
     .tool-btn span {
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 500;
     }
 
-    .element-section {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-    }
-
-    .element-category {
-      margin-bottom: 16px;
-    }
-
-    .category-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      padding: 0 4px;
-    }
-
+    /* Element Grid */
     .element-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
 
     .element-item {
       background: var(--dark-elevated);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: 6px;
+      padding: 8px;
       cursor: grab;
       transition: all 0.2s;
       text-align: center;
+      position: relative;
     }
 
     .element-item:hover {
       background: var(--dark-hover);
       border-color: var(--primary);
-      transform: translateY(-2px);
     }
 
     .element-item:active {
       cursor: grabbing;
     }
 
+    .element-item.has-texture {
+      border-color: var(--success);
+    }
+
     .element-icon {
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 8px;
-      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 4px;
+      border-radius: 4px;
+      background-size: cover;
+      background-position: center;
     }
 
     .element-name {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 500;
       color: var(--text-secondary);
+    }
+
+    .element-upload-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+
+    .element-item:hover .element-upload-btn {
+      opacity: 1;
+    }
+
+    .element-upload-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .element-upload-btn svg {
+      width: 10px;
+      height: 10px;
+      color: var(--text);
+    }
+
+    /* Materials Library */
+    .materials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .material-item {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .material-item:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .material-item.selected {
+      border-color: var(--gold);
+    }
+
+    .material-item::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      padding: 2px 4px;
+      font-size: 8px;
+      text-align: center;
+      border-radius: 0 0 4px 4px;
     }
 
     /* Canvas Area */
@@ -331,8 +464,9 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: var(--dark);
+      background: #12121f;
       position: relative;
+      overflow: hidden;
     }
 
     .canvas-toolbar {
@@ -342,26 +476,33 @@
       padding: 8px 16px;
       background: var(--dark-surface);
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    .zoom-controls {
+    .toolbar-group {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
+    .zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .zoom-btn {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 4px;
       color: var(--text);
       cursor: pointer;
-      transition: all 0.2s;
+      font-size: 14px;
     }
 
     .zoom-btn:hover {
@@ -369,43 +510,38 @@
     }
 
     .zoom-level {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-secondary);
-      min-width: 50px;
+      min-width: 40px;
       text-align: center;
     }
 
     .canvas-info {
       display: flex;
       gap: 16px;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
     }
 
     .canvas-wrapper {
       flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      position: relative;
       overflow: hidden;
     }
 
-    .canvas-container {
-      background: #1e1e2e;
-      border-radius: 8px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-      position: relative;
-    }
-
     #canvas {
-      border-radius: 8px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 4px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
     }
 
     /* 3D View */
     #three-container {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      inset: 0;
       display: none;
     }
 
@@ -413,31 +549,28 @@
       display: block;
     }
 
-    .canvas-wrapper.hidden {
-      display: none;
-    }
-
     /* Right Panel */
     .right-panel {
-      width: 280px;
+      width: 260px;
       background: var(--dark-surface);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      overflow-y: auto;
     }
 
     .panel-section {
-      padding: 16px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
     }
 
     .panel-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .room-grid {
@@ -453,17 +586,17 @@
     }
 
     .input-label {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
     }
 
     .input-field {
       background: var(--dark-elevated);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: 4px;
+      padding: 6px 8px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .input-field:focus {
@@ -478,37 +611,31 @@
     /* Properties Panel */
     .properties-empty {
       text-align: center;
-      padding: 24px;
+      padding: 20px;
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .property-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .property-label {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-secondary);
     }
 
-    .property-value {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text);
-    }
-
     .property-input {
-      width: 80px;
+      width: 70px;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 6px 8px;
+      padding: 5px 6px;
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       text-align: right;
     }
 
@@ -518,12 +645,26 @@
     }
 
     .color-picker {
-      width: 80px;
-      height: 30px;
+      width: 70px;
+      height: 26px;
       border: 1px solid var(--border);
       border-radius: 4px;
       cursor: pointer;
       padding: 0;
+    }
+
+    .texture-preview {
+      width: 70px;
+      height: 40px;
+      border-radius: 4px;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .texture-preview:hover {
+      border-color: var(--primary);
     }
 
     /* Quote Panel */
@@ -531,6 +672,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
 
     .quote-items {
@@ -542,9 +684,9 @@
     .quote-item {
       display: flex;
       justify-content: space-between;
-      padding: 10px 0;
+      padding: 8px 0;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
+      font-size: 11px;
     }
 
     .quote-item-name {
@@ -557,7 +699,7 @@
     }
 
     .quote-total {
-      padding: 16px;
+      padding: 12px 16px;
       background: var(--dark-elevated);
       border-top: 1px solid var(--border);
     }
@@ -569,13 +711,13 @@
     }
 
     .quote-total-label {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text);
     }
 
     .quote-total-value {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
       color: var(--gold);
     }
@@ -586,21 +728,20 @@
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 8px 0;
-      min-width: 180px;
+      padding: 6px 0;
+      min-width: 160px;
       z-index: 1000;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
     .context-menu-item {
-      padding: 10px 16px;
-      font-size: 13px;
+      padding: 8px 14px;
+      font-size: 12px;
       color: var(--text-secondary);
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
-      transition: all 0.15s;
+      gap: 8px;
     }
 
     .context-menu-item:hover {
@@ -612,30 +753,26 @@
       color: var(--error);
     }
 
-    .context-menu-item.danger:hover {
-      background: rgba(239, 68, 68, 0.1);
-    }
-
     .context-menu-item svg {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
 
     .context-menu-divider {
       height: 1px;
       background: var(--border);
-      margin: 8px 0;
+      margin: 4px 0;
     }
 
     .context-menu-label {
-      padding: 8px 16px;
-      font-size: 11px;
+      padding: 6px 14px;
+      font-size: 10px;
       color: var(--text-muted);
       text-transform: uppercase;
       font-weight: 600;
     }
 
-    /* Share Modal */
+    /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -654,34 +791,37 @@
       background: var(--dark-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 24px;
+      padding: 20px;
       width: 100%;
-      max-width: 480px;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .modal-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
     }
 
     .modal-close {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--dark-elevated);
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       color: var(--text-muted);
       cursor: pointer;
+      font-size: 18px;
     }
 
     .modal-close:hover {
@@ -689,6 +829,98 @@
       color: var(--text);
     }
 
+    /* Material Picker Modal */
+    .material-categories {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .material-category-btn {
+      padding: 6px 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .material-category-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .material-category-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .materials-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .material-modal-item {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .material-modal-item:hover {
+      border-color: var(--primary);
+    }
+
+    .material-modal-item.selected {
+      border-color: var(--gold);
+    }
+
+    .material-modal-item .material-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.8);
+      padding: 4px 6px;
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .upload-material-btn {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 2px dashed var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      gap: 4px;
+    }
+
+    .upload-material-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .upload-material-btn svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .upload-material-btn span {
+      font-size: 9px;
+    }
+
+    /* Share Modal */
     .share-link-box {
       display: flex;
       gap: 8px;
@@ -702,27 +934,23 @@
       border-radius: 6px;
       padding: 10px 12px;
       color: var(--text);
-      font-size: 13px;
-    }
-
-    .share-permission {
-      margin-bottom: 16px;
+      font-size: 12px;
     }
 
     .permission-options {
       display: flex;
       gap: 8px;
+      margin-bottom: 16px;
     }
 
     .permission-btn {
       flex: 1;
-      padding: 12px;
+      padding: 10px;
       background: var(--dark-elevated);
       border: 2px solid var(--border);
-      border-radius: 8px;
+      border-radius: 6px;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.2s;
       text-align: center;
     }
 
@@ -737,144 +965,53 @@
     }
 
     .permission-btn-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .permission-btn-desc {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
     }
 
-    .collab-section {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    .collab-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
-
-    .collab-invite {
-      display: flex;
-      gap: 8px;
-    }
-
-    .collab-input {
-      flex: 1;
-      background: var(--dark-elevated);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-size: 13px;
-    }
-
-    /* Upload overlay */
-    .upload-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1002;
-    }
-
-    .upload-overlay.active {
-      display: flex;
-    }
-
-    .upload-box {
-      background: var(--dark-surface);
-      border: 2px dashed var(--border);
-      border-radius: 12px;
-      padding: 48px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .upload-box:hover {
-      border-color: var(--primary);
-    }
-
-    .upload-icon {
-      width: 48px;
-      height: 48px;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }
-
-    .upload-text {
-      font-size: 16px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .upload-hint {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    /* Keyboard shortcuts hint */
+    /* Keyboard Shortcuts */
     .shortcuts-hint {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
+      bottom: 12px;
+      right: 12px;
       background: var(--dark-surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 11px;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 9px;
       color: var(--text-muted);
+      display: flex;
+      gap: 12px;
     }
 
     .shortcut {
       display: flex;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-
-    .shortcut:last-child {
-      margin-bottom: 0;
+      align-items: center;
+      gap: 4px;
     }
 
     .shortcut kbd {
       background: var(--dark-elevated);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 2px 4px;
+      border-radius: 3px;
       font-family: inherit;
-      font-size: 10px;
-    }
-
-    /* Loading */
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
+      font-size: 9px;
     }
 
     /* Responsive */
-    @media (max-width: 1024px) {
-      .sidebar {
-        width: 200px;
-      }
-      .right-panel {
-        width: 240px;
-      }
+    @media (max-width: 1200px) {
+      .sidebar { width: 180px; }
+      .right-panel { width: 220px; }
     }
 
-    @media (max-width: 768px) {
-      .sidebar, .right-panel {
-        display: none;
-      }
+    @media (max-width: 900px) {
+      .sidebar, .right-panel { display: none; }
     }
   </style>
 </head>
@@ -903,7 +1040,7 @@
 
       <div class="header-right">
         <button class="btn btn-secondary" onclick="openShareModal()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
             <polyline points="16,6 12,2 8,6"/>
             <line x1="12" y1="2" x2="12" y2="15"/>
@@ -911,11 +1048,9 @@
           Share
         </button>
         <button class="btn btn-primary" onclick="generateQuote()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14,2 14,8 20,8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
           Get Quote
         </button>
@@ -926,123 +1061,106 @@
     <main class="main">
       <!-- Left Sidebar -->
       <aside class="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-title">Tools</div>
-        </div>
-        <div class="tool-grid">
-          <button class="tool-btn active" id="toolSelect" onclick="setTool('select')" title="Select (V)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
-            </svg>
-            <span>Select</span>
-          </button>
-          <button class="tool-btn" id="toolPan" onclick="setTool('pan')" title="Pan (H)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
-              <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
-              <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
-              <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
-            </svg>
-            <span>Pan</span>
-          </button>
-          <button class="tool-btn" id="toolDraw" onclick="setTool('draw')" title="Draw (D)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-              <path d="M2 2l7.586 7.586"/>
-            </svg>
-            <span>Draw</span>
-          </button>
-          <button class="tool-btn" id="toolMeasure" onclick="setTool('measure')" title="Measure (M)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4Z"/>
-              <path d="m7.5 10.5 2 2"/>
-              <path d="m10.5 7.5 2 2"/>
-              <path d="m13.5 4.5 2 2"/>
-              <path d="m4.5 13.5 2 2"/>
-            </svg>
-            <span>Measure</span>
-          </button>
+        <!-- Floor Plans -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Floor Plans</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="floorplan-grid" id="floorplanGrid">
+              <!-- Floor plans will be rendered here -->
+            </div>
+          </div>
         </div>
 
-        <div class="element-section">
-          <div class="element-category">
-            <div class="category-title">Cabinets</div>
-            <div class="element-grid">
-              <div class="element-item" draggable="true" data-type="base-cabinet">
-                <div class="element-icon" style="background: #8B4513;"></div>
-                <div class="element-name">Base Cabinet</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="wall-cabinet">
-                <div class="element-icon" style="background: #A0522D;"></div>
-                <div class="element-name">Wall Cabinet</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="tall-cabinet">
-                <div class="element-icon" style="background: #8B4513;"></div>
-                <div class="element-name">Tall Cabinet</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="island">
-                <div class="element-icon" style="background: #654321;"></div>
-                <div class="element-name">Island</div>
-              </div>
+        <!-- Tools -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Tools</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="tool-grid">
+              <button class="tool-btn active" id="toolSelect" onclick="setTool('select')" title="Select (V)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                </svg>
+                <span>Select</span>
+              </button>
+              <button class="tool-btn" id="toolWall" onclick="setTool('wall')" title="Draw Wall (W)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                </svg>
+                <span>Wall</span>
+              </button>
+              <button class="tool-btn" id="toolPan" onclick="setTool('pan')" title="Pan (H)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
+                  <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/>
+                  <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/>
+                  <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+                </svg>
+                <span>Pan</span>
+              </button>
+              <button class="tool-btn" id="toolMeasure" onclick="setTool('measure')" title="Measure (M)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4Z"/>
+                </svg>
+                <span>Measure</span>
+              </button>
             </div>
           </div>
+        </div>
 
-          <div class="element-category">
-            <div class="category-title">Surfaces</div>
-            <div class="element-grid">
-              <div class="element-item" draggable="true" data-type="countertop">
-                <div class="element-icon" style="background: #708090;"></div>
-                <div class="element-name">Countertop</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="backsplash">
-                <div class="element-icon" style="background: #B8860B;"></div>
-                <div class="element-name">Backsplash</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="flooring">
-                <div class="element-icon" style="background: #D2691E;"></div>
-                <div class="element-name">Flooring</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="tile">
-                <div class="element-icon" style="background: #CCC;"></div>
-                <div class="element-name">Tile Area</div>
-              </div>
+        <!-- Cabinets -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Cabinets</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="element-grid" id="cabinetsGrid">
+              <!-- Elements rendered by JS -->
             </div>
           </div>
+        </div>
 
-          <div class="element-category">
-            <div class="category-title">Appliances</div>
-            <div class="element-grid">
-              <div class="element-item" draggable="true" data-type="sink">
-                <div class="element-icon" style="background: #C0C0C0;"></div>
-                <div class="element-name">Sink</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="stove">
-                <div class="element-icon" style="background: #2F2F2F;"></div>
-                <div class="element-name">Stove</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="refrigerator">
-                <div class="element-icon" style="background: #A9A9A9;"></div>
-                <div class="element-name">Refrigerator</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="dishwasher">
-                <div class="element-icon" style="background: #808080;"></div>
-                <div class="element-name">Dishwasher</div>
-              </div>
+        <!-- Surfaces -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Surfaces</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="element-grid" id="surfacesGrid">
+              <!-- Elements rendered by JS -->
             </div>
           </div>
+        </div>
 
-          <div class="element-category">
-            <div class="category-title">Structure</div>
-            <div class="element-grid">
-              <div class="element-item" draggable="true" data-type="door">
-                <div class="element-icon" style="background: #DEB887;"></div>
-                <div class="element-name">Door</div>
-              </div>
-              <div class="element-item" draggable="true" data-type="window">
-                <div class="element-icon" style="background: #87CEEB;"></div>
-                <div class="element-name">Window</div>
-              </div>
+        <!-- Appliances -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Appliances</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="element-grid" id="appliancesGrid">
+              <!-- Elements rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Structure -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Structure</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div class="element-grid" id="structureGrid">
+              <!-- Elements rendered by JS -->
             </div>
           </div>
         </div>
@@ -1051,11 +1169,14 @@
       <!-- Canvas Area -->
       <div class="canvas-area">
         <div class="canvas-toolbar">
-          <div class="zoom-controls">
-            <button class="zoom-btn" onclick="zoomOut()">−</button>
-            <span class="zoom-level" id="zoomLevel">100%</span>
-            <button class="zoom-btn" onclick="zoomIn()">+</button>
-            <button class="zoom-btn" onclick="resetZoom()" title="Reset zoom">⟲</button>
+          <div class="toolbar-group">
+            <div class="zoom-controls">
+              <button class="zoom-btn" onclick="zoomOut()">−</button>
+              <span class="zoom-level" id="zoomLevel">100%</span>
+              <button class="zoom-btn" onclick="zoomIn()">+</button>
+              <button class="zoom-btn" onclick="fitToScreen()" title="Fit to screen">⊡</button>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="clearCanvas()">Clear</button>
           </div>
           <div class="canvas-info">
             <span id="canvasSize">12' × 10'</span>
@@ -1063,9 +1184,7 @@
           </div>
         </div>
         <div class="canvas-wrapper" id="canvasWrapper">
-          <div class="canvas-container" id="canvasContainer">
-            <canvas id="canvas"></canvas>
-          </div>
+          <canvas id="canvas"></canvas>
         </div>
         <div id="three-container"></div>
       </div>
@@ -1081,16 +1200,28 @@
                 <option value="kitchen">Kitchen</option>
                 <option value="bathroom">Bathroom</option>
                 <option value="laundry">Laundry</option>
-                <option value="other">Other</option>
+                <option value="bedroom">Bedroom</option>
+                <option value="living">Living Room</option>
+                <option value="office">Office</option>
+                <option value="commercial">Commercial</option>
               </select>
             </div>
             <div class="input-group">
               <label class="input-label">Width (ft)</label>
-              <input type="number" class="input-field" id="roomWidth" value="12" min="4" max="50" onchange="updateRoom()">
+              <input type="number" class="input-field" id="roomWidth" value="20" min="8" max="100" onchange="updateRoom()">
             </div>
             <div class="input-group">
               <label class="input-label">Depth (ft)</label>
-              <input type="number" class="input-field" id="roomDepth" value="10" min="4" max="50" onchange="updateRoom()">
+              <input type="number" class="input-field" id="roomDepth" value="16" min="8" max="100" onchange="updateRoom()">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Scale</label>
+              <select class="input-field" id="scaleMode" onchange="updateScale()">
+                <option value="fit">Fit to Screen</option>
+                <option value="40">40 px/ft</option>
+                <option value="50">50 px/ft</option>
+                <option value="60">60 px/ft</option>
+              </select>
             </div>
           </div>
         </div>
@@ -1098,7 +1229,7 @@
         <div class="panel-section" id="propertiesPanel">
           <div class="panel-title">Properties</div>
           <div class="properties-empty" id="propertiesEmpty">
-            Select an element to edit its properties
+            Select an element to edit
           </div>
           <div id="propertiesContent" style="display: none;">
             <div class="property-row">
@@ -1107,15 +1238,19 @@
             </div>
             <div class="property-row">
               <span class="property-label">Width (ft)</span>
-              <input type="number" class="property-input" id="propWidth" step="0.5" min="0.5" max="20" onchange="updateSelectedElement()">
+              <input type="number" class="property-input" id="propWidth" step="0.5" min="0.5" max="30" onchange="updateSelectedElement()">
             </div>
             <div class="property-row">
-              <span class="property-label">Height (ft)</span>
-              <input type="number" class="property-input" id="propHeight" step="0.5" min="0.5" max="20" onchange="updateSelectedElement()">
+              <span class="property-label">Depth (ft)</span>
+              <input type="number" class="property-input" id="propHeight" step="0.5" min="0.5" max="30" onchange="updateSelectedElement()">
             </div>
             <div class="property-row">
               <span class="property-label">Color</span>
               <input type="color" class="color-picker" id="propColor" onchange="updateSelectedElement()">
+            </div>
+            <div class="property-row">
+              <span class="property-label">Texture</span>
+              <div class="texture-preview" id="propTexture" onclick="openMaterialPicker()" title="Click to change texture"></div>
             </div>
             <div class="property-row">
               <span class="property-label">Rotation</span>
@@ -1150,53 +1285,35 @@
     <div class="context-menu-label" id="contextMenuLabel">Element</div>
     <div class="context-menu-item" onclick="contextAction('rotate')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 2v6h-6"/>
-        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
       </svg>
       Rotate 90°
     </div>
     <div class="context-menu-item" onclick="contextAction('duplicate')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2"/>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
       </svg>
       Duplicate
     </div>
-    <div class="context-menu-item" onclick="contextAction('upload')">
+    <div class="context-menu-item" onclick="contextAction('texture')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
       </svg>
-      Upload Image
+      Change Texture
     </div>
     <div class="context-menu-item" onclick="contextAction('lock')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="lockIcon">
-        <rect x="3" y="11" width="18" height="11" rx="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
       <span id="lockText">Lock</span>
     </div>
     <div class="context-menu-divider"></div>
-    <div class="context-menu-item" onclick="contextAction('front')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="8" y="8" width="12" height="12" rx="2"/>
-        <path d="M4 16V4h12"/>
-      </svg>
-      Bring to Front
-    </div>
-    <div class="context-menu-item" onclick="contextAction('back')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="4" y="4" width="12" height="12" rx="2"/>
-        <path d="M8 20h12V8"/>
-      </svg>
-      Send to Back
-    </div>
+    <div class="context-menu-item" onclick="contextAction('front')">Bring to Front</div>
+    <div class="context-menu-item" onclick="contextAction('back')">Send to Back</div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item danger" onclick="contextAction('delete')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
       </svg>
       Delete
     </div>
@@ -1207,95 +1324,157 @@
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">Share Project</h3>
-        <button class="modal-close" onclick="closeShareModal()">×</button>
+        <button class="modal-close" onclick="closeModal('shareModal')">×</button>
       </div>
       <div class="share-link-box">
-        <input type="text" class="share-link-input" id="shareLink" value="https://surprisegranite.com/tools/room-designer?p=abc123" readonly>
+        <input type="text" class="share-link-input" id="shareLink" readonly>
         <button class="btn btn-primary" onclick="copyShareLink()">Copy</button>
       </div>
-      <div class="share-permission">
-        <div class="permission-options">
-          <div class="permission-btn active" onclick="setSharePermission('view')">
-            <div class="permission-btn-title">View Only</div>
-            <div class="permission-btn-desc">Can view but not edit</div>
-          </div>
-          <div class="permission-btn" onclick="setSharePermission('edit')">
-            <div class="permission-btn-title">Can Edit</div>
-            <div class="permission-btn-desc">Full editing access</div>
-          </div>
+      <div class="permission-options">
+        <div class="permission-btn active" onclick="setSharePermission('view', this)">
+          <div class="permission-btn-title">View Only</div>
+          <div class="permission-btn-desc">Can view but not edit</div>
         </div>
-      </div>
-      <div class="collab-section">
-        <div class="collab-title">Invite Collaborators</div>
-        <div class="collab-invite">
-          <input type="email" class="collab-input" placeholder="Enter email address">
-          <button class="btn btn-secondary" onclick="inviteCollaborator()">Invite</button>
+        <div class="permission-btn" onclick="setSharePermission('edit', this)">
+          <div class="permission-btn-title">Can Edit</div>
+          <div class="permission-btn-desc">Full editing access</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Upload Overlay -->
-  <div class="upload-overlay" id="uploadOverlay">
-    <div class="upload-box" onclick="triggerUpload()">
-      <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      <div class="upload-text">Upload Image</div>
-      <div class="upload-hint">Click to select or drag and drop</div>
+  <!-- Material Picker Modal -->
+  <div class="modal-overlay" id="materialModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Choose Material</h3>
+        <button class="modal-close" onclick="closeModal('materialModal')">×</button>
+      </div>
+      <div class="material-categories" id="materialCategories">
+        <!-- Categories rendered by JS -->
+      </div>
+      <div class="materials-modal-grid" id="materialsGrid">
+        <!-- Materials rendered by JS -->
+      </div>
     </div>
-    <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleImageUpload(event)">
   </div>
+
+  <!-- Hidden file input -->
+  <input type="file" id="materialUpload" accept="image/*" style="display: none" onchange="handleMaterialUpload(event)">
 
   <!-- Keyboard Shortcuts -->
   <div class="shortcuts-hint">
     <div class="shortcut"><kbd>V</kbd> Select</div>
+    <div class="shortcut"><kbd>W</kbd> Wall</div>
     <div class="shortcut"><kbd>Del</kbd> Delete</div>
     <div class="shortcut"><kbd>R</kbd> Rotate</div>
-    <div class="shortcut"><kbd>D</kbd> Duplicate</div>
+    <div class="shortcut"><kbd>Ctrl+D</kbd> Duplicate</div>
   </div>
 
   <script>
     // ===== CONFIGURATION =====
     const CONFIG = {
-      PIXELS_PER_FOOT: 40,
-      GRID_SIZE: 20,
+      MIN_PIXELS_PER_FOOT: 20,
+      DEFAULT_PIXELS_PER_FOOT: 40,
+      GRID_SUBDIVISIONS: 2,
+      WALL_THICKNESS: 6,
       PRICING: {
         'base-cabinet': 150,
         'wall-cabinet': 120,
         'tall-cabinet': 300,
         'corner-cabinet': 200,
         'island': 400,
-        'countertop': 65, // per sqft
-        'backsplash': 25, // per sqft
-        'flooring': 8, // per sqft
-        'tile': 15, // per sqft
+        'countertop': 65,
+        'backsplash': 25,
+        'flooring': 8,
+        'tile': 15,
         'sink': 350,
         'stove': 800,
         'refrigerator': 1200,
         'dishwasher': 600,
         'door': 200,
-        'window': 300
-      },
-      ELEMENT_DEFAULTS: {
-        'base-cabinet': { width: 3, height: 2, color: '#8B4513', label: 'Base Cabinet' },
-        'wall-cabinet': { width: 3, height: 1.5, color: '#A0522D', label: 'Wall Cabinet' },
-        'tall-cabinet': { width: 2, height: 6, color: '#8B4513', label: 'Tall Cabinet' },
-        'corner-cabinet': { width: 3, height: 3, color: '#8B4513', label: 'Corner Cabinet' },
-        'island': { width: 6, height: 3, color: '#654321', label: 'Island' },
-        'countertop': { width: 8, height: 2, color: '#708090', label: 'Countertop' },
-        'backsplash': { width: 6, height: 1.5, color: '#B8860B', label: 'Backsplash' },
-        'sink': { width: 2.5, height: 1.5, color: '#C0C0C0', label: 'Sink' },
-        'stove': { width: 2.5, height: 2, color: '#2F2F2F', label: 'Stove' },
-        'refrigerator': { width: 3, height: 2.5, color: '#A9A9A9', label: 'Refrigerator' },
-        'dishwasher': { width: 2, height: 2, color: '#808080', label: 'Dishwasher' },
-        'flooring': { width: 4, height: 4, color: '#D2691E', label: 'Flooring' },
-        'tile': { width: 3, height: 3, color: '#CCC', label: 'Tile Area' },
-        'door': { width: 3, height: 0.5, color: '#DEB887', label: 'Door' },
-        'window': { width: 4, height: 0.5, color: '#87CEEB', label: 'Window' }
+        'window': 300,
+        'wall': 0
       }
+    };
+
+    const ELEMENT_TYPES = {
+      cabinets: [
+        { type: 'base-cabinet', width: 3, height: 2, color: '#8B4513', label: 'Base Cabinet' },
+        { type: 'wall-cabinet', width: 3, height: 1.5, color: '#A0522D', label: 'Wall Cabinet' },
+        { type: 'tall-cabinet', width: 2, height: 7, color: '#8B4513', label: 'Tall Cabinet' },
+        { type: 'island', width: 6, height: 3, color: '#654321', label: 'Island' }
+      ],
+      surfaces: [
+        { type: 'countertop', width: 8, height: 2, color: '#708090', label: 'Countertop' },
+        { type: 'backsplash', width: 6, height: 1.5, color: '#B8860B', label: 'Backsplash' },
+        { type: 'flooring', width: 5, height: 5, color: '#D2691E', label: 'Flooring' },
+        { type: 'tile', width: 4, height: 4, color: '#CCC', label: 'Tile Area' }
+      ],
+      appliances: [
+        { type: 'sink', width: 2.5, height: 2, color: '#C0C0C0', label: 'Sink' },
+        { type: 'stove', width: 2.5, height: 2.5, color: '#2F2F2F', label: 'Stove/Range' },
+        { type: 'refrigerator', width: 3, height: 3, color: '#A9A9A9', label: 'Refrigerator' },
+        { type: 'dishwasher', width: 2, height: 2, color: '#808080', label: 'Dishwasher' }
+      ],
+      structure: [
+        { type: 'door', width: 3, height: 0.5, color: '#DEB887', label: 'Door' },
+        { type: 'window', width: 4, height: 0.5, color: '#87CEEB', label: 'Window' },
+        { type: 'wall', width: 0.5, height: 8, color: '#555', label: 'Wall' }
+      ]
+    };
+
+    const FLOOR_PLANS = [
+      { id: 'empty', name: 'Empty', walls: [] },
+      { id: 'square', name: 'Square', walls: [
+        { x: 0, y: 0, w: 1, h: 1, type: 'full' }
+      ]},
+      { id: 'l-shape', name: 'L-Shape', walls: [
+        { x: 0, y: 0, w: 0.6, h: 1, type: 'rect' },
+        { x: 0, y: 0, w: 1, h: 0.5, type: 'rect' }
+      ]},
+      { id: 'u-shape', name: 'U-Shape', walls: [
+        { x: 0, y: 0, w: 0.3, h: 1, type: 'rect' },
+        { x: 0.7, y: 0, w: 0.3, h: 1, type: 'rect' },
+        { x: 0, y: 0.7, w: 1, h: 0.3, type: 'rect' }
+      ]},
+      { id: 'galley', name: 'Galley', walls: [
+        { x: 0, y: 0, w: 0.2, h: 1, type: 'rect' },
+        { x: 0.8, y: 0, w: 0.2, h: 1, type: 'rect' }
+      ]},
+      { id: 'open', name: 'Open Plan', walls: [
+        { x: 0, y: 0.7, w: 0.4, h: 0.3, type: 'rect' }
+      ]}
+    ];
+
+    // Sample materials library
+    const MATERIALS = {
+      granite: [
+        { id: 'granite-black', name: 'Black Galaxy', color: '#1a1a1a', url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200' },
+        { id: 'granite-white', name: 'White Ice', color: '#f5f5f5', url: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=200' },
+        { id: 'granite-gold', name: 'Santa Cecilia', color: '#d4a574', url: 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=200' }
+      ],
+      quartz: [
+        { id: 'quartz-white', name: 'Pure White', color: '#ffffff', url: '' },
+        { id: 'quartz-grey', name: 'Grey Expo', color: '#888888', url: '' },
+        { id: 'quartz-calc', name: 'Calacatta', color: '#f8f6f0', url: '' }
+      ],
+      wood: [
+        { id: 'wood-oak', name: 'Oak', color: '#b8860b', url: '' },
+        { id: 'wood-walnut', name: 'Walnut', color: '#5d4037', url: '' },
+        { id: 'wood-maple', name: 'Maple', color: '#deb887', url: '' },
+        { id: 'wood-cherry', name: 'Cherry', color: '#8b4513', url: '' }
+      ],
+      tile: [
+        { id: 'tile-white', name: 'White Subway', color: '#ffffff', url: '' },
+        { id: 'tile-marble', name: 'Marble Look', color: '#e8e8e8', url: '' },
+        { id: 'tile-slate', name: 'Slate Grey', color: '#708090', url: '' }
+      ],
+      flooring: [
+        { id: 'floor-lvp', name: 'LVP Oak', color: '#c4a76c', url: '' },
+        { id: 'floor-tile', name: 'Porcelain', color: '#d4c4b0', url: '' },
+        { id: 'floor-hard', name: 'Hardwood', color: '#8b6914', url: '' }
+      ]
     };
 
     // ===== STATE =====
@@ -1303,14 +1482,22 @@
     let currentTool = 'select';
     let currentView = '2d';
     let zoom = 1;
+    let pixelsPerFoot = 40;
     let elements = [];
+    let walls = [];
     let selectedElement = null;
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
-    let roomWidth = 12;
-    let roomDepth = 10;
+    let roomWidth = 20;
+    let roomDepth = 16;
+    let currentFloorPlan = 'empty';
     let contextMenuElement = null;
-    let sharePermission = 'view';
+    let elementTextures = {}; // Store custom textures for element types
+    let customMaterials = []; // User uploaded materials
+
+    // Wall drawing
+    let isDrawingWall = false;
+    let wallStart = null;
 
     // Three.js
     let scene, camera, renderer, controls;
@@ -1322,15 +1509,141 @@
       canvas = document.getElementById('canvas');
       ctx = canvas.getContext('2d');
 
-      updateCanvasSize();
+      renderSidebar();
+      renderFloorPlans();
       setupEventListeners();
       setupDragDrop();
+      fitToScreen();
+    }
+
+    function renderSidebar() {
+      // Render element grids
+      ['cabinets', 'surfaces', 'appliances', 'structure'].forEach(category => {
+        const grid = document.getElementById(category + 'Grid');
+        if (!grid) return;
+
+        grid.innerHTML = ELEMENT_TYPES[category].map(el => `
+          <div class="element-item ${elementTextures[el.type] ? 'has-texture' : ''}"
+               draggable="true"
+               data-type="${el.type}"
+               data-category="${category}">
+            <div class="element-icon" style="background: ${elementTextures[el.type] ? `url(${elementTextures[el.type]})` : el.color}; background-size: cover;"></div>
+            <div class="element-name">${el.label}</div>
+            <div class="element-upload-btn" onclick="event.stopPropagation(); uploadElementTexture('${el.type}')" title="Upload texture">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function renderFloorPlans() {
+      const grid = document.getElementById('floorplanGrid');
+      grid.innerHTML = FLOOR_PLANS.map(fp => `
+        <div class="floorplan-item ${currentFloorPlan === fp.id ? 'active' : ''}"
+             onclick="selectFloorPlan('${fp.id}')">
+          <div class="floorplan-preview">
+            ${getFloorPlanSVG(fp)}
+          </div>
+          <div class="floorplan-name">${fp.name}</div>
+        </div>
+      `).join('');
+    }
+
+    function getFloorPlanSVG(fp) {
+      if (fp.id === 'empty') {
+        return `<svg viewBox="0 0 40 30"><rect x="2" y="2" width="36" height="26" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="2"/></svg>`;
+      }
+      if (fp.id === 'square') {
+        return `<svg viewBox="0 0 40 30"><rect x="2" y="2" width="36" height="26" fill="#333" stroke="#666" stroke-width="1"/></svg>`;
+      }
+      if (fp.id === 'l-shape') {
+        return `<svg viewBox="0 0 40 30"><path d="M2 2 H26 V15 H15 V28 H2 Z" fill="#333" stroke="#666" stroke-width="1"/></svg>`;
+      }
+      if (fp.id === 'u-shape') {
+        return `<svg viewBox="0 0 40 30"><path d="M2 2 H12 V20 H28 V2 H38 V28 H2 Z" fill="#333" stroke="#666" stroke-width="1"/></svg>`;
+      }
+      if (fp.id === 'galley') {
+        return `<svg viewBox="0 0 40 30"><rect x="2" y="2" width="8" height="26" fill="#333" stroke="#666"/><rect x="30" y="2" width="8" height="26" fill="#333" stroke="#666"/></svg>`;
+      }
+      if (fp.id === 'open') {
+        return `<svg viewBox="0 0 40 30"><rect x="2" y="2" width="36" height="26" fill="none" stroke="#666" stroke-dasharray="2"/><rect x="2" y="18" width="16" height="10" fill="#333" stroke="#666"/></svg>`;
+      }
+      return `<svg viewBox="0 0 40 30"><rect x="2" y="2" width="36" height="26" fill="none" stroke="#666"/></svg>`;
+    }
+
+    function selectFloorPlan(id) {
+      currentFloorPlan = id;
+      const plan = FLOOR_PLANS.find(p => p.id === id);
+
+      // Clear existing walls
+      walls = [];
+
+      // Add walls based on floor plan
+      if (plan && plan.walls) {
+        plan.walls.forEach(w => {
+          if (w.type === 'full') {
+            // Full room walls
+            addWall(0, 0, roomWidth * pixelsPerFoot, CONFIG.WALL_THICKNESS);
+            addWall(0, 0, CONFIG.WALL_THICKNESS, roomDepth * pixelsPerFoot);
+            addWall(0, roomDepth * pixelsPerFoot - CONFIG.WALL_THICKNESS, roomWidth * pixelsPerFoot, CONFIG.WALL_THICKNESS);
+            addWall(roomWidth * pixelsPerFoot - CONFIG.WALL_THICKNESS, 0, CONFIG.WALL_THICKNESS, roomDepth * pixelsPerFoot);
+          } else if (w.type === 'rect') {
+            const x = w.x * roomWidth * pixelsPerFoot;
+            const y = w.y * roomDepth * pixelsPerFoot;
+            const width = w.w * roomWidth * pixelsPerFoot;
+            const height = w.h * roomDepth * pixelsPerFoot;
+            // Add as a filled area indicator
+            walls.push({ x, y, width, height, type: 'area' });
+          }
+        });
+      }
+
+      renderFloorPlans();
       draw();
     }
 
+    function addWall(x, y, width, height) {
+      walls.push({
+        id: Date.now() + Math.random(),
+        x, y, width, height,
+        type: 'wall',
+        color: '#444'
+      });
+    }
+
+    function fitToScreen() {
+      const wrapper = document.getElementById('canvasWrapper');
+      const availableWidth = wrapper.clientWidth - 60;
+      const availableHeight = wrapper.clientHeight - 60;
+
+      const scaleX = availableWidth / roomWidth;
+      const scaleY = availableHeight / roomDepth;
+
+      pixelsPerFoot = Math.min(scaleX, scaleY, 60);
+      pixelsPerFoot = Math.max(pixelsPerFoot, CONFIG.MIN_PIXELS_PER_FOOT);
+
+      document.getElementById('scaleMode').value = 'fit';
+      updateCanvasSize();
+    }
+
+    function updateScale() {
+      const mode = document.getElementById('scaleMode').value;
+      if (mode === 'fit') {
+        fitToScreen();
+      } else {
+        pixelsPerFoot = parseInt(mode);
+        updateCanvasSize();
+      }
+    }
+
     function updateCanvasSize() {
-      const canvasWidth = roomWidth * CONFIG.PIXELS_PER_FOOT;
-      const canvasHeight = roomDepth * CONFIG.PIXELS_PER_FOOT;
+      const canvasWidth = roomWidth * pixelsPerFoot;
+      const canvasHeight = roomDepth * pixelsPerFoot;
 
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
@@ -1341,150 +1654,183 @@
     }
 
     function setupEventListeners() {
-      // Canvas events
       canvas.addEventListener('mousedown', onMouseDown);
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseup', onMouseUp);
       canvas.addEventListener('contextmenu', onContextMenu);
       canvas.addEventListener('dblclick', onDoubleClick);
-
-      // Keyboard
       document.addEventListener('keydown', onKeyDown);
 
-      // Close context menu
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.context-menu')) {
           hideContextMenu();
         }
       });
+
+      window.addEventListener('resize', () => {
+        if (document.getElementById('scaleMode').value === 'fit') {
+          fitToScreen();
+        }
+      });
     }
 
     function setupDragDrop() {
-      const items = document.querySelectorAll('.element-item');
-      items.forEach(item => {
-        item.addEventListener('dragstart', onDragStart);
-        item.addEventListener('dragend', onDragEnd);
+      document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('element-item')) {
+          e.dataTransfer.setData('element-type', e.target.dataset.type);
+          e.target.style.opacity = '0.5';
+        }
       });
 
-      const canvasContainer = document.getElementById('canvasContainer');
-      canvasContainer.addEventListener('dragover', onDragOver);
-      canvasContainer.addEventListener('drop', onDrop);
+      document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('element-item')) {
+          e.target.style.opacity = '1';
+        }
+      });
+
+      canvas.addEventListener('dragover', (e) => e.preventDefault());
+      canvas.addEventListener('drop', onDrop);
     }
 
     // ===== DRAWING =====
     function draw() {
       if (!ctx) return;
 
-      // Clear
-      ctx.fillStyle = '#1e1e2e';
+      ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid
       drawGrid();
+      drawFloorPlanAreas();
+      drawWalls();
+      drawElements();
 
-      // Draw room border
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-      // Draw elements
-      elements.forEach((el, index) => {
-        drawElement(el, el === selectedElement);
-      });
-
-      // Update element count
       document.getElementById('elementCount').textContent = `${elements.length} element${elements.length !== 1 ? 's' : ''}`;
-
-      // Update quote
       calculateQuote();
     }
 
     function drawGrid() {
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
+      const gridSize = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
 
-      // Vertical lines
-      for (let x = 0; x <= canvas.width; x += CONFIG.GRID_SIZE) {
+      // Sub-grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 1;
+      for (let x = gridSize; x < canvas.width; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
-
-      // Horizontal lines
-      for (let y = 0; y <= canvas.height; y += CONFIG.GRID_SIZE) {
+      for (let y = gridSize; y < canvas.height; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
 
-      // Foot markers
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.font = '10px Inter';
-      for (let x = CONFIG.PIXELS_PER_FOOT; x < canvas.width; x += CONFIG.PIXELS_PER_FOOT) {
-        ctx.fillText(`${x / CONFIG.PIXELS_PER_FOOT}'`, x - 8, 12);
+      // Main grid (feet)
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      for (let x = pixelsPerFoot; x < canvas.width; x += pixelsPerFoot) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
       }
-      for (let y = CONFIG.PIXELS_PER_FOOT; y < canvas.height; y += CONFIG.PIXELS_PER_FOOT) {
-        ctx.fillText(`${y / CONFIG.PIXELS_PER_FOOT}'`, 4, y + 4);
+      for (let y = pixelsPerFoot; y < canvas.height; y += pixelsPerFoot) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
       }
+
+      // Labels
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = `${Math.max(10, pixelsPerFoot / 4)}px Inter`;
+      for (let x = pixelsPerFoot; x < canvas.width; x += pixelsPerFoot) {
+        ctx.fillText(`${Math.round(x / pixelsPerFoot)}'`, x + 3, 14);
+      }
+      for (let y = pixelsPerFoot; y < canvas.height; y += pixelsPerFoot) {
+        ctx.fillText(`${Math.round(y / pixelsPerFoot)}'`, 3, y - 3);
+      }
+
+      // Border
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawFloorPlanAreas() {
+      walls.filter(w => w.type === 'area').forEach(area => {
+        ctx.fillStyle = 'rgba(60, 60, 80, 0.5)';
+        ctx.fillRect(area.x, area.y, area.width, area.height);
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(area.x, area.y, area.width, area.height);
+      });
+    }
+
+    function drawWalls() {
+      walls.filter(w => w.type === 'wall').forEach(wall => {
+        ctx.fillStyle = wall.color;
+        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+      });
+    }
+
+    function drawElements() {
+      elements.forEach(el => {
+        drawElement(el, el === selectedElement);
+      });
     }
 
     function drawElement(el, isSelected) {
       const x = el.x;
       const y = el.y;
-      const w = el.width * CONFIG.PIXELS_PER_FOOT;
-      const h = el.height * CONFIG.PIXELS_PER_FOOT;
+      const w = el.width * pixelsPerFoot;
+      const h = el.height * pixelsPerFoot;
 
       ctx.save();
-
-      // Apply rotation
       ctx.translate(x + w/2, y + h/2);
       ctx.rotate((el.rotation || 0) * Math.PI / 180);
       ctx.translate(-(x + w/2), -(y + h/2));
 
-      // Draw element background
-      if (el.image) {
-        ctx.drawImage(el.image, x, y, w, h);
+      // Background
+      if (el.textureImg) {
+        ctx.drawImage(el.textureImg, x, y, w, h);
+      } else if (el.texture) {
+        ctx.fillStyle = el.color;
+        ctx.fillRect(x, y, w, h);
       } else {
         ctx.fillStyle = el.color;
         ctx.fillRect(x, y, w, h);
       }
 
-      // Draw border
+      // Border
       ctx.strokeStyle = isSelected ? '#6366f1' : 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.lineWidth = isSelected ? 3 : 1;
       ctx.strokeRect(x, y, w, h);
 
-      // Draw label
+      // Label
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.font = '11px Inter';
+      ctx.font = `${Math.max(10, pixelsPerFoot / 3)}px Inter`;
       ctx.textAlign = 'center';
       ctx.fillText(el.label, x + w/2, y + h/2 + 4);
 
-      // Draw dimensions
+      // Dimensions
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = '9px Inter';
+      ctx.font = `${Math.max(8, pixelsPerFoot / 4)}px Inter`;
       ctx.fillText(`${el.width}' × ${el.height}'`, x + w/2, y + h/2 + 16);
 
-      // Draw selection handles
+      // Selection handles
       if (isSelected) {
-        const handleSize = 8;
+        const hs = 8;
         ctx.fillStyle = '#6366f1';
+        [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([hx, hy]) => {
+          ctx.fillRect(hx - hs/2, hy - hs/2, hs, hs);
+        });
 
-        // Corner handles
-        ctx.fillRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
-        ctx.fillRect(x + w - handleSize/2, y - handleSize/2, handleSize, handleSize);
-        ctx.fillRect(x - handleSize/2, y + h - handleSize/2, handleSize, handleSize);
-        ctx.fillRect(x + w - handleSize/2, y + h - handleSize/2, handleSize, handleSize);
-
-        // Lock indicator
         if (el.locked) {
-          ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
-          ctx.fillRect(x + w - 20, y + 4, 16, 16);
-          ctx.fillStyle = '#fff';
-          ctx.font = '10px Inter';
-          ctx.fillText('🔒', x + w - 12, y + 15);
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+          ctx.font = '12px Inter';
+          ctx.fillText('🔒', x + w - 10, y + 14);
         }
       }
 
@@ -1493,26 +1839,26 @@
 
     // ===== MOUSE EVENTS =====
     function onMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
+
+      if (currentTool === 'wall') {
+        isDrawingWall = true;
+        wallStart = { x, y };
+        return;
+      }
+
       if (currentTool !== 'select') return;
 
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
-
-      // Find clicked element (reverse order for top elements first)
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
       if (clicked) {
-        if (clicked.locked) {
-          selectedElement = clicked;
-          updateProperties();
-          draw();
-          return;
-        }
-
         selectedElement = clicked;
-        isDragging = true;
-        dragOffset = { x: x - clicked.x, y: y - clicked.y };
+        if (!clicked.locked) {
+          isDragging = true;
+          dragOffset = { x: x - clicked.x, y: y - clicked.y };
+        }
         updateProperties();
       } else {
         selectedElement = null;
@@ -1523,32 +1869,70 @@
     }
 
     function onMouseMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
+
+      if (isDrawingWall && wallStart) {
+        // Preview wall while drawing
+        draw();
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+        const wx = Math.min(wallStart.x, x);
+        const wy = Math.min(wallStart.y, y);
+        const ww = Math.abs(x - wallStart.x) || CONFIG.WALL_THICKNESS;
+        const wh = Math.abs(y - wallStart.y) || CONFIG.WALL_THICKNESS;
+        ctx.fillRect(wx, wy, ww, wh);
+        return;
+      }
+
       if (!isDragging || !selectedElement || selectedElement.locked) return;
 
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
+      const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
+      const snapX = Math.round((x - dragOffset.x) / gridSnap) * gridSnap;
+      const snapY = Math.round((y - dragOffset.y) / gridSnap) * gridSnap;
 
-      // Snap to grid
-      const snapX = Math.round((x - dragOffset.x) / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE;
-      const snapY = Math.round((y - dragOffset.y) / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE;
-
-      selectedElement.x = snapX;
-      selectedElement.y = snapY;
+      selectedElement.x = Math.max(0, Math.min(snapX, canvas.width - selectedElement.width * pixelsPerFoot));
+      selectedElement.y = Math.max(0, Math.min(snapY, canvas.height - selectedElement.height * pixelsPerFoot));
 
       draw();
     }
 
-    function onMouseUp() {
+    function onMouseUp(e) {
+      if (isDrawingWall && wallStart) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left);
+        const y = (e.clientY - rect.top);
+
+        const wx = Math.min(wallStart.x, x);
+        const wy = Math.min(wallStart.y, y);
+        let ww = Math.abs(x - wallStart.x);
+        let wh = Math.abs(y - wallStart.y);
+
+        // Make it a proper wall (thin in one dimension)
+        if (ww < wh) {
+          ww = CONFIG.WALL_THICKNESS;
+        } else {
+          wh = CONFIG.WALL_THICKNESS;
+        }
+
+        if (ww > 10 || wh > 10) {
+          addWall(wx, wy, ww, wh);
+        }
+
+        isDrawingWall = false;
+        wallStart = null;
+        draw();
+        return;
+      }
+
       isDragging = false;
     }
 
     function onContextMenu(e) {
       e.preventDefault();
-
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
 
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
@@ -1562,8 +1946,8 @@
 
     function onDoubleClick(e) {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
 
       const clicked = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
@@ -1576,20 +1960,19 @@
       }
     }
 
-    function isPointInElement(x, y, el) {
-      const w = el.width * CONFIG.PIXELS_PER_FOOT;
-      const h = el.height * CONFIG.PIXELS_PER_FOOT;
-      return x >= el.x && x <= el.x + w && y >= el.y && y <= el.y + h;
+    function isPointInElement(px, py, el) {
+      const w = el.width * pixelsPerFoot;
+      const h = el.height * pixelsPerFoot;
+      return px >= el.x && px <= el.x + w && py >= el.y && py <= el.y + h;
     }
 
     // ===== KEYBOARD EVENTS =====
     function onKeyDown(e) {
-      if (e.target.tagName === 'INPUT') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
       switch(e.key.toLowerCase()) {
-        case 'v':
-          setTool('select');
-          break;
+        case 'v': setTool('select'); break;
+        case 'w': setTool('wall'); break;
         case 'delete':
         case 'backspace':
           if (selectedElement && !selectedElement.locked) {
@@ -1607,13 +1990,9 @@
           }
           break;
         case 'd':
-          if (e.ctrlKey || e.metaKey) {
+          if ((e.ctrlKey || e.metaKey) && selectedElement) {
             e.preventDefault();
-            if (selectedElement) {
-              duplicateElement(selectedElement);
-            }
-          } else {
-            setTool('draw');
+            duplicateElement(selectedElement);
           }
           break;
         case 'escape':
@@ -1626,49 +2005,52 @@
     }
 
     // ===== DRAG & DROP =====
-    function onDragStart(e) {
-      e.dataTransfer.setData('element-type', e.target.dataset.type);
-      e.target.style.opacity = '0.5';
-    }
-
-    function onDragEnd(e) {
-      e.target.style.opacity = '1';
-    }
-
-    function onDragOver(e) {
-      e.preventDefault();
-    }
-
     function onDrop(e) {
       e.preventDefault();
-
       const type = e.dataTransfer.getData('element-type');
       if (!type) return;
 
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
 
       createElement(type, x, y);
     }
 
     function createElement(type, x, y) {
-      const defaults = CONFIG.ELEMENT_DEFAULTS[type];
+      let defaults = null;
+      Object.values(ELEMENT_TYPES).forEach(cat => {
+        const found = cat.find(el => el.type === type);
+        if (found) defaults = found;
+      });
+
       if (!defaults) return;
 
+      const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
       const element = {
         id: Date.now() + Math.random(),
         type: type,
-        x: Math.round(x / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE,
-        y: Math.round(y / CONFIG.GRID_SIZE) * CONFIG.GRID_SIZE,
+        x: Math.round(x / gridSnap) * gridSnap,
+        y: Math.round(y / gridSnap) * gridSnap,
         width: defaults.width,
         height: defaults.height,
         color: defaults.color,
         label: defaults.label,
         rotation: 0,
         locked: false,
-        image: null
+        texture: elementTextures[type] || null,
+        textureImg: null
       };
+
+      // Load texture if exists
+      if (element.texture) {
+        const img = new Image();
+        img.onload = () => {
+          element.textureImg = img;
+          draw();
+        };
+        img.src = element.texture;
+      }
 
       elements.push(element);
       selectedElement = element;
@@ -1677,11 +2059,12 @@
     }
 
     function duplicateElement(el) {
+      const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
       const newEl = {
         ...el,
         id: Date.now() + Math.random(),
-        x: el.x + CONFIG.GRID_SIZE * 2,
-        y: el.y + CONFIG.GRID_SIZE * 2,
+        x: el.x + gridSnap * 2,
+        y: el.y + gridSnap * 2,
         locked: false
       };
       elements.push(newEl);
@@ -1718,8 +2101,9 @@
         case 'duplicate':
           duplicateElement(contextMenuElement);
           break;
-        case 'upload':
-          openUploadOverlay();
+        case 'texture':
+          selectedElement = contextMenuElement;
+          openMaterialPicker();
           break;
         case 'lock':
           contextMenuElement.locked = !contextMenuElement.locked;
@@ -1751,15 +2135,22 @@
     function setTool(tool) {
       currentTool = tool;
       document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1))?.classList.add('active');
+      const btn = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
+      if (btn) btn.classList.add('active');
 
-      canvas.style.cursor = tool === 'pan' ? 'grab' : (tool === 'draw' ? 'crosshair' : 'default');
+      canvas.style.cursor = tool === 'wall' ? 'crosshair' : (tool === 'pan' ? 'grab' : 'default');
     }
 
-    // ===== VIEW TOGGLE =====
+    function toggleSection(header) {
+      const content = header.nextElementSibling;
+      const toggle = header.querySelector('.sidebar-toggle');
+      content.classList.toggle('collapsed');
+      toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+    }
+
+    // ===== VIEW =====
     function setView(view) {
       currentView = view;
-
       document.getElementById('view2D').classList.toggle('active', view === '2d');
       document.getElementById('view3D').classList.toggle('active', view === '3d');
 
@@ -1767,45 +2158,39 @@
       const threeContainer = document.getElementById('three-container');
 
       if (view === '3d') {
-        canvasWrapper.classList.add('hidden');
+        canvasWrapper.style.display = 'none';
         threeContainer.classList.add('active');
         init3D();
         render3D();
       } else {
-        canvasWrapper.classList.remove('hidden');
+        canvasWrapper.style.display = 'block';
         threeContainer.classList.remove('active');
       }
     }
 
     // ===== 3D VIEW =====
     function init3D() {
-      if (scene) return; // Already initialized
+      if (scene) return;
 
       const container = document.getElementById('three-container');
       const width = container.clientWidth;
       const height = container.clientHeight;
 
-      // Scene
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x1e1e2e);
+      scene.background = new THREE.Color(0x1a1a2e);
 
-      // Camera
       camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-      camera.position.set(roomWidth * 0.8, roomDepth * 0.8, roomWidth * 0.8);
+      camera.position.set(roomWidth * 0.7, roomDepth * 0.7, roomWidth * 0.7);
       camera.lookAt(0, 0, 0);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(width, height);
       renderer.shadowMap.enabled = true;
       container.appendChild(renderer.domElement);
 
-      // Controls
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
 
-      // Lights
       const ambient = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambient);
 
@@ -1814,33 +2199,6 @@
       directional.castShadow = true;
       scene.add(directional);
 
-      // Floor
-      const floorGeom = new THREE.PlaneGeometry(roomWidth, roomDepth);
-      const floorMat = new THREE.MeshStandardMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide });
-      const floor = new THREE.Mesh(floorGeom, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Grid
-      const grid = new THREE.GridHelper(Math.max(roomWidth, roomDepth), Math.max(roomWidth, roomDepth), 0x444444, 0x333333);
-      scene.add(grid);
-
-      // Walls (wireframe)
-      const wallMat = new THREE.MeshBasicMaterial({ color: 0x444444, wireframe: true });
-
-      // Back wall
-      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth, 8), wallMat);
-      backWall.position.set(0, 4, -roomDepth/2);
-      scene.add(backWall);
-
-      // Left wall
-      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(roomDepth, 8), wallMat);
-      leftWall.position.set(-roomWidth/2, 4, 0);
-      leftWall.rotation.y = Math.PI / 2;
-      scene.add(leftWall);
-
-      // Handle resize
       window.addEventListener('resize', () => {
         const w = container.clientWidth;
         const h = container.clientHeight;
@@ -1853,47 +2211,42 @@
     function render3D() {
       if (!scene || currentView !== '3d') return;
 
-      // Clear existing element meshes (keep floor, grid, walls, lights)
-      scene.children = scene.children.filter(child =>
-        child.type === 'AmbientLight' ||
-        child.type === 'DirectionalLight' ||
-        child.type === 'GridHelper' ||
-        child.userData.isStatic
-      );
+      // Clear non-lights
+      scene.children = scene.children.filter(c => c.type.includes('Light'));
 
-      // Add floor back
-      const floorGeom = new THREE.PlaneGeometry(roomWidth, roomDepth);
-      const floorMat = new THREE.MeshStandardMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide });
-      const floor = new THREE.Mesh(floorGeom, floorMat);
+      // Floor
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(roomWidth, roomDepth),
+        new THREE.MeshStandardMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide })
+      );
       floor.rotation.x = -Math.PI / 2;
       floor.receiveShadow = true;
-      floor.userData.isStatic = true;
       scene.add(floor);
 
-      // Add elements as 3D boxes
+      // Grid
+      scene.add(new THREE.GridHelper(Math.max(roomWidth, roomDepth), Math.max(roomWidth, roomDepth), 0x444, 0x333));
+
+      // Elements
       elements.forEach(el => {
         const w = el.width;
         const d = el.height;
-        const h = el.type.includes('cabinet') ? (el.type === 'tall-cabinet' ? 6 : 3) : 1;
+        const h = el.type.includes('cabinet') ? (el.type === 'tall-cabinet' ? 7 : 3) : 1;
 
-        const geometry = new THREE.BoxGeometry(w, h, d);
-        const material = new THREE.MeshStandardMaterial({ color: el.color });
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(w, h, d),
+          new THREE.MeshStandardMaterial({ color: el.color })
+        );
 
-        // Convert 2D position to 3D
-        const posX = (el.x / CONFIG.PIXELS_PER_FOOT) - roomWidth/2 + w/2;
-        const posZ = (el.y / CONFIG.PIXELS_PER_FOOT) - roomDepth/2 + d/2;
-        const posY = h/2;
-
-        mesh.position.set(posX, posY, posZ);
+        mesh.position.set(
+          (el.x / pixelsPerFoot) - roomWidth/2 + w/2,
+          h/2,
+          (el.y / pixelsPerFoot) - roomDepth/2 + d/2
+        );
         mesh.rotation.y = (el.rotation || 0) * Math.PI / 180;
         mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
         scene.add(mesh);
       });
 
-      // Animate
       function animate() {
         if (currentView !== '3d') return;
         requestAnimationFrame(animate);
@@ -1914,21 +2267,21 @@
       updateZoom();
     }
 
-    function resetZoom() {
-      zoom = 1;
-      updateZoom();
-    }
-
     function updateZoom() {
       document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
-      document.getElementById('canvasContainer').style.transform = `scale(${zoom})`;
+      canvas.style.transform = `translate(-50%, -50%) scale(${zoom})`;
     }
 
-    // ===== ROOM SETTINGS =====
+    // ===== ROOM =====
     function updateRoom() {
-      roomWidth = parseInt(document.getElementById('roomWidth').value) || 12;
-      roomDepth = parseInt(document.getElementById('roomDepth').value) || 10;
-      updateCanvasSize();
+      roomWidth = parseInt(document.getElementById('roomWidth').value) || 20;
+      roomDepth = parseInt(document.getElementById('roomDepth').value) || 16;
+
+      if (document.getElementById('scaleMode').value === 'fit') {
+        fitToScreen();
+      } else {
+        updateCanvasSize();
+      }
 
       if (currentView === '3d') {
         scene = null;
@@ -1938,7 +2291,7 @@
       }
     }
 
-    // ===== PROPERTIES PANEL =====
+    // ===== PROPERTIES =====
     function updateProperties() {
       const empty = document.getElementById('propertiesEmpty');
       const content = document.getElementById('propertiesContent');
@@ -1952,6 +2305,13 @@
         document.getElementById('propHeight').value = selectedElement.height;
         document.getElementById('propColor').value = selectedElement.color;
         document.getElementById('propRotation').textContent = (selectedElement.rotation || 0) + '°';
+
+        const texturePreview = document.getElementById('propTexture');
+        if (selectedElement.texture) {
+          texturePreview.style.background = `url(${selectedElement.texture}) center/cover`;
+        } else {
+          texturePreview.style.background = selectedElement.color;
+        }
       } else {
         empty.style.display = 'block';
         content.style.display = 'none';
@@ -1968,23 +2328,150 @@
       draw();
     }
 
-    // ===== QUOTE CALCULATION =====
+    // ===== MATERIALS =====
+    function openMaterialPicker() {
+      if (!selectedElement) return;
+
+      document.getElementById('materialModal').classList.add('active');
+      renderMaterialCategories();
+      renderMaterials('granite');
+    }
+
+    function renderMaterialCategories() {
+      const container = document.getElementById('materialCategories');
+      container.innerHTML = Object.keys(MATERIALS).map(cat => `
+        <button class="material-category-btn ${cat === 'granite' ? 'active' : ''}"
+                onclick="renderMaterials('${cat}', this)">
+          ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+        </button>
+      `).join('') + `
+        <button class="material-category-btn" onclick="renderMaterials('custom', this)">
+          My Uploads
+        </button>
+      `;
+    }
+
+    function renderMaterials(category, btn) {
+      document.querySelectorAll('.material-category-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const container = document.getElementById('materialsGrid');
+
+      if (category === 'custom') {
+        container.innerHTML = `
+          <div class="upload-material-btn" onclick="document.getElementById('materialUpload').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload</span>
+          </div>
+          ${customMaterials.map(m => `
+            <div class="material-modal-item"
+                 style="background: url(${m.url}) center/cover"
+                 onclick="applyMaterial('${m.url}')">
+              <div class="material-name">${m.name}</div>
+            </div>
+          `).join('')}
+        `;
+      } else {
+        const materials = MATERIALS[category] || [];
+        container.innerHTML = `
+          <div class="upload-material-btn" onclick="document.getElementById('materialUpload').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload</span>
+          </div>
+          ${materials.map(m => `
+            <div class="material-modal-item"
+                 style="background: ${m.url ? `url(${m.url})` : m.color} center/cover"
+                 onclick="applyMaterial('${m.url || m.color}', '${m.color}')">
+              <div class="material-name">${m.name}</div>
+            </div>
+          `).join('')}
+        `;
+      }
+    }
+
+    function applyMaterial(urlOrColor, fallbackColor) {
+      if (!selectedElement) return;
+
+      if (urlOrColor.startsWith('http') || urlOrColor.startsWith('data:')) {
+        selectedElement.texture = urlOrColor;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          selectedElement.textureImg = img;
+          draw();
+          updateProperties();
+        };
+        img.onerror = () => {
+          selectedElement.color = fallbackColor || '#888';
+          draw();
+        };
+        img.src = urlOrColor;
+      } else {
+        selectedElement.texture = null;
+        selectedElement.textureImg = null;
+        selectedElement.color = urlOrColor;
+        draw();
+        updateProperties();
+      }
+
+      closeModal('materialModal');
+    }
+
+    function handleMaterialUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const url = event.target.result;
+        const name = file.name.split('.')[0];
+
+        customMaterials.push({ id: Date.now(), name, url });
+
+        if (selectedElement) {
+          applyMaterial(url);
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    function uploadElementTexture(type) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          elementTextures[type] = event.target.result;
+          renderSidebar();
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+
+    // ===== QUOTE =====
     function calculateQuote() {
       const items = {};
       let total = 0;
 
       elements.forEach(el => {
         const price = CONFIG.PRICING[el.type] || 0;
-        let cost = 0;
-
-        if (['countertop', 'backsplash', 'flooring', 'tile'].includes(el.type)) {
-          // Price per sqft
-          const sqft = el.width * el.height;
-          cost = sqft * price;
-        } else {
-          // Fixed price per unit
-          cost = price;
-        }
+        let cost = ['countertop', 'backsplash', 'flooring', 'tile'].includes(el.type)
+          ? el.width * el.height * price
+          : price;
 
         if (!items[el.type]) {
           items[el.type] = { count: 0, total: 0, label: el.label };
@@ -1994,18 +2481,15 @@
         total += cost;
       });
 
-      // Update quote display
       const quoteItems = document.getElementById('quoteItems');
-      if (Object.keys(items).length === 0) {
-        quoteItems.innerHTML = '<div class="quote-item"><span class="quote-item-name">No items yet</span><span class="quote-item-value">$0</span></div>';
-      } else {
-        quoteItems.innerHTML = Object.entries(items).map(([type, data]) => `
-          <div class="quote-item">
-            <span class="quote-item-name">${data.label} (${data.count})</span>
-            <span class="quote-item-value">$${data.total.toLocaleString()}</span>
-          </div>
-        `).join('');
-      }
+      quoteItems.innerHTML = Object.keys(items).length === 0
+        ? '<div class="quote-item"><span class="quote-item-name">No items yet</span><span class="quote-item-value">$0</span></div>'
+        : Object.entries(items).map(([t, d]) => `
+            <div class="quote-item">
+              <span class="quote-item-name">${d.label} (${d.count})</span>
+              <span class="quote-item-value">$${d.total.toLocaleString()}</span>
+            </div>
+          `).join('');
 
       document.getElementById('quoteTotal').textContent = '$' + total.toLocaleString();
     }
@@ -2014,31 +2498,24 @@
       const projectName = document.getElementById('projectName').value;
       const roomType = document.getElementById('roomType').value;
 
-      let quoteText = `QUOTE: ${projectName}\n`;
-      quoteText += `Room: ${roomType} (${roomWidth}' × ${roomDepth}')\n`;
-      quoteText += `========================\n\n`;
-
+      let text = `QUOTE: ${projectName}\nRoom: ${roomType} (${roomWidth}' × ${roomDepth}')\n${'='.repeat(30)}\n\n`;
       elements.forEach(el => {
-        quoteText += `${el.label}: ${el.width}' × ${el.height}'\n`;
+        text += `${el.label}: ${el.width}' × ${el.height}'\n`;
       });
+      text += `\n${'='.repeat(30)}\nTotal: ${document.getElementById('quoteTotal').textContent}`;
 
-      quoteText += `\n========================\n`;
-      quoteText += `Total: ${document.getElementById('quoteTotal').textContent}\n`;
-
-      alert(quoteText);
+      alert(text);
     }
 
-    // ===== SHARE MODAL =====
+    // ===== MODALS =====
     function openShareModal() {
-      document.getElementById('shareModal').classList.add('active');
-
-      // Generate share link
       const token = Math.random().toString(36).substring(2, 14);
       document.getElementById('shareLink').value = `https://surprisegranite.com/tools/room-designer?p=${token}`;
+      document.getElementById('shareModal').classList.add('active');
     }
 
-    function closeShareModal() {
-      document.getElementById('shareModal').classList.remove('active');
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
     }
 
     function copyShareLink() {
@@ -2048,59 +2525,20 @@
       alert('Link copied!');
     }
 
-    function setSharePermission(perm) {
-      sharePermission = perm;
-      document.querySelectorAll('.permission-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(perm));
-      });
+    function setSharePermission(perm, btn) {
+      document.querySelectorAll('.permission-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
 
-    function inviteCollaborator() {
-      const email = document.querySelector('.collab-input').value;
-      if (email) {
-        alert(`Invitation sent to ${email}`);
-        document.querySelector('.collab-input').value = '';
+    function clearCanvas() {
+      if (confirm('Clear all elements?')) {
+        elements = [];
+        walls = walls.filter(w => w.type === 'area');
+        selectedElement = null;
+        updateProperties();
+        draw();
       }
     }
-
-    // ===== IMAGE UPLOAD =====
-    function openUploadOverlay() {
-      document.getElementById('uploadOverlay').classList.add('active');
-    }
-
-    function closeUploadOverlay() {
-      document.getElementById('uploadOverlay').classList.remove('active');
-    }
-
-    function triggerUpload() {
-      document.getElementById('fileInput').click();
-    }
-
-    function handleImageUpload(e) {
-      const file = e.target.files[0];
-      if (!file || !contextMenuElement) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-          contextMenuElement.image = img;
-          draw();
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-
-      closeUploadOverlay();
-      e.target.value = '';
-    }
-
-    // Close upload overlay on click outside
-    document.getElementById('uploadOverlay').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeUploadOverlay();
-      }
-    });
   </script>
 </body>
 </html>
