@@ -406,12 +406,21 @@
         }
 
         @media (max-width: 480px) {
+          .aria-rt-btn {
+            width: 52px;
+            height: 52px;
+            bottom: 16px;
+            ${this.config.position === 'left' ? 'left: 16px;' : 'right: 16px;'}
+          }
+          .aria-rt-btn svg { width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; }
           .aria-rt-modal { max-width: 100%; max-height: 85vh; border-radius: 20px 20px 0 0; }
           .aria-rt-overlay { align-items: flex-end; padding: 0; }
           .aria-rt-header { padding: 24px 20px; }
           .aria-rt-avatar { width: 80px; height: 80px; }
           .aria-rt-avatar svg { width: 40px !important; height: 40px !important; }
           .aria-rt-name { font-size: 24px; }
+          .aria-rt-close { width: 40px; height: 40px; min-width: 40px; min-height: 40px; top: 16px; right: 16px; }
+          .aria-rt-close svg { width: 20px !important; height: 20px !important; }
           .aria-rt-conversation { max-height: 180px; }
           .aria-rt-input-area { padding: 12px 16px; }
         }
