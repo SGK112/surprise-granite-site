@@ -127,8 +127,8 @@
         // OpenAI Realtime voice - natural sounding
         voice: 'coral', // Options: alloy, coral, echo, fable, onyx, nova, shimmer
 
-        // WebSocket relay endpoint (aria-bridge service)
-        relayEndpoint: 'wss://aria-bridge.onrender.com/web-chat',
+        // WebSocket relay endpoint (main API server)
+        relayEndpoint: 'wss://surprise-granite-email-api.onrender.com/api/aria-realtime',
 
         // Greeting
         greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today?",
