@@ -2,7 +2,7 @@
  * ARIA REALTIME - OpenAI Realtime Voice Chat
  * Natural AI voice using OpenAI's Realtime API
  * Powered by Remodely AI
- * Version: 2.0
+ * Version: 2.1 - Fixed audio playback
  */
 
 (function() {
@@ -59,14 +59,20 @@
         transcript: ''
       };
 
-      // WebSocket and Audio
+      // WebSocket
       this.ws = null;
+
+      // Audio capture
       this.audioContext = null;
       this.mediaStream = null;
-      this.audioWorklet = null;
+      this.workletNode = null;
       this.sourceNode = null;
+
+      // Audio playback - queue-based for smooth playback
+      this.playbackContext = null;
       this.audioQueue = [];
       this.isPlaying = false;
+      this.nextPlayTime = 0;
 
       // UI elements
       this.floatingBtn = null;
@@ -152,6 +158,7 @@
           overflow: hidden;
           transform: translateY(30px) scale(0.9);
           transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          position: relative;
         }
         .aria-rt-overlay.open .aria-rt-modal { transform: translateY(0) scale(1); }
 
@@ -178,7 +185,7 @@
         }
         .aria-rt-avatar svg { width: 48px !important; height: 48px !important; min-width: 48px !important; min-height: 48px !important; max-width: 48px !important; max-height: 48px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
         .aria-rt-avatar.listening { background: #ef4444; }
-        .aria-rt-avatar.listening svg { color: #fff; }
+        .aria-rt-avatar.listening svg { color: #fff !important; }
         .aria-rt-avatar.speaking { animation: speakingPulse 0.8s infinite; }
         .aria-rt-avatar.connected::after {
           content: '';
@@ -199,20 +206,25 @@
 
         .aria-rt-close {
           position: absolute;
-          top: 16px;
-          right: 16px;
-          background: rgba(255,255,255,0.1);
+          top: 12px;
+          right: 12px;
+          background: rgba(255,255,255,0.2);
           border: none;
-          width: 36px;
-          height: 36px;
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
+          min-height: 44px;
           border-radius: 50%;
           color: #fff;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: all 0.2s;
+          z-index: 10;
         }
-        .aria-rt-close:hover { background: rgba(255,255,255,0.2); }
+        .aria-rt-close:hover { background: rgba(255,255,255,0.35); transform: scale(1.1); }
+        .aria-rt-close svg { width: 24px !important; height: 24px !important; pointer-events: none; }
 
         .aria-rt-name { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
         .aria-rt-status { font-size: 14px; opacity: 0.8; }
@@ -281,7 +293,7 @@
         .aria-rt-talk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .aria-rt-talk-btn svg { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; max-width: 36px !important; max-height: 36px !important; color: ${secondary} !important; flex-shrink: 0 !important; }
         .aria-rt-talk-btn.listening { background: #ef4444; animation: ariaPulse 1.5s infinite; }
-        .aria-rt-talk-btn.listening svg { color: #fff; }
+        .aria-rt-talk-btn.listening svg { color: #fff !important; }
 
         .aria-rt-actions {
           display: flex;
@@ -362,8 +374,8 @@
       return `
         <div class="aria-rt-modal aria-rt">
           <div class="aria-rt-header">
-            <button class="aria-rt-close" id="ariaRtClose">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <button class="aria-rt-close" id="ariaRtClose" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
@@ -388,7 +400,7 @@
             </div>
 
             <div class="aria-rt-controls">
-              <button class="aria-rt-talk-btn" id="ariaRtTalkBtn">
+              <button class="aria-rt-talk-btn" id="ariaRtTalkBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -399,9 +411,9 @@
             </div>
 
             <div class="aria-rt-actions">
-              <button class="aria-rt-action" data-action="schedule">Schedule Visit</button>
-              <button class="aria-rt-action" data-action="quote">Get Quote</button>
-              <button class="aria-rt-action" data-action="hours">Business Hours</button>
+              <button class="aria-rt-action" data-action="schedule" type="button">Schedule Visit</button>
+              <button class="aria-rt-action" data-action="quote" type="button">Get Quote</button>
+              <button class="aria-rt-action" data-action="hours" type="button">Business Hours</button>
             </div>
           </div>
 
@@ -440,9 +452,12 @@
       const overlay = document.createElement('div');
       overlay.className = 'aria-rt-overlay';
       overlay.innerHTML = this.getModalHTML();
-      overlay.onclick = (e) => {
+
+      // Close on overlay click (but not modal click)
+      overlay.addEventListener('click', (e) => {
         if (e.target === overlay) this.close();
-      };
+      });
+
       document.body.appendChild(overlay);
       this.modalOverlay = overlay;
       this.attachEvents();
@@ -453,9 +468,15 @@
       const container = this.modalOverlay || this.container;
       if (!container) return;
 
-      // Close button
+      // Close button - use event delegation with better targeting
       const closeBtn = container.querySelector('#ariaRtClose');
-      if (closeBtn) closeBtn.onclick = () => this.close();
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.close();
+        });
+      }
 
       // Talk button
       const talkBtn = container.querySelector('#ariaRtTalkBtn');
@@ -479,6 +500,7 @@
           wsUrl = `${wsProtocol}//${window.location.host}${this.config.relayEndpoint}`;
         }
 
+        console.log('[Aria] Connecting to:', wsUrl);
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
@@ -495,7 +517,11 @@
         };
 
         this.ws.onmessage = (event) => {
-          this.handleMessage(JSON.parse(event.data));
+          try {
+            this.handleMessage(JSON.parse(event.data));
+          } catch (e) {
+            console.error('[Aria] Failed to parse message:', e);
+          }
         };
 
         this.ws.onerror = (error) => {
@@ -504,8 +530,8 @@
           if (this.config.onError) this.config.onError(error);
         };
 
-        this.ws.onclose = () => {
-          console.log('[Aria] WebSocket closed');
+        this.ws.onclose = (event) => {
+          console.log('[Aria] WebSocket closed:', event.code, event.reason);
           this.state.isConnected = false;
           this.updateStatus('Disconnected');
           this.updateAvatar();
@@ -520,12 +546,17 @@
 
     // Handle messages from relay
     handleMessage(msg) {
+      console.log('[Aria] Message:', msg.type);
+
       switch (msg.type) {
         case 'connected':
           this.state.isConnected = true;
           this.updateStatus('Connected');
           this.updateAvatar();
           if (this.config.onConnect) this.config.onConnect();
+
+          // Initialize playback context
+          this.initPlaybackContext();
 
           // Trigger greeting
           setTimeout(() => this.triggerGreeting(), 500);
@@ -544,8 +575,8 @@
           break;
 
         case 'audio':
-          // Aria's audio response
-          this.playAudio(msg.audio);
+          // Aria's audio response - queue it for smooth playback
+          this.queueAudio(msg.audio);
           break;
 
         case 'speaking_start':
@@ -574,6 +605,12 @@
         this.ws.close();
         this.ws = null;
       }
+      if (this.playbackContext) {
+        this.playbackContext.close().catch(() => {});
+        this.playbackContext = null;
+      }
+      this.audioQueue = [];
+      this.isPlaying = false;
       this.state.isConnected = false;
       this.state.isListening = false;
     }
@@ -600,26 +637,30 @@
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            sampleRate: 24000
+            autoGainControl: true
           }
         });
 
-        // Create audio context
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 24000
-        });
+        // Create audio context - use device's native sample rate
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const nativeSampleRate = this.audioContext.sampleRate;
+        console.log('[Aria] Native sample rate:', nativeSampleRate);
 
         // Create source from microphone
         this.sourceNode = this.audioContext.createMediaStreamSource(this.mediaStream);
 
         // Create script processor to capture audio
-        const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+        const bufferSize = 4096;
+        const processor = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
 
         processor.onaudioprocess = (e) => {
           if (!this.state.isListening || this.state.isSpeaking) return;
 
           const inputData = e.inputBuffer.getChannelData(0);
-          const pcm16 = this.floatTo16BitPCM(inputData);
+
+          // Resample to 24000Hz if needed
+          const resampled = this.resample(inputData, nativeSampleRate, 24000);
+          const pcm16 = this.floatTo16BitPCM(resampled);
           const base64 = this.arrayBufferToBase64(pcm16);
 
           if (this.ws?.readyState === WebSocket.OPEN) {
@@ -650,6 +691,27 @@
       }
     }
 
+    // Resample audio data
+    resample(inputData, fromSampleRate, toSampleRate) {
+      if (fromSampleRate === toSampleRate) {
+        return inputData;
+      }
+
+      const ratio = fromSampleRate / toSampleRate;
+      const newLength = Math.round(inputData.length / ratio);
+      const result = new Float32Array(newLength);
+
+      for (let i = 0; i < newLength; i++) {
+        const srcIndex = i * ratio;
+        const srcIndexFloor = Math.floor(srcIndex);
+        const srcIndexCeil = Math.min(srcIndexFloor + 1, inputData.length - 1);
+        const t = srcIndex - srcIndexFloor;
+        result[i] = inputData[srcIndexFloor] * (1 - t) + inputData[srcIndexCeil] * t;
+      }
+
+      return result;
+    }
+
     // Stop listening
     stopListening() {
       this.state.isListening = false;
@@ -678,43 +740,82 @@
         this.mediaStream = null;
       }
       if (this.audioContext) {
-        this.audioContext.close();
+        this.audioContext.close().catch(() => {});
         this.audioContext = null;
       }
     }
 
-    // Play audio from base64
-    async playAudio(base64Audio) {
+    // Initialize playback context
+    initPlaybackContext() {
+      if (!this.playbackContext) {
+        this.playbackContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.nextPlayTime = 0;
+        this.audioQueue = [];
+        this.isPlaying = false;
+      }
+    }
+
+    // Queue audio for smooth playback
+    queueAudio(base64Audio) {
       try {
         if (!this.playbackContext) {
-          this.playbackContext = new (window.AudioContext || window.webkitAudioContext)({
-            sampleRate: 24000
-          });
+          this.initPlaybackContext();
         }
 
+        // Decode base64 to PCM16
         const audioData = this.base64ToArrayBuffer(base64Audio);
         const pcm16 = new Int16Array(audioData);
-        const float32 = new Float32Array(pcm16.length);
 
+        // Convert to float32
+        const float32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) {
           float32[i] = pcm16[i] / 32768;
         }
 
+        // Create audio buffer at 24kHz
         const audioBuffer = this.playbackContext.createBuffer(1, float32.length, 24000);
         audioBuffer.getChannelData(0).set(float32);
 
-        const source = this.playbackContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(this.playbackContext.destination);
-        source.start();
+        // Add to queue
+        this.audioQueue.push(audioBuffer);
 
-        // Visualize
-        this.animateVisualizer(true);
-        source.onended = () => this.animateVisualizer(false);
+        // Start playback if not already playing
+        if (!this.isPlaying) {
+          this.playNextInQueue();
+        }
 
       } catch (error) {
-        console.error('[Aria] Audio playback error:', error);
+        console.error('[Aria] Audio queue error:', error);
       }
+    }
+
+    // Play next audio buffer in queue
+    playNextInQueue() {
+      if (this.audioQueue.length === 0) {
+        this.isPlaying = false;
+        this.animateVisualizer(false);
+        return;
+      }
+
+      this.isPlaying = true;
+      this.animateVisualizer(true);
+
+      const audioBuffer = this.audioQueue.shift();
+      const source = this.playbackContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(this.playbackContext.destination);
+
+      // Calculate when to start this buffer
+      const currentTime = this.playbackContext.currentTime;
+      const startTime = Math.max(currentTime, this.nextPlayTime);
+
+      source.start(startTime);
+      this.nextPlayTime = startTime + audioBuffer.duration;
+
+      // Schedule next buffer playback
+      source.onended = () => {
+        this.playNextInQueue();
+      };
     }
 
     // Trigger greeting
@@ -807,6 +908,7 @@ Always be helpful and guide users toward scheduling or getting a quote.`;
       if (!bars) return;
 
       if (active) {
+        if (this.visualizerInterval) clearInterval(this.visualizerInterval);
         this.visualizerInterval = setInterval(() => {
           bars.forEach(bar => {
             bar.style.height = `${8 + Math.random() * 24}px`;
@@ -814,6 +916,7 @@ Always be helpful and guide users toward scheduling or getting a quote.`;
         }, 100);
       } else {
         clearInterval(this.visualizerInterval);
+        this.visualizerInterval = null;
         bars.forEach(bar => bar.style.height = '8px');
       }
     }
