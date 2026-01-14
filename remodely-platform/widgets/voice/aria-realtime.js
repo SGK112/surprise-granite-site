@@ -753,6 +753,14 @@
         this.audioQueue = [];
         this.isPlaying = false;
       }
+      // Resume if suspended (browsers require user interaction)
+      if (this.playbackContext.state === 'suspended') {
+        this.playbackContext.resume().then(() => {
+          console.log('[Aria] AudioContext resumed');
+        }).catch(err => {
+          console.error('[Aria] Failed to resume AudioContext:', err);
+        });
+      }
     }
 
     // Queue audio for smooth playback
@@ -760,6 +768,11 @@
       try {
         if (!this.playbackContext) {
           this.initPlaybackContext();
+        }
+
+        // Make sure context is running
+        if (this.playbackContext.state === 'suspended') {
+          this.playbackContext.resume();
         }
 
         // Decode base64 to PCM16
@@ -778,6 +791,7 @@
 
         // Add to queue
         this.audioQueue.push(audioBuffer);
+        console.log('[Aria] Audio queued, queue length:', this.audioQueue.length);
 
         // Start playback if not already playing
         if (!this.isPlaying) {
@@ -797,6 +811,12 @@
         return;
       }
 
+      // Ensure context is running
+      if (this.playbackContext.state === 'suspended') {
+        console.log('[Aria] Resuming suspended AudioContext before playback');
+        this.playbackContext.resume();
+      }
+
       this.isPlaying = true;
       this.animateVisualizer(true);
 
@@ -809,6 +829,7 @@
       const currentTime = this.playbackContext.currentTime;
       const startTime = Math.max(currentTime, this.nextPlayTime);
 
+      console.log('[Aria] Playing audio buffer, duration:', audioBuffer.duration.toFixed(2) + 's');
       source.start(startTime);
       this.nextPlayTime = startTime + audioBuffer.duration;
 
