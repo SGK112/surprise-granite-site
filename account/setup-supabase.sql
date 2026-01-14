@@ -349,15 +349,22 @@ CREATE TABLE IF NOT EXISTS public.leads (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
 
   -- Contact Information
-  name TEXT NOT NULL,
+  name TEXT,                         -- Legacy column
+  full_name TEXT,                    -- Full name from forms
+  first_name TEXT,                   -- First name
+  last_name TEXT,                    -- Last name
   email TEXT NOT NULL,
   phone TEXT,
+  zip_code TEXT,                     -- Project ZIP code
 
   -- Project Details
   project_type TEXT,                 -- kitchen, bathroom, flooring, etc.
   service_type TEXT,                 -- countertops, tile, flooring, cabinets
   material_preference TEXT,          -- granite, quartz, marble, etc.
   message TEXT,
+  image_urls JSONB,                  -- Array of uploaded image URLs
+  form_name TEXT,                    -- Source form identifier
+  page_url TEXT,                     -- URL where lead was captured
 
   -- Quote/Estimate Data (from calculator)
   counter_sqft DECIMAL(10,2),
