@@ -55,6 +55,7 @@
         isConnected: false,
         isListening: false,
         isSpeaking: false,
+        hasGreeted: false,
         conversationHistory: [],
         transcript: ''
       };
@@ -551,15 +552,15 @@
       switch (msg.type) {
         case 'connected':
           this.state.isConnected = true;
-          this.updateStatus('Connected');
+          this.updateStatus('Press the button to talk');
           this.updateAvatar();
           if (this.config.onConnect) this.config.onConnect();
 
           // Initialize playback context
           this.initPlaybackContext();
 
-          // Trigger greeting
-          setTimeout(() => this.triggerGreeting(), 500);
+          // Don't auto-trigger greeting - wait for user to press talk button
+          // Greeting will be triggered on first startListening() call
           break;
 
         case 'transcript':
@@ -683,6 +684,12 @@
         // Tell relay we're ready
         if (this.ws?.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ type: 'start_listening' }));
+        }
+
+        // Trigger greeting on first interaction (after mic permission granted)
+        if (!this.state.hasGreeted) {
+          this.state.hasGreeted = true;
+          setTimeout(() => this.triggerGreeting(), 300);
         }
 
       } catch (error) {

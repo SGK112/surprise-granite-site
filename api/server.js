@@ -4,7 +4,7 @@ const Stripe = require('stripe');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env', override: true });
 
 // ============================================
 // REMODELY.AI RATE LIMITER (SERVER-SIDE)
@@ -2231,6 +2231,122 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
+});
+
+// ============ ARIA VOICE LEAD CAPTURE ============
+app.post('/api/aria-lead', async (req, res) => {
+  try {
+    const { name, phone, email, project_type, project_details, preferred_contact_time, notes, source, tool, timestamp } = req.body;
+
+    console.log('[ARIA LEAD] Received:', { name, phone, email, project_type, source });
+
+    // Build email content
+    const leadHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="500" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); padding: 25px; text-align: center;">
+              <h1 style="margin: 0; color: #1a1a2e; font-size: 24px; font-weight: 700;">🎤 New Voice Lead from Aria</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Contact Information</h2>
+              <table width="100%" cellspacing="0" cellpadding="8">
+                <tr>
+                  <td style="color: #666; font-weight: 600; width: 140px;">Name:</td>
+                  <td style="color: #1a1a2e;">${name || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Phone:</td>
+                  <td style="color: #1a1a2e;"><a href="tel:${phone}" style="color: #1a1a2e; font-weight: 600;">${phone || 'Not provided'}</a></td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Email:</td>
+                  <td style="color: #1a1a2e;"><a href="mailto:${email}" style="color: #1a1a2e;">${email || 'Not provided'}</a></td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Best Time:</td>
+                  <td style="color: #1a1a2e;">${preferred_contact_time || 'Not specified'}</td>
+                </tr>
+              </table>
+
+              <h2 style="margin: 25px 0 15px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">Project Details</h2>
+              <table width="100%" cellspacing="0" cellpadding="8">
+                <tr>
+                  <td style="color: #666; font-weight: 600; width: 140px;">Project Type:</td>
+                  <td style="color: #1a1a2e;">${project_type || 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Details:</td>
+                  <td style="color: #1a1a2e;">${project_details || 'Not provided'}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666; font-weight: 600;">Notes:</td>
+                  <td style="color: #1a1a2e;">${notes || 'None'}</td>
+                </tr>
+              </table>
+
+              <div style="margin-top: 25px; padding: 15px; background: #f8f8f8; border-radius: 8px; border-left: 4px solid #f9cb00;">
+                <p style="margin: 0; color: #666; font-size: 12px;">
+                  <strong>Source:</strong> ${source || 'Aria Voice Chat'}<br>
+                  <strong>Action:</strong> ${tool || 'Lead Capture'}<br>
+                  <strong>Time:</strong> ${timestamp || new Date().toISOString()}
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: #1a1a2e; padding: 20px; text-align: center;">
+              <p style="margin: 0; color: #f9cb00; font-size: 14px; font-weight: 600;">Follow up ASAP!</p>
+              <p style="margin: 5px 0 0; color: #888; font-size: 12px;">This lead came from the Aria AI voice assistant on your website.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    // Send to admin
+    const emailResult = await sendNotification(
+      ADMIN_EMAIL,
+      `🎤 New Voice Lead: ${name || 'Unknown'} - ${project_type || 'Inquiry'}`,
+      leadHtml
+    );
+
+    // Also store in Supabase if available
+    if (supabase) {
+      try {
+        await supabase.from('aria_leads').insert([{
+          name,
+          phone,
+          email,
+          project_type,
+          project_details,
+          preferred_contact_time,
+          notes,
+          source: source || 'aria_voice_chat',
+          tool,
+          created_at: timestamp || new Date().toISOString()
+        }]);
+        console.log('[ARIA LEAD] Saved to database');
+      } catch (dbErr) {
+        console.log('[ARIA LEAD] Database save skipped:', dbErr.message);
+      }
+    }
+
+    res.json({ success: true, emailSent: emailResult.success });
+  } catch (error) {
+    console.error('[ARIA LEAD] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ============ TEST EMAIL ENDPOINT ============
@@ -5307,7 +5423,7 @@ async function verifyDistributorApiKey(apiKey) {
 
   const crypto = require('crypto');
   const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
-  const keyPrefix = apiKey.substring(0, 8);
+  const keyPrefix = apiKey.substring(0, 11); // 'sg_' + 8 chars - matches creation
 
   const { data } = await supabase
     .from('distributor_api_keys')
@@ -5318,14 +5434,8 @@ async function verifyDistributorApiKey(apiKey) {
     .single();
 
   if (data) {
-    // Update last used
-    await supabase
-      .from('distributor_api_keys')
-      .update({
-        last_used_at: new Date().toISOString(),
-        total_requests: supabase.sql`total_requests + 1`
-      })
-      .eq('key_prefix', keyPrefix);
+    // Update last used - use RPC for safe increment
+    await supabase.rpc('increment_api_key_requests', { prefix: keyPrefix });
   }
 
   return data;
@@ -5911,7 +6021,7 @@ app.delete('/api/distributor/locations/:id', async (req, res) => {
 
 // ============ PUBLIC MARKETPLACE API ============
 
-// Search slabs (public)
+// Search slabs (public) - Updated to use products table
 app.get('/api/marketplace/slabs', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
@@ -5927,10 +6037,84 @@ app.get('/api/marketplace/slabs', async (req, res) => {
       state,
       search,
       limit = 50,
-      offset = 0
+      offset = 0,
+      use_new_schema = 'false' // Feature flag for migration
     } = req.query;
 
-    // Use the search function
+    // Try new products schema first if enabled
+    if (use_new_schema === 'true') {
+      let query = supabase
+        .from('distributor_products')
+        .select(`
+          *,
+          distributor_product_slabs(*),
+          distributors(
+            id, company_name, logo_url, website
+          ),
+          distributor_locations(
+            id, name, city, state, postal_code, phone
+          )
+        `, { count: 'exact' })
+        .eq('product_type', 'slab')
+        .eq('is_public', true)
+        .eq('status', 'active');
+
+      // Apply filters
+      if (material_type) query = query.ilike('material_type', `%${material_type}%`);
+      if (brand) query = query.ilike('brand', `%${brand}%`);
+      if (color) query = query.ilike('color_family', `%${color}%`);
+      if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
+      if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%,color_family.ilike.%${search}%`);
+      }
+
+      // Filter by sqft range if provided
+      if (min_sqft || max_sqft) {
+        // This requires joining with distributor_product_slabs
+        // For now, we'll filter client-side or add a database function
+      }
+
+      // Pagination
+      query = query
+        .order('created_at', { ascending: false })
+        .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+      const { data: products, error, count } = await query;
+
+      if (error) throw error;
+
+      // Transform products to match legacy slab format
+      const slabs = (products || []).map(p => ({
+        id: p.id,
+        distributor_id: p.distributor_id,
+        product_name: p.name,
+        brand: p.brand,
+        material_type: p.material_type,
+        color_family: p.color_family,
+        finish: p.finish,
+        description: p.description,
+        price_per_sqft: p.wholesale_price,
+        length_inches: p.distributor_product_slabs?.[0]?.length_inches,
+        width_inches: p.distributor_product_slabs?.[0]?.width_inches,
+        thickness_cm: p.distributor_product_slabs?.[0]?.thickness_cm,
+        sqft: p.distributor_product_slabs?.[0]?.sqft,
+        quality_grade: p.distributor_product_slabs?.[0]?.quality_grade,
+        origin_country: p.distributor_product_slabs?.[0]?.origin_country,
+        lot_number: p.distributor_product_slabs?.[0]?.lot_number,
+        images: p.images || [],
+        status: p.status === 'active' ? 'available' : p.status,
+        is_featured: p.is_featured,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        distributor: p.distributors,
+        location: p.distributor_locations
+      }));
+
+      return res.json({ slabs, total: count });
+    }
+
+    // Legacy: Use the search function for slab_inventory
     const { data: slabs, error } = await supabase.rpc('search_slabs', {
       p_material_type: material_type || null,
       p_brand: brand || null,
@@ -5950,6 +6134,105 @@ app.get('/api/marketplace/slabs', async (req, res) => {
     res.json({ slabs: slabs || [] });
   } catch (error) {
     console.error('Search slabs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// General marketplace products search (new unified endpoint)
+app.get('/api/marketplace/products', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const {
+      product_type,
+      material_type,
+      brand,
+      color,
+      min_price,
+      max_price,
+      search,
+      limit = 50,
+      offset = 0
+    } = req.query;
+
+    let query = supabase
+      .from('distributor_products')
+      .select(`
+        *,
+        distributor_product_slabs(*),
+        distributor_product_tiles(*),
+        distributor_product_flooring(*),
+        distributor_product_installation(*),
+        distributors(
+          id, company_name, logo_url, website, city, state
+        )
+      `, { count: 'exact' })
+      .eq('is_public', true)
+      .eq('status', 'active');
+
+    // Apply filters
+    if (product_type) query = query.eq('product_type', product_type);
+    if (material_type) query = query.ilike('material_type', `%${material_type}%`);
+    if (brand) query = query.ilike('brand', `%${brand}%`);
+    if (color) query = query.ilike('color_family', `%${color}%`);
+    if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
+    if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%`);
+    }
+
+    query = query
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    const { data: products, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({
+      products: products || [],
+      total: count,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    console.error('Search marketplace products error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get marketplace product detail
+app.get('/api/marketplace/products/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: product, error } = await supabase
+      .from('distributor_products')
+      .select(`
+        *,
+        distributor_product_slabs(*),
+        distributor_product_tiles(*),
+        distributor_product_flooring(*),
+        distributor_product_installation(*),
+        distributors(
+          id, company_name, logo_url, website, phone,
+          city, state
+        ),
+        distributor_locations(
+          id, name, address_line1, city, state, postal_code, phone
+        )
+      `)
+      .eq('id', req.params.id)
+      .eq('is_public', true)
+      .single();
+
+    if (error) throw error;
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    res.json({ product });
+  } catch (error) {
+    console.error('Get marketplace product error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -6034,11 +6317,8 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
 
     if (error) throw error;
 
-    // Increment inquiry count on slab
-    await supabase
-      .from('slab_inventory')
-      .update({ inquiry_count: supabase.sql`inquiry_count + 1` })
-      .eq('id', req.params.id);
+    // Increment inquiry count on slab - use RPC for safe increment
+    await supabase.rpc('increment_slab_inquiry_count', { slab_id: req.params.id });
 
     // Get distributor email and send notification
     const { data: distributor } = await supabase
@@ -6201,6 +6481,198 @@ app.delete('/api/distributor/api-keys/:id', async (req, res) => {
   }
 });
 
+// ============ DISTRIBUTOR INQUIRIES ============
+
+// Get all inquiries for distributor
+app.get('/api/distributor/inquiries', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { status, page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let query = supabase
+      .from('slab_inquiries')
+      .select(`
+        *,
+        slab:slab_id (
+          id, product_name, brand, material_type, color, price_per_sqft,
+          primary_image_url
+        )
+      `, { count: 'exact' })
+      .eq('distributor_id', profile.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data: inquiries, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({
+      inquiries: inquiries || [],
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get inquiries error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single inquiry
+app.get('/api/distributor/inquiries/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { data: inquiry, error } = await supabase
+      .from('slab_inquiries')
+      .select(`
+        *,
+        slab:slab_id (
+          id, product_name, brand, material_type, color, price_per_sqft,
+          length_inches, width_inches, thickness_cm, primary_image_url
+        )
+      `)
+      .eq('id', req.params.id)
+      .eq('distributor_id', profile.id)
+      .single();
+
+    if (error) throw error;
+    if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+
+    res.json({ inquiry });
+  } catch (error) {
+    console.error('Get inquiry error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update inquiry status
+app.patch('/api/distributor/inquiries/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    const { status, notes, response_message } = req.body;
+    const updates = { updated_at: new Date().toISOString() };
+
+    if (status) {
+      const validStatuses = ['new', 'contacted', 'quoted', 'closed', 'converted'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+      }
+      updates.status = status;
+      if (status === 'contacted' || status === 'quoted') {
+        updates.responded_at = updates.responded_at || new Date().toISOString();
+      }
+    }
+    if (notes !== undefined) updates.notes = notes;
+    if (response_message !== undefined) updates.response_message = response_message;
+
+    const { data: inquiry, error } = await supabase
+      .from('slab_inquiries')
+      .update(updates)
+      .eq('id', req.params.id)
+      .eq('distributor_id', profile.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+
+    res.json({ inquiry });
+  } catch (error) {
+    console.error('Update inquiry error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get inquiry statistics
+app.get('/api/distributor/inquiries/stats/summary', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return res.status(401).json({ error: 'Distributor not found' });
+
+    // Get counts by status
+    const { data: inquiries, error } = await supabase
+      .from('slab_inquiries')
+      .select('status')
+      .eq('distributor_id', profile.id);
+
+    if (error) throw error;
+
+    const stats = {
+      total: inquiries?.length || 0,
+      new: 0,
+      contacted: 0,
+      quoted: 0,
+      converted: 0,
+      closed: 0
+    };
+
+    (inquiries || []).forEach(inq => {
+      if (stats[inq.status] !== undefined) {
+        stats[inq.status]++;
+      }
+    });
+
+    res.json({ stats });
+  } catch (error) {
+    console.error('Get inquiry stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ DISTRIBUTOR ANALYTICS ============
 
 // Get analytics summary
@@ -6265,12 +6737,1268 @@ app.get('/api/distributor/analytics', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
+// ============================================
+// ENTERPRISE PRODUCTS API
+// Universal product management for slabs, tiles, flooring, installation products
+// ============================================
+
+// Helper: Get distributor ID from user or API key
+async function getDistributorId(req) {
+  const apiKey = req.headers['x-api-key'];
+  const userId = req.headers['x-user-id'];
+
+  if (apiKey) {
+    const keyPrefix = apiKey.substring(0, 11);
+    const { data: keyData } = await supabase
+      .from('distributor_api_keys')
+      .select('distributor_id')
+      .eq('key_prefix', keyPrefix)
+      .eq('is_active', true)
+      .single();
+    return keyData?.distributor_id;
+  }
+
+  if (userId) {
+    // Check new distributors table first
+    const { data: distributor } = await supabase
+      .from('distributors')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (distributor?.id) return distributor.id;
+
+    // Fallback to legacy distributor_profiles
+    const { data: profile } = await supabase
+      .from('distributor_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+    return profile?.id;
+  }
+
+  return null;
+}
+
+// GET /api/products - List products with filters
+app.get('/api/products', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const {
+      distributor_id,
+      product_type,
+      material_type,
+      color_family,
+      status = 'active',
+      search,
+      min_price,
+      max_price,
+      is_public,
+      limit = 50,
+      offset = 0
+    } = req.query;
+
+    // Build query
+    let query = supabase
+      .from('distributor_products')
+      .select(`
+        *,
+        distributor_product_slabs(*),
+        distributor_product_tiles(*),
+        distributor_product_flooring(*),
+        distributor_product_installation(*),
+        distributors(company_name, logo_url),
+        distributor_locations(name, city, state)
+      `, { count: 'exact' });
+
+    // Apply filters
+    if (distributor_id) query = query.eq('distributor_id', distributor_id);
+    if (product_type) query = query.eq('product_type', product_type);
+    if (material_type) query = query.ilike('material_type', `%${material_type}%`);
+    if (color_family) query = query.ilike('color_family', `%${color_family}%`);
+    if (status) query = query.eq('status', status);
+    if (is_public !== undefined) query = query.eq('is_public', is_public === 'true');
+    if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
+    if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+
+    // Search across multiple fields
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%`);
+    }
+
+    // Pagination and ordering
+    query = query
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    const { data: products, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({
+      products,
+      total: count,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    console.error('Get products error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/:id - Get single product with full details
+app.get('/api/products/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { id } = req.params;
+
+    const { data: product, error } = await supabase
+      .from('distributor_products')
+      .select(`
+        *,
+        distributor_product_slabs(*),
+        distributor_product_tiles(*),
+        distributor_product_flooring(*),
+        distributor_product_installation(*),
+        distributor_product_skus(*),
+        distributors(company_name, logo_url, email, phone),
+        distributor_locations(*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    res.json(product);
+  } catch (error) {
+    console.error('Get product error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/products - Create product
+app.post('/api/products', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const {
+      sku, external_sku, upc, product_type = 'slab',
+      name, brand, description, material_type, color_family, finish,
+      quantity = 1, quantity_unit = 'each', min_stock_level = 0,
+      cost_price, wholesale_price, retail_price, price_unit = 'each',
+      location_id, warehouse_zone, bin_location,
+      status = 'active', is_featured = false, is_public = true,
+      images = [], tags = [], custom_attributes = {},
+      type_data = {}
+    } = req.body;
+
+    // Validate required fields
+    if (!sku || !name) {
+      return res.status(400).json({ error: 'SKU and name are required' });
+    }
+
+    // Insert product
+    const { data: product, error: productError } = await supabase
+      .from('distributor_products')
+      .insert({
+        distributor_id: distributorId,
+        sku, external_sku, upc, product_type,
+        name, brand, description, material_type, color_family, finish,
+        quantity, quantity_unit, min_stock_level,
+        cost_price, wholesale_price, retail_price, price_unit,
+        location_id, warehouse_zone, bin_location,
+        status, is_featured, is_public,
+        images, tags, custom_attributes,
+        sync_source: 'api'
+      })
+      .select()
+      .single();
+
+    if (productError) throw productError;
+
+    // Insert type-specific data
+    if (Object.keys(type_data).length > 0) {
+      const typeTable = `distributor_product_${product_type === 'installation_product' ? 'installation' : product_type}s`;
+      const { error: typeError } = await supabase
+        .from(typeTable)
+        .insert({
+          product_id: product.id,
+          ...type_data
+        });
+
+      if (typeError) {
+        console.error(`Error inserting ${typeTable}:`, typeError);
+      }
+    }
+
+    // Log initial inventory transaction
+    await supabase
+      .from('inventory_transactions')
+      .insert({
+        product_id: product.id,
+        transaction_type: 'receive',
+        quantity_change: quantity,
+        quantity_before: 0,
+        quantity_after: quantity,
+        reference_type: 'initial_stock',
+        notes: 'Initial inventory on product creation'
+      });
+
+    res.status(201).json(product);
+  } catch (error) {
+    console.error('Create product error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/products/:id - Update product
+app.patch('/api/products/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+    const { type_data, ...productData } = req.body;
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('distributor_products')
+      .select('distributor_id, product_type')
+      .eq('id', id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized to update this product' });
+    }
+
+    // Update product
+    const { data: product, error: productError } = await supabase
+      .from('distributor_products')
+      .update(productData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (productError) throw productError;
+
+    // Update type-specific data if provided
+    if (type_data && Object.keys(type_data).length > 0) {
+      const typeTable = `distributor_product_${existing.product_type === 'installation_product' ? 'installation' : existing.product_type}s`;
+      await supabase
+        .from(typeTable)
+        .upsert({
+          product_id: id,
+          ...type_data
+        });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error('Update product error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/products/:id - Delete product
+app.delete('/api/products/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('distributor_products')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized to delete this product' });
+    }
+
+    // Delete product (cascades to type-specific tables)
+    const { error } = await supabase
+      .from('distributor_products')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (error) {
+    console.error('Delete product error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/products/bulk - Bulk create/update products
+app.post('/api/products/bulk', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { products } = req.body;
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: 'Products array is required' });
+    }
+
+    const results = {
+      inserted: 0,
+      updated: 0,
+      errors: []
+    };
+
+    for (const product of products) {
+      try {
+        const { type_data, ...productData } = product;
+
+        // Upsert product by SKU
+        const { data, error } = await supabase
+          .from('distributor_products')
+          .upsert({
+            distributor_id: distributorId,
+            ...productData,
+            sync_source: 'bulk_import',
+            last_synced_at: new Date().toISOString()
+          }, {
+            onConflict: 'distributor_id,sku'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          results.errors.push({ sku: product.sku, error: error.message });
+          continue;
+        }
+
+        // Check if insert or update by comparing timestamps
+        if (data.created_at === data.updated_at) {
+          results.inserted++;
+        } else {
+          results.updated++;
+        }
+
+        // Handle type-specific data
+        if (type_data && Object.keys(type_data).length > 0 && data.product_type) {
+          const typeTable = `distributor_product_${data.product_type === 'installation_product' ? 'installation' : data.product_type}s`;
+          await supabase
+            .from(typeTable)
+            .upsert({
+              product_id: data.id,
+              ...type_data
+            });
+        }
+      } catch (err) {
+        results.errors.push({ sku: product.sku, error: err.message });
+      }
+    }
+
+    res.json({
+      success: results.errors.length === 0,
+      ...results
+    });
+  } catch (error) {
+    console.error('Bulk import error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/:id/inventory - Get inventory transactions
+app.get('/api/products/:id/inventory', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { id } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+
+    const { data: transactions, error, count } = await supabase
+      .from('inventory_transactions')
+      .select('*', { count: 'exact' })
+      .eq('product_id', id)
+      .order('performed_at', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    if (error) throw error;
+
+    res.json({
+      transactions,
+      total: count,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+  } catch (error) {
+    console.error('Get inventory transactions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/products/:id/inventory - Add inventory transaction
+app.post('/api/products/:id/inventory', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+    const {
+      transaction_type,
+      quantity_change,
+      reference_type,
+      reference_id,
+      notes
+    } = req.body;
+
+    // Verify ownership and get current quantity
+    const { data: product } = await supabase
+      .from('distributor_products')
+      .select('distributor_id, quantity')
+      .eq('id', id)
+      .single();
+
+    if (!product || product.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const newQuantity = product.quantity + parseInt(quantity_change);
+
+    if (newQuantity < 0) {
+      return res.status(400).json({
+        error: 'Insufficient inventory',
+        current_quantity: product.quantity,
+        requested_change: quantity_change
+      });
+    }
+
+    // Update product quantity
+    await supabase
+      .from('distributor_products')
+      .update({
+        quantity: newQuantity,
+        status: newQuantity === 0 ? 'out_of_stock' : 'active'
+      })
+      .eq('id', id);
+
+    // Log transaction
+    const { data: transaction, error } = await supabase
+      .from('inventory_transactions')
+      .insert({
+        product_id: id,
+        transaction_type,
+        quantity_change: parseInt(quantity_change),
+        quantity_before: product.quantity,
+        quantity_after: newQuantity,
+        reference_type,
+        reference_id,
+        notes
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+      success: true,
+      transaction,
+      new_quantity: newQuantity
+    });
+  } catch (error) {
+    console.error('Add inventory transaction error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/:id/skus - Get SKU cross-references
+app.get('/api/products/:id/skus', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { id } = req.params;
+
+    const { data: skus, error } = await supabase
+      .from('distributor_product_skus')
+      .select('*')
+      .eq('product_id', id)
+      .order('is_primary', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(skus);
+  } catch (error) {
+    console.error('Get product SKUs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/products/:id/skus - Add SKU mapping
+app.post('/api/products/:id/skus', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+    const { sku_type, sku_value, system_name, is_primary = false } = req.body;
+
+    // Verify ownership
+    const { data: product } = await supabase
+      .from('distributor_products')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!product || product.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { data: sku, error } = await supabase
+      .from('distributor_product_skus')
+      .insert({
+        product_id: id,
+        sku_type,
+        sku_value,
+        system_name,
+        is_primary
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(sku);
+  } catch (error) {
+    console.error('Add SKU mapping error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/products/:id/skus/:skuId - Remove SKU mapping
+app.delete('/api/products/:id/skus/:skuId', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id, skuId } = req.params;
+
+    // Verify ownership
+    const { data: product } = await supabase
+      .from('distributor_products')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!product || product.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { error } = await supabase
+      .from('distributor_product_skus')
+      .delete()
+      .eq('id', skuId)
+      .eq('product_id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete SKU mapping error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/lookup - Find product by external SKU
+app.get('/api/products/lookup', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { sku, system } = req.query;
+    if (!sku) return res.status(400).json({ error: 'SKU is required' });
+
+    const distributorId = await getDistributorId(req);
+
+    // First check distributor_product_skus table
+    let query = supabase
+      .from('distributor_product_skus')
+      .select(`
+        product_id,
+        distributor_products(*)
+      `)
+      .eq('sku_value', sku);
+
+    if (system) query = query.eq('system_name', system);
+
+    const { data: skuMatch } = await query.single();
+
+    if (skuMatch?.distributor_products) {
+      return res.json(skuMatch.distributor_products);
+    }
+
+    // Fall back to distributor_products.sku and distributor_products.external_sku
+    let productQuery = supabase
+      .from('distributor_products')
+      .select('*')
+      .or(`sku.eq.${sku},external_sku.eq.${sku}`);
+
+    if (distributorId) {
+      productQuery = productQuery.eq('distributor_id', distributorId);
+    }
+
+    const { data: product } = await productQuery.single();
+
+    if (product) {
+      return res.json(product);
+    }
+
+    res.status(404).json({ error: 'Product not found' });
+  } catch (error) {
+    console.error('Product lookup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// ERP INTEGRATIONS API
+// ============================================
+
+// GET /api/integrations - List integrations
+app.get('/api/integrations', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: integrations, error } = await supabase
+      .from('erp_integrations')
+      .select('*, sync_logs(id, status, started_at, completed_at, records_processed)')
+      .eq('distributor_id', distributorId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Remove sensitive config data
+    const safeIntegrations = integrations.map(int => ({
+      ...int,
+      connection_config: { configured: Object.keys(int.connection_config || {}).length > 0 }
+    }));
+
+    res.json(safeIntegrations);
+  } catch (error) {
+    console.error('Get integrations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/integrations - Create integration
+app.post('/api/integrations', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const {
+      system_type,
+      display_name,
+      connection_config,
+      sync_direction = 'bidirectional',
+      sync_frequency_minutes = 60,
+      field_mappings = {}
+    } = req.body;
+
+    if (!system_type) {
+      return res.status(400).json({ error: 'System type is required' });
+    }
+
+    const { data: integration, error } = await supabase
+      .from('erp_integrations')
+      .insert({
+        distributor_id: distributorId,
+        system_type,
+        display_name: display_name || system_type,
+        connection_config,
+        sync_direction,
+        sync_frequency_minutes,
+        field_mappings
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Return without sensitive config
+    res.status(201).json({
+      ...integration,
+      connection_config: { configured: true }
+    });
+  } catch (error) {
+    console.error('Create integration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/integrations/:id - Update integration
+app.patch('/api/integrations/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('erp_integrations')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { data: integration, error } = await supabase
+      .from('erp_integrations')
+      .update(req.body)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      ...integration,
+      connection_config: { configured: Object.keys(integration.connection_config || {}).length > 0 }
+    });
+  } catch (error) {
+    console.error('Update integration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/integrations/:id - Delete integration
+app.delete('/api/integrations/:id', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from('erp_integrations')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!existing || existing.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { error } = await supabase
+      .from('erp_integrations')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete integration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/integrations/:id/sync - Trigger manual sync
+app.post('/api/integrations/:id/sync', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+
+    // Verify ownership and get integration
+    const { data: integration } = await supabase
+      .from('erp_integrations')
+      .select('*')
+      .eq('id', id)
+      .eq('distributor_id', distributorId)
+      .single();
+
+    if (!integration) {
+      return res.status(404).json({ error: 'Integration not found' });
+    }
+
+    // Create sync log entry
+    const { data: syncLog, error: logError } = await supabase
+      .from('sync_logs')
+      .insert({
+        integration_id: id,
+        sync_type: 'manual',
+        direction: integration.sync_direction,
+        status: 'running'
+      })
+      .select()
+      .single();
+
+    if (logError) throw logError;
+
+    // Update integration last_sync
+    await supabase
+      .from('erp_integrations')
+      .update({
+        last_sync_at: new Date().toISOString(),
+        last_sync_status: 'running'
+      })
+      .eq('id', id);
+
+    // TODO: Actually perform sync based on system_type
+    // For now, just mark as completed
+    setTimeout(async () => {
+      await supabase
+        .from('sync_logs')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          records_processed: 0
+        })
+        .eq('id', syncLog.id);
+
+      await supabase
+        .from('erp_integrations')
+        .update({ last_sync_status: 'completed' })
+        .eq('id', id);
+    }, 2000);
+
+    res.json({
+      success: true,
+      sync_log_id: syncLog.id,
+      message: 'Sync initiated'
+    });
+  } catch (error) {
+    console.error('Trigger sync error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/integrations/:id/logs - Get sync logs
+app.get('/api/integrations/:id/logs', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+    const { limit = 20 } = req.query;
+
+    // Verify ownership
+    const { data: integration } = await supabase
+      .from('erp_integrations')
+      .select('distributor_id')
+      .eq('id', id)
+      .single();
+
+    if (!integration || integration.distributor_id !== distributorId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { data: logs, error } = await supabase
+      .from('sync_logs')
+      .select('*')
+      .eq('integration_id', id)
+      .order('started_at', { ascending: false })
+      .limit(parseInt(limit));
+
+    if (error) throw error;
+
+    res.json(logs);
+  } catch (error) {
+    console.error('Get sync logs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/integrations/:id/test - Test connection
+app.post('/api/integrations/:id/test', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { id } = req.params;
+
+    // Get integration
+    const { data: integration } = await supabase
+      .from('erp_integrations')
+      .select('*')
+      .eq('id', id)
+      .eq('distributor_id', distributorId)
+      .single();
+
+    if (!integration) {
+      return res.status(404).json({ error: 'Integration not found' });
+    }
+
+    // TODO: Actually test connection based on system_type
+    // For now, return success if config exists
+    const hasConfig = Object.keys(integration.connection_config || {}).length > 0;
+
+    res.json({
+      success: hasConfig,
+      message: hasConfig ? 'Connection test successful' : 'No connection configuration found'
+    });
+  } catch (error) {
+    console.error('Test connection error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/stats - Get inventory statistics
+app.get('/api/products/stats', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    // Get product counts by type and status
+    const { data: products } = await supabase
+      .from('distributor_products')
+      .select('product_type, status, quantity, wholesale_price, min_stock_level')
+      .eq('distributor_id', distributorId);
+
+    const stats = {
+      total_products: products?.length || 0,
+      active_products: products?.filter(p => p.status === 'active').length || 0,
+      out_of_stock: products?.filter(p => p.status === 'out_of_stock').length || 0,
+      low_stock: products?.filter(p => p.quantity <= p.min_stock_level && p.min_stock_level > 0).length || 0,
+      by_type: {},
+      total_value: 0
+    };
+
+    // Calculate by type and total value
+    products?.forEach(p => {
+      stats.by_type[p.product_type] = (stats.by_type[p.product_type] || 0) + 1;
+      stats.total_value += (p.wholesale_price || 0) * (p.quantity || 0);
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get product stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// ARIA REALTIME - OpenAI Voice WebSocket Relay
+// ============================================
+const http = require('http');
+const WebSocket = require('ws');
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ noServer: true });
+
+// Handle WebSocket upgrade for Aria Realtime
+server.on('upgrade', (request, socket, head) => {
+  const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+
+  if (pathname === '/api/aria-realtime') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+// Aria Realtime WebSocket handler
+wss.on('connection', (clientWs) => {
+  console.log('[Aria Realtime] Client connected');
+
+  let openAiWs = null;
+  let sessionConfig = null;
+  let isSessionReady = false;
+
+  // Handle messages from browser client
+  clientWs.on('message', async (data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+
+      switch (msg.type) {
+        case 'config':
+          // Client sends configuration - connect to OpenAI
+          sessionConfig = msg;
+          await connectToOpenAI();
+          break;
+
+        case 'audio':
+          // Forward audio to OpenAI
+          if (openAiWs?.readyState === WebSocket.OPEN && isSessionReady) {
+            openAiWs.send(JSON.stringify({
+              type: 'input_audio_buffer.append',
+              audio: msg.audio
+            }));
+          }
+          break;
+
+        case 'start_listening':
+          console.log('[Aria Realtime] Client started listening');
+          break;
+
+        case 'stop_listening':
+          // Commit the audio buffer to get a response
+          if (openAiWs?.readyState === WebSocket.OPEN) {
+            openAiWs.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+          }
+          break;
+
+        case 'text_input':
+          // Text input instead of voice
+          if (openAiWs?.readyState === WebSocket.OPEN && isSessionReady) {
+            openAiWs.send(JSON.stringify({
+              type: 'conversation.item.create',
+              item: {
+                type: 'message',
+                role: 'user',
+                content: [{ type: 'input_text', text: msg.text }]
+              }
+            }));
+            openAiWs.send(JSON.stringify({
+              type: 'response.create',
+              response: { modalities: ['text', 'audio'] }
+            }));
+          }
+          break;
+
+        case 'trigger_greeting':
+          // Trigger Aria's greeting
+          if (openAiWs?.readyState === WebSocket.OPEN && isSessionReady) {
+            openAiWs.send(JSON.stringify({
+              type: 'response.create',
+              response: {
+                modalities: ['text', 'audio'],
+                instructions: `Greet the user briefly: "${msg.greeting || "Hi! How can I help you today?"}"`
+              }
+            }));
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('[Aria Realtime] Message parse error:', error);
+    }
+  });
+
+  // Connect to OpenAI Realtime API
+  async function connectToOpenAI() {
+    if (!process.env.OPENAI_API_KEY) {
+      clientWs.send(JSON.stringify({ type: 'error', message: 'OpenAI API key not configured' }));
+      return;
+    }
+
+    try {
+      openAiWs = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17', {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'realtime=v1'
+        }
+      });
+
+      openAiWs.on('open', () => {
+        console.log('[Aria Realtime] Connected to OpenAI');
+
+        // Configure the session
+        const config = {
+          type: 'session.update',
+          session: {
+            modalities: ['text', 'audio'],
+            voice: sessionConfig?.voice || 'coral',
+            input_audio_format: 'pcm16',
+            output_audio_format: 'pcm16',
+            input_audio_transcription: { model: 'whisper-1' },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500,
+              create_response: true
+            },
+            instructions: sessionConfig?.systemInstructions || buildDefaultInstructions(),
+            temperature: 0.7,
+            max_response_output_tokens: 300
+          }
+        };
+
+        openAiWs.send(JSON.stringify(config));
+      });
+
+      openAiWs.on('message', (data) => {
+        try {
+          const response = JSON.parse(data.toString());
+          handleOpenAIMessage(response);
+        } catch (error) {
+          console.error('[Aria Realtime] OpenAI message parse error:', error);
+        }
+      });
+
+      openAiWs.on('error', (error) => {
+        console.error('[Aria Realtime] OpenAI WebSocket error:', error);
+        clientWs.send(JSON.stringify({ type: 'error', message: 'OpenAI connection error' }));
+      });
+
+      openAiWs.on('close', () => {
+        console.log('[Aria Realtime] OpenAI connection closed');
+        isSessionReady = false;
+      });
+
+    } catch (error) {
+      console.error('[Aria Realtime] Failed to connect to OpenAI:', error);
+      clientWs.send(JSON.stringify({ type: 'error', message: 'Failed to connect to voice service' }));
+    }
+  }
+
+  // Handle OpenAI messages
+  function handleOpenAIMessage(response) {
+    switch (response.type) {
+      case 'session.created':
+      case 'session.updated':
+        isSessionReady = true;
+        clientWs.send(JSON.stringify({ type: 'connected' }));
+        console.log('[Aria Realtime] Session ready');
+        break;
+
+      case 'response.audio.delta':
+        // Forward audio to client
+        if (response.delta) {
+          clientWs.send(JSON.stringify({
+            type: 'audio',
+            audio: response.delta
+          }));
+        }
+        break;
+
+      case 'response.audio_transcript.delta':
+        // Aria is speaking - send transcript
+        if (response.delta) {
+          clientWs.send(JSON.stringify({
+            type: 'response_text',
+            text: response.delta,
+            partial: true
+          }));
+        }
+        break;
+
+      case 'response.audio_transcript.done':
+        // Complete transcript
+        if (response.transcript) {
+          clientWs.send(JSON.stringify({
+            type: 'response_text',
+            text: response.transcript,
+            partial: false
+          }));
+        }
+        break;
+
+      case 'conversation.item.input_audio_transcription.completed':
+        // User's speech transcribed
+        if (response.transcript) {
+          clientWs.send(JSON.stringify({
+            type: 'transcript',
+            text: response.transcript
+          }));
+        }
+        break;
+
+      case 'response.audio.done':
+        clientWs.send(JSON.stringify({ type: 'speaking_end' }));
+        break;
+
+      case 'response.created':
+        clientWs.send(JSON.stringify({ type: 'speaking_start' }));
+        break;
+
+      case 'error':
+        console.error('[Aria Realtime] OpenAI error:', response.error);
+        clientWs.send(JSON.stringify({
+          type: 'error',
+          message: response.error?.message || 'Unknown error'
+        }));
+        break;
+    }
+  }
+
+  // Build default instructions
+  function buildDefaultInstructions() {
+    const name = sessionConfig?.businessName || 'Surprise Granite';
+    const ctx = sessionConfig?.businessContext || {};
+
+    return `You are Aria, a friendly AI voice assistant for ${name}.
+
+PERSONALITY:
+- Warm, helpful, and professional
+- Keep responses SHORT (1-2 sentences)
+- Use natural conversational language
+- Be direct and get to the point quickly
+
+BUSINESS INFO:
+- Services: ${ctx.services?.join(', ') || 'countertops, tile, flooring, cabinets, full remodels'}
+- Service Area: ${ctx.serviceArea || 'Phoenix metro area'}
+- Hours: ${ctx.businessHours || 'Monday-Saturday 8am-6pm'}
+- Phone: (602) 833-7194
+
+CAPABILITIES:
+- Answer questions about services and materials
+- Help schedule free estimates
+- Provide general pricing info
+- Transfer to human if needed
+
+Be helpful and guide users toward scheduling an appointment or getting a quote.`;
+  }
+
+  // Cleanup on disconnect
+  clientWs.on('close', () => {
+    console.log('[Aria Realtime] Client disconnected');
+    if (openAiWs?.readyState === WebSocket.OPEN) {
+      openAiWs.close();
+    }
+  });
+
+  clientWs.on('error', (error) => {
+    console.error('[Aria Realtime] Client WebSocket error:', error);
+  });
+});
+
+// Start server with WebSocket support
+server.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
   console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
   console.log(`Supabase configured: ${!!supabase}`);
   console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
   console.log(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
+  console.log(`Aria Realtime WebSocket: /api/aria-realtime`);
 });
