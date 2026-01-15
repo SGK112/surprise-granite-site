@@ -6038,11 +6038,11 @@ app.get('/api/marketplace/slabs', async (req, res) => {
       search,
       limit = 50,
       offset = 0,
-      use_new_schema = 'false' // Feature flag for migration
+      use_legacy_schema = 'false' // Feature flag - set to 'true' to use old slab_inventory
     } = req.query;
 
-    // Try new products schema first if enabled
-    if (use_new_schema === 'true') {
+    // Use new distributor_products schema (default)
+    if (use_legacy_schema !== 'true') {
       let query = supabase
         .from('distributor_products')
         .select(`
@@ -6148,6 +6148,8 @@ app.get('/api/marketplace/products', async (req, res) => {
       material_type,
       brand,
       color,
+      color_family,
+      featured,
       min_price,
       max_price,
       search,
@@ -6174,7 +6176,9 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (product_type) query = query.eq('product_type', product_type);
     if (material_type) query = query.ilike('material_type', `%${material_type}%`);
     if (brand) query = query.ilike('brand', `%${brand}%`);
-    if (color) query = query.ilike('color_family', `%${color}%`);
+    const colorFilter = color_family || color;
+    if (colorFilter) query = query.ilike('color_family', `%${colorFilter}%`);
+    if (featured === 'true') query = query.eq('is_featured', true);
     if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
     if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
 
@@ -6237,33 +6241,57 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
   }
 });
 
-// Get slab detail (public)
+// Get slab detail (public) - Updated to use distributor_products
 app.get('/api/marketplace/slabs/:id', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const { data: slab, error } = await supabase
-      .from('slab_inventory')
+    const { data: product, error } = await supabase
+      .from('distributor_products')
       .select(`
         *,
-        distributor_profiles(
-          id, company_name, logo_url, website,
-          average_rating, review_count, verification_status
+        distributor_product_slabs(*),
+        distributors(
+          id, company_name, logo_url, website, phone, city, state
         ),
         distributor_locations(
-          id, location_name, city, state, zip_code, phone,
-          has_showroom, has_slab_yard
+          id, name, city, state, postal_code, phone
         )
       `)
       .eq('id', req.params.id)
-      .eq('status', 'available')
+      .eq('product_type', 'slab')
+      .eq('is_public', true)
       .single();
 
     if (error) throw error;
-    if (!slab) return res.status(404).json({ error: 'Slab not found' });
+    if (!product) return res.status(404).json({ error: 'Slab not found' });
 
-    // Increment view count
-    await supabase.rpc('increment_slab_view', { p_slab_id: req.params.id });
+    // Transform to legacy slab format for backwards compatibility
+    const slab = {
+      id: product.id,
+      distributor_id: product.distributor_id,
+      product_name: product.name,
+      brand: product.brand,
+      material_type: product.material_type,
+      color_family: product.color_family,
+      finish: product.finish,
+      description: product.description,
+      price_per_sqft: product.wholesale_price,
+      length_inches: product.distributor_product_slabs?.[0]?.length_inches,
+      width_inches: product.distributor_product_slabs?.[0]?.width_inches,
+      thickness_cm: product.distributor_product_slabs?.[0]?.thickness_cm,
+      sqft: product.distributor_product_slabs?.[0]?.sqft,
+      quality_grade: product.distributor_product_slabs?.[0]?.quality_grade,
+      origin_country: product.distributor_product_slabs?.[0]?.origin_country,
+      lot_number: product.distributor_product_slabs?.[0]?.lot_number,
+      images: product.images || [],
+      status: product.status === 'active' ? 'available' : product.status,
+      is_featured: product.is_featured,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      distributor: product.distributors,
+      location: product.distributor_locations
+    };
 
     res.json({ slab });
   } catch (error) {
@@ -6272,7 +6300,7 @@ app.get('/api/marketplace/slabs/:id', async (req, res) => {
   }
 });
 
-// Submit slab inquiry
+// Submit slab/product inquiry - Updated to use distributor_products
 app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
@@ -6283,60 +6311,60 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
-    // Get slab and distributor info
-    const { data: slab } = await supabase
-      .from('slab_inventory')
-      .select('distributor_id, product_name, brand, price_per_sqft')
+    // Get product and distributor info from new schema
+    const { data: product } = await supabase
+      .from('distributor_products')
+      .select(`
+        id, distributor_id, name, brand, wholesale_price,
+        distributors(id, company_name, email, contact_name)
+      `)
       .eq('id', req.params.id)
       .single();
 
-    if (!slab) return res.status(404).json({ error: 'Slab not found' });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    // Create inquiry
-    const { data: inquiry, error } = await supabase
-      .from('slab_inquiries')
-      .insert({
-        slab_id: req.params.id,
-        distributor_id: slab.distributor_id,
-        user_id: req.headers['x-user-id'] || null,
-        inquirer_type: inquirer_type || 'homeowner',
-        name,
-        email,
-        phone,
-        company_name,
-        message,
-        project_type,
-        project_zip,
-        estimated_sqft,
-        timeline,
-        source: 'marketplace',
-        source_url: req.headers.referer
-      })
-      .select()
-      .single();
+    // Try to create inquiry in product_inquiries table (if exists)
+    let inquiry = null;
+    try {
+      const { data, error } = await supabase
+        .from('product_inquiries')
+        .insert({
+          product_id: req.params.id,
+          distributor_id: product.distributor_id,
+          inquirer_type: inquirer_type || 'homeowner',
+          name,
+          email,
+          phone,
+          company_name,
+          message,
+          project_type,
+          project_zip,
+          estimated_sqft,
+          timeline,
+          source: 'marketplace',
+          source_url: req.headers.referer
+        })
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (!error) inquiry = data;
+    } catch (e) {
+      // Table may not exist yet, continue without storing
+      console.log('product_inquiries table not available, sending email only');
+    }
 
-    // Increment inquiry count on slab - use RPC for safe increment
-    await supabase.rpc('increment_slab_inquiry_count', { slab_id: req.params.id });
-
-    // Get distributor email and send notification
-    const { data: distributor } = await supabase
-      .from('distributor_profiles')
-      .select('primary_contact_email, company_name')
-      .eq('id', slab.distributor_id)
-      .single();
-
-    if (distributor?.primary_contact_email) {
+    // Send email notification to distributor
+    const distributorEmail = product.distributors?.email;
+    if (distributorEmail) {
       await sendNotification(
-        distributor.primary_contact_email,
-        `New Inquiry for ${slab.product_name}`,
+        distributorEmail,
+        `New Inquiry for ${product.name}`,
         `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a2e;">New Slab Inquiry</h2>
+          <h2 style="color: #1a1a2e;">New Product Inquiry</h2>
           <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Product:</strong> ${slab.product_name} ${slab.brand ? `(${slab.brand})` : ''}</p>
-            <p><strong>Price:</strong> $${slab.price_per_sqft}/sqft</p>
+            <p><strong>Product:</strong> ${product.name} ${product.brand ? `(${product.brand})` : ''}</p>
+            <p><strong>Price:</strong> $${product.wholesale_price || 'N/A'}/sqft</p>
           </div>
           <h3>Contact Information</h3>
           <p><strong>Name:</strong> ${name}</p>
@@ -6355,7 +6383,17 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
       );
     }
 
-    res.status(201).json({ inquiry, message: 'Inquiry submitted successfully' });
+    // Also send to admin
+    await sendNotification(
+      process.env.ADMIN_EMAIL || 'info@surprisegranite.com',
+      `Marketplace Inquiry: ${product.name}`,
+      `<p>New inquiry from ${name} (${email}) for ${product.name}. Distributor: ${product.distributors?.company_name || 'Unknown'}</p><p>Message: ${message || 'No message'}</p>`
+    );
+
+    res.status(201).json({
+      inquiry: inquiry || { id: 'email-only', product_id: req.params.id },
+      message: 'Inquiry submitted successfully'
+    });
   } catch (error) {
     console.error('Submit inquiry error:', error);
     res.status(500).json({ error: error.message });
@@ -6848,6 +6886,85 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+// GET /api/products/stats - Get inventory statistics (MUST be before /:id route)
+app.get('/api/products/stats', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const distributorId = await getDistributorId(req);
+    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
+
+    const { data: products } = await supabase
+      .from('distributor_products')
+      .select('product_type, status, quantity, wholesale_price, min_stock_level')
+      .eq('distributor_id', distributorId);
+
+    const stats = {
+      total_products: products?.length || 0,
+      active_products: products?.filter(p => p.status === 'active').length || 0,
+      out_of_stock: products?.filter(p => p.status === 'out_of_stock').length || 0,
+      low_stock: products?.filter(p => p.quantity <= p.min_stock_level && p.min_stock_level > 0).length || 0,
+      by_type: {},
+      total_value: 0
+    };
+
+    products?.forEach(p => {
+      stats.by_type[p.product_type] = (stats.by_type[p.product_type] || 0) + 1;
+      stats.total_value += (p.wholesale_price || 0) * (p.quantity || 0);
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get product stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/products/lookup - Find product by external SKU (MUST be before /:id route)
+app.get('/api/products/lookup', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { sku, system } = req.query;
+    if (!sku) return res.status(400).json({ error: 'SKU is required' });
+
+    const distributorId = await getDistributorId(req);
+
+    let query = supabase
+      .from('distributor_product_skus')
+      .select(`product_id, distributor_products(*)`)
+      .eq('sku_value', sku);
+
+    if (system) query = query.eq('system_name', system);
+
+    const { data: skuMatch } = await query.single();
+
+    if (skuMatch?.distributor_products) {
+      return res.json(skuMatch.distributor_products);
+    }
+
+    let productQuery = supabase
+      .from('distributor_products')
+      .select('*')
+      .or(`sku.eq.${sku},external_sku.eq.${sku}`);
+
+    if (distributorId) {
+      productQuery = productQuery.eq('distributor_id', distributorId);
+    }
+
+    const { data: product } = await productQuery.single();
+
+    if (product) {
+      return res.json(product);
+    }
+
+    res.status(404).json({ error: 'Product not found' });
+  } catch (error) {
+    console.error('Product lookup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/products/:id - Get single product with full details
 app.get('/api/products/:id', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
@@ -7324,56 +7441,6 @@ app.delete('/api/products/:id/skus/:skuId', async (req, res) => {
   }
 });
 
-// GET /api/products/lookup - Find product by external SKU
-app.get('/api/products/lookup', async (req, res) => {
-  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
-
-  try {
-    const { sku, system } = req.query;
-    if (!sku) return res.status(400).json({ error: 'SKU is required' });
-
-    const distributorId = await getDistributorId(req);
-
-    // First check distributor_product_skus table
-    let query = supabase
-      .from('distributor_product_skus')
-      .select(`
-        product_id,
-        distributor_products(*)
-      `)
-      .eq('sku_value', sku);
-
-    if (system) query = query.eq('system_name', system);
-
-    const { data: skuMatch } = await query.single();
-
-    if (skuMatch?.distributor_products) {
-      return res.json(skuMatch.distributor_products);
-    }
-
-    // Fall back to distributor_products.sku and distributor_products.external_sku
-    let productQuery = supabase
-      .from('distributor_products')
-      .select('*')
-      .or(`sku.eq.${sku},external_sku.eq.${sku}`);
-
-    if (distributorId) {
-      productQuery = productQuery.eq('distributor_id', distributorId);
-    }
-
-    const { data: product } = await productQuery.single();
-
-    if (product) {
-      return res.json(product);
-    }
-
-    res.status(404).json({ error: 'Product not found' });
-  } catch (error) {
-    console.error('Product lookup error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // ============================================
 // ERP INTEGRATIONS API
 // ============================================
@@ -7674,42 +7741,6 @@ app.post('/api/integrations/:id/test', async (req, res) => {
     });
   } catch (error) {
     console.error('Test connection error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/products/stats - Get inventory statistics
-app.get('/api/products/stats', async (req, res) => {
-  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
-
-  try {
-    const distributorId = await getDistributorId(req);
-    if (!distributorId) return res.status(401).json({ error: 'Authentication required' });
-
-    // Get product counts by type and status
-    const { data: products } = await supabase
-      .from('distributor_products')
-      .select('product_type, status, quantity, wholesale_price, min_stock_level')
-      .eq('distributor_id', distributorId);
-
-    const stats = {
-      total_products: products?.length || 0,
-      active_products: products?.filter(p => p.status === 'active').length || 0,
-      out_of_stock: products?.filter(p => p.status === 'out_of_stock').length || 0,
-      low_stock: products?.filter(p => p.quantity <= p.min_stock_level && p.min_stock_level > 0).length || 0,
-      by_type: {},
-      total_value: 0
-    };
-
-    // Calculate by type and total value
-    products?.forEach(p => {
-      stats.by_type[p.product_type] = (stats.by_type[p.product_type] || 0) + 1;
-      stats.total_value += (p.wholesale_price || 0) * (p.quantity || 0);
-    });
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Get product stats error:', error);
     res.status(500).json({ error: error.message });
   }
 });
