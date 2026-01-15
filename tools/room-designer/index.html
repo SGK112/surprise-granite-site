@@ -5244,15 +5244,37 @@
 
     // Track if we're waiting for login to continue
     let pendingAuthInit = false;
+    let workspaceInitialized = false;
 
     async function init() {
       // Check if viewing a shared design (allow without login)
       const urlParams = new URLSearchParams(window.location.search);
       const shareToken = urlParams.get('share') || urlParams.get('p');
 
+      // Check if this is an OAuth callback (has hash with access_token)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const isOAuthCallback = hashParams.has('access_token') || hashParams.has('error');
+
+      const supabase = getSupabaseClient();
+
+      if (isOAuthCallback) {
+        // Wait for Supabase to process the OAuth callback
+        // Clear the hash from URL for cleaner look
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        // Give Supabase a moment to process the tokens
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Check session after OAuth processing
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          initializeWorkspace();
+          return;
+        }
+      }
+
       // If NOT a shared design, check authentication
       if (!shareToken) {
-        const supabase = getSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
@@ -5260,6 +5282,18 @@
           pendingAuthInit = true;
           hidePreloader();
           showLoginPromptRequired();
+
+          // Listen for auth state changes (for when user logs in)
+          supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session && !workspaceInitialized) {
+              pendingAuthInit = false;
+              // Force close login modal (remove required attribute first)
+              const loginModal = document.getElementById('loginModal');
+              loginModal.removeAttribute('data-required');
+              loginModal.classList.remove('active');
+              initializeWorkspace();
+            }
+          });
           return;
         }
       }
@@ -5270,6 +5304,9 @@
 
     // Initialize the workspace (called after auth check passes)
     function initializeWorkspace() {
+      if (workspaceInitialized) return; // Prevent double initialization
+      workspaceInitialized = true;
+
       canvas = document.getElementById('canvas');
       ctx = canvas.getContext('2d');
 
