@@ -1307,6 +1307,11 @@
       color: var(--text);
     }
 
+    /* Hide close button on required modals */
+    .modal-overlay[data-required="true"] .modal-close {
+      display: none;
+    }
+
     /* Material Picker Modal */
     .material-categories {
       display: flex;
@@ -3766,7 +3771,7 @@
     <div class="modal" style="max-width: 400px;">
       <div class="modal-header">
         <h3 class="modal-title">Sign In</h3>
-        <button class="modal-close" onclick="closeModal('loginModal')">×</button>
+        <button class="modal-close login-modal-close" onclick="closeModal('loginModal')">×</button>
       </div>
 
       <p id="loginPromptMessage" style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
@@ -5172,24 +5177,34 @@
     let redoStack = [];
     const MAX_UNDO_STATES = 50;
 
+    // Track if we're waiting for login to continue
+    let pendingAuthInit = false;
+
     async function init() {
       // Check if viewing a shared design (allow without login)
       const urlParams = new URLSearchParams(window.location.search);
       const shareToken = urlParams.get('share') || urlParams.get('p');
 
-      // If NOT a shared design, require authentication
+      // If NOT a shared design, check authentication
       if (!shareToken) {
         const supabase = getSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
-          // Not logged in, redirect to login
-          const returnUrl = encodeURIComponent(window.location.href);
-          window.location.href = '/account/?redirect=' + returnUrl;
+          // Not logged in - show login prompt instead of redirecting
+          pendingAuthInit = true;
+          hidePreloader();
+          showLoginPromptRequired();
           return;
         }
       }
 
+      // Continue with normal initialization
+      initializeWorkspace();
+    }
+
+    // Initialize the workspace (called after auth check passes)
+    function initializeWorkspace() {
       canvas = document.getElementById('canvas');
       ctx = canvas.getContext('2d');
 
@@ -11210,7 +11225,12 @@
     }
 
     function closeModal(id) {
-      document.getElementById(id).classList.remove('active');
+      const modal = document.getElementById(id);
+      // Don't allow closing if it's a required modal (for auth)
+      if (modal.getAttribute('data-required') === 'true') {
+        return;
+      }
+      modal.classList.remove('active');
     }
 
     function copyShareLink() {
@@ -11632,6 +11652,30 @@
       document.getElementById('loginEmail').value = '';
       document.getElementById('loginPassword').value = '';
       document.getElementById('loginModal').classList.add('active');
+      document.getElementById('loginModal').removeAttribute('data-required');
+    }
+
+    // Show required login prompt (non-dismissible, for initial access)
+    function showLoginPromptRequired() {
+      document.getElementById('loginPromptMessage').innerHTML =
+        'Sign in to access the Room Designer.<br><span style="font-size: 12px; opacity: 0.7;">Create professional kitchen & bath layouts with instant quotes.</span>';
+      document.getElementById('loginFormContainer').style.display = 'block';
+      document.getElementById('loginSuccessContainer').style.display = 'none';
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      const modal = document.getElementById('loginModal');
+      modal.classList.add('active');
+      modal.setAttribute('data-required', 'true');
+    }
+
+    // Hide the preloader
+    function hidePreloader() {
+      const preloader = document.getElementById('cloudPreloader');
+      if (preloader) {
+        preloader.classList.add('loaded');
+        setTimeout(() => preloader.style.display = 'none', 600);
+      }
     }
 
     // Handle login form submission
@@ -11662,6 +11706,15 @@
 
         // Update header UI
         updateAuthUI();
+
+        // If this was a required login to access the tool, continue initialization
+        if (pendingAuthInit) {
+          pendingAuthInit = false;
+          setTimeout(() => {
+            closeModal('loginModal');
+            initializeWorkspace();
+          }, 1000);
+        }
 
       } catch (err) {
         console.error('Login error:', err);
