@@ -1835,6 +1835,58 @@
       transform: none;
     }
 
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .auth-divider span {
+      padding: 0 12px;
+    }
+
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #3c4043;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-google:hover {
+      background: #f8f9fa;
+      border-color: #c6c6c6;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-google:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-google svg {
+      flex-shrink: 0;
+    }
+
     /* Signup Steps */
     .signup-step {
       animation: fadeIn 0.3s ease;
@@ -3143,6 +3195,128 @@
     .listing-category-badge.supplies { color: #a78bfa; }
     .listing-category-badge.other { color: #94a3b8; }
 
+    /* ============================================
+       DESIGN TOOLS GRID
+       ============================================ */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .tools-grid.calculators-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+
+    .tool-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      border-color: var(--border-light);
+    }
+
+    .tool-card.featured {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.1) 0%, rgba(249, 203, 0, 0.05) 100%);
+      border-color: rgba(249, 203, 0, 0.3);
+    }
+
+    .tool-card.featured:hover {
+      border-color: var(--gold-primary);
+      box-shadow: 0 8px 24px rgba(249, 203, 0, 0.15);
+    }
+
+    .tool-card.calculator {
+      padding: 16px;
+    }
+
+    .tool-icon {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
+
+    .tool-icon.small {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+    }
+
+    .tool-icon svg {
+      width: 26px;
+      height: 26px;
+      color: var(--gold-primary);
+    }
+
+    .tool-icon.small svg {
+      width: 22px;
+      height: 22px;
+      color: var(--text-secondary);
+    }
+
+    .tool-card.featured .tool-icon {
+      background: rgba(249, 203, 0, 0.15);
+    }
+
+    .tool-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tool-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 4px 0;
+    }
+
+    .tool-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .tool-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tool-badge.featured {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: var(--dark-primary);
+    }
+
+    @media (max-width: 600px) {
+      .tools-grid {
+        grid-template-columns: 1fr;
+      }
+      .tools-grid.calculators-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* Inquiry Items */
     .inquiry-item {
       background: var(--dark-elevated);
@@ -3703,6 +3877,20 @@
           <input type="password" id="login-password" required placeholder="Enter your password"/>
         </div>
         <button type="submit" class="auth-submit" id="login-btn">Sign In</button>
+
+        <div class="auth-divider">
+          <span>or continue with</span>
+        </div>
+
+        <button type="button" class="btn-google" onclick="handleGoogleLogin()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign in with Google
+        </button>
       </form>
 
       <!-- Signup Form -->
@@ -3878,6 +4066,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <span class="nav-item-text">My Listings</span>
             <span class="nav-badge" id="listings-count" data-count="0">0</span>
+          </a>
+          <a class="nav-item" data-page="tools" onclick="showPage('tools')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span class="nav-item-text">Design Tools</span>
           </a>
         </div>
 
@@ -4216,6 +4408,164 @@
                 <p style="color: var(--text-muted); margin-bottom: 0;">When someone contacts you about a listing, it will appear here.</p>
               </div>
               <div id="inquiries-list" style="display: none;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Design Tools Page -->
+        <section id="page-tools" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Design Tools</h3>
+              <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Professional design tools for your projects</p>
+            </div>
+            <div class="card-body">
+              <div class="tools-grid">
+                <!-- Room Designer Pro -->
+                <a href="/tools/room-designer/" class="tool-card featured">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Room Designer Pro</h4>
+                    <p>2D/3D kitchen & bath design with instant quotes</p>
+                    <span class="tool-badge featured">Featured</span>
+                  </div>
+                </a>
+
+                <!-- Visualizer -->
+                <a href="/tools/visualizer/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Stone Visualizer</h4>
+                    <p>See how materials look in your space</p>
+                  </div>
+                </a>
+
+                <!-- Blueprint Takeoff -->
+                <a href="/tools/blueprint-takeoff/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Blueprint Takeoff</h4>
+                    <p>Extract measurements from blueprints</p>
+                  </div>
+                </a>
+
+                <!-- Virtual Kitchen -->
+                <a href="/tools/virtual-kitchen-design-tool/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Virtual Kitchen</h4>
+                    <p>Design your kitchen with drag & drop</p>
+                  </div>
+                </a>
+
+                <!-- Virtual Bathroom -->
+                <a href="/tools/virtual-bathroom-design-tool/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Virtual Bathroom</h4>
+                    <p>Design your bathroom space</p>
+                  </div>
+                </a>
+
+                <!-- Multi-Surface Visualizer -->
+                <a href="/tools/multi-surface-room-visualizer/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Multi-Surface Visualizer</h4>
+                    <p>Visualize counters, floors, and backsplash</p>
+                  </div>
+                </a>
+
+                <!-- Edge Profile Visualizer -->
+                <a href="/tools/countertop-edge-visualizer/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Edge Profile Visualizer</h4>
+                    <p>Compare countertop edge profiles</p>
+                  </div>
+                </a>
+
+                <!-- Interior Gallery -->
+                <a href="/tools/interior-design-gallery/" class="tool-card">
+                  <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                  </div>
+                  <div class="tool-info">
+                    <h4>Design Gallery</h4>
+                    <p>Browse interior design inspiration</p>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Calculators Section -->
+              <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+                <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-secondary);">Calculators</h3>
+                <div class="tools-grid calculators-grid">
+                  <a href="/tools/countertop-calculator/" class="tool-card calculator" target="_blank">
+                    <div class="tool-icon small">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <div class="tool-info">
+                      <h4>Countertop Calculator</h4>
+                      <p>Calculate material needs</p>
+                    </div>
+                  </a>
+                  <a href="/tools/tile-calculator/" class="tool-card calculator" target="_blank">
+                    <div class="tool-icon small">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                      </svg>
+                    </div>
+                    <div class="tool-info">
+                      <h4>Tile Calculator</h4>
+                      <p>Plan your tile project</p>
+                    </div>
+                  </a>
+                  <a href="/tools/flooring-calculator/" class="tool-card calculator" target="_blank">
+                    <div class="tool-icon small">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                      </svg>
+                    </div>
+                    <div class="tool-info">
+                      <h4>Flooring Calculator</h4>
+                      <p>Estimate flooring needs</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -7203,7 +7553,7 @@
 
     function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
-      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs'];
+      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs', 'tools'];
       if (hash && validPages.includes(hash)) {
         showPage(hash);
       }
@@ -7321,6 +7671,38 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Sign In';
+      }
+    }
+
+    async function handleGoogleLogin() {
+      hideAuthMessage();
+
+      const btn = document.querySelector('.btn-google');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="60" stroke-dashoffset="20"/></svg> Connecting...';
+      }
+
+      try {
+        // Use SgAuth if available, otherwise use direct Supabase client
+        if (window.SgAuth && window.SgAuth.signInWithGoogle) {
+          await window.SgAuth.signInWithGoogle(window.location.origin + '/account/');
+        } else {
+          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + '/account/'
+            }
+          });
+          if (error) throw error;
+        }
+        // OAuth redirects to Google, so we won't reach here unless there's an error
+      } catch (err) {
+        showAuthMessage(err.message || 'Failed to connect with Google', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google';
+        }
       }
     }
 
@@ -8351,6 +8733,7 @@
         'favorites': 'My Favorites',
         'my-designs': 'My Designs',
         'listings': 'My Listings',
+        'tools': 'Design Tools',
         'leads': 'Leads',
         'customers': 'Customers',
         'estimates': 'Estimates',

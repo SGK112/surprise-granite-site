@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Upload CSV | Distributor Dashboard | Surprise Granite</title>
+  <meta name="description" content="Bulk upload slab inventory via CSV file."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .dashboard-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .sidebar-logo img { height: 32px; }
+
+    .sidebar-logo span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(249, 203, 0, 0.1);
+      color: var(--gold-primary);
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Upload Area */
+    .upload-container {
+      max-width: 800px;
+    }
+
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border-subtle);
+      border-radius: 12px;
+      padding: 48px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .dropzone-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dropzone-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--gold-primary);
+    }
+
+    .dropzone-text {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-hint {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* File Selected */
+    .file-selected {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--dark-elevated);
+      border-radius: 10px;
+      margin-top: 16px;
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--success);
+    }
+
+    .file-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .file-size {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .file-remove {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .file-remove:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+
+    /* Progress */
+    .upload-progress {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--dark-elevated);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-primary), var(--gold-dark));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    /* Results */
+    .upload-results {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .result-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .result-stat {
+      background: var(--dark-elevated);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .result-stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .result-stat-value.success { color: var(--success); }
+    .result-stat-value.error { color: var(--error); }
+    .result-stat-value.warning { color: var(--warning); }
+
+    .result-stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-errors {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .result-errors h4 {
+      font-size: 14px;
+      color: var(--error);
+      margin-bottom: 12px;
+    }
+
+    .error-item {
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .error-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Template Section */
+    .template-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: var(--dark-elevated);
+      border-radius: 10px;
+    }
+
+    .template-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .template-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Columns Reference */
+    .columns-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .column-item code {
+      background: var(--dark-elevated);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: var(--gold-primary);
+    }
+
+    .column-item .required {
+      color: var(--error);
+      font-size: 11px;
+    }
+
+    .column-item .optional {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
+
+      .result-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .columns-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .template-section {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+        <div style="display:none;font-size:20px;font-weight:800;color:#f9cb00;">SG</div>
+        <span>Distributor Portal</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/distributor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Inventory</div>
+          <a href="/distributor/dashboard/inventory/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            All Slabs
+          </a>
+          <a href="/distributor/dashboard/inventory/add/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Slab
+          </a>
+          <a href="/distributor/dashboard/inventory/upload/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload CSV
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Business</div>
+          <a href="/distributor/dashboard/inquiries/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Inquiries
+          </a>
+          <a href="/distributor/dashboard/locations/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Locations
+          </a>
+          <a href="/distributor/dashboard/analytics/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/distributor/dashboard/settings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Company Profile
+          </a>
+          <a href="/distributor/dashboard/settings/api/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Keys
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Upload CSV</h1>
+          <p class="page-subtitle">Bulk import your slab inventory from a CSV file</p>
+        </div>
+      </div>
+
+      <div class="upload-container">
+        <!-- Template Download -->
+        <div class="card">
+          <div class="template-section">
+            <div class="template-info">
+              <h4>Download CSV Template</h4>
+              <p>Use our template to ensure your data is formatted correctly</p>
+            </div>
+            <button class="btn btn-secondary" onclick="downloadTemplate()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Template
+            </button>
+          </div>
+
+          <div class="columns-grid">
+            <div class="column-item"><code>product_name</code> <span class="required">Required</span></div>
+            <div class="column-item"><code>material_type</code> <span class="required">Required</span></div>
+            <div class="column-item"><code>price_per_sqft</code> <span class="required">Required</span></div>
+            <div class="column-item"><code>length_inches</code> <span class="required">Required</span></div>
+            <div class="column-item"><code>width_inches</code> <span class="required">Required</span></div>
+            <div class="column-item"><code>thickness_cm</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>brand</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>color</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>finish</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>quantity</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>lot_number</code> <span class="optional">Optional</span></div>
+            <div class="column-item"><code>location_id</code> <span class="optional">Optional</span></div>
+          </div>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="card">
+          <h3 class="card-title">Upload Your File</h3>
+          <p class="card-subtitle">Drag and drop your CSV file or click to browse</p>
+
+          <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <div class="dropzone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p class="dropzone-text">Drop your CSV file here</p>
+            <p class="dropzone-hint">or click to browse (max 10MB)</p>
+          </div>
+          <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+
+          <div class="file-selected" id="fileSelected" style="display: none;">
+            <div class="file-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="file-info">
+              <div class="file-name" id="fileName"></div>
+              <div class="file-size" id="fileSize"></div>
+            </div>
+            <button class="file-remove" onclick="removeFile()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="upload-progress" id="uploadProgress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Processing...</p>
+          </div>
+
+          <div class="upload-results" id="uploadResults">
+            <div class="result-summary">
+              <div class="result-stat">
+                <div class="result-stat-value success" id="successCount">0</div>
+                <div class="result-stat-label">Imported</div>
+              </div>
+              <div class="result-stat">
+                <div class="result-stat-value error" id="errorCount">0</div>
+                <div class="result-stat-label">Errors</div>
+              </div>
+              <div class="result-stat">
+                <div class="result-stat-value warning" id="skipCount">0</div>
+                <div class="result-stat-label">Skipped</div>
+              </div>
+            </div>
+            <div class="result-errors" id="errorList" style="display: none;">
+              <h4>Errors</h4>
+              <div id="errorItems"></div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload &amp; Import
+            </button>
+            <a href="/distributor/dashboard/inventory/" class="btn btn-secondary">View Inventory</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjU5NzQsImV4cCI6MjA1OTEwMTk3NH0.0I3P4GJRu5FkUn-P6pxTi8mIZxBJ9jP68KXl6G3JRv8';
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let selectedFile = null;
+
+    // Auth check
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          if (isLocalhost) {
+            currentUser = { id: 'demo-user', email: 'demo@example.com' };
+            return currentUser;
+          }
+          window.location.href = '/distributor/signup/';
+          return null;
+        }
+        currentUser = session.user;
+        return session.user;
+      } catch (error) {
+        console.error('Auth error:', error);
+        currentUser = { id: 'demo-user', email: 'demo@example.com' };
+        return currentUser;
+      }
+    }
+
+    // Download template
+    function downloadTemplate() {
+      const headers = [
+        'product_name',
+        'material_type',
+        'price_per_sqft',
+        'length_inches',
+        'width_inches',
+        'thickness_cm',
+        'brand',
+        'color',
+        'finish',
+        'quantity',
+        'lot_number',
+        'location_id'
+      ];
+
+      const sampleRow = [
+        'Calacatta Gold',
+        'Marble',
+        '85.00',
+        '120',
+        '72',
+        '3',
+        'MSI',
+        'White with Gold Veins',
+        'Polished',
+        '1',
+        'LOT-2024-001',
+        ''
+      ];
+
+      const csv = [headers.join(','), sampleRow.join(',')].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'slab-inventory-template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Drag and drop
+    const dropzone = document.getElementById('dropzone');
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.csv')) {
+        selectFile(file);
+      } else {
+        alert('Please upload a CSV file');
+      }
+    });
+
+    // File selection
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) selectFile(file);
+    }
+
+    function selectFile(file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+
+      selectedFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatFileSize(file.size);
+      document.getElementById('fileSelected').style.display = 'flex';
+      document.getElementById('uploadBtn').disabled = false;
+
+      // Reset results
+      document.getElementById('uploadProgress').style.display = 'none';
+      document.getElementById('uploadResults').style.display = 'none';
+    }
+
+    function removeFile() {
+      selectedFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileSelected').style.display = 'none';
+      document.getElementById('uploadBtn').disabled = true;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Upload file
+    async function uploadFile() {
+      if (!selectedFile || !currentUser) return;
+
+      const uploadBtn = document.getElementById('uploadBtn');
+      const progress = document.getElementById('uploadProgress');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      const results = document.getElementById('uploadResults');
+
+      uploadBtn.disabled = true;
+      progress.style.display = 'block';
+      results.style.display = 'none';
+
+      try {
+        // Parse CSV
+        progressText.textContent = 'Reading file...';
+        progressFill.style.width = '10%';
+
+        const text = await selectedFile.text();
+        const rows = parseCSV(text);
+
+        if (rows.length === 0) {
+          throw new Error('No data rows found in CSV');
+        }
+
+        progressText.textContent = `Processing ${rows.length} rows...`;
+        progressFill.style.width = '30%';
+
+        // Upload to API
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const response = await fetch(`${API_BASE}/api/distributor/inventory/bulk`, {
+          method: 'POST',
+          headers: {
+            'x-user-id': currentUser.id
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        progressFill.style.width = '100%';
+        progressText.textContent = 'Complete!';
+
+        // Show results
+        setTimeout(() => {
+          progress.style.display = 'none';
+          results.style.display = 'block';
+
+          document.getElementById('successCount').textContent = data.imported || 0;
+          document.getElementById('errorCount').textContent = data.errors?.length || 0;
+          document.getElementById('skipCount').textContent = data.skipped || 0;
+
+          if (data.errors && data.errors.length > 0) {
+            document.getElementById('errorList').style.display = 'block';
+            document.getElementById('errorItems').innerHTML = data.errors
+              .slice(0, 10)
+              .map(err => `<div class="error-item">Row ${err.row}: ${err.message}</div>`)
+              .join('');
+          }
+        }, 500);
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        progressText.textContent = 'Error: ' + error.message;
+        progressFill.style.width = '100%';
+        progressFill.style.background = 'var(--error)';
+      }
+
+      uploadBtn.disabled = false;
+    }
+
+    // Parse CSV
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      const rows = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+        if (values.length === headers.length) {
+          const row = {};
+          headers.forEach((h, idx) => row[h] = values[idx]);
+          rows.push(row);
+        }
+      }
+
+      return rows;
+    }
+
+    // Init
+    checkAuth();
+  </script>
+</body>
+</html>

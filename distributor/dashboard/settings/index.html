@@ -450,6 +450,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Company Profile
           </a>
+          <a href="/distributor/dashboard/settings/team/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Team
+          </a>
           <a href="/distributor/dashboard/settings/api/" class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             API Keys
@@ -477,6 +481,7 @@
 
       <div class="settings-nav">
         <a href="/distributor/dashboard/settings/" class="settings-tab active">Company Profile</a>
+        <a href="/distributor/dashboard/settings/team/" class="settings-tab">Team</a>
         <a href="/distributor/dashboard/settings/api/" class="settings-tab">API Keys</a>
       </div>
 
@@ -626,7 +631,7 @@
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
@@ -634,15 +639,36 @@
     let distributorProfile = null;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const { data: { user } } = await supabaseClient.auth.getUser();
 
       if (!user) {
+        if (isLocalhost) {
+          currentUser = { id: 'demo-user', email: 'demo@example.com' };
+          console.log('Demo mode: Using demo user');
+          showDemoSettings();
+          return;
+        }
         window.location.href = '/log-in/?redirect=/distributor/dashboard/settings/';
         return;
       }
 
       currentUser = user;
       await loadProfile();
+    }
+
+    function showDemoSettings() {
+      // Update user info in sidebar
+      document.getElementById('userName').textContent = 'Demo User';
+      document.getElementById('userEmail').textContent = 'demo@example.com';
+      document.getElementById('userAvatar').textContent = 'D';
+
+      // Fill form with demo data
+      document.getElementById('companyName').value = 'Demo Company';
+      document.getElementById('companyType').value = 'distributor';
+      document.getElementById('contactName').value = 'Demo User';
+      document.getElementById('contactEmail').value = 'demo@example.com';
+      document.getElementById('contactPhone').value = '(555) 555-5555';
     }
 
     async function loadProfile() {

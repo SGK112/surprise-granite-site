@@ -1137,10 +1137,36 @@
     // Supabase Config
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentStep = 1;
     let formData = {};
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Check if user is already logged in and redirect to dashboard
+    async function checkExistingAuth() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        // Check if they have a distributor profile
+        const { data: profile } = await supabaseClient
+          .from('distributor_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile) {
+          window.location.href = '/distributor/dashboard/';
+          return;
+        }
+      }
+    }
+
+    // Run auth check on page load (unless in demo mode)
+    if (!isLocalhost) {
+      checkExistingAuth();
+    } else {
+      console.log('Demo mode: Signup will simulate account creation');
+    }
 
     // Phone formatting
     document.getElementById('phone').addEventListener('input', function(e) {
@@ -1299,9 +1325,23 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<div class="loading-spinner"></div> Creating Account...';
 
+      // Demo mode - simulate successful signup without creating real account
+      if (isLocalhost) {
+        console.log('Demo mode: Simulating account creation with data:', formData);
+
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Show success
+        document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+        document.querySelector('.form-step[data-step="success"]').classList.add('active');
+        document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));
+        return;
+      }
+
       try {
         // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -1316,7 +1356,7 @@
         if (authError) throw authError;
 
         // 2. Create distributor profile
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profileData, error: profileError } = await supabaseClient
           .from('distributor_profiles')
           .insert({
             user_id: authData.user.id,
@@ -1341,7 +1381,7 @@
 
         // 3. Create primary location
         if (profileData) {
-          const { error: locationError } = await supabase
+          const { error: locationError } = await supabaseClient
             .from('distributor_locations')
             .insert({
               distributor_id: profileData.id,

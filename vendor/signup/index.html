@@ -727,7 +727,7 @@
     // Supabase Config
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentStep = 1;
     let formData = {};
@@ -874,7 +874,7 @@
 
       try {
         // 1. Create auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -889,7 +889,7 @@
         if (authError) throw authError;
 
         // 2. Create vendor profile
-        const { error: profileError } = await supabase
+        const { error: profileError } = await supabaseClient
           .from('vendor_profiles')
           .insert({
             id: authData.user.id,
@@ -911,7 +911,7 @@
         }
 
         // 3. Create initial service area
-        await supabase
+        await supabaseClient
           .from('service_areas')
           .insert({
             vendor_id: authData.user.id,

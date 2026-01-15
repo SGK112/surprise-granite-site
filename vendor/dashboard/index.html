@@ -961,7 +961,7 @@
     // Supabase Config
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let vendorProfile = null;
     let subscription = null;
@@ -977,7 +977,7 @@
     async function initDashboard() {
       try {
         // Check auth
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
 
         if (error || !user) {
           window.location.href = '/vendor/signup/';
@@ -985,7 +985,7 @@
         }
 
         // Load vendor profile
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseClient
           .from('vendor_profiles')
           .select('*')
           .eq('id', user.id)
@@ -999,7 +999,7 @@
         vendorProfile = profile;
 
         // Load subscription
-        const { data: sub } = await supabase
+        const { data: sub } = await supabaseClient
           .from('vendor_subscriptions')
           .select('*, subscription_plans(*)')
           .eq('vendor_id', user.id)
@@ -1092,7 +1092,7 @@
 
     async function loadRecentLeads() {
       try {
-        const { data: leads } = await supabase
+        const { data: leads } = await supabaseClient
           .from('lead_distributions')
           .select(`
             *,
@@ -1185,7 +1185,7 @@
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       localStorage.removeItem('sg_vendor_signup');
       window.location.href = '/';
     }

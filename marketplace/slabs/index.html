@@ -980,7 +980,16 @@
       showLoading(true);
 
       try {
-        const response = await fetch(`${API_BASE}/api/marketplace/slabs?limit=100`);
+        // Check for new schema flag (URL param or config)
+        const urlParams = new URLSearchParams(window.location.search);
+        const useNewSchema = urlParams.get('new_schema') === 'true' ||
+                             (window.SG_CONFIG?.FEATURES?.USE_NEW_PRODUCTS_SCHEMA ?? false);
+
+        const apiUrl = useNewSchema
+          ? `${API_BASE}/api/marketplace/slabs?limit=100&use_new_schema=true`
+          : `${API_BASE}/api/marketplace/slabs?limit=100`;
+
+        const response = await fetch(apiUrl);
 
         if (!response.ok) throw new Error('Failed to load slabs');
 

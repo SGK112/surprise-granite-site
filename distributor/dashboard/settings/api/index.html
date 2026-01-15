@@ -772,7 +772,7 @@
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
@@ -781,9 +781,16 @@
     let newKeyValue = null;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const { data: { user } } = await supabaseClient.auth.getUser();
 
       if (!user) {
+        if (isLocalhost) {
+          currentUser = { id: 'demo-user', email: 'demo@example.com' };
+          console.log('Demo mode: Using demo user');
+          showDemoApiKeys();
+          return;
+        }
         window.location.href = '/log-in/?redirect=/distributor/dashboard/settings/api/';
         return;
       }
@@ -793,8 +800,31 @@
       await loadApiKeys();
     }
 
+    function showDemoApiKeys() {
+      // Update user info in sidebar
+      document.getElementById('userName').textContent = 'Demo User';
+      document.getElementById('userEmail').textContent = 'demo@example.com';
+      document.getElementById('userAvatar').textContent = 'D';
+
+      // Show demo empty state for API keys
+      const container = document.getElementById('keysContent');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          </div>
+          <h3 class="empty-title">Demo Mode</h3>
+          <p class="empty-text">You are viewing the API keys page in demo mode on localhost. Sign in to manage your API keys.</p>
+          <button class="btn btn-primary" onclick="openCreateModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Demo Key
+          </button>
+        </div>
+      `;
+    }
+
     async function loadDistributor() {
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseClient
         .from('distributor_profiles')
         .select('*')
         .eq('user_id', currentUser.id)

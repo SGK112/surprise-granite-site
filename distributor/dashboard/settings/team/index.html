@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Team Management | Distributor Dashboard</title>
+  <meta name="description" content="Manage your team members and their permissions."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/config.js"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+      --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+
+    .dashboard-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--dark-surface);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+    }
+
+    .sidebar-logo img { height: 32px; }
+    .sidebar-logo span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav { padding: 0 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover { background: var(--dark-elevated); color: var(--text-primary); }
+    .nav-item.active { background: rgba(249, 203, 0, 0.1); color: var(--gold-primary); }
+    .nav-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 32px;
+      max-width: 1000px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .page-title { font-size: 28px; font-weight: 800; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Settings Navigation */
+    .settings-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+
+    .settings-tab {
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .settings-tab:hover { color: var(--text-primary); }
+    .settings-tab.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title { font-size: 18px; font-weight: 700; }
+    .card-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid var(--error);
+    }
+
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+
+    .btn-sm {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    /* Team Table */
+    .team-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .team-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .team-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+
+    .team-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .team-table tr:hover td {
+      background: var(--dark-elevated);
+    }
+
+    .member-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .member-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--dark-primary);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .member-avatar.pending {
+      background: var(--dark-elevated);
+      color: var(--text-muted);
+    }
+
+    .member-name {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .member-email {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .role-badge.admin {
+      background: rgba(249, 203, 0, 0.15);
+      color: var(--gold-primary);
+    }
+
+    .role-badge.sales {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue-accent);
+    }
+
+    .role-badge.warehouse_manager {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .role-badge.viewer {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge.active {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .status-badge.pending {
+      background: rgba(249, 203, 0, 0.15);
+      color: var(--gold-primary);
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .modal-close:hover {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    /* Form */
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Role descriptions */
+    .role-description {
+      background: var(--dark-elevated);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .role-description h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--gold-primary);
+    }
+
+    .role-description ul {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding-left: 16px;
+      margin: 0;
+    }
+
+    .role-description li {
+      margin-bottom: 4px;
+    }
+
+    /* Status Message */
+    .status-message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status-message.success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      display: block;
+    }
+
+    .status-message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+      display: block;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      stroke: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* User Section */
+    .user-section {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--dark-primary);
+      font-size: 16px;
+    }
+
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-email { font-size: 12px; color: var(--text-muted); }
+    .user-role { font-size: 11px; color: var(--gold-primary); text-transform: uppercase; }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Permission Denied */
+    .permission-denied {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .permission-denied svg {
+      width: 64px;
+      height: 64px;
+      stroke: var(--error);
+      margin-bottom: 16px;
+    }
+
+    .permission-denied h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .permission-denied p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 20px; }
+      .settings-nav { flex-wrap: wrap; }
+      .team-table { display: block; overflow-x: auto; }
+      .page-header { flex-direction: column; gap: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite">
+        <span>Distributor Portal</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a href="/distributor/dashboard/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Inventory</div>
+          <a href="/distributor/dashboard/inventory/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            All Slabs
+            <span class="nav-badge" id="slabCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/inventory/add/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Slab
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Business</div>
+          <a href="/distributor/dashboard/inquiries/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            Inquiries
+            <span class="nav-badge" id="inquiryCount">0</span>
+          </a>
+          <a href="/distributor/dashboard/locations/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Locations
+          </a>
+          <a href="/distributor/dashboard/analytics/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/distributor/dashboard/settings/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Company Profile
+          </a>
+          <a href="/distributor/dashboard/settings/team/" class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Team
+          </a>
+          <a href="/distributor/dashboard/settings/api/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API Keys
+          </a>
+        </div>
+      </nav>
+
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">?</div>
+          <div>
+            <div class="user-name" id="userName">Loading...</div>
+            <div class="user-email" id="userEmail"></div>
+            <div class="user-role" id="userRole"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Team Management</h1>
+          <p class="page-subtitle">Manage team members and their access permissions</p>
+        </div>
+        <button class="btn btn-primary" onclick="showInviteModal()" id="inviteBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite Member
+        </button>
+      </div>
+
+      <div class="settings-nav">
+        <a href="/distributor/dashboard/settings/" class="settings-tab">Company Profile</a>
+        <a href="/distributor/dashboard/settings/team/" class="settings-tab active">Team</a>
+        <a href="/distributor/dashboard/settings/api/" class="settings-tab">API Keys</a>
+      </div>
+
+      <div id="statusMessage" class="status-message"></div>
+
+      <!-- Loading State -->
+      <div class="loading" id="loadingState">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Permission Denied State -->
+      <div class="permission-denied" id="permissionDenied" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+        </svg>
+        <h2>Access Denied</h2>
+        <p>You don't have permission to manage team members. Contact an admin for access.</p>
+        <a href="/distributor/dashboard/" class="btn btn-secondary">Back to Dashboard</a>
+      </div>
+
+      <!-- Team Content -->
+      <div id="teamContent" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Team Members</h2>
+              <p class="card-subtitle" id="memberCount">0 members</p>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="emptyState" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <h3>No team members yet</h3>
+            <p>Invite your first team member to collaborate on inventory management.</p>
+            <button class="btn btn-primary" onclick="showInviteModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Invite Member
+            </button>
+          </div>
+
+          <!-- Team Table -->
+          <table class="team-table" id="teamTable" style="display: none;">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="teamTableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Role Info Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Role Permissions</h2>
+              <p class="card-subtitle">What each role can do</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="role-description">
+              <h4>Admin</h4>
+              <ul>
+                <li>Full access to all features</li>
+                <li>Manage team members</li>
+                <li>View audit logs</li>
+                <li>Manage API keys</li>
+              </ul>
+            </div>
+            <div class="role-description">
+              <h4>Sales</h4>
+              <ul>
+                <li>View and manage inventory</li>
+                <li>Respond to inquiries</li>
+                <li>View analytics</li>
+                <li>Cannot delete inventory</li>
+              </ul>
+            </div>
+            <div class="role-description">
+              <h4>Warehouse Manager</h4>
+              <ul>
+                <li>Add and update inventory</li>
+                <li>Manage locations</li>
+                <li>View inquiries</li>
+                <li>Cannot access settings</li>
+              </ul>
+            </div>
+            <div class="role-description">
+              <h4>Viewer</h4>
+              <ul>
+                <li>View-only access</li>
+                <li>See inventory and analytics</li>
+                <li>Cannot make changes</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Invite Modal -->
+  <div class="modal-overlay" id="inviteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Invite Team Member</h2>
+        <button class="modal-close" onclick="closeModal('inviteModal')">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form onsubmit="inviteMember(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" class="form-input" id="inviteEmail" required placeholder="colleague@company.com">
+            <p class="form-hint">They'll receive an email invitation to join your team.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Role *</label>
+            <select class="form-select" id="inviteRole" required onchange="updateRoleDescription()">
+              <option value="">Select a role...</option>
+              <option value="admin">Admin</option>
+              <option value="sales">Sales</option>
+              <option value="warehouse_manager">Warehouse Manager</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+
+          <div id="roleDescriptionBox" class="role-description" style="display: none;">
+            <h4 id="roleDescTitle"></h4>
+            <ul id="roleDescList"></ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('inviteModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="inviteSubmitBtn">Send Invitation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Role Modal -->
+  <div class="modal-overlay" id="editRoleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Change Role</h2>
+        <button class="modal-close" onclick="closeModal('editRoleModal')">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form onsubmit="updateMemberRole(event)">
+        <div class="modal-body">
+          <p style="margin-bottom: 16px; color: var(--text-secondary);">
+            Changing role for <strong id="editMemberName"></strong>
+          </p>
+          <input type="hidden" id="editMemberId">
+
+          <div class="form-group">
+            <label class="form-label">New Role</label>
+            <select class="form-select" id="editMemberRole" required>
+              <option value="admin">Admin</option>
+              <option value="sales">Sales</option>
+              <option value="warehouse_manager">Warehouse Manager</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('editRoleModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Remove Confirmation Modal -->
+  <div class="modal-overlay" id="removeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Remove Team Member</h2>
+        <button class="modal-close" onclick="closeModal('removeModal')">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to remove <strong id="removeMemberName"></strong> from your team?</p>
+        <p style="color: var(--text-muted); margin-top: 12px; font-size: 13px;">
+          They will lose access to your distributor account immediately.
+        </p>
+        <input type="hidden" id="removeMemberId">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('removeModal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmRemoveMember()">Remove Member</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
+  <script src="/js/distributor-sso-auth.js"></script>
+  <script>
+    const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+
+    let currentUser = null;
+    let currentRole = null;
+    let distributorId = null;
+    let teamMembers = [];
+
+    const roleDescriptions = {
+      admin: {
+        title: 'Admin',
+        perms: ['Full access to all features', 'Manage team members', 'View audit logs', 'Manage API keys']
+      },
+      sales: {
+        title: 'Sales',
+        perms: ['View and manage inventory', 'Respond to inquiries', 'View analytics', 'Cannot delete inventory']
+      },
+      warehouse_manager: {
+        title: 'Warehouse Manager',
+        perms: ['Add and update inventory', 'Manage locations', 'View inquiries', 'Cannot access settings']
+      },
+      viewer: {
+        title: 'Viewer',
+        perms: ['View-only access', 'See inventory and analytics', 'Cannot make changes']
+      }
+    };
+
+    async function init() {
+      // Wait for SgSSOAuth to be ready
+      await waitForSSOAuth();
+
+      const supabase = window._sgSupabaseClient;
+      if (!supabase) {
+        console.error('Supabase not initialized');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = '/log-in/?redirect=/distributor/dashboard/settings/team/';
+        return;
+      }
+
+      currentUser = user;
+
+      // Load distributor context and role
+      try {
+        const distributors = await window.SgSSOAuth.loadUserDistributors();
+
+        if (distributors.length === 0) {
+          window.location.href = '/distributor/signup/';
+          return;
+        }
+
+        // Use first distributor (or saved context)
+        const savedContext = sessionStorage.getItem('sg_distributor_context');
+        const distributor = savedContext
+          ? distributors.find(d => d.distributor_id === savedContext) || distributors[0]
+          : distributors[0];
+
+        distributorId = distributor.distributor_id;
+        currentRole = distributor.role;
+
+        // Update sidebar user info
+        updateUserInfo(user, distributor);
+
+        // Check permission
+        if (!['admin'].includes(currentRole)) {
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('permissionDenied').style.display = 'block';
+          document.getElementById('inviteBtn').style.display = 'none';
+          return;
+        }
+
+        // Load team members
+        await loadTeamMembers();
+
+      } catch (error) {
+        console.error('Init error:', error);
+        showStatus('Failed to initialize. Please refresh.', 'error');
+      }
+    }
+
+    function waitForSSOAuth() {
+      return new Promise(resolve => {
+        if (window.SgSSOAuth) {
+          resolve();
+          return;
+        }
+        let attempts = 0;
+        const check = setInterval(() => {
+          attempts++;
+          if (window.SgSSOAuth || attempts > 50) {
+            clearInterval(check);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
+    function updateUserInfo(user, distributor) {
+      const name = user.user_metadata?.full_name || user.email.split('@')[0];
+      document.getElementById('userName').textContent = name;
+      document.getElementById('userEmail').textContent = user.email;
+      document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('userRole').textContent = distributor.role;
+    }
+
+    async function loadTeamMembers() {
+      try {
+        const response = await window.SgSSOAuth.apiRequest(`/api/distributor/${distributorId}/team`);
+
+        if (!response.ok) {
+          throw new Error('Failed to load team');
+        }
+
+        const data = await response.json();
+        teamMembers = data.members || [];
+
+        renderTeamTable();
+
+      } catch (error) {
+        console.error('Load team error:', error);
+        showStatus('Failed to load team members', 'error');
+      } finally {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('teamContent').style.display = 'block';
+      }
+    }
+
+    function renderTeamTable() {
+      const tbody = document.getElementById('teamTableBody');
+      const table = document.getElementById('teamTable');
+      const emptyState = document.getElementById('emptyState');
+      const memberCount = document.getElementById('memberCount');
+
+      memberCount.textContent = `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}`;
+
+      if (teamMembers.length === 0) {
+        table.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      table.style.display = 'table';
+
+      tbody.innerHTML = teamMembers.map(member => {
+        const name = member.full_name || member.email.split('@')[0];
+        const initial = name.charAt(0).toUpperCase();
+        const isCurrentUser = member.user_id === currentUser.id;
+        const isPending = member.status === 'pending';
+        const joinedDate = member.created_at
+          ? new Date(member.created_at).toLocaleDateString()
+          : '-';
+
+        return `
+          <tr>
+            <td>
+              <div class="member-info">
+                <div class="member-avatar ${isPending ? 'pending' : ''}">${initial}</div>
+                <div>
+                  <div class="member-name">${name}${isCurrentUser ? ' (You)' : ''}</div>
+                  <div class="member-email">${member.email}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="role-badge ${member.role}">${member.role.replace('_', ' ')}</span>
+            </td>
+            <td>
+              <span class="status-badge ${isPending ? 'pending' : 'active'}">
+                ${isPending ? 'Pending' : 'Active'}
+              </span>
+            </td>
+            <td style="color: var(--text-muted); font-size: 13px;">${joinedDate}</td>
+            <td>
+              <div class="actions-cell">
+                ${!isCurrentUser ? `
+                  <button class="btn btn-secondary btn-sm" onclick="showEditRoleModal('${member.user_id}', '${name}', '${member.role}')">
+                    Edit
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="showRemoveModal('${member.user_id}', '${name}')">
+                    Remove
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function showInviteModal() {
+      document.getElementById('inviteEmail').value = '';
+      document.getElementById('inviteRole').value = '';
+      document.getElementById('roleDescriptionBox').style.display = 'none';
+      document.getElementById('inviteModal').classList.add('show');
+    }
+
+    function showEditRoleModal(userId, name, role) {
+      document.getElementById('editMemberId').value = userId;
+      document.getElementById('editMemberName').textContent = name;
+      document.getElementById('editMemberRole').value = role;
+      document.getElementById('editRoleModal').classList.add('show');
+    }
+
+    function showRemoveModal(userId, name) {
+      document.getElementById('removeMemberId').value = userId;
+      document.getElementById('removeMemberName').textContent = name;
+      document.getElementById('removeModal').classList.add('show');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('show');
+    }
+
+    function updateRoleDescription() {
+      const role = document.getElementById('inviteRole').value;
+      const box = document.getElementById('roleDescriptionBox');
+
+      if (!role || !roleDescriptions[role]) {
+        box.style.display = 'none';
+        return;
+      }
+
+      const desc = roleDescriptions[role];
+      document.getElementById('roleDescTitle').textContent = desc.title;
+      document.getElementById('roleDescList').innerHTML = desc.perms.map(p => `<li>${p}</li>`).join('');
+      box.style.display = 'block';
+    }
+
+    async function inviteMember(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('inviteEmail').value.trim();
+      const role = document.getElementById('inviteRole').value;
+      const btn = document.getElementById('inviteSubmitBtn');
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const response = await window.SgSSOAuth.apiRequest(
+          `/api/distributor/${distributorId}/team/invite`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ email, role })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to send invitation');
+        }
+
+        showStatus(`Invitation sent to ${email}`, 'success');
+        closeModal('inviteModal');
+        await loadTeamMembers();
+
+      } catch (error) {
+        showStatus(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Invitation';
+      }
+    }
+
+    async function updateMemberRole(e) {
+      e.preventDefault();
+
+      const userId = document.getElementById('editMemberId').value;
+      const newRole = document.getElementById('editMemberRole').value;
+
+      try {
+        const response = await window.SgSSOAuth.apiRequest(
+          `/api/distributor/${distributorId}/team/${userId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ role: newRole })
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update role');
+        }
+
+        showStatus('Role updated successfully', 'success');
+        closeModal('editRoleModal');
+        await loadTeamMembers();
+
+      } catch (error) {
+        showStatus(error.message, 'error');
+      }
+    }
+
+    async function confirmRemoveMember() {
+      const userId = document.getElementById('removeMemberId').value;
+
+      try {
+        const response = await window.SgSSOAuth.apiRequest(
+          `/api/distributor/${distributorId}/team/${userId}`,
+          { method: 'DELETE' }
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to remove member');
+        }
+
+        showStatus('Team member removed', 'success');
+        closeModal('removeModal');
+        await loadTeamMembers();
+
+      } catch (error) {
+        showStatus(error.message, 'error');
+      }
+    }
+
+    function showStatus(message, type) {
+      const el = document.getElementById('statusMessage');
+      el.textContent = message;
+      el.className = 'status-message ' + type;
+
+      setTimeout(() => {
+        el.className = 'status-message';
+      }, 5000);
+    }
+
+    // Close modal on outside click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('show');
+        }
+      });
+    });
+
+    init();
+  </script>
+</body>
+</html>

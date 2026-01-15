@@ -194,6 +194,30 @@
     updateNavUI();
   }
 
+  // Sign in with OAuth provider (Google, etc.)
+  async function signInWithOAuth(provider, options = {}) {
+    if (!supabaseClient) await init();
+
+    // Default redirect to current page or account page
+    const redirectTo = options.redirectTo || window.location.origin + '/account/';
+
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: redirectTo,
+        queryParams: options.queryParams || {}
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Convenience method for Google sign-in
+  async function signInWithGoogle(redirectTo) {
+    return signInWithOAuth('google', { redirectTo });
+  }
+
   // Get current user
   function getUser() {
     return currentUser;
@@ -326,6 +350,100 @@
       }
     } catch (e) {}
     return 0;
+  }
+
+  // ============ API Request Helpers ============
+
+  /**
+   * Get current JWT access token for API calls
+   */
+  async function getAccessToken() {
+    if (!supabaseClient) await init();
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    return session?.access_token || null;
+  }
+
+  /**
+   * Make authenticated API request with JWT
+   * @param {string} path - API endpoint path (e.g., '/api/marketplace/slabs')
+   * @param {Object} options - Fetch options (method, body, headers, etc.)
+   */
+  async function apiRequest(path, options = {}) {
+    const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+    const token = await getAccessToken();
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+
+    // Add JWT token if available
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Add user ID as fallback for legacy endpoints
+    if (currentUser?.id && !options.skipLegacyHeaders) {
+      headers['X-User-ID'] = currentUser.id;
+    }
+
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers
+    });
+
+    // Handle 401 - try to refresh token
+    if (response.status === 401 && supabaseClient) {
+      const { data: { session }, error } = await supabaseClient.auth.refreshSession();
+
+      if (session && !error) {
+        // Retry with new token
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        return fetch(`${API_BASE}${path}`, { ...options, headers });
+      }
+
+      // Refresh failed - dispatch event for UI to handle
+      window.dispatchEvent(new CustomEvent('sg-auth-required', {
+        detail: { path, reason: 'token_expired' }
+      }));
+    }
+
+    return response;
+  }
+
+  /**
+   * Make authenticated GET request
+   */
+  async function apiGet(path) {
+    return apiRequest(path, { method: 'GET' });
+  }
+
+  /**
+   * Make authenticated POST request
+   */
+  async function apiPost(path, data) {
+    return apiRequest(path, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  /**
+   * Make authenticated PATCH request
+   */
+  async function apiPatch(path, data) {
+    return apiRequest(path, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+
+  /**
+   * Make authenticated DELETE request
+   */
+  async function apiDelete(path) {
+    return apiRequest(path, { method: 'DELETE' });
   }
 
   // ============ User Data Methods ============
@@ -546,12 +664,22 @@
     signIn,
     signUp,
     signOut,
+    signInWithOAuth,
+    signInWithGoogle,
     getUser,
     getProfile,
     isLoggedIn,
     getClient,
     onAuthChange,
     updateNavUI,
+    // API helpers with JWT
+    getAccessToken,
+    apiRequest,
+    apiGet,
+    apiPost,
+    apiPatch,
+    apiDelete,
+    // User data
     getFavorites,
     addFavorite,
     removeFavorite,

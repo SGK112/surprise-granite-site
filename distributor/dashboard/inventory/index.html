@@ -707,7 +707,7 @@
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
     let currentUser = null;
@@ -716,8 +716,16 @@
     let searchTimeout = null;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
+        if (isLocalhost) {
+          currentUser = { id: 'demo-user', email: 'demo@example.com' };
+          console.log('Demo mode: Using demo user');
+          showDemoInventory();
+          setupDropZone();
+          return;
+        }
         window.location.href = '/log-in/?redirect=/distributor/dashboard/inventory/';
         return;
       }
@@ -726,20 +734,41 @@
       setupDropZone();
     }
 
+    function showDemoInventory() {
+      const tbody = document.getElementById('inventoryBody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              </div>
+              <h3 class="empty-title">Demo Mode</h3>
+              <p class="empty-text">You are viewing the inventory page in demo mode on localhost. Sign in to manage real inventory.</p>
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="openUploadModal()">Upload CSV</button>
+                <a href="/distributor/dashboard/inventory/add/" class="btn btn-primary">Add Slab</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
     async function loadInventory() {
       const status = document.getElementById('filterStatus').value;
       const material = document.getElementById('filterMaterial').value;
       const search = document.getElementById('filterSearch').value;
 
       try {
-        let query = supabase
+        let query = supabaseClient
           .from('slab_inventory')
           .select('*, distributor_locations(location_name, city)', { count: 'exact' })
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
         // Get distributor profile first
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseClient
           .from('distributor_profiles')
           .select('id')
           .eq('user_id', currentUser.id)

@@ -122,6 +122,13 @@ const supabaseUrl = process.env.SUPABASE_URL || 'https://htjvyzmuqsrjpesdurni.su
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
+// Enterprise Authentication Middleware
+const authMiddleware = require('./lib/auth/middleware');
+if (supabase) {
+  authMiddleware.initAuth(supabase);
+}
+const { authenticateJWT, requireRole, requirePermission, requireDistributor, logAuditEvent, getClientIP } = authMiddleware;
+
 // Blueprint Takeoff Analyzer with GPT-4 Vision and Ollama support
 const { analyzeBlueprint, parseBluebeamBAX, CONFIG: TAKEOFF_CONFIG } = require('./lib/takeoff/blueprint-analyzer');
 
@@ -5440,6 +5447,626 @@ async function verifyDistributorApiKey(apiKey) {
 
   return data;
 }
+
+// ============================================
+// ENTERPRISE SSO AUTHENTICATION API
+// ============================================
+
+// Check if email domain requires SSO
+app.post('/api/auth/check-sso-domain', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.json({ sso_required: false });
+    }
+
+    const domain = '@' + email.split('@')[1].toLowerCase();
+
+    // Check if domain has SSO configured
+    const { data: ssoConfig } = await supabase
+      .from('distributor_sso_config')
+      .select('provider, enforce_sso, distributor_id, default_role')
+      .filter('email_domains', 'cs', `{${domain}}`)
+      .eq('is_active', true)
+      .single();
+
+    if (ssoConfig) {
+      res.json({
+        sso_required: ssoConfig.enforce_sso,
+        sso_available: true,
+        provider: ssoConfig.provider,
+        distributor_id: ssoConfig.distributor_id
+      });
+    } else {
+      res.json({ sso_required: false, sso_available: false });
+    }
+  } catch (error) {
+    console.error('Check SSO domain error:', error);
+    res.json({ sso_required: false, sso_available: false });
+  }
+});
+
+// Provision SSO user after successful OAuth login
+app.post('/api/auth/provision-sso-user', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const user = req.user;
+    const email = user.email;
+    const domain = '@' + email.split('@')[1].toLowerCase();
+
+    // Find SSO config for this domain
+    const { data: ssoConfig } = await supabase
+      .from('distributor_sso_config')
+      .select('distributor_id, default_role, auto_provision_users')
+      .filter('email_domains', 'cs', `{${domain}}`)
+      .eq('is_active', true)
+      .single();
+
+    if (!ssoConfig) {
+      return res.status(404).json({
+        error: 'No SSO configuration found for your email domain',
+        code: 'NO_SSO_CONFIG'
+      });
+    }
+
+    // Check if user already has a role for this distributor
+    const { data: existingRole } = await supabase
+      .from('distributor_user_roles')
+      .select('role, permissions, is_active')
+      .eq('user_id', user.id)
+      .eq('distributor_id', ssoConfig.distributor_id)
+      .single();
+
+    if (existingRole) {
+      // Log SSO login
+      await logAuditEvent({
+        eventType: 'sso_login',
+        userId: user.id,
+        distributorId: ssoConfig.distributor_id,
+        details: { existing_role: existingRole.role },
+        ipAddress: getClientIP(req),
+        userAgent: req.headers['user-agent']
+      });
+
+      return res.json({
+        distributor_id: ssoConfig.distributor_id,
+        role: existingRole.role,
+        permissions: existingRole.permissions,
+        existing: true
+      });
+    }
+
+    // Auto-provision if enabled
+    if (ssoConfig.auto_provision_users) {
+      // Get default permissions for the role
+      const { data: template } = await supabase
+        .from('role_permission_templates')
+        .select('permissions')
+        .eq('role', ssoConfig.default_role)
+        .single();
+
+      // Create new role assignment
+      const { data: newRole, error: roleError } = await supabase
+        .from('distributor_user_roles')
+        .insert({
+          distributor_id: ssoConfig.distributor_id,
+          user_id: user.id,
+          role: ssoConfig.default_role,
+          permissions: template?.permissions || {},
+          is_active: true,
+          accepted_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (roleError) throw roleError;
+
+      // Log provisioning
+      await logAuditEvent({
+        eventType: 'sso_provisioned',
+        userId: user.id,
+        distributorId: ssoConfig.distributor_id,
+        details: { role: ssoConfig.default_role, auto_provisioned: true },
+        ipAddress: getClientIP(req),
+        userAgent: req.headers['user-agent']
+      });
+
+      return res.json({
+        distributor_id: ssoConfig.distributor_id,
+        role: newRole.role,
+        permissions: newRole.permissions,
+        provisioned: true
+      });
+    }
+
+    // User needs manual approval
+    res.json({
+      distributor_id: ssoConfig.distributor_id,
+      pending_approval: true,
+      message: 'Your account requires administrator approval'
+    });
+
+  } catch (error) {
+    console.error('Provision SSO user error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get current user's distributor access
+app.get('/api/auth/my-distributors', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: roles, error } = await supabase
+      .from('distributor_user_roles')
+      .select(`
+        distributor_id,
+        role,
+        permissions,
+        is_active,
+        accepted_at,
+        distributors(
+          id, company_name, logo_url, status
+        )
+      `)
+      .eq('user_id', req.user.id)
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    res.json({
+      distributors: roles.map(r => ({
+        distributor_id: r.distributor_id,
+        role: r.role,
+        permissions: r.permissions,
+        joined_at: r.accepted_at,
+        company_name: r.distributors?.company_name,
+        logo_url: r.distributors?.logo_url,
+        status: r.distributors?.status
+      }))
+    });
+  } catch (error) {
+    console.error('Get my distributors error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's role for a specific distributor
+app.get('/api/auth/role/:distributorId', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: role, error } = await supabase
+      .from('distributor_user_roles')
+      .select('role, permissions, is_active')
+      .eq('user_id', req.user.id)
+      .eq('distributor_id', req.params.distributorId)
+      .single();
+
+    if (error || !role || !role.is_active) {
+      return res.status(404).json({
+        error: 'No role found for this distributor',
+        code: 'NO_ROLE'
+      });
+    }
+
+    res.json(role);
+  } catch (error) {
+    console.error('Get role error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Invite user to distributor team
+app.post('/api/distributor/:id/team/invite', authenticateJWT, requireRole('admin'), async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { email, role } = req.body;
+    const distributorId = req.params.id;
+
+    if (!email || !role) {
+      return res.status(400).json({ error: 'Email and role are required' });
+    }
+
+    const validRoles = ['admin', 'sales', 'warehouse_manager', 'viewer'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role', validRoles });
+    }
+
+    // Get permission template for the role
+    const { data: template } = await supabase
+      .from('role_permission_templates')
+      .select('permissions')
+      .eq('role', role)
+      .single();
+
+    // Generate invite token
+    const crypto = require('crypto');
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // Check if user already exists in auth
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+    let userId = existingUser?.id;
+
+    // Create role record
+    const { data: invite, error } = await supabase
+      .from('distributor_user_roles')
+      .upsert({
+        distributor_id: distributorId,
+        user_id: userId,
+        role,
+        permissions: template?.permissions || {},
+        is_active: false, // Inactive until accepted
+        invited_at: new Date().toISOString(),
+        invited_by: req.user.id,
+        invite_token: inviteToken,
+        invite_expires_at: inviteExpires.toISOString()
+      }, {
+        onConflict: 'distributor_id,user_id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Get distributor name for email
+    const { data: distributor } = await supabase
+      .from('distributors')
+      .select('company_name')
+      .eq('id', distributorId)
+      .single();
+
+    // Send invitation email
+    const inviteUrl = `https://www.surprisegranite.com/distributor/invite?token=${inviteToken}`;
+
+    await transporter.sendMail({
+      from: `"Surprise Granite" <${ADMIN_EMAIL}>`,
+      to: email,
+      subject: `You've been invited to join ${distributor?.company_name || 'a distributor'} on Surprise Granite`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 12px;">
+          <h2 style="color: #f9cb00;">Team Invitation</h2>
+          <p>You've been invited to join <strong>${distributor?.company_name || 'a distributor'}</strong> as a <strong>${role}</strong>.</p>
+          <p>Click the button below to accept this invitation:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background: #f9cb00; color: #1a1a2e; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+          </div>
+          <p style="color: #888; font-size: 14px;">This invitation expires in 7 days.</p>
+        </div>
+      `
+    });
+
+    // Log audit
+    await logAuditEvent({
+      eventType: 'user_invited',
+      userId: req.user.id,
+      distributorId,
+      details: { invited_email: email, role },
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      message: `Invitation sent to ${email}`,
+      invite_id: invite.id
+    });
+
+  } catch (error) {
+    console.error('Invite user error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Accept team invitation
+app.post('/api/auth/accept-invite', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Invitation token required' });
+    }
+
+    // Find and validate invitation
+    const { data: invite, error: findError } = await supabase
+      .from('distributor_user_roles')
+      .select('*, distributors(company_name)')
+      .eq('invite_token', token)
+      .eq('is_active', false)
+      .single();
+
+    if (findError || !invite) {
+      return res.status(404).json({ error: 'Invalid or expired invitation' });
+    }
+
+    // Check expiration
+    if (new Date(invite.invite_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Invitation has expired' });
+    }
+
+    // Activate the role
+    const { error: updateError } = await supabase
+      .from('distributor_user_roles')
+      .update({
+        user_id: req.user.id,
+        is_active: true,
+        accepted_at: new Date().toISOString(),
+        invite_token: null,
+        invite_expires_at: null
+      })
+      .eq('id', invite.id);
+
+    if (updateError) throw updateError;
+
+    // Log acceptance
+    await logAuditEvent({
+      eventType: 'user_accepted_invite',
+      userId: req.user.id,
+      distributorId: invite.distributor_id,
+      details: { role: invite.role },
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      distributor_id: invite.distributor_id,
+      role: invite.role,
+      company_name: invite.distributors?.company_name
+    });
+
+  } catch (error) {
+    console.error('Accept invite error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get team members for a distributor
+app.get('/api/distributor/:id/team', authenticateJWT, requireRole('admin', 'sales'), async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: members, error } = await supabase
+      .from('distributor_user_roles')
+      .select(`
+        id,
+        user_id,
+        role,
+        permissions,
+        is_active,
+        invited_at,
+        accepted_at
+      `)
+      .eq('distributor_id', req.params.id)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    // Get user details from auth
+    const userIds = members.filter(m => m.user_id).map(m => m.user_id);
+    const userDetails = {};
+
+    for (const userId of userIds) {
+      try {
+        const { data } = await supabase.auth.admin.getUserById(userId);
+        if (data?.user) {
+          userDetails[userId] = {
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || data.user.user_metadata?.name,
+            avatar_url: data.user.user_metadata?.avatar_url
+          };
+        }
+      } catch (e) {
+        // User might not exist
+      }
+    }
+
+    res.json({
+      members: members.map(m => ({
+        ...m,
+        user: userDetails[m.user_id] || null
+      }))
+    });
+
+  } catch (error) {
+    console.error('Get team error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update team member role
+app.patch('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('admin'), async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { role, permissions } = req.body;
+
+    // Get new permissions template if role changed
+    let newPermissions = permissions;
+    if (role && !permissions) {
+      const { data: template } = await supabase
+        .from('role_permission_templates')
+        .select('permissions')
+        .eq('role', role)
+        .single();
+      newPermissions = template?.permissions;
+    }
+
+    const updates = {};
+    if (role) updates.role = role;
+    if (newPermissions) updates.permissions = newPermissions;
+
+    const { data, error } = await supabase
+      .from('distributor_user_roles')
+      .update(updates)
+      .eq('id', req.params.memberId)
+      .eq('distributor_id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Log role change
+    await logAuditEvent({
+      eventType: 'role_changed',
+      userId: req.user.id,
+      distributorId: req.params.id,
+      details: { member_id: req.params.memberId, new_role: role },
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json(data);
+
+  } catch (error) {
+    console.error('Update member error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Remove team member
+app.delete('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('admin'), async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    // Soft delete - deactivate the role
+    const { error } = await supabase
+      .from('distributor_user_roles')
+      .update({ is_active: false })
+      .eq('id', req.params.memberId)
+      .eq('distributor_id', req.params.id);
+
+    if (error) throw error;
+
+    // Log removal
+    await logAuditEvent({
+      eventType: 'user_removed',
+      userId: req.user.id,
+      distributorId: req.params.id,
+      details: { member_id: req.params.memberId },
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Remove member error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get audit logs for a distributor
+app.get('/api/distributor/:id/audit-logs', authenticateJWT, requireRole('admin'), async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { limit = 50, offset = 0, event_type } = req.query;
+
+    let query = supabase
+      .from('auth_audit_logs')
+      .select('*', { count: 'exact' })
+      .eq('distributor_id', req.params.id)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    if (event_type) {
+      query = query.eq('event_type', event_type);
+    }
+
+    const { data: logs, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({ logs, total: count, limit: parseInt(limit), offset: parseInt(offset) });
+
+  } catch (error) {
+    console.error('Get audit logs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get active sessions for current user
+app.get('/api/auth/sessions', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { data: sessions, error } = await supabase
+      .from('user_sessions')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('is_active', true)
+      .order('last_active_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ sessions });
+
+  } catch (error) {
+    console.error('Get sessions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Revoke a specific session
+app.delete('/api/auth/sessions/:sessionId', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    const { error } = await supabase
+      .from('user_sessions')
+      .update({
+        is_active: false,
+        revoked_at: new Date().toISOString(),
+        revoke_reason: 'user_manual_revoke'
+      })
+      .eq('id', req.params.sessionId)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Revoke session error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Revoke all other sessions
+app.post('/api/auth/sessions/revoke-others', authenticateJWT, async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    // Get current session hash from token
+    const crypto = require('crypto');
+    const currentSessionHash = crypto.createHash('sha256').update(req.accessToken).digest('hex');
+
+    const { data: count } = await supabase.rpc('revoke_other_sessions', {
+      p_user_id: req.user.id,
+      p_current_session_hash: currentSessionHash
+    });
+
+    res.json({ success: true, revoked_count: count });
+
+  } catch (error) {
+    console.error('Revoke others error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// DISTRIBUTOR API (Original endpoints below)
+// ============================================
 
 // Get distributor profile
 app.get('/api/distributor/profile', async (req, res) => {

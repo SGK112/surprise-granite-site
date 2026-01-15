@@ -586,7 +586,7 @@
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
@@ -597,9 +597,17 @@
     let currentPeriod = 30;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const { data: { user } } = await supabaseClient.auth.getUser();
 
       if (!user) {
+        if (isLocalhost) {
+          currentUser = { id: 'demo-user', email: 'demo@example.com' };
+          console.log('Demo mode: Using demo user');
+          showDemoAnalytics();
+          setupTimeFilter();
+          return;
+        }
         window.location.href = '/log-in/?redirect=/distributor/dashboard/analytics/';
         return;
       }
@@ -610,8 +618,33 @@
       setupTimeFilter();
     }
 
+    function showDemoAnalytics() {
+      // Update user info in sidebar
+      document.getElementById('userName').textContent = 'Demo User';
+      document.getElementById('userEmail').textContent = 'demo@example.com';
+      document.getElementById('userAvatar').textContent = 'D';
+
+      // Show demo stats
+      document.getElementById('totalViews').textContent = '0';
+      document.getElementById('totalInquiries').textContent = '0';
+      document.getElementById('conversionRate').textContent = '0%';
+      document.getElementById('totalFavorites').textContent = '0';
+
+      // Show demo charts with sample data
+      updateViewsChart([]);
+      updateMaterialsChart([]);
+
+      // Show demo top products
+      document.getElementById('topProductsContent').innerHTML = `
+        <div class="empty-state" style="padding: 40px;">
+          <p class="empty-text">Demo mode - no real analytics data. Sign in to see your inventory performance.</p>
+          <a href="/distributor/dashboard/inventory/add/" class="btn btn-primary">Add First Slab</a>
+        </div>
+      `;
+    }
+
     async function loadDistributor() {
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseClient
         .from('distributor_profiles')
         .select('*')
         .eq('user_id', currentUser.id)

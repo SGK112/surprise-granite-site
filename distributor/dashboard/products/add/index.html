@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Add Product | Distributor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/config.js"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 32px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .back-link {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .back-link:hover { color: var(--gold-primary); }
+
+    /* Form Container */
+    .form-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .form-section {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Form Grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .form-label .required {
+      color: var(--error);
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      padding: 12px 14px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    .form-select { cursor: pointer; }
+    .form-select option { background: var(--dark-surface); }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Type Selector */
+    .type-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .type-option {
+      padding: 16px;
+      border: 2px solid var(--border-subtle);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .type-option:hover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .type-option.selected {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .type-option svg {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .type-option.selected svg {
+      color: var(--gold-primary);
+    }
+
+    .type-option span {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Image Upload */
+    .image-upload {
+      border: 2px dashed var(--border-subtle);
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .image-upload:hover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .image-upload svg {
+      width: 48px;
+      height: 48px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .image-upload p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .image-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-item button {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 20px var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* Type-specific sections */
+    .type-fields {
+      display: none;
+    }
+
+    .type-fields.active {
+      display: block;
+    }
+
+    /* Error message */
+    .error-msg {
+      color: var(--error);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* Success toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .toast.error {
+      background: var(--error);
+      color: white;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Loading */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+      .type-selector { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <a href="/distributor/dashboard/products/" class="back-link">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Products
+    </a>
+    <h1 class="page-title" id="pageTitle">Add Product</h1>
+  </header>
+
+  <div class="form-container">
+    <form id="productForm">
+      <!-- Product Type -->
+      <div class="form-section">
+        <h2 class="section-title">Product Type</h2>
+        <div class="type-selector">
+          <div class="type-option selected" data-type="slab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+            </svg>
+            <span>Slab</span>
+          </div>
+          <div class="type-option" data-type="tile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="8" height="8"/>
+              <rect x="13" y="3" width="8" height="8"/>
+              <rect x="3" y="13" width="8" height="8"/>
+              <rect x="13" y="13" width="8" height="8"/>
+            </svg>
+            <span>Tile</span>
+          </div>
+          <div class="type-option" data-type="flooring">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 12h18M3 6h18M3 18h18"/>
+            </svg>
+            <span>Flooring</span>
+          </div>
+          <div class="type-option" data-type="installation_product">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+            </svg>
+            <span>Installation</span>
+          </div>
+        </div>
+        <input type="hidden" name="product_type" id="productType" value="slab">
+      </div>
+
+      <!-- Basic Info -->
+      <div class="form-section">
+        <h2 class="section-title">Basic Information</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">SKU <span class="required">*</span></label>
+            <input type="text" name="sku" class="form-input" required placeholder="e.g., GRN-001">
+          </div>
+          <div class="form-group">
+            <label class="form-label">External SKU</label>
+            <input type="text" name="external_sku" class="form-input" placeholder="ERP system SKU">
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Product Name <span class="required">*</span></label>
+            <input type="text" name="name" class="form-input" required placeholder="e.g., Alaska White Granite">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" name="brand" class="form-input" placeholder="Manufacturer or brand">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material Type</label>
+            <select name="material_type" class="form-select">
+              <option value="">Select material</option>
+              <option value="Granite">Granite</option>
+              <option value="Quartz">Quartz</option>
+              <option value="Marble">Marble</option>
+              <option value="Quartzite">Quartzite</option>
+              <option value="Soapstone">Soapstone</option>
+              <option value="Porcelain">Porcelain</option>
+              <option value="Sintered Stone">Sintered Stone</option>
+              <option value="Ceramic">Ceramic</option>
+              <option value="LVP">LVP</option>
+              <option value="LVT">LVT</option>
+              <option value="Hardwood">Hardwood</option>
+              <option value="Laminate">Laminate</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color Family</label>
+            <input type="text" name="color_family" class="form-input" placeholder="e.g., White, Gray, Brown">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Finish</label>
+            <select name="finish" class="form-select">
+              <option value="">Select finish</option>
+              <option value="Polished">Polished</option>
+              <option value="Honed">Honed</option>
+              <option value="Leathered">Leathered</option>
+              <option value="Brushed">Brushed</option>
+              <option value="Matte">Matte</option>
+              <option value="Satin">Satin</option>
+              <option value="Natural">Natural</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-textarea" placeholder="Product description..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing & Inventory -->
+      <div class="form-section">
+        <h2 class="section-title">Pricing & Inventory</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Wholesale Price</label>
+            <input type="number" name="wholesale_price" class="form-input" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price Unit</label>
+            <select name="price_unit" class="form-select">
+              <option value="sqft">Per Sq Ft</option>
+              <option value="each">Each</option>
+              <option value="box">Per Box</option>
+              <option value="pallet">Per Pallet</option>
+              <option value="linear_ft">Per Linear Ft</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity</label>
+            <input type="number" name="quantity" class="form-input" min="0" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity Unit</label>
+            <select name="quantity_unit" class="form-select">
+              <option value="each">Each</option>
+              <option value="sqft">Sq Ft</option>
+              <option value="box">Boxes</option>
+              <option value="pallet">Pallets</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Min Stock Level</label>
+            <input type="number" name="min_stock_level" class="form-input" min="0" value="0" placeholder="Alert when below this">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="out_of_stock">Out of Stock</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slab-specific fields -->
+      <div class="form-section type-fields" id="slabFields" data-type="slab">
+        <h2 class="section-title">Slab Details</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Length (inches)</label>
+            <input type="number" name="length_inches" class="form-input" step="0.25" placeholder="120">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Width (inches)</label>
+            <input type="number" name="width_inches" class="form-input" step="0.25" placeholder="65">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thickness (cm)</label>
+            <select name="thickness_cm" class="form-select">
+              <option value="">Select thickness</option>
+              <option value="2">2 cm</option>
+              <option value="3">3 cm</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quality Grade</label>
+            <select name="quality_grade" class="form-select">
+              <option value="">Select grade</option>
+              <option value="Premium">Premium</option>
+              <option value="Standard">Standard</option>
+              <option value="Commercial">Commercial</option>
+              <option value="First Quality">First Quality</option>
+              <option value="Second Quality">Second Quality</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lot Number</label>
+            <input type="text" name="lot_number" class="form-input" placeholder="Lot/bundle identifier">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Origin Country</label>
+            <input type="text" name="origin_country" class="form-input" placeholder="e.g., Brazil, Italy">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tile-specific fields -->
+      <div class="form-section type-fields" id="tileFields" data-type="tile">
+        <h2 class="section-title">Tile Details</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tile Length (inches)</label>
+            <input type="number" name="tile_length_inches" class="form-input" step="0.25" placeholder="12">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tile Width (inches)</label>
+            <input type="number" name="tile_width_inches" class="form-input" step="0.25" placeholder="24">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thickness (mm)</label>
+            <input type="number" name="thickness_mm" class="form-input" step="0.5" placeholder="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tiles per Box</label>
+            <input type="number" name="tiles_per_box" class="form-input" placeholder="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sq Ft per Box</label>
+            <input type="number" name="sqft_per_box" class="form-input" step="0.01" placeholder="12.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">PEI Rating</label>
+            <select name="pei_rating" class="form-select">
+              <option value="">Select rating</option>
+              <option value="1">1 - Wall only</option>
+              <option value="2">2 - Light traffic</option>
+              <option value="3">3 - Moderate traffic</option>
+              <option value="4">4 - Heavy traffic</option>
+              <option value="5">5 - Extra heavy traffic</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flooring-specific fields -->
+      <div class="form-section type-fields" id="flooringFields" data-type="flooring">
+        <h2 class="section-title">Flooring Details</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Flooring Type</label>
+            <select name="flooring_type" class="form-select">
+              <option value="">Select type</option>
+              <option value="lvp">LVP (Luxury Vinyl Plank)</option>
+              <option value="lvt">LVT (Luxury Vinyl Tile)</option>
+              <option value="hardwood">Hardwood</option>
+              <option value="engineered">Engineered Hardwood</option>
+              <option value="laminate">Laminate</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plank Length (inches)</label>
+            <input type="number" name="plank_length_inches" class="form-input" step="0.25" placeholder="48">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plank Width (inches)</label>
+            <input type="number" name="plank_width_inches" class="form-input" step="0.25" placeholder="7">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thickness (mm)</label>
+            <input type="number" name="flooring_thickness_mm" class="form-input" step="0.5" placeholder="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Wear Layer (mm)</label>
+            <input type="number" name="wear_layer_mm" class="form-input" step="0.1" placeholder="0.5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Installation Method</label>
+            <select name="installation_method" class="form-select">
+              <option value="">Select method</option>
+              <option value="click">Click-lock</option>
+              <option value="glue_down">Glue Down</option>
+              <option value="nail_down">Nail Down</option>
+              <option value="float">Floating</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sq Ft per Box</label>
+            <input type="number" name="flooring_sqft_per_box" class="form-input" step="0.01" placeholder="20.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Residential Warranty (years)</label>
+            <input type="number" name="residential_warranty_years" class="form-input" placeholder="25">
+          </div>
+        </div>
+      </div>
+
+      <!-- Installation product fields -->
+      <div class="form-section type-fields" id="installationFields" data-type="installation_product">
+        <h2 class="section-title">Installation Product Details</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+              <option value="">Select category</option>
+              <option value="adhesive">Adhesive</option>
+              <option value="grout">Grout</option>
+              <option value="sealer">Sealer</option>
+              <option value="underlayment">Underlayment</option>
+              <option value="tool">Tool</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit Size</label>
+            <input type="text" name="unit_size" class="form-input" placeholder="e.g., 1 gal, 50 lb bag">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Coverage (sq ft per unit)</label>
+            <input type="number" name="coverage_sqft_per_unit" class="form-input" step="0.01" placeholder="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dry Time (hours)</label>
+            <input type="number" name="dry_time_hours" class="form-input" placeholder="24">
+          </div>
+        </div>
+      </div>
+
+      <!-- Images -->
+      <div class="form-section">
+        <h2 class="section-title">Images</h2>
+        <div class="image-upload" id="imageUpload">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p>Click to upload images or drag and drop</p>
+          <p style="font-size: 12px; margin-top: 4px;">PNG, JPG, WEBP up to 10MB each</p>
+        </div>
+        <input type="file" id="imageInput" accept="image/*" multiple hidden>
+        <div class="image-preview" id="imagePreview"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <a href="/distributor/dashboard/products/" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Product
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Configuration
+    const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+    const SUPABASE_URL = window.SG_CONFIG?.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = window.SG_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjU5NzQsImV4cCI6MjA1OTEwMTk3NH0.0I3P4GJRu5FkUn-P6pxTi8mIZxBJ9mP68KXl6G3JRv8';
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let editingId = null;
+    let imageUrls = [];
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Check for edit mode
+    const urlParams = new URLSearchParams(window.location.search);
+    editingId = urlParams.get('id');
+
+    // Initialize
+    async function init() {
+      if (isLocalhost) {
+        currentUser = { id: 'demo-user', email: 'demo@example.com' };
+      } else {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          window.location.href = '/log-in/?redirect=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        currentUser = user;
+      }
+
+      if (editingId) {
+        document.getElementById('pageTitle').textContent = 'Edit Product';
+        loadProduct(editingId);
+      }
+
+      setupEventListeners();
+      showTypeFields('slab');
+    }
+
+    // Load product for editing
+    async function loadProduct(id) {
+      try {
+        const response = await fetch(`${API_BASE}/api/products/${id}`, {
+          headers: { 'X-User-Id': currentUser.id }
+        });
+
+        if (!response.ok) throw new Error('Failed to load product');
+
+        const product = await response.json();
+        populateForm(product);
+      } catch (error) {
+        console.error('Load error:', error);
+        showToast('Failed to load product', 'error');
+      }
+    }
+
+    // Populate form with product data
+    function populateForm(product) {
+      const form = document.getElementById('productForm');
+
+      // Set product type
+      document.getElementById('productType').value = product.product_type;
+      document.querySelectorAll('.type-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.type === product.product_type);
+      });
+      showTypeFields(product.product_type);
+
+      // Basic fields
+      const fields = ['sku', 'external_sku', 'name', 'brand', 'material_type', 'color_family',
+        'finish', 'description', 'wholesale_price', 'price_unit', 'quantity', 'quantity_unit',
+        'min_stock_level', 'status'];
+
+      fields.forEach(field => {
+        const input = form.elements[field];
+        if (input && product[field] !== null && product[field] !== undefined) {
+          input.value = product[field];
+        }
+      });
+
+      // Type-specific data
+      const typeData = product.product_slabs?.[0] || product.product_tiles?.[0] ||
+        product.product_flooring?.[0] || product.product_installation?.[0] || {};
+
+      // Slab fields
+      if (product.product_type === 'slab' && product.product_slabs?.[0]) {
+        const slab = product.product_slabs[0];
+        if (slab.length_inches) form.elements['length_inches'].value = slab.length_inches;
+        if (slab.width_inches) form.elements['width_inches'].value = slab.width_inches;
+        if (slab.thickness_cm) form.elements['thickness_cm'].value = slab.thickness_cm;
+        if (slab.quality_grade) form.elements['quality_grade'].value = slab.quality_grade;
+        if (slab.lot_number) form.elements['lot_number'].value = slab.lot_number;
+        if (slab.origin_country) form.elements['origin_country'].value = slab.origin_country;
+      }
+
+      // Images
+      if (product.images && Array.isArray(product.images)) {
+        imageUrls = product.images;
+        renderImagePreviews();
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Type selector
+      document.querySelectorAll('.type-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          const type = opt.dataset.type;
+          document.getElementById('productType').value = type;
+          showTypeFields(type);
+        });
+      });
+
+      // Image upload
+      const imageUpload = document.getElementById('imageUpload');
+      const imageInput = document.getElementById('imageInput');
+
+      imageUpload.addEventListener('click', () => imageInput.click());
+      imageInput.addEventListener('change', handleImageUpload);
+
+      imageUpload.addEventListener('dragover', e => {
+        e.preventDefault();
+        imageUpload.style.borderColor = 'var(--gold-primary)';
+      });
+
+      imageUpload.addEventListener('dragleave', () => {
+        imageUpload.style.borderColor = 'var(--border-subtle)';
+      });
+
+      imageUpload.addEventListener('drop', e => {
+        e.preventDefault();
+        imageUpload.style.borderColor = 'var(--border-subtle)';
+        if (e.dataTransfer.files) {
+          handleFiles(e.dataTransfer.files);
+        }
+      });
+
+      // Form submit
+      document.getElementById('productForm').addEventListener('submit', handleSubmit);
+    }
+
+    // Show type-specific fields
+    function showTypeFields(type) {
+      document.querySelectorAll('.type-fields').forEach(section => {
+        section.classList.toggle('active', section.dataset.type === type);
+      });
+    }
+
+    // Handle image upload
+    function handleImageUpload(e) {
+      handleFiles(e.target.files);
+    }
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 10 * 1024 * 1024) {
+          showToast('Image too large (max 10MB)', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          imageUrls.push(e.target.result);
+          renderImagePreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderImagePreviews() {
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = imageUrls.map((url, i) => `
+        <div class="preview-item">
+          <img src="${url}" alt="Preview ${i + 1}">
+          <button type="button" onclick="removeImage(${i})">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function removeImage(index) {
+      imageUrls.splice(index, 1);
+      renderImagePreviews();
+    }
+
+    // Handle form submission
+    async function handleSubmit(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+
+      const productType = document.getElementById('productType').value;
+
+      // Build product data
+      const productData = {
+        sku: form.elements['sku'].value,
+        external_sku: form.elements['external_sku'].value || null,
+        name: form.elements['name'].value,
+        brand: form.elements['brand'].value || null,
+        material_type: form.elements['material_type'].value || null,
+        color_family: form.elements['color_family'].value || null,
+        finish: form.elements['finish'].value || null,
+        description: form.elements['description'].value || null,
+        wholesale_price: parseFloat(form.elements['wholesale_price'].value) || null,
+        price_unit: form.elements['price_unit'].value,
+        quantity: parseInt(form.elements['quantity'].value) || 1,
+        quantity_unit: form.elements['quantity_unit'].value,
+        min_stock_level: parseInt(form.elements['min_stock_level'].value) || 0,
+        status: form.elements['status'].value,
+        product_type: productType,
+        images: imageUrls
+      };
+
+      // Add type-specific data
+      const type_data = {};
+
+      if (productType === 'slab') {
+        if (form.elements['length_inches'].value) type_data.length_inches = parseFloat(form.elements['length_inches'].value);
+        if (form.elements['width_inches'].value) type_data.width_inches = parseFloat(form.elements['width_inches'].value);
+        if (form.elements['thickness_cm'].value) type_data.thickness_cm = parseFloat(form.elements['thickness_cm'].value);
+        if (form.elements['quality_grade'].value) type_data.quality_grade = form.elements['quality_grade'].value;
+        if (form.elements['lot_number'].value) type_data.lot_number = form.elements['lot_number'].value;
+        if (form.elements['origin_country'].value) type_data.origin_country = form.elements['origin_country'].value;
+      } else if (productType === 'tile') {
+        if (form.elements['tile_length_inches'].value) type_data.length_inches = parseFloat(form.elements['tile_length_inches'].value);
+        if (form.elements['tile_width_inches'].value) type_data.width_inches = parseFloat(form.elements['tile_width_inches'].value);
+        if (form.elements['thickness_mm'].value) type_data.thickness_mm = parseFloat(form.elements['thickness_mm'].value);
+        if (form.elements['tiles_per_box'].value) type_data.tiles_per_box = parseInt(form.elements['tiles_per_box'].value);
+        if (form.elements['sqft_per_box'].value) type_data.sqft_per_box = parseFloat(form.elements['sqft_per_box'].value);
+        if (form.elements['pei_rating'].value) type_data.pei_rating = parseInt(form.elements['pei_rating'].value);
+      } else if (productType === 'flooring') {
+        if (form.elements['flooring_type'].value) type_data.flooring_type = form.elements['flooring_type'].value;
+        if (form.elements['plank_length_inches'].value) type_data.plank_length_inches = parseFloat(form.elements['plank_length_inches'].value);
+        if (form.elements['plank_width_inches'].value) type_data.plank_width_inches = parseFloat(form.elements['plank_width_inches'].value);
+        if (form.elements['flooring_thickness_mm'].value) type_data.thickness_mm = parseFloat(form.elements['flooring_thickness_mm'].value);
+        if (form.elements['wear_layer_mm'].value) type_data.wear_layer_mm = parseFloat(form.elements['wear_layer_mm'].value);
+        if (form.elements['installation_method'].value) type_data.installation_method = form.elements['installation_method'].value;
+        if (form.elements['flooring_sqft_per_box'].value) type_data.sqft_per_box = parseFloat(form.elements['flooring_sqft_per_box'].value);
+        if (form.elements['residential_warranty_years'].value) type_data.residential_warranty_years = parseInt(form.elements['residential_warranty_years'].value);
+      } else if (productType === 'installation_product') {
+        if (form.elements['category'].value) type_data.category = form.elements['category'].value;
+        if (form.elements['unit_size'].value) type_data.unit_size = form.elements['unit_size'].value;
+        if (form.elements['coverage_sqft_per_unit'].value) type_data.coverage_sqft_per_unit = parseFloat(form.elements['coverage_sqft_per_unit'].value);
+        if (form.elements['dry_time_hours'].value) type_data.dry_time_hours = parseInt(form.elements['dry_time_hours'].value);
+      }
+
+      if (Object.keys(type_data).length > 0) {
+        productData.type_data = type_data;
+      }
+
+      try {
+        const url = editingId
+          ? `${API_BASE}/api/products/${editingId}`
+          : `${API_BASE}/api/products`;
+
+        const response = await fetch(url, {
+          method: editingId ? 'PATCH' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': currentUser.id
+          },
+          body: JSON.stringify(productData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to save product');
+        }
+
+        showToast(editingId ? 'Product updated!' : 'Product created!', 'success');
+        setTimeout(() => {
+          window.location.href = '/distributor/dashboard/products/';
+        }, 1500);
+
+      } catch (error) {
+        console.error('Save error:', error);
+        showToast(error.message || 'Failed to save product', 'error');
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>

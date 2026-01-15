@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Products | Distributor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/config.js"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --blue-accent: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 32px;
+    }
+
+    /* Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .back-link {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .back-link:hover { color: var(--gold-primary); }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 20px var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.error { color: var(--error); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--dark-surface);
+      padding: 4px;
+      border-radius: 10px;
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+    }
+
+    .tab:hover { color: var(--text-primary); }
+
+    .tab.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    /* Filters */
+    .filters-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-select, .filter-input {
+      padding: 10px 14px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .filter-select { min-width: 150px; }
+    .filter-input { flex: 1; max-width: 300px; }
+
+    .filter-select option { background: var(--dark-surface); }
+
+    /* Table */
+    .table-container {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .products-table th,
+    .products-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .products-table th {
+      background: var(--dark-elevated);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .products-table tr:hover { background: rgba(255,255,255,0.02); }
+
+    .product-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .product-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--dark-elevated);
+    }
+
+    .product-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .product-info span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .status-inactive {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+    }
+
+    .status-out_of_stock {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    /* Product type badges */
+    .type-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .type-slab { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .type-tile { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+    .type-flooring { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+    .type-installation_product { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+
+    /* Actions */
+    .actions-menu {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: none;
+      background: var(--dark-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--text-primary);
+    }
+
+    .action-btn.delete:hover { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pagination-info {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pagination-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .page-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s ease;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page-btn:not(:disabled):hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .page-header { flex-direction: column; gap: 16px; }
+      .header-actions { width: 100%; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .tabs { width: 100%; overflow-x: auto; }
+      .filters-bar { flex-direction: column; }
+      .filter-input { max-width: 100%; }
+
+      .products-table th:nth-child(4),
+      .products-table td:nth-child(4),
+      .products-table th:nth-child(5),
+      .products-table td:nth-child(5) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <a href="/distributor/dashboard/" class="back-link">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Dashboard
+      </a>
+      <h1 class="page-title">Products</h1>
+    </div>
+    <div class="header-actions">
+      <a href="/distributor/dashboard/products/add/" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Add Product
+      </a>
+      <button class="btn btn-secondary" onclick="exportProducts()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-label">Total Products</div>
+      <div class="stat-value" id="statTotal">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active</div>
+      <div class="stat-value success" id="statActive">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value warning" id="statOutOfStock">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low Stock</div>
+      <div class="stat-value error" id="statLowStock">-</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-type="">All Products</button>
+    <button class="tab" data-type="slab">Slabs</button>
+    <button class="tab" data-type="tile">Tiles</button>
+    <button class="tab" data-type="flooring">Flooring</button>
+    <button class="tab" data-type="installation_product">Installation</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <input type="text" class="filter-input" id="searchInput" placeholder="Search products...">
+    <select class="filter-select" id="materialFilter">
+      <option value="">All Materials</option>
+      <option value="Granite">Granite</option>
+      <option value="Quartz">Quartz</option>
+      <option value="Marble">Marble</option>
+      <option value="Quartzite">Quartzite</option>
+      <option value="Porcelain">Porcelain</option>
+      <option value="LVP">LVP</option>
+      <option value="Hardwood">Hardwood</option>
+    </select>
+    <select class="filter-select" id="statusFilter">
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="out_of_stock">Out of Stock</option>
+    </select>
+  </div>
+
+  <!-- Products Table -->
+  <div class="table-container">
+    <div id="productsContent">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading products...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+    const SUPABASE_URL = window.SG_CONFIG?.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = window.SG_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjU5NzQsImV4cCI6MjA1OTEwMTk3NH0.0I3P4GJRu5FkUn-P6pxTi8mIZxBJ9mP68KXl6G3JRv8';
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let products = [];
+    let currentPage = 0;
+    let totalProducts = 0;
+    const ITEMS_PER_PAGE = 25;
+
+    // Filters
+    let filters = {
+      product_type: '',
+      material_type: '',
+      status: '',
+      search: ''
+    };
+
+    // Check if localhost for demo mode
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Initialize
+    async function init() {
+      if (isLocalhost) {
+        console.log('Demo mode: Skipping auth on localhost');
+        currentUser = { id: 'demo-user', email: 'demo@example.com' };
+        loadStats();
+        loadProducts();
+        return;
+      }
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          window.location.href = '/log-in/?redirect=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        currentUser = user;
+        loadStats();
+        loadProducts();
+      } catch (error) {
+        console.error('Auth error:', error);
+        showEmptyState('Authentication error. Please try again.');
+      }
+    }
+
+    // Load stats
+    async function loadStats() {
+      try {
+        const response = await fetch(`${API_BASE}/api/products/stats`, {
+          headers: { 'X-User-Id': currentUser.id }
+        });
+
+        if (response.ok) {
+          const stats = await response.json();
+          document.getElementById('statTotal').textContent = stats.total_products || 0;
+          document.getElementById('statActive').textContent = stats.active_products || 0;
+          document.getElementById('statOutOfStock').textContent = stats.out_of_stock || 0;
+          document.getElementById('statLowStock').textContent = stats.low_stock || 0;
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    // Load products
+    async function loadProducts() {
+      const content = document.getElementById('productsContent');
+      content.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading products...</p></div>';
+
+      try {
+        const params = new URLSearchParams({
+          limit: ITEMS_PER_PAGE,
+          offset: currentPage * ITEMS_PER_PAGE
+        });
+
+        if (filters.product_type) params.append('product_type', filters.product_type);
+        if (filters.material_type) params.append('material_type', filters.material_type);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.search) params.append('search', filters.search);
+
+        const response = await fetch(`${API_BASE}/api/products?${params}`, {
+          headers: { 'X-User-Id': currentUser.id }
+        });
+
+        if (!response.ok) throw new Error('Failed to load products');
+
+        const data = await response.json();
+        products = data.products || [];
+        totalProducts = data.total || 0;
+
+        if (products.length === 0) {
+          showEmptyState();
+        } else {
+          renderProducts();
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+
+        // Demo fallback
+        if (isLocalhost) {
+          products = [];
+          showEmptyState('No products found. Add your first product to get started.');
+        } else {
+          showEmptyState('Error loading products. Please try again.');
+        }
+      }
+    }
+
+    // Render products table
+    function renderProducts() {
+      const content = document.getElementById('productsContent');
+
+      let html = `
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Type</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      products.forEach(product => {
+        const imageUrl = product.images?.[0] || 'https://via.placeholder.com/50x50?text=No+Image';
+        const price = product.wholesale_price
+          ? `$${parseFloat(product.wholesale_price).toFixed(2)}/${product.price_unit || 'ea'}`
+          : '-';
+
+        html += `
+          <tr>
+            <td>
+              <div class="product-name">
+                <img src="${imageUrl}" alt="${product.name}" class="product-image" onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'">
+                <div class="product-info">
+                  <h4>${escapeHtml(product.name)}</h4>
+                  <span>${escapeHtml(product.material_type || '')} ${escapeHtml(product.color_family || '')}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="type-badge type-${product.product_type}">${formatType(product.product_type)}</span></td>
+            <td>${escapeHtml(product.sku)}</td>
+            <td>${price}</td>
+            <td>${product.quantity}</td>
+            <td><span class="status-badge status-${product.status}">${formatStatus(product.status)}</span></td>
+            <td>
+              <div class="actions-menu">
+                <button class="action-btn" onclick="editProduct('${product.id}')" title="Edit">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="action-btn delete" onclick="deleteProduct('${product.id}')" title="Delete">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+
+      // Pagination
+      const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+      const start = currentPage * ITEMS_PER_PAGE + 1;
+      const end = Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalProducts);
+
+      html += `
+        <div class="pagination">
+          <div class="pagination-info">Showing ${start}-${end} of ${totalProducts} products</div>
+          <div class="pagination-btns">
+            <button class="page-btn" onclick="prevPage()" ${currentPage === 0 ? 'disabled' : ''}>Previous</button>
+            <button class="page-btn" onclick="nextPage()" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Next</button>
+          </div>
+        </div>
+      `;
+
+      content.innerHTML = html;
+    }
+
+    // Show empty state
+    function showEmptyState(message) {
+      const content = document.getElementById('productsContent');
+      content.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+          </svg>
+          <h3>${message || 'No products yet'}</h3>
+          <p>Add your first product to start selling on the marketplace.</p>
+          <a href="/distributor/dashboard/products/add/" class="btn btn-primary">Add Product</a>
+        </div>
+      `;
+    }
+
+    // Format helpers
+    function formatType(type) {
+      const types = {
+        slab: 'Slab',
+        tile: 'Tile',
+        flooring: 'Flooring',
+        installation_product: 'Install'
+      };
+      return types[type] || type;
+    }
+
+    function formatStatus(status) {
+      const statuses = {
+        active: 'Active',
+        inactive: 'Inactive',
+        out_of_stock: 'Out of Stock',
+        discontinued: 'Discontinued'
+      };
+      return statuses[status] || status;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Pagination
+    function prevPage() {
+      if (currentPage > 0) {
+        currentPage--;
+        loadProducts();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+      if (currentPage < totalPages - 1) {
+        currentPage++;
+        loadProducts();
+      }
+    }
+
+    // Actions
+    function editProduct(id) {
+      window.location.href = `/distributor/dashboard/products/add/?id=${id}`;
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Are you sure you want to delete this product?')) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'X-User-Id': currentUser.id }
+        });
+
+        if (response.ok) {
+          loadStats();
+          loadProducts();
+        } else {
+          alert('Failed to delete product');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error deleting product');
+      }
+    }
+
+    function exportProducts() {
+      // Create CSV from current products
+      const headers = ['SKU', 'Name', 'Type', 'Material', 'Color', 'Price', 'Quantity', 'Status'];
+      const rows = products.map(p => [
+        p.sku,
+        p.name,
+        p.product_type,
+        p.material_type || '',
+        p.color_family || '',
+        p.wholesale_price || '',
+        p.quantity,
+        p.status
+      ]);
+
+      let csv = headers.join(',') + '\n';
+      rows.forEach(row => {
+        csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Event listeners
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        filters.product_type = tab.dataset.type;
+        currentPage = 0;
+        loadProducts();
+      });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', debounce(e => {
+      filters.search = e.target.value;
+      currentPage = 0;
+      loadProducts();
+    }, 300));
+
+    document.getElementById('materialFilter').addEventListener('change', e => {
+      filters.material_type = e.target.value;
+      currentPage = 0;
+      loadProducts();
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', e => {
+      filters.status = e.target.value;
+      currentPage = 0;
+      loadProducts();
+    });
+
+    function debounce(fn, delay) {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    // Init on load
+    init();
+  </script>
+</body>
+</html>

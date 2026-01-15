@@ -652,7 +652,7 @@
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
@@ -662,20 +662,47 @@
     let editingId = null;
 
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-      if (!user) {
-        window.location.href = '/log-in/?redirect=/distributor/dashboard/locations/';
+      // Demo mode for localhost - skip auth entirely
+      if (isLocalhost) {
+        console.log('Demo mode: Skipping auth on localhost');
+        currentUser = { id: 'demo-user', email: 'demo@example.com' };
+        renderEmptyState();
         return;
       }
 
-      currentUser = user;
-      await loadDistributor();
-      await loadLocations();
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if (!user) {
+          window.location.href = '/log-in/?redirect=/distributor/dashboard/locations/';
+          return;
+        }
+
+        currentUser = user;
+        await loadDistributor();
+        await loadLocations();
+      } catch (error) {
+        console.error('Init error:', error);
+      }
+    }
+
+    function renderEmptyState() {
+      document.getElementById('locationsContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3 class="empty-title">No Locations Yet</h3>
+          <p class="empty-text">Add your first pickup location to get started</p>
+          <button class="btn btn-primary" onclick="openModal()">Add Location</button>
+        </div>
+      `;
     }
 
     async function loadDistributor() {
-      const { data: profile } = await supabase
+      const { data: profile } = await supabaseClient
         .from('distributor_profiles')
         .select('*')
         .eq('user_id', currentUser.id)
