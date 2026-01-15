@@ -853,6 +853,144 @@
       color: #ef4444;
     }
 
+    /* My Designs Grid */
+    .designs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .design-card {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .design-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .design-preview {
+      width: 100%;
+      height: 160px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .design-preview svg {
+      width: 48px;
+      height: 48px;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    .design-preview-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .design-preview-badge.shared {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .design-preview-badge.private {
+      background: rgba(156, 163, 175, 0.2);
+      color: #9ca3af;
+    }
+
+    .design-content {
+      padding: 16px;
+    }
+
+    .design-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .design-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .design-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .design-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .design-actions button,
+    .design-actions a {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .design-btn-open {
+      background: var(--primary);
+      color: var(--dark);
+    }
+
+    .design-btn-open:hover {
+      background: var(--primary-hover);
+    }
+
+    .design-btn-share {
+      background: transparent;
+      border: 1px solid var(--primary) !important;
+      color: var(--primary);
+    }
+
+    .design-btn-share:hover {
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .design-btn-delete {
+      background: transparent;
+      border: 1px solid var(--border-subtle) !important;
+      color: var(--text-secondary);
+      flex: 0 0 auto;
+      padding: 10px 12px;
+    }
+
+    .design-btn-delete:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444 !important;
+      color: #ef4444;
+    }
+
     /* Quote Request Modal */
     .quote-modal {
       position: fixed;
@@ -3731,6 +3869,11 @@
             <span class="nav-item-text">Favorites</span>
             <span class="nav-badge" id="favorites-count" data-count="0">0</span>
           </a>
+          <a class="nav-item" data-page="my-designs" onclick="showPage('my-designs')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-item-text">My Designs</span>
+            <span class="nav-badge" id="designs-count" data-count="0">0</span>
+          </a>
           <a class="nav-item" data-page="listings" onclick="showPage('listings')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <span class="nav-item-text">My Listings</span>
@@ -3975,6 +4118,45 @@
                 </h4>
                 <div id="favorites-shop-grid" class="saved-floors-grid"></div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- My Designs Page (Room Designer) -->
+        <section id="page-my-designs" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">My Designs</h3>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <select id="designs-filter" onchange="filterDesigns()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary);">
+                  <option value="all">All Designs</option>
+                  <option value="shared">Shared</option>
+                  <option value="private">Private</option>
+                </select>
+                <a href="/tools/room-designer/" class="btn btn-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  New Design
+                </a>
+              </div>
+            </div>
+            <div class="card-body">
+              <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Create kitchen and bathroom layouts with the Room Designer. Your saved designs appear here.
+              </p>
+
+              <div id="designs-loading" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p style="color: var(--text-muted); margin-top: 12px;">Loading your designs...</p>
+              </div>
+
+              <div id="designs-empty" style="display: none; text-align: center; padding: 40px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <h3 style="color: #666; margin: 16px 0 8px;">No Designs Yet</h3>
+                <p style="color: #999; margin-bottom: 20px;">Create your first kitchen or bathroom design with our Room Designer tool!</p>
+                <a href="/tools/room-designer/" class="btn btn-primary">Open Room Designer</a>
+              </div>
+
+              <div id="designs-grid" class="designs-grid" style="display: none;"></div>
             </div>
           </div>
         </section>
@@ -7021,7 +7203,7 @@
 
     function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
-      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar'];
+      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs'];
       if (hash && validPages.includes(hash)) {
         showPage(hash);
       }
@@ -7617,6 +7799,191 @@
       });
     }
 
+    // =============================================
+    // MY DESIGNS (ROOM DESIGNER)
+    // =============================================
+
+    let allDesigns = [];
+    let designsFilter = 'all';
+
+    async function loadMyDesigns() {
+      const loadingEl = document.getElementById('designs-loading');
+      const emptyEl = document.getElementById('designs-empty');
+      const gridEl = document.getElementById('designs-grid');
+
+      if (!loadingEl || !emptyEl || !gridEl) return;
+
+      // Show loading
+      loadingEl.style.display = 'flex';
+      emptyEl.style.display = 'none';
+      gridEl.style.display = 'none';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          loadingEl.style.display = 'none';
+          emptyEl.style.display = 'block';
+          return;
+        }
+
+        // Load designs created by this user
+        const { data: designs, error } = await supabaseClient
+          .from('room_designs')
+          .select('*')
+          .eq('created_by', user.id)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        allDesigns = designs || [];
+
+        // Update count badge
+        const countEl = document.getElementById('designs-count');
+        if (countEl) {
+          countEl.textContent = allDesigns.length;
+          countEl.style.display = allDesigns.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        loadingEl.style.display = 'none';
+
+        if (allDesigns.length === 0) {
+          emptyEl.style.display = 'block';
+          gridEl.style.display = 'none';
+        } else {
+          emptyEl.style.display = 'none';
+          gridEl.style.display = 'grid';
+          renderDesigns();
+        }
+
+      } catch (err) {
+        console.error('Error loading designs:', err);
+        loadingEl.style.display = 'none';
+        emptyEl.style.display = 'block';
+        gridEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading designs. Please try again.</p>';
+      }
+    }
+
+    function filterDesigns() {
+      designsFilter = document.getElementById('designs-filter').value;
+      renderDesigns();
+    }
+
+    function renderDesigns() {
+      const gridEl = document.getElementById('designs-grid');
+      if (!gridEl) return;
+
+      let filtered = allDesigns;
+      if (designsFilter === 'shared') {
+        filtered = allDesigns.filter(d => d.share_token);
+      } else if (designsFilter === 'private') {
+        filtered = allDesigns.filter(d => !d.share_token);
+      }
+
+      if (filtered.length === 0) {
+        gridEl.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px; grid-column: 1 / -1;">No ${designsFilter === 'all' ? '' : designsFilter + ' '}designs found.</p>`;
+        return;
+      }
+
+      gridEl.innerHTML = filtered.map(design => {
+        const isShared = !!design.share_token;
+        const roomType = design.room_type || 'kitchen';
+        const updatedDate = new Date(design.updated_at).toLocaleDateString();
+        const elementCount = Array.isArray(design.elements) ? design.elements.length : 0;
+
+        return `
+          <div class="design-card" data-id="${design.id}">
+            <div class="design-preview">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+              </svg>
+              <span class="design-preview-badge ${isShared ? 'shared' : 'private'}">${isShared ? 'Shared' : 'Private'}</span>
+            </div>
+            <div class="design-content">
+              <div class="design-title">${escapeHtml(design.project_name || 'Untitled Design')}</div>
+              <div class="design-meta">
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                  ${roomType.charAt(0).toUpperCase() + roomType.slice(1)}
+                </span>
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  ${elementCount} items
+                </span>
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  ${updatedDate}
+                </span>
+              </div>
+              <div class="design-actions">
+                <a href="/tools/room-designer/?p=${design.share_token || design.id}" class="design-btn-open">Open</a>
+                <button class="design-btn-share" onclick="copyDesignLink('${design.share_token || design.id}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                </button>
+                <button class="design-btn-delete" onclick="deleteDesign('${design.id}', '${escapeHtml(design.project_name || 'Untitled')}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copyDesignLink(token) {
+      const url = `${window.location.origin}/tools/room-designer/?p=${token}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Design link copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy link', 'error');
+      });
+    }
+
+    async function deleteDesign(designId, designName) {
+      if (!confirm(`Are you sure you want to delete "${designName}"? This cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('room_designs')
+          .delete()
+          .eq('id', designId);
+
+        if (error) throw error;
+
+        // Remove from local array
+        allDesigns = allDesigns.filter(d => d.id !== designId);
+
+        // Update count badge
+        const countEl = document.getElementById('designs-count');
+        if (countEl) {
+          countEl.textContent = allDesigns.length;
+          countEl.style.display = allDesigns.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        // Re-render or show empty
+        if (allDesigns.length === 0) {
+          document.getElementById('designs-empty').style.display = 'block';
+          document.getElementById('designs-grid').style.display = 'none';
+        } else {
+          renderDesigns();
+        }
+
+        showToast('Design deleted successfully', 'success');
+
+      } catch (err) {
+        console.error('Error deleting design:', err);
+        showToast('Failed to delete design', 'error');
+      }
+    }
+
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     function requestQuoteForFavorites() {
       if (allFavorites.length === 0) {
         showToast('No favorites saved yet!', 'error');
@@ -7982,6 +8349,7 @@
         'dashboard': 'Dashboard',
         'profile': 'My Profile',
         'favorites': 'My Favorites',
+        'my-designs': 'My Designs',
         'listings': 'My Listings',
         'leads': 'Leads',
         'customers': 'Customers',
@@ -8006,6 +8374,11 @@
       // Load favorites when that page is shown
       if (page === 'favorites') {
         loadFavorites();
+      }
+
+      // Load my designs when that page is shown
+      if (page === 'my-designs') {
+        loadMyDesigns();
       }
 
       // Load listings when that page is shown
