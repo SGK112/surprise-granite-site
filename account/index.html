@@ -6981,11 +6981,26 @@
         showDashboard();
         return;
       }
+      // Check for incoming redirect parameter (e.g., from tools page auth check)
+      const params = new URLSearchParams(window.location.search);
+      const incomingRedirect = params.get('redirect');
+      if (incomingRedirect) {
+        // Store the original redirect destination for after login
+        sessionStorage.setItem('auth_redirect', incomingRedirect);
+      }
       // Redirect to unified login page instead of showing embedded auth
       window.location.href = '/log-in/?redirect=' + encodeURIComponent(window.location.pathname + window.location.hash);
     }
 
     function showDashboard() {
+      // Check for stored redirect URL (e.g., from Room Designer auth flow)
+      const authRedirect = sessionStorage.getItem('auth_redirect');
+      if (authRedirect) {
+        sessionStorage.removeItem('auth_redirect');
+        window.location.href = authRedirect;
+        return;
+      }
+
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('dashboard-app').style.display = 'block';

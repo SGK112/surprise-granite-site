@@ -335,6 +335,11 @@
       color: #fff;
     }
 
+    .tool-card-badge.pro {
+      background: linear-gradient(135deg, #4285F4, #EA4335, #FBBC05, #34A853);
+      color: #fff;
+    }
+
     .tool-card-content {
       padding: 28px;
     }
@@ -604,6 +609,28 @@
           </div>
         </a>
 
+        <!-- Room Designer Pro - Login Required -->
+        <a href="/tools/room-designer/" class="tool-card room-designer-card" data-requires-auth="true">
+          <div class="tool-card-image">
+            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80" alt="Room Designer">
+            <span class="tool-card-badge pro">Pro</span>
+          </div>
+          <div class="tool-card-content">
+            <div class="tool-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 21V10l9-7 9 7v11"/>
+                <path d="M21 21h-7"/>
+              </svg>
+            </div>
+            <h3>Room Designer Pro</h3>
+            <p>Design kitchens and bathrooms in 2D/3D. Add cabinets, countertops, appliances and generate instant quotes.</p>
+            <span class="tool-card-cta">
+              Open Designer
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+
         <!-- Countertop Calculator -->
         <a href="/tools/countertop-calculator/" class="tool-card">
           <div class="tool-card-image">
@@ -734,6 +761,46 @@
   <!-- Rate Limiter -->
   <script src="/js/rate-limiter.js"></script>
 
+  <!-- Supabase for Auth Check -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Auth check for Pro tools
+    document.addEventListener('DOMContentLoaded', function() {
+      // Skip auth check for local file viewing
+      const isLocal = window.location.protocol === 'file:' ||
+                      window.location.hostname === 'localhost' ||
+                      window.location.hostname === '127.0.0.1';
+
+      if (isLocal) {
+        // Local dev mode - allow direct access
+        return;
+      }
+
+      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MzA2MjAsImV4cCI6MjA1MjIwNjYyMH0.j4d1I5E0iMzKaCOnAc66ElkUBffnTiBgLhPFJAaQxQU';
+
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Handle clicks on auth-required tools
+      document.querySelectorAll('[data-requires-auth="true"]').forEach(card => {
+        card.addEventListener('click', async function(e) {
+          e.preventDefault();
+
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session) {
+            // User is logged in, proceed to tool
+            window.location.href = this.href;
+          } else {
+            // Not logged in, redirect to login with return URL
+            const returnUrl = encodeURIComponent(this.href);
+            window.location.href = '/account/?redirect=' + returnUrl;
+          }
+        });
+      });
+    });
+  </script>
+
   <!-- Powered by Remodely Badge -->
   <a href="https://remodely.ai" target="_blank" style="
     position: fixed;
@@ -753,8 +820,20 @@
     z-index: 9999;
     font-family: system-ui, sans-serif;
   ">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="remodelyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#4285F4"/>
+          <stop offset="25%" style="stop-color:#EA4335"/>
+          <stop offset="50%" style="stop-color:#FBBC05"/>
+          <stop offset="100%" style="stop-color:#34A853"/>
+        </linearGradient>
+      </defs>
+      <path d="M3 21V10l9-7 9 7v11" stroke="url(#remodelyGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21 21h-7" stroke="#34A853" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
     <span>Powered by</span>
-    <strong style="background: linear-gradient(135deg, #6366f1, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Remodely.ai</strong>
+    <strong style="color: #fff;">Remodely.ai</strong>
   </a>
 </body>
 </html>

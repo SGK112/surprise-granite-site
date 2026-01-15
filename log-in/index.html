@@ -514,15 +514,21 @@
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
-        // Already logged in, redirect to account
-        window.location.href = '/account/';
+        // Already logged in, redirect to stored destination or account
+        const storedRedirect = sessionStorage.getItem('auth_redirect');
+        if (storedRedirect) {
+          sessionStorage.removeItem('auth_redirect');
+          window.location.href = storedRedirect;
+        } else {
+          window.location.href = '/account/';
+        }
         return;
       }
 
-      // Check for redirect param
+      // Check for redirect param (only store if not already set by account page)
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get('redirect');
-      if (redirect) {
+      if (redirect && !sessionStorage.getItem('auth_redirect')) {
         sessionStorage.setItem('auth_redirect', redirect);
       }
     });

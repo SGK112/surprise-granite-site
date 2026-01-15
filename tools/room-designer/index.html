@@ -5172,7 +5172,24 @@
     let redoStack = [];
     const MAX_UNDO_STATES = 50;
 
-    function init() {
+    async function init() {
+      // Check if viewing a shared design (allow without login)
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareToken = urlParams.get('share') || urlParams.get('p');
+
+      // If NOT a shared design, require authentication
+      if (!shareToken) {
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          // Not logged in, redirect to login
+          const returnUrl = encodeURIComponent(window.location.href);
+          window.location.href = '/account/?redirect=' + returnUrl;
+          return;
+        }
+      }
+
       canvas = document.getElementById('canvas');
       ctx = canvas.getContext('2d');
 
