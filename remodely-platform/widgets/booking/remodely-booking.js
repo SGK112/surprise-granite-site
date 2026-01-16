@@ -628,8 +628,6 @@
         <div class="rb-step" data-step="3">
           <div class="rb-step-title">Your contact information</div>
 
-          <div id="rb-estimate-display"></div>
-
           <div class="rb-row">
             <div class="rb-form-group">
               <label class="rb-label">First Name *</label>
@@ -651,10 +649,38 @@
             <input type="tel" class="rb-input" id="rb-phone" placeholder="(555) 123-4567" required>
           </div>
 
-          <div class="rb-form-group">
-            <label class="rb-label">Project Address</label>
-            <input type="text" class="rb-input" id="rb-address" placeholder="123 Main St, Phoenix, AZ">
+          <!-- Service Address Section -->
+          <div class="rb-address-section" style="margin-top: 12px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--rb-primary, #f9cb00); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Service Address</div>
+            <div class="rb-form-group" style="margin-bottom: 12px;">
+              <label class="rb-label">Street Address</label>
+              <input type="text" class="rb-input" id="rb-street" placeholder="123 Main St">
+            </div>
+            <div class="rb-row" style="gap: 12px;">
+              <div class="rb-form-group" style="flex: 2;">
+                <label class="rb-label">City</label>
+                <input type="text" class="rb-input" id="rb-city" placeholder="Phoenix">
+              </div>
+              <div class="rb-form-group" style="flex: 1;">
+                <label class="rb-label">State</label>
+                <select class="rb-input" id="rb-state" style="padding: 12px;">
+                  <option value="AZ" selected>AZ</option>
+                  <option value="CA">CA</option>
+                  <option value="CO">CO</option>
+                  <option value="NV">NV</option>
+                  <option value="NM">NM</option>
+                  <option value="TX">TX</option>
+                  <option value="UT">UT</option>
+                </select>
+              </div>
+              <div class="rb-form-group" style="flex: 1;">
+                <label class="rb-label">ZIP</label>
+                <input type="text" class="rb-input" id="rb-zip" placeholder="85001" maxlength="5">
+              </div>
+            </div>
           </div>
+          <!-- Hidden field for backward compatibility -->
+          <input type="hidden" id="rb-address">
         </div>
       `;
     }
@@ -892,7 +918,7 @@
           alert('Please answer all questions');
           return;
         }
-        this.showEstimate();
+        // Removed premature estimate display - not based on real measurements
       }
 
       if (this.state.step === 3) {
@@ -906,12 +932,38 @@
           return;
         }
 
+        // Collect address fields
+        const street = document.getElementById('rb-street')?.value || '';
+        const city = document.getElementById('rb-city')?.value || '';
+        const state = document.getElementById('rb-state')?.value || '';
+        const zip = document.getElementById('rb-zip')?.value || '';
+
+        // Build full address string
+        let fullAddress = '';
+        if (street) {
+          fullAddress = street;
+          if (city) fullAddress += ', ' + city;
+          if (state) fullAddress += ', ' + state;
+          if (zip) fullAddress += ' ' + zip;
+        }
+
+        // Set hidden field for backward compatibility
+        const addressField = document.getElementById('rb-address');
+        if (addressField) addressField.value = fullAddress;
+
         this.state.contact = {
           firstName,
           lastName,
           email,
           phone,
-          address: document.getElementById('rb-address').value
+          address: fullAddress,
+          // Structured address data
+          serviceAddress: {
+            street,
+            city,
+            state,
+            zip
+          }
         };
       }
 
