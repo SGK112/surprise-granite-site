@@ -470,98 +470,9 @@
       display: none;
     }
 
-    /* Tutorial Tooltips */
-    .tutorial-tooltip {
-      position: absolute;
-      left: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      margin-left: 12px;
-      background: rgba(20, 20, 25, 0.95);
-      border: 1px solid var(--gold);
-      border-radius: 8px;
-      padding: 8px 12px;
-      max-width: 200px;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .tutorial-tooltip.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    /* Tooltip tail/arrow pointing left */
-    .tutorial-tooltip::before {
-      content: '';
-      position: absolute;
-      left: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 8px solid transparent;
-      border-right-color: var(--gold);
-      border-left: none;
-    }
-
-    .tutorial-tooltip::after {
-      content: '';
-      position: absolute;
-      left: -6px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 7px solid transparent;
-      border-right-color: rgba(20, 20, 25, 0.95);
-      border-left: none;
-    }
-
-    .tutorial-tooltip-text {
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 1.4;
-      margin: 0;
-    }
-
-    .tutorial-tooltip-dismiss {
-      display: block;
-      color: var(--text-muted);
-      font-size: 10px;
-      margin-top: 6px;
-      cursor: pointer;
-    }
-
-    .tutorial-tooltip-dismiss:hover {
-      color: var(--text-secondary);
-    }
-
-    /* Sidebar section needs relative positioning for tooltip */
+    /* Sidebar section */
     .sidebar-section {
       position: relative;
-    }
-
-    /* Tutorial help button in header */
-    .tutorial-help-btn {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--gold);
-      color: var(--dark);
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-
-    .tutorial-help-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 2px 10px rgba(249, 203, 0, 0.4);
     }
 
     /* Room List */
@@ -4073,11 +3984,6 @@
       </div>
 
       <div class="header-right">
-        <!-- Tutorial Help Button -->
-        <button class="tutorial-help-btn" onclick="toggleTutorial()" title="Show tutorial hints">
-          ?
-        </button>
-
         <!-- User Account Menu -->
         <div class="user-account-menu" id="userAccountMenu">
           <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
@@ -4266,14 +4172,10 @@
         </div>
 
         <!-- Floor Plans -->
-        <div class="sidebar-section" data-tutorial="floorplans">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Choose a room layout">
             <span class="sidebar-title">Floor Plans</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="floorplans">
-            <p class="tutorial-tooltip-text">Choose a room layout to start your design</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('floorplans')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="floorplan-grid" id="floorplanGrid">
@@ -4283,14 +4185,10 @@
         </div>
 
         <!-- Tools -->
-        <div class="sidebar-section" data-tutorial="tools">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Draw & edit tools">
             <span class="sidebar-title">Tools</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="tools">
-            <p class="tutorial-tooltip-text">Select elements, draw walls, add counters, pan &amp; zoom</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('tools')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="tool-grid">
@@ -4351,14 +4249,10 @@
         </div>
 
         <!-- Cabinets -->
-        <div class="sidebar-section" data-tutorial="cabinets">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Add cabinets">
             <span class="sidebar-title">Cabinets</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="cabinets">
-            <p class="tutorial-tooltip-text">Click to add cabinets to your floor plan</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('cabinets')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="element-grid" id="cabinetsGrid">
@@ -4368,14 +4262,10 @@
         </div>
 
         <!-- Surfaces -->
-        <div class="sidebar-section" data-tutorial="surfaces">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Countertops & flooring">
             <span class="sidebar-title">Surfaces</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="surfaces">
-            <p class="tutorial-tooltip-text">Add countertops, backsplash, and flooring</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('surfaces')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="element-grid" id="surfacesGrid">
@@ -4385,14 +4275,10 @@
         </div>
 
         <!-- Appliances -->
-        <div class="sidebar-section" data-tutorial="appliances">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Sinks, stoves & more">
             <span class="sidebar-title">Appliances</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="appliances">
-            <p class="tutorial-tooltip-text">Add sinks, stoves, refrigerators, and more</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('appliances')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="element-grid" id="appliancesGrid">
@@ -4402,14 +4288,10 @@
         </div>
 
         <!-- Structure -->
-        <div class="sidebar-section" data-tutorial="structure">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Doors, windows & walls">
             <span class="sidebar-title">Structure</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="structure">
-            <p class="tutorial-tooltip-text">Add doors, windows, walls, and trim details</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('structure')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="element-grid" id="structureGrid">
@@ -4419,14 +4301,10 @@
         </div>
 
         <!-- Materials Library -->
-        <div class="sidebar-section" data-tutorial="materials">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Apply materials">
             <span class="sidebar-title">Materials</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="materials">
-            <p class="tutorial-tooltip-text">Click a material, then click any element to apply it</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('materials')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="materials-tabs">
@@ -4454,14 +4332,10 @@
         </div>
 
         <!-- Cabinet Catalog -->
-        <div class="sidebar-section" data-tutorial="catalog">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Browse cabinet SKUs">
             <span class="sidebar-title">Cabinet Catalog</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="catalog">
-            <p class="tutorial-tooltip-text">Browse real cabinet SKUs with dimensions and pricing</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('catalog')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="catalog-brand">
@@ -4504,14 +4378,10 @@
         </div>
 
         <!-- Product Catalog from Website -->
-        <div class="sidebar-section" data-tutorial="products">
-          <div class="sidebar-header" onclick="toggleSection(this)">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Shop online products">
             <span class="sidebar-title">Store Products</span>
             <span class="sidebar-toggle">▼</span>
-          </div>
-          <div class="tutorial-tooltip" data-tooltip="products">
-            <p class="tutorial-tooltip-text">Search and use products from our online store</p>
-            <span class="tutorial-tooltip-dismiss" onclick="dismissTooltip('products')">Got it</span>
           </div>
           <div class="sidebar-content">
             <div class="product-search-bar">
@@ -7234,9 +7104,19 @@
         attempts++;
       }
 
-      // Wait for SgAuth to initialize
+      // Wait for SgAuth to initialize with error handling
       if (window.SgAuth && window.SgAuth.init) {
-        await window.SgAuth.init();
+        try {
+          await window.SgAuth.init();
+        } catch (err) {
+          // Handle AbortError and other init errors gracefully
+          if (err.name === 'AbortError') {
+            console.warn('SgAuth init aborted (may have timed out):', err.message);
+          } else {
+            console.warn('SgAuth init error:', err);
+          }
+          // Continue without auth - user can still use the tool
+        }
       }
     }
 
@@ -18643,108 +18523,6 @@
         toast.remove();
       }, 3000);
     }
-
-    // ===== TUTORIAL TOOLTIPS SYSTEM =====
-    const tutorialTooltips = [
-      'floorplans', 'tools', 'cabinets', 'surfaces',
-      'appliances', 'structure', 'materials', 'catalog', 'products'
-    ];
-
-    // Check if tutorial has been completed
-    function isTutorialCompleted() {
-      return localStorage.getItem('roomDesignerTutorialComplete') === 'true';
-    }
-
-    // Check if specific tooltip was dismissed
-    function isTooltipDismissed(name) {
-      const dismissed = JSON.parse(localStorage.getItem('roomDesignerDismissedTooltips') || '[]');
-      return dismissed.includes(name);
-    }
-
-    // Dismiss a specific tooltip
-    function dismissTooltip(name) {
-      const tooltip = document.querySelector(`[data-tooltip="${name}"]`);
-      if (tooltip) {
-        tooltip.classList.remove('visible');
-      }
-
-      // Save to localStorage
-      const dismissed = JSON.parse(localStorage.getItem('roomDesignerDismissedTooltips') || '[]');
-      if (!dismissed.includes(name)) {
-        dismissed.push(name);
-        localStorage.setItem('roomDesignerDismissedTooltips', JSON.stringify(dismissed));
-      }
-
-      // Check if all tooltips are dismissed
-      if (dismissed.length >= tutorialTooltips.length) {
-        localStorage.setItem('roomDesignerTutorialComplete', 'true');
-      }
-    }
-
-    // Show all tooltips (tutorial mode)
-    function showTutorialTooltips() {
-      // Show tooltips one by one with staggered timing
-      tutorialTooltips.forEach((name, index) => {
-        if (!isTooltipDismissed(name)) {
-          const tooltip = document.querySelector(`[data-tooltip="${name}"]`);
-          if (tooltip) {
-            setTimeout(() => {
-              tooltip.classList.add('visible');
-            }, index * 200); // Stagger by 200ms
-          }
-        }
-      });
-    }
-
-    // Hide all tooltips
-    function hideTutorialTooltips() {
-      tutorialTooltips.forEach(name => {
-        const tooltip = document.querySelector(`[data-tooltip="${name}"]`);
-        if (tooltip) {
-          tooltip.classList.remove('visible');
-        }
-      });
-    }
-
-    // Toggle tutorial tooltips
-    function toggleTutorial() {
-      const anyVisible = document.querySelector('.tutorial-tooltip.visible');
-      if (anyVisible) {
-        hideTutorialTooltips();
-      } else {
-        // Reset dismissed tooltips to show all
-        localStorage.removeItem('roomDesignerDismissedTooltips');
-        localStorage.removeItem('roomDesignerTutorialComplete');
-        showTutorialTooltips();
-      }
-    }
-
-    // Initialize tutorial on first visit
-    function initTutorial() {
-      // Check if this is first visit (no elements and not completed tutorial)
-      const isFirstVisit = !localStorage.getItem('roomDesignerVisited');
-
-      if (isFirstVisit && !isTutorialCompleted()) {
-        // Mark as visited
-        localStorage.setItem('roomDesignerVisited', 'true');
-
-        // Show tutorial after a short delay
-        setTimeout(() => {
-          showTutorialTooltips();
-        }, 1500);
-      }
-    }
-
-    // Call initTutorial when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initTutorial, 1000);
-    });
-
-    // Make tutorial functions globally accessible
-    window.toggleTutorial = toggleTutorial;
-    window.dismissTooltip = dismissTooltip;
-    window.showTutorialTooltips = showTutorialTooltips;
-    window.hideTutorialTooltips = hideTutorialTooltips;
 
     // Generate share link and save to Supabase
     async function generateShareLink() {
