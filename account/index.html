@@ -9432,14 +9432,15 @@
 
         // Check if customer already exists with this email
         if (selectedLead.email) {
-          const { data: existing } = await supabaseClient
+          const { data: existing, error: checkError } = await supabaseClient
             .from('customers')
             .select('id')
             .eq('email', selectedLead.email)
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
-          if (existing) {
+          // Ignore 406 errors (no rows found)
+          if (existing && !checkError) {
             showToast('Customer with this email already exists', 'info');
             return;
           }

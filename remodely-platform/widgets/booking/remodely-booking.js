@@ -1035,20 +1035,22 @@
       };
 
       // Format as lead for Supabase
+      const serviceAddr = this.state.contact.serviceAddress || {};
       const leadData = {
         first_name: this.state.contact.firstName,
         last_name: this.state.contact.lastName,
         full_name: `${this.state.contact.firstName} ${this.state.contact.lastName}`,
         email: this.state.contact.email,
         phone: this.state.contact.phone,
+        zip_code: serviceAddr.zip || null,
         project_type: this.state.service,
-        message: `SCHEDULED CONSULTATION\nDate: ${scheduledDate}\nTime: ${scheduledTime}\nService: ${this.state.service}\nTimeline: ${this.state.answers?.timeline || 'Not specified'}\nBudget: ${this.state.answers?.budget || 'Not specified'}`,
+        message: `SCHEDULED CONSULTATION\nDate: ${scheduledDate}\nTime: ${scheduledTime}\nService: ${this.state.service}\nTimeline: ${this.state.answers?.timeline?.value || this.state.answers?.timeline || 'Not specified'}\nBudget: ${this.state.answers?.budget?.value || this.state.answers?.budget || 'Not specified'}`,
         source: 'remodely-booking-widget',
         form_name: 'booking-consultation',
         page_url: window.location.href,
         status: 'new',
-        timeline: this.state.answers?.timeline || null,
-        budget: this.state.answers?.budget || null,
+        timeline: this.state.answers?.timeline?.value || this.state.answers?.timeline || null,
+        budget: this.state.answers?.budget?.value || this.state.answers?.budget || null,
         service_address: this.state.contact.serviceAddress || null,
         raw_data: {
           scheduled_date: this.state.date.toISOString(),
@@ -1065,16 +1067,23 @@
         const supabaseUrl = this.config.supabaseUrl || 'https://ypeypgwsycxcagncgdur.supabase.co';
         const supabaseKey = this.config.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
-        await fetch(`${supabaseUrl}/rest/v1/leads`, {
+        const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/leads`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation'
+            'Prefer': 'return=minimal'
           },
           body: JSON.stringify(leadData)
         });
+
+        if (!supabaseResponse.ok) {
+          const errorText = await supabaseResponse.text();
+          console.error('Supabase error:', supabaseResponse.status, errorText);
+        } else {
+          console.log('Lead saved to Supabase successfully');
+        }
 
         // Also send to Email API
         await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
@@ -1096,8 +1105,9 @@
         this.showSuccess();
       } catch (e) {
         console.error('Booking error:', e);
-        this.trackEvent('booking_completed', booking); // Still show success for demo
-        this.showSuccess();
+        alert('There was an error submitting your booking. Please call us at (602) 833-3189.');
+        nextBtn.disabled = false;
+        nextBtn.innerHTML = 'Confirm Booking <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
       }
     }
 

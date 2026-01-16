@@ -1455,17 +1455,33 @@
               appointment_type: 'free_estimate'
             };
 
+            // Get address fields for structured data
+            var street = document.getElementById('inputStreet').value.trim();
+            var street2 = document.getElementById('inputStreet2').value.trim();
+            var city = document.getElementById('inputCity').value.trim();
+            var state = document.getElementById('inputState').value;
+            var zipCode = document.getElementById('inputZip').value.trim();
+
             var leadData = {
               first_name: firstName,
               last_name: lastName,
               full_name: fullName,
               email: document.getElementById('inputEmail').value.trim(),
               phone: document.getElementById('inputPhone').value.trim(),
+              zip_code: zipCode,
               project_type: document.getElementById('inputProjectType').value || 'Not specified',
               message: 'APPOINTMENT REQUEST\nDate: ' + formatDate(selDate) + '\nTime: ' + selTime + '\nAddress: ' + document.getElementById('inputAddress').value.trim() + '\n\n' + (document.getElementById('inputNotes').value.trim() || ''),
               source: 'Booking Calendar',
               form_name: 'appointment-booking',
               page_url: window.location.href,
+              status: 'new',
+              service_address: {
+                street: street,
+                street2: street2 || null,
+                city: city,
+                state: state,
+                zip: zipCode
+              },
               raw_data: appointmentDetails
             };
 
