@@ -49,6 +49,10 @@
       --text-secondary: rgba(255,255,255,0.7);
       --text-muted: rgba(255,255,255,0.5);
       --border: rgba(255,255,255,0.1);
+      --border-color: rgba(255,255,255,0.1);
+      --panel-bg: #1a1a2e;
+      --hover-bg: #2d2d4a;
+      --text-primary: #ffffff;
       --success: #10b981;
       --warning: #f59e0b;
       --error: #ef4444;
@@ -73,7 +77,9 @@
 
     /* Header */
     .header {
-      background: var(--dark-surface);
+      background: linear-gradient(90deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       padding: 0 20px;
       display: flex;
@@ -81,6 +87,7 @@
       justify-content: space-between;
       height: 56px;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .header-left {
@@ -191,7 +198,7 @@
       gap: 8px;
       padding: 6px 12px;
       background: var(--dark-elevated);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text-primary);
       cursor: pointer;
@@ -230,8 +237,8 @@
       top: 100%;
       right: 0;
       margin-top: 8px;
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
       border-radius: 10px;
       min-width: 200px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -415,12 +422,15 @@
     /* Sidebar */
     .sidebar {
       width: 220px;
-      background: var(--dark-surface);
+      background: linear-gradient(180deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     }
 
     .sidebar-section {
@@ -1382,12 +1392,15 @@
     /* Right Panel */
     .right-panel {
       width: 260px;
-      background: var(--dark-surface);
+      background: linear-gradient(180deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       overflow-y: auto;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
     }
 
     .panel-section {
@@ -3665,7 +3678,7 @@
       display: none;
     }
 
-    /* Keyboard Shortcuts */
+    /* Keyboard Shortcuts - auto-hide after delay */
     .shortcuts-hint {
       position: fixed;
       bottom: 12px;
@@ -3678,6 +3691,19 @@
       color: var(--text-muted);
       display: flex;
       gap: 12px;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      z-index: 100;
+    }
+
+    .shortcuts-hint.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .shortcuts-hint:hover {
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
 
     .shortcut {
@@ -3745,6 +3771,251 @@
     @keyframes toastOut {
       from { opacity: 1; transform: translateY(0); }
       to { opacity: 0; transform: translateY(-20px); }
+    }
+
+    /* ===== MY DESIGNS MODAL ===== */
+    .designs-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 0 16px 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .designs-tab {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .designs-tab:hover {
+      background: var(--dark-hover);
+      color: var(--text-primary);
+    }
+
+    .designs-tab.active {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .designs-search {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .designs-search input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      background: var(--dark-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .designs-search svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      stroke: var(--text-muted);
+    }
+
+    .designs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      max-height: 50vh;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .design-card {
+      background: var(--dark-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .design-card:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .design-card-preview {
+      height: 140px;
+      background: var(--panel-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .design-card-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .design-card-preview svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--text-muted);
+    }
+
+    .design-card-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      border-radius: 4px;
+      font-size: 10px;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    .design-card-info {
+      padding: 12px;
+    }
+
+    .design-card-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .design-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .design-card-date {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .design-card-comments {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .designs-loading, .designs-empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .designs-empty svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      stroke: var(--text-muted);
+    }
+
+    .designs-empty p {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+
+    /* Notification Toast */
+    .notification-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: rgba(30, 30, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 10000;
+      transform: translateX(calc(100% + 40px));
+      transition: transform 0.3s ease;
+      max-width: 360px;
+    }
+
+    .notification-toast.show {
+      transform: translateX(0);
+    }
+
+    .notification-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-color);
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .notification-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: white;
+    }
+
+    .notification-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .notification-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .notification-close {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 4px;
+    }
+
+    .notification-close:hover {
+      background: var(--dark-hover);
+      color: var(--text-primary);
     }
   </style>
 </head>
@@ -3879,6 +4150,13 @@
             </div>
           </div>
         </div>
+
+        <button class="btn btn-secondary" onclick="openMyDesignsModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+          </svg>
+          My Designs
+        </button>
 
         <button class="btn btn-secondary" onclick="openShareModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4500,6 +4778,24 @@
                 <option value="">Custom</option>
               </select>
             </div>
+            <!-- Window/Door height from floor -->
+            <div class="property-row" id="sillHeightRow" style="display: none;">
+              <span class="property-label">Sill Height</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select class="property-select" id="propSillHeight" onchange="updateSillHeight()" style="flex: 1;">
+                  <option value="2">24" - Standard Window</option>
+                  <option value="2.5">30" - Above Counter</option>
+                  <option value="3">36" - Counter Height</option>
+                  <option value="3.67">44" - Max Egress Height</option>
+                  <option value="0">0" - Floor Level (Door)</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+            </div>
+            <div class="property-row" id="customSillRow" style="display: none;">
+              <span class="property-label">Custom (ft)</span>
+              <input type="number" class="property-input" id="propCustomSill" step="0.0833" min="0" max="8" onchange="applyCustomSillHeight()">
+            </div>
             <div class="property-row" id="edgeProfileRow" style="display: none;">
               <span class="property-label">Edge Profile</span>
               <select class="property-select" id="propEdgeProfile" onchange="updateEdgeProfile()">
@@ -4827,6 +5123,125 @@
       <div class="recent-activity" id="recentActivity" style="display:none;">
         <h4>Recent Activity</h4>
         <div class="activity-list" id="activityList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Designs Modal -->
+  <div class="modal-overlay" id="myDesignsModal">
+    <div class="modal" style="max-width: 800px; max-height: 85vh;">
+      <div class="modal-header">
+        <h3 class="modal-title">My Designs</h3>
+        <button class="modal-close" onclick="closeModal('myDesignsModal')">×</button>
+      </div>
+
+      <div class="designs-tabs">
+        <button class="designs-tab active" onclick="switchDesignsTab('my', this)">My Designs</button>
+        <button class="designs-tab" onclick="switchDesignsTab('shared', this)">Shared With Me</button>
+        <button class="designs-tab" onclick="switchDesignsTab('recent', this)">Recently Viewed</button>
+      </div>
+
+      <div class="designs-search">
+        <input type="text" id="designsSearch" placeholder="Search designs..." oninput="filterDesigns(this.value)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+
+      <div class="designs-grid" id="designsGrid">
+        <div class="designs-loading">Loading designs...</div>
+      </div>
+
+      <div class="designs-empty" id="designsEmpty" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <p>No designs found</p>
+        <button class="btn btn-primary" onclick="closeModal('myDesignsModal')">Create New Design</button>
+      </div>
+
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 12px;">
+        <button class="btn btn-primary" onclick="saveDesignLocally(); loadMyDesigns();">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Current Design
+        </button>
+        <button class="btn btn-secondary" onclick="closeModal('myDesignsModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Push Notification Toast -->
+  <div class="notification-toast" id="notificationToast">
+    <div class="notification-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title" id="notificationTitle">New Message</div>
+      <div class="notification-body" id="notificationBody">You have a new message</div>
+    </div>
+    <button class="notification-close" onclick="hideNotification()">×</button>
+  </div>
+
+  <!-- Edge Preview Modal -->
+  <div class="modal-overlay" id="edgePreviewModal">
+    <div class="modal" style="max-width: 500px; background: var(--surface-secondary);">
+      <div class="modal-header">
+        <h3 class="modal-title">Edge Profile Preview</h3>
+        <button class="modal-close" onclick="closeEdgePreview()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <!-- 3D Preview Container -->
+        <div id="edgePreview3D" style="width: 100%; height: 280px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px 8px 0 0;"></div>
+
+        <!-- Edge Info -->
+        <div style="padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Current Edge Profile</div>
+              <div id="edgeProfileName" style="font-size: 18px; font-weight: 600; color: var(--text-primary);">Eased</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Thickness</div>
+              <div id="edgeThickness" style="font-size: 18px; font-weight: 600; color: var(--gold);">3cm</div>
+            </div>
+          </div>
+
+          <!-- Edge Profile Selector -->
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 8px;">Change Edge Profile</label>
+            <select id="edgeProfileSelect" onchange="updateEdgeProfile(this.value)" style="width: 100%; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+              <option value="eased">Eased (Standard)</option>
+              <option value="pencil">Pencil Round</option>
+              <option value="quarter-round">Quarter Round</option>
+              <option value="half-bullnose">Half Bullnose</option>
+              <option value="full-bullnose">Full Bullnose</option>
+              <option value="bevel">Bevel / Quarter Bevel</option>
+              <option value="ogee">Ogee (Premium)</option>
+              <option value="double-ogee">Double Ogee (Premium)</option>
+              <option value="cove">Cove</option>
+              <option value="dupont">Dupont</option>
+              <option value="mitered">Mitered</option>
+              <option value="waterfall">Waterfall</option>
+            </select>
+          </div>
+
+          <!-- Camera Controls -->
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="rotateEdgePreview('left')">← Rotate</button>
+            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="rotateEdgePreview('reset')">Reset View</button>
+            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="rotateEdgePreview('right')">Rotate →</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEdgePreview()">Close</button>
+        <button class="btn btn-primary" onclick="applyEdgeAndClose()">Apply & Close</button>
       </div>
     </div>
   </div>
@@ -6370,6 +6785,8 @@
     let selectedElement = null;
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
+    let autoRotationApplied = false; // Track if auto-rotation was applied during this drag
+    let lastSnappedWall = null; // Track which wall we last snapped to
 
     // Resize state
     let isResizing = false;
@@ -6956,6 +7373,26 @@
           redo();
         }
       });
+
+      // Auto-hide keyboard shortcuts bar after 5 seconds
+      const shortcutsHint = document.getElementById('shortcutsHint');
+      if (shortcutsHint) {
+        setTimeout(() => {
+          shortcutsHint.classList.add('hidden');
+        }, 5000);
+
+        // Show on hover
+        shortcutsHint.addEventListener('mouseenter', () => {
+          shortcutsHint.classList.remove('hidden');
+        });
+
+        // Hide again after mouse leaves (with delay)
+        shortcutsHint.addEventListener('mouseleave', () => {
+          setTimeout(() => {
+            shortcutsHint.classList.add('hidden');
+          }, 2000);
+        });
+      }
     }
 
     // ===== UNDO/REDO =====
@@ -7888,6 +8325,9 @@
       // Draw elements
       drawElements();
 
+      // Draw snap guides when dragging cabinets
+      drawSnapGuides();
+
       // Draw work triangle overlay if enabled
       drawWorkTriangle();
 
@@ -7895,6 +8335,120 @@
 
       document.getElementById('elementCount').textContent = `${elements.length} element${elements.length !== 1 ? 's' : ''}`;
       calculateQuote();
+    }
+
+    // Draw snap guides when dragging cabinets near walls
+    function drawSnapGuides() {
+      if (!isDragging || !selectedElement) return;
+
+      const isCabinetType = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
+                             'drawer-base', 'sink-base', 'lazy-susan',
+                             'island', 'countertop', 'sink', 'stove', 'dishwasher',
+                             'refrigerator', 'oven'].includes(selectedElement.type);
+
+      if (!isCabinetType) return;
+
+      const snapZone = pixelsPerFoot * 0.75; // Match the snap distance
+      const roomW = roomWidth * pixelsPerFoot;
+      const roomH = roomDepth * pixelsPerFoot;
+
+      const elX = selectedElement.x;
+      const elY = selectedElement.y;
+      const elW = selectedElement.width * pixelsPerFoot;
+      const elH = selectedElement.height * pixelsPerFoot;
+
+      ctx.save();
+      ctx.setLineDash([8, 4]);
+      ctx.lineWidth = 2;
+
+      // Back wall snap guide (top)
+      if (Math.abs(elY) < snapZone) {
+        ctx.strokeStyle = '#4CAF50';
+        ctx.beginPath();
+        ctx.moveTo(-50, 0);
+        ctx.lineTo(roomW + 50, 0);
+        ctx.stroke();
+        // Highlight indicator
+        ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+        ctx.fillRect(-50, 0, roomW + 100, snapZone);
+      }
+
+      // Left wall snap guide
+      if (Math.abs(elX) < snapZone) {
+        ctx.strokeStyle = '#2196F3';
+        ctx.beginPath();
+        ctx.moveTo(0, -50);
+        ctx.lineTo(0, roomH + 50);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(33, 150, 243, 0.2)';
+        ctx.fillRect(0, -50, snapZone, roomH + 100);
+      }
+
+      // Right wall snap guide
+      if (Math.abs((elX + elW) - roomW) < snapZone) {
+        ctx.strokeStyle = '#FF9800';
+        ctx.beginPath();
+        ctx.moveTo(roomW, -50);
+        ctx.lineTo(roomW, roomH + 50);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 152, 0, 0.2)';
+        ctx.fillRect(roomW - snapZone, -50, snapZone, roomH + 100);
+      }
+
+      // Front wall snap guide (bottom)
+      if (Math.abs((elY + elH) - roomH) < snapZone) {
+        ctx.strokeStyle = '#9C27B0';
+        ctx.beginPath();
+        ctx.moveTo(-50, roomH);
+        ctx.lineTo(roomW + 50, roomH);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(156, 39, 176, 0.2)';
+        ctx.fillRect(-50, roomH - snapZone, roomW + 100, snapZone);
+      }
+
+      // Corner indicators for corner cabinets
+      const isCornerCabinet = ['corner-cabinet', 'lazy-susan'].includes(selectedElement.type);
+      if (isCornerCabinet) {
+        const cornerZone = pixelsPerFoot * 1.0;
+
+        // Top-left corner
+        if (Math.abs(elX) < cornerZone && Math.abs(elY) < cornerZone) {
+          ctx.fillStyle = 'rgba(76, 175, 80, 0.4)';
+          ctx.beginPath();
+          ctx.arc(0, 0, cornerZone, 0, Math.PI / 2);
+          ctx.lineTo(0, 0);
+          ctx.fill();
+        }
+
+        // Top-right corner
+        if (Math.abs((elX + elW) - roomW) < cornerZone && Math.abs(elY) < cornerZone) {
+          ctx.fillStyle = 'rgba(255, 152, 0, 0.4)';
+          ctx.beginPath();
+          ctx.arc(roomW, 0, cornerZone, Math.PI / 2, Math.PI);
+          ctx.lineTo(roomW, 0);
+          ctx.fill();
+        }
+
+        // Bottom-left corner
+        if (Math.abs(elX) < cornerZone && Math.abs((elY + elH) - roomH) < cornerZone) {
+          ctx.fillStyle = 'rgba(33, 150, 243, 0.4)';
+          ctx.beginPath();
+          ctx.arc(0, roomH, cornerZone, -Math.PI / 2, 0);
+          ctx.lineTo(0, roomH);
+          ctx.fill();
+        }
+
+        // Bottom-right corner
+        if (Math.abs((elX + elW) - roomW) < cornerZone && Math.abs((elY + elH) - roomH) < cornerZone) {
+          ctx.fillStyle = 'rgba(156, 39, 176, 0.4)';
+          ctx.beginPath();
+          ctx.arc(roomW, roomH, cornerZone, Math.PI, Math.PI * 1.5);
+          ctx.lineTo(roomW, roomH);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
     }
 
     // Toggle work triangle visualization
@@ -10217,6 +10771,68 @@
           ctx.strokeRect(handle.x - hs/2, handle.y - hs/2, hs, hs);
         });
       }
+
+      // Edge preview indicator for countertops - pulsing dot on front edge
+      if (isSelected && (el.type === 'countertop' || el.type === 'countertop-l' || el.type === 'countertop-u')) {
+        const rotation = (el.rotation || 0) * Math.PI / 180;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+
+        // Calculate indicator position on front edge (bottom of countertop in 2D)
+        // Rotate the point based on element rotation
+        let indicatorX = cx;
+        let indicatorY = y + h + 15; // Below the front edge
+
+        if (rotation !== 0) {
+          // Rotate indicator position around center
+          const dx = indicatorX - cx;
+          const dy = indicatorY - cy;
+          indicatorX = cx + dx * Math.cos(rotation) - dy * Math.sin(rotation);
+          indicatorY = cy + dx * Math.sin(rotation) + dy * Math.cos(rotation);
+        }
+
+        // Store indicator position for click detection
+        el._edgeIndicator = { x: indicatorX, y: indicatorY, radius: 14 };
+
+        // Pulsing animation
+        const pulse = (Math.sin(Date.now() / 300) + 1) / 2; // 0 to 1
+        const baseRadius = 10;
+        const pulseRadius = baseRadius + pulse * 4;
+
+        // Outer glow
+        const gradient = ctx.createRadialGradient(indicatorX, indicatorY, 0, indicatorX, indicatorY, pulseRadius + 8);
+        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(99, 102, 241, 0.3)');
+        gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(indicatorX, indicatorY, pulseRadius + 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main indicator dot
+        ctx.fillStyle = '#6366f1';
+        ctx.beginPath();
+        ctx.arc(indicatorX, indicatorY, baseRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Eye icon inside
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('👁', indicatorX, indicatorY);
+
+        // Label
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Edge', indicatorX, indicatorY + 22);
+      }
     }
 
     // ===== RESIZE HANDLES =====
@@ -10437,21 +11053,37 @@
     }
 
     function onMouseDown(e) {
+      // Ignore right-click - let context menu handle it
+      if (e.button === 2) {
+        return;
+      }
+
       const rect = canvas.getBoundingClientRect();
       const screenX = e.clientX - rect.left;
       const screenY = e.clientY - rect.top;
       const { x, y } = screenToWorld(screenX, screenY);
+
+      // Check for edge indicator click on selected countertop
+      if (selectedElement && selectedElement._edgeIndicator) {
+        const ind = selectedElement._edgeIndicator;
+        const dist = Math.sqrt((x - ind.x) ** 2 + (y - ind.y) ** 2);
+        if (dist <= ind.radius + 5) {
+          showEdgePreviewModal(selectedElement);
+          return;
+        }
+      }
 
       // Pan tool or middle mouse button
       if (currentTool === 'pan' || e.button === 1) {
         isPanning = true;
         panStart = { x: screenX - panX, y: screenY - panY };
         canvas.style.cursor = 'grabbing';
+        e.preventDefault();
         return;
       }
 
       // Space + drag to pan
-      if (e.spaceKey) {
+      if (spacePressed) {
         isPanning = true;
         panStart = { x: screenX - panX, y: screenY - panY };
         return;
@@ -10515,6 +11147,8 @@
         if (!clicked.locked) {
           isDragging = true;
           dragOffset = { x: x - clicked.x, y: y - clicked.y };
+          autoRotationApplied = false; // Reset auto-rotation tracking for new drag
+          lastSnappedWall = null;
         }
         updateProperties();
       } else {
@@ -10622,8 +11256,9 @@
       const elH = selectedElement.height * pixelsPerFoot;
 
       // Check if this is a cabinet-type element for stricter alignment
-      const isCabinetElement = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
-                                'tall-cabinet', 'corner-cabinet', 'lazy-susan'].includes(selectedElement.type);
+      const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
+                            'tall-cabinet', 'corner-cabinet', 'lazy-susan'];
+      const isCabinetElement = cabinetTypes.includes(selectedElement.type);
 
       elements.forEach(other => {
         if (other.id === selectedElement.id) return;
@@ -10632,17 +11267,29 @@
         const otherY = other.y;
         const otherW = other.width * pixelsPerFoot;
         const otherH = other.height * pixelsPerFoot;
+        const isOtherCabinet = cabinetTypes.includes(other.type);
 
         // For cabinets, use tighter snap for edge-to-edge (butt joints)
-        const edgeSnapDist = isCabinetElement ? pixelsPerFoot * 0.4 : snapDistance;
+        const edgeSnapDist = isCabinetElement ? pixelsPerFoot * 0.5 : snapDistance;
+
+        // When both are cabinets, use much larger snap distance for forming runs
+        const cabinetRunSnapDist = (isCabinetElement && isOtherCabinet) ? pixelsPerFoot * 0.8 : edgeSnapDist;
 
         // Snap right edge of selected to left edge of other (place side by side)
-        if (Math.abs((snapX + elW) - otherX) < edgeSnapDist) {
+        if (Math.abs((snapX + elW) - otherX) < cabinetRunSnapDist) {
           snapX = otherX - elW;
+          // When cabinets snap side-by-side, also align their tops to form a run
+          if (isCabinetElement && isOtherCabinet) {
+            snapY = otherY;
+          }
         }
         // Snap left edge of selected to right edge of other
-        if (Math.abs(snapX - (otherX + otherW)) < edgeSnapDist) {
+        if (Math.abs(snapX - (otherX + otherW)) < cabinetRunSnapDist) {
           snapX = otherX + otherW;
+          // When cabinets snap side-by-side, also align their tops to form a run
+          if (isCabinetElement && isOtherCabinet) {
+            snapY = otherY;
+          }
         }
         // Snap bottom edge of selected to top edge of other
         if (Math.abs((snapY + elH) - otherY) < edgeSnapDist) {
@@ -10672,11 +11319,14 @@
       });
 
       // Wall snapping for cabinets and countertops
-      const wallSnapDistance = pixelsPerFoot * 0.4; // Snap within 0.4 feet of walls
+      const wallSnapDistance = pixelsPerFoot * 0.75; // Snap within 0.75 feet of walls (increased for easier snapping)
       const isCabinetType = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan',
                              'island', 'countertop', 'sink', 'stove', 'dishwasher',
                              'refrigerator', 'oven'].includes(selectedElement.type);
+
+      // Track which wall we're snapping to for auto-rotation
+      let snappedToWall = null;
 
       if (isCabinetType) {
         // Room boundary walls (in pixels)
@@ -10688,21 +11338,62 @@
         // Snap to back wall (top of 2D canvas = back wall in 3D)
         if (Math.abs(snapY - roomTopWall) < wallSnapDistance) {
           snapY = roomTopWall;
+          snappedToWall = 'back';
         }
 
         // Snap to left wall
         if (Math.abs(snapX - roomLeftWall) < wallSnapDistance) {
           snapX = roomLeftWall;
+          snappedToWall = 'left';
         }
 
         // Snap to right wall (right edge of element to wall)
         if (Math.abs((snapX + elW) - roomRightWall) < wallSnapDistance) {
           snapX = roomRightWall - elW;
+          snappedToWall = 'right';
         }
 
         // Snap to front (bottom edge in 2D - not usually needed but available)
         if (Math.abs((snapY + elH) - roomBottomWall) < wallSnapDistance) {
           snapY = roomBottomWall - elH;
+          snappedToWall = 'front';
+        }
+
+        // Auto-rotate cabinets so their FRONT (doors) faces INTO the room
+        // Only rotate ONCE when first snapping to a different wall
+        const autoRotateTypes = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
+                                  'sink', 'stove', 'dishwasher', 'refrigerator', 'oven'];
+
+        // Only apply rotation if this is a NEW wall snap (different from last)
+        if (snappedToWall && snappedToWall !== lastSnappedWall && autoRotateTypes.includes(selectedElement.type)) {
+          lastSnappedWall = snappedToWall;
+
+          // Cabinet BACK goes against wall, FRONT (doors) faces into room
+          // rotation=0: front faces DOWN, rotation=90: front faces LEFT
+          // rotation=180: front faces UP, rotation=270: front faces RIGHT
+          let targetRotation;
+          switch(snappedToWall) {
+            case 'back':
+              targetRotation = 0;
+              break;
+            case 'left':
+              targetRotation = 270;
+              break;
+            case 'right':
+              targetRotation = 90;
+              break;
+            case 'front':
+              targetRotation = 180;
+              break;
+            default:
+              targetRotation = selectedElement.rotation || 0;
+          }
+
+          selectedElement.rotation = targetRotation;
+          showSnapFeedback(`Snapped to ${snappedToWall} wall`);
+        } else if (!snappedToWall) {
+          // Reset when not snapped to any wall
+          lastSnappedWall = null;
         }
 
         // Snap to custom drawn walls
@@ -10740,13 +11431,14 @@
         // Special corner snap for corner cabinets and lazy-susan
         const isCornerCabinet = ['corner-cabinet', 'lazy-susan'].includes(selectedElement.type);
         if (isCornerCabinet) {
-          const cornerSnapDistance = pixelsPerFoot * 0.6; // Slightly larger snap for corners
+          const cornerSnapDistance = pixelsPerFoot * 1.0; // Larger snap distance for corners
 
           // Check if near top-left corner (back-left in 3D)
           if (Math.abs(snapX - roomLeftWall) < cornerSnapDistance &&
               Math.abs(snapY - roomTopWall) < cornerSnapDistance) {
             snapX = roomLeftWall;
             snapY = roomTopWall;
+            selectedElement.rotation = 0; // L opens toward front-right
             showSnapFeedback('Corner Snap: Back-Left');
           }
           // Check if near top-right corner (back-right in 3D)
@@ -10754,6 +11446,7 @@
                    Math.abs(snapY - roomTopWall) < cornerSnapDistance) {
             snapX = roomRightWall - elW;
             snapY = roomTopWall;
+            selectedElement.rotation = 270; // L opens toward front-left
             showSnapFeedback('Corner Snap: Back-Right');
           }
           // Check if near bottom-left corner (front-left in 3D)
@@ -10761,6 +11454,7 @@
                    Math.abs((snapY + elH) - roomBottomWall) < cornerSnapDistance) {
             snapX = roomLeftWall;
             snapY = roomBottomWall - elH;
+            selectedElement.rotation = 90; // L opens toward back-right
             showSnapFeedback('Corner Snap: Front-Left');
           }
           // Check if near bottom-right corner (front-right in 3D)
@@ -10768,8 +11462,60 @@
                    Math.abs((snapY + elH) - roomBottomWall) < cornerSnapDistance) {
             snapX = roomRightWall - elW;
             snapY = roomBottomWall - elH;
+            selectedElement.rotation = 180; // L opens toward back-left
             showSnapFeedback('Corner Snap: Front-Right');
           }
+        }
+
+        // Cabinet-to-cabinet alignment for L and U shaped runs
+        // Find adjacent cabinets and align depth with them
+        const adjacentCabinets = elements.filter(el => {
+          if (el === selectedElement) return false;
+          if (!['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base'].includes(el.type)) return false;
+
+          const elX = el.x;
+          const elY = el.y;
+          const elRight = elX + el.width * pixelsPerFoot;
+          const elBottom = elY + el.height * pixelsPerFoot;
+
+          // Check if horizontally adjacent (within 0.5 feet)
+          const horizGap = Math.min(
+            Math.abs(snapX - elRight),
+            Math.abs((snapX + elW) - elX)
+          );
+
+          // Check if vertically adjacent
+          const vertGap = Math.min(
+            Math.abs(snapY - elBottom),
+            Math.abs((snapY + elH) - elY)
+          );
+
+          return horizGap < pixelsPerFoot * 0.5 || vertGap < pixelsPerFoot * 0.5;
+        });
+
+        // If there are adjacent cabinets, help align for L-shape connections
+        if (adjacentCabinets.length > 0) {
+          adjacentCabinets.forEach(adj => {
+            const adjRight = adj.x + adj.width * pixelsPerFoot;
+            const adjBottom = adj.y + adj.height * pixelsPerFoot;
+
+            // Snap to form perpendicular L-connection
+            // If adjacent cabinet is horizontal (on back wall), connect vertically (on side wall)
+            if (Math.abs(adj.y - roomTopWall) < wallSnapDistance) {
+              // Adjacent is on back wall, snap our top to their bottom for L
+              if (Math.abs(snapY - adjBottom) < pixelsPerFoot * 0.5) {
+                snapY = adjBottom;
+              }
+            }
+
+            // If we're forming an L, snap our edge to their edge
+            if (Math.abs(snapX - adjRight) < pixelsPerFoot * 0.3) {
+              snapX = adjRight;
+            }
+            if (Math.abs((snapX + elW) - adj.x) < pixelsPerFoot * 0.3) {
+              snapX = adj.x - elW;
+            }
+          });
         }
       }
 
@@ -11002,7 +11748,15 @@
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             fitToScreen();
+          } else {
+            // Plain 0 resets view
+            resetView();
           }
+          break;
+        case 'home':
+          // Home key resets view
+          e.preventDefault();
+          resetView();
           break;
       }
     }
@@ -11017,7 +11771,11 @@
     // Track if HTML5 drag is in progress
     let isHtmlDragging = false;
 
-    // Mouse wheel zoom
+    // Mouse wheel zoom with throttling for smooth trackpad support
+    let lastWheelTime = 0;
+    let wheelAccumulator = 0;
+    let wheelTimeout = null;
+
     function onWheel(e) {
       // Don't zoom during any drag operation
       if (isDragging || isResizing || isHtmlDragging || isPanning) {
@@ -11026,16 +11784,43 @@
 
       e.preventDefault();
 
+      const now = Date.now();
+      const timeDelta = now - lastWheelTime;
+      lastWheelTime = now;
+
+      // Detect if this is a trackpad gesture (small, frequent deltas) or mouse wheel (larger, less frequent)
+      const isTrackpad = Math.abs(e.deltaY) < 50 && timeDelta < 50;
+
+      // Accumulate for trackpad, apply immediately for mouse wheel
+      if (isTrackpad) {
+        wheelAccumulator += e.deltaY;
+
+        // Clear existing timeout
+        if (wheelTimeout) clearTimeout(wheelTimeout);
+
+        // Apply accumulated zoom after brief pause
+        wheelTimeout = setTimeout(() => {
+          applyZoom(wheelAccumulator, e.clientX, e.clientY);
+          wheelAccumulator = 0;
+        }, 16); // ~60fps
+      } else {
+        // Mouse wheel - apply immediately but with gentler factor
+        applyZoom(e.deltaY, e.clientX, e.clientY);
+      }
+    }
+
+    function applyZoom(deltaY, clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
 
       // Get world position before zoom
       const worldX = (mouseX - panX) / pixelsPerFoot;
       const worldY = (mouseY - panY) / pixelsPerFoot;
 
-      // Adjust pixels per foot
-      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      // Calculate zoom factor - gentler for accumulated trackpad gestures
+      const normalizedDelta = Math.max(-100, Math.min(100, deltaY)); // Clamp extreme values
+      const zoomFactor = normalizedDelta < 0 ? 1.08 : 0.92;
       const newPixelsPerFoot = Math.max(15, Math.min(100, pixelsPerFoot * zoomFactor));
 
       // Adjust pan to zoom toward mouse position
@@ -11048,6 +11833,22 @@
       document.getElementById('zoomLevel').textContent = Math.round(pixelsPerFoot / 40 * 100) + '%';
 
       draw();
+    }
+
+    // Reset view to default pan and zoom
+    function resetView() {
+      panX = 50;
+      panY = 50;
+      pixelsPerFoot = 40;
+      wheelAccumulator = 0;
+      if (wheelTimeout) {
+        clearTimeout(wheelTimeout);
+        wheelTimeout = null;
+      }
+      document.getElementById('scaleMode').value = 'fit';
+      document.getElementById('zoomLevel').textContent = '100%';
+      draw();
+      showSnapFeedback('View reset');
     }
 
     // ===== DRAG & DROP =====
@@ -11610,13 +12411,15 @@
       menu.className = 'context-menu';
       menu.style.cssText = `
         position: fixed;
-        background: var(--panel-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
+        background: rgba(30, 30, 40, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
         padding: 8px 0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         z-index: 9999;
-        min-width: 160px;
+        min-width: 180px;
       `;
 
       const options = [
@@ -11636,21 +12439,31 @@
       options.forEach(opt => {
         if (opt.divider) {
           const div = document.createElement('div');
-          div.style.cssText = 'height: 1px; background: var(--border-color); margin: 4px 0;';
+          div.style.cssText = 'height: 1px; background: rgba(255, 255, 255, 0.1); margin: 6px 8px;';
           menu.appendChild(div);
         } else {
           const item = document.createElement('div');
           item.style.cssText = `
-            padding: 8px 16px;
+            padding: 10px 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             font-size: 13px;
+            color: #e0e0e0;
+            transition: all 0.15s ease;
+            margin: 2px 6px;
+            border-radius: 6px;
           `;
-          item.innerHTML = `<span style="width: 16px; text-align: center;">${opt.icon}</span>${opt.label}`;
-          item.onmouseenter = () => item.style.background = 'var(--hover-bg)';
-          item.onmouseleave = () => item.style.background = 'transparent';
+          item.innerHTML = `<span style="width: 18px; text-align: center; font-size: 14px;">${opt.icon}</span>${opt.label}`;
+          item.onmouseenter = () => {
+            item.style.background = 'rgba(255, 255, 255, 0.1)';
+            item.style.color = '#ffffff';
+          };
+          item.onmouseleave = () => {
+            item.style.background = 'transparent';
+            item.style.color = '#e0e0e0';
+          };
           item.onclick = () => {
             opt.action();
             menu.remove();
@@ -11961,21 +12774,25 @@
       controls.maxDistance = 35; // Don't go too far
 
       // Significantly reduce zoom sensitivity (default is 1.0)
-      controls.zoomSpeed = 0.3;
+      controls.zoomSpeed = 0.25;
 
       // Reduce pan sensitivity
-      controls.panSpeed = 0.4;
+      controls.panSpeed = 0.3;
 
       // Reduce rotation sensitivity
-      controls.rotateSpeed = 0.4;
+      controls.rotateSpeed = 0.35;
 
       // Disable right-click completely - only left-click rotates, middle zooms
       // Shift+Left or middle mouse for panning
       controls.mouseButtons = {
         LEFT: THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: null  // Disable right-click interaction
+        RIGHT: THREE.MOUSE.PAN  // Allow right-click for panning instead of disabling
       };
+
+      // Handle trackpad pinch-to-zoom more smoothly
+      controls.enableZoom = true;
+      controls.screenSpacePanning = true;  // Pan in screen space for more intuitive control
 
       // Enable keyboard controls for panning (arrow keys)
       controls.enableKeys = true;
@@ -12208,6 +13025,14 @@
       }
 
       const group = new THREE.Group();
+
+      // Helper to adjust color brightness (works with numeric colors)
+      function adjustColorBrightness(col, amount) {
+        const r = Math.max(0, Math.min(255, ((col >> 16) & 0xFF) + amount));
+        const g = Math.max(0, Math.min(255, ((col >> 8) & 0xFF) + amount));
+        const b = Math.max(0, Math.min(255, (col & 0xFF) + amount));
+        return (r << 16) | (g << 8) | b;
+      }
 
       // Helper to create material with optional texture
       function createTexturedMaterial(baseColor, textureUrl, options = {}) {
@@ -12794,99 +13619,195 @@
         }
 
         case 'lazy-susan': {
-          // Lazy Susan corner cabinet with rotating shelves
-          const cabinetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
-          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8 });
-          const handleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9, roughness: 0.15 });
-          const shelfMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.6 });
+          // LAZY SUSAN CORNER CABINET - L-shaped with rotating shelves inside
+          // Similar to corner cabinet but with bi-fold doors revealing lazy susan mechanism
 
+          const cabinetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
+          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+          const handleMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.2 });
+          const shelfMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.5 }); // Wood colored shelves
+          const doorMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.35 });
+
+          // Cabinet dimensions
           const toeKickHeight = 0.33;
           const toeKickRecess = 0.25;
-          const bodyHeight = h - toeKickHeight;
-          const armExtension = Math.max(w, d) * 0.65;
-          const armWidth = 2;
+          const cabinetBodyHeight = h - toeKickHeight;
+          const armDepth = 2; // Standard 24" arm depth
+          const panelThickness = 0.06;
 
-          // Back arm
-          const backArm = new THREE.Mesh(
-            new THREE.BoxGeometry(armWidth, bodyHeight, armExtension),
-            cabinetMat
-          );
-          backArm.position.set(-w/2 + armWidth/2, toeKickHeight/2, -d/2 + armExtension/2);
-          group.add(backArm);
+          const bodyYOffset = toeKickHeight / 2;
 
-          // Side arm
-          const sideArm = new THREE.Mesh(
-            new THREE.BoxGeometry(armExtension, bodyHeight, armWidth),
-            cabinetMat
-          );
-          sideArm.position.set(-w/2 + armExtension/2, toeKickHeight/2, -d/2 + armWidth/2);
-          group.add(sideArm);
+          // Create L-shaped cabinet body using THREE.Shape
+          const lsShape = new THREE.Shape();
+          lsShape.moveTo(-w/2, -d/2);
+          lsShape.lineTo(-w/2, -d/2 + armDepth);
+          lsShape.lineTo(-w/2 + armDepth, -d/2 + armDepth);
+          lsShape.lineTo(-w/2 + armDepth, d/2);
+          lsShape.lineTo(w/2, d/2);
+          lsShape.lineTo(w/2, -d/2);
+          lsShape.closePath();
 
-          // Interior
-          const interiorSize = Math.min(armExtension, armWidth) * 0.8;
-          const interior = new THREE.Mesh(
-            new THREE.BoxGeometry(interiorSize, bodyHeight - 0.1, interiorSize),
+          const lsExtrudeSettings = { depth: cabinetBodyHeight, bevelEnabled: false };
+          const lsGeometry = new THREE.ExtrudeGeometry(lsShape, lsExtrudeSettings);
+          lsGeometry.rotateX(-Math.PI / 2);
+          lsGeometry.translate(0, -cabinetBodyHeight/2, 0);
+
+          const cabinetBody = new THREE.Mesh(lsGeometry, cabinetMat);
+          cabinetBody.position.y = bodyYOffset;
+          group.add(cabinetBody);
+
+          // Dark interior panels
+          const backPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(w - armDepth - 0.1, cabinetBodyHeight - 0.1, panelThickness),
             bodyMat
           );
-          interior.position.set(-w/2 + armWidth + interiorSize/2 - 0.1, toeKickHeight/2, -d/2 + armWidth + interiorSize/2 - 0.1);
-          group.add(interior);
+          backPanel.position.set(armDepth/2, bodyYOffset, -d/2 + armDepth - panelThickness/2);
+          group.add(backPanel);
 
-          // Rotating shelves (circular)
-          const shelfRadius = Math.min(w, d) * 0.35;
-          const shelfCenterX = -w/2 + armWidth + shelfRadius * 0.7;
-          const shelfCenterZ = -d/2 + armWidth + shelfRadius * 0.7;
+          const sidePanel = new THREE.Mesh(
+            new THREE.BoxGeometry(panelThickness, cabinetBodyHeight - 0.1, d - armDepth - 0.1),
+            bodyMat
+          );
+          sidePanel.position.set(-w/2 + armDepth - panelThickness/2, bodyYOffset, armDepth/2);
+          group.add(sidePanel);
 
-          for (let s = 0; s < 2; s++) {
-            const shelfY = toeKickHeight/2 - bodyHeight/2 + 0.4 + s * (bodyHeight * 0.35);
-            const shelf = new THREE.Mesh(
-              new THREE.CylinderGeometry(shelfRadius, shelfRadius, 0.03, 32),
-              shelfMat
-            );
+          // LAZY SUSAN ROTATING SHELVES - visible through diagonal opening
+          const shelfRadius = Math.min(w, d) * 0.42;
+          const shelfCenterX = 0;  // Center of cabinet opening
+          const shelfCenterZ = 0;
+          const numShelves = 2;
+
+          // Center pole (chrome/metal)
+          const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.3 });
+          const centerPole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.025, 0.025, cabinetBodyHeight - 0.2, 16),
+            poleMat
+          );
+          centerPole.position.set(shelfCenterX, bodyYOffset, shelfCenterZ);
+          group.add(centerPole);
+
+          // Create kidney/pie-shaped lazy susan shelves
+          for (let s = 0; s < numShelves; s++) {
+            const shelfY = bodyYOffset - cabinetBodyHeight/2 + 0.5 + s * (cabinetBodyHeight * 0.4);
+
+            // Create pie-shaped shelf (270 degrees)
+            const pieShape = new THREE.Shape();
+            const pieAngleStart = Math.PI * 0.75;  // Start at back-left
+            const pieAngleEnd = Math.PI * 2.25;    // 270 degrees
+            const segments = 32;
+
+            pieShape.moveTo(0, 0);
+            for (let i = 0; i <= segments; i++) {
+              const angle = pieAngleStart + (pieAngleEnd - pieAngleStart) * (i / segments);
+              pieShape.lineTo(Math.cos(angle) * shelfRadius, Math.sin(angle) * shelfRadius);
+            }
+            pieShape.lineTo(0, 0);
+
+            const shelfGeom = new THREE.ExtrudeGeometry(pieShape, { depth: 0.025, bevelEnabled: false });
+            shelfGeom.rotateX(-Math.PI / 2);
+
+            const shelf = new THREE.Mesh(shelfGeom, shelfMat);
             shelf.position.set(shelfCenterX, shelfY, shelfCenterZ);
+            shelf.rotation.y = Math.PI / 4; // Rotate to face opening
             group.add(shelf);
 
-            // Center post
-            const postHeight = s === 0 ? bodyHeight * 0.4 : bodyHeight * 0.35;
-            const post = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.04, 0.04, postHeight, 16),
-              shelfMat
+            // Shelf rim (edge)
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0x665544, roughness: 0.6 });
+            const rimCurve = new THREE.EllipseCurve(0, 0, shelfRadius, shelfRadius, pieAngleStart, pieAngleEnd, false);
+            const rimPoints = rimCurve.getPoints(32);
+            const rimGeom = new THREE.BufferGeometry().setFromPoints(
+              rimPoints.map(p => new THREE.Vector3(p.x, 0, p.y))
             );
-            post.position.set(shelfCenterX, shelfY + postHeight/2, shelfCenterZ);
-            group.add(post);
+            const rim = new THREE.Line(rimGeom, new THREE.LineBasicMaterial({ color: 0x444444 }));
+            rim.position.set(shelfCenterX, shelfY + 0.015, shelfCenterZ);
+            rim.rotation.y = Math.PI / 4;
+            group.add(rim);
           }
 
-          // Diagonal door
-          const diagOffset = armWidth * 0.9;
-          const diagWidth = Math.sqrt(2) * diagOffset * 1.1;
-          const diagDoor = new THREE.Mesh(
-            new THREE.BoxGeometry(diagWidth, bodyHeight - 0.15, 0.06),
-            cabinetMat
-          );
-          diagDoor.rotation.y = -Math.PI / 4;
-          const diagCenterOffset = diagOffset * 0.7;
-          diagDoor.position.set(-w/2 + armWidth + diagCenterOffset, toeKickHeight/2, -d/2 + armWidth + diagCenterOffset);
-          group.add(diagDoor);
+          // DIAGONAL BI-FOLD DOORS (characteristic of lazy susan cabinets)
+          const diagP1 = { x: -w/2 + armDepth, z: d/2 };
+          const diagP2 = { x: w/2, z: -d/2 + armDepth };
+          const diagDoorWidth = Math.sqrt(Math.pow(diagP2.x - diagP1.x, 2) + Math.pow(diagP1.z - diagP2.z, 2));
+          const doorHeight = cabinetBodyHeight - 0.15;
+          const halfDoorWidth = (diagDoorWidth - 0.1) / 2;
 
-          // Handle on diagonal door
-          const handle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.015, 0.015, 0.35, 8),
-            handleMat
-          );
-          const handleOffset = 0.25;
-          handle.position.set(
-            -w/2 + armWidth + diagCenterOffset + handleOffset * Math.cos(Math.PI/4),
-            toeKickHeight/2,
-            -d/2 + armWidth + diagCenterOffset + handleOffset * Math.sin(Math.PI/4) + 0.08
-          );
-          group.add(handle);
+          const diagCenterX = (diagP1.x + diagP2.x) / 2;
+          const diagCenterZ = (diagP1.z + diagP2.z) / 2;
 
-          // Toe kick
-          const tkMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.95 });
+          // Create two doors (bi-fold style)
+          for (let doorIdx = 0; doorIdx < 2; doorIdx++) {
+            const doorGroup = new THREE.Group();
+
+            // Door panel
+            const doorPanel = new THREE.Mesh(
+              new THREE.BoxGeometry(halfDoorWidth, doorHeight, panelThickness),
+              doorMat
+            );
+            doorGroup.add(doorPanel);
+
+            // Shaker inset
+            const insetW = halfDoorWidth - 0.15;
+            const insetH = doorHeight - 0.2;
+            const inset = new THREE.Mesh(
+              new THREE.BoxGeometry(insetW, insetH, 0.02),
+              new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -10), roughness: 0.5 })
+            );
+            inset.position.z = panelThickness/2 + 0.01;
+            doorGroup.add(inset);
+
+            // Handle
+            const handle = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.01, 0.01, 0.2, 8),
+              handleMat
+            );
+            handle.rotation.x = Math.PI / 2;
+            const handleXPos = doorIdx === 0 ? halfDoorWidth/2 - 0.08 : -halfDoorWidth/2 + 0.08;
+            handle.position.set(handleXPos, 0, panelThickness/2 + 0.03);
+            doorGroup.add(handle);
+
+            // Position door
+            const doorXOffset = doorIdx === 0 ? -halfDoorWidth/2 - 0.02 : halfDoorWidth/2 + 0.02;
+            doorGroup.rotation.y = Math.PI / 4;
+
+            // Calculate position along diagonal
+            const offsetDir = doorIdx === 0 ? -1 : 1;
+            const offsetAmount = halfDoorWidth/2 + 0.02;
+            doorGroup.position.set(
+              diagCenterX + offsetDir * offsetAmount * Math.cos(Math.PI/4) * 0.5,
+              bodyYOffset,
+              diagCenterZ + offsetDir * offsetAmount * Math.sin(Math.PI/4) * 0.5
+            );
+            group.add(doorGroup);
+          }
+
+          // TOE KICK
+          const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
+          const tkHeight = toeKickHeight - 0.02;
+
+          const tkShape = new THREE.Shape();
+          tkShape.moveTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + armDepth - toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + armDepth - toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.closePath();
+
+          const tkExtrudeSettings = { depth: tkHeight, bevelEnabled: false };
+          const tkGeometry = new THREE.ExtrudeGeometry(tkShape, tkExtrudeSettings);
+          tkGeometry.rotateX(-Math.PI / 2);
+          tkGeometry.translate(0, -h/2 + tkHeight/2, 0);
+
+          const toeKick = new THREE.Mesh(tkGeometry, tkMat);
+          group.add(toeKick);
+
+          // Floor shadow
           const tkFloor = new THREE.Mesh(
-            new THREE.BoxGeometry(armExtension - toeKickRecess, 0.02, armExtension - toeKickRecess),
-            tkMat
+            new THREE.PlaneGeometry(w, d),
+            new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1 })
           );
-          tkFloor.position.set(-w/2 + armExtension/2, -h/2 + 0.01, -d/2 + armExtension/2);
+          tkFloor.rotation.x = -Math.PI / 2;
+          tkFloor.position.y = -h/2 + 0.01;
           group.add(tkFloor);
 
           break;
@@ -12895,131 +13816,171 @@
         case 'corner-cabinet': {
           // L-SHAPED CORNER CABINET - Sits in corner with diagonal door
           // Standard corner cabinet: 36" x 36" footprint, arms are 24" deep
+          // Cabinet sits in back-left corner with diagonal door facing front-right
 
           const cabinetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
-          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8 });
-          const handleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9, roughness: 0.15 });
+          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
+          const handleMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.2 });
           const doorMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.35 });
+          const frameMat = new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -15), roughness: 0.45 });
 
-          // Toe kick dimensions
+          // Cabinet dimensions
           const toeKickHeight = 0.33; // 4" toe kick
-          const toeKickRecess = 0.25; // 3" recess from front
+          const toeKickRecess = 0.25; // 3" recess
           const cabinetBodyHeight = h - toeKickHeight;
+          const armDepth = 2; // Standard 24" arm depth
+          const panelThickness = 0.06; // 3/4" panels
 
-          // L-shape dimensions - scale proportionally to element size
-          // For 36"x36" (3x3 ft) cabinet, arm depth is typically 24" (2 ft)
-          const armDepth = Math.min(w * 0.67, d * 0.67, 2); // 24" or 2/3 of size
+          // Y offset for body (centered on cabinet body, not including toe kick)
+          const bodyYOffset = toeKickHeight / 2;
 
-          // Create the L-shaped cabinet body using two overlapping boxes
-          // Back arm - runs along back wall (full width, armDepth deep)
-          const backArm = new THREE.Mesh(
-            new THREE.BoxGeometry(w, cabinetBodyHeight, armDepth),
-            cabinetMat
-          );
-          backArm.position.set(0, toeKickHeight / 2, -d / 2 + armDepth / 2);
-          group.add(backArm);
+          // Create L-shaped cabinet using THREE.Shape for proper geometry
+          const lShape = new THREE.Shape();
+          // Start at back-left corner and trace L-shape clockwise
+          // In local coords: back is -Z, left is -X, front is +Z, right is +X
+          lShape.moveTo(-w/2, -d/2);                    // Back-left corner (into walls)
+          lShape.lineTo(-w/2, -d/2 + armDepth);         // Along left wall
+          lShape.lineTo(-w/2 + armDepth, -d/2 + armDepth); // Turn at inside corner
+          lShape.lineTo(-w/2 + armDepth, d/2);          // Forward along inside of left arm
+          lShape.lineTo(w/2, d/2);                      // Across front (this is where diagonal will be)
+          lShape.lineTo(w/2, -d/2);                     // Along right edge to back wall
+          lShape.lineTo(-w/2, -d/2);                    // Close back to start
 
-          // Side arm - runs along side wall (armDepth wide, extends forward)
-          // Only the part not covered by back arm
-          const sideArmLength = d - armDepth;
-          const sideArm = new THREE.Mesh(
-            new THREE.BoxGeometry(armDepth, cabinetBodyHeight, sideArmLength),
-            cabinetMat
-          );
-          sideArm.position.set(-w / 2 + armDepth / 2, toeKickHeight / 2, -d / 2 + armDepth + sideArmLength / 2);
-          group.add(sideArm);
+          // Extrude L-shape for cabinet body
+          const extrudeSettings = {
+            depth: cabinetBodyHeight,
+            bevelEnabled: false
+          };
+          const lGeometry = new THREE.ExtrudeGeometry(lShape, extrudeSettings);
+          lGeometry.rotateX(-Math.PI / 2); // Rotate to stand upright
+          lGeometry.translate(0, -cabinetBodyHeight/2, 0); // Center vertically
 
-          // Dark interior visible at the open diagonal corner
-          const interiorSize = Math.min(w, d) * 0.4;
-          const interior = new THREE.Mesh(
-            new THREE.BoxGeometry(interiorSize, cabinetBodyHeight - 0.1, interiorSize),
+          const cabinetBody = new THREE.Mesh(lGeometry, cabinetMat);
+          cabinetBody.position.y = bodyYOffset;
+          group.add(cabinetBody);
+
+          // Dark interior back panels (visible through diagonal opening)
+          // Back panel
+          const backPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(w - armDepth - 0.1, cabinetBodyHeight - 0.1, panelThickness),
             bodyMat
           );
-          interior.position.set(
-            -w / 2 + armDepth + interiorSize / 2 - 0.05,
-            toeKickHeight / 2,
-            -d / 2 + armDepth + interiorSize / 2 - 0.05
+          backPanel.position.set(armDepth/2, bodyYOffset, -d/2 + armDepth - panelThickness/2);
+          group.add(backPanel);
+
+          // Side interior panel
+          const sidePanel = new THREE.Mesh(
+            new THREE.BoxGeometry(panelThickness, cabinetBodyHeight - 0.1, d - armDepth - 0.1),
+            bodyMat
           );
-          group.add(interior);
+          sidePanel.position.set(-w/2 + armDepth - panelThickness/2, bodyYOffset, armDepth/2);
+          group.add(sidePanel);
 
-          // DIAGONAL DOOR - 45 degrees at the inner corner of the L
-          // The door spans from where back arm ends to where side arm ends
-          const diagStartX = -w / 2 + armDepth;
-          const diagStartZ = d / 2;
-          const diagEndX = w / 2;
-          const diagEndZ = -d / 2 + armDepth;
+          // DIAGONAL DOOR - angled at 45° across the open corner
+          // Door spans from inside corner to the front edges of both arms
+          const diagP1 = { x: -w/2 + armDepth, z: d/2 };  // End of left arm (front-left)
+          const diagP2 = { x: w/2, z: -d/2 + armDepth };  // End of back arm (back-right)
 
-          // Door width is the diagonal distance
-          const diagDoorWidth = Math.sqrt(Math.pow(diagEndX - diagStartX, 2) + Math.pow(diagStartZ - diagEndZ, 2)) * 0.92;
+          // Door dimensions
+          const diagDoorWidth = Math.sqrt(Math.pow(diagP2.x - diagP1.x, 2) + Math.pow(diagP1.z - diagP2.z, 2));
+          const doorHeight = cabinetBodyHeight - 0.15;
 
-          const diagDoor = new THREE.Mesh(
-            new THREE.BoxGeometry(diagDoorWidth, cabinetBodyHeight - 0.1, 0.06),
+          // Create door with shaker-style panel
+          const doorGroup = new THREE.Group();
+
+          // Door frame/face
+          const doorFace = new THREE.Mesh(
+            new THREE.BoxGeometry(diagDoorWidth - 0.08, doorHeight, panelThickness),
             doorMat
           );
-          diagDoor.rotation.y = -Math.PI / 4; // 45 degree angle
+          doorGroup.add(doorFace);
 
-          // Center the door on the diagonal
-          const diagCenterX = (diagStartX + diagEndX) / 2;
-          const diagCenterZ = (diagStartZ + diagEndZ) / 2;
-          diagDoor.position.set(diagCenterX, toeKickHeight / 2, diagCenterZ);
-          group.add(diagDoor);
-
-          // Shaker-style door inset frame
-          const frameInset = 0.12;
-          const frameThickness = 0.04;
-          const innerDoorWidth = diagDoorWidth - frameInset * 2;
-          const innerDoorHeight = cabinetBodyHeight - 0.3;
-
-          const doorInset = new THREE.Mesh(
-            new THREE.BoxGeometry(innerDoorWidth, innerDoorHeight, 0.025),
-            new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 })
+          // Shaker inset panel (recessed center)
+          const insetWidth = diagDoorWidth - 0.35;
+          const insetHeight = doorHeight - 0.25;
+          const inset = new THREE.Mesh(
+            new THREE.BoxGeometry(insetWidth, insetHeight, 0.02),
+            new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -8), roughness: 0.5 })
           );
-          doorInset.rotation.y = -Math.PI / 4;
-          doorInset.position.set(diagCenterX, toeKickHeight / 2, diagCenterZ + 0.04);
-          group.add(doorInset);
+          inset.position.z = panelThickness/2 + 0.01;
+          doorGroup.add(inset);
 
-          // Handle on diagonal door
+          // Shaker frame lines (grooves)
+          const grooveMat = new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.15 });
+          const grooveDepth = 0.005;
+          // Top groove
+          const topGroove = new THREE.Mesh(new THREE.BoxGeometry(insetWidth + 0.02, 0.02, grooveDepth), grooveMat);
+          topGroove.position.set(0, insetHeight/2 + 0.01, panelThickness/2 + 0.015);
+          doorGroup.add(topGroove);
+          // Bottom groove
+          const botGroove = new THREE.Mesh(new THREE.BoxGeometry(insetWidth + 0.02, 0.02, grooveDepth), grooveMat);
+          botGroove.position.set(0, -insetHeight/2 - 0.01, panelThickness/2 + 0.015);
+          doorGroup.add(botGroove);
+          // Left groove
+          const leftGroove = new THREE.Mesh(new THREE.BoxGeometry(0.02, insetHeight + 0.02, grooveDepth), grooveMat);
+          leftGroove.position.set(-insetWidth/2 - 0.01, 0, panelThickness/2 + 0.015);
+          doorGroup.add(leftGroove);
+          // Right groove
+          const rightGroove = new THREE.Mesh(new THREE.BoxGeometry(0.02, insetHeight + 0.02, grooveDepth), grooveMat);
+          rightGroove.position.set(insetWidth/2 + 0.01, 0, panelThickness/2 + 0.015);
+          doorGroup.add(rightGroove);
+
+          // Door handle (bar pull)
+          const handleLength = 0.25;
           const handle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8),
+            new THREE.CylinderGeometry(0.012, 0.012, handleLength, 8),
             handleMat
           );
-          // Position handle on right side of door
-          const handleOffsetDist = diagDoorWidth * 0.35;
-          handle.position.set(
-            diagCenterX + handleOffsetDist * Math.cos(Math.PI / 4),
-            toeKickHeight / 2,
-            diagCenterZ + handleOffsetDist * Math.sin(Math.PI / 4) + 0.08
-          );
-          group.add(handle);
+          handle.rotation.x = Math.PI / 2;
+          handle.position.set(diagDoorWidth/2 - 0.2, 0, panelThickness/2 + 0.04);
+          doorGroup.add(handle);
 
-          // TOE KICK - recessed base
-          const tkMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.95 });
+          // Handle mounting posts
+          const postGeom = new THREE.CylinderGeometry(0.008, 0.008, 0.04, 6);
+          const post1 = new THREE.Mesh(postGeom, handleMat);
+          post1.position.set(diagDoorWidth/2 - 0.2, handleLength/2 - 0.02, panelThickness/2 + 0.02);
+          doorGroup.add(post1);
+          const post2 = new THREE.Mesh(postGeom, handleMat);
+          post2.position.set(diagDoorWidth/2 - 0.2, -handleLength/2 + 0.02, panelThickness/2 + 0.02);
+          doorGroup.add(post2);
 
-          // Back toe kick face
-          const tkBack = new THREE.Mesh(
-            new THREE.BoxGeometry(w - toeKickRecess * 2, toeKickHeight - 0.02, 0.02),
-            tkMat
-          );
-          tkBack.position.set(0, -h / 2 + toeKickHeight / 2, -d / 2 + armDepth - toeKickRecess);
-          group.add(tkBack);
+          // Position and rotate door group
+          const diagCenterX = (diagP1.x + diagP2.x) / 2;
+          const diagCenterZ = (diagP1.z + diagP2.z) / 2;
+          doorGroup.rotation.y = Math.PI / 4; // 45 degree angle (door faces front-right)
+          doorGroup.position.set(diagCenterX, bodyYOffset, diagCenterZ);
+          group.add(doorGroup);
 
-          // Side toe kick face
-          const tkSide = new THREE.Mesh(
-            new THREE.BoxGeometry(0.02, toeKickHeight - 0.02, sideArmLength - toeKickRecess),
-            tkMat
-          );
-          tkSide.position.set(-w / 2 + armDepth - toeKickRecess, -h / 2 + toeKickHeight / 2, -d / 2 + armDepth + sideArmLength / 2);
-          group.add(tkSide);
+          // TOE KICK - L-shaped recessed base
+          const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
+          const tkHeight = toeKickHeight - 0.02;
 
-          // Diagonal toe kick under door
-          const tkDiagWidth = diagDoorWidth * 0.85;
-          const tkDiag = new THREE.Mesh(
-            new THREE.BoxGeometry(tkDiagWidth, toeKickHeight - 0.02, 0.02),
-            tkMat
+          // Create L-shaped toe kick using shape (smaller than cabinet by recess amount)
+          const tkShape = new THREE.Shape();
+          tkShape.moveTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + armDepth - toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + armDepth - toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.closePath();
+
+          const tkExtrudeSettings = { depth: tkHeight, bevelEnabled: false };
+          const tkGeometry = new THREE.ExtrudeGeometry(tkShape, tkExtrudeSettings);
+          tkGeometry.rotateX(-Math.PI / 2);
+          tkGeometry.translate(0, -h/2 + tkHeight/2, 0);
+
+          const toeKick = new THREE.Mesh(tkGeometry, tkMat);
+          group.add(toeKick);
+
+          // Floor under toe kick (visible shadow catcher)
+          const tkFloor = new THREE.Mesh(
+            new THREE.PlaneGeometry(w, d),
+            new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1 })
           );
-          tkDiag.rotation.y = -Math.PI / 4;
-          tkDiag.position.set(diagCenterX - toeKickRecess * 0.5, -h / 2 + toeKickHeight / 2, diagCenterZ - toeKickRecess * 0.5);
-          group.add(tkDiag);
+          tkFloor.rotation.x = -Math.PI / 2;
+          tkFloor.position.y = -h/2 + 0.01;
+          group.add(tkFloor);
 
           break;
         }
@@ -13698,6 +14659,118 @@
               }
             }
           }
+          break;
+        }
+
+        case 'countertop-l': {
+          // L-shaped countertop
+          const lMat = createTexturedMaterial(color, textureUrl, {
+            roughness: 0.1,
+            metalness: 0.08
+          });
+          const thickness = 0.1; // 3cm thickness
+
+          // L-shape: main arm along width, secondary arm along depth
+          // Main horizontal arm (full width, partial depth)
+          const armDepth = d * 0.4; // Arm is 40% of total depth
+          const mainArm = new THREE.Mesh(
+            new THREE.BoxGeometry(w, thickness, armDepth),
+            lMat
+          );
+          mainArm.position.set(0, 0, d/2 - armDepth/2);
+          group.add(mainArm);
+
+          // Vertical arm (partial width, full depth)
+          const armWidth = w * 0.4;
+          const vertArm = new THREE.Mesh(
+            new THREE.BoxGeometry(armWidth, thickness, d - armDepth),
+            lMat
+          );
+          vertArm.position.set(-w/2 + armWidth/2, 0, -armDepth/2);
+          group.add(vertArm);
+
+          // Top highlight
+          const topMat = createTexturedMaterial(color, textureUrl, {
+            roughness: 0.05,
+            metalness: 0.15
+          });
+          const topMain = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.02, 0.005, armDepth - 0.02),
+            topMat
+          );
+          topMain.position.set(0, thickness/2, d/2 - armDepth/2);
+          group.add(topMain);
+
+          const topVert = new THREE.Mesh(
+            new THREE.BoxGeometry(armWidth - 0.02, 0.005, d - armDepth - 0.02),
+            topMat
+          );
+          topVert.position.set(-w/2 + armWidth/2, thickness/2, -armDepth/2);
+          group.add(topVert);
+          break;
+        }
+
+        case 'countertop-u': {
+          // U-shaped countertop
+          const uMat = createTexturedMaterial(color, textureUrl, {
+            roughness: 0.1,
+            metalness: 0.08
+          });
+          const thickness = 0.1; // 3cm thickness
+
+          // U-shape: back arm full width, two side arms
+          const armDepth = d * 0.3; // Back arm depth
+          const sideWidth = w * 0.25; // Side arm width
+
+          // Back arm (full width, partial depth)
+          const backArm = new THREE.Mesh(
+            new THREE.BoxGeometry(w, thickness, armDepth),
+            uMat
+          );
+          backArm.position.set(0, 0, -d/2 + armDepth/2);
+          group.add(backArm);
+
+          // Left side arm
+          const leftArm = new THREE.Mesh(
+            new THREE.BoxGeometry(sideWidth, thickness, d - armDepth),
+            uMat
+          );
+          leftArm.position.set(-w/2 + sideWidth/2, 0, armDepth/2);
+          group.add(leftArm);
+
+          // Right side arm
+          const rightArm = new THREE.Mesh(
+            new THREE.BoxGeometry(sideWidth, thickness, d - armDepth),
+            uMat
+          );
+          rightArm.position.set(w/2 - sideWidth/2, 0, armDepth/2);
+          group.add(rightArm);
+
+          // Top highlights
+          const topMat = createTexturedMaterial(color, textureUrl, {
+            roughness: 0.05,
+            metalness: 0.15
+          });
+          const topBack = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.02, 0.005, armDepth - 0.02),
+            topMat
+          );
+          topBack.position.set(0, thickness/2, -d/2 + armDepth/2);
+          group.add(topBack);
+
+          const topLeft = new THREE.Mesh(
+            new THREE.BoxGeometry(sideWidth - 0.02, 0.005, d - armDepth - 0.02),
+            topMat
+          );
+          topLeft.position.set(-w/2 + sideWidth/2, thickness/2, armDepth/2);
+          group.add(topLeft);
+
+          const topRight = new THREE.Mesh(
+            new THREE.BoxGeometry(sideWidth - 0.02, 0.005, d - armDepth - 0.02),
+            topMat
+          );
+          topRight.position.set(w/2 - sideWidth/2, thickness/2, armDepth/2);
+          group.add(topRight);
           break;
         }
 
@@ -15496,6 +16569,38 @@
           }
         }
 
+        // Window/Door sill height (height from floor)
+        const windowDoorTypes = ['window', 'sliding-door', 'french-door', 'glass-door', 'bay-window', 'picture-window'];
+        const isWindowOrDoor = windowDoorTypes.includes(selectedElement.type);
+        const sillHeightRow = document.getElementById('sillHeightRow');
+        const customSillRow = document.getElementById('customSillRow');
+
+        if (sillHeightRow) {
+          sillHeightRow.style.display = isWindowOrDoor ? 'flex' : 'none';
+          if (isWindowOrDoor) {
+            const sillHeight = selectedElement.sillHeight !== undefined ? selectedElement.sillHeight : getDefaultSillHeight(selectedElement.type);
+            const select = document.getElementById('propSillHeight');
+
+            // Check if it matches a preset
+            const presets = [0, 2, 2.5, 3, 3.67];
+            const matchesPreset = presets.some(p => Math.abs(sillHeight - p) < 0.05);
+
+            if (matchesPreset) {
+              select.value = presets.find(p => Math.abs(sillHeight - p) < 0.05).toString();
+              if (customSillRow) customSillRow.style.display = 'none';
+            } else {
+              select.value = 'custom';
+              if (customSillRow) {
+                customSillRow.style.display = 'flex';
+                document.getElementById('propCustomSill').value = sillHeight.toFixed(2);
+              }
+            }
+          }
+        }
+        if (customSillRow && !isWindowOrDoor) {
+          customSillRow.style.display = 'none';
+        }
+
         // Update pricing section
         const pricingSection = document.getElementById('pricingSection');
         if (pricingSection && checkPermission('canViewPrices')) {
@@ -15557,6 +16662,77 @@
         draw();
         showSnapFeedback(`Applied standard size: ${formatDimension(width)} × ${formatDimension(height)}`);
       }
+    }
+
+    // Get default sill height based on element type (building code compliant)
+    function getDefaultSillHeight(type) {
+      switch(type) {
+        case 'window':
+        case 'bay-window':
+        case 'picture-window':
+          return 2; // 24" - standard window sill height
+        case 'sliding-door':
+        case 'french-door':
+        case 'glass-door':
+        case 'door':
+          return 0; // Floor level for doors
+        default:
+          return 2;
+      }
+    }
+
+    // Update sill height from dropdown
+    function updateSillHeight() {
+      if (!selectedElement) return;
+
+      const select = document.getElementById('propSillHeight');
+      const value = select.value;
+      const customSillRow = document.getElementById('customSillRow');
+
+      if (value === 'custom') {
+        customSillRow.style.display = 'flex';
+        document.getElementById('propCustomSill').value = selectedElement.sillHeight || getDefaultSillHeight(selectedElement.type);
+        return;
+      }
+
+      customSillRow.style.display = 'none';
+      const sillHeight = parseFloat(value);
+      selectedElement.sillHeight = sillHeight;
+
+      // Show building code info
+      let codeInfo = '';
+      if (sillHeight < 2) {
+        codeInfo = ' (Note: Standard min is 24")';
+      } else if (sillHeight > 3.67) {
+        codeInfo = ' (Warning: May exceed egress max 44")';
+      }
+
+      saveUndoState();
+      draw();
+      showSnapFeedback(`Sill height: ${Math.round(sillHeight * 12)}"${codeInfo}`);
+    }
+
+    // Apply custom sill height
+    function applyCustomSillHeight() {
+      if (!selectedElement) return;
+
+      const input = document.getElementById('propCustomSill');
+      const sillHeight = parseFloat(input.value) || 0;
+
+      // Clamp to reasonable values
+      selectedElement.sillHeight = Math.max(0, Math.min(8, sillHeight));
+
+      // Building code warnings
+      let warning = '';
+      if (sillHeight < 2 && selectedElement.type === 'window') {
+        warning = ' - Below 24" minimum for safety';
+      } else if (sillHeight > 3.67 && selectedElement.type === 'window') {
+        warning = ' - Above 44" egress maximum';
+      }
+
+      saveUndoState();
+      draw();
+      showSnapFeedback(`Custom sill: ${Math.round(sillHeight * 12)}"${warning}`);
     }
 
     // Update edge profile for countertops
@@ -16419,6 +17595,317 @@
       modal.classList.remove('active');
     }
 
+    // ===== EDGE PREVIEW MODAL =====
+    let edgePreviewScene, edgePreviewCamera, edgePreviewRenderer, edgePreviewControls;
+    let edgePreviewElement = null;
+    let edgePreviewAnimationId = null;
+
+    function showEdgePreviewModal(element) {
+      edgePreviewElement = element;
+
+      const modal = document.getElementById('edgePreviewModal');
+      modal.classList.add('active');
+
+      // Update UI with current element settings
+      const profile = element.edgeProfile || 'eased';
+      const thickness = element.thickness || '3cm';
+
+      document.getElementById('edgeProfileName').textContent = getEdgeProfileLabel(profile);
+      document.getElementById('edgeThickness').textContent = thickness;
+      document.getElementById('edgeProfileSelect').value = profile;
+
+      // Initialize or update 3D preview
+      setTimeout(() => initEdgePreview3D(element), 100);
+    }
+
+    function getEdgeProfileLabel(profile) {
+      const labels = {
+        'eased': 'Eased',
+        'pencil': 'Pencil Round',
+        'quarter-round': 'Quarter Round',
+        'half-bullnose': 'Half Bullnose',
+        'full-bullnose': 'Full Bullnose',
+        'bevel': 'Bevel',
+        'quarter-bevel': 'Quarter Bevel',
+        'ogee': 'Ogee',
+        'double-ogee': 'Double Ogee',
+        'cove': 'Cove',
+        'dupont': 'Dupont',
+        'mitered': 'Mitered',
+        'waterfall': 'Waterfall'
+      };
+      return labels[profile] || profile;
+    }
+
+    function initEdgePreview3D(element) {
+      const container = document.getElementById('edgePreview3D');
+      if (!container) return;
+
+      // Clear existing
+      if (edgePreviewRenderer) {
+        container.innerHTML = '';
+        if (edgePreviewAnimationId) {
+          cancelAnimationFrame(edgePreviewAnimationId);
+        }
+      }
+
+      // Scene setup
+      edgePreviewScene = new THREE.Scene();
+      edgePreviewScene.background = new THREE.Color(0x1a1a2e);
+
+      // Camera - VERY close-up view of edge
+      const aspect = container.clientWidth / container.clientHeight;
+      edgePreviewCamera = new THREE.PerspectiveCamera(35, aspect, 0.01, 50);
+      edgePreviewCamera.position.set(0.4, 0.2, 0.5);
+      edgePreviewCamera.lookAt(0, 0, 0);
+
+      // Renderer
+      edgePreviewRenderer = new THREE.WebGLRenderer({ antialias: true });
+      edgePreviewRenderer.setSize(container.clientWidth, container.clientHeight);
+      edgePreviewRenderer.shadowMap.enabled = true;
+      container.appendChild(edgePreviewRenderer.domElement);
+
+      // Controls - enable zoom with close limits
+      edgePreviewControls = new THREE.OrbitControls(edgePreviewCamera, edgePreviewRenderer.domElement);
+      edgePreviewControls.enableDamping = true;
+      edgePreviewControls.dampingFactor = 0.05;
+      edgePreviewControls.target.set(0, 0, 0);
+      edgePreviewControls.enableZoom = true;
+      edgePreviewControls.minDistance = 0.15;
+      edgePreviewControls.maxDistance = 2.0;
+
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+      edgePreviewScene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1);
+      keyLight.position.set(3, 5, 3);
+      keyLight.castShadow = true;
+      edgePreviewScene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+      fillLight.position.set(-2, 3, -1);
+      edgePreviewScene.add(fillLight);
+
+      // Create edge profile sample
+      createEdgePreviewMesh(element);
+
+      // Animation loop
+      function animate() {
+        edgePreviewAnimationId = requestAnimationFrame(animate);
+        edgePreviewControls.update();
+        edgePreviewRenderer.render(edgePreviewScene, edgePreviewCamera);
+      }
+      animate();
+    }
+
+    function createEdgePreviewMesh(element) {
+      // Remove old mesh
+      const oldMesh = edgePreviewScene.getObjectByName('edgeSample');
+      if (oldMesh) edgePreviewScene.remove(oldMesh);
+
+      const profile = element.edgeProfile || 'eased';
+      const color = parseInt(element.color?.replace('#', '') || '708090', 16);
+      const textureUrl = element.texture || null;
+
+      // Create material
+      let material;
+      if (textureUrl) {
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load(textureUrl);
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        material = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: 0.1,
+          metalness: 0.08
+        });
+      } else {
+        material = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.1,
+          metalness: 0.08
+        });
+      }
+
+      // Create edge profile shape
+      const shape = new THREE.Shape();
+      const t = 0.35; // Thickness - larger for better visibility
+
+      switch(profile) {
+        case 'pencil':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.75);
+          shape.quadraticCurveTo(t, t, t * 0.85, t);
+          shape.lineTo(0, t);
+          break;
+        case 'quarter-round':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.5);
+          shape.quadraticCurveTo(t, t, t * 0.5, t);
+          shape.lineTo(0, t);
+          break;
+        case 'half-bullnose':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.6);
+          shape.quadraticCurveTo(t, t, t * 0.6, t);
+          shape.lineTo(0, t);
+          break;
+        case 'full-bullnose':
+          shape.moveTo(t * 0.3, 0);
+          shape.lineTo(t * 0.7, 0);
+          shape.quadraticCurveTo(t, 0, t, t * 0.3);
+          shape.lineTo(t, t * 0.7);
+          shape.quadraticCurveTo(t, t, t * 0.7, t);
+          shape.lineTo(t * 0.3, t);
+          shape.quadraticCurveTo(0, t, 0, t * 0.7);
+          shape.lineTo(0, t * 0.3);
+          shape.quadraticCurveTo(0, 0, t * 0.3, 0);
+          break;
+        case 'ogee':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.5);
+          shape.bezierCurveTo(t, t * 0.7, t * 0.8, t * 0.8, t * 0.6, t * 0.85);
+          shape.bezierCurveTo(t * 0.4, t * 0.9, t * 0.2, t, 0, t);
+          break;
+        case 'double-ogee':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.3);
+          shape.bezierCurveTo(t, t * 0.4, t * 0.85, t * 0.45, t * 0.7, t * 0.5);
+          shape.bezierCurveTo(t * 0.55, t * 0.55, t * 0.55, t * 0.65, t * 0.7, t * 0.7);
+          shape.bezierCurveTo(t * 0.85, t * 0.75, t * 0.9, t * 0.85, t * 0.6, t * 0.9);
+          shape.bezierCurveTo(t * 0.3, t * 0.95, t * 0.1, t, 0, t);
+          break;
+        case 'bevel':
+        case 'quarter-bevel':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.7);
+          shape.lineTo(t * 0.7, t);
+          shape.lineTo(0, t);
+          break;
+        case 'cove':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.7);
+          shape.quadraticCurveTo(t * 0.7, t, 0, t);
+          break;
+        case 'dupont':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.4);
+          shape.lineTo(t * 0.85, t * 0.5);
+          shape.quadraticCurveTo(t * 0.7, t * 0.6, t * 0.7, t * 0.75);
+          shape.lineTo(t * 0.7, t);
+          shape.lineTo(0, t);
+          break;
+        case 'mitered':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.85);
+          shape.lineTo(t * 0.85, t);
+          shape.lineTo(0, t);
+          break;
+        case 'waterfall':
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t);
+          shape.lineTo(t * 0.05, t);
+          shape.lineTo(0, t * 0.95);
+          break;
+        default: // eased
+          shape.moveTo(0, 0);
+          shape.lineTo(t, 0);
+          shape.lineTo(t, t * 0.9);
+          shape.quadraticCurveTo(t, t, t * 0.9, t);
+          shape.lineTo(0, t);
+      }
+      shape.closePath();
+
+      // Extrude to create 3D edge
+      const extrudeSettings = {
+        steps: 1,
+        depth: 1.2,  // Shorter depth for closer view
+        bevelEnabled: false
+      };
+
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = 'edgeSample';
+
+      // Position and rotate for good close-up view
+      mesh.rotation.y = Math.PI / 2;
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(-0.6, 0, 0.25);  // Centered for closer camera
+
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      edgePreviewScene.add(mesh);
+    }
+
+    function updateEdgeProfile(profile) {
+      if (!edgePreviewElement) return;
+
+      edgePreviewElement.edgeProfile = profile;
+      document.getElementById('edgeProfileName').textContent = getEdgeProfileLabel(profile);
+
+      // Update 3D preview
+      createEdgePreviewMesh(edgePreviewElement);
+
+      // Update main canvas and 3D view
+      draw();
+      render3D();
+    }
+
+    function rotateEdgePreview(direction) {
+      if (!edgePreviewCamera || !edgePreviewControls) return;
+
+      if (direction === 'reset') {
+        edgePreviewCamera.position.set(0.4, 0.2, 0.5);
+        edgePreviewControls.target.set(0, 0, 0);
+      } else if (direction === 'left') {
+        const angle = 0.3;
+        const x = edgePreviewCamera.position.x;
+        const z = edgePreviewCamera.position.z;
+        edgePreviewCamera.position.x = x * Math.cos(angle) + z * Math.sin(angle);
+        edgePreviewCamera.position.z = -x * Math.sin(angle) + z * Math.cos(angle);
+      } else if (direction === 'right') {
+        const angle = -0.3;
+        const x = edgePreviewCamera.position.x;
+        const z = edgePreviewCamera.position.z;
+        edgePreviewCamera.position.x = x * Math.cos(angle) + z * Math.sin(angle);
+        edgePreviewCamera.position.z = -x * Math.sin(angle) + z * Math.cos(angle);
+      }
+      edgePreviewControls.update();
+    }
+
+    function closeEdgePreview() {
+      const modal = document.getElementById('edgePreviewModal');
+      modal.classList.remove('active');
+
+      // Cleanup
+      if (edgePreviewAnimationId) {
+        cancelAnimationFrame(edgePreviewAnimationId);
+        edgePreviewAnimationId = null;
+      }
+      if (edgePreviewRenderer) {
+        edgePreviewRenderer.dispose();
+      }
+      edgePreviewElement = null;
+    }
+
+    function applyEdgeAndClose() {
+      // Edge profile already applied via updateEdgeProfile
+      closeEdgePreview();
+      updateProperties();
+      showSnapFeedback('Edge profile updated');
+    }
+
     function copyShareLink() {
       const input = document.getElementById('shareLink');
       if (input.value) {
@@ -16839,6 +18326,30 @@
         }
         return window._roomDesignerSupabase;
       }
+      return null;
+    }
+
+    // Get current authenticated user
+    function getCurrentUser() {
+      // Try sg-auth first
+      if (window.sgAuth && typeof window.sgAuth.getUser === 'function') {
+        return window.sgAuth.getUser();
+      }
+      // Try getting from Supabase session
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        // Note: this is sync access to cached session
+        const session = supabase.auth?.session;
+        if (session?.user) return session.user;
+      }
+      // Check localStorage for cached user
+      try {
+        const stored = localStorage.getItem('sb-ypeypgwsycxcagncgdur-auth-token');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.user) return parsed.user;
+        }
+      } catch (e) {}
       return null;
     }
 
@@ -17303,14 +18814,14 @@
             categoryMargins: PRICING_STATE.categoryMargins,
             customPrices: PRICING_STATE.customPrices
           },
-          company_name: companyName
+          company_name: companyName,
+          current_room_id: currentRoomId  // Store in settings, not as top-level column
         },
         // Multi-room support
         rooms: rooms.map(room => ({
           ...room,
           elements: room.elements.map(el => ({ ...el, textureImg: null }))
         })),
-        current_room_id: currentRoomId,
         quote_total: quoteTotal,
         share_mode: permission === 'full_collab' ? 'edit' : 'view',
         is_public: false
@@ -17336,6 +18847,14 @@
         let designId = SHARE_STATE.designId;
         let designToken = SHARE_STATE.designToken;
         console.log('Current state - designId:', designId, 'designToken:', designToken);
+
+        // If designId is a local ID (starts with "local-"), we need to create a new one in Supabase
+        const isLocalDesign = designId && String(designId).startsWith('local-');
+        if (isLocalDesign) {
+          console.log('Local design detected, will create new Supabase design');
+          designId = null;
+          designToken = null;
+        }
 
         // Create or update design in database
         if (!designId) {
@@ -17503,7 +19022,7 @@
             elements: room.elements || [],
             walls: room.walls || []
           }));
-          currentRoomId = design.current_room_id || rooms[0].id;
+          currentRoomId = design.settings?.current_room_id || design.current_room_id || rooms[0].id;
 
           // Load current room data
           const currentRoom = getCurrentRoom();
@@ -18760,6 +20279,421 @@
 
       URL.revokeObjectURL(url);
     }
+
+    // ===== MY DESIGNS MODAL =====
+    let currentDesignsTab = 'my';
+    let allDesigns = { my: [], shared: [], recent: [] };
+
+    function openMyDesignsModal() {
+      document.getElementById('myDesignsModal').classList.add('active');
+      loadMyDesigns();
+    }
+
+    // Save current design to local storage
+    function saveDesignLocally() {
+      const projectName = document.getElementById('projectName').value || 'Untitled Design';
+      const roomType = document.getElementById('roomType').value || 'kitchen';
+
+      const design = {
+        id: 'local-' + Date.now(),
+        name: projectName,
+        room_type: roomType,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        room_width: roomWidth,
+        room_depth: roomDepth,
+        elements: elements.map(el => ({
+          ...el,
+          textureImg: null // Don't save image objects
+        })),
+        walls: walls,
+        rooms: rooms.map(r => ({
+          ...r,
+          elements: r.elements?.map(el => ({ ...el, textureImg: null })) || []
+        }))
+      };
+
+      // Get existing designs
+      let designs = [];
+      try {
+        designs = JSON.parse(localStorage.getItem('room_designs') || '[]');
+      } catch (e) {}
+
+      // Add new design at the beginning
+      designs.unshift(design);
+
+      // Keep only last 20 designs
+      designs = designs.slice(0, 20);
+
+      localStorage.setItem('room_designs', JSON.stringify(designs));
+      showSnapFeedback('Design saved locally');
+      return design;
+    }
+
+    function switchDesignsTab(tab, btn) {
+      currentDesignsTab = tab;
+      document.querySelectorAll('.designs-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderDesignsGrid();
+    }
+
+    async function loadMyDesigns() {
+      const grid = document.getElementById('designsGrid');
+      const empty = document.getElementById('designsEmpty');
+      grid.innerHTML = '<div class="designs-loading">Loading designs...</div>';
+      empty.style.display = 'none';
+
+      try {
+        const supabase = getSupabaseClient();
+        const user = getCurrentUser();
+
+        if (!supabase || !user) {
+          // Load from localStorage
+          const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
+          allDesigns.my = localDesigns.map((d, i) => ({
+            id: d.id || `local-${i}`,  // Preserve original design ID
+            name: d.name || 'Untitled Design',
+            room_type: d.room_type || 'kitchen',
+            created_at: d.created_at || new Date().toISOString(),
+            elements_count: d.elements?.length || 0,
+            comments_count: 0,
+            preview: d.preview || null,
+            isLocal: true,
+            originalIndex: i  // Keep index for fallback lookup
+          }));
+          allDesigns.shared = [];
+          allDesigns.recent = JSON.parse(localStorage.getItem('recent_designs') || '[]');
+          renderDesignsGrid();
+          return;
+        }
+
+        // Load user's own designs
+        const { data: myDesigns, error: myError } = await supabase
+          .from('room_designs')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
+
+        if (myError) throw myError;
+
+        // Load designs shared with user
+        const { data: sharedDesigns, error: sharedError } = await supabase
+          .from('room_design_shares')
+          .select('*, room_designs(*)')
+          .neq('user_id', user.id)
+          .order('share_date', { ascending: false });
+
+        // Process designs
+        allDesigns.my = (myDesigns || []).map(d => ({
+          id: d.id,
+          name: d.name || 'Untitled Design',
+          room_type: d.room_type || 'kitchen',
+          created_at: d.created_at,
+          updated_at: d.updated_at,
+          elements_count: d.design_data?.elements?.length || 0,
+          comments_count: d.comments_count || 0,
+          preview: d.preview_url,
+          share_token: d.share_token
+        }));
+
+        allDesigns.shared = (sharedDesigns || []).filter(s => s.room_designs).map(s => ({
+          id: s.design_id,
+          name: s.room_designs?.name || 'Shared Design',
+          room_type: s.room_designs?.room_type || 'kitchen',
+          created_at: s.share_date,
+          shared_by: s.shared_by_name || 'Someone',
+          permission: s.permission_level,
+          share_token: s.share_token,
+          elements_count: 0,
+          comments_count: s.comments_count || 0
+        }));
+
+        // Load recent from localStorage
+        allDesigns.recent = JSON.parse(localStorage.getItem('recent_designs') || '[]');
+
+        renderDesignsGrid();
+
+      } catch (err) {
+        console.error('Error loading designs:', err);
+        grid.innerHTML = '<div class="designs-loading">Error loading designs</div>';
+      }
+    }
+
+    function renderDesignsGrid() {
+      const grid = document.getElementById('designsGrid');
+      const empty = document.getElementById('designsEmpty');
+
+      const designs = allDesigns[currentDesignsTab] || [];
+
+      if (designs.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      const formatDate = (date) => {
+        const d = new Date(date);
+        const now = new Date();
+        const diffDays = Math.floor((now - d) / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return d.toLocaleDateString();
+      };
+
+      grid.innerHTML = designs.map((design, idx) => `
+        <div class="design-card" onclick="loadDesignFromList('${design.id}', '${design.share_token || ''}', ${design.isLocal || false}, ${design.originalIndex !== undefined ? design.originalIndex : idx})">
+          <div class="design-card-preview">
+            ${design.preview
+              ? `<img src="${design.preview}" alt="${design.name}">`
+              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>`
+            }
+            ${currentDesignsTab === 'shared'
+              ? `<span class="design-card-badge">${design.permission || 'View'}</span>`
+              : design.share_token
+                ? '<span class="design-card-badge">Shared</span>'
+                : ''
+            }
+          </div>
+          <div class="design-card-info">
+            <div class="design-card-name">${design.name}</div>
+            <div class="design-card-meta">
+              <span class="design-card-date">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                ${formatDate(design.created_at)}
+              </span>
+              ${design.comments_count > 0 ? `
+                <span class="design-card-comments">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  ${design.comments_count}
+                </span>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterDesigns(query) {
+      const designs = allDesigns[currentDesignsTab] || [];
+      const filtered = designs.filter(d =>
+        d.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      const grid = document.getElementById('designsGrid');
+      const empty = document.getElementById('designsEmpty');
+
+      if (filtered.length === 0 && query) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      // Temporarily override for rendering
+      const original = allDesigns[currentDesignsTab];
+      allDesigns[currentDesignsTab] = filtered;
+      renderDesignsGrid();
+      allDesigns[currentDesignsTab] = original;
+    }
+
+    async function loadDesignFromList(id, shareToken, isLocal, originalIndex) {
+      closeModal('myDesignsModal');
+
+      if (isLocal) {
+        const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
+        // Find design by ID first, then by index as fallback
+        let design = localDesigns.find(d => d.id === id);
+        if (!design && originalIndex !== undefined && localDesigns[originalIndex]) {
+          design = localDesigns[originalIndex];
+        }
+        if (design) {
+          loadLocalDesign(design);
+          showSnapFeedback(`Loaded: ${design.name || 'Untitled Design'}`);
+        } else {
+          showSnapFeedback('Design not found');
+        }
+        return;
+      }
+
+      if (shareToken) {
+        window.location.href = `?share=${shareToken}`;
+        return;
+      }
+
+      // Load directly from database
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from('room_designs')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        if (data?.design_data) {
+          loadDesignData(data.design_data);
+          SHARE_STATE.designId = id;
+        }
+      } catch (err) {
+        console.error('Error loading design:', err);
+        showSnapFeedback('Error loading design');
+      }
+    }
+
+    // Load a locally saved design
+    function loadLocalDesign(design) {
+      // Restore room dimensions
+      if (design.room_width) roomWidth = design.room_width;
+      if (design.room_depth) roomDepth = design.room_depth;
+
+      // Restore elements
+      if (design.elements) {
+        elements = design.elements.map(el => ({
+          ...el,
+          textureImg: null
+        }));
+
+        // Reload textures
+        elements.forEach(el => {
+          if (el.texture) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              el.textureImg = img;
+              draw();
+            };
+            img.src = el.texture;
+          }
+        });
+      }
+
+      // Restore walls
+      if (design.walls) {
+        walls = design.walls;
+      }
+
+      // Update project name
+      if (design.name) {
+        document.getElementById('projectName').value = design.name;
+      }
+
+      // Update room type
+      if (design.room_type) {
+        document.getElementById('roomType').value = design.room_type;
+      }
+
+      // Update UI
+      document.getElementById('roomWidth').value = roomWidth;
+      document.getElementById('roomDepth').value = roomDepth;
+
+      // Set local design ID for chat
+      SHARE_STATE.designId = design.id;
+
+      // Redraw
+      updateCanvasSize();
+      draw();
+      update3DScene();
+      calculateQuote();
+      updateProperties();
+
+      showSnapFeedback(`Loaded: ${design.name || 'Design'}`);
+    }
+
+    // Add recent design tracking
+    function trackRecentDesign(design) {
+      let recent = JSON.parse(localStorage.getItem('recent_designs') || '[]');
+      // Remove if already exists
+      recent = recent.filter(r => r.id !== design.id);
+      // Add to front
+      recent.unshift({
+        id: design.id,
+        name: design.name,
+        share_token: design.share_token,
+        created_at: new Date().toISOString()
+      });
+      // Keep only last 10
+      recent = recent.slice(0, 10);
+      localStorage.setItem('recent_designs', JSON.stringify(recent));
+    }
+
+    // ===== NOTIFICATIONS =====
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    function showNotification(title, body) {
+      // In-app toast
+      const toast = document.getElementById('notificationToast');
+      document.getElementById('notificationTitle').textContent = title;
+      document.getElementById('notificationBody').textContent = body;
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 5000);
+
+      // Browser notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: body,
+          icon: '/images/logo.png',
+          badge: '/images/logo.png'
+        });
+      }
+    }
+
+    function hideNotification() {
+      document.getElementById('notificationToast').classList.remove('show');
+    }
+
+    function playNotificationSound() {
+      // Create a simple notification beep
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.1;
+
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 100);
+      } catch (e) {
+        // Audio not available
+      }
+    }
+
+    // Helper function for consistent color from string
+    function stringToColor(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const hue = hash % 360;
+      return `hsl(${hue}, 65%, 45%)`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
   </script>
 </body>
 </html>
