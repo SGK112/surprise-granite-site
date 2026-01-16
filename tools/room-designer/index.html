@@ -554,6 +554,81 @@
       box-shadow: 0 2px 10px rgba(249, 203, 0, 0.4);
     }
 
+    /* Room List */
+    .room-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .room-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .room-item:hover {
+      background: var(--dark-surface);
+      border-color: var(--primary);
+    }
+
+    .room-item.active {
+      background: rgba(249, 203, 0, 0.1);
+      border-color: var(--gold);
+    }
+
+    .room-icon {
+      font-size: 16px;
+    }
+
+    .room-name {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .room-size {
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: var(--dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .room-delete-btn {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+
+    .room-item:hover .room-delete-btn {
+      opacity: 1;
+    }
+
+    .room-delete-btn:hover {
+      background: var(--error);
+      color: white;
+    }
+
     /* Floor Plans Grid */
     .floorplan-grid {
       display: grid;
@@ -875,6 +950,15 @@
       letter-spacing: 0.3px;
     }
 
+    .material-no-texture-badge {
+      position: absolute;
+      bottom: 22px;
+      right: 4px;
+      color: rgba(255,255,255,0.5);
+      font-size: 8px;
+      z-index: 2;
+    }
+
     .material-hint {
       font-size: 10px;
       color: var(--text-muted);
@@ -957,6 +1041,16 @@
     .cabinet-item-size {
       font-size: 10px;
       color: var(--primary);
+    }
+
+    .cabinet-item-price {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--success, #22c55e);
+      margin-left: auto;
+      padding: 2px 6px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 4px;
     }
 
     .cabinet-item-add {
@@ -3817,6 +3911,30 @@
     <main class="main">
       <!-- Left Sidebar -->
       <aside class="sidebar">
+        <!-- Multi-Room Manager -->
+        <div class="sidebar-section" data-tutorial="rooms">
+          <div class="sidebar-header" onclick="toggleSection(this)">
+            <span class="sidebar-title">Rooms</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div id="roomList" class="room-list">
+              <!-- Room list will be rendered here -->
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="showAddRoomModal()" style="width: 100%; margin-top: 8px;">
+              + Add Room
+            </button>
+            <div style="margin-top: 8px; display: flex; gap: 4px;">
+              <button class="btn btn-secondary btn-sm" onclick="viewAllRooms3D()" style="flex: 1; font-size: 10px;" title="View all rooms in 3D">
+                🏠 View All
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="exportMultiRoomLayout()" style="flex: 1; font-size: 10px;" title="Export layout">
+                📤 Export
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Floor Plans -->
         <div class="sidebar-section" data-tutorial="floorplans">
           <div class="sidebar-header" onclick="toggleSection(this)">
@@ -3982,17 +4100,21 @@
           </div>
           <div class="sidebar-content">
             <div class="materials-tabs">
+              <!-- Countertop Stones -->
               <button class="material-tab active" onclick="showMaterialCategory('granite', this)">Granite</button>
               <button class="material-tab" onclick="showMaterialCategory('quartz', this)">Quartz</button>
               <button class="material-tab" onclick="showMaterialCategory('marble', this)">Marble</button>
               <button class="material-tab" onclick="showMaterialCategory('quartzite', this)">Quartzite</button>
-              <button class="material-tab" onclick="showMaterialCategory('cabinets', this)">Cabinets</button>
-              <button class="material-tab" onclick="showMaterialCategory('vanities', this)">Vanities</button>
+              <!-- Flooring -->
               <button class="material-tab" onclick="showMaterialCategory('tile', this)">Tile</button>
               <button class="material-tab" onclick="showMaterialCategory('flooring', this)">LVT</button>
-              <button class="material-tab" onclick="showMaterialCategory('flooringTrims', this)">Trims</button>
-              <button class="material-tab" onclick="showMaterialCategory('showerPanels', this)">Shower</button>
               <button class="material-tab" onclick="showMaterialCategory('hardscape', this)">Hardscape</button>
+              <!-- Cabinet Finishes -->
+              <button class="material-tab" onclick="showMaterialCategory('cabinets', this)">Cabinets</button>
+              <button class="material-tab" onclick="showMaterialCategory('vanities', this)">Vanities</button>
+              <!-- Specialty -->
+              <button class="material-tab" onclick="showMaterialCategory('showerPanels', this)">Shower</button>
+              <button class="material-tab" onclick="showMaterialCategory('flooringTrims', this)">Trims</button>
             </div>
             <div class="material-grid" id="materialGrid">
               <!-- Materials rendered by JS -->
@@ -4015,6 +4137,7 @@
             <div class="catalog-brand">
               <select id="catalogSelect" onchange="changeCatalog(this.value)">
                 <option value="procraft">ProCraft Cabinetry</option>
+                <option value="msi">MSI Cabinetry</option>
                 <option value="custom">Custom / Import</option>
               </select>
             </div>
@@ -5953,6 +6076,59 @@
       ]
     };
 
+    // Stone pricing loaded from external JSON file (contains 1137 materials from Excel import)
+    let stonePricingLoaded = false;
+
+    // Load stone pricing data from external JSON file and merge into MATERIALS
+    async function loadStonePricing() {
+      if (stonePricingLoaded) return; // Already loaded
+
+      try {
+        const response = await fetch('stone-pricing.json');
+        if (!response.ok) {
+          console.warn('Stone pricing file not found, using built-in materials only');
+          return;
+        }
+
+        const stonePricing = await response.json();
+        let addedCount = 0;
+
+        // Merge each category
+        for (const category of ['granite', 'quartz', 'quartzite', 'marble', 'porcelain']) {
+          if (stonePricing[category] && MATERIALS[category]) {
+            // Get existing IDs to avoid duplicates
+            const existingIds = new Set(MATERIALS[category].map(m => m.id));
+
+            // Add new materials that don't already exist
+            for (const material of stonePricing[category]) {
+              if (!existingIds.has(material.id)) {
+                MATERIALS[category].push(material);
+                addedCount++;
+              }
+            }
+          } else if (stonePricing[category]) {
+            // Category doesn't exist in MATERIALS, create it
+            MATERIALS[category] = stonePricing[category];
+            addedCount += stonePricing[category].length;
+          }
+        }
+
+        stonePricingLoaded = true;
+        console.log(`Loaded ${addedCount} stone materials from pricing file`);
+
+        // Refresh the materials panel if it's currently showing a stone category
+        const activeCategory = document.querySelector('.material-tab.active')?.dataset?.category;
+        if (['granite', 'quartz', 'quartzite', 'marble'].includes(activeCategory)) {
+          renderMaterials(activeCategory);
+        }
+
+        return addedCount;
+      } catch (error) {
+        console.warn('Could not load stone pricing:', error);
+        return 0;
+      }
+    }
+
     // Price tier helper for materials
     const PRICE_TIERS = {
       budget: { min: 0, max: 12.60, label: 'Budget-Friendly', color: '#10b981' },
@@ -5989,74 +6165,131 @@
         },
         cabinets: {
           base: [
-            { sku: 'B09', name: 'Base 9"', width: 0.75, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B12', name: 'Base 12"', width: 1, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B15', name: 'Base 15"', width: 1.25, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B18', name: 'Base 18"', width: 1.5, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B21', name: 'Base 21"', width: 1.75, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B24', name: 'Base 24"', width: 2, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B27', name: 'Base 27"', width: 2.25, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B30', name: 'Base 30"', width: 2.5, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B33', name: 'Base 33"', width: 2.75, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B36', name: 'Base 36"', width: 3, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B42', name: 'Base 42"', width: 3.5, height: 2, depth: 2, type: 'base-cabinet' },
-            { sku: 'B48', name: 'Base 48"', width: 4, height: 2, depth: 2, type: 'base-cabinet' }
+            { sku: 'B09', name: 'Base 9"', width: 0.75, height: 2, depth: 2, type: 'base-cabinet', price: 185 },
+            { sku: 'B12', name: 'Base 12"', width: 1, height: 2, depth: 2, type: 'base-cabinet', price: 215 },
+            { sku: 'B15', name: 'Base 15"', width: 1.25, height: 2, depth: 2, type: 'base-cabinet', price: 245 },
+            { sku: 'B18', name: 'Base 18"', width: 1.5, height: 2, depth: 2, type: 'base-cabinet', price: 275 },
+            { sku: 'B21', name: 'Base 21"', width: 1.75, height: 2, depth: 2, type: 'base-cabinet', price: 305 },
+            { sku: 'B24', name: 'Base 24"', width: 2, height: 2, depth: 2, type: 'base-cabinet', price: 335 },
+            { sku: 'B27', name: 'Base 27"', width: 2.25, height: 2, depth: 2, type: 'base-cabinet', price: 365 },
+            { sku: 'B30', name: 'Base 30"', width: 2.5, height: 2, depth: 2, type: 'base-cabinet', price: 395 },
+            { sku: 'B33', name: 'Base 33"', width: 2.75, height: 2, depth: 2, type: 'base-cabinet', price: 425 },
+            { sku: 'B36', name: 'Base 36"', width: 3, height: 2, depth: 2, type: 'base-cabinet', price: 455 },
+            { sku: 'B42', name: 'Base 42"', width: 3.5, height: 2, depth: 2, type: 'base-cabinet', price: 515 },
+            { sku: 'B48', name: 'Base 48"', width: 4, height: 2, depth: 2, type: 'base-cabinet', price: 575 }
           ],
           wall: [
-            { sku: 'W0930', name: 'Wall 9"x30"', width: 0.75, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W1230', name: 'Wall 12"x30"', width: 1, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W1530', name: 'Wall 15"x30"', width: 1.25, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W1830', name: 'Wall 18"x30"', width: 1.5, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W2130', name: 'Wall 21"x30"', width: 1.75, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W2430', name: 'Wall 24"x30"', width: 2, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W3030', name: 'Wall 30"x30"', width: 2.5, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W3630', name: 'Wall 36"x30"', width: 3, height: 1.25, depth: 2.5, type: 'wall-cabinet' },
-            { sku: 'W0936', name: 'Wall 9"x36"', width: 0.75, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W1236', name: 'Wall 12"x36"', width: 1, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W1536', name: 'Wall 15"x36"', width: 1.25, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W1836', name: 'Wall 18"x36"', width: 1.5, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W2436', name: 'Wall 24"x36"', width: 2, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W3036', name: 'Wall 30"x36"', width: 2.5, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W3636', name: 'Wall 36"x36"', width: 3, height: 1.25, depth: 3, type: 'wall-cabinet' },
-            { sku: 'W0942', name: 'Wall 9"x42"', width: 0.75, height: 1.25, depth: 3.5, type: 'wall-cabinet' },
-            { sku: 'W1242', name: 'Wall 12"x42"', width: 1, height: 1.25, depth: 3.5, type: 'wall-cabinet' },
-            { sku: 'W1842', name: 'Wall 18"x42"', width: 1.5, height: 1.25, depth: 3.5, type: 'wall-cabinet' },
-            { sku: 'W2442', name: 'Wall 24"x42"', width: 2, height: 1.25, depth: 3.5, type: 'wall-cabinet' },
-            { sku: 'W3042', name: 'Wall 30"x42"', width: 2.5, height: 1.25, depth: 3.5, type: 'wall-cabinet' },
-            { sku: 'W3642', name: 'Wall 36"x42"', width: 3, height: 1.25, depth: 3.5, type: 'wall-cabinet' }
+            { sku: 'W0930', name: 'Wall 9"x30"', width: 0.75, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 145 },
+            { sku: 'W1230', name: 'Wall 12"x30"', width: 1, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 165 },
+            { sku: 'W1530', name: 'Wall 15"x30"', width: 1.25, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1830', name: 'Wall 18"x30"', width: 1.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 205 },
+            { sku: 'W2130', name: 'Wall 21"x30"', width: 1.75, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 225 },
+            { sku: 'W2430', name: 'Wall 24"x30"', width: 2, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 245 },
+            { sku: 'W3030', name: 'Wall 30"x30"', width: 2.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 285 },
+            { sku: 'W3630', name: 'Wall 36"x30"', width: 3, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 325 },
+            { sku: 'W0936', name: 'Wall 9"x36"', width: 0.75, height: 1.25, depth: 3, type: 'wall-cabinet', price: 165 },
+            { sku: 'W1236', name: 'Wall 12"x36"', width: 1, height: 1.25, depth: 3, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1536', name: 'Wall 15"x36"', width: 1.25, height: 1.25, depth: 3, type: 'wall-cabinet', price: 215 },
+            { sku: 'W1836', name: 'Wall 18"x36"', width: 1.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 245 },
+            { sku: 'W2436', name: 'Wall 24"x36"', width: 2, height: 1.25, depth: 3, type: 'wall-cabinet', price: 285 },
+            { sku: 'W3036', name: 'Wall 30"x36"', width: 2.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 335 },
+            { sku: 'W3636', name: 'Wall 36"x36"', width: 3, height: 1.25, depth: 3, type: 'wall-cabinet', price: 385 },
+            { sku: 'W0942', name: 'Wall 9"x42"', width: 0.75, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 185 },
+            { sku: 'W1242', name: 'Wall 12"x42"', width: 1, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 215 },
+            { sku: 'W1842', name: 'Wall 18"x42"', width: 1.5, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 275 },
+            { sku: 'W2442', name: 'Wall 24"x42"', width: 2, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 325 },
+            { sku: 'W3042', name: 'Wall 30"x42"', width: 2.5, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 385 },
+            { sku: 'W3642', name: 'Wall 36"x42"', width: 3, height: 1.25, depth: 3.5, type: 'wall-cabinet', price: 445 }
           ],
           tall: [
-            { sku: 'T189024', name: 'Pantry 18"x90"', width: 1.5, height: 2, depth: 7.5, type: 'tall-cabinet' },
-            { sku: 'T249024', name: 'Pantry 24"x90"', width: 2, height: 2, depth: 7.5, type: 'tall-cabinet' },
-            { sku: 'T309024', name: 'Pantry 30"x90"', width: 2.5, height: 2, depth: 7.5, type: 'tall-cabinet' },
-            { sku: 'T369024', name: 'Pantry 36"x90"', width: 3, height: 2, depth: 7.5, type: 'tall-cabinet' },
-            { sku: 'OC3390', name: 'Oven Cabinet 33"x90"', width: 2.75, height: 2, depth: 7.5, type: 'tall-cabinet' },
-            { sku: 'OC3396', name: 'Oven Cabinet 33"x96"', width: 2.75, height: 2, depth: 8, type: 'tall-cabinet' }
+            { sku: 'T189024', name: 'Pantry 18"x90"', width: 1.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 685 },
+            { sku: 'T249024', name: 'Pantry 24"x90"', width: 2, height: 2, depth: 7.5, type: 'tall-cabinet', price: 795 },
+            { sku: 'T309024', name: 'Pantry 30"x90"', width: 2.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 895 },
+            { sku: 'T369024', name: 'Pantry 36"x90"', width: 3, height: 2, depth: 7.5, type: 'tall-cabinet', price: 995 },
+            { sku: 'OC3390', name: 'Oven Cabinet 33"x90"', width: 2.75, height: 2, depth: 7.5, type: 'tall-cabinet', price: 945 },
+            { sku: 'OC3396', name: 'Oven Cabinet 33"x96"', width: 2.75, height: 2, depth: 8, type: 'tall-cabinet', price: 1045 }
           ],
           corner: [
-            { sku: 'DERA36', name: 'Diagonal Corner 36"', width: 3, height: 3, depth: 2, type: 'corner-cabinet' },
-            { sku: 'WDC2430', name: 'Diagonal Wall 24"x30"', width: 2, height: 2, depth: 2.5, type: 'corner-cabinet' },
-            { sku: 'WDC2436', name: 'Diagonal Wall 24"x36"', width: 2, height: 2, depth: 3, type: 'corner-cabinet' },
-            { sku: 'WDC2442', name: 'Diagonal Wall 24"x42"', width: 2, height: 2, depth: 3.5, type: 'corner-cabinet' }
+            { sku: 'DERA36', name: 'Diagonal Corner 36"', width: 3, height: 3, depth: 2, type: 'corner-cabinet', price: 545 },
+            { sku: 'WDC2430', name: 'Diagonal Wall 24"x30"', width: 2, height: 2, depth: 2.5, type: 'corner-cabinet', price: 385 },
+            { sku: 'WDC2436', name: 'Diagonal Wall 24"x36"', width: 2, height: 2, depth: 3, type: 'corner-cabinet', price: 425 },
+            { sku: 'WDC2442', name: 'Diagonal Wall 24"x42"', width: 2, height: 2, depth: 3.5, type: 'corner-cabinet', price: 465 }
           ],
           lazySusan: [
-            { sku: 'BLS33', name: 'Lazy Susan 33"', width: 2.75, height: 2.75, depth: 2, type: 'lazy-susan' },
-            { sku: 'BLS36', name: 'Lazy Susan 36"', width: 3, height: 3, depth: 2, type: 'lazy-susan' },
-            { sku: 'BLS39', name: 'Lazy Susan 39"', width: 3.25, height: 3.25, depth: 2, type: 'lazy-susan' }
+            { sku: 'BLS33', name: 'Lazy Susan 33"', width: 2.75, height: 2.75, depth: 2, type: 'lazy-susan', price: 595 },
+            { sku: 'BLS36', name: 'Lazy Susan 36"', width: 3, height: 3, depth: 2, type: 'lazy-susan', price: 645 },
+            { sku: 'BLS39', name: 'Lazy Susan 39"', width: 3.25, height: 3.25, depth: 2, type: 'lazy-susan', price: 695 }
           ],
           sink: [
-            { sku: 'SB30', name: 'Sink Base 30"', width: 2.5, height: 2, depth: 2, type: 'sink-base' },
-            { sku: 'SB33', name: 'Sink Base 33"', width: 2.75, height: 2, depth: 2, type: 'sink-base' },
-            { sku: 'SB36', name: 'Sink Base 36"', width: 3, height: 2, depth: 2, type: 'sink-base' },
-            { sku: 'SB42', name: 'Sink Base 42"', width: 3.5, height: 2, depth: 2, type: 'sink-base' }
+            { sku: 'SB30', name: 'Sink Base 30"', width: 2.5, height: 2, depth: 2, type: 'sink-base', price: 365 },
+            { sku: 'SB33', name: 'Sink Base 33"', width: 2.75, height: 2, depth: 2, type: 'sink-base', price: 395 },
+            { sku: 'SB36', name: 'Sink Base 36"', width: 3, height: 2, depth: 2, type: 'sink-base', price: 425 },
+            { sku: 'SB42', name: 'Sink Base 42"', width: 3.5, height: 2, depth: 2, type: 'sink-base', price: 485 }
           ],
           drawer: [
-            { sku: 'DB12', name: 'Drawer Base 12"', width: 1, height: 2, depth: 2, type: 'drawer-base' },
-            { sku: 'DB15', name: 'Drawer Base 15"', width: 1.25, height: 2, depth: 2, type: 'drawer-base' },
-            { sku: 'DB18', name: 'Drawer Base 18"', width: 1.5, height: 2, depth: 2, type: 'drawer-base' },
-            { sku: 'DB24', name: 'Drawer Base 24"', width: 2, height: 2, depth: 2, type: 'drawer-base' },
-            { sku: 'DB30', name: 'Drawer Base 30"', width: 2.5, height: 2, depth: 2, type: 'drawer-base' },
-            { sku: 'DB36', name: 'Drawer Base 36"', width: 3, height: 2, depth: 2, type: 'drawer-base' }
+            { sku: 'DB12', name: 'Drawer Base 12"', width: 1, height: 2, depth: 2, type: 'drawer-base', price: 295 },
+            { sku: 'DB15', name: 'Drawer Base 15"', width: 1.25, height: 2, depth: 2, type: 'drawer-base', price: 335 },
+            { sku: 'DB18', name: 'Drawer Base 18"', width: 1.5, height: 2, depth: 2, type: 'drawer-base', price: 375 },
+            { sku: 'DB24', name: 'Drawer Base 24"', width: 2, height: 2, depth: 2, type: 'drawer-base', price: 425 },
+            { sku: 'DB30', name: 'Drawer Base 30"', width: 2.5, height: 2, depth: 2, type: 'drawer-base', price: 485 },
+            { sku: 'DB36', name: 'Drawer Base 36"', width: 3, height: 2, depth: 2, type: 'drawer-base', price: 545 }
+          ]
+        }
+      },
+      msi: {
+        name: 'MSI Cabinetry',
+        logo: null,
+        series: {
+          'euro-white': { name: 'Euro White', color: '#ffffff' },
+          'euro-grey': { name: 'Euro Grey', color: '#6a6a6a' },
+          'shaker-dove': { name: 'Shaker Dove', color: '#d3d3d3' },
+          'shaker-graphite': { name: 'Shaker Graphite', color: '#4a4a4a' }
+        },
+        cabinets: {
+          base: [
+            { sku: 'MSI-B12', name: 'Base 12"', width: 1, height: 2, depth: 2, type: 'base-cabinet', price: 189 },
+            { sku: 'MSI-B15', name: 'Base 15"', width: 1.25, height: 2, depth: 2, type: 'base-cabinet', price: 219 },
+            { sku: 'MSI-B18', name: 'Base 18"', width: 1.5, height: 2, depth: 2, type: 'base-cabinet', price: 249 },
+            { sku: 'MSI-B21', name: 'Base 21"', width: 1.75, height: 2, depth: 2, type: 'base-cabinet', price: 279 },
+            { sku: 'MSI-B24', name: 'Base 24"', width: 2, height: 2, depth: 2, type: 'base-cabinet', price: 309 },
+            { sku: 'MSI-B27', name: 'Base 27"', width: 2.25, height: 2, depth: 2, type: 'base-cabinet', price: 339 },
+            { sku: 'MSI-B30', name: 'Base 30"', width: 2.5, height: 2, depth: 2, type: 'base-cabinet', price: 369 },
+            { sku: 'MSI-B33', name: 'Base 33"', width: 2.75, height: 2, depth: 2, type: 'base-cabinet', price: 399 },
+            { sku: 'MSI-B36', name: 'Base 36"', width: 3, height: 2, depth: 2, type: 'base-cabinet', price: 429 }
+          ],
+          wall: [
+            { sku: 'MSI-W1230', name: 'Wall 12"x30"', width: 1, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 149 },
+            { sku: 'MSI-W1530', name: 'Wall 15"x30"', width: 1.25, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 169 },
+            { sku: 'MSI-W1830', name: 'Wall 18"x30"', width: 1.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 189 },
+            { sku: 'MSI-W2430', name: 'Wall 24"x30"', width: 2, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 229 },
+            { sku: 'MSI-W3030', name: 'Wall 30"x30"', width: 2.5, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 269 },
+            { sku: 'MSI-W3630', name: 'Wall 36"x30"', width: 3, height: 1.25, depth: 2.5, type: 'wall-cabinet', price: 309 },
+            { sku: 'MSI-W1236', name: 'Wall 12"x36"', width: 1, height: 1.25, depth: 3, type: 'wall-cabinet', price: 169 },
+            { sku: 'MSI-W1536', name: 'Wall 15"x36"', width: 1.25, height: 1.25, depth: 3, type: 'wall-cabinet', price: 199 },
+            { sku: 'MSI-W1836', name: 'Wall 18"x36"', width: 1.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 229 },
+            { sku: 'MSI-W2436', name: 'Wall 24"x36"', width: 2, height: 1.25, depth: 3, type: 'wall-cabinet', price: 269 },
+            { sku: 'MSI-W3036', name: 'Wall 30"x36"', width: 2.5, height: 1.25, depth: 3, type: 'wall-cabinet', price: 319 },
+            { sku: 'MSI-W3636', name: 'Wall 36"x36"', width: 3, height: 1.25, depth: 3, type: 'wall-cabinet', price: 369 }
+          ],
+          tall: [
+            { sku: 'MSI-T1890', name: 'Pantry 18"x90"', width: 1.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 649 },
+            { sku: 'MSI-T2490', name: 'Pantry 24"x90"', width: 2, height: 2, depth: 7.5, type: 'tall-cabinet', price: 749 },
+            { sku: 'MSI-T3090', name: 'Pantry 30"x90"', width: 2.5, height: 2, depth: 7.5, type: 'tall-cabinet', price: 849 }
+          ],
+          corner: [
+            { sku: 'MSI-BC36', name: 'Base Corner 36"', width: 3, height: 3, depth: 2, type: 'corner-cabinet', price: 495 },
+            { sku: 'MSI-WC24', name: 'Wall Corner 24"', width: 2, height: 2, depth: 2.5, type: 'corner-cabinet', price: 359 }
+          ],
+          sink: [
+            { sku: 'MSI-SB30', name: 'Sink Base 30"', width: 2.5, height: 2, depth: 2, type: 'sink-base', price: 339 },
+            { sku: 'MSI-SB33', name: 'Sink Base 33"', width: 2.75, height: 2, depth: 2, type: 'sink-base', price: 369 },
+            { sku: 'MSI-SB36', name: 'Sink Base 36"', width: 3, height: 2, depth: 2, type: 'sink-base', price: 399 }
+          ],
+          drawer: [
+            { sku: 'MSI-DB12', name: 'Drawer Base 12"', width: 1, height: 2, depth: 2, type: 'drawer-base', price: 269 },
+            { sku: 'MSI-DB15', name: 'Drawer Base 15"', width: 1.25, height: 2, depth: 2, type: 'drawer-base', price: 309 },
+            { sku: 'MSI-DB18', name: 'Drawer Base 18"', width: 1.5, height: 2, depth: 2, type: 'drawer-base', price: 349 },
+            { sku: 'MSI-DB24', name: 'Drawer Base 24"', width: 2, height: 2, depth: 2, type: 'drawer-base', price: 399 }
           ]
         }
       },
@@ -6098,6 +6331,377 @@
     let contextMenuElement = null;
     let elementTextures = {}; // Store custom textures for element types
     let customMaterials = []; // User uploaded materials
+
+    // Multi-room support
+    let rooms = [];
+    let currentRoomId = null;
+
+    // Initialize default room
+    function initializeRooms() {
+      if (rooms.length === 0) {
+        rooms.push({
+          id: 'room-' + Date.now(),
+          name: 'Kitchen',
+          type: 'kitchen',
+          width: roomWidth,
+          depth: roomDepth,
+          offsetX: 0,  // Position in multi-room layout
+          offsetY: 0,
+          elements: [],
+          walls: [],
+          floorPlan: 'empty'
+        });
+        currentRoomId = rooms[0].id;
+      }
+    }
+
+    // Get current room object
+    function getCurrentRoom() {
+      return rooms.find(r => r.id === currentRoomId) || rooms[0];
+    }
+
+    // Save current room state before switching
+    function saveCurrentRoomState() {
+      const room = getCurrentRoom();
+      if (room) {
+        room.width = roomWidth;
+        room.depth = roomDepth;
+        room.elements = [...elements];
+        room.walls = [...walls];
+        room.floorPlan = currentFloorPlan;
+      }
+    }
+
+    // Switch to a different room
+    function switchToRoom(roomId) {
+      saveCurrentRoomState();
+
+      const room = rooms.find(r => r.id === roomId);
+      if (!room) return;
+
+      currentRoomId = roomId;
+      roomWidth = room.width;
+      roomDepth = room.depth;
+      elements = room.elements || [];
+      walls = room.walls || [];
+      currentFloorPlan = room.floorPlan || 'empty';
+
+      // Update UI
+      document.getElementById('roomWidth').value = roomWidth;
+      document.getElementById('roomDepth').value = roomDepth;
+      document.getElementById('roomType').value = room.type || 'kitchen';
+
+      // Redraw
+      fitToScreen();
+      draw();
+      updateRoomList();
+      calculateQuote();
+
+      showToast(`Switched to ${room.name}`, 'info');
+    }
+
+    // Add a new room
+    function addNewRoom(name, type, width, depth) {
+      saveCurrentRoomState();
+
+      // Calculate position for new room (to the right of existing rooms)
+      let maxX = 0;
+      rooms.forEach(r => {
+        const rightEdge = r.offsetX + r.width;
+        if (rightEdge > maxX) maxX = rightEdge;
+      });
+
+      const newRoom = {
+        id: 'room-' + Date.now(),
+        name: name || `Room ${rooms.length + 1}`,
+        type: type || 'kitchen',
+        width: width || 12,
+        depth: depth || 10,
+        offsetX: maxX + 2,  // 2ft gap between rooms
+        offsetY: 0,
+        elements: [],
+        walls: [],
+        floorPlan: 'empty'
+      };
+
+      rooms.push(newRoom);
+      switchToRoom(newRoom.id);
+
+      return newRoom;
+    }
+
+    // Delete a room
+    function deleteRoom(roomId) {
+      if (rooms.length <= 1) {
+        showToast('Cannot delete the only room', 'error');
+        return;
+      }
+
+      const index = rooms.findIndex(r => r.id === roomId);
+      if (index === -1) return;
+
+      const roomName = rooms[index].name;
+      rooms.splice(index, 1);
+
+      // If deleted current room, switch to first room
+      if (currentRoomId === roomId) {
+        switchToRoom(rooms[0].id);
+      }
+
+      updateRoomList();
+      showToast(`Deleted ${roomName}`, 'info');
+    }
+
+    // Update room list UI
+    function updateRoomList() {
+      const container = document.getElementById('roomList');
+      if (!container) return;
+
+      container.innerHTML = rooms.map(room => `
+        <div class="room-item ${room.id === currentRoomId ? 'active' : ''}" onclick="switchToRoom('${room.id}')">
+          <span class="room-icon">${room.type === 'kitchen' ? '🍳' : room.type === 'bathroom' ? '🚿' : '🏠'}</span>
+          <span class="room-name">${room.name}</span>
+          <span class="room-size">${room.width}'×${room.depth}'</span>
+          ${rooms.length > 1 ? `<button class="room-delete-btn" onclick="event.stopPropagation(); deleteRoom('${room.id}')" title="Delete room">×</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Show add room modal
+    function showAddRoomModal() {
+      const modal = document.getElementById('addRoomModal');
+      if (modal) {
+        modal.classList.add('active');
+      } else {
+        // Simple prompt fallback
+        const name = prompt('Room name:', `Room ${rooms.length + 1}`);
+        if (name) {
+          const type = prompt('Room type (kitchen, bathroom, laundry, other):', 'kitchen');
+          const width = parseInt(prompt('Room width (feet):', '12')) || 12;
+          const depth = parseInt(prompt('Room depth (feet):', '10')) || 10;
+          addNewRoom(name, type, width, depth);
+        }
+      }
+    }
+
+    // Make functions globally accessible
+    window.switchToRoom = switchToRoom;
+    window.addNewRoom = addNewRoom;
+    window.deleteRoom = deleteRoom;
+    window.showAddRoomModal = showAddRoomModal;
+    window.updateRoomList = updateRoomList;
+
+    // View all rooms in 3D (multi-room layout)
+    let viewingAllRooms = false;
+
+    function viewAllRooms3D() {
+      saveCurrentRoomState();
+      viewingAllRooms = true;
+
+      // Switch to 3D view
+      setView('3d');
+
+      // Rebuild 3D scene with all rooms
+      setTimeout(() => {
+        init3DMultiRoom();
+        showToast('Viewing all rooms - click a room to edit', 'info');
+      }, 100);
+    }
+
+    // Initialize 3D scene with all rooms
+    function init3DMultiRoom() {
+      if (!window.THREE) {
+        console.error('Three.js not loaded');
+        return;
+      }
+
+      const container = document.getElementById('view3D');
+      if (!container) return;
+
+      // Clear existing scene
+      container.innerHTML = '';
+
+      // Calculate total layout dimensions
+      let totalWidth = 0;
+      let totalDepth = 0;
+      rooms.forEach(room => {
+        const rightEdge = room.offsetX + room.width;
+        const bottomEdge = room.offsetY + room.depth;
+        if (rightEdge > totalWidth) totalWidth = rightEdge;
+        if (bottomEdge > totalDepth) totalDepth = bottomEdge;
+      });
+
+      // Create scene
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a2e);
+
+      // Create camera with view of entire layout
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(totalWidth / 2, Math.max(totalWidth, totalDepth) * 1.5, totalDepth * 1.5);
+      camera.lookAt(totalWidth / 2, 0, totalDepth / 2);
+
+      // Create renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      // Add controls
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(totalWidth / 2, 0, totalDepth / 2);
+      controls.update();
+
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+
+      const sun = new THREE.DirectionalLight(0xFFFBF0, 1.0);
+      sun.position.set(totalWidth, 20, totalDepth / 2);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      // Render each room
+      rooms.forEach((room, roomIndex) => {
+        const roomGroup = new THREE.Group();
+        roomGroup.position.set(room.offsetX, 0, room.offsetY);
+        roomGroup.userData = { roomId: room.id, roomName: room.name };
+
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(room.width, room.depth);
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: roomIndex === rooms.findIndex(r => r.id === currentRoomId) ? 0x3a5a8a : 0x2a3a4a,
+          side: THREE.DoubleSide
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(room.width / 2, 0, room.depth / 2);
+        floor.receiveShadow = true;
+        roomGroup.add(floor);
+
+        // Room label
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#f9cb00';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(room.name, 128, 40);
+
+        const labelTexture = new THREE.CanvasTexture(canvas);
+        const labelGeo = new THREE.PlaneGeometry(4, 1);
+        const labelMat = new THREE.MeshBasicMaterial({ map: labelTexture, transparent: true });
+        const label = new THREE.Mesh(labelGeo, labelMat);
+        label.position.set(room.width / 2, 0.1, room.depth / 2);
+        label.rotation.x = -Math.PI / 2;
+        roomGroup.add(label);
+
+        // Walls (outline)
+        const wallHeight = 8;
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x555555, transparent: true, opacity: 0.3 });
+
+        // Back wall
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(room.width, wallHeight, 0.3), wallMat);
+        backWall.position.set(room.width / 2, wallHeight / 2, 0.15);
+        roomGroup.add(backWall);
+
+        // Left wall
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallHeight, room.depth), wallMat);
+        leftWall.position.set(0.15, wallHeight / 2, room.depth / 2);
+        roomGroup.add(leftWall);
+
+        // Render elements for this room
+        if (room.elements && room.elements.length > 0) {
+          room.elements.forEach(el => {
+            const elMesh = createSimple3DElement(el);
+            if (elMesh) {
+              // Convert 2D position to 3D
+              const x3d = (el.x / pixelsPerFoot);
+              const z3d = (el.y / pixelsPerFoot);
+              elMesh.position.set(x3d + el.width / 2, 0, z3d + el.height / 2);
+              roomGroup.add(elMesh);
+            }
+          });
+        }
+
+        scene.add(roomGroup);
+      });
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    }
+
+    // Create simplified 3D element for multi-room view
+    function createSimple3DElement(el) {
+      if (!window.THREE) return null;
+
+      const w = el.width;
+      const d = el.height;
+      let h = 2.5; // default height
+
+      // Adjust height based on type
+      if (el.type.includes('tall')) h = 7;
+      else if (el.type.includes('wall-cabinet')) h = 2.5;
+      else if (el.type.includes('cabinet')) h = 2.9;
+      else if (el.type === 'countertop') h = 0.1;
+      else if (el.type === 'sink' || el.type === 'stove') h = 0.5;
+      else if (el.type === 'refrigerator') h = 5.5;
+
+      const color = new THREE.Color(el.color || '#808080');
+      const geometry = new THREE.BoxGeometry(w, h, d);
+      const material = new THREE.MeshStandardMaterial({ color: color });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.position.y = h / 2;
+
+      return mesh;
+    }
+
+    // Export multi-room layout
+    function exportMultiRoomLayout() {
+      saveCurrentRoomState();
+
+      const layoutData = {
+        version: '1.0',
+        projectName: document.getElementById('projectName').value || 'Multi-Room Design',
+        createdAt: new Date().toISOString(),
+        rooms: rooms.map(room => ({
+          ...room,
+          elements: room.elements.map(el => ({ ...el, textureImg: null }))
+        })),
+        currentRoomId: currentRoomId
+      };
+
+      const blob = new Blob([JSON.stringify(layoutData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `multi-room-layout-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast('Layout exported successfully', 'success');
+    }
+
+    window.viewAllRooms3D = viewAllRooms3D;
+    window.exportMultiRoomLayout = exportMultiRoomLayout;
 
     // Pan offset (for infinite canvas navigation)
     let panX = 0;
@@ -6254,9 +6858,27 @@
       renderFloorPlans();
       renderMaterials('granite');
       renderCabinetCatalog();
+
+      // Load extended stone pricing from Excel import (async, non-blocking)
+      loadStonePricing().then(count => {
+        if (count > 0) {
+          showToast(`Loaded ${count} stone materials with pricing`, 'success');
+        }
+      });
+
       setupEventListeners();
       setupDragDrop();
       fitToScreen();
+
+      // Initialize multi-room system
+      initializeRooms();
+      // Sync elements with first room
+      const firstRoom = getCurrentRoom();
+      if (firstRoom) {
+        firstRoom.elements = elements;
+        firstRoom.walls = walls;
+      }
+      updateRoomList();
 
       // Initialize auth UI
       initAuth();
@@ -6500,18 +7122,26 @@
         const imageUrl = resolveAssetUrl(mat.url);
 
         // Determine background style - use image with color fallback
+        // CSS background-image will fall back to color if image fails
         const bgStyle = imageUrl
-          ? `url('${imageUrl}') center/cover no-repeat, ${mat.color || '#666'}`
+          ? `url('${imageUrl}') center/cover no-repeat, linear-gradient(${mat.color || '#666'}, ${mat.color || '#666'})`
           : mat.color || '#666';
+
+        // Add indicator if no texture (color only)
+        const noTextureBadge = !imageUrl
+          ? '<div class="material-no-texture-badge" title="Color only - no texture image">●</div>'
+          : '';
 
         return `
         <div class="material-swatch ${selectedMaterial?.id === mat.id ? 'selected' : ''}"
              style="background: ${bgStyle};"
              onclick="selectMaterial('${mat.id}')"
              data-url="${imageUrl || ''}"
+             data-color="${mat.color || '#666'}"
              title="${tooltip}">
           ${priceBadge}
           ${brandBadge}
+          ${noTextureBadge}
           <div class="material-swatch-label">${mat.name}</div>
         </div>
       `;
@@ -6671,10 +7301,12 @@
     function dragStoreProduct(event, slug) {
       const product = storeProducts.find(p => p.slug === slug);
       if (product) {
+        event.dataTransfer.effectAllowed = 'copy';
         event.dataTransfer.setData('text/plain', JSON.stringify({
           type: 'store-product',
           product: product
         }));
+        console.log('Dragging store product:', product.name);
       }
     }
 
@@ -6788,19 +7420,42 @@
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
+          console.log('Texture loaded successfully:', textureUrl);
           element.textureImg = img;
           draw();
           update3DScene();
         };
-        img.onerror = () => {
-          console.warn('Failed to load texture:', textureUrl);
-          // Fallback: still update with color
+        img.onerror = (err) => {
+          console.warn('Failed to load texture:', textureUrl, err);
+          // Clear texture reference on error
+          element.texture = null;
+          element.textureImg = null;
+          // Fallback: use solid color
           draw();
+          showToast(`Could not load texture image, using solid color`, 'error');
+        };
+        // Set a timeout to handle hung requests
+        const loadTimeout = setTimeout(() => {
+          if (!img.complete) {
+            console.warn('Texture load timeout:', textureUrl);
+            element.texture = null;
+            element.textureImg = null;
+            draw();
+          }
+        }, 10000);
+        img.onload = () => {
+          clearTimeout(loadTimeout);
+          console.log('Texture loaded successfully:', textureUrl);
+          element.textureImg = img;
+          draw();
+          update3DScene();
         };
         img.src = textureUrl;
       } else {
+        // No texture URL - material only has color (this is normal for some materials)
         element.textureImg = null;
         element.texture = null;
+        console.log('Material has no texture URL, using color:', element.color);
       }
 
       // Clear selection after applying
@@ -6845,6 +7500,7 @@
             <span class="cabinet-item-sku">${cab.sku}</span>
             <span class="cabinet-item-name">${cab.name}</span>
             <span class="cabinet-item-size">${cab.width}' × ${cab.height}'</span>
+            ${cab.price ? `<span class="cabinet-item-price">$${cab.price}</span>` : ''}
           </div>
           <button class="cabinet-item-add" onclick="event.stopPropagation(); addCatalogCabinet('${cab.sku}')" title="Add to canvas">+</button>
         </div>
@@ -6919,6 +7575,10 @@
         sku: cab.sku,
         catalog: currentCatalog,
         series: currentCabinetSeries,
+        // Store original SKU dimensions for linear fill calculation
+        skuWidth: cab.width,  // Original box width (e.g., 3 for 36" cabinet)
+        skuHeight: cab.height, // Original box depth
+        skuName: cab.name,
         // Cabinet settings
         construction: cabinetSettings.construction,
         doorStyle: cabinetSettings.doorStyle,
@@ -7076,11 +7736,17 @@
     function updateCanvasSize() {
       const wrapper = document.getElementById('canvasWrapper');
 
+      // Guard against missing elements (e.g., after share link error overlay)
+      if (!wrapper || !canvas) return;
+
       // Canvas fills entire workspace
       canvas.width = wrapper.clientWidth;
       canvas.height = wrapper.clientHeight;
 
-      document.getElementById('canvasSize').textContent = `${roomWidth}' × ${roomDepth}'`;
+      const sizeEl = document.getElementById('canvasSize');
+      if (sizeEl) {
+        sizeEl.textContent = `${roomWidth}' × ${roomDepth}'`;
+      }
 
       draw();
     }
@@ -7105,7 +7771,8 @@
 
       window.addEventListener('resize', () => {
         updateCanvasSize();
-        if (document.getElementById('scaleMode').value === 'fit') {
+        const scaleMode = document.getElementById('scaleMode');
+        if (scaleMode && scaleMode.value === 'fit') {
           fitToScreen();
         }
       });
@@ -7115,7 +7782,9 @@
       document.addEventListener('dragstart', (e) => {
         if (e.target.classList.contains('element-item')) {
           e.dataTransfer.setData('element-type', e.target.dataset.type);
+          e.dataTransfer.effectAllowed = 'copy';
           e.target.style.opacity = '0.5';
+          isHtmlDragging = true;
         }
       });
 
@@ -7123,10 +7792,21 @@
         if (e.target.classList.contains('element-item')) {
           e.target.style.opacity = '1';
         }
+        isHtmlDragging = false;
       });
 
-      canvas.addEventListener('dragover', (e) => e.preventDefault());
-      canvas.addEventListener('drop', onDrop);
+      canvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        isHtmlDragging = true;
+      });
+      canvas.addEventListener('dragleave', () => {
+        isHtmlDragging = false;
+      });
+      canvas.addEventListener('drop', (e) => {
+        isHtmlDragging = false;
+        onDrop(e);
+      });
     }
 
     // ===== DRAWING =====
@@ -10282,8 +10962,16 @@
       }
     }
 
+    // Track if HTML5 drag is in progress
+    let isHtmlDragging = false;
+
     // Mouse wheel zoom
     function onWheel(e) {
+      // Don't zoom during any drag operation
+      if (isDragging || isResizing || isHtmlDragging || isPanning) {
+        return;
+      }
+
       e.preventDefault();
 
       const rect = canvas.getBoundingClientRect();
@@ -10313,15 +11001,223 @@
     // ===== DRAG & DROP =====
     function onDrop(e) {
       e.preventDefault();
-      const type = e.dataTransfer.getData('element-type');
-      if (!type) return;
-
       const rect = canvas.getBoundingClientRect();
       const screenX = e.clientX - rect.left;
       const screenY = e.clientY - rect.top;
       const { x, y } = screenToWorld(screenX, screenY);
 
-      createElement(type, x, y);
+      console.log('onDrop called at', x, y);
+
+      // Check for element-type (sidebar elements)
+      const type = e.dataTransfer.getData('element-type');
+      if (type) {
+        console.log('Creating element type:', type);
+        createElement(type, x, y);
+        return;
+      }
+
+      // Check for store product or other JSON data
+      const jsonData = e.dataTransfer.getData('text/plain');
+      console.log('JSON data from drop:', jsonData);
+      if (jsonData) {
+        try {
+          const data = JSON.parse(jsonData);
+          console.log('Parsed drop data:', data);
+          if (data.type === 'store-product' && data.product) {
+            console.log('Handling store product drop:', data.product.name);
+            handleStoreProductDrop(data.product, x, y, e);
+            return;
+          }
+        } catch (parseErr) {
+          console.log('Not JSON data, ignoring');
+        }
+      }
+    }
+
+    // Handle dropping a store product onto the canvas or an element
+    function handleStoreProductDrop(product, x, y, e) {
+      console.log('handleStoreProductDrop called', { product: product.name, x, y });
+
+      // Check if dropped on an existing element using world coordinates
+      const hitElement = [...elements].reverse().find(el => isPointInElement(x, y, el));
+      console.log('Hit element:', hitElement ? hitElement.type : 'none');
+
+      if (hitElement) {
+        // Apply product as material/texture to existing element
+        console.log('Applying product to existing element');
+        applyStoreProductToExistingElement(hitElement, product);
+      } else {
+        // Create a new element with the product
+        console.log('Creating new element from product');
+        createElementFromStoreProduct(product, x, y);
+      }
+    }
+
+    // Apply store product to an existing element
+    function applyStoreProductToExistingElement(element, product) {
+      // Determine best element type match
+      const productType = product.type?.toLowerCase() || '';
+
+      // Store product info on element
+      element.storeProduct = {
+        name: product.name,
+        slug: product.slug,
+        brand: product.brand,
+        sku: product.sku,
+        price: product.price,
+        image: product.images?.[0] || product.image
+      };
+
+      // Apply as texture if product has image
+      if (product.images?.[0] || product.image) {
+        const imageUrl = product.images?.[0] || product.image;
+        element.texture = imageUrl;
+        element.textureImg = null; // Force reload
+
+        // Load texture image
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          element.textureImg = img;
+          draw();
+          if (currentView === '3d') update3DScene();
+        };
+        img.src = imageUrl;
+      }
+
+      // Update price if product has price
+      if (product.price) {
+        element.priceOverride = parseFloat(product.price);
+        element.costPrice = parseFloat(product.price);
+      }
+
+      // Update label
+      element.label = product.name || element.label;
+
+      selectedElement = element;
+      updateProperties();
+      draw();
+      calculateQuote();
+
+      showToast(`Applied ${product.name} to ${element.type}`, 'success');
+    }
+
+    // Create new element from store product
+    function createElementFromStoreProduct(product, x, y) {
+      console.log('createElementFromStoreProduct called', { product: product.name, x, y });
+      const productType = product.type?.toLowerCase() || '';
+      console.log('Product type:', productType);
+
+      // Map product types to element types
+      let elementType = 'stove'; // default fallback (valid appliance type)
+      let width = 2.5;
+      let height = 2;
+      let color = '#4a90d9';
+
+      if (productType.includes('sink')) {
+        elementType = 'sink';
+        width = 2.75;
+        height = 1.75;
+      } else if (productType.includes('faucet')) {
+        elementType = 'sink'; // Use sink type for faucets
+        width = 0.75;
+        height = 0.5;
+      } else if (productType.includes('range') || productType.includes('stove')) {
+        elementType = 'stove';
+        width = 2.5;
+        height = 2.5;
+      } else if (productType.includes('refrigerator') || productType.includes('fridge')) {
+        elementType = 'refrigerator';
+        width = 3;
+        height = 3;
+      } else if (productType.includes('dishwasher')) {
+        elementType = 'dishwasher';
+        width = 2;
+        height = 2;
+      } else if (productType.includes('microwave')) {
+        elementType = 'microwave';
+        width = 2;
+        height = 1;
+      } else if (productType.includes('hood') || productType.includes('vent')) {
+        elementType = 'range-hood';
+        width = 2.5;
+        height = 1.5;
+      } else if (productType.includes('cabinet')) {
+        elementType = 'base-cabinet';
+        width = 3;
+        height = 2;
+      } else if (productType.includes('countertop') || productType.includes('granite') || productType.includes('quartz')) {
+        elementType = 'countertop';
+        width = 4;
+        height = 2;
+      } else if (productType.includes('tile') || productType.includes('backsplash')) {
+        elementType = 'backsplash';
+        width = 4;
+        height = 1.5;
+      }
+
+      // Find the color from ELEMENT_TYPES by searching all categories
+      let foundColor = color;
+      for (const category of Object.values(ELEMENT_TYPES)) {
+        const found = category.find(e => e.type === elementType);
+        if (found) {
+          foundColor = found.color;
+          break;
+        }
+      }
+
+      const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
+      const element = {
+        id: Date.now() + Math.random(),
+        type: elementType,
+        x: Math.round(x / gridSnap) * gridSnap,
+        y: Math.round(y / gridSnap) * gridSnap,
+        width: width,
+        height: height,
+        color: foundColor,
+        label: product.name || 'Store Product',
+        rotation: 0,
+        locked: false,
+        storeProduct: {
+          name: product.name,
+          slug: product.slug,
+          brand: product.brand,
+          sku: product.sku,
+          price: product.price,
+          image: product.images?.[0] || product.image
+        },
+        priceOverride: product.price ? parseFloat(product.price) : null,
+        costPrice: product.price ? parseFloat(product.price) : null,
+        priceUnit: 'unit',
+        marginPercent: null
+      };
+
+      // Apply texture from product image
+      if (product.images?.[0] || product.image) {
+        const imageUrl = product.images?.[0] || product.image;
+        element.texture = imageUrl;
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          element.textureImg = img;
+          draw();
+          if (currentView === '3d') update3DScene();
+        };
+        img.src = imageUrl;
+      }
+
+      elements.push(element);
+      console.log('Element created and added:', element);
+      console.log('Total elements now:', elements.length);
+
+      selectedElement = element;
+      updateProperties();
+      draw();
+      calculateQuote();
+      saveUndoState();
+
+      showToast(`Added ${product.name} to design`, 'success');
     }
 
     function createElement(type, x, y) {
@@ -10858,10 +11754,14 @@
     }
 
     function toggleSection(header) {
-      const content = header.nextElementSibling;
+      // Find the sidebar-content, skipping over any tooltip elements
+      const section = header.parentElement;
+      const content = section.querySelector('.sidebar-content');
       const toggle = header.querySelector('.sidebar-toggle');
-      content.classList.toggle('collapsed');
-      toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+      if (content) {
+        content.classList.toggle('collapsed');
+        toggle.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+      }
     }
 
     // ===== VIEW =====
@@ -15088,14 +15988,27 @@
 
     // ===== PRICING FUNCTIONS =====
 
-    // Get effective price for an element (priority: override -> material -> custom -> default)
+    // Get effective price for an element (priority: override -> catalog -> material -> custom -> default)
     function getElementPrice(element) {
       // 1) Manual override takes highest priority
       if (element.priceOverride !== null && element.priceOverride !== undefined) {
         return { price: element.priceOverride, source: 'override' };
       }
 
-      // 2) Check for material-specific pricing
+      // 2) Check for cabinet catalog pricing (by SKU)
+      if (element.sku && element.catalog) {
+        const catalog = CABINET_CATALOGS[element.catalog];
+        if (catalog) {
+          for (const category of Object.values(catalog.cabinets)) {
+            const cab = category.find(c => c.sku === element.sku);
+            if (cab && cab.price) {
+              return { price: cab.price, source: 'catalog' };
+            }
+          }
+        }
+      }
+
+      // 3) Check for material-specific pricing
       if (element.materialId) {
         for (const category in MATERIALS) {
           const mat = MATERIALS[category].find(m => m.id === element.materialId);
@@ -15105,12 +16018,12 @@
         }
       }
 
-      // 3) Check custom prices from Excel import
+      // 4) Check custom prices from Excel import
       if (element.materialId && PRICING_STATE.customPrices[element.materialId]) {
         return { price: PRICING_STATE.customPrices[element.materialId], source: 'pricelist' };
       }
 
-      // 4) Fall back to default type pricing
+      // 5) Fall back to default type pricing
       return { price: CONFIG.PRICING[element.type] || 0, source: 'default' };
     }
 
@@ -15206,11 +16119,15 @@
       calculateQuote();
     }
 
-    // ===== QUOTE (Enhanced with Margins) =====
+    // ===== QUOTE (Enhanced with Margins & Linear Fill Calculation) =====
     function calculateQuote() {
       const items = {};
       let totalCost = 0;
       let totalRetail = 0;
+
+      // Filler pricing (per linear foot)
+      const FILLER_PRICE_PER_LF = 25; // $25 per linear foot for filler strips
+      const MIN_FILLER_WIDTH = 0.125; // 1.5" minimum (anything smaller is ignored)
 
       elements.forEach(el => {
         const priceInfo = getElementPrice(el);
@@ -15219,29 +16136,71 @@
         let baseCost = 0;
         let quantity = 1;
         let unit = el.priceUnit || 'unit';
+        let fillerCost = 0;
+        let fillerWidth = 0;
+        let boxCount = 1;
 
         // Calculate based on element type
         if (['countertop', 'backsplash', 'flooring', 'tile'].includes(el.type)) {
+          // Square footage pricing
           const sqft = el.width * el.height;
           baseCost = sqft * priceInfo.price;
           quantity = sqft;
           unit = 'sqft';
+        } else if (el.skuWidth && el.sku) {
+          // Cabinet from catalog with SKU - calculate linear fill
+          // If cabinet was resized beyond its original SKU width, calculate box count
+          const actualWidth = el.width;
+          const skuWidth = el.skuWidth;
+
+          if (actualWidth > skuWidth * 1.1) {
+            // Cabinet was stretched - calculate how many boxes needed
+            boxCount = Math.floor(actualWidth / skuWidth);
+            const remainder = actualWidth - (boxCount * skuWidth);
+
+            // Check if remainder needs a filler
+            if (remainder >= MIN_FILLER_WIDTH) {
+              fillerWidth = remainder;
+              fillerCost = fillerWidth * FILLER_PRICE_PER_LF;
+            }
+
+            // Price is per box * number of boxes
+            baseCost = priceInfo.price * boxCount;
+            quantity = boxCount;
+            unit = 'boxes';
+
+            // Store on element for display
+            el.boxCount = boxCount;
+            el.fillerWidth = fillerWidth;
+          } else {
+            // Single box
+            baseCost = priceInfo.price;
+            quantity = 1;
+            unit = 'unit';
+            el.boxCount = 1;
+            el.fillerWidth = 0;
+          }
         } else {
+          // Standard unit pricing
           baseCost = priceInfo.price;
           quantity = 1;
           unit = 'unit';
         }
 
-        const retailPrice = baseCost * (1 + margin / 100);
+        const retailPrice = (baseCost + fillerCost) * (1 + margin / 100);
+        const totalBaseCost = baseCost + fillerCost;
 
         // Store calculated prices on element for display
-        el.costPrice = baseCost;
+        el.costPrice = totalBaseCost;
         el.retailPrice = retailPrice;
 
-        // Group items by type and material
+        // Group items by SKU for cabinets, or type/material for others
         const materialName = getMaterialName(el.materialId);
-        const itemKey = el.materialId ? `${el.type}-${el.materialId}` : el.type;
-        const itemLabel = materialName ? `${el.label} (${materialName})` : el.label;
+        const itemKey = el.sku ? `cab-${el.sku}-${el.series || 'default'}` :
+                        (el.materialId ? `${el.type}-${el.materialId}` : el.type);
+        const itemLabel = el.sku ?
+                          `${el.skuName || el.sku}${boxCount > 1 ? ` (×${boxCount})` : ''}` :
+                          (materialName ? `${el.label} (${materialName})` : el.label);
 
         if (!items[itemKey]) {
           items[itemKey] = {
@@ -15250,22 +16209,54 @@
             retailTotal: 0,
             label: itemLabel,
             sqft: 0,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
             margin: margin,
-            priceSource: priceInfo.source
+            priceSource: priceInfo.source,
+            sku: el.sku || null
           };
         }
 
         items[itemKey].count++;
-        items[itemKey].costTotal += baseCost;
+        items[itemKey].costTotal += totalBaseCost;
         items[itemKey].retailTotal += retailPrice;
+        items[itemKey].boxCount += boxCount;
+        items[itemKey].fillerTotal += fillerWidth;
 
         if (unit === 'sqft') {
           items[itemKey].sqft += quantity;
         }
+        if (el.sku) {
+          items[itemKey].linearFt += el.width;
+        }
 
-        totalCost += baseCost;
+        totalCost += totalBaseCost;
         totalRetail += retailPrice;
       });
+
+      // Add filler items to the quote if any exist
+      const totalFiller = Object.values(items).reduce((sum, item) => sum + item.fillerTotal, 0);
+      if (totalFiller > MIN_FILLER_WIDTH) {
+        const fillerMargin = 30;
+        const fillerCost = totalFiller * FILLER_PRICE_PER_LF;
+        const fillerRetail = fillerCost * (1 + fillerMargin / 100);
+        items['filler-strips'] = {
+          count: 1,
+          costTotal: fillerCost,
+          retailTotal: fillerRetail,
+          label: `Filler Strips (${(totalFiller * 12).toFixed(1)}")`,
+          sqft: 0,
+          linearFt: totalFiller,
+          boxCount: 0,
+          fillerTotal: totalFiller,
+          margin: fillerMargin,
+          priceSource: 'standard',
+          sku: 'FILLER'
+        };
+        totalCost += fillerCost;
+        totalRetail += fillerRetail;
+      }
 
       renderQuoteItems(items, totalCost, totalRetail);
     }
@@ -15289,10 +16280,18 @@
           const sqftInfo = data.sqft > 0 ? ` - ${data.sqft.toFixed(1)} sqft` : '';
           const marginBadge = canViewCosts ? `<span class="margin-badge">${data.margin}%</span>` : '';
 
+          // Show box count for cabinets with SKU
+          let quantityInfo = `(${data.count})`;
+          if (data.sku && data.boxCount > 0) {
+            quantityInfo = data.boxCount > 1
+              ? `(${data.boxCount} boxes @ ${(data.linearFt * 12 / data.count).toFixed(0)}" linear)`
+              : `(${data.count})`;
+          }
+
           if (!canViewPrices) {
             return `
               <div class="quote-item">
-                <span class="quote-item-name">${data.label} (${data.count})${sqftInfo}</span>
+                <span class="quote-item-name">${data.label} ${quantityInfo}${sqftInfo}</span>
               </div>
             `;
           }
@@ -15300,7 +16299,7 @@
           return `
             <div class="quote-item">
               <span class="quote-item-name">
-                ${data.label} (${data.count})${sqftInfo}
+                ${data.label} ${quantityInfo}${sqftInfo}
                 ${marginBadge}
               </span>
               <span class="quote-item-value">
@@ -15766,7 +16765,7 @@
       const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
-      // Create new client with persistent session storage
+      // Create new client with persistent session storage and explicit headers
       if (window.supabase && window.supabase.createClient) {
         window._roomDesignerSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
@@ -15774,6 +16773,12 @@
             autoRefreshToken: true,
             detectSessionInUrl: true,
             storage: window.localStorage
+          },
+          global: {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
           }
         });
         // Also set as global so other components can use it
@@ -15785,12 +16790,28 @@
       return null;
     }
 
-    // Generate unique share token
-    function generateToken(length = 12) {
+    // Generate cryptographically secure share token
+    function generateToken(length = 16) {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
       let token = '';
-      for (let i = 0; i < length; i++) {
-        token += chars.charAt(Math.floor(Math.random() * chars.length));
+
+      // Use Web Crypto API for secure random values
+      if (window.crypto && window.crypto.getRandomValues) {
+        const randomValues = new Uint32Array(length);
+        crypto.getRandomValues(randomValues);
+        for (let i = 0; i < length; i++) {
+          token += chars.charAt(randomValues[i] % chars.length);
+        }
+      } else {
+        // Fallback for very old browsers - combine multiple entropy sources
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substring(2);
+        const combined = timestamp + random + performance.now().toString(36);
+        for (let i = 0; i < length; i++) {
+          const index = (combined.charCodeAt(i % combined.length) * (i + 1)) % chars.length;
+          token += chars.charAt(index);
+        }
+        console.warn('Using fallback token generation - crypto API not available');
       }
       return token;
     }
@@ -16210,6 +17231,9 @@
         quoteTotal += cost * (1 + margin / 100);
       });
 
+      // Save current room state before creating share data
+      saveCurrentRoomState();
+
       const designData = {
         user_id: user.id,
         name: projectName,
@@ -16229,19 +17253,33 @@
           },
           company_name: companyName
         },
+        // Multi-room support
+        rooms: rooms.map(room => ({
+          ...room,
+          elements: room.elements.map(el => ({ ...el, textureImg: null }))
+        })),
+        current_room_id: currentRoomId,
         quote_total: quoteTotal,
         share_mode: permission === 'full_collab' ? 'edit' : 'view',
         is_public: false
       };
 
       try {
-        const supabase = getSupabaseClient();
-        console.log('Supabase client:', supabase ? 'available' : 'NOT AVAILABLE');
+        // Use direct fetch to avoid Supabase client issues
+        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
-        if (!supabase) {
-          alert('Database connection unavailable. Please try again.');
-          return;
-        }
+        // Get auth token if logged in
+        const session = await window.SgAuth?.getSession?.();
+        const authToken = session?.access_token || SUPABASE_ANON_KEY;
+
+        const headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${authToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        };
 
         let designId = SHARE_STATE.designId;
         let designToken = SHARE_STATE.designToken;
@@ -16252,48 +17290,64 @@
           designToken = generateToken(16);
           console.log('Creating new design with token:', designToken);
 
-          const { data, error } = await supabase
-            .from('room_designs')
-            .insert({
-              share_token: designToken,
-              ...designData
-            })
-            .select()
-            .single();
+          const insertData = {
+            share_token: designToken,
+            ...designData
+          };
 
-          console.log('Insert result:', { data, error });
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/room_designs`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(insertData)
+          });
 
-          if (error) throw error;
-          designId = data.id;
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Insert failed: ${response.status} - ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('Insert result:', data);
+
+          designId = Array.isArray(data) ? data[0]?.id : data.id;
           SHARE_STATE.designId = designId;
           SHARE_STATE.designToken = designToken;
           console.log('Design created with ID:', designId);
         } else {
           // Update existing design
-          const { error } = await supabase
-            .from('room_designs')
-            .update({
-              ...designData,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', designId);
+          const updateData = {
+            ...designData,
+            updated_at: new Date().toISOString()
+          };
 
-          if (error) throw error;
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/room_designs?id=eq.${designId}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify(updateData)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Update failed: ${response.status} - ${errorText}`);
+          }
         }
 
         // Create share record with specific permission
         const shareToken = generateToken(12);
-        const { data: shareData, error: shareError } = await supabase
-          .from('room_design_shares')
-          .insert({
+        const shareResponse = await fetch(`${SUPABASE_URL}/rest/v1/room_design_shares`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
             design_id: designId,
             share_token: shareToken,
             permission_level: permission
           })
-          .select()
-          .single();
+        });
 
-        if (shareError) throw shareError;
+        if (!shareResponse.ok) {
+          const errorText = await shareResponse.text();
+          throw new Error(`Share insert failed: ${shareResponse.status} - ${errorText}`);
+        }
 
         // Display share URL
         const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareToken}`;
@@ -16305,12 +17359,43 @@
 
       } catch (err) {
         console.error('Share error:', err);
-        // Fallback to simple link
-        const token = generateToken(12);
-        const shareUrl = `${window.location.origin}${window.location.pathname}?p=${token}`;
+        // Fallback to localStorage for local testing
+        const token = generateToken(16);
+
+        // Save design to localStorage
+        const localDesign = {
+          id: token,
+          share_token: token,
+          name: projectName,
+          room_type: roomType,
+          room_width: roomWidth,
+          room_depth: roomDepth,
+          elements: elements.map(el => ({ ...el, textureImg: null })),
+          settings: {
+            walls: walls,
+            pricing_config: {
+              globalMargin: PRICING_STATE.globalMargin,
+              categoryMargins: PRICING_STATE.categoryMargins,
+              customPrices: PRICING_STATE.customPrices
+            },
+            company_name: companyName
+          },
+          quote_total: quoteTotal,
+          share_mode: permission === 'full_collab' ? 'edit' : 'view',
+          permission_level: permission,
+          created_at: new Date().toISOString()
+        };
+
+        // Store in localStorage
+        const localShares = JSON.parse(localStorage.getItem('roomDesignerLocalShares') || '{}');
+        localShares[token] = localDesign;
+        localStorage.setItem('roomDesignerLocalShares', JSON.stringify(localShares));
+
+        const shareUrl = `${window.location.origin}${window.location.pathname}?share=${token}`;
         document.getElementById('shareLink').value = shareUrl;
         document.getElementById('copyShareBtn').disabled = false;
-        document.getElementById('shareStatusText').textContent = 'Link generated (offline mode)';
+        document.getElementById('shareStatusText').textContent = 'Link generated (local mode - for testing)';
+        showToast('Share link created (local storage mode)', 'info');
       }
     }
 
@@ -16358,6 +17443,39 @@
         // Load elements and walls
         elements = design.elements || [];
         walls = design.walls || [];
+
+        // Load multi-room data if available
+        if (design.rooms && design.rooms.length > 0) {
+          rooms = design.rooms.map(room => ({
+            ...room,
+            elements: room.elements || [],
+            walls: room.walls || []
+          }));
+          currentRoomId = design.current_room_id || rooms[0].id;
+
+          // Load current room data
+          const currentRoom = getCurrentRoom();
+          if (currentRoom) {
+            elements = currentRoom.elements || [];
+            walls = currentRoom.walls || [];
+            roomWidth = currentRoom.width || roomWidth;
+            roomDepth = currentRoom.depth || roomDepth;
+          }
+
+          console.log('Loaded multi-room layout with', rooms.length, 'rooms');
+          updateRoomList();
+        } else {
+          // Single room - initialize rooms array
+          initializeRooms();
+          const firstRoom = getCurrentRoom();
+          if (firstRoom) {
+            firstRoom.elements = elements;
+            firstRoom.walls = walls;
+            firstRoom.width = roomWidth;
+            firstRoom.depth = roomDepth;
+          }
+          updateRoomList();
+        }
 
         console.log('Loaded elements:', elements.length);
         console.log('Loaded walls:', walls.length);
@@ -16429,67 +17547,123 @@
         console.log('Supabase client:', supabase ? 'available' : 'NOT AVAILABLE');
 
         if (!supabase) {
-          console.warn('Supabase not available for loading shared design');
+          console.warn('Supabase not available for loading shared design, trying localStorage...');
+
+          // Try localStorage fallback
+          const localShares = JSON.parse(localStorage.getItem('roomDesignerLocalShares') || '{}');
+          const localDesign = localShares[shareToken];
+
+          if (localDesign) {
+            console.log('Found design in localStorage:', localDesign.name);
+            loadDesignData(localDesign, localDesign.permission_level || 'full_collab');
+            showToast('Design loaded from local storage (offline mode)', 'info');
+            return;
+          }
+
           hidePreloader();
-          alert('Cannot load shared design - database connection unavailable');
+          showShareLinkError('Cannot load shared design - database connection unavailable. Please try again later.');
           return;
         }
 
+        // Use direct fetch to avoid Supabase client issues
+        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        const headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+
         // First try to get the share record by share_token
         console.log('Querying room_design_shares for token:', shareToken);
-        let { data: shareData, error: shareError } = await supabase
-          .from('room_design_shares')
-          .select('*')
-          .eq('share_token', shareToken)
-          .single();
+        let shareData = null;
+        let shareError = null;
 
-        console.log('Share query result:', { data: shareData, error: shareError });
+        try {
+          const shareRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/room_design_shares?share_token=eq.${shareToken}&select=*`,
+            { headers }
+          );
+          const shareResults = await shareRes.json();
+          shareData = shareResults.length > 0 ? shareResults[0] : null;
+          console.log('Share query result:', shareData);
+        } catch (e) {
+          shareError = e;
+          console.error('Share query error:', e);
+        }
 
         // If not found by share_token, try to find by design token directly
-        if (shareError || !shareData) {
+        if (!shareData) {
           console.log('Not found in shares, trying room_designs directly...');
-          const { data: directDesign, error: directError } = await supabase
-            .from('room_designs')
-            .select('*')
-            .eq('share_token', shareToken)
-            .single();
 
-          console.log('Direct design query result:', { data: directDesign, error: directError });
+          try {
+            const designRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/room_designs?share_token=eq.${shareToken}&select=*`,
+              { headers }
+            );
+            const designResults = await designRes.json();
+            const directDesign = designResults.length > 0 ? designResults[0] : null;
 
-          if (directDesign) {
-            // Found as a direct design link - load it directly
-            loadDesignData(directDesign, 'full_collab');
+            console.log('Direct design query result:', directDesign);
+
+            if (directDesign) {
+              // Found as a direct design link - load it directly
+              loadDesignData(directDesign, 'full_collab');
+              return;
+            }
+          } catch (e) {
+            console.error('Design query error:', e);
+          }
+
+          // Try localStorage fallback for local testing
+          console.log('Trying localStorage fallback...');
+          const localShares = JSON.parse(localStorage.getItem('roomDesignerLocalShares') || '{}');
+          const localDesign = localShares[shareToken];
+
+          if (localDesign) {
+            console.log('Found design in localStorage:', localDesign.name);
+            loadDesignData(localDesign, localDesign.permission_level || 'full_collab');
+            showToast('Design loaded from local storage', 'info');
             return;
           }
 
           console.error('Share error:', shareError);
-          alert('Share link not found or expired. Please ask for a new link.');
           hidePreloader();
+          showShareLinkError('Share link not found or expired. Please ask the designer for a new link.');
           return;
         }
 
-        // Then get the associated design
-        const { data: design, error: designError } = await supabase
-          .from('room_designs')
-          .select('*')
-          .eq('id', shareData.design_id)
-          .single();
+        // Then get the associated design using direct fetch
+        console.log('Loading design with id:', shareData.design_id);
+        let design = null;
+        try {
+          const designRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/room_designs?id=eq.${shareData.design_id}&select=*`,
+            { headers }
+          );
+          const designResults = await designRes.json();
+          design = designResults.length > 0 ? designResults[0] : null;
+        } catch (e) {
+          console.error('Design fetch error:', e);
+        }
 
-        if (designError || !design) {
-          console.error('Design error:', designError);
-          alert('Design not found');
+        if (!design) {
+          console.error('Design not found for id:', shareData.design_id);
           hidePreloader();
+          showShareLinkError('Design not found or has been deleted.');
           return;
         }
 
-        // Update access count
-        await supabase
-          .from('room_design_shares')
-          .update({
+        // Update access count (fire and forget, don't block on this)
+        fetch(`${SUPABASE_URL}/rest/v1/room_design_shares?id=eq.${shareData.id}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
             access_count: (shareData.access_count || 0) + 1,
             last_accessed_at: new Date().toISOString()
           })
-          .eq('id', shareData.id);
+        }).catch(e => console.warn('Could not update access count:', e));
 
         const permission = shareData.permission_level;
 
@@ -16498,8 +17672,50 @@
 
       } catch (err) {
         console.error('Load shared design error:', err);
-        alert('Error loading shared design: ' + err.message);
         hidePreloader();
+        showShareLinkError('Error loading shared design: ' + err.message);
+      }
+    }
+
+    // Show error overlay when share link fails to load
+    function showShareLinkError(message) {
+      // Hide the main canvas area and show error instead
+      const mainArea = document.querySelector('.main');
+      if (mainArea) {
+        mainArea.innerHTML = `
+          <div class="share-error-overlay" style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            z-index: 1000;
+            text-align: center;
+            padding: 40px;
+          ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="width: 80px; height: 80px; margin-bottom: 24px; opacity: 0.5;">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M15 9l-6 6M9 9l6 6"/>
+            </svg>
+            <h2 style="color: var(--text); margin: 0 0 16px 0; font-size: 24px;">Link Unavailable</h2>
+            <p style="color: var(--text-muted); margin: 0 0 32px 0; max-width: 400px; line-height: 1.6;">
+              ${message}
+            </p>
+            <div style="display: flex; gap: 12px;">
+              <a href="/tools/room-designer/" class="btn btn-primary" style="text-decoration: none;">
+                Start New Design
+              </a>
+              <a href="/" class="btn btn-secondary" style="text-decoration: none;">
+                Go to Homepage
+              </a>
+            </div>
+          </div>
+        `;
       }
     }
 
