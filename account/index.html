@@ -5243,7 +5243,100 @@
             </div>
             <div class="form-group">
               <label>ZIP Code</label>
-              <input type="text" id="new-lead-zip" placeholder="85374"/>
+              <input type="text" id="new-lead-zip" placeholder="85374" maxlength="5"/>
+            </div>
+          </div>
+
+          <!-- Billing Address Section -->
+          <div class="form-section" style="margin: 20px 0; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f9cb00" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 600; color: #f9cb00; text-transform: uppercase; letter-spacing: 0.5px;">Billing Address</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>Street Address</label>
+                <input type="text" id="new-lead-billing-street" placeholder="123 Main St"/>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Unit/Apt</label>
+                <input type="text" id="new-lead-billing-street2" placeholder="Apt 4B"/>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>City</label>
+                <input type="text" id="new-lead-billing-city" placeholder="Surprise"/>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>State</label>
+                <select id="new-lead-billing-state">
+                  <option value="AZ" selected>AZ</option>
+                  <option value="CA">CA</option>
+                  <option value="CO">CO</option>
+                  <option value="NV">NV</option>
+                  <option value="NM">NM</option>
+                  <option value="TX">TX</option>
+                  <option value="UT">UT</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>ZIP</label>
+                <input type="text" id="new-lead-billing-zip" placeholder="85374" maxlength="5"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Same Toggle -->
+          <div class="form-group" style="margin: 16px 0; padding: 12px 16px; background: rgba(249,203,0,0.05); border: 1px solid rgba(249,203,0,0.2); border-radius: 8px;">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="new-lead-address-same" checked onchange="toggleNewLeadServiceAddress()" style="width: 18px; height: 18px; accent-color: #f9cb00;"/>
+              <span style="font-size: 14px;">Service address is the same as billing address</span>
+            </label>
+          </div>
+
+          <!-- Service Address Section (hidden by default) -->
+          <div id="new-lead-service-address-section" style="display: none; margin: 20px 0; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f9cb00" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 600; color: #f9cb00; text-transform: uppercase; letter-spacing: 0.5px;">Service Address</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>Street Address</label>
+                <input type="text" id="new-lead-service-street" placeholder="456 Project Ave"/>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Unit/Apt</label>
+                <input type="text" id="new-lead-service-street2" placeholder=""/>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label>City</label>
+                <input type="text" id="new-lead-service-city" placeholder="Surprise"/>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>State</label>
+                <select id="new-lead-service-state">
+                  <option value="AZ" selected>AZ</option>
+                  <option value="CA">CA</option>
+                  <option value="CO">CO</option>
+                  <option value="NV">NV</option>
+                  <option value="NM">NM</option>
+                  <option value="TX">TX</option>
+                  <option value="UT">UT</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>ZIP</label>
+                <input type="text" id="new-lead-service-zip" placeholder="85374" maxlength="5"/>
+              </div>
             </div>
           </div>
 
@@ -9122,6 +9215,27 @@
 
     function closeAddLeadModal() {
       document.getElementById('add-lead-modal').classList.remove('active');
+      // Reset service address section
+      document.getElementById('new-lead-address-same').checked = true;
+      document.getElementById('new-lead-service-address-section').style.display = 'none';
+    }
+
+    function toggleNewLeadServiceAddress() {
+      const checkbox = document.getElementById('new-lead-address-same');
+      const serviceSection = document.getElementById('new-lead-service-address-section');
+
+      if (checkbox.checked) {
+        serviceSection.style.display = 'none';
+        // Clear service address fields
+        document.getElementById('new-lead-service-street').value = '';
+        document.getElementById('new-lead-service-street2').value = '';
+        document.getElementById('new-lead-service-city').value = '';
+        document.getElementById('new-lead-service-zip').value = '';
+      } else {
+        serviceSection.style.display = 'block';
+        // Animate in
+        serviceSection.style.animation = 'fadeSlideIn 0.3s ease';
+      }
     }
 
     async function saveNewLead(event) {
@@ -9136,6 +9250,34 @@
         const lastName = document.getElementById('new-lead-last-name').value.trim();
         const fullName = `${firstName} ${lastName}`.trim();
 
+        // Collect billing address
+        const billingStreet = document.getElementById('new-lead-billing-street').value.trim();
+        const billingAddress = billingStreet ? {
+          street: billingStreet,
+          street2: document.getElementById('new-lead-billing-street2').value.trim() || null,
+          city: document.getElementById('new-lead-billing-city').value.trim() || null,
+          state: document.getElementById('new-lead-billing-state').value || null,
+          zip: document.getElementById('new-lead-billing-zip').value.trim() || null
+        } : null;
+
+        // Check if service address is same as billing
+        const addressSame = document.getElementById('new-lead-address-same').checked;
+
+        // Collect service address if different
+        let serviceAddress = null;
+        if (!addressSame) {
+          const serviceStreet = document.getElementById('new-lead-service-street').value.trim();
+          if (serviceStreet) {
+            serviceAddress = {
+              street: serviceStreet,
+              street2: document.getElementById('new-lead-service-street2').value.trim() || null,
+              city: document.getElementById('new-lead-service-city').value.trim() || null,
+              state: document.getElementById('new-lead-service-state').value || null,
+              zip: document.getElementById('new-lead-service-zip').value.trim() || null
+            };
+          }
+        }
+
         const leadData = {
           full_name: fullName,
           first_name: firstName,
@@ -9148,7 +9290,11 @@
           source: document.getElementById('new-lead-source').value,
           status: document.getElementById('new-lead-status').value,
           form_name: 'manual-entry',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          // Address fields
+          billing_address: billingAddress,
+          service_address: serviceAddress,
+          address_same: addressSame
         };
 
         const { data, error } = await supabaseClient

@@ -1,0 +1,502 @@
+/* =============================================
+   UNIFIED LEAD FORM - Shared Styles
+   Surprise Granite Design System
+   ============================================= */
+
+:root {
+  /* Brand Colors */
+  --ulf-gold: #f9cb00;
+  --ulf-gold-dark: #e6b800;
+  --ulf-gold-glow: rgba(249, 203, 0, 0.2);
+
+  /* Dark Theme */
+  --ulf-bg-dark: #1a1a2e;
+  --ulf-bg-surface: #12121a;
+  --ulf-bg-elevated: #1e1e2d;
+  --ulf-bg-input: rgba(255, 255, 255, 0.03);
+
+  /* Light Theme */
+  --ulf-bg-light: #ffffff;
+  --ulf-bg-light-surface: #f8f9fa;
+
+  /* Typography */
+  --ulf-text-primary: #ffffff;
+  --ulf-text-secondary: rgba(255, 255, 255, 0.75);
+  --ulf-text-muted: rgba(255, 255, 255, 0.5);
+  --ulf-text-dark: #1a1a2e;
+
+  /* Borders */
+  --ulf-border: rgba(255, 255, 255, 0.1);
+  --ulf-border-light: rgba(0, 0, 0, 0.1);
+  --ulf-border-focus: var(--ulf-gold);
+
+  /* Radius */
+  --ulf-radius-sm: 8px;
+  --ulf-radius: 12px;
+  --ulf-radius-lg: 20px;
+
+  /* Shadows */
+  --ulf-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --ulf-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.25);
+
+  /* Transitions */
+  --ulf-transition: 0.2s ease;
+  --ulf-transition-slow: 0.3s ease;
+}
+
+/* =============================================
+   BASE FORM CONTAINER
+   ============================================= */
+
+.ulf-form {
+  width: 100%;
+  max-width: 100%;
+}
+
+.ulf-form--dark {
+  background: var(--ulf-bg-surface);
+  color: var(--ulf-text-primary);
+}
+
+.ulf-form--light {
+  background: var(--ulf-bg-light);
+  color: var(--ulf-text-dark);
+}
+
+/* =============================================
+   FORM SECTIONS
+   ============================================= */
+
+.ulf-section {
+  margin-bottom: 24px;
+}
+
+.ulf-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ulf-border);
+}
+
+.ulf-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ulf-gold);
+  margin: 0;
+}
+
+.ulf-section-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ulf-gold);
+}
+
+/* =============================================
+   INPUT GROUPS
+   ============================================= */
+
+.ulf-input-group {
+  margin-bottom: 16px;
+}
+
+.ulf-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.ulf-label .ulf-required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.ulf-input,
+.ulf-select,
+.ulf-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid var(--ulf-border);
+  border-radius: var(--ulf-radius);
+  background: var(--ulf-bg-input);
+  color: inherit;
+  transition: var(--ulf-transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ulf-form--light .ulf-input,
+.ulf-form--light .ulf-select,
+.ulf-form--light .ulf-textarea {
+  border-color: var(--ulf-border-light);
+  background: var(--ulf-bg-light-surface);
+}
+
+.ulf-input::placeholder,
+.ulf-textarea::placeholder {
+  color: var(--ulf-text-muted);
+}
+
+.ulf-input:focus,
+.ulf-select:focus,
+.ulf-textarea:focus {
+  outline: none;
+  border-color: var(--ulf-gold);
+  box-shadow: 0 0 0 3px var(--ulf-gold-glow);
+}
+
+.ulf-input:invalid:not(:placeholder-shown) {
+  border-color: #ef4444;
+}
+
+.ulf-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.ulf-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* =============================================
+   INPUT ROWS (Side by side)
+   ============================================= */
+
+.ulf-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ulf-row > .ulf-input-group {
+  flex: 1;
+  min-width: 120px;
+}
+
+.ulf-row > .ulf-input-group.ulf-flex-2 {
+  flex: 2;
+}
+
+.ulf-row > .ulf-input-group.ulf-flex-3 {
+  flex: 3;
+}
+
+/* =============================================
+   ADDRESS SECTION
+   ============================================= */
+
+.ulf-address-section {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--ulf-border);
+  border-radius: var(--ulf-radius);
+  margin-bottom: 16px;
+}
+
+.ulf-form--light .ulf-address-section {
+  background: var(--ulf-bg-light-surface);
+  border-color: var(--ulf-border-light);
+}
+
+.ulf-address-section .ulf-section-header {
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Address Toggle Checkbox */
+.ulf-address-toggle {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: rgba(249, 203, 0, 0.05);
+  border: 1px solid rgba(249, 203, 0, 0.2);
+  border-radius: var(--ulf-radius);
+}
+
+.ulf-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  user-select: none;
+}
+
+.ulf-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ulf-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: var(--ulf-transition);
+  flex-shrink: 0;
+}
+
+.ulf-checkbox:checked {
+  background: var(--ulf-gold);
+  border-color: var(--ulf-gold);
+}
+
+.ulf-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--ulf-bg-dark);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ulf-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ulf-gold-glow);
+}
+
+/* Service Address Reveal Animation */
+.ulf-service-address {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+  margin-top: 0;
+}
+
+.ulf-service-address.ulf-visible {
+  max-height: 400px;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+.ulf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--ulf-radius);
+  cursor: pointer;
+  transition: var(--ulf-transition);
+  text-decoration: none;
+}
+
+.ulf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ulf-btn--primary {
+  background: var(--ulf-gold);
+  color: var(--ulf-bg-dark);
+}
+
+.ulf-btn--primary:hover:not(:disabled) {
+  background: var(--ulf-gold-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--ulf-gold-glow);
+}
+
+.ulf-btn--secondary {
+  background: transparent;
+  color: var(--ulf-text-primary);
+  border: 1px solid var(--ulf-border);
+}
+
+.ulf-btn--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--ulf-text-secondary);
+}
+
+.ulf-form--light .ulf-btn--secondary {
+  color: var(--ulf-text-dark);
+  border-color: var(--ulf-border-light);
+}
+
+.ulf-btn--full {
+  width: 100%;
+}
+
+.ulf-btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* =============================================
+   FORM FOOTER
+   ============================================= */
+
+.ulf-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ulf-border);
+}
+
+.ulf-footer--stacked {
+  flex-direction: column;
+}
+
+/* =============================================
+   VALIDATION STATES
+   ============================================= */
+
+.ulf-input-group.ulf-error .ulf-input,
+.ulf-input-group.ulf-error .ulf-select,
+.ulf-input-group.ulf-error .ulf-textarea {
+  border-color: #ef4444;
+}
+
+.ulf-error-message {
+  display: none;
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.ulf-input-group.ulf-error .ulf-error-message {
+  display: block;
+}
+
+.ulf-input-group.ulf-success .ulf-input,
+.ulf-input-group.ulf-success .ulf-select {
+  border-color: #22c55e;
+}
+
+/* =============================================
+   LOADING STATE
+   ============================================= */
+
+.ulf-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ulf-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: ulf-spin 0.8s linear infinite;
+}
+
+@keyframes ulf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================
+   SUCCESS STATE
+   ============================================= */
+
+.ulf-success-message {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.ulf-success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  color: #22c55e;
+}
+
+.ulf-success-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ulf-success-text {
+  color: var(--ulf-text-secondary);
+  margin-bottom: 24px;
+}
+
+/* =============================================
+   MOBILE RESPONSIVE
+   ============================================= */
+
+@media (max-width: 640px) {
+  .ulf-row {
+    flex-direction: column;
+  }
+
+  .ulf-row > .ulf-input-group {
+    min-width: 100%;
+  }
+
+  .ulf-footer {
+    flex-direction: column-reverse;
+  }
+
+  .ulf-btn {
+    width: 100%;
+  }
+
+  .ulf-input,
+  .ulf-select,
+  .ulf-textarea {
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+
+  .ulf-address-section {
+    padding: 12px;
+  }
+}
+
+/* =============================================
+   STATE SELECT DROPDOWN
+   ============================================= */
+
+.ulf-state-select {
+  min-width: 80px;
+}
+
+/* =============================================
+   PHONE INPUT FORMATTING
+   ============================================= */
+
+.ulf-input[data-format="phone"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================
+   ZIP CODE INPUT
+   ============================================= */
+
+.ulf-input[data-format="zip"] {
+  max-width: 100px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 640px) {
+  .ulf-input[data-format="zip"] {
+    max-width: 100%;
+  }
+}

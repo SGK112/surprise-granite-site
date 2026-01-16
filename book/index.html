@@ -907,10 +907,51 @@
           <label class="form-label">Email <span class="required">*</span></label>
           <input type="email" class="form-input" id="inputEmail" placeholder="john@example.com" required>
         </div>
-        <div class="form-group full-width">
-          <label class="form-label">Project Address <span class="required">*</span></label>
-          <input type="text" class="form-input" id="inputAddress" placeholder="123 Main St, Surprise, AZ" required>
+        <!-- Service/Project Address Section -->
+        <div class="form-group full-width" style="margin-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f9cb00" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span style="font-size: 13px; font-weight: 600; color: #f9cb00; text-transform: uppercase; letter-spacing: 0.5px;">Service Address</span>
+          </div>
+          <div class="form-grid" style="gap: 12px;">
+            <div class="form-group" style="flex: 2; margin-bottom: 0;">
+              <label class="form-label">Street Address <span class="required">*</span></label>
+              <input type="text" class="form-input" id="inputStreet" placeholder="123 Main St" required>
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label">Unit/Apt</label>
+              <input type="text" class="form-input" id="inputStreet2" placeholder="Apt 4B">
+            </div>
+          </div>
+          <div class="form-grid" style="gap: 12px; margin-top: 12px;">
+            <div class="form-group" style="flex: 2; margin-bottom: 0;">
+              <label class="form-label">City <span class="required">*</span></label>
+              <input type="text" class="form-input" id="inputCity" placeholder="Surprise" required>
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label">State</label>
+              <select class="form-select" id="inputState">
+                <option value="AZ" selected>AZ</option>
+                <option value="CA">CA</option>
+                <option value="CO">CO</option>
+                <option value="NV">NV</option>
+                <option value="NM">NM</option>
+                <option value="TX">TX</option>
+                <option value="UT">UT</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label">ZIP <span class="required">*</span></label>
+              <input type="text" class="form-input" id="inputZip" placeholder="85374" maxlength="5" required>
+            </div>
+          </div>
+          <!-- Hidden field for backward compatibility -->
+          <input type="hidden" id="inputAddress">
         </div>
+
         <div class="form-group">
           <label class="form-label">Project Type</label>
           <select class="form-select" id="inputProjectType">
@@ -1330,9 +1371,23 @@
           var name = document.getElementById('inputName').value.trim();
           var phone = document.getElementById('inputPhone').value.trim();
           var email = document.getElementById('inputEmail').value.trim();
-          var address = document.getElementById('inputAddress').value.trim();
 
-          if (!name || !phone || !email || !address) {
+          // Collect address fields
+          var street = document.getElementById('inputStreet').value.trim();
+          var street2 = document.getElementById('inputStreet2').value.trim();
+          var city = document.getElementById('inputCity').value.trim();
+          var state = document.getElementById('inputState').value;
+          var zip = document.getElementById('inputZip').value.trim();
+
+          // Build full address string
+          var address = street;
+          if (street2) address += ' ' + street2;
+          address += ', ' + city + ', ' + state + ' ' + zip;
+
+          // Set hidden field for backward compatibility
+          document.getElementById('inputAddress').value = address;
+
+          if (!name || !phone || !email || !street || !city || !zip) {
             alert('Please fill in all required fields.');
             return;
           }
