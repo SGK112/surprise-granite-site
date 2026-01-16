@@ -1012,6 +1012,16 @@
       nextBtn.disabled = true;
       nextBtn.innerHTML = 'Booking...';
 
+      // Format scheduled time
+      const scheduledDate = this.state.date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      const hour = parseInt(this.state.time);
+      const scheduledTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
+
       const booking = {
         service: this.state.service,
         answers: this.state.answers,
@@ -1024,23 +1034,62 @@
         tenant: this.config.businessName
       };
 
-      try {
-        // Send to API
-        if (this.config.apiEndpoint) {
-          await fetch(`${this.config.apiEndpoint}/bookings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(booking)
-          });
+      // Format as lead for Supabase
+      const leadData = {
+        first_name: this.state.contact.firstName,
+        last_name: this.state.contact.lastName,
+        full_name: `${this.state.contact.firstName} ${this.state.contact.lastName}`,
+        email: this.state.contact.email,
+        phone: this.state.contact.phone,
+        project_type: this.state.service,
+        message: `SCHEDULED CONSULTATION\nDate: ${scheduledDate}\nTime: ${scheduledTime}\nService: ${this.state.service}\nTimeline: ${this.state.answers?.timeline || 'Not specified'}\nBudget: ${this.state.answers?.budget || 'Not specified'}`,
+        source: 'remodely-booking-widget',
+        form_name: 'booking-consultation',
+        page_url: window.location.href,
+        status: 'new',
+        timeline: this.state.answers?.timeline || null,
+        budget: this.state.answers?.budget || null,
+        service_address: this.state.contact.serviceAddress || null,
+        raw_data: {
+          scheduled_date: this.state.date.toISOString(),
+          scheduled_time: this.state.time,
+          scheduled_display: `${scheduledDate} at ${scheduledTime}`,
+          service: this.state.service,
+          answers: this.state.answers,
+          lead_score: this.state.leadScore
         }
+      };
 
-        // Send to webhook
+      try {
+        // Send to Supabase directly
+        const supabaseUrl = this.config.supabaseUrl || 'https://ypeypgwsycxcagncgdur.supabase.co';
+        const supabaseKey = this.config.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+        await fetch(`${supabaseUrl}/rest/v1/leads`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(leadData)
+        });
+
+        // Also send to Email API
+        await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        }).catch(e => console.log('Email API error:', e));
+
+        // Send to webhook if configured
         if (this.config.webhookUrl) {
           await fetch(this.config.webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(booking)
-          });
+          }).catch(e => console.log('Webhook error:', e));
         }
 
         this.trackEvent('booking_completed', booking);
