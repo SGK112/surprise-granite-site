@@ -10,6 +10,7 @@
   <!-- Three.js for 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -5057,6 +5058,7 @@
       <div class="header-center">
         <button class="view-btn active" id="view2D" onclick="setView('2d')">2D Plan</button>
         <button class="view-btn" id="view3D" onclick="setView('3d')">3D View</button>
+        <button class="view-btn" id="viewDetailedModel" onclick="previewDetailedCabinetModel()" title="Preview imported 3D cabinet model">Preview Model</button>
       </div>
 
       <div class="header-right">
@@ -7140,6 +7142,48 @@
       activePriceList: null,      // Currently active price list name
       customPrices: {}            // Temporary price overrides from Excel import
     };
+
+    // ===== 3D MODEL CACHE =====
+    const MODEL_CACHE = {
+      kitchenCabinets: null,
+      loadingPromise: null
+    };
+
+    // GLB Model Loader
+    async function loadGLBModel(url) {
+      return new Promise((resolve, reject) => {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          url,
+          (gltf) => {
+            console.log('GLB model loaded successfully');
+            resolve(gltf);
+          },
+          (progress) => {
+            const pct = (progress.loaded / progress.total * 100).toFixed(1);
+            console.log(`Loading 3D model: ${pct}%`);
+          },
+          (error) => {
+            console.error('Error loading GLB model:', error);
+            reject(error);
+          }
+        );
+      });
+    }
+
+    // Load kitchen cabinets model
+    async function getKitchenCabinetsModel() {
+      if (MODEL_CACHE.kitchenCabinets) {
+        return MODEL_CACHE.kitchenCabinets.scene.clone();
+      }
+      if (MODEL_CACHE.loadingPromise) {
+        await MODEL_CACHE.loadingPromise;
+        return MODEL_CACHE.kitchenCabinets.scene.clone();
+      }
+      MODEL_CACHE.loadingPromise = loadGLBModel('/tools/room-designer/assets/models/kitchen-cabinets.glb');
+      MODEL_CACHE.kitchenCabinets = await MODEL_CACHE.loadingPromise;
+      return MODEL_CACHE.kitchenCabinets.scene.clone();
+    }
 
     const SHARE_STATE = {
       designId: null,             // Supabase design ID
@@ -18045,6 +18089,86 @@
         init3D();
         render3D();
       }
+    }
+
+    // ===== DETAILED MODEL PREVIEW =====
+    async function previewDetailedCabinetModel() {
+      try {
+        // Switch to 3D view if not already
+        if (currentView !== '3d') {
+          setView('3d');
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait for view switch
+        }
+
+        const btn = document.getElementById('viewDetailedModel');
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+
+        // Load the detailed cabinet model
+        const modelClone = await getKitchenCabinetsModel();
+
+        if (modelClone && scene) {
+          // Remove any existing preview model
+          const existingPreview = scene.getObjectByName('detailedPreviewModel');
+          if (existingPreview) {
+            scene.remove(existingPreview);
+          }
+
+          // Add the loaded model to the scene
+          modelClone.name = 'detailedPreviewModel';
+
+          // Calculate bounding box to scale and position model
+          const box = new THREE.Box3().setFromObject(modelClone);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+
+          // Scale model to fit in a 10ft x 10ft area (reasonable kitchen scale)
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = maxDim > 0 ? 10 / maxDim : 1;
+          modelClone.scale.setScalar(scale);
+
+          // Position at center of room
+          modelClone.position.set(
+            roomWidth / 2 - center.x * scale,
+            0 - box.min.y * scale,
+            roomDepth / 2 - center.z * scale
+          );
+
+          // Add shadows to all meshes
+          modelClone.traverse(child => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          scene.add(modelClone);
+
+          // Position camera to see the model
+          if (camera && controls) {
+            camera.position.set(roomWidth / 2 + 12, 8, roomDepth / 2 + 12);
+            controls.target.set(roomWidth / 2, 3, roomDepth / 2);
+            controls.update();
+          }
+
+          btn.textContent = 'Model Loaded';
+          console.log('Detailed cabinet model added to scene');
+        } else {
+          btn.textContent = 'Preview Model';
+          console.warn('Could not load model or scene not available');
+        }
+      } catch (error) {
+        console.error('Error loading detailed model:', error);
+        const btn = document.getElementById('viewDetailedModel');
+        btn.textContent = 'Load Failed';
+        setTimeout(() => {
+          btn.textContent = 'Preview Model';
+          btn.disabled = false;
+        }, 2000);
+      }
+
+      const btn = document.getElementById('viewDetailedModel');
+      btn.disabled = false;
     }
 
     // ===== 3D VIEW =====
