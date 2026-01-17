@@ -35,44 +35,64 @@
         if (window._sgSupabaseClient) {
           supabaseClient = window._sgSupabaseClient;
         } else {
-          console.error('SG Auth: Global Supabase client not found');
+          console.warn('SG Auth: Global Supabase client not found, continuing without auth');
+          isInitialized = true;
           return;
         }
 
-        // Get current session
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        // Get current session with error handling for AbortError
+        try {
+          const { data: { session }, error } = await supabaseClient.auth.getSession();
 
-        if (session && !error) {
-          currentUser = session.user;
-          await loadUserProfile();
-          console.log('SG Auth: User logged in', currentUser.email);
+          if (session && !error) {
+            currentUser = session.user;
+            await loadUserProfile();
+            console.log('SG Auth: User logged in', currentUser.email);
+          }
+        } catch (sessionErr) {
+          // AbortError happens when page is refreshing or network issues
+          if (sessionErr.name === 'AbortError') {
+            console.log('SG Auth: Session check aborted (page refresh or network)');
+          } else {
+            console.warn('SG Auth: Session check error', sessionErr.message);
+          }
+          // Continue without session - user can log in manually
         }
 
         // Listen for auth changes
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-          console.log('SG Auth: State change', event);
+        try {
+          supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            console.log('SG Auth: State change', event);
 
-          if (event === 'SIGNED_IN' && session) {
-            currentUser = session.user;
-            await loadUserProfile();
-            notifyListeners('login', { user: currentUser, profile: userProfile });
-            updateNavUI();
-          } else if (event === 'SIGNED_OUT') {
-            currentUser = null;
-            userProfile = null;
-            notifyListeners('logout', null);
-            updateNavUI();
-          } else if (event === 'TOKEN_REFRESHED') {
-            console.log('SG Auth: Token refreshed');
-          }
-        });
+            if (event === 'SIGNED_IN' && session) {
+              currentUser = session.user;
+              await loadUserProfile();
+              notifyListeners('login', { user: currentUser, profile: userProfile });
+              updateNavUI();
+            } else if (event === 'SIGNED_OUT') {
+              currentUser = null;
+              userProfile = null;
+              notifyListeners('logout', null);
+              updateNavUI();
+            } else if (event === 'TOKEN_REFRESHED') {
+              console.log('SG Auth: Token refreshed');
+            }
+          });
+        } catch (listenerErr) {
+          console.warn('SG Auth: Could not set up auth listener', listenerErr.message);
+        }
 
         isInitialized = true;
         updateNavUI();
         notifyListeners('init', { user: currentUser, profile: userProfile });
 
       } catch (e) {
-        console.error('SG Auth: Init error', e);
+        // Handle AbortError specifically - it's usually benign (page refresh, etc)
+        if (e.name === 'AbortError') {
+          console.log('SG Auth: Init aborted (page refresh or navigation)');
+        } else {
+          console.error('SG Auth: Init error', e);
+        }
         isInitialized = true;
       }
     })();

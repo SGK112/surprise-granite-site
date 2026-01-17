@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room Designer - Test Suite</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 { color: #22c55e; margin-bottom: 20px; }
+    h2 { color: #60a5fa; margin: 20px 0 10px; font-size: 18px; }
+    .test-container { max-width: 900px; margin: 0 auto; }
+    .test-group {
+      background: #252542;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .test-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 6px 0;
+      background: #1a1a2e;
+    }
+    .test-item.pass { border-left: 4px solid #22c55e; }
+    .test-item.fail { border-left: 4px solid #ef4444; }
+    .test-item.pending { border-left: 4px solid #f59e0b; }
+    .test-item.running { border-left: 4px solid #60a5fa; }
+    .test-status {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 14px;
+    }
+    .pass .test-status { background: #22c55e; }
+    .fail .test-status { background: #ef4444; }
+    .pending .test-status { background: #f59e0b; }
+    .running .test-status { background: #60a5fa; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .test-name { flex: 1; }
+    .test-time { color: #888; font-size: 12px; margin-left: 10px; }
+    .test-error { color: #ef4444; font-size: 12px; margin-top: 6px; padding-left: 36px; }
+    .summary {
+      background: linear-gradient(135deg, #252542, #1a1a2e);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+    }
+    .summary-item {
+      text-align: center;
+      flex: 1;
+    }
+    .summary-value {
+      font-size: 36px;
+      font-weight: bold;
+    }
+    .summary-label { color: #888; font-size: 14px; }
+    .pass-value { color: #22c55e; }
+    .fail-value { color: #ef4444; }
+    .total-value { color: #60a5fa; }
+    .btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn:hover { background: #16a34a; }
+    .btn:disabled { background: #444; cursor: not-allowed; }
+    .btn-secondary { background: #60a5fa; }
+    .btn-secondary:hover { background: #3b82f6; }
+    .console {
+      background: #0d0d1a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+    }
+    .console-line { padding: 2px 0; }
+    .console-line.info { color: #60a5fa; }
+    .console-line.success { color: #22c55e; }
+    .console-line.error { color: #ef4444; }
+    .console-line.warn { color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>Room Designer Test Suite</h1>
+
+    <div class="summary">
+      <div class="summary-item">
+        <div class="summary-value total-value" id="totalTests">0</div>
+        <div class="summary-label">Total Tests</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value pass-value" id="passedTests">0</div>
+        <div class="summary-label">Passed</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value fail-value" id="failedTests">0</div>
+        <div class="summary-label">Failed</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value" id="testDuration" style="color: #888;">0ms</div>
+        <div class="summary-label">Duration</div>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn" id="runAllBtn" onclick="runAllTests()">Run All Tests</button>
+      <button class="btn btn-secondary" onclick="runApprovalTests()">Test Approval Flow</button>
+      <button class="btn btn-secondary" onclick="clearResults()">Clear</button>
+    </div>
+
+    <div id="testResults"></div>
+
+    <div class="console" id="console"></div>
+  </div>
+
+  <script>
+    // Test Framework
+    const testResults = [];
+    let startTime = 0;
+
+    function log(message, type = 'info') {
+      const console = document.getElementById('console');
+      const line = document.createElement('div');
+      line.className = `console-line ${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      console.appendChild(line);
+      console.scrollTop = console.scrollHeight;
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message || 'Assertion failed');
+      }
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message || 'Assertion failed'}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+      }
+    }
+
+    function assertContains(str, substr, message) {
+      if (!str.includes(substr)) {
+        throw new Error(`${message || 'Assertion failed'}: "${substr}" not found in "${str.substring(0, 100)}..."`);
+      }
+    }
+
+    async function runTest(name, testFn) {
+      const result = { name, status: 'running', time: 0, error: null };
+      testResults.push(result);
+      renderResults();
+
+      const testStart = performance.now();
+      try {
+        log(`Running: ${name}`);
+        await testFn();
+        result.status = 'pass';
+        result.time = Math.round(performance.now() - testStart);
+        log(`PASS: ${name} (${result.time}ms)`, 'success');
+      } catch (error) {
+        result.status = 'fail';
+        result.error = error.message;
+        result.time = Math.round(performance.now() - testStart);
+        log(`FAIL: ${name} - ${error.message}`, 'error');
+      }
+      renderResults();
+      return result;
+    }
+
+    function renderResults() {
+      const container = document.getElementById('testResults');
+      const groups = {};
+
+      testResults.forEach(test => {
+        const group = test.name.split(':')[0] || 'General';
+        if (!groups[group]) groups[group] = [];
+        groups[group].push(test);
+      });
+
+      let html = '';
+      for (const [groupName, tests] of Object.entries(groups)) {
+        html += `<h2>${groupName}</h2><div class="test-group">`;
+        tests.forEach(test => {
+          const icon = test.status === 'pass' ? '✓' : test.status === 'fail' ? '✗' : test.status === 'running' ? '◌' : '○';
+          html += `
+            <div class="test-item ${test.status}">
+              <div class="test-status">${icon}</div>
+              <div class="test-name">${test.name.split(':').slice(1).join(':') || test.name}</div>
+              <div class="test-time">${test.time}ms</div>
+            </div>
+            ${test.error ? `<div class="test-error">${test.error}</div>` : ''}
+          `;
+        });
+        html += '</div>';
+      }
+      container.innerHTML = html;
+
+      // Update summary
+      const passed = testResults.filter(t => t.status === 'pass').length;
+      const failed = testResults.filter(t => t.status === 'fail').length;
+      document.getElementById('totalTests').textContent = testResults.length;
+      document.getElementById('passedTests').textContent = passed;
+      document.getElementById('failedTests').textContent = failed;
+      document.getElementById('testDuration').textContent = `${Date.now() - startTime}ms`;
+    }
+
+    function clearResults() {
+      testResults.length = 0;
+      document.getElementById('testResults').innerHTML = '';
+      document.getElementById('console').innerHTML = '';
+      document.getElementById('totalTests').textContent = '0';
+      document.getElementById('passedTests').textContent = '0';
+      document.getElementById('failedTests').textContent = '0';
+      document.getElementById('testDuration').textContent = '0ms';
+    }
+
+    // Fetch main designer HTML for parsing
+    let designerHTML = '';
+    let designerLoaded = false;
+
+    async function loadDesigner() {
+      if (designerLoaded) return designerHTML;
+      log('Loading room designer code...');
+      try {
+        const response = await fetch('/tools/room-designer/index.html');
+        designerHTML = await response.text();
+        designerLoaded = true;
+        log('Designer code loaded successfully', 'success');
+        return designerHTML;
+      } catch (error) {
+        log('Failed to load designer: ' + error.message, 'error');
+        throw error;
+      }
+    }
+
+    // ============ PERMISSION LEVEL TESTS ============
+    async function testPermissionLevels() {
+      await runTest('Permissions: quote_approval level exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'quote_approval:', 'quote_approval permission level should exist');
+      });
+
+      await runTest('Permissions: quote_approval has canApprove true', async () => {
+        const html = await loadDesigner();
+        // Check the permission definition includes canApprove: true
+        const quoteApprovalMatch = html.match(/quote_approval:\s*\{[^}]+\}/s);
+        assert(quoteApprovalMatch, 'quote_approval permission block not found');
+        assertContains(quoteApprovalMatch[0], 'canApprove: true', 'quote_approval should have canApprove: true');
+      });
+
+      await runTest('Permissions: quote_approval has canViewPrices true', async () => {
+        const html = await loadDesigner();
+        const quoteApprovalMatch = html.match(/quote_approval:\s*\{[^}]+\}/s);
+        assert(quoteApprovalMatch, 'quote_approval permission block not found');
+        assertContains(quoteApprovalMatch[0], 'canViewPrices: true', 'quote_approval should have canViewPrices: true');
+      });
+
+      await runTest('Permissions: quote_approval cannot edit', async () => {
+        const html = await loadDesigner();
+        const quoteApprovalMatch = html.match(/quote_approval:\s*\{[^}]+\}/s);
+        assert(quoteApprovalMatch, 'quote_approval permission block not found');
+        assertContains(quoteApprovalMatch[0], 'canEdit: false', 'quote_approval should have canEdit: false');
+      });
+    }
+
+    // ============ SHARE MODAL TESTS ============
+    async function testShareModal() {
+      await runTest('Share Modal: Send for Approval option exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'Send for Approval', 'Send for Approval button text should exist');
+      });
+
+      await runTest('Share Modal: quote_approval button has green styling', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "data-permission=\"quote_approval\"", 'quote_approval data attribute should exist');
+        // Check for green gradient styling
+        assertContains(html, '#22c55e', 'Green color should be present for approval button');
+      });
+
+      await runTest('Share Modal: quote_approval option description', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'Customer reviews quote & pays to approve', 'Approval description should exist');
+      });
+
+      await runTest('Share Modal: setSharePermission function handles quote_approval', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "setSharePermission('quote_approval'", 'setSharePermission call for quote_approval should exist');
+      });
+    }
+
+    // ============ APPROVE & PAY BUTTON TESTS ============
+    async function testApprovePayButton() {
+      await runTest('Approve Button: Approve & Pay button exists in review', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'Approve & Pay Deposit', 'Approve & Pay Deposit button should exist');
+      });
+
+      await runTest('Approve Button: Button has correct onclick handler', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'onclick="approveAndPay()"', 'approveAndPay onclick handler should exist');
+      });
+
+      await runTest('Approve Button: Shows only for quote_approval permission', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "permission === 'quote_approval'", 'Conditional check for quote_approval should exist');
+      });
+
+      await runTest('Approve Button: Has proper styling class', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'approve-pay-btn', 'approve-pay-btn class should exist');
+        assertContains(html, '.approve-pay-btn', 'CSS for approve-pay-btn should exist');
+      });
+
+      await runTest('Approve Button: Shows approval terms text', async () => {
+        const html = await loadDesigner();
+        assertContains(html, '50% deposit', 'Deposit percentage should be mentioned');
+      });
+    }
+
+    // ============ APPROVE AND PAY FUNCTION TESTS ============
+    async function testApproveAndPayFunction() {
+      await runTest('ApproveAndPay: Function is defined', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'window.approveAndPay = async function()', 'approveAndPay function should be defined');
+      });
+
+      await runTest('ApproveAndPay: Calculates 50% deposit', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'total * 0.5', 'Should calculate 50% deposit');
+      });
+
+      await runTest('ApproveAndPay: Calls Stripe API', async () => {
+        const html = await loadDesigner();
+        assertContains(html, '/api/create-checkout-session', 'Should call Stripe checkout session API');
+      });
+
+      await runTest('ApproveAndPay: Includes success URL with approval param', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'approval=success', 'Success URL should include approval=success');
+      });
+
+      await runTest('ApproveAndPay: Stores approval data in localStorage', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'sg_pending_approval', 'Should store pending approval in localStorage');
+      });
+
+      await runTest('ApproveAndPay: Sends metadata with payment type', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'quote_approval_deposit', 'Payment type metadata should be included');
+      });
+
+      await runTest('ApproveAndPay: Handles email collection', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'customerEmail', 'Should handle customer email');
+      });
+
+      await runTest('ApproveAndPay: Shows loading state on button', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "btn.innerHTML = `", 'Should update button content for loading state');
+        assertContains(html, 'Processing...', 'Should show Processing... text');
+      });
+    }
+
+    // ============ POST-PAYMENT TESTS ============
+    async function testPostPayment() {
+      await runTest('PostPayment: checkApprovalStatus function exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'function checkApprovalStatus()', 'checkApprovalStatus function should exist');
+      });
+
+      await runTest('PostPayment: Called on DOMContentLoaded', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'checkApprovalStatus()', 'checkApprovalStatus should be called on load');
+      });
+
+      await runTest('PostPayment: Shows confirmation modal', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'showApprovalConfirmation', 'showApprovalConfirmation function should exist');
+      });
+
+      await runTest('PostPayment: Confirmation shows deposit paid', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'Deposit Paid', 'Confirmation should show Deposit Paid');
+      });
+
+      await runTest('PostPayment: Confirmation shows remaining balance', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'Remaining Balance', 'Confirmation should show Remaining Balance');
+      });
+
+      await runTest('PostPayment: Updates share status to approved_paid', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'approved_paid', 'Should update status to approved_paid');
+      });
+
+      await runTest('PostPayment: updateShareStatus function exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'async function updateShareStatus', 'updateShareStatus function should exist');
+      });
+    }
+
+    // ============ STRIPE INTEGRATION TESTS ============
+    async function testStripeIntegration() {
+      await runTest('Stripe: Public key is defined', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'STRIPE_PUBLIC_KEY', 'STRIPE_PUBLIC_KEY should be defined');
+        assertContains(html, 'pk_live_', 'Should have live Stripe key');
+      });
+
+      await runTest('Stripe: API base URL is correct', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'surprise-granite-email-api.onrender.com', 'API base URL should be correct');
+      });
+
+      await runTest('Stripe: Redirects to checkout URL', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'window.location.href = data.url', 'Should redirect to Stripe URL');
+      });
+
+      await runTest('Stripe: Handles sessionId fallback', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'redirectToCheckout', 'Should have redirectToCheckout fallback');
+      });
+    }
+
+    // ============ QUOTE CALCULATION TESTS ============
+    async function testQuoteCalculation() {
+      await runTest('Quote: calculateQuoteTotal function exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'function calculateQuoteTotal()', 'calculateQuoteTotal function should exist');
+      });
+
+      await runTest('Quote: Uses margin for pricing', async () => {
+        const html = await loadDesigner();
+        // Check in calculateQuoteTotal function
+        const funcMatch = html.match(/function calculateQuoteTotal\(\)[^}]+\}/s);
+        assert(funcMatch, 'calculateQuoteTotal function not found');
+        assertContains(html, '1 + margin / 100', 'Should apply margin to pricing');
+      });
+
+      await runTest('Quote: Handles area-based items', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "['countertop', 'backsplash', 'flooring', 'tile']", 'Should handle area-based items');
+      });
+    }
+
+    // ============ REVIEW PANEL TESTS ============
+    async function testReviewPanel() {
+      await runTest('Review Panel: Auto-opens for quote_approval', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "permission === 'quote_approval'", 'Should check for quote_approval permission');
+        // Check the auto-open logic includes quote_approval
+        const autoOpenMatch = html.match(/Auto-open the review panel[^}]+quote_approval/s);
+        assert(autoOpenMatch, 'quote_approval should be in auto-open logic');
+      });
+
+      await runTest('Review Panel: canApprove includes quote_approval', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "SHARE_STATE.permission === 'quote_approval'", 'canApprove should check for quote_approval');
+      });
+
+      await runTest('Review Panel: Shows element approval buttons', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'btn-approve', 'Approve button class should exist');
+        assertContains(html, 'btn-reject', 'Reject button class should exist');
+      });
+    }
+
+    // ============ CSS STYLING TESTS ============
+    async function testStyling() {
+      await runTest('CSS: quote-approval-actions class exists', async () => {
+        const html = await loadDesigner();
+        assertContains(html, '.quote-approval-actions', 'quote-approval-actions CSS should exist');
+      });
+
+      await runTest('CSS: approve-pay-btn has gradient background', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'linear-gradient(135deg, #22c55e, #16a34a)', 'Approve button should have green gradient');
+      });
+
+      await runTest('CSS: approve-pay-btn has hover state', async () => {
+        const html = await loadDesigner();
+        assertContains(html, '.approve-pay-btn:hover', 'Approve button hover state should exist');
+      });
+
+      await runTest('CSS: approval-confirmation-modal styles exist', async () => {
+        const html = await loadDesigner();
+        assertContains(html, '.approval-confirmation-modal', 'Confirmation modal CSS should exist');
+      });
+    }
+
+    // ============ ERROR HANDLING TESTS ============
+    async function testErrorHandling() {
+      await runTest('Errors: ApproveAndPay catches errors', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "catch (error)", 'Should have try-catch in approveAndPay');
+      });
+
+      await runTest('Errors: Shows toast on payment failure', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "showToast('Payment failed:", 'Should show toast on payment failure');
+      });
+
+      await runTest('Errors: Re-enables button on error', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'btn.disabled = false', 'Should re-enable button on error');
+      });
+
+      await runTest('Errors: Validates minimum amount', async () => {
+        const html = await loadDesigner();
+        assertContains(html, 'depositAmount < 1', 'Should validate minimum deposit amount');
+      });
+
+      await runTest('Errors: Validates email format', async () => {
+        const html = await loadDesigner();
+        assertContains(html, "!customerEmail.includes('@')", 'Should validate email format');
+      });
+    }
+
+    // ============ RUN ALL TESTS ============
+    async function runAllTests() {
+      clearResults();
+      startTime = Date.now();
+      document.getElementById('runAllBtn').disabled = true;
+      log('Starting full test suite...', 'info');
+
+      try {
+        await loadDesigner();
+
+        await testPermissionLevels();
+        await testShareModal();
+        await testApprovePayButton();
+        await testApproveAndPayFunction();
+        await testPostPayment();
+        await testStripeIntegration();
+        await testQuoteCalculation();
+        await testReviewPanel();
+        await testStyling();
+        await testErrorHandling();
+
+        const passed = testResults.filter(t => t.status === 'pass').length;
+        const failed = testResults.filter(t => t.status === 'fail').length;
+        log(`\nTest suite complete: ${passed} passed, ${failed} failed`, failed > 0 ? 'warn' : 'success');
+      } catch (error) {
+        log('Test suite error: ' + error.message, 'error');
+      }
+
+      document.getElementById('runAllBtn').disabled = false;
+    }
+
+    async function runApprovalTests() {
+      clearResults();
+      startTime = Date.now();
+      log('Running approval flow tests only...', 'info');
+
+      try {
+        await loadDesigner();
+
+        await testPermissionLevels();
+        await testShareModal();
+        await testApprovePayButton();
+        await testApproveAndPayFunction();
+        await testPostPayment();
+
+        const passed = testResults.filter(t => t.status === 'pass').length;
+        const failed = testResults.filter(t => t.status === 'fail').length;
+        log(`\nApproval flow tests complete: ${passed} passed, ${failed} failed`, failed > 0 ? 'warn' : 'success');
+      } catch (error) {
+        log('Test error: ' + error.message, 'error');
+      }
+    }
+
+    // Auto-run on load
+    log('Test suite ready. Click "Run All Tests" to begin.');
+  </script>
+</body>
+</html>
