@@ -9452,7 +9452,7 @@
 
     // Send welcome email to new lead
     async function sendLeadWelcomeEmail(leadInfo) {
-      const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType } = leadInfo;
+      const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType, notes } = leadInfo;
 
       const projectTypeLabels = {
         'kitchen': 'Kitchen Countertops',
@@ -9463,7 +9463,7 @@
         'commercial': 'Commercial Project',
         'other': 'Home Improvement'
       };
-      const projectLabel = projectTypeLabels[projectType] || 'your project';
+      const projectLabel = projectTypeLabels[projectType] || 'Countertop Project';
 
       const apptTypeLabels = {
         'estimate': 'Free In-Home Estimate',
@@ -9480,25 +9480,37 @@
         formattedDate = apptDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
       }
 
-      // Use the /api/leads endpoint which sends proper customer confirmation emails
-      await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          homeowner_name: `${firstName} ${lastName}`,
-          homeowner_email: email,
-          homeowner_phone: phone || '',
-          project_type: projectLabel,
-          project_zip: '85374',
-          source: 'Manual Entry - Account',
-          // Include appointment info if scheduled
-          appointment_date: hasAppointment ? formattedDate : null,
-          appointment_time: hasAppointment ? apptTime : null,
-          message: hasAppointment
-            ? `${apptTypeLabels[apptType] || 'Appointment'} scheduled for ${formattedDate} at ${apptTime}`
-            : `New lead added manually - ${projectLabel}`
-        })
-      });
+      try {
+        // Use the dedicated lead welcome email endpoint
+        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/lead-welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
+            project_type: projectLabel,
+            notes: notes || null,
+            has_appointment: hasAppointment,
+            appointment_date: hasAppointment ? formattedDate : null,
+            appointment_time: hasAppointment ? apptTime : null,
+            appointment_type: hasAppointment ? (apptTypeLabels[apptType] || 'Appointment') : null,
+            source: 'Manual Entry - Account'
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          console.error('Welcome email failed:', result);
+          return false;
+        }
+        console.log('Welcome email sent successfully to:', email);
+        return true;
+      } catch (error) {
+        console.error('Failed to send welcome email:', error);
+        return false;
+      }
     }
 
     // Close add lead modal when clicking overlay

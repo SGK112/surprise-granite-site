@@ -185,7 +185,7 @@ const COMPANY = {
   phone: '(602) 833-3189',
   address: '15464 W Aster Dr, Surprise, AZ 85379',
   website: 'https://www.surprisegranite.com',
-  logo: 'https://cdn.prod.website-files.com/63d50be6d353ffb720a1aa80/63d50be6d353ffb720a1aae4_SG%20LOGO%20BLACK%203.png',
+  logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
   tagline: 'Premium Countertops & Expert Installation',
   license: 'AZ ROC# 341113'
 };
@@ -1161,6 +1161,177 @@ function generateContractorInviteEmail(contractor, job, inviteToken) {
   };
 }
 
+// ==================== CALENDAR INTEGRATION HELPERS ====================
+
+// Generate Google Calendar URL for appointments
+function generateGoogleCalendarUrl(data) {
+  const title = encodeURIComponent(`Surprise Granite - ${data.project_type || 'Free Estimate'}`);
+  const location = encodeURIComponent(data.project_address || '');
+  const details = encodeURIComponent(
+    `Appointment with Surprise Granite for your ${data.project_type || 'countertop project'}.\n\n` +
+    `Questions? Call (602) 833-3189\n\n` +
+    `https://www.surprisegranite.com`
+  );
+
+  // Parse the date and time - handle various formats
+  let startDate = '';
+  let endDate = '';
+  try {
+    // Try to parse the date
+    const dateStr = data.appointment_date || '';
+    const timeStr = data.appointment_time || '10:00 AM';
+
+    // Create a date object
+    let dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) {
+      // Try parsing common formats
+      const parts = dateStr.match(/(\w+),?\s+(\w+)\s+(\d+),?\s+(\d+)/);
+      if (parts) {
+        dateObj = new Date(`${parts[2]} ${parts[3]}, ${parts[4]}`);
+      }
+    }
+
+    if (!isNaN(dateObj.getTime())) {
+      // Parse time
+      const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const meridiem = timeMatch[3]?.toUpperCase();
+        if (meridiem === 'PM' && hours < 12) hours += 12;
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+        dateObj.setHours(hours, minutes, 0, 0);
+      }
+
+      // Format for Google Calendar (YYYYMMDDTHHmmss)
+      const formatDate = (d) => {
+        return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      };
+
+      startDate = formatDate(dateObj);
+      // End date is 1 hour later
+      const endDateObj = new Date(dateObj.getTime() + 60 * 60 * 1000);
+      endDate = formatDate(endDateObj);
+    }
+  } catch (e) {
+    console.error('Error parsing date for calendar:', e);
+  }
+
+  // If we couldn't parse the date, use a placeholder
+  if (!startDate) {
+    const now = new Date();
+    now.setDate(now.getDate() + 7); // Default to 1 week from now
+    now.setHours(10, 0, 0, 0);
+    startDate = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    endDate = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  }
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&location=${location}&details=${details}`;
+}
+
+// Generate Outlook Calendar URL for appointments
+function generateOutlookCalendarUrl(data) {
+  const title = encodeURIComponent(`Surprise Granite - ${data.project_type || 'Free Estimate'}`);
+  const location = encodeURIComponent(data.project_address || '');
+  const body = encodeURIComponent(
+    `Appointment with Surprise Granite for your ${data.project_type || 'countertop project'}.\n\n` +
+    `Questions? Call (602) 833-3189`
+  );
+
+  // Parse date similar to Google Calendar
+  let startDate = '';
+  let endDate = '';
+  try {
+    const dateStr = data.appointment_date || '';
+    const timeStr = data.appointment_time || '10:00 AM';
+
+    let dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) {
+      const parts = dateStr.match(/(\w+),?\s+(\w+)\s+(\d+),?\s+(\d+)/);
+      if (parts) {
+        dateObj = new Date(`${parts[2]} ${parts[3]}, ${parts[4]}`);
+      }
+    }
+
+    if (!isNaN(dateObj.getTime())) {
+      const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const meridiem = timeMatch[3]?.toUpperCase();
+        if (meridiem === 'PM' && hours < 12) hours += 12;
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+        dateObj.setHours(hours, minutes, 0, 0);
+      }
+
+      startDate = dateObj.toISOString();
+      endDate = new Date(dateObj.getTime() + 60 * 60 * 1000).toISOString();
+    }
+  } catch (e) {
+    console.error('Error parsing date for Outlook calendar:', e);
+  }
+
+  if (!startDate) {
+    const now = new Date();
+    now.setDate(now.getDate() + 7);
+    now.setHours(10, 0, 0, 0);
+    startDate = now.toISOString();
+    endDate = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+  }
+
+  return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDate}&enddt=${endDate}&location=${location}&body=${body}`;
+}
+
+// Generate Yahoo Calendar URL for appointments
+function generateYahooCalendarUrl(data) {
+  const title = encodeURIComponent(`Surprise Granite - ${data.project_type || 'Free Estimate'}`);
+  const location = encodeURIComponent(data.project_address || '');
+  const desc = encodeURIComponent(
+    `Appointment with Surprise Granite. Questions? Call (602) 833-3189`
+  );
+
+  // Parse date
+  let st = '';
+  try {
+    const dateStr = data.appointment_date || '';
+    const timeStr = data.appointment_time || '10:00 AM';
+
+    let dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) {
+      const parts = dateStr.match(/(\w+),?\s+(\w+)\s+(\d+),?\s+(\d+)/);
+      if (parts) {
+        dateObj = new Date(`${parts[2]} ${parts[3]}, ${parts[4]}`);
+      }
+    }
+
+    if (!isNaN(dateObj.getTime())) {
+      const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (timeMatch) {
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const meridiem = timeMatch[3]?.toUpperCase();
+        if (meridiem === 'PM' && hours < 12) hours += 12;
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+        dateObj.setHours(hours, minutes, 0, 0);
+      }
+
+      // Yahoo format: YYYYMMDDTHHmmss
+      st = dateObj.toISOString().replace(/[-:]/g, '').split('.')[0];
+    }
+  } catch (e) {
+    console.error('Error parsing date for Yahoo calendar:', e);
+  }
+
+  if (!st) {
+    const now = new Date();
+    now.setDate(now.getDate() + 7);
+    now.setHours(10, 0, 0, 0);
+    st = now.toISOString().replace(/[-:]/g, '').split('.')[0];
+  }
+
+  return `https://calendar.yahoo.com/?v=60&title=${title}&st=${st}&dur=0100&in_loc=${location}&desc=${desc}`;
+}
+
 // Admin notification templates
 const emailTemplates = {
   invoiceSent: (invoice, template = 'classic') => ({
@@ -1578,6 +1749,18 @@ const emailTemplates = {
                 </tr>
               </table>
 
+              <!-- Add to Calendar -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 12px; color: #6b7280; font-size: 13px;">Add to your calendar:</p>
+                    <a href="${generateGoogleCalendarUrl(data)}" target="_blank" style="display: inline-block; background-color: #4285f4; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-size: 13px; font-weight: 500; margin-right: 8px;">📅 Google</a>
+                    <a href="${generateOutlookCalendarUrl(data)}" target="_blank" style="display: inline-block; background-color: #0078d4; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-size: 13px; font-weight: 500; margin-right: 8px;">📅 Outlook</a>
+                    <a href="${generateYahooCalendarUrl(data)}" target="_blank" style="display: inline-block; background-color: #720e9e; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; font-size: 13px; font-weight: 500;">📅 Yahoo</a>
+                  </td>
+                </tr>
+              </table>
+
               <!-- Reschedule Note -->
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
@@ -1605,6 +1788,161 @@ const emailTemplates = {
             </td>
           </tr>
 
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+  }),
+
+  // Lead welcome email - for new leads without scheduled appointments
+  leadWelcome: (data) => ({
+    subject: `Welcome to Surprise Granite! We're Excited to Help - ${data.project_type || 'Your Project'}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f9fa;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table width="560" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Header with Gold Accent -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 32px; text-align: center;">
+              <img src="${COMPANY.logo}" alt="Surprise Granite" style="height: 48px; width: auto; margin-bottom: 16px;">
+              <h1 style="margin: 0; color: #f9cb00; font-size: 24px; font-weight: 600;">Thanks for Reaching Out!</h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">Your dream countertops are closer than you think</p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px;">
+
+              <!-- Personal Greeting -->
+              <p style="margin: 0 0 20px; color: #1a2b3c; font-size: 16px; line-height: 1.6;">
+                Hi ${data.first_name || data.homeowner_name?.split(' ')[0] || 'there'},
+              </p>
+              <p style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.7;">
+                We got your info and we're thrilled you're considering Surprise Granite for your ${data.project_type || 'countertop'} project.
+                Whether you're dreaming of elegant marble, durable quartz, or timeless granite, we've got you covered—literally.
+              </p>
+
+              ${data.has_appointment ? `
+              <!-- Appointment Info -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 16px;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px;">
+                    <p style="margin: 0 0 12px; color: #166534; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">📅 Your Appointment</p>
+                    <p style="margin: 0; color: #15803d; font-size: 18px; font-weight: 600;">${data.appointment_date} at ${data.appointment_time}</p>
+                    ${data.appointment_type ? `<p style="margin: 8px 0 0; color: #166534; font-size: 14px;">${data.appointment_type}</p>` : ''}
+                  </td>
+                </tr>
+              </table>
+              <!-- Add to Calendar Buttons -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 10px; color: #6b7280; font-size: 12px;">Add to your calendar:</p>
+                    <a href="${generateGoogleCalendarUrl({...data, project_type: data.appointment_type || data.project_type})}" target="_blank" style="display: inline-block; background-color: #4285f4; color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 500; margin-right: 6px;">📅 Google</a>
+                    <a href="${generateOutlookCalendarUrl({...data, project_type: data.appointment_type || data.project_type})}" target="_blank" style="display: inline-block; background-color: #0078d4; color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 500; margin-right: 6px;">📅 Outlook</a>
+                    <a href="${generateYahooCalendarUrl({...data, project_type: data.appointment_type || data.project_type})}" target="_blank" style="display: inline-block; background-color: #720e9e; color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 4px; font-size: 12px; font-weight: 500;">📅 Yahoo</a>
+                  </td>
+                </tr>
+              </table>
+              ` : `
+              <!-- What's Next Section -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 24px;">
+                    <p style="margin: 0 0 12px; color: #92400e; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⚡ What Happens Next</p>
+                    <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.6;">
+                      One of our countertop specialists will reach out within 24 hours to discuss your project and schedule a free in-home estimate. No pressure, just expert advice.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              `}
+
+              ${data.notes ? `
+              <!-- Notes Section -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background: #f8f9fa; border-radius: 8px; padding: 20px;">
+                    <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Notes from your inquiry</p>
+                    <p style="margin: 0; color: #1a2b3c; font-size: 14px; line-height: 1.6; font-style: italic;">"${data.notes}"</p>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
+
+              <!-- Why Choose Us -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 16px; color: #1a2b3c; font-size: 15px; font-weight: 600;">Why homeowners choose us:</p>
+                    <table width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">✓ Free in-home estimates (no obligation)</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">✓ Premium materials at competitive prices</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">✓ Professional installation by our own team</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">✓ Serving the Valley since 2017</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Buttons -->
+              <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://www.surprisegranite.com/countertops" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-right: 12px;">Browse Materials</a>
+                    <a href="tel:+16028333189" style="display: inline-block; background: #1a1a2e; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 14px; font-weight: 500;">Call Us: (602) 833-3189</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Friendly Sign-off -->
+              <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6; text-align: center;">
+                Can't wait to help you transform your space!<br>
+                <span style="color: #1a2b3c; font-weight: 500;">— The Surprise Granite Team</span>
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #1a1a2e; padding: 24px; text-align: center;">
+              <p style="margin: 0 0 4px; color: #f9cb00; font-size: 13px; font-weight: 500;">Surprise Granite Marble & Quartz</p>
+              <p style="margin: 0 0 8px; color: rgba(255,255,255,0.6); font-size: 12px;">15464 W Aster Dr, Surprise, AZ 85379</p>
+              <p style="margin: 0; color: rgba(255,255,255,0.4); font-size: 11px;">AZ ROC# 341113 · Licensed & Insured</p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Unsubscribe Note -->
+        <table width="560" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 16px 0; text-align: center;">
+              <p style="margin: 0; color: #9ca3af; font-size: 11px;">Questions? Just reply to this email or call us anytime.</p>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
@@ -3569,34 +3907,117 @@ app.post('/api/leads', async (req, res) => {
     };
     await sendNotification(ADMIN_EMAIL, adminEmail.subject, adminEmail.html);
 
-    // Send customer confirmation email for appointments
-    if (isAppointment && homeowner_email) {
+    // Send customer confirmation/welcome email
+    if (homeowner_email) {
       try {
-        const customerEmail = emailTemplates.appointmentConfirmation({
-          homeowner_name: homeowner_name,
-          homeowner_email: homeowner_email,
-          appointment_date: appointment_date || 'To be confirmed',
-          appointment_time: appointment_time || 'To be confirmed',
-          project_address: project_address,
-          project_type: project_type
-        });
+        let customerEmail;
+        if (isAppointment) {
+          // Use appointment confirmation template for scheduled appointments
+          customerEmail = emailTemplates.appointmentConfirmation({
+            homeowner_name: homeowner_name,
+            homeowner_email: homeowner_email,
+            appointment_date: appointment_date || 'To be confirmed',
+            appointment_time: appointment_time || 'To be confirmed',
+            project_address: project_address,
+            project_type: project_type
+          });
+        } else {
+          // Use welcome email for general leads without appointments
+          const projectTypeDisplay = project_type ?
+            project_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) :
+            'Countertop Project';
+          customerEmail = emailTemplates.leadWelcome({
+            first_name: homeowner_name ? homeowner_name.split(' ')[0] : null,
+            homeowner_name: homeowner_name,
+            project_type: projectTypeDisplay,
+            notes: project_details || message || null,
+            has_appointment: false
+          });
+        }
         await sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
-        console.log('Customer confirmation email sent to:', homeowner_email);
+        console.log('Customer email sent to:', homeowner_email);
       } catch (emailError) {
         // Don't fail the request if customer email fails
-        console.error('Failed to send customer confirmation email:', emailError.message);
+        console.error('Failed to send customer email:', emailError.message);
       }
     }
 
     res.json({
       success: true,
-      message: isAppointment ? 'Appointment booked successfully! Check your email for confirmation.' : 'Lead submitted successfully',
+      message: isAppointment ? 'Appointment booked successfully! Check your email for confirmation.' : 'Lead submitted successfully! Check your email for confirmation.',
       lead_id: `lead_${Date.now()}`,
-      confirmation_sent: isAppointment
+      confirmation_sent: !!homeowner_email
     });
 
   } catch (error) {
     console.error('Lead submission error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send welcome email to a lead (manual trigger from admin)
+app.post('/api/lead-welcome', async (req, res) => {
+  try {
+    const {
+      email,
+      first_name,
+      last_name,
+      full_name,
+      project_type,
+      notes,
+      has_appointment,
+      appointment_date,
+      appointment_time,
+      appointment_type,
+      source = 'Manual Entry'
+    } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Determine first name for greeting
+    const firstName = first_name || (full_name ? full_name.split(' ')[0] : null);
+
+    // Format project type for display
+    const projectTypeDisplay = project_type ?
+      project_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) :
+      'Countertop Project';
+
+    // Build email data
+    const emailData = {
+      first_name: firstName,
+      homeowner_name: full_name || `${first_name || ''} ${last_name || ''}`.trim(),
+      project_type: projectTypeDisplay,
+      notes: notes || null,
+      has_appointment: !!has_appointment,
+      appointment_date: appointment_date || null,
+      appointment_time: appointment_time || null,
+      appointment_type: appointment_type || null
+    };
+
+    // Generate and send the welcome email
+    const welcomeEmail = emailTemplates.leadWelcome(emailData);
+    const result = await sendNotification(email, welcomeEmail.subject, welcomeEmail.html);
+
+    if (result.success) {
+      console.log('Welcome email sent to:', email);
+      res.json({
+        success: true,
+        message: 'Welcome email sent successfully',
+        recipient: email
+      });
+    } else {
+      console.error('Failed to send welcome email:', result.reason);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email',
+        reason: result.reason
+      });
+    }
+
+  } catch (error) {
+    console.error('Welcome email error:', error);
     res.status(500).json({ error: error.message });
   }
 });

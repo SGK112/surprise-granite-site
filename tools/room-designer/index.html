@@ -18151,8 +18151,12 @@
 
           console.log('Model dimensions (feet):', scaledSize.x.toFixed(2), scaledSize.y.toFixed(2), scaledSize.z.toFixed(2));
 
-          // Position at origin (0,0) on the floor
-          modelClone.position.set(0, 0, 0);
+          // Position in center of room, adjust for model's own center offset
+          const posX = roomWidth / 2 - scaledCenter.x + 1;  // Nudge right
+          const posY = -scaledBox.min.y;  // Floor level
+          const posZ = roomDepth / 2 - scaledCenter.z + 1;  // Nudge forward
+          console.log('Positioning at:', posX, posY, posZ, 'Room:', roomWidth, 'x', roomDepth);
+          modelClone.position.set(posX, posY, posZ);
 
           // Add shadows to all meshes
           modelClone.traverse(child => {
