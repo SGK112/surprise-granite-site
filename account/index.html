@@ -9731,19 +9731,22 @@
           allLeads[idx].customer_id = customer.id;
         }
 
+        // Save appointment info before closing modal (which clears selectedLead)
+        const hasAppointment = selectedLead?.raw_data?.appointment;
+        const customerId = customer.id;
+
         showToast('Customer created successfully!');
         updateStats();
         renderLeads();
         closeLeadModal();
 
         // Offer to create estimate with appointment pre-filled
-        const hasAppointment = selectedLead.raw_data?.appointment;
         const confirmMsg = hasAppointment
           ? 'Customer added! They have an appointment scheduled. Create an estimate for them now?'
           : 'Customer added! Would you like to create an estimate for them now?';
 
         if (confirm(confirmMsg)) {
-          createEstimateForCustomer(customer.id);
+          createEstimateForCustomer(customerId);
         }
       } catch (err) {
         console.error('Convert lead error:', err);
