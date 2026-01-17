@@ -7171,18 +7171,25 @@
       });
     }
 
-    // Load kitchen cabinets model
-    async function getKitchenCabinetsModel() {
-      if (MODEL_CACHE.kitchenCabinets) {
-        return MODEL_CACHE.kitchenCabinets.scene.clone();
+    // Load a cabinet model by name
+    async function loadCabinetModel(modelName) {
+      if (MODEL_CACHE[modelName]) {
+        return MODEL_CACHE[modelName].scene.clone();
       }
-      if (MODEL_CACHE.loadingPromise) {
-        await MODEL_CACHE.loadingPromise;
-        return MODEL_CACHE.kitchenCabinets.scene.clone();
+      const url = `/tools/room-designer/assets/models/${modelName}.glb`;
+      try {
+        const gltf = await loadGLBModel(url);
+        MODEL_CACHE[modelName] = gltf;
+        return gltf.scene.clone();
+      } catch (error) {
+        console.warn(`Could not load model ${modelName}:`, error);
+        return null;
       }
-      MODEL_CACHE.loadingPromise = loadGLBModel('/tools/room-designer/assets/models/kitchen-cabinets.glb');
-      MODEL_CACHE.kitchenCabinets = await MODEL_CACHE.loadingPromise;
-      return MODEL_CACHE.kitchenCabinets.scene.clone();
+    }
+
+    // Load the base-24 cabinet model (24" base cabinet)
+    async function getBaseCabinetModel() {
+      return loadCabinetModel('base-24');
     }
 
     const SHARE_STATE = {
@@ -18105,7 +18112,7 @@
         btn.disabled = true;
 
         // Load the detailed cabinet model
-        const modelClone = await getKitchenCabinetsModel();
+        const modelClone = await getBaseCabinetModel();
 
         if (modelClone && scene) {
           // Remove any existing preview model
@@ -18122,17 +18129,30 @@
           const size = box.getSize(new THREE.Vector3());
           const center = box.getCenter(new THREE.Vector3());
 
-          // Scale model to fit in a 10ft x 10ft area (reasonable kitchen scale)
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scale = maxDim > 0 ? 10 / maxDim : 1;
-          modelClone.scale.setScalar(scale);
+          console.log('Model dimensions (raw):', size.x, size.y, size.z);
+          console.log('Model center:', center.x, center.y, center.z);
 
-          // Position at center of room
-          modelClone.position.set(
-            roomWidth / 2 - center.x * scale,
-            0 - box.min.y * scale,
-            roomDepth / 2 - center.z * scale
-          );
+          // Home Designer Pro exports very small - scale up significantly
+          // A 24" cabinet should be 2 feet wide, ~3 feet tall
+          // Calculate scale based on expected cabinet height (3 feet = 36 inches)
+          const expectedHeight = 3; // 3 feet tall for base cabinet
+          const currentHeight = size.y;
+          const scaleFactor = currentHeight > 0 ? expectedHeight / currentHeight : 1;
+
+          console.log('Raw model height:', currentHeight, 'Scale factor:', scaleFactor);
+
+          // Apply scale to make cabinet realistic size
+          modelClone.scale.setScalar(scaleFactor);
+
+          // Recalculate bounds after scaling
+          const scaledBox = new THREE.Box3().setFromObject(modelClone);
+          const scaledSize = scaledBox.getSize(new THREE.Vector3());
+          const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+          console.log('Model dimensions (feet):', scaledSize.x.toFixed(2), scaledSize.y.toFixed(2), scaledSize.z.toFixed(2));
+
+          // Position at origin (0,0) on the floor
+          modelClone.position.set(0, 0, 0);
 
           // Add shadows to all meshes
           modelClone.traverse(child => {
@@ -18144,10 +18164,16 @@
 
           scene.add(modelClone);
 
-          // Position camera to see the model
+          // Position camera to see the model nicely
           if (camera && controls) {
-            camera.position.set(roomWidth / 2 + 12, 8, roomDepth / 2 + 12);
-            controls.target.set(roomWidth / 2, 3, roomDepth / 2);
+            // Position camera at a good viewing angle
+            const viewDist = Math.max(scaledSize.x, scaledSize.z) * 1.5 + 5;
+            camera.position.set(
+              roomWidth / 2 + viewDist,
+              scaledSize.y + 3,
+              roomDepth / 2 + viewDist
+            );
+            controls.target.set(roomWidth / 2, scaledSize.y / 2, roomDepth / 2);
             controls.update();
           }
 

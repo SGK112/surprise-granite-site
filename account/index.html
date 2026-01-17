@@ -2163,6 +2163,10 @@
       animation: spin 1s linear infinite;
     }
 
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -5340,6 +5344,48 @@
             </div>
           </div>
 
+          <!-- Appointment Scheduling Section -->
+          <div class="form-section" style="margin: 20px 0; padding: 16px; background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#22c55e" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 600; color: #22c55e; text-transform: uppercase; letter-spacing: 0.5px;">Schedule Appointment (Optional)</span>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Appointment Date</label>
+                <input type="date" id="new-lead-appt-date" min="" style="color-scheme: dark;"/>
+              </div>
+              <div class="form-group">
+                <label>Appointment Time</label>
+                <select id="new-lead-appt-time">
+                  <option value="">Select Time</option>
+                  <option value="8:00 AM">8:00 AM</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+              <label>Appointment Type</label>
+              <select id="new-lead-appt-type">
+                <option value="estimate">Free In-Home Estimate</option>
+                <option value="measure">Measurement Visit</option>
+                <option value="showroom">Showroom Visit</option>
+                <option value="consultation">Design Consultation</option>
+                <option value="installation">Installation</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Project Details / Notes</label>
             <textarea id="new-lead-message" rows="3" placeholder="Describe the project or add notes..."></textarea>
@@ -5365,6 +5411,17 @@
                 <option value="qualified">Qualified</option>
               </select>
             </div>
+          </div>
+
+          <!-- Welcome Email Toggle -->
+          <div class="form-group" style="margin: 16px 0; padding: 12px 16px; background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px;">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="new-lead-send-email" checked style="width: 18px; height: 18px; accent-color: #3b82f6;"/>
+              <div>
+                <span style="font-size: 14px; font-weight: 500;">Send welcome email to lead</span>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">A friendly confirmation email will be sent automatically</p>
+              </div>
+            </label>
           </div>
         </div>
         <div class="modal-footer">
@@ -9211,6 +9268,14 @@
     function openAddLeadModal() {
       document.getElementById('add-lead-form').reset();
       document.getElementById('add-lead-modal').classList.add('active');
+
+      // Set min date for appointment picker to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('new-lead-appt-date').min = today;
+
+      // Reset service address visibility
+      document.getElementById('new-lead-service-address-section').style.display = 'none';
+      document.getElementById('new-lead-address-same').checked = true;
     }
 
     function closeAddLeadModal() {
@@ -9242,13 +9307,17 @@
       event.preventDefault();
 
       const btn = document.getElementById('save-lead-btn');
+      const originalBtnHTML = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Saving...';
+      btn.innerHTML = '<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Saving...';
 
       try {
         const firstName = document.getElementById('new-lead-first-name').value.trim();
         const lastName = document.getElementById('new-lead-last-name').value.trim();
         const fullName = `${firstName} ${lastName}`.trim();
+        const email = document.getElementById('new-lead-email').value.trim();
+        const phone = document.getElementById('new-lead-phone').value.trim() || null;
+        const projectType = document.getElementById('new-lead-project-type').value || null;
 
         // Collect billing address
         const billingStreet = document.getElementById('new-lead-billing-street').value.trim();
@@ -9278,15 +9347,39 @@
           }
         }
 
+        // Collect appointment data
+        const apptDate = document.getElementById('new-lead-appt-date').value;
+        const apptTime = document.getElementById('new-lead-appt-time').value;
+        const apptType = document.getElementById('new-lead-appt-type').value;
+        const hasAppointment = apptDate && apptTime;
+
+        // Format appointment string for message
+        let appointmentInfo = '';
+        if (hasAppointment) {
+          const apptDateObj = new Date(apptDate + 'T12:00:00');
+          const formattedDate = apptDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          const apptTypeLabels = {
+            'estimate': 'Free In-Home Estimate',
+            'measure': 'Measurement Visit',
+            'showroom': 'Showroom Visit',
+            'consultation': 'Design Consultation',
+            'installation': 'Installation'
+          };
+          appointmentInfo = `\n\nSCHEDULED APPOINTMENT:\n${apptTypeLabels[apptType] || apptType}\n${formattedDate} at ${apptTime}`;
+        }
+
+        const userMessage = document.getElementById('new-lead-message').value.trim() || '';
+        const fullMessage = userMessage + appointmentInfo;
+
         const leadData = {
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
-          email: document.getElementById('new-lead-email').value.trim(),
-          phone: document.getElementById('new-lead-phone').value.trim() || null,
-          project_type: document.getElementById('new-lead-project-type').value || null,
+          email: email,
+          phone: phone,
+          project_type: projectType,
           zip_code: document.getElementById('new-lead-zip').value.trim() || null,
-          message: document.getElementById('new-lead-message').value.trim() || null,
+          message: fullMessage || null,
           source: document.getElementById('new-lead-source').value,
           status: document.getElementById('new-lead-status').value,
           form_name: 'manual-entry',
@@ -9294,7 +9387,15 @@
           // Address fields
           billing_address: billingAddress,
           service_address: serviceAddress,
-          address_same: addressSame
+          address_same: addressSame,
+          // Appointment data in raw_data
+          raw_data: hasAppointment ? {
+            appointment: {
+              date: apptDate,
+              time: apptTime,
+              type: apptType
+            }
+          } : null
         };
 
         const { data, error } = await supabaseClient
@@ -9305,20 +9406,154 @@
 
         if (error) throw error;
 
+        // Send welcome email if checkbox is checked
+        const sendEmail = document.getElementById('new-lead-send-email').checked;
+        if (sendEmail && email) {
+          try {
+            await sendLeadWelcomeEmail({
+              firstName,
+              lastName,
+              email,
+              phone,
+              projectType,
+              hasAppointment,
+              apptDate,
+              apptTime,
+              apptType
+            });
+          } catch (emailErr) {
+            console.warn('Welcome email error (non-blocking):', emailErr);
+          }
+        }
+
         // Add to local array and refresh display
         allLeads.unshift(data);
         updateStats();
         renderLeads();
         closeAddLeadModal();
-        showToast('Lead added successfully!', 'success');
+
+        let successMsg = 'Lead added successfully!';
+        if (sendEmail && email) successMsg += ' Welcome email sent.';
+        if (hasAppointment) successMsg += ' Appointment scheduled.';
+        showToast(successMsg, 'success');
 
       } catch (err) {
         console.error('Error saving lead:', err);
         showToast('Error: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Save Lead';
+        btn.innerHTML = originalBtnHTML;
       }
+    }
+
+    // Send welcome email to new lead
+    async function sendLeadWelcomeEmail(leadInfo) {
+      const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType } = leadInfo;
+
+      const projectTypeLabels = {
+        'kitchen': 'kitchen countertops',
+        'bathroom': 'bathroom vanity',
+        'flooring': 'flooring',
+        'fireplace': 'fireplace surround',
+        'outdoor': 'outdoor kitchen',
+        'commercial': 'commercial project',
+        'other': 'home improvement project'
+      };
+      const projectLabel = projectTypeLabels[projectType] || 'project';
+
+      const apptTypeLabels = {
+        'estimate': 'Free In-Home Estimate',
+        'measure': 'Measurement Visit',
+        'showroom': 'Showroom Visit',
+        'consultation': 'Design Consultation',
+        'installation': 'Installation'
+      };
+
+      let appointmentSection = '';
+      if (hasAppointment) {
+        const apptDateObj = new Date(apptDate + 'T12:00:00');
+        const formattedDate = apptDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        appointmentSection = `
+          <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <h3 style="color: #166534; margin: 0 0 12px 0; font-size: 16px;">📅 Your Appointment is Confirmed!</h3>
+            <p style="margin: 0; color: #15803d; font-size: 15px;">
+              <strong>${apptTypeLabels[apptType] || 'Appointment'}</strong><br>
+              ${formattedDate} at ${apptTime}
+            </p>
+            <p style="margin: 12px 0 0 0; font-size: 13px; color: #166534;">
+              We'll send you a reminder before your appointment. If you need to reschedule, just give us a call!
+            </p>
+          </div>
+        `;
+      }
+
+      const emailBody = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="color: #f9cb00; margin: 0; font-size: 24px;">Surprise Granite</h1>
+            <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">Marble & Quartz</p>
+          </div>
+
+          <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+            <h2 style="color: #1a1a2e; margin: 0 0 16px 0; font-size: 20px;">Hey ${firstName}! 👋</h2>
+
+            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
+              Thanks for reaching out about your ${projectLabel}! We're thrilled you're considering us to help transform your space.
+              (Fair warning: our countertops are so good-looking, you might find yourself just... staring at them. It happens.)
+            </p>
+
+            ${appointmentSection}
+
+            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
+              ${hasAppointment ? "In the meantime, feel free to browse our selection online or dream up your perfect kitchen. We won't judge if you create a Pinterest board." : "One of our stone specialists will be in touch shortly to discuss your project and schedule a time that works for you. We promise we're much friendlier than a slab of granite (though admittedly, granite does have great composure)."}
+            </p>
+
+            <div style="background: #fefce8; border-left: 4px solid #f9cb00; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+              <p style="margin: 0; color: #854d0e; font-size: 14px;">
+                <strong>Quick Tip:</strong> Have measurements handy? Even rough ones help us give you a more accurate estimate.
+                No pressure though – we bring our own measuring tape (and dad jokes) to every appointment.
+              </p>
+            </div>
+
+            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 8px 0;">
+              Questions? Just hit reply or give us a call. We're real humans who actually answer the phone!
+            </p>
+
+            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 24px 0 0 0;">
+              Looking forward to working with you,<br>
+              <strong style="color: #1a1a2e;">The Surprise Granite Team</strong>
+            </p>
+          </div>
+
+          <div style="background: #f9fafb; padding: 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+              <strong>Surprise Granite, Marble & Quartz</strong>
+            </p>
+            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
+              📍 14155 W. Grand Ave, Surprise, AZ 85374
+            </p>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;">
+              📞 <a href="tel:6028333189" style="color: #f9cb00; text-decoration: none;">(602) 833-3189</a> &nbsp;|&nbsp;
+              🌐 <a href="https://www.surprisegranite.com" style="color: #f9cb00; text-decoration: none;">surprisegranite.com</a>
+            </p>
+          </div>
+        </div>
+      `;
+
+      await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          email: email,
+          name: `${firstName} ${lastName}`,
+          subject: hasAppointment
+            ? `Your Appointment is Confirmed! 📅 - Surprise Granite`
+            : `Thanks for Reaching Out! - Surprise Granite`,
+          message: emailBody,
+          source: 'lead-welcome-email'
+        })
+      });
     }
 
     // Close add lead modal when clicking overlay
@@ -9451,21 +9686,58 @@
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
 
-        // Parse address if available
-        const addressParts = (selectedLead.project_address || selectedLead.address || '').split(',').map(s => s.trim());
+        // Get address from structured data or parse from string
+        let address = null, city = null, state = 'AZ', zip = null;
 
-        // Create customer
+        // Try structured service_address first, then billing_address
+        const structuredAddr = selectedLead.service_address || selectedLead.billing_address;
+        if (structuredAddr && typeof structuredAddr === 'object') {
+          address = structuredAddr.street || null;
+          if (structuredAddr.street2) address += ' ' + structuredAddr.street2;
+          city = structuredAddr.city || null;
+          state = structuredAddr.state || 'AZ';
+          zip = structuredAddr.zip || selectedLead.zip_code || null;
+        } else {
+          // Fall back to parsing address string
+          const addressParts = (selectedLead.project_address || selectedLead.address || '').split(',').map(s => s.trim());
+          address = addressParts[0] || null;
+          city = addressParts[1] || null;
+          state = addressParts[2] || 'AZ';
+          zip = selectedLead.zip_code || null;
+        }
+
+        // Build notes with appointment info if present
+        let notes = `Lead source: ${selectedLead.form_name || 'Website'}\nProject type: ${selectedLead.project_type || 'Not specified'}`;
+        if (selectedLead.raw_data?.appointment) {
+          const appt = selectedLead.raw_data.appointment;
+          const apptTypeLabels = {
+            'estimate': 'Free In-Home Estimate',
+            'measure': 'Measurement Visit',
+            'showroom': 'Showroom Visit',
+            'consultation': 'Design Consultation',
+            'installation': 'Installation'
+          };
+          notes += `\n\nScheduled: ${apptTypeLabels[appt.type] || appt.type} on ${appt.date} at ${appt.time}`;
+        }
+        if (selectedLead.message) {
+          notes += `\n\nOriginal message: ${selectedLead.message}`;
+        }
+
+        // Create customer with full data
         const customerData = {
           user_id: user.id,
           name: selectedLead.full_name || 'Unknown',
+          first_name: firstName || null,
+          last_name: lastName || null,
           email: selectedLead.email || null,
           phone: selectedLead.phone || null,
-          address: addressParts[0] || null,
-          city: addressParts[1] || null,
-          state: addressParts[2] || 'AZ',
-          zip: selectedLead.zip_code || null,
-          notes: `Lead source: ${selectedLead.form_name || 'Website'}\nProject type: ${selectedLead.project_type || 'Not specified'}\nOriginal message: ${selectedLead.message || 'None'}`,
-          lead_id: selectedLead.id
+          address: address,
+          city: city,
+          state: state,
+          zip: zip,
+          notes: notes,
+          lead_id: selectedLead.id,
+          project_type: selectedLead.project_type || null
         };
 
         const { data: customer, error } = await supabaseClient
@@ -9494,8 +9766,13 @@
         renderLeads();
         closeLeadModal();
 
-        // Offer to create estimate
-        if (confirm('Customer added! Would you like to create an estimate for them now?')) {
+        // Offer to create estimate with appointment pre-filled
+        const hasAppointment = selectedLead.raw_data?.appointment;
+        const confirmMsg = hasAppointment
+          ? 'Customer added! They have an appointment scheduled. Create an estimate for them now?'
+          : 'Customer added! Would you like to create an estimate for them now?';
+
+        if (confirm(confirmMsg)) {
           createEstimateForCustomer(customer.id);
         }
       } catch (err) {
