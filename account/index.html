@@ -9455,15 +9455,15 @@
       const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType } = leadInfo;
 
       const projectTypeLabels = {
-        'kitchen': 'kitchen countertops',
-        'bathroom': 'bathroom vanity',
-        'flooring': 'flooring',
-        'fireplace': 'fireplace surround',
-        'outdoor': 'outdoor kitchen',
-        'commercial': 'commercial project',
-        'other': 'home improvement project'
+        'kitchen': 'Kitchen Countertops',
+        'bathroom': 'Bathroom Vanity',
+        'flooring': 'Flooring',
+        'fireplace': 'Fireplace Surround',
+        'outdoor': 'Outdoor Kitchen',
+        'commercial': 'Commercial Project',
+        'other': 'Home Improvement'
       };
-      const projectLabel = projectTypeLabels[projectType] || 'project';
+      const projectLabel = projectTypeLabels[projectType] || 'your project';
 
       const apptTypeLabels = {
         'estimate': 'Free In-Home Estimate',
@@ -9473,89 +9473,30 @@
         'installation': 'Installation'
       };
 
-      let appointmentSection = '';
-      if (hasAppointment) {
+      // Format appointment date nicely
+      let formattedDate = '';
+      if (hasAppointment && apptDate) {
         const apptDateObj = new Date(apptDate + 'T12:00:00');
-        const formattedDate = apptDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        appointmentSection = `
-          <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 12px; padding: 20px; margin: 24px 0;">
-            <h3 style="color: #166534; margin: 0 0 12px 0; font-size: 16px;">📅 Your Appointment is Confirmed!</h3>
-            <p style="margin: 0; color: #15803d; font-size: 15px;">
-              <strong>${apptTypeLabels[apptType] || 'Appointment'}</strong><br>
-              ${formattedDate} at ${apptTime}
-            </p>
-            <p style="margin: 12px 0 0 0; font-size: 13px; color: #166534;">
-              We'll send you a reminder before your appointment. If you need to reschedule, just give us a call!
-            </p>
-          </div>
-        `;
+        formattedDate = apptDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
       }
 
-      const emailBody = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 32px; text-align: center; border-radius: 12px 12px 0 0;">
-            <h1 style="color: #f9cb00; margin: 0; font-size: 24px;">Surprise Granite</h1>
-            <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0 0; font-size: 14px;">Marble & Quartz</p>
-          </div>
-
-          <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
-            <h2 style="color: #1a1a2e; margin: 0 0 16px 0; font-size: 20px;">Hey ${firstName}! 👋</h2>
-
-            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
-              Thanks for reaching out about your ${projectLabel}! We're thrilled you're considering us to help transform your space.
-              (Fair warning: our countertops are so good-looking, you might find yourself just... staring at them. It happens.)
-            </p>
-
-            ${appointmentSection}
-
-            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
-              ${hasAppointment ? "In the meantime, feel free to browse our selection online or dream up your perfect kitchen. We won't judge if you create a Pinterest board." : "One of our stone specialists will be in touch shortly to discuss your project and schedule a time that works for you. We promise we're much friendlier than a slab of granite (though admittedly, granite does have great composure)."}
-            </p>
-
-            <div style="background: #fefce8; border-left: 4px solid #f9cb00; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
-              <p style="margin: 0; color: #854d0e; font-size: 14px;">
-                <strong>Quick Tip:</strong> Have measurements handy? Even rough ones help us give you a more accurate estimate.
-                No pressure though – we bring our own measuring tape (and dad jokes) to every appointment.
-              </p>
-            </div>
-
-            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 8px 0;">
-              Questions? Just hit reply or give us a call. We're real humans who actually answer the phone!
-            </p>
-
-            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 24px 0 0 0;">
-              Looking forward to working with you,<br>
-              <strong style="color: #1a1a2e;">The Surprise Granite Team</strong>
-            </p>
-          </div>
-
-          <div style="background: #f9fafb; padding: 24px; text-align: center; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
-              <strong>Surprise Granite, Marble & Quartz</strong>
-            </p>
-            <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">
-              📍 14155 W. Grand Ave, Surprise, AZ 85374
-            </p>
-            <p style="margin: 0; color: #6b7280; font-size: 13px;">
-              📞 <a href="tel:6028333189" style="color: #f9cb00; text-decoration: none;">(602) 833-3189</a> &nbsp;|&nbsp;
-              🌐 <a href="https://www.surprisegranite.com" style="color: #f9cb00; text-decoration: none;">surprisegranite.com</a>
-            </p>
-          </div>
-        </div>
-      `;
-
-      await fetch('https://surprise-granite-email-api.onrender.com/api/send-estimate', {
+      // Use the /api/leads endpoint which sends proper customer confirmation emails
+      await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: email,
-          email: email,
-          name: `${firstName} ${lastName}`,
-          subject: hasAppointment
-            ? `Your Appointment is Confirmed! 📅 - Surprise Granite`
-            : `Thanks for Reaching Out! - Surprise Granite`,
-          message: emailBody,
-          source: 'lead-welcome-email'
+          homeowner_name: `${firstName} ${lastName}`,
+          homeowner_email: email,
+          homeowner_phone: phone || '',
+          project_type: projectLabel,
+          project_zip: '85374',
+          source: 'Manual Entry - Account',
+          // Include appointment info if scheduled
+          appointment_date: hasAppointment ? formattedDate : null,
+          appointment_time: hasAppointment ? apptTime : null,
+          message: hasAppointment
+            ? `${apptTypeLabels[apptType] || 'Appointment'} scheduled for ${formattedDate} at ${apptTime}`
+            : `New lead added manually - ${projectLabel}`
         })
       });
     }
@@ -9751,22 +9692,20 @@
           notes += `\n\nOriginal message: ${selectedLead.message}`;
         }
 
-        // Create customer with full data
+        // Create customer with standard fields only
         const customerData = {
           user_id: user.id,
           name: selectedLead.full_name || 'Unknown',
-          first_name: firstName || null,
-          last_name: lastName || null,
           email: selectedLead.email || null,
           phone: selectedLead.phone || null,
           address: address,
           city: city,
           state: state,
           zip: zip,
-          notes: notes,
-          lead_id: selectedLead.id,
-          project_type: selectedLead.project_type || null
+          notes: notes
         };
+
+        console.log('Creating customer with data:', customerData);
 
         const { data: customer, error } = await supabaseClient
           .from('customers')
@@ -9774,7 +9713,10 @@
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Customer insert error:', error);
+          throw error;
+        }
 
         // Update lead status to "qualified"
         await supabaseClient
