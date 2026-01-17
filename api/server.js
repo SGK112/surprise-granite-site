@@ -2485,6 +2485,155 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         console.log('Payment intent failed:', event.data.object.id);
         break;
 
+      // ============ PROJECT PAYMENT EVENTS ============
+      case 'payment_intent.succeeded': {
+        const pi = event.data.object;
+
+        // Check if this is a project payment
+        if (pi.metadata?.project_id) {
+          console.log('Project payment succeeded:', pi.id, 'Project:', pi.metadata.project_id);
+
+          const projectId = pi.metadata.project_id;
+          const amount = pi.amount / 100;
+          const paymentType = pi.metadata.payment_type || 'payment';
+
+          // Update payment record
+          await supabase
+            .from('project_payments')
+            .update({
+              status: 'succeeded',
+              completed_at: new Date().toISOString(),
+              stripe_charge_id: pi.latest_charge,
+              receipt_url: pi.receipt_url
+            })
+            .eq('stripe_payment_intent_id', pi.id);
+
+          // Get current project
+          const { data: project } = await supabase
+            .from('room_designs')
+            .select('*')
+            .eq('id', projectId)
+            .single();
+
+          if (project) {
+            const newAmountPaid = (project.amount_paid || 0) + amount;
+            const isPaidInFull = newAmountPaid >= (project.quote_total || 0);
+
+            // Update project
+            await supabase
+              .from('room_designs')
+              .update({
+                amount_paid: newAmountPaid,
+                payment_status: isPaidInFull ? 'paid' : (paymentType === 'deposit' ? 'deposit_paid' : 'partial'),
+                status: isPaidInFull ? 'paid' : (project.status === 'approved' ? 'paid' : project.status),
+                stripe_payment_intent_id: pi.id
+              })
+              .eq('id', projectId);
+
+            // Log activity
+            await supabase.from('project_activities').insert({
+              project_id: projectId,
+              activity_type: 'payment_received',
+              description: `${paymentType} payment of $${amount.toFixed(2)} received`,
+              metadata: { payment_intent_id: pi.id, amount, payment_type: paymentType }
+            });
+
+            // Send receipt to customer
+            if (project.customer_email) {
+              const receiptHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center;">
+      <h1 style="color: #fff; margin: 0; font-size: 24px;">Payment Received!</h1>
+    </div>
+    <div style="padding: 30px;">
+      <p style="color: #333; font-size: 16px;">Hi ${project.customer_name || 'there'},</p>
+      <p style="color: #333; font-size: 16px;">Thank you for your payment. Here are the details:</p>
+
+      <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <table width="100%" style="border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Project:</td>
+            <td style="padding: 8px 0; color: #333; text-align: right; font-weight: 600;">${project.name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Payment Type:</td>
+            <td style="padding: 8px 0; color: #333; text-align: right;">${paymentType}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Amount Paid:</td>
+            <td style="padding: 8px 0; color: #10b981; text-align: right; font-weight: 700; font-size: 18px;">$${amount.toFixed(2)}</td>
+          </tr>
+          <tr style="border-top: 1px solid #eee;">
+            <td style="padding: 12px 0 8px; color: #666;">Total Paid:</td>
+            <td style="padding: 12px 0 8px; color: #333; text-align: right;">$${newAmountPaid.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Project Total:</td>
+            <td style="padding: 8px 0; color: #333; text-align: right;">$${(project.quote_total || 0).toFixed(2)}</td>
+          </tr>
+          ${!isPaidInFull ? `
+          <tr>
+            <td style="padding: 8px 0; color: #666;">Remaining Balance:</td>
+            <td style="padding: 8px 0; color: #f59e0b; text-align: right; font-weight: 600;">$${((project.quote_total || 0) - newAmountPaid).toFixed(2)}</td>
+          </tr>
+          ` : ''}
+        </table>
+      </div>
+
+      ${isPaidInFull ? `
+      <div style="background: #dcfce7; border-radius: 8px; padding: 15px; text-align: center;">
+        <p style="color: #166534; margin: 0; font-weight: 600;">Project is paid in full! We'll be in touch soon.</p>
+      </div>
+      ` : ''}
+    </div>
+    <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+      <p style="color: #999; font-size: 12px; margin: 0;">Questions? Call (602) 833-7194</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+              await transporter.sendMail({
+                from: `"Surprise Granite" <${SMTP_USER}>`,
+                to: project.customer_email,
+                subject: `Payment Received - ${project.name}`,
+                html: receiptHtml
+              });
+            }
+
+            // Notify owner
+            if (project.user_id) {
+              const { data: owner } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', project.user_id)
+                .single();
+
+              if (owner?.email) {
+                await transporter.sendMail({
+                  from: `"Surprise Granite" <${SMTP_USER}>`,
+                  to: owner.email,
+                  subject: `Payment Received - ${project.name} - $${amount.toFixed(2)}`,
+                  html: `
+                    <h2>Payment Received!</h2>
+                    <p><strong>Project:</strong> ${project.name}</p>
+                    <p><strong>Customer:</strong> ${project.customer_name || project.customer_email}</p>
+                    <p><strong>Amount:</strong> $${amount.toFixed(2)}</p>
+                    <p><strong>Payment Type:</strong> ${paymentType}</p>
+                    <p><strong>Total Paid:</strong> $${newAmountPaid.toFixed(2)} / $${(project.quote_total || 0).toFixed(2)}</p>
+                    ${isPaidInFull ? '<p style="color: green; font-weight: bold;">PROJECT PAID IN FULL!</p>' : ''}
+                  `
+                });
+              }
+            }
+          }
+        }
+        break;
+      }
+
       // ============ VENDOR SUBSCRIPTION EVENTS ============
       case 'customer.subscription.created': {
         const subscription = event.data.object;
@@ -9289,6 +9438,729 @@ Be helpful and guide users toward scheduling an appointment or getting a quote.`
   clientWs.on('error', (error) => {
     console.error('[Aria Realtime] Client WebSocket error:', error);
   });
+});
+
+// ============ PROJECT MANAGEMENT API ============
+
+// Save/Update project with customer info
+app.post('/api/projects/save', async (req, res) => {
+  try {
+    const {
+      project_id,
+      name,
+      room_type,
+      room_width,
+      room_depth,
+      elements,
+      rooms,
+      settings,
+      quote_total,
+      customer_name,
+      customer_email,
+      customer_phone,
+      customer_address,
+      status,
+      notes
+    } = req.body;
+
+    const user_id = req.headers['x-user-id'];
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const projectData = {
+      user_id,
+      name: name || 'Untitled Project',
+      room_type: room_type || 'kitchen',
+      room_width: room_width || 12,
+      room_depth: room_depth || 10,
+      elements: elements || [],
+      rooms: rooms || [],
+      settings: settings || {},
+      quote_total: quote_total || 0,
+      customer_name,
+      customer_email,
+      customer_phone,
+      customer_address,
+      status: status || 'draft',
+      quote_notes: notes,
+      updated_at: new Date().toISOString()
+    };
+
+    let result;
+
+    if (project_id) {
+      // Update existing project
+      const { data, error } = await supabase
+        .from('room_designs')
+        .update(projectData)
+        .eq('id', project_id)
+        .eq('user_id', user_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      result = data;
+
+      // Log activity
+      await supabase.from('project_activities').insert({
+        project_id,
+        user_id,
+        activity_type: 'updated',
+        description: 'Project updated'
+      });
+    } else {
+      // Create new project
+      const share_token = require('crypto').randomBytes(12).toString('hex');
+
+      const { data, error } = await supabase
+        .from('room_designs')
+        .insert({
+          ...projectData,
+          share_token,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      result = data;
+
+      // Log activity
+      await supabase.from('project_activities').insert({
+        project_id: result.id,
+        user_id,
+        activity_type: 'created',
+        description: 'Project created'
+      });
+    }
+
+    res.json({ success: true, project: result });
+
+  } catch (error) {
+    console.error('Project save error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user's projects with filtering
+app.get('/api/projects', async (req, res) => {
+  try {
+    const user_id = req.headers['x-user-id'];
+    const { status, search, limit = 50, offset = 0 } = req.query;
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    let query = supabase
+      .from('room_designs')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('updated_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,customer_name.ilike.%${search}%,customer_email.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+
+    res.json({ projects: data, count: data.length });
+
+  } catch (error) {
+    console.error('Get projects error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single project by ID or share token
+app.get('/api/projects/:identifier', async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const user_id = req.headers['x-user-id'];
+
+    // Try to get by ID first, then by share_token
+    let query = supabase.from('room_designs').select('*');
+
+    // Check if it's a UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+    if (isUUID) {
+      query = query.eq('id', identifier);
+    } else {
+      query = query.eq('share_token', identifier);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error) throw error;
+
+    // Check access permissions
+    const isOwner = data.user_id === user_id;
+    const isCustomer = data.customer_id === user_id;
+    const hasShareToken = !isUUID; // Accessed via share token
+
+    if (!isOwner && !isCustomer && !hasShareToken) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Get activity log if owner
+    let activities = [];
+    if (isOwner) {
+      const { data: activityData } = await supabase
+        .from('project_activities')
+        .select('*')
+        .eq('project_id', data.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      activities = activityData || [];
+    }
+
+    res.json({
+      project: data,
+      activities,
+      permissions: {
+        canEdit: isOwner,
+        canApprove: isCustomer || hasShareToken,
+        canPay: isCustomer || hasShareToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Get project error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send quote to customer
+app.post('/api/projects/:id/send-quote', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customer_email, customer_name, message, expires_days = 30 } = req.body;
+    const user_id = req.headers['x-user-id'];
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!customer_email) {
+      return res.status(400).json({ error: 'Customer email required' });
+    }
+
+    // Get project
+    const { data: project, error: projectError } = await supabase
+      .from('room_designs')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (projectError) throw projectError;
+
+    // Generate portal token
+    const portal_token = require('crypto').randomBytes(16).toString('hex');
+    const expires_at = new Date(Date.now() + expires_days * 24 * 60 * 60 * 1000).toISOString();
+
+    // Create portal token record
+    await supabase.from('customer_portal_tokens').insert({
+      project_id: id,
+      token: portal_token,
+      customer_email,
+      expires_at
+    });
+
+    // Update project
+    await supabase
+      .from('room_designs')
+      .update({
+        customer_email,
+        customer_name: customer_name || project.customer_name,
+        status: 'sent',
+        quote_sent_at: new Date().toISOString(),
+        quote_expires_at: expires_at
+      })
+      .eq('id', id);
+
+    // Create quote version snapshot
+    const { data: versions } = await supabase
+      .from('quote_versions')
+      .select('version_number')
+      .eq('project_id', id)
+      .order('version_number', { ascending: false })
+      .limit(1);
+
+    const nextVersion = (versions?.[0]?.version_number || 0) + 1;
+
+    await supabase.from('quote_versions').insert({
+      project_id: id,
+      version_number: nextVersion,
+      elements: project.elements,
+      quote_total: project.quote_total,
+      quote_breakdown: project.quote_breakdown,
+      pricing_config: project.settings?.pricing_config,
+      created_by: user_id
+    });
+
+    // Update project version
+    await supabase
+      .from('room_designs')
+      .update({ quote_version: nextVersion })
+      .eq('id', id);
+
+    // Log activity
+    await supabase.from('project_activities').insert({
+      project_id: id,
+      user_id,
+      activity_type: 'quote_sent',
+      description: `Quote v${nextVersion} sent to ${customer_email}`,
+      metadata: { customer_email, portal_token, expires_at }
+    });
+
+    // Build portal URL
+    const portalUrl = `${process.env.SITE_URL || 'https://surprisegranite.com'}/customer-portal/?token=${portal_token}`;
+
+    // Send email to customer
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; text-align: center;">
+      <h1 style="color: #fff; margin: 0; font-size: 24px;">Your Project Quote</h1>
+      <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0;">from Surprise Granite</p>
+    </div>
+    <div style="padding: 30px;">
+      <p style="color: #333; font-size: 16px; line-height: 1.6;">
+        Hi ${customer_name || 'there'},
+      </p>
+      <p style="color: #333; font-size: 16px; line-height: 1.6;">
+        ${message || 'Your project quote is ready for review. Click the button below to view your design, pricing details, and approve the project.'}
+      </p>
+
+      <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+        <p style="color: #666; margin: 0 0 5px; font-size: 14px;">Project Total</p>
+        <p style="color: #1a1a2e; margin: 0; font-size: 32px; font-weight: 700;">$${(project.quote_total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+          View Quote & Approve
+        </a>
+      </div>
+
+      <p style="color: #666; font-size: 14px; text-align: center;">
+        This quote expires on ${new Date(expires_at).toLocaleDateString()}
+      </p>
+    </div>
+    <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
+      <p style="color: #999; font-size: 12px; margin: 0;">
+        Questions? Reply to this email or call (602) 833-7194
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    await transporter.sendMail({
+      from: `"Surprise Granite" <${SMTP_USER}>`,
+      to: customer_email,
+      subject: `Your Project Quote - ${project.name || 'Kitchen Design'}`,
+      html: emailHtml
+    });
+
+    res.json({
+      success: true,
+      portal_url: portalUrl,
+      portal_token,
+      quote_version: nextVersion
+    });
+
+  } catch (error) {
+    console.error('Send quote error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Customer approves quote
+app.post('/api/projects/approve', async (req, res) => {
+  try {
+    const { token, customer_name, customer_phone } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Portal token required' });
+    }
+
+    // Validate token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('customer_portal_tokens')
+      .select('*, room_designs(*)')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (tokenError || !tokenData) {
+      return res.status(404).json({ error: 'Invalid or expired token' });
+    }
+
+    const project = tokenData.room_designs;
+
+    // Update project status
+    await supabase
+      .from('room_designs')
+      .update({
+        status: 'approved',
+        quote_approved_at: new Date().toISOString(),
+        customer_name: customer_name || project.customer_name,
+        customer_phone: customer_phone || project.customer_phone
+      })
+      .eq('id', project.id);
+
+    // Log activity
+    await supabase.from('project_activities').insert({
+      project_id: project.id,
+      activity_type: 'quote_approved',
+      description: `Quote approved by ${tokenData.customer_email}`,
+      metadata: { customer_name, customer_phone }
+    });
+
+    // Notify owner
+    if (project.user_id) {
+      const { data: owner } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', project.user_id)
+        .single();
+
+      if (owner?.email) {
+        await transporter.sendMail({
+          from: `"Surprise Granite" <${SMTP_USER}>`,
+          to: owner.email,
+          subject: `Quote Approved - ${project.name}`,
+          html: `
+            <h2>Great news! Your quote has been approved.</h2>
+            <p><strong>Project:</strong> ${project.name}</p>
+            <p><strong>Customer:</strong> ${customer_name || tokenData.customer_email}</p>
+            <p><strong>Amount:</strong> $${(project.quote_total || 0).toLocaleString()}</p>
+            <p>The customer can now proceed with payment.</p>
+          `
+        });
+      }
+    }
+
+    res.json({ success: true, project_id: project.id });
+
+  } catch (error) {
+    console.error('Quote approval error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create payment intent for project
+app.post('/api/projects/:id/create-payment', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_type, token, customer_email } = req.body;
+
+    // Get project - either by token or by ID with auth
+    let project;
+
+    if (token) {
+      const { data: tokenData } = await supabase
+        .from('customer_portal_tokens')
+        .select('*, room_designs(*)')
+        .eq('token', token)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (!tokenData) {
+        return res.status(404).json({ error: 'Invalid or expired token' });
+      }
+      project = tokenData.room_designs;
+    } else {
+      const user_id = req.headers['x-user-id'];
+      const { data } = await supabase
+        .from('room_designs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      project = data;
+    }
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Calculate amount based on payment type
+    let amount;
+    let description;
+    const total = project.quote_total || 0;
+
+    switch (payment_type) {
+      case 'deposit':
+        amount = Math.max(99, total * 0.1); // 10% or minimum $99
+        description = `Deposit (10%) - ${project.name}`;
+        break;
+      case 'half':
+        amount = total * 0.5;
+        description = `50% Payment - ${project.name}`;
+        break;
+      case 'full':
+        amount = total;
+        description = `Full Payment - ${project.name}`;
+        break;
+      case 'remaining':
+        amount = total - (project.amount_paid || 0);
+        description = `Remaining Balance - ${project.name}`;
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid payment type' });
+    }
+
+    if (amount <= 0) {
+      return res.status(400).json({ error: 'Invalid payment amount' });
+    }
+
+    // Create Stripe customer if needed
+    let stripeCustomerId = project.stripe_customer_id;
+    const email = customer_email || project.customer_email;
+
+    if (!stripeCustomerId && email) {
+      const existingCustomers = await stripe.customers.list({ email, limit: 1 });
+
+      if (existingCustomers.data.length > 0) {
+        stripeCustomerId = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email,
+          name: project.customer_name,
+          metadata: { project_id: project.id }
+        });
+        stripeCustomerId = customer.id;
+      }
+
+      // Save customer ID to project
+      await supabase
+        .from('room_designs')
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq('id', project.id);
+    }
+
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'usd',
+      customer: stripeCustomerId,
+      description,
+      metadata: {
+        project_id: project.id,
+        payment_type,
+        project_name: project.name
+      },
+      receipt_email: email
+    });
+
+    // Record payment in database
+    await supabase.from('project_payments').insert({
+      project_id: project.id,
+      stripe_payment_intent_id: paymentIntent.id,
+      amount,
+      payment_type,
+      status: 'pending',
+      customer_email: email
+    });
+
+    // Log activity
+    await supabase.from('project_activities').insert({
+      project_id: project.id,
+      activity_type: 'payment_initiated',
+      description: `${payment_type} payment of $${amount.toFixed(2)} initiated`,
+      metadata: { payment_intent_id: paymentIntent.id, amount }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount
+    });
+
+  } catch (error) {
+    console.error('Create payment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update project status (for webhook or manual update)
+app.post('/api/projects/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const user_id = req.headers['x-user-id'];
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const validStatuses = ['draft', 'quoted', 'sent', 'viewed', 'approved', 'paid', 'in_progress', 'completed', 'cancelled'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    // Update project
+    const updateData = { status };
+
+    if (status === 'completed') {
+      updateData.completed_date = new Date().toISOString().split('T')[0];
+    }
+
+    await supabase
+      .from('room_designs')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', user_id);
+
+    // Log activity
+    await supabase.from('project_activities').insert({
+      project_id: id,
+      user_id,
+      activity_type: 'status_changed',
+      description: `Status changed to ${status}${notes ? ': ' + notes : ''}`,
+      metadata: { new_status: status, notes }
+    });
+
+    res.json({ success: true, status });
+
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get project activity log
+app.get('/api/projects/:id/activities', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user_id = req.headers['x-user-id'];
+    const { limit = 50 } = req.query;
+
+    // Verify access
+    const { data: project } = await supabase
+      .from('room_designs')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (!project || project.user_id !== user_id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { data: activities, error } = await supabase
+      .from('project_activities')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    res.json({ activities });
+
+  } catch (error) {
+    console.error('Get activities error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Customer portal - get project by token
+app.get('/api/customer-portal/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Get token and project
+    const { data: tokenData, error } = await supabase
+      .from('customer_portal_tokens')
+      .select('*, room_designs(*)')
+      .eq('token', token)
+      .single();
+
+    if (error || !tokenData) {
+      return res.status(404).json({ error: 'Invalid token' });
+    }
+
+    // Check expiration
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+      return res.status(410).json({ error: 'Token expired' });
+    }
+
+    const project = tokenData.room_designs;
+
+    // Update view tracking
+    await supabase
+      .from('customer_portal_tokens')
+      .update({
+        last_accessed_at: new Date().toISOString(),
+        access_count: (tokenData.access_count || 0) + 1
+      })
+      .eq('token', token);
+
+    // Record first view
+    if (!project.quote_viewed_at) {
+      await supabase
+        .from('room_designs')
+        .update({
+          quote_viewed_at: new Date().toISOString(),
+          status: project.status === 'sent' ? 'viewed' : project.status
+        })
+        .eq('id', project.id);
+
+      // Log activity
+      await supabase.from('project_activities').insert({
+        project_id: project.id,
+        activity_type: 'quote_viewed',
+        description: `Quote viewed by ${tokenData.customer_email}`
+      });
+    }
+
+    // Get payment history
+    const { data: payments } = await supabase
+      .from('project_payments')
+      .select('*')
+      .eq('project_id', project.id)
+      .eq('status', 'succeeded')
+      .order('created_at', { ascending: false });
+
+    res.json({
+      project: {
+        id: project.id,
+        name: project.name,
+        room_type: project.room_type,
+        elements: project.elements,
+        rooms: project.rooms,
+        settings: project.settings,
+        quote_total: project.quote_total,
+        quote_breakdown: project.quote_breakdown,
+        status: project.status,
+        amount_paid: project.amount_paid || 0,
+        customer_name: project.customer_name,
+        created_at: project.created_at
+      },
+      payments: payments || [],
+      permissions: tokenData.permissions || ['view', 'approve', 'pay'],
+      expires_at: tokenData.expires_at
+    });
+
+  } catch (error) {
+    console.error('Customer portal error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Start server with WebSocket support
