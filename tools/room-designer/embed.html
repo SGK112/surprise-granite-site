@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Embedded Design View | Surprise Granite</title>
+  <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #f5f5f5; }
+
+    .embed-container {
+      max-width: 100%;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .embed-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .embed-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .embed-meta {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .embed-3d-viewer {
+      width: 100%;
+      height: 400px;
+      position: relative;
+      background: #0d0d15;
+    }
+
+    .embed-footer {
+      padding: 16px 20px;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .embed-quote {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .embed-quote-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .embed-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .embed-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #888;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .embed-header { flex-direction: column; gap: 8px; text-align: center; }
+      .embed-footer { flex-direction: column; text-align: center; }
+      .embed-3d-viewer { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="embed-container">
+    <div class="embed-header">
+      <div>
+        <div class="embed-title" id="projectName">Kitchen Design</div>
+        <div class="embed-meta" id="projectMeta">12' × 10' Kitchen</div>
+      </div>
+      <div class="embed-meta" id="companyName">Surprise Granite</div>
+    </div>
+
+    <div class="embed-3d-viewer" id="viewer3d">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        Loading 3D view...
+      </div>
+    </div>
+
+    <div class="embed-footer">
+      <div>
+        <div class="embed-quote-label">Estimated Project Total</div>
+        <div class="embed-quote" id="quoteTotal">$0.00</div>
+      </div>
+      <a href="#" class="embed-cta" id="openDesigner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Open in Designer
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script>
+    // Get token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      document.getElementById('viewer3d').innerHTML = '<div class="loading">No design specified</div>';
+    } else {
+      loadDesign(token);
+    }
+
+    async function loadDesign(shareToken) {
+      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+      try {
+        // Try share token first
+        let response = await fetch(
+          `${SUPABASE_URL}/rest/v1/room_designs?share_token=eq.${shareToken}&select=*`,
+          { headers: { 'apikey': SUPABASE_ANON_KEY } }
+        );
+        let data = await response.json();
+        let design = data[0];
+
+        if (!design) {
+          document.getElementById('viewer3d').innerHTML = '<div class="loading">Design not found</div>';
+          return;
+        }
+
+        // Update UI
+        document.getElementById('projectName').textContent = design.project_name || design.name || 'Kitchen Design';
+        document.getElementById('projectMeta').textContent = `${design.room_width || 12}' × ${design.room_depth || 10}' ${design.room_type || 'Kitchen'}`;
+        document.getElementById('companyName').textContent = design.settings?.company_name || 'Surprise Granite';
+        document.getElementById('quoteTotal').textContent = '$' + (design.quote_total || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('openDesigner').href = `/tools/room-designer/?token=${shareToken}`;
+
+        // Initialize 3D viewer
+        init3DViewer(design);
+
+      } catch (err) {
+        console.error('Load error:', err);
+        document.getElementById('viewer3d').innerHTML = '<div class="loading">Error loading design</div>';
+      }
+    }
+
+    function init3DViewer(design) {
+      const container = document.getElementById('viewer3d');
+      container.innerHTML = '';
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0d0d15);
+
+      const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+      directional.position.set(10, 15, 10);
+      directional.castShadow = true;
+      scene.add(directional);
+
+      // Room dimensions
+      const roomWidth = design.room_width || 12;
+      const roomDepth = design.room_depth || 10;
+      const roomHeight = 8;
+
+      // Floor
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0xD2B48C, roughness: 0.8 });
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth + 4, roomDepth + 4), floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(roomWidth / 2, 0, roomDepth / 2);
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Walls
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xFFFAF0, roughness: 0.9, side: THREE.DoubleSide });
+
+      // Back wall
+      const backWall = new THREE.Mesh(new THREE.PlaneGeometry(roomWidth, roomHeight), wallMat);
+      backWall.position.set(roomWidth / 2, roomHeight / 2, 0);
+      scene.add(backWall);
+
+      // Left wall
+      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(roomDepth, roomHeight), wallMat);
+      leftWall.rotation.y = Math.PI / 2;
+      leftWall.position.set(0, roomHeight / 2, roomDepth / 2);
+      scene.add(leftWall);
+
+      // Right wall
+      const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(roomDepth, roomHeight), wallMat);
+      rightWall.rotation.y = -Math.PI / 2;
+      rightWall.position.set(roomWidth, roomHeight / 2, roomDepth / 2);
+      scene.add(rightWall);
+
+      // Simplified elements rendering
+      const elements = design.elements || [];
+      const savedScale = design.settings?.pixelsPerFoot || 40;
+
+      elements.forEach(el => {
+        if (!el.width || !el.height) return;
+
+        const w = el.width;
+        const d = el.height;
+        const h = getElementHeight(el.type);
+
+        // Convert position from pixels to feet
+        const xPos = (el.x / savedScale) + w / 2;
+        const zPos = (el.y / savedScale) + d / 2;
+        const yPos = getYPosition(el.type, h);
+
+        // Element color
+        let color = el.color || '#808080';
+        if (typeof color === 'string' && color.startsWith('#')) {
+          color = parseInt(color.replace('#', ''), 16);
+        }
+
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(w, h, d),
+          new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 })
+        );
+        mesh.position.set(xPos, yPos, zPos);
+        mesh.rotation.y = -(el.rotation || 0) * Math.PI / 180;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      });
+
+      // Camera controls
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(roomWidth / 2, 1.5, roomDepth / 2);
+      camera.position.set(roomWidth * 1.2, roomWidth * 0.6, roomDepth * 1.3);
+      controls.update();
+
+      // Animation
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    }
+
+    function getElementHeight(type) {
+      const heights = {
+        'base-cabinet': 2.875, 'wall-cabinet': 2.5, 'tall-cabinet': 7,
+        'countertop': 0.125, 'island': 3, 'refrigerator': 6, 'range': 3,
+        'sink': 0.5, 'dishwasher': 2.875, 'window': 3, 'door': 6.67
+      };
+      return heights[type] || 2;
+    }
+
+    function getYPosition(type, h) {
+      if (type === 'wall-cabinet') return 4.5 + h/2;
+      if (type === 'countertop') return 3 + h/2;
+      if (['window', 'door'].includes(type)) return h/2;
+      return h/2;
+    }
+  </script>
+</body>
+</html>

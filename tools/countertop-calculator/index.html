@@ -513,6 +513,128 @@
             border-color: rgba(249, 203, 0, 0.3);
         }
 
+        /* Waterfall Section Styles */
+        .waterfall-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .waterfall-toggle {
+            margin-bottom: 12px;
+        }
+
+        .waterfall-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .waterfall-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--gold-primary);
+            cursor: pointer;
+        }
+
+        .waterfall-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .waterfall-info {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: help;
+        }
+
+        .waterfall-options {
+            background: rgba(249, 203, 0, 0.05);
+            border: 1px solid rgba(249, 203, 0, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .waterfall-sides {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+
+        .waterfall-side-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .waterfall-side-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--gold-primary);
+            cursor: pointer;
+        }
+
+        .waterfall-side-option span {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .waterfall-height-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .waterfall-height-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .waterfall-height {
+            padding: 10px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .waterfall-custom-height {
+            padding: 10px 12px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+            margin-top: 8px;
+        }
+
+        .waterfall-sqft {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .waterfall-sides {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+
         .input-group {
             display: flex;
             flex-direction: column;
@@ -1546,12 +1668,47 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- Waterfall Sides Section -->
+                        <div class="waterfall-section">
+                            <div class="waterfall-toggle">
+                                <label class="waterfall-checkbox">
+                                    <input type="checkbox" class="waterfall-enabled" onchange="toggleWaterfall(this); calculateAll()">
+                                    <span class="waterfall-label">Add Waterfall Sides</span>
+                                    <span class="waterfall-info" title="Waterfall sides extend the countertop vertically down to the floor">?</span>
+                                </label>
+                            </div>
+                            <div class="waterfall-options" style="display: none;">
+                                <div class="waterfall-sides">
+                                    <label class="waterfall-side-option">
+                                        <input type="checkbox" class="waterfall-left" onchange="calculateAll()">
+                                        <span>Left Side</span>
+                                    </label>
+                                    <label class="waterfall-side-option">
+                                        <input type="checkbox" class="waterfall-right" onchange="calculateAll()">
+                                        <span>Right Side</span>
+                                    </label>
+                                </div>
+                                <div class="waterfall-height-group">
+                                    <label>Drop Height</label>
+                                    <select class="waterfall-height" onchange="calculateAll()">
+                                        <option value="36">36" (Standard Counter)</option>
+                                        <option value="42">42" (Bar Height)</option>
+                                        <option value="30">30" (Desk Height)</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                    <input type="number" class="waterfall-custom-height" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
+                                </div>
+                            </div>
+                        </div>
                         <div class="section-results">
                             <div class="section-sqft">
                                 <span class="counter-sqft">0</span> sqft counter
                             </div>
                             <div class="section-sqft backsplash-sqft" style="display: none;">
                                 + <span class="splash-sqft">0</span> sqft splash
+                            </div>
+                            <div class="section-sqft waterfall-sqft" style="display: none;">
+                                + <span class="wfall-sqft">0</span> sqft waterfall
                             </div>
                             <div class="section-sqft edge-linear-ft">
                                 <span class="edge-lf">0</span> linear ft edge
@@ -1581,6 +1738,10 @@
                     <div class="result-card">
                         <div class="result-label">Backsplash</div>
                         <div class="result-value"><span id="splashSqft">0</span> <small>sqft</small></div>
+                    </div>
+                    <div class="result-card" id="waterfallCard" style="display: none;">
+                        <div class="result-label">Waterfall Sides</div>
+                        <div class="result-value"><span id="waterfallSqft">0</span> <small>sqft</small></div>
                     </div>
                 </div>
                 <div class="results-grid" style="margin-top: 12px;">
@@ -2023,12 +2184,47 @@
                         </select>
                     </div>
                 </div>
+                <!-- Waterfall Sides Section -->
+                <div class="waterfall-section">
+                    <div class="waterfall-toggle">
+                        <label class="waterfall-checkbox">
+                            <input type="checkbox" class="waterfall-enabled" onchange="toggleWaterfall(this); calculateAll()">
+                            <span class="waterfall-label">Add Waterfall Sides</span>
+                            <span class="waterfall-info" title="Waterfall sides extend the countertop vertically down to the floor">?</span>
+                        </label>
+                    </div>
+                    <div class="waterfall-options" style="display: none;">
+                        <div class="waterfall-sides">
+                            <label class="waterfall-side-option">
+                                <input type="checkbox" class="waterfall-left" onchange="calculateAll()">
+                                <span>Left Side</span>
+                            </label>
+                            <label class="waterfall-side-option">
+                                <input type="checkbox" class="waterfall-right" onchange="calculateAll()">
+                                <span>Right Side</span>
+                            </label>
+                        </div>
+                        <div class="waterfall-height-group">
+                            <label>Drop Height</label>
+                            <select class="waterfall-height" onchange="calculateAll()">
+                                <option value="36">36" (Standard Counter)</option>
+                                <option value="42">42" (Bar Height)</option>
+                                <option value="30">30" (Desk Height)</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                            <input type="number" class="waterfall-custom-height" placeholder="Height in inches" min="12" max="48" style="display: none;" oninput="calculateAll()">
+                        </div>
+                    </div>
+                </div>
                 <div class="section-results">
                     <div class="section-sqft">
                         <span class="counter-sqft">0</span> sqft counter
                     </div>
                     <div class="section-sqft backsplash-sqft" style="display: none;">
                         + <span class="splash-sqft">0</span> sqft splash
+                    </div>
+                    <div class="section-sqft waterfall-sqft" style="display: none;">
+                        + <span class="wfall-sqft">0</span> sqft waterfall
                     </div>
                     <div class="section-sqft edge-linear-ft">
                         <span class="edge-lf">0</span> linear ft edge
@@ -2065,10 +2261,27 @@
             document.getElementById('sectionCount').textContent = count;
         }
 
+        function toggleWaterfall(checkbox) {
+            const section = checkbox.closest('.countertop-section');
+            const options = section.querySelector('.waterfall-options');
+            options.style.display = checkbox.checked ? 'block' : 'none';
+
+            // Also handle waterfall height custom input
+            const heightSelect = section.querySelector('.waterfall-height');
+            const customInput = section.querySelector('.waterfall-custom-height');
+            if (heightSelect && customInput) {
+                heightSelect.onchange = function() {
+                    customInput.style.display = this.value === 'custom' ? 'block' : 'none';
+                    calculateAll();
+                };
+            }
+        }
+
         function calculateAll() {
             const sections = document.querySelectorAll('.countertop-section');
             let totalCounterSqft = 0;
             let totalSplashSqft = 0;
+            let totalWaterfallSqft = 0;
             let totalEdgeLF = 0;
 
             // Get edge tier price per linear foot
@@ -2129,10 +2342,52 @@
                 }
                 section.querySelector('.edge-lf').textContent = edgeLF.toFixed(1);
                 totalEdgeLF += edgeLF;
+
+                // Calculate waterfall sides square footage
+                let waterfallSqft = 0;
+                const waterfallEnabled = section.querySelector('.waterfall-enabled')?.checked;
+                const waterfallDisplay = section.querySelector('.waterfall-sqft');
+
+                if (waterfallEnabled) {
+                    const waterfallLeft = section.querySelector('.waterfall-left')?.checked;
+                    const waterfallRight = section.querySelector('.waterfall-right')?.checked;
+                    const heightSelect = section.querySelector('.waterfall-height');
+                    const customHeight = section.querySelector('.waterfall-custom-height');
+
+                    // Get waterfall drop height
+                    let waterfallHeight = 36; // Default 36" counter height
+                    if (heightSelect) {
+                        if (heightSelect.value === 'custom') {
+                            waterfallHeight = parseFloat(customHeight?.value) || 36;
+                        } else {
+                            waterfallHeight = parseFloat(heightSelect.value) || 36;
+                        }
+                    }
+
+                    // Waterfall side uses depth (front-to-back) as width, waterfallHeight as height
+                    // Each waterfall side = depth * waterfallHeight (in sq inches, convert to sq ft)
+                    if (waterfallLeft) {
+                        waterfallSqft += (depth * waterfallHeight) / 144;
+                    }
+                    if (waterfallRight) {
+                        waterfallSqft += (depth * waterfallHeight) / 144;
+                    }
+                }
+
+                // Update waterfall display
+                if (waterfallDisplay) {
+                    if (waterfallSqft > 0) {
+                        section.querySelector('.wfall-sqft').textContent = waterfallSqft.toFixed(2);
+                        waterfallDisplay.style.display = 'block';
+                    } else {
+                        waterfallDisplay.style.display = 'none';
+                    }
+                }
+                totalWaterfallSqft += waterfallSqft;
             });
 
             // Calculate totals
-            const totalSqft = totalCounterSqft + totalSplashSqft;
+            const totalSqft = totalCounterSqft + totalSplashSqft + totalWaterfallSqft;
             const edgeUpgradeCost = totalEdgeLF * edgePricePerLF;
 
             // Update totals display
@@ -2141,6 +2396,15 @@
             document.getElementById('splashSqft').textContent = totalSplashSqft.toFixed(2);
             document.getElementById('withWaste').textContent = (totalSqft * 1.1).toFixed(2);
             document.getElementById('totalEdgeLF').textContent = totalEdgeLF.toFixed(1);
+
+            // Show/hide waterfall sqft
+            const waterfallCard = document.getElementById('waterfallCard');
+            if (totalWaterfallSqft > 0) {
+                document.getElementById('waterfallSqft').textContent = totalWaterfallSqft.toFixed(2);
+                waterfallCard.style.display = 'block';
+            } else {
+                waterfallCard.style.display = 'none';
+            }
 
             // Show/hide edge upgrade cost
             const edgeUpgradeCard = document.getElementById('edgeUpgradeCard');

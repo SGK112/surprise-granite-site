@@ -1742,9 +1742,17 @@
     }
 
     .item-checkbox {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       cursor: pointer;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+      margin: 0;
+      border-radius: 4px;
+    }
+
+    .item-checkbox:checked {
+      background: var(--accent);
     }
 
     .item-icon {
@@ -3271,6 +3279,47 @@
       margin-top: 16px;
       padding-top: 12px;
       border-top: 1px solid var(--border);
+    }
+
+    /* Pricing Locked State */
+    .pricing-locked {
+      position: relative;
+      pointer-events: none;
+      opacity: 0.3;
+      filter: blur(3px);
+    }
+
+    .pricing-locked-overlay {
+      background: linear-gradient(135deg, rgba(26,26,46,0.95), rgba(22,33,62,0.95));
+      border-radius: 12px;
+      padding: 24px;
+      margin: 12px;
+      text-align: center;
+    }
+
+    .pricing-locked-content {
+      color: var(--text);
+    }
+
+    .pricing-locked-content h4 {
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .pricing-locked-content p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .pricing-locked-content .btn {
+      background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%);
+      color: #1a1a2e;
+      border: none;
+      padding: 12px 24px;
+      font-weight: 600;
     }
 
     .property-section-title {
@@ -5058,7 +5107,6 @@
       <div class="header-center">
         <button class="view-btn active" id="view2D" onclick="setView('2d')">2D Plan</button>
         <button class="view-btn" id="view3D" onclick="setView('3d')">3D View</button>
-        <button class="view-btn" id="viewDetailedModel" onclick="previewDetailedCabinetModel()" title="Preview imported 3D cabinet model">Preview Model</button>
       </div>
 
       <div class="header-right">
@@ -5221,12 +5269,13 @@
           </div>
         </div>
 
-        <button class="btn btn-primary" onclick="generateQuote()">
+        <button class="btn btn-primary" onclick="generateTakeoffReport()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="M9 12h6M9 16h6"/>
           </svg>
-          Get Quote
+          Get Takeoffs
         </button>
       </div>
     </header>
@@ -5729,32 +5778,6 @@
 
       <!-- Right Panel -->
       <aside class="right-panel">
-        <!-- Element List - Click to Select -->
-        <div class="panel-section" id="elementSelectorSection">
-          <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>Elements on Canvas</span>
-            <span class="element-total-count" id="elementTotalCount">0</span>
-          </div>
-          <div class="element-list-filter" style="margin-bottom: 8px;">
-            <select class="input-field" id="elementListFilter" onchange="updateElementSelector()" style="font-size: 11px; padding: 4px 6px;">
-              <option value="all">All Elements</option>
-              <option value="cabinets">Cabinets</option>
-              <option value="countertops">Countertops</option>
-              <option value="appliances">Appliances</option>
-              <option value="fixtures">Fixtures</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="element-flat-list" id="elementFlatList" style="max-height: 250px; overflow-y: auto;">
-            <!-- All elements listed here - click to select -->
-          </div>
-          <div class="element-selector-actions" id="elementSelectorActions" style="display: none; gap: 4px; margin-top: 8px;">
-            <button class="btn-small btn-primary" onclick="focusSelectedElement()" title="Center view on element">Focus</button>
-            <button class="btn-small btn-secondary" onclick="duplicateSelectedElement()" title="Duplicate element">Copy</button>
-            <button class="btn-small btn-danger" onclick="deleteSelectedElement()" title="Delete element">Delete</button>
-          </div>
-        </div>
-
         <div class="panel-section">
           <div class="panel-title">Room Settings</div>
           <div class="room-grid">
@@ -5839,6 +5862,9 @@
             </button>
           </div>
           <p class="template-hint">Click a template to load preset room layout</p>
+          <button onclick="exportAsTemplate()" style="width:100%;margin-top:8px;padding:8px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);border-radius:6px;color:#a5b4fc;font-size:11px;cursor:pointer;" title="Export your current design as reusable template code">
+            📋 Export Current Design as Template
+          </button>
         </div>
 
         <!-- Cabinet Settings -->
@@ -6016,6 +6042,33 @@
               <select class="property-select" id="propStandardSize" onchange="applyStandardSize()">
                 <option value="">Custom</option>
               </select>
+            </div>
+            <!-- Add Countertop button for base cabinets -->
+            <div class="property-row" id="addCountertopRow" style="display: none;">
+              <button onclick="addCountertopToCabinet()" style="
+                width: 100%;
+                padding: 10px 16px;
+                background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+                color: #000;
+                border: none;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition: all 0.2s;
+              " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(74, 222, 128, 0.4)';"
+                 onmouseout="this.style.transform=''; this.style.boxShadow='';">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <rect x="2" y="4" width="20" height="4" rx="1"/>
+                  <path d="M4 8v8"/>
+                  <path d="M20 8v8"/>
+                </svg>
+                Add Countertop
+              </button>
             </div>
             <!-- Window/Door height from floor -->
             <div class="property-row" id="sillHeightRow" style="display: none;">
@@ -6209,19 +6262,33 @@
             <div class="property-row" id="edgeProfileRow" style="display: none;">
               <span class="property-label">Edge Profile</span>
               <select class="property-select" id="propEdgeProfile" onchange="updateEdgeProfile()">
-                <option value="eased">Eased (Standard)</option>
-                <option value="pencil">Pencil Round</option>
-                <option value="quarter-round">Quarter Round</option>
-                <option value="quarter-bevel">Quarter Bevel</option>
-                <option value="half-bullnose">Half Bullnose</option>
-                <option value="full-bullnose">Full Bullnose</option>
-                <option value="ogee">Ogee (+$25/LF)</option>
-                <option value="double-ogee">Double Ogee (+$35/LF)</option>
-                <option value="cove">Cove (+$20/LF)</option>
-                <option value="dupont">Dupont (+$30/LF)</option>
-                <option value="mitered">Mitered (+$15/LF)</option>
-                <option value="waterfall">Waterfall (+$50/LF)</option>
+                <optgroup label="★★★★★ Most Durable">
+                  <option value="full-bullnose">Full Bullnose - Nearly indestructible</option>
+                  <option value="half-bullnose">Half Bullnose - Best practical choice</option>
+                </optgroup>
+                <optgroup label="★★★★ Durable">
+                  <option value="eased">Eased (Standard) - Versatile, all stones</option>
+                  <option value="pencil">Pencil Round - Small radius</option>
+                  <option value="quarter-round">Quarter Round - Larger radius</option>
+                  <option value="quarter-bevel">Quarter Bevel - Wear resistant</option>
+                  <option value="mitered">Mitered (+$15/LF) - Modern look</option>
+                </optgroup>
+                <optgroup label="★★★ Moderate">
+                  <option value="dupont">Dupont (+$30/LF) - Multi-step profile</option>
+                  <option value="cove">Cove (+$20/LF) - Concave curve</option>
+                </optgroup>
+                <optgroup label="★★ Decorative (Chip-prone)">
+                  <option value="ogee">Ogee (+$25/LF) - Classic, delicate</option>
+                  <option value="double-ogee">Double Ogee (+$35/LF) - Very ornate</option>
+                </optgroup>
+                <optgroup label="Special">
+                  <option value="waterfall">Waterfall (+$50/LF) - For waterfall edges</option>
+                </optgroup>
               </select>
+            </div>
+            <!-- Edge profile info -->
+            <div class="property-row" id="edgeProfileInfoRow" style="display: none;">
+              <div id="edgeProfileInfo" style="font-size: 11px; color: rgba(255,255,255,0.6); padding: 6px 8px; background: rgba(0,0,0,0.2); border-radius: 4px; line-height: 1.4;"></div>
             </div>
             <div class="property-row" id="thicknessRow" style="display: none;">
               <span class="property-label">Slab Thickness</span>
@@ -6238,25 +6305,101 @@
                 <option value="stacked">Stacked (vertical seam)</option>
               </select>
             </div>
-            <!-- Waterfall edge configuration -->
-            <div class="property-row" id="waterfallRow" style="display: none;">
-              <span class="property-label">Waterfall Sides</span>
-              <div class="checkbox-group" style="flex-wrap: wrap;">
-                <label><input type="checkbox" id="propWaterfallLeft" onchange="updateWaterfallSides()"> Left</label>
-                <label><input type="checkbox" id="propWaterfallRight" onchange="updateWaterfallSides()"> Right</label>
-                <label><input type="checkbox" id="propWaterfallFront" onchange="updateWaterfallSides()"> Front</label>
-                <label><input type="checkbox" id="propWaterfallBack" onchange="updateWaterfallSides()"> Back</label>
+            <!-- Waterfall Sides - Always visible prominent option for countertops -->
+            <div class="property-row waterfall-section-header" id="waterfallSectionRow" style="display: none;">
+              <div style="width: 100%; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <span style="font-weight: 600; color: #f9cb00; font-size: 13px;">WATERFALL SIDES</span>
+                  <span style="font-size: 11px; color: rgba(255,255,255,0.5);">Stone drops to floor</span>
+                </div>
+                <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <label class="waterfall-checkbox-label" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" id="propWaterfallLeft" onchange="updateWaterfallSides()" style="width: 18px; height: 18px; accent-color: #f9cb00;">
+                    <span style="font-size: 13px;">Left Side</span>
+                  </label>
+                  <label class="waterfall-checkbox-label" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" id="propWaterfallRight" onchange="updateWaterfallSides()" style="width: 18px; height: 18px; accent-color: #f9cb00;">
+                    <span style="font-size: 13px;">Right Side</span>
+                  </label>
+                  <label class="waterfall-checkbox-label" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" id="propWaterfallFront" onchange="updateWaterfallSides()" style="width: 18px; height: 18px; accent-color: #f9cb00;">
+                    <span style="font-size: 13px;">Front</span>
+                  </label>
+                  <label class="waterfall-checkbox-label" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" id="propWaterfallBack" onchange="updateWaterfallSides()" style="width: 18px; height: 18px; accent-color: #f9cb00;">
+                    <span style="font-size: 13px;">Back</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="property-row" id="waterfallHeightRow" style="display: none;">
               <span class="property-label">Waterfall Drop</span>
               <select class="property-select" id="propWaterfallHeight" onchange="updateWaterfallHeight()">
                 <option value="2.5">2.5' (30") - Counter height</option>
-                <option value="2.9">2.9' (35") - Cabinet height</option>
+                <option value="2.9" selected>2.9' (35") - Standard</option>
                 <option value="3">3' (36") - Island height</option>
                 <option value="floor">To Floor</option>
                 <option value="custom">Custom...</option>
               </select>
+            </div>
+            <!-- Legacy waterfall row (hidden, kept for compatibility) -->
+            <div class="property-row" id="waterfallRow" style="display: none;"></div>
+            <!-- Overhang Controls for Islands, Bars, etc. -->
+            <div class="property-row overhang-section" id="overhangSectionRow" style="display: none;">
+              <div style="width: 100%; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <span style="font-weight: 600; color: #4ade80; font-size: 13px;">OVERHANG</span>
+                  <select class="property-select" id="propOverhangPreset" onchange="applyOverhangPreset()" style="width: auto; padding: 4px 8px; font-size: 11px;">
+                    <option value="">Custom</option>
+                    <option value="standard">Standard (2" front)</option>
+                    <option value="island">Island (2" all)</option>
+                    <option value="bar">Bar Seating (12")</option>
+                    <option value="breakfast">Breakfast Bar (15")</option>
+                    <option value="ada">ADA Accessible (19")</option>
+                  </select>
+                </div>
+                <!-- Fabrication warning area -->
+                <div id="overhangWarning" style="display: none; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 8px; margin-bottom: 10px; font-size: 11px;">
+                  <div style="display: flex; align-items: flex-start; gap: 6px;">
+                    <span style="color: #f59e0b;">⚠️</span>
+                    <div id="overhangWarningText" style="color: #fbbf24; line-height: 1.4;"></div>
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.6);">Front</label>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="propOverhangFront" min="0" max="24" step="0.5" value="2"
+                        onchange="updateOverhang()" style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-size: 12px;">
+                      <span style="font-size: 11px; color: rgba(255,255,255,0.5);">in</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.6);">Back</label>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="propOverhangBack" min="0" max="24" step="0.5" value="0"
+                        onchange="updateOverhang()" style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-size: 12px;">
+                      <span style="font-size: 11px; color: rgba(255,255,255,0.5);">in</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.6);">Left</label>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="propOverhangLeft" min="0" max="24" step="0.5" value="1.5"
+                        onchange="updateOverhang()" style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-size: 12px;">
+                      <span style="font-size: 11px; color: rgba(255,255,255,0.5);">in</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.6);">Right</label>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input type="number" id="propOverhangRight" min="0" max="24" step="0.5" value="1.5"
+                        onchange="updateOverhang()" style="width: 60px; padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-size: 12px;">
+                      <span style="font-size: 11px; color: rgba(255,255,255,0.5);">in</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="property-row" id="backsplashRow" style="display: none;">
               <span class="property-label">Backsplash</span>
@@ -6277,10 +6420,17 @@
             </div>
             <div class="property-row" id="seamsRow" style="display: none;">
               <span class="property-label">Seams</span>
-              <div class="seam-controls">
-                <button class="seam-btn" onclick="addSeamToCountertop()" title="Add seam at countertop center">+ Add Seam</button>
-                <span class="seam-count" id="seamCount">0 seams</span>
-                <button class="seam-btn seam-clear" onclick="clearSeams()" title="Remove all seams">Clear</button>
+              <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <div class="seam-controls">
+                  <button class="seam-btn" onclick="addSeamToCountertop()" title="Add seam at optimal position">+ Add Seam</button>
+                  <span class="seam-count" id="seamCount">0 seams</span>
+                  <button class="seam-btn seam-clear" onclick="clearSeams()" title="Remove all seams">Clear</button>
+                </div>
+                <button class="seam-btn" onclick="showSeamRequirementCheck()" style="background: rgba(99, 102, 241, 0.2); font-size: 11px; padding: 4px 8px;"
+                  title="Check if seams are needed based on slab dimensions">Check Requirements</button>
+                <div id="seamRequirementInfo" style="display: none; font-size: 11px; padding: 6px 8px; background: rgba(245, 158, 11, 0.15); border-radius: 4px; border-left: 3px solid #f59e0b;">
+                  <span id="seamRequirementText" style="color: #fbbf24; line-height: 1.4;"></span>
+                </div>
               </div>
             </div>
             <!-- Sink-specific properties -->
@@ -6451,12 +6601,28 @@
         <div class="quote-section" id="quotePanel">
           <div class="panel-section">
             <div class="quote-header">
-              <div class="panel-title">Quote Summary</div>
+              <div class="panel-title">Takeoff Summary</div>
               <div class="quote-view-toggle">
                 <button class="toggle-btn active" id="retailViewBtn" onclick="setQuoteView('retail')" title="Show retail prices">Retail</button>
                 <button class="toggle-btn" id="costViewBtn" onclick="setQuoteView('cost')" title="Show cost prices">Cost</button>
               </div>
             </div>
+          </div>
+          <!-- Quick Takeoff Stats -->
+          <div id="takeoffQuickStats" style="padding: 0 12px 12px; display: none;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+              <div style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: #818cf8;" id="quickSlabCount">0</div>
+                <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase;">Slabs</div>
+              </div>
+              <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: #34d399;" id="quickCabinetCount">0</div>
+                <div style="font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase;">Cabinets</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="generateTakeoffReport()" style="width: 100%; margin-top: 8px; font-size: 11px;">
+              View Full Takeoffs →
+            </button>
           </div>
           <div class="quote-actions">
             <button class="btn btn-sm btn-secondary" onclick="openPriceListModal()" title="Upload or manage price lists">
@@ -6733,6 +6899,26 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Share to Gallery Option -->
+      <div class="gallery-share-option" style="margin: 20px 0; padding: 16px; background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(79,70,229,0.08)); border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
+        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+          <input type="checkbox" id="shareToGallery" style="width: 20px; height: 20px; margin-top: 2px; accent-color: #6366f1;">
+          <div>
+            <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              Share to Public Gallery
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Inspire others by showcasing your design in our community gallery. Your company name will be displayed.
+            </div>
+          </div>
+        </label>
       </div>
 
       <div class="share-actions">
@@ -7082,6 +7268,175 @@
     </div>
   </div>
 
+  <!-- Takeoff Report Modal -->
+  <div class="modal-overlay" id="takeoffModal" style="display: none;">
+    <div class="modal" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+          </svg>
+          Material Takeoffs
+        </h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-secondary btn-sm" onclick="exportTakeoffPDF()" style="font-size: 12px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export PDF
+          </button>
+          <button class="modal-close" onclick="closeModal('takeoffModal')">×</button>
+        </div>
+      </div>
+      <div class="modal-body" id="takeoffContent" style="overflow-y: auto; flex: 1; padding: 20px;">
+        <!-- Takeoff content rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Takeoff Modal Styles */
+    .takeoff-section {
+      background: var(--dark-elevated);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .takeoff-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .takeoff-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .takeoff-section-badge {
+      background: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .takeoff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .takeoff-item {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .takeoff-item-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .takeoff-item-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .takeoff-item-unit {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .takeoff-item-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .takeoff-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .takeoff-table th {
+      text-align: left;
+      padding: 8px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .takeoff-table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .takeoff-table tr:last-child td {
+      border-bottom: none;
+    }
+    .takeoff-highlight {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .takeoff-warning {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .takeoff-summary {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark-elevated) 100%);
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+    .takeoff-summary-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .takeoff-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    .slab-visual {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .slab-icon {
+      width: 60px;
+      height: 40px;
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .slab-icon.used {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-color: rgba(255,255,255,0.4);
+    }
+  </style>
+
   <!-- Hidden file input -->
   <input type="file" id="materialUpload" accept="image/*" style="display: none" onchange="handleMaterialUpload(event)">
 
@@ -7143,55 +7498,6 @@
       customPrices: {}            // Temporary price overrides from Excel import
     };
 
-    // ===== 3D MODEL CACHE =====
-    const MODEL_CACHE = {
-      kitchenCabinets: null,
-      loadingPromise: null
-    };
-
-    // GLB Model Loader
-    async function loadGLBModel(url) {
-      return new Promise((resolve, reject) => {
-        const loader = new THREE.GLTFLoader();
-        loader.load(
-          url,
-          (gltf) => {
-            console.log('GLB model loaded successfully');
-            resolve(gltf);
-          },
-          (progress) => {
-            const pct = (progress.loaded / progress.total * 100).toFixed(1);
-            console.log(`Loading 3D model: ${pct}%`);
-          },
-          (error) => {
-            console.error('Error loading GLB model:', error);
-            reject(error);
-          }
-        );
-      });
-    }
-
-    // Load a cabinet model by name
-    async function loadCabinetModel(modelName) {
-      if (MODEL_CACHE[modelName]) {
-        return MODEL_CACHE[modelName].scene.clone();
-      }
-      const url = `/tools/room-designer/assets/models/${modelName}.glb`;
-      try {
-        const gltf = await loadGLBModel(url);
-        MODEL_CACHE[modelName] = gltf;
-        return gltf.scene.clone();
-      } catch (error) {
-        console.warn(`Could not load model ${modelName}:`, error);
-        return null;
-      }
-    }
-
-    // Load the base-24 cabinet model (24" base cabinet)
-    async function getBaseCabinetModel() {
-      return loadCabinetModel('base-24');
-    }
-
     const SHARE_STATE = {
       designId: null,             // Supabase design ID
       designToken: null,          // Current design's share token
@@ -7199,6 +7505,127 @@
       isSharedView: false,        // Whether viewing a shared design
       allowedActions: null        // Actions permitted by current permission
     };
+
+    // Pricing access control - only paid subscribers see pricing
+    const PRICING_ACCESS = {
+      isSubscribed: false,        // Whether user has paid subscription
+      accountType: null,          // User's account type (homeowner, pro, fabricator, etc.)
+      canViewPricing: false,      // Computed: can this user see pricing?
+      checkedAt: null             // When we last checked subscription status
+    };
+
+    // Account types that can view pricing (paid tiers)
+    const PAID_ACCOUNT_TYPES = ['pro', 'fabricator', 'business', 'enterprise', 'distributor', 'admin'];
+
+    // Check if current user can view pricing
+    async function checkPricingAccess() {
+      try {
+        const user = window.SgAuth?.getUser();
+        const profile = await window.SgAuth?.getProfile?.();
+
+        PRICING_ACCESS.checkedAt = Date.now();
+
+        if (!user) {
+          // Guest user - no pricing access
+          PRICING_ACCESS.isSubscribed = false;
+          PRICING_ACCESS.accountType = 'guest';
+          PRICING_ACCESS.canViewPricing = false;
+        } else if (profile) {
+          PRICING_ACCESS.accountType = profile.account_type || 'homeowner';
+          PRICING_ACCESS.isSubscribed = PAID_ACCOUNT_TYPES.includes(PRICING_ACCESS.accountType);
+          PRICING_ACCESS.canViewPricing = PRICING_ACCESS.isSubscribed;
+        } else {
+          // Logged in but no profile - treat as free tier
+          PRICING_ACCESS.accountType = 'homeowner';
+          PRICING_ACCESS.isSubscribed = false;
+          PRICING_ACCESS.canViewPricing = false;
+        }
+
+        console.log('Pricing access:', PRICING_ACCESS);
+        updatePricingVisibility();
+        return PRICING_ACCESS.canViewPricing;
+      } catch (err) {
+        console.warn('Error checking pricing access:', err);
+        PRICING_ACCESS.canViewPricing = false;
+        updatePricingVisibility();
+        return false;
+      }
+    }
+
+    // Update UI to show/hide pricing based on access
+    function updatePricingVisibility() {
+      const canView = PRICING_ACCESS.canViewPricing;
+
+      // Pricing section in properties panel
+      const pricingSection = document.getElementById('pricingSection');
+      if (pricingSection) {
+        if (canView) {
+          pricingSection.classList.remove('pricing-locked');
+          pricingSection.style.display = '';
+        } else {
+          pricingSection.classList.add('pricing-locked');
+        }
+      }
+
+      // Quote panel
+      const quotePanel = document.getElementById('quotePanel');
+      if (quotePanel) {
+        if (canView) {
+          quotePanel.classList.remove('pricing-locked');
+        } else {
+          quotePanel.classList.add('pricing-locked');
+        }
+      }
+
+      // Quote total
+      const quoteTotal = document.getElementById('quoteTotal');
+      if (quoteTotal && !canView) {
+        quoteTotal.textContent = '---';
+      }
+
+      // Add/update pricing locked overlay
+      updatePricingLockedOverlay();
+    }
+
+    // Create/update the pricing locked overlay
+    function updatePricingLockedOverlay() {
+      const existingOverlay = document.getElementById('pricingLockedOverlay');
+
+      if (PRICING_ACCESS.canViewPricing) {
+        // Remove overlay if it exists
+        if (existingOverlay) existingOverlay.remove();
+        return;
+      }
+
+      // Create overlay if doesn't exist
+      if (!existingOverlay) {
+        const overlay = document.createElement('div');
+        overlay.id = 'pricingLockedOverlay';
+        overlay.className = 'pricing-locked-overlay';
+        overlay.innerHTML = `
+          <div class="pricing-locked-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:40px;height:40px;margin-bottom:12px;opacity:0.5;">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <h4>Pricing Locked</h4>
+            <p>Sign up for a Pro account to see material pricing, quotes, and takeoffs.</p>
+            <button class="btn btn-primary" onclick="showLoginPrompt('Sign up or log in to access pricing features.')">
+              Unlock Pricing
+            </button>
+            <div style="margin-top:12px;font-size:11px;color:var(--text-muted);">
+              Free to design • Pricing for Pro members
+            </div>
+          </div>
+        `;
+
+        // Insert after quote panel
+        const quotePanel = document.getElementById('quotePanel');
+        if (quotePanel) {
+          quotePanel.parentNode.insertBefore(overlay, quotePanel.nextSibling);
+        }
+      }
+    }
 
     const PERMISSION_LEVELS = {
       full_collab: {
@@ -7337,6 +7764,924 @@
       depths: [1, 1.5, 2, 2.5, 3, 4],
       tolerance: 0.0833  // 1" snap tolerance
     };
+
+    // ===== SLAB & MATERIAL STANDARDS =====
+    const SLAB_STANDARDS = {
+      // Standard slab sizes by material type (in inches)
+      granite: {
+        width: 115,       // Typical granite slab width
+        height: 68,       // Typical granite slab height
+        thickness: ['2cm', '3cm'],
+        sqftPerSlab: 54.3, // 115 × 68 / 144
+        wastePercent: 25,  // 25% waste for natural stone (irregular shapes, veining match)
+        label: 'Granite Slab'
+      },
+      quartzite: {
+        width: 120,
+        height: 65,
+        thickness: ['2cm', '3cm'],
+        sqftPerSlab: 54.2,
+        wastePercent: 25,
+        label: 'Quartzite Slab'
+      },
+      marble: {
+        width: 110,
+        height: 65,
+        thickness: ['2cm', '3cm'],
+        sqftPerSlab: 49.7,
+        wastePercent: 30,  // Higher waste for veining match
+        label: 'Marble Slab'
+      },
+      quartz: {
+        width: 126,       // Engineered quartz (Cambria, Silestone, etc.)
+        height: 63,
+        thickness: ['2cm', '3cm'],
+        sqftPerSlab: 55.1,
+        wastePercent: 20,  // Lower waste - consistent pattern
+        label: 'Quartz Slab'
+      },
+      porcelain: {
+        width: 126,       // Large format porcelain
+        height: 63,
+        thickness: ['6mm', '12mm', '20mm'],
+        sqftPerSlab: 55.1,
+        wastePercent: 15,  // Lowest waste
+        label: 'Porcelain Slab'
+      },
+      soapstone: {
+        width: 84,
+        height: 36,
+        thickness: ['3cm'],
+        sqftPerSlab: 21,
+        wastePercent: 30,
+        label: 'Soapstone Slab'
+      },
+      // Jumbo slabs (some suppliers)
+      jumboQuartz: {
+        width: 132,
+        height: 65,
+        thickness: ['2cm', '3cm'],
+        sqftPerSlab: 59.6,
+        wastePercent: 18,
+        label: 'Jumbo Quartz Slab'
+      },
+      jumboGranite: {
+        width: 130,
+        height: 78,
+        thickness: ['3cm'],
+        sqftPerSlab: 70.4,
+        wastePercent: 22,
+        label: 'Jumbo Granite Slab'
+      }
+    };
+
+    const TAKEOFF_STANDARDS = {
+      // Flooring waste factors
+      flooring: {
+        tile: { wastePercent: 15, boxSqft: 10, label: 'Tile' },
+        hardwood: { wastePercent: 10, boxSqft: 20, label: 'Hardwood' },
+        lvp: { wastePercent: 10, boxSqft: 24, label: 'LVP/LVT' },
+        carpet: { wastePercent: 5, rollWidth: 12, label: 'Carpet' },
+        naturalStone: { wastePercent: 20, boxSqft: 5, label: 'Natural Stone Tile' }
+      },
+      // Scribe molding requirements
+      scribe: {
+        pricePerLF: 8.50,   // $/LF for scribe molding
+        widthOptions: [0.5, 0.75, 1.5, 3], // Standard scribe widths in inches
+        requiresWhen: ['wall', 'corner', 'uneven']
+      },
+      // Filler requirements
+      filler: {
+        pricePerLF: 25,     // $/LF for filler strips
+        minWidth: 0.125,    // 1.5" minimum to count
+        standardWidths: [3, 6, 12] // Standard filler widths available (inches)
+      },
+      // Edge profile linear feet pricing
+      edgeProfiles: {
+        eased: { pricePerLF: 0, labor: 'standard' },
+        bullnose: { pricePerLF: 12, labor: 'standard' },
+        ogee: { pricePerLF: 18, labor: 'specialty' },
+        dupont: { pricePerLF: 22, labor: 'specialty' },
+        waterfall: { pricePerLF: 45, labor: 'miter' }
+      },
+      // Backsplash calculations
+      backsplash: {
+        standard4: { height: 4, pricePerLF: 35 },
+        standard6: { height: 6, pricePerLF: 45 },
+        fullHeight: { height: 18, pricePerLF: 85 }
+      },
+      // Sink cutout pricing
+      sinkCutouts: {
+        undermount: { price: 175, label: 'Undermount Cutout' },
+        dropin: { price: 75, label: 'Drop-in Cutout' },
+        farmhouse: { price: 225, label: 'Farmhouse/Apron Cutout' },
+        prep: { price: 125, label: 'Prep Sink Cutout' }
+      },
+      // Cooktop cutout
+      cooktopCutout: { price: 125, label: 'Cooktop Cutout' }
+    };
+
+    // ===== TAKEOFF CALCULATIONS =====
+    function calculateTakeoffs() {
+      const takeoffs = {
+        stone: {
+          slabs: [], totalSqft: 0, slabsNeeded: 0, edgeLF: 0, cutouts: [],
+          materials: {}, // Group by material for pricing
+          totalMaterialCost: 0, totalEdgeCost: 0, totalCutoutCost: 0
+        },
+        cabinets: { base: [], wall: [], tall: [], totalCount: 0, totalLF: 0, totalCost: 0 },
+        scribe: { locations: [], totalLF: 0, totalCost: 0 },
+        filler: { pieces: [], totalLF: 0, totalCost: 0 },
+        flooring: { rooms: [], totalSqft: 0, boxesNeeded: 0, wasteIncluded: 0, totalCost: 0 },
+        appliances: { items: [], totalCount: 0, totalCost: 0 },
+        plumbing: { sinks: [], faucets: [], totalCount: 0, totalCost: 0 },
+        backsplash: { areas: [], totalSqft: 0, totalLF: 0, totalCost: 0 },
+        summary: { totalMaterialCost: 0, laborHours: 0, grandTotal: 0 }
+      };
+
+      // Collect all elements by type
+      elements.forEach(el => {
+        const type = el.type;
+        const sqft = el.width * el.height;
+        const widthInches = el.width * 12;
+        const heightInches = el.height * 12;
+
+        // ===== COUNTERTOPS / STONE =====
+        if (type === 'countertop' || type === 'island' || type === 'countertop-l' || type === 'countertop-u') {
+          takeoffs.stone.totalSqft += sqft;
+
+          // Calculate edge linear feet (perimeter minus back wall)
+          const hasBackWall = !el.overhangBack || el.overhangBack < 0.1;
+          const perimeter = (el.width + el.height) * 2;
+          const edgeLF = hasBackWall ? perimeter - el.width : perimeter; // Subtract back edge if against wall
+          takeoffs.stone.edgeLF += edgeLF;
+
+          // Get material info from element (set when user applies material)
+          const materialName = el.materialName || 'Unspecified Stone';
+          const materialPrice = el.materialPrice || 0; // Price per SF
+          const materialBrand = el.materialBrand || '';
+          const materialId = el.materialId || 'unknown';
+
+          // Group by material for summary
+          if (!takeoffs.stone.materials[materialId]) {
+            takeoffs.stone.materials[materialId] = {
+              name: materialName,
+              brand: materialBrand,
+              pricePerSF: materialPrice,
+              totalSqft: 0,
+              totalCost: 0,
+              pieces: []
+            };
+          }
+          takeoffs.stone.materials[materialId].totalSqft += sqft;
+          takeoffs.stone.materials[materialId].totalCost += sqft * materialPrice;
+          takeoffs.stone.materials[materialId].pieces.push(el.label || 'Countertop');
+
+          takeoffs.stone.totalMaterialCost += sqft * materialPrice;
+
+          // Track waterfall edges (special pricing)
+          if (el.waterfallSides && el.waterfallSides.length > 0) {
+            el.waterfallSides.forEach(side => {
+              const waterfallHeight = 2.5; // Standard 30" cabinet height
+              const waterfallSqft = (side === 'left' || side === 'right' ? el.height : el.width) * waterfallHeight;
+              takeoffs.stone.cutouts.push({
+                type: 'waterfall',
+                side: side,
+                linearFeet: side === 'left' || side === 'right' ? el.height : el.width,
+                height: waterfallHeight,
+                sqft: waterfallSqft,
+                cost: waterfallSqft * materialPrice
+              });
+              takeoffs.stone.totalMaterialCost += waterfallSqft * materialPrice;
+            });
+          }
+
+          // Edge profile cost
+          const edgePrice = TAKEOFF_STANDARDS.edgeProfiles[el.edgeProfile || 'eased']?.pricePerLF || 0;
+          takeoffs.stone.totalEdgeCost += edgeLF * edgePrice;
+
+          takeoffs.stone.slabs.push({
+            label: el.label || 'Countertop',
+            width: el.width,
+            height: el.height,
+            sqft: sqft,
+            edgeLF: edgeLF,
+            edgeProfile: el.edgeProfile || 'eased',
+            material: materialName,
+            materialBrand: materialBrand,
+            pricePerSF: materialPrice,
+            cost: sqft * materialPrice,
+            hasWaterfall: (el.waterfallSides && el.waterfallSides.length > 0)
+          });
+        }
+
+        // ===== CABINETS =====
+        else if (type.includes('base-cabinet') || type.includes('sink-base') || type === 'dishwasher') {
+          const cabinetWidth = Math.round(widthInches);
+          takeoffs.cabinets.base.push({
+            label: el.label || `Base ${cabinetWidth}"`,
+            width: el.width,
+            widthInches: cabinetWidth,
+            sku: el.sku || `B${cabinetWidth}`,
+            count: 1
+          });
+          takeoffs.cabinets.totalCount++;
+          takeoffs.cabinets.totalLF += el.width;
+        }
+        else if (type.includes('wall-cabinet')) {
+          const cabinetWidth = Math.round(widthInches);
+          takeoffs.cabinets.wall.push({
+            label: el.label || `Wall ${cabinetWidth}"`,
+            width: el.width,
+            widthInches: cabinetWidth,
+            sku: el.sku || `W${cabinetWidth}`,
+            count: 1
+          });
+          takeoffs.cabinets.totalCount++;
+          takeoffs.cabinets.totalLF += el.width;
+        }
+        else if (type.includes('tall-cabinet') || type.includes('pantry')) {
+          const cabinetWidth = Math.round(widthInches);
+          takeoffs.cabinets.tall.push({
+            label: el.label || `Tall ${cabinetWidth}"`,
+            width: el.width,
+            widthInches: cabinetWidth,
+            sku: el.sku || `T${cabinetWidth}`,
+            count: 1
+          });
+          takeoffs.cabinets.totalCount++;
+        }
+
+        // ===== SINKS (Cutouts) =====
+        else if (type.includes('sink')) {
+          const sinkType = el.mountType || 'undermount';
+          takeoffs.plumbing.sinks.push({
+            label: el.label || 'Sink',
+            type: sinkType,
+            width: el.width,
+            cutoutPrice: TAKEOFF_STANDARDS.sinkCutouts[sinkType]?.price || 175
+          });
+          takeoffs.plumbing.totalCount++;
+          takeoffs.stone.cutouts.push({
+            type: 'sink',
+            subtype: sinkType,
+            label: el.label || 'Sink Cutout'
+          });
+        }
+
+        // ===== APPLIANCES =====
+        else if (['refrigerator', 'range', 'oven', 'microwave', 'range-hood', 'cooktop'].includes(type)) {
+          takeoffs.appliances.items.push({
+            type: type,
+            label: el.label || type,
+            width: el.width,
+            height: el.height
+          });
+          takeoffs.appliances.totalCount++;
+
+          // Cooktop requires cutout
+          if (type === 'cooktop') {
+            takeoffs.stone.cutouts.push({
+              type: 'cooktop',
+              label: 'Cooktop Cutout'
+            });
+          }
+        }
+
+        // ===== FLOORING =====
+        else if (type === 'flooring' || type === 'tile-floor') {
+          takeoffs.flooring.rooms.push({
+            label: el.label || 'Flooring',
+            sqft: sqft,
+            material: el.material || 'tile'
+          });
+          takeoffs.flooring.totalSqft += sqft;
+        }
+
+        // ===== BACKSPLASH =====
+        else if (type === 'backsplash') {
+          takeoffs.backsplash.areas.push({
+            label: el.label || 'Backsplash',
+            width: el.width,
+            height: el.height,
+            sqft: sqft,
+            linearFeet: el.width
+          });
+          takeoffs.backsplash.totalSqft += sqft;
+          takeoffs.backsplash.totalLF += el.width;
+        }
+      });
+
+      // ===== CALCULATE SLAB REQUIREMENTS =====
+      if (takeoffs.stone.totalSqft > 0) {
+        // Default to quartz if no material specified
+        const materialType = 'quartz';
+        const slabSpec = SLAB_STANDARDS[materialType];
+
+        // Calculate net square feet needed
+        const netSqft = takeoffs.stone.totalSqft;
+        // Add waste factor
+        const grossSqft = netSqft * (1 + slabSpec.wastePercent / 100);
+        // Calculate slabs needed
+        const slabsNeeded = Math.ceil(grossSqft / slabSpec.sqftPerSlab);
+
+        takeoffs.stone.slabsNeeded = slabsNeeded;
+        takeoffs.stone.netSqft = netSqft;
+        takeoffs.stone.grossSqft = grossSqft;
+        takeoffs.stone.wastePercent = slabSpec.wastePercent;
+        takeoffs.stone.slabSize = `${slabSpec.width}" × ${slabSpec.height}"`;
+        takeoffs.stone.sqftPerSlab = slabSpec.sqftPerSlab;
+      }
+
+      // ===== CALCULATE SCRIBE REQUIREMENTS =====
+      // Scribe is needed where cabinets meet walls at angles or uneven walls
+      let scribeLF = 0;
+      elements.forEach(el => {
+        if (el.type.includes('cabinet')) {
+          // Check if cabinet is against a wall (at room edge)
+          const roomWidth = currentRoom?.width || 12;
+          const roomDepth = currentRoom?.depth || 10;
+          const atLeftWall = el.x < 0.5 * pixelsPerFoot;
+          const atRightWall = (el.x + el.width * pixelsPerFoot) > (roomWidth - 0.5) * pixelsPerFoot;
+          const atTopWall = el.y < 0.5 * pixelsPerFoot;
+          const atBottomWall = (el.y + el.height * pixelsPerFoot) > (roomDepth - 0.5) * pixelsPerFoot;
+
+          // Add scribe for wall-adjacent sides
+          if (atLeftWall || atRightWall) scribeLF += el.height;
+          if (atTopWall || atBottomWall) scribeLF += el.width;
+        }
+      });
+      takeoffs.scribe.totalLF = scribeLF;
+
+      // ===== CALCULATE FLOORING WITH WASTE =====
+      if (takeoffs.flooring.totalSqft > 0) {
+        const floorSpec = TAKEOFF_STANDARDS.flooring.tile;
+        const wasteSqft = takeoffs.flooring.totalSqft * (floorSpec.wastePercent / 100);
+        takeoffs.flooring.wasteIncluded = wasteSqft;
+        takeoffs.flooring.grossSqft = takeoffs.flooring.totalSqft + wasteSqft;
+        takeoffs.flooring.boxesNeeded = Math.ceil(takeoffs.flooring.grossSqft / floorSpec.boxSqft);
+      }
+
+      // ===== CONSOLIDATE CABINETS BY SIZE =====
+      takeoffs.cabinets.baseSummary = consolidateCabinets(takeoffs.cabinets.base);
+      takeoffs.cabinets.wallSummary = consolidateCabinets(takeoffs.cabinets.wall);
+      takeoffs.cabinets.tallSummary = consolidateCabinets(takeoffs.cabinets.tall);
+
+      return takeoffs;
+    }
+
+    // Helper: Consolidate cabinet list by size
+    function consolidateCabinets(cabinetList) {
+      const summary = {};
+      cabinetList.forEach(cab => {
+        const key = cab.widthInches;
+        if (!summary[key]) {
+          summary[key] = { width: cab.widthInches, count: 0, sku: cab.sku };
+        }
+        summary[key].count++;
+      });
+      return Object.values(summary).sort((a, b) => a.width - b.width);
+    }
+
+    // ===== GENERATE TAKEOFF REPORT =====
+    function generateTakeoffReport() {
+      const takeoffs = calculateTakeoffs();
+      showTakeoffModal(takeoffs);
+    }
+
+    // Show takeoff modal with detailed breakdown
+    function showTakeoffModal(takeoffs) {
+      const modal = document.getElementById('takeoffModal');
+      const content = document.getElementById('takeoffContent');
+
+      let html = '';
+
+      // ===== STONE / COUNTERTOPS SECTION =====
+      if (takeoffs.stone.totalSqft > 0) {
+        const hasPricing = takeoffs.stone.totalMaterialCost > 0;
+        const materialsList = Object.values(takeoffs.stone.materials);
+
+        html += `
+          <div class="takeoff-section takeoff-highlight">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                </svg>
+                Stone / Countertops
+                <span class="takeoff-section-badge">${takeoffs.stone.slabsNeeded} Slab${takeoffs.stone.slabsNeeded > 1 ? 's' : ''}</span>
+              </div>
+              ${hasPricing ? `<div style="font-size: 16px; font-weight: 700; color: #10b981;">$${takeoffs.stone.totalMaterialCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>` : ''}
+            </div>
+
+            ${materialsList.length > 0 ? `
+              <div style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Materials Selected</div>
+                <table class="takeoff-table">
+                  <thead>
+                    <tr>
+                      <th>Stone</th>
+                      <th>Brand</th>
+                      <th>SF</th>
+                      <th>$/SF</th>
+                      <th style="text-align: right;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${materialsList.map(m => `
+                      <tr>
+                        <td><strong>${m.name}</strong></td>
+                        <td>${m.brand || '-'}</td>
+                        <td>${m.totalSqft.toFixed(1)}</td>
+                        <td>${m.pricePerSF > 0 ? '$' + m.pricePerSF.toFixed(2) : '-'}</td>
+                        <td style="text-align: right; font-weight: 600;">${m.totalCost > 0 ? '$' + m.totalCost.toFixed(2) : '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <div class="takeoff-warning" style="margin-bottom: 16px;">
+                <span>💡</span>
+                <span>Select a stone material to see pricing. Click a countertop then choose from Materials panel.</span>
+              </div>
+            `}
+
+            <div class="takeoff-grid">
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Net Square Feet</div>
+                <div class="takeoff-item-value">${takeoffs.stone.netSqft?.toFixed(1) || takeoffs.stone.totalSqft.toFixed(1)} <span class="takeoff-item-unit">SF</span></div>
+                <div class="takeoff-item-note">Actual countertop area</div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Gross (w/ ${takeoffs.stone.wastePercent || 20}% waste)</div>
+                <div class="takeoff-item-value">${takeoffs.stone.grossSqft?.toFixed(1) || (takeoffs.stone.totalSqft * 1.2).toFixed(1)} <span class="takeoff-item-unit">SF</span></div>
+                <div class="takeoff-item-note">Includes cutting waste</div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Slabs Required</div>
+                <div class="takeoff-item-value">${takeoffs.stone.slabsNeeded || Math.ceil(takeoffs.stone.totalSqft * 1.2 / 55)}</div>
+                <div class="takeoff-item-note">@ ${takeoffs.stone.sqftPerSlab?.toFixed(1) || '55'} SF/slab</div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Edge Profile LF</div>
+                <div class="takeoff-item-value">${takeoffs.stone.edgeLF?.toFixed(1) || '0'} <span class="takeoff-item-unit">LF</span></div>
+                <div class="takeoff-item-note">${takeoffs.stone.totalEdgeCost > 0 ? '+$' + takeoffs.stone.totalEdgeCost.toFixed(2) : 'Eased edge included'}</div>
+              </div>
+            </div>
+
+            <div class="slab-visual">
+              ${Array(takeoffs.stone.slabsNeeded || Math.ceil(takeoffs.stone.totalSqft * 1.2 / 55)).fill(0).map((_, i) =>
+                `<div class="slab-icon used">${i + 1}</div>`
+              ).join('')}
+            </div>
+
+            ${takeoffs.stone.cutouts.length > 0 ? `
+              <div style="margin-top: 16px;">
+                <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Cutouts & Fabrication</div>
+                <table class="takeoff-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Type</th>
+                      <th>Size</th>
+                      <th style="text-align: right;">Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${takeoffs.stone.cutouts.map(c => `
+                      <tr>
+                        <td>${c.label || (c.type === 'waterfall' ? 'Waterfall Edge' : c.type)}</td>
+                        <td>${c.subtype || c.type}</td>
+                        <td>${c.sqft ? c.sqft.toFixed(1) + ' SF' : (c.linearFeet ? c.linearFeet.toFixed(1) + ' LF' : '1')}</td>
+                        <td style="text-align: right;">${c.cost ? '$' + c.cost.toFixed(2) : (TAKEOFF_STANDARDS.sinkCutouts[c.subtype]?.price ? '$' + TAKEOFF_STANDARDS.sinkCutouts[c.subtype].price : '-')}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      // ===== CABINETS SECTION =====
+      if (takeoffs.cabinets.totalCount > 0) {
+        html += `
+          <div class="takeoff-section">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="9"/>
+                  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                </svg>
+                Cabinets
+                <span class="takeoff-section-badge">${takeoffs.cabinets.totalCount} Units</span>
+              </div>
+              <div style="font-size: 13px; color: var(--text-secondary);">
+                ${takeoffs.cabinets.totalLF.toFixed(1)} LF total
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+              ${takeoffs.cabinets.baseSummary.length > 0 ? `
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px;">BASE CABINETS</div>
+                  <table class="takeoff-table">
+                    <thead><tr><th>Size</th><th>Qty</th></tr></thead>
+                    <tbody>
+                      ${takeoffs.cabinets.baseSummary.map(c => `
+                        <tr><td>B${c.width}" ${c.width >= 36 ? '(Sink/Range)' : ''}</td><td>${c.count}</td></tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+              ${takeoffs.cabinets.wallSummary.length > 0 ? `
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px;">WALL CABINETS</div>
+                  <table class="takeoff-table">
+                    <thead><tr><th>Size</th><th>Qty</th></tr></thead>
+                    <tbody>
+                      ${takeoffs.cabinets.wallSummary.map(c => `
+                        <tr><td>W${c.width}"</td><td>${c.count}</td></tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+              ${takeoffs.cabinets.tallSummary.length > 0 ? `
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px;">TALL/PANTRY</div>
+                  <table class="takeoff-table">
+                    <thead><tr><th>Size</th><th>Qty</th></tr></thead>
+                    <tbody>
+                      ${takeoffs.cabinets.tallSummary.map(c => `
+                        <tr><td>T${c.width}"</td><td>${c.count}</td></tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      // ===== SCRIBE / FILLER SECTION =====
+      if (takeoffs.scribe.totalLF > 0 || takeoffs.filler.totalLF > 0) {
+        html += `
+          <div class="takeoff-section">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10H3M21 6H3M21 14H3M21 18H3"/>
+                </svg>
+                Scribe & Filler
+              </div>
+            </div>
+            <div class="takeoff-grid">
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Scribe Molding</div>
+                <div class="takeoff-item-value">${takeoffs.scribe.totalLF.toFixed(1)} <span class="takeoff-item-unit">LF</span></div>
+                <div class="takeoff-item-note">Wall-to-cabinet transitions</div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Filler Strips</div>
+                <div class="takeoff-item-value">${takeoffs.filler.totalLF.toFixed(1)} <span class="takeoff-item-unit">LF</span></div>
+                <div class="takeoff-item-note">Cabinet gap fillers</div>
+              </div>
+            </div>
+            ${takeoffs.scribe.totalLF > 0 ? `
+              <div class="takeoff-warning">
+                <span>💡</span>
+                <span>Scribe molding recommended where cabinets meet walls. Order 10% extra for cuts.</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      // ===== FLOORING SECTION =====
+      if (takeoffs.flooring.totalSqft > 0) {
+        html += `
+          <div class="takeoff-section">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+                </svg>
+                Flooring
+                <span class="takeoff-section-badge">${takeoffs.flooring.boxesNeeded} Boxes</span>
+              </div>
+            </div>
+            <div class="takeoff-grid">
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Room Area</div>
+                <div class="takeoff-item-value">${takeoffs.flooring.totalSqft.toFixed(1)} <span class="takeoff-item-unit">SF</span></div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">+ Waste (${TAKEOFF_STANDARDS.flooring.tile.wastePercent}%)</div>
+                <div class="takeoff-item-value">${takeoffs.flooring.wasteIncluded?.toFixed(1) || '0'} <span class="takeoff-item-unit">SF</span></div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Total Needed</div>
+                <div class="takeoff-item-value">${takeoffs.flooring.grossSqft?.toFixed(1) || '0'} <span class="takeoff-item-unit">SF</span></div>
+              </div>
+              <div class="takeoff-item">
+                <div class="takeoff-item-label">Boxes to Order</div>
+                <div class="takeoff-item-value">${takeoffs.flooring.boxesNeeded || 0}</div>
+                <div class="takeoff-item-note">@ ${TAKEOFF_STANDARDS.flooring.tile.boxSqft} SF/box</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ===== APPLIANCES SECTION =====
+      if (takeoffs.appliances.totalCount > 0) {
+        html += `
+          <div class="takeoff-section">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
+                  <circle cx="12" cy="14" r="4"/>
+                </svg>
+                Appliances
+                <span class="takeoff-section-badge">${takeoffs.appliances.totalCount}</span>
+              </div>
+            </div>
+            <table class="takeoff-table">
+              <thead>
+                <tr><th>Item</th><th>Size</th><th>Qty</th></tr>
+              </thead>
+              <tbody>
+                ${takeoffs.appliances.items.map(a => `
+                  <tr>
+                    <td>${a.label}</td>
+                    <td>${Math.round(a.width * 12)}"W × ${Math.round(a.height * 12)}"D</td>
+                    <td>1</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      // ===== PLUMBING / FIXTURES SECTION =====
+      if (takeoffs.plumbing.totalCount > 0) {
+        html += `
+          <div class="takeoff-section">
+            <div class="takeoff-section-header">
+              <div class="takeoff-section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5.5 5.5L8 3L10.5 5.5"/><path d="M8 3v6a4 4 0 004 4h4"/>
+                  <circle cx="18" cy="13" r="2"/><path d="M18 15v6"/>
+                </svg>
+                Plumbing & Fixtures
+                <span class="takeoff-section-badge">${takeoffs.plumbing.totalCount}</span>
+              </div>
+            </div>
+            <table class="takeoff-table">
+              <thead>
+                <tr><th>Item</th><th>Type</th><th>Cutout</th></tr>
+              </thead>
+              <tbody>
+                ${takeoffs.plumbing.sinks.map(s => `
+                  <tr>
+                    <td>${s.label}</td>
+                    <td>${s.type}</td>
+                    <td>$${s.cutoutPrice}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      // ===== SUMMARY SECTION =====
+      const grandTotal = (takeoffs.stone.totalMaterialCost || 0) +
+                         (takeoffs.stone.totalEdgeCost || 0) +
+                         (takeoffs.cabinets.totalCost || 0) +
+                         (takeoffs.flooring.totalCost || 0) +
+                         (takeoffs.scribe.totalLF * TAKEOFF_STANDARDS.scribe.pricePerLF) +
+                         (takeoffs.plumbing.sinks.reduce((sum, s) => sum + (s.cutoutPrice || 0), 0));
+
+      html += `
+        <div class="takeoff-summary">
+          <div class="takeoff-summary-title">ORDER SUMMARY</div>
+          <div class="takeoff-summary-grid">
+            <div class="takeoff-item">
+              <div class="takeoff-item-label">Stone Slabs</div>
+              <div class="takeoff-item-value">${takeoffs.stone.slabsNeeded || Math.ceil((takeoffs.stone.totalSqft || 0) * 1.2 / 55)}</div>
+              <div class="takeoff-item-note">${takeoffs.stone.totalSqft.toFixed(1)} net SF</div>
+            </div>
+            <div class="takeoff-item">
+              <div class="takeoff-item-label">Cabinets</div>
+              <div class="takeoff-item-value">${takeoffs.cabinets.totalCount}</div>
+              <div class="takeoff-item-note">${takeoffs.cabinets.totalLF.toFixed(1)} LF</div>
+            </div>
+            <div class="takeoff-item">
+              <div class="takeoff-item-label">Scribe/Filler</div>
+              <div class="takeoff-item-value">${(takeoffs.scribe.totalLF + takeoffs.filler.totalLF).toFixed(1)} <span class="takeoff-item-unit">LF</span></div>
+            </div>
+            <div class="takeoff-item">
+              <div class="takeoff-item-label">Sink Cutouts</div>
+              <div class="takeoff-item-value">${takeoffs.plumbing.sinks.length}</div>
+            </div>
+          </div>
+          ${grandTotal > 0 ? `
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Estimated Material Cost</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Based on selected materials • Excludes labor & installation</div>
+              </div>
+              <div style="font-size: 28px; font-weight: 700; color: #10b981;">$${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </div>
+          ` : ''}
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="exportTakeoffPDF()" style="flex: 1;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download PDF
+            </button>
+            <button class="btn btn-secondary" onclick="copyTakeoffToClipboard()" style="flex: 1;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Empty state
+      if (takeoffs.stone.totalSqft === 0 && takeoffs.cabinets.totalCount === 0) {
+        html = `
+          <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+            <div style="font-size: 16px; margin-bottom: 8px;">No Elements to Calculate</div>
+            <div style="font-size: 13px;">Add cabinets, countertops, and other elements to generate takeoffs.</div>
+          </div>
+        `;
+      }
+
+      content.innerHTML = html;
+      modal.style.display = 'flex';
+    }
+
+    // Export takeoff as PDF
+    function exportTakeoffPDF() {
+      // Use existing PDF export functionality
+      if (typeof jspdf !== 'undefined') {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const takeoffs = calculateTakeoffs();
+
+        doc.setFontSize(20);
+        doc.text('Material Takeoff Report', 20, 20);
+
+        doc.setFontSize(12);
+        doc.text(`Project: ${projectName || 'Untitled Project'}`, 20, 35);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 42);
+
+        let y = 55;
+
+        // Stone section
+        if (takeoffs.stone.slabsNeeded > 0) {
+          doc.setFontSize(14);
+          doc.text('Stone / Countertops', 20, y);
+          y += 8;
+          doc.setFontSize(10);
+          doc.text(`Slabs Required: ${takeoffs.stone.slabsNeeded}`, 25, y); y += 6;
+          doc.text(`Net Area: ${takeoffs.stone.netSqft?.toFixed(1)} SF`, 25, y); y += 6;
+          doc.text(`Gross (w/ waste): ${takeoffs.stone.grossSqft?.toFixed(1)} SF`, 25, y); y += 6;
+          doc.text(`Edge LF: ${takeoffs.stone.edgeLF?.toFixed(1)} LF`, 25, y); y += 10;
+        }
+
+        // Cabinets section
+        if (takeoffs.cabinets.totalCount > 0) {
+          doc.setFontSize(14);
+          doc.text('Cabinets', 20, y);
+          y += 8;
+          doc.setFontSize(10);
+          doc.text(`Total Cabinets: ${takeoffs.cabinets.totalCount}`, 25, y); y += 6;
+          doc.text(`Total Linear Feet: ${takeoffs.cabinets.totalLF.toFixed(1)} LF`, 25, y); y += 10;
+        }
+
+        // Scribe section
+        if (takeoffs.scribe.totalLF > 0) {
+          doc.setFontSize(14);
+          doc.text('Scribe & Filler', 20, y);
+          y += 8;
+          doc.setFontSize(10);
+          doc.text(`Scribe Molding: ${takeoffs.scribe.totalLF.toFixed(1)} LF`, 25, y); y += 10;
+        }
+
+        doc.save('takeoff-report.pdf');
+      } else {
+        alert('PDF export requires jsPDF library');
+      }
+    }
+
+    // Copy takeoff to clipboard as text
+    function copyTakeoffToClipboard() {
+      const takeoffs = calculateTakeoffs();
+      const materialsList = Object.values(takeoffs.stone.materials);
+
+      let text = `MATERIAL TAKEOFF REPORT\n`;
+      text += `Project: ${projectName || 'Untitled Project'}\n`;
+      text += `Date: ${new Date().toLocaleDateString()}\n`;
+      text += `${'='.repeat(50)}\n\n`;
+
+      // Stone section
+      if (takeoffs.stone.totalSqft > 0) {
+        text += `STONE / COUNTERTOPS\n`;
+        text += `-`.repeat(30) + `\n`;
+        text += `Slabs Required: ${takeoffs.stone.slabsNeeded || Math.ceil(takeoffs.stone.totalSqft * 1.2 / 55)}\n`;
+        text += `Net Area: ${takeoffs.stone.totalSqft.toFixed(1)} SF\n`;
+        text += `Gross (w/ waste): ${(takeoffs.stone.totalSqft * 1.2).toFixed(1)} SF\n`;
+        text += `Edge LF: ${takeoffs.stone.edgeLF?.toFixed(1) || '0'} LF\n`;
+
+        if (materialsList.length > 0) {
+          text += `\nMaterials:\n`;
+          materialsList.forEach(m => {
+            text += `  • ${m.name} (${m.brand || 'N/A'}): ${m.totalSqft.toFixed(1)} SF`;
+            if (m.pricePerSF > 0) text += ` @ $${m.pricePerSF.toFixed(2)}/SF = $${m.totalCost.toFixed(2)}`;
+            text += `\n`;
+          });
+        }
+
+        if (takeoffs.stone.cutouts.length > 0) {
+          text += `\nCutouts:\n`;
+          takeoffs.stone.cutouts.forEach(c => {
+            text += `  • ${c.label || c.type} (${c.subtype || c.type})\n`;
+          });
+        }
+        text += `\n`;
+      }
+
+      // Cabinets section
+      if (takeoffs.cabinets.totalCount > 0) {
+        text += `CABINETS\n`;
+        text += `-`.repeat(30) + `\n`;
+        text += `Total Units: ${takeoffs.cabinets.totalCount}\n`;
+        text += `Total Linear Feet: ${takeoffs.cabinets.totalLF.toFixed(1)} LF\n`;
+
+        if (takeoffs.cabinets.baseSummary.length > 0) {
+          text += `\nBase Cabinets:\n`;
+          takeoffs.cabinets.baseSummary.forEach(c => {
+            text += `  • B${c.width}" x ${c.count}\n`;
+          });
+        }
+        if (takeoffs.cabinets.wallSummary.length > 0) {
+          text += `\nWall Cabinets:\n`;
+          takeoffs.cabinets.wallSummary.forEach(c => {
+            text += `  • W${c.width}" x ${c.count}\n`;
+          });
+        }
+        text += `\n`;
+      }
+
+      // Scribe section
+      if (takeoffs.scribe.totalLF > 0) {
+        text += `SCRIBE & FILLER\n`;
+        text += `-`.repeat(30) + `\n`;
+        text += `Scribe Molding: ${takeoffs.scribe.totalLF.toFixed(1)} LF\n\n`;
+      }
+
+      // Flooring section
+      if (takeoffs.flooring.totalSqft > 0) {
+        text += `FLOORING\n`;
+        text += `-`.repeat(30) + `\n`;
+        text += `Area: ${takeoffs.flooring.totalSqft.toFixed(1)} SF\n`;
+        text += `With Waste: ${takeoffs.flooring.grossSqft?.toFixed(1) || (takeoffs.flooring.totalSqft * 1.15).toFixed(1)} SF\n`;
+        text += `Boxes Needed: ${takeoffs.flooring.boxesNeeded || Math.ceil(takeoffs.flooring.totalSqft * 1.15 / 10)}\n\n`;
+      }
+
+      // Grand total
+      const grandTotal = (takeoffs.stone.totalMaterialCost || 0) +
+                         (takeoffs.stone.totalEdgeCost || 0) +
+                         (takeoffs.scribe.totalLF * TAKEOFF_STANDARDS.scribe.pricePerLF);
+      if (grandTotal > 0) {
+        text += `${'='.repeat(50)}\n`;
+        text += `ESTIMATED MATERIAL COST: $${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}\n`;
+        text += `(Excludes labor & installation)\n`;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Takeoff copied to clipboard!', 'success');
+      }).catch(err => {
+        console.error('Copy failed:', err);
+        showToast('Failed to copy', 'error');
+      });
+    }
 
     // ===== MEASUREMENT FORMATTING =====
     // Format feet (decimal) to feet-inches-fractions string
@@ -9206,6 +10551,9 @@
       // Initialize auth UI
       initAuth();
 
+      // Check pricing access based on subscription status
+      checkPricingAccess();
+
       // Check for shared design URL
       checkSharedDesignUrl();
 
@@ -9294,7 +10642,8 @@
             roomType: document.getElementById('roomType')?.value || 'kitchen',
             projectName: document.getElementById('projectName')?.value || 'Untitled',
             timestamp: Date.now(),
-            version: 2 // Track save format version
+            version: 2, // Track save format version
+            pixelsPerFoot: pixelsPerFoot // Store scale for proper position restoration
           };
           localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saveData));
           lastSaveTime = Date.now();
@@ -9590,8 +10939,26 @@
           if (projectNameEl) projectNameEl.value = data.projectName;
         }
 
+        // Normalize element positions if saved scale differs from current
+        // This ensures 3D rendering is accurate regardless of viewport size
+        updateCanvasSize(); // Calculate current pixelsPerFoot first
+        const savedScale = data.pixelsPerFoot || 40;
+        if (savedScale !== pixelsPerFoot && savedScale > 0) {
+          const scaleRatio = pixelsPerFoot / savedScale;
+          console.log('Normalizing auto-saved positions with ratio:', scaleRatio);
+          elements.forEach(el => {
+            el.x = (el.x || 0) * scaleRatio;
+            el.y = (el.y || 0) * scaleRatio;
+          });
+          walls.forEach(wall => {
+            if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
+            if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
+            if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
+            if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
+          });
+        }
+
         // Update UI components
-        updateCanvasSize();
         updateElementSelector();
         updateItemPicker();
         calculateQuote();
@@ -10644,7 +12011,16 @@
 
       if (!isCabinetType) return;
 
-      const snapZone = pixelsPerFoot * 0.75; // Match the snap distance
+      // Draw hint text at top of canvas
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to screen coordinates
+      ctx.font = '12px Inter';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.textAlign = 'center';
+      ctx.fillText('Hold SHIFT for free placement (no snap/rotate)', canvas.width / 2, 25);
+      ctx.restore();
+
+      const snapZone = pixelsPerFoot * 0.5; // Match the reduced snap distance
       const roomW = roomWidth * pixelsPerFoot;
       const roomH = roomDepth * pixelsPerFoot;
 
@@ -14788,12 +16164,23 @@
 
       if (!isDragging || !selectedElement || selectedElement.locked) return;
 
+      // Hold Shift to disable all snapping and auto-rotation (free placement)
+      const freePlace = e.shiftKey;
+
       const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
       let snapX = Math.round((x - dragOffset.x) / gridSnap) * gridSnap;
       let snapY = Math.round((y - dragOffset.y) / gridSnap) * gridSnap;
 
+      // If Shift is held, just use grid snap and skip all other snapping
+      if (freePlace) {
+        selectedElement.x = snapX;
+        selectedElement.y = snapY;
+        draw();
+        return;
+      }
+
       // Element-to-element snapping (for placing cabinets together)
-      const snapDistance = pixelsPerFoot * 0.5; // Snap within 0.5 feet (more forgiving)
+      const snapDistance = pixelsPerFoot * 0.4; // Reduced from 0.5 for less aggressive snap
       const elW = selectedElement.width * pixelsPerFoot;
       const elH = selectedElement.height * pixelsPerFoot;
 
@@ -14801,6 +16188,11 @@
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
                             'tall-cabinet', 'corner-cabinet', 'lazy-susan'];
       const isCabinetElement = cabinetTypes.includes(selectedElement.type);
+
+      // Wall element types - these should ATTRACT cabinets, not repel them
+      const wallTypes = ['wall', 'wall-block', 'wall-concrete', 'wall-framed', 'wall-wood-2x4',
+                         'wall-wood-2x6', 'wall-brick', 'wall-steel', 'wall-aluminum',
+                         'pony-wall', 'pony-wall-bar', 'knee-wall'];
 
       elements.forEach(other => {
         if (other.id === selectedElement.id) return;
@@ -14810,6 +16202,41 @@
         const otherW = other.width * pixelsPerFoot;
         const otherH = other.height * pixelsPerFoot;
         const isOtherCabinet = cabinetTypes.includes(other.type);
+        const isOtherWall = wallTypes.includes(other.type);
+
+        // WALL ELEMENTS: Cabinets should snap AGAINST walls (back of cabinet to wall surface)
+        if (isOtherWall && isCabinetElement) {
+          const wallSnapDist = pixelsPerFoot * 0.75; // Generous snap distance for walls
+
+          // Determine wall orientation
+          const isVerticalWall = otherH > otherW;
+
+          if (isVerticalWall) {
+            // Vertical wall - cabinet can snap to left or right side
+            // Snap cabinet's back (left edge) against wall's right face
+            if (Math.abs(snapX - (otherX + otherW)) < wallSnapDist) {
+              snapX = otherX + otherW; // Cabinet left edge meets wall right edge
+            }
+            // Snap cabinet's back (right edge) against wall's left face
+            if (Math.abs((snapX + elW) - otherX) < wallSnapDist) {
+              snapX = otherX - elW; // Cabinet right edge meets wall left edge
+            }
+          } else {
+            // Horizontal wall - cabinet can snap to top or bottom side
+            // Snap cabinet's back (top edge) against wall's bottom face
+            if (Math.abs(snapY - (otherY + otherH)) < wallSnapDist) {
+              snapY = otherY + otherH; // Cabinet top edge meets wall bottom edge
+            }
+            // Snap cabinet's back (bottom edge) against wall's top face
+            if (Math.abs((snapY + elH) - otherY) < wallSnapDist) {
+              snapY = otherY - elH; // Cabinet bottom edge meets wall top edge
+            }
+          }
+          return; // Skip regular element snapping for walls
+        }
+
+        // Skip walls for regular element-to-element snapping (handled above)
+        if (isOtherWall) return;
 
         // For cabinets, use tighter snap for edge-to-edge (butt joints)
         const edgeSnapDist = isCabinetElement ? pixelsPerFoot * 0.5 : snapDistance;
@@ -14820,16 +16247,16 @@
         // Snap right edge of selected to left edge of other (place side by side)
         if (Math.abs((snapX + elW) - otherX) < cabinetRunSnapDist) {
           snapX = otherX - elW;
-          // When cabinets snap side-by-side, also align their tops to form a run
-          if (isCabinetElement && isOtherCabinet) {
+          // Only align Y if already close (within 0.3ft) - don't force alignment
+          if (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.3) {
             snapY = otherY;
           }
         }
         // Snap left edge of selected to right edge of other
         if (Math.abs(snapX - (otherX + otherW)) < cabinetRunSnapDist) {
           snapX = otherX + otherW;
-          // When cabinets snap side-by-side, also align their tops to form a run
-          if (isCabinetElement && isOtherCabinet) {
+          // Only align Y if already close (within 0.3ft) - don't force alignment
+          if (isCabinetElement && isOtherCabinet && Math.abs(snapY - otherY) < pixelsPerFoot * 0.3) {
             snapY = otherY;
           }
         }
@@ -14861,7 +16288,7 @@
       });
 
       // Wall snapping for cabinets and countertops
-      const wallSnapDistance = pixelsPerFoot * 0.75; // Snap within 0.75 feet of walls (increased for easier snapping)
+      const wallSnapDistance = pixelsPerFoot * 0.5; // Snap within 0.5 feet of walls (reduced for less aggressive snap)
       const isCabinetType = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan',
                              'island', 'countertop', 'sink', 'stove', 'dishwasher',
@@ -14902,13 +16329,19 @@
         }
 
         // Auto-rotate cabinets so their FRONT (doors) faces INTO the room
-        // Only rotate ONCE when first snapping to a different wall
+        // Only rotate when element is actually AT the wall (distance < 0.1 ft = ~1 inch)
         const autoRotateTypes = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
                                   'sink', 'stove', 'dishwasher', 'oven'];
         // Note: refrigerator removed from auto-rotate - users can place it any direction
 
-        // Only apply rotation if this is a NEW wall snap (different from last)
-        if (snappedToWall && snappedToWall !== lastSnappedWall && autoRotateTypes.includes(selectedElement.type)) {
+        // Check if element is actually touching the wall (not just near it)
+        const touchingWall = (snappedToWall === 'back' && snapY === 0) ||
+                             (snappedToWall === 'left' && snapX === 0) ||
+                             (snappedToWall === 'right' && Math.abs((snapX + elW) - roomRightWall) < 1) ||
+                             (snappedToWall === 'front' && Math.abs((snapY + elH) - roomBottomWall) < 1);
+
+        // Only apply rotation if this is a NEW wall snap AND element is touching
+        if (snappedToWall && snappedToWall !== lastSnappedWall && touchingWall && autoRotateTypes.includes(selectedElement.type)) {
           lastSnappedWall = snappedToWall;
 
           // Cabinet BACK goes against wall, FRONT (doors) faces into room
@@ -14939,34 +16372,53 @@
           lastSnappedWall = null;
         }
 
-        // Snap to custom drawn walls
+        // Snap to custom drawn walls - cabinets snap AGAINST walls (like magnets attracting)
         walls.forEach(wall => {
           const wallLeft = wall.x;
           const wallTop = wall.y;
           const wallRight = wall.x + wall.width;
           const wallBottom = wall.y + wall.height;
+          const wallCenterX = wallLeft + wall.width / 2;
+          const wallCenterY = wallTop + wall.height / 2;
 
           // Determine if wall is horizontal or vertical based on aspect ratio
           const isVerticalWall = wall.height > wall.width;
 
+          // Calculate element center
+          const elCenterX = snapX + elW / 2;
+          const elCenterY = snapY + elH / 2;
+
           if (isVerticalWall) {
-            // Snap element's right edge to wall's left edge
-            if (Math.abs((snapX + elW) - wallLeft) < wallSnapDistance) {
-              snapX = wallLeft - elW;
-            }
-            // Snap element's left edge to wall's right edge
-            if (Math.abs(snapX - wallRight) < wallSnapDistance) {
-              snapX = wallRight;
+            // Vertical wall - snap cabinet against whichever side is closer
+            const distToLeftSide = Math.abs(snapX - wallRight); // Cabinet left to wall right
+            const distToRightSide = Math.abs((snapX + elW) - wallLeft); // Cabinet right to wall left
+
+            if (elCenterX < wallCenterX) {
+              // Cabinet is to the left of wall - snap cabinet's right edge to wall's left edge
+              if (distToRightSide < wallSnapDistance) {
+                snapX = wallLeft - elW;
+              }
+            } else {
+              // Cabinet is to the right of wall - snap cabinet's left edge to wall's right edge
+              if (distToLeftSide < wallSnapDistance) {
+                snapX = wallRight;
+              }
             }
           } else {
-            // Horizontal wall
-            // Snap element's bottom edge to wall's top edge
-            if (Math.abs((snapY + elH) - wallTop) < wallSnapDistance) {
-              snapY = wallTop - elH;
-            }
-            // Snap element's top edge to wall's bottom edge
-            if (Math.abs(snapY - wallBottom) < wallSnapDistance) {
-              snapY = wallBottom;
+            // Horizontal wall - snap cabinet against whichever side is closer
+            const distToTopSide = Math.abs(snapY - wallBottom); // Cabinet top to wall bottom
+            const distToBottomSide = Math.abs((snapY + elH) - wallTop); // Cabinet bottom to wall top
+
+            if (elCenterY < wallCenterY) {
+              // Cabinet is above wall - snap cabinet's bottom edge to wall's top edge
+              if (distToBottomSide < wallSnapDistance) {
+                snapY = wallTop - elH;
+              }
+            } else {
+              // Cabinet is below wall - snap cabinet's top edge to wall's bottom edge
+              if (distToTopSide < wallSnapDistance) {
+                snapY = wallBottom;
+              }
             }
           }
         });
@@ -15701,16 +17153,60 @@
 
       const gridSnap = pixelsPerFoot / CONFIG.GRID_SUBDIVISIONS;
       const isCabinet = type.includes('cabinet');
+      const isCountertop = type === 'countertop' || type === 'countertop-l' || type === 'countertop-u';
+
+      // For countertops, check if dropping on/near a cabinet to auto-fit
+      let finalX = Math.round(x / gridSnap) * gridSnap;
+      let finalY = Math.round(y / gridSnap) * gridSnap;
+      let finalWidth = defaults.width;
+      let finalHeight = defaults.height;
+      let snappedToCabinet = null;
+
+      if (isCountertop) {
+        // Find cabinet under or near drop point
+        const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet', 'lazy-susan', 'island'];
+        const snapDistance = pixelsPerFoot * 1; // 1 foot snap zone
+
+        // Check each cabinet to find the best match
+        let bestCabinet = null;
+        let bestDistance = Infinity;
+
+        elements.forEach(el => {
+          if (!baseCabinetTypes.includes(el.type)) return;
+
+          const cabCenterX = el.x + (el.width * pixelsPerFoot) / 2;
+          const cabCenterY = el.y + ((el.height || el.depth || 2) * pixelsPerFoot) / 2;
+          const distance = Math.sqrt(Math.pow(x - cabCenterX, 2) + Math.pow(y - cabCenterY, 2));
+
+          if (distance < snapDistance && distance < bestDistance) {
+            bestDistance = distance;
+            bestCabinet = el;
+          }
+        });
+
+        if (bestCabinet) {
+          // Snap countertop to fit on cabinet with 1.5" overhang
+          const overhangFeet = 0.125; // 1.5 inches in feet
+          const overhangPx = overhangFeet * pixelsPerFoot;
+
+          finalX = bestCabinet.x - overhangPx;
+          finalY = bestCabinet.y - overhangPx;
+          finalWidth = bestCabinet.width + (overhangFeet * 2);
+          finalHeight = (bestCabinet.height || bestCabinet.depth || 2) + (overhangFeet * 2);
+          snappedToCabinet = bestCabinet;
+        }
+      }
+
       const element = {
         id: Date.now() + Math.random(),
         type: type,
-        x: Math.round(x / gridSnap) * gridSnap,
-        y: Math.round(y / gridSnap) * gridSnap,
-        width: defaults.width,
-        height: defaults.height,
+        x: finalX,
+        y: finalY,
+        width: finalWidth,
+        height: finalHeight,
         color: defaults.color,
         label: defaults.label,
-        rotation: 0,
+        rotation: snappedToCabinet ? (snappedToCabinet.rotation || 0) : 0,
         locked: false,
         texture: elementTextures[type] || null,
         textureImg: null,
@@ -15719,6 +17215,13 @@
         construction: isCabinet ? cabinetSettings.construction : undefined,
         doorStyle: isCabinet ? cabinetSettings.doorStyle : undefined,
         doorOverlay: isCabinet ? cabinetSettings.doorOverlay : undefined,
+        // Countertop-specific settings - 2" front overhang covers cabinet door faces
+        overhangFront: isCountertop ? 0.167 : undefined, // 2" front overhang
+        overhangBack: isCountertop ? 0 : undefined,       // 0" back (against wall)
+        overhangLeft: isCountertop ? 0.125 : undefined,   // 1.5" sides
+        overhangRight: isCountertop ? 0.125 : undefined,  // 1.5" sides
+        edgeProfile: isCountertop ? 'eased' : undefined,
+        thickness: isCountertop ? '3cm' : undefined,
         // Pricing fields
         priceOverride: null,
         priceUnit: 'sqft',
@@ -15743,6 +17246,11 @@
       calculateQuote();
       saveUndoState();
       draw();
+
+      // Show feedback if snapped to cabinet
+      if (snappedToCabinet) {
+        showSnapFeedback('Countertop fitted to cabinet with 1.5" overhang');
+      }
     }
 
     function duplicateElement(el) {
@@ -15926,7 +17434,7 @@
       let html = '';
       filteredElements.forEach((el, idx) => {
         const isSelected = el === selectedElement;
-        const isChecked = selectedItems.has(el.id);
+        const isChecked = selectedItems.has(String(el.id));
         const typeName = formatElementType(el.type);
         const icon = getElementIcon(el.type);
         const price = calculateElementPrice(el);
@@ -16218,16 +17726,18 @@
     }
 
     function toggleItemSelection(id) {
-      if (selectedItems.has(id)) {
-        selectedItems.delete(id);
+      // Convert to string for consistent comparison
+      const strId = String(id);
+      if (selectedItems.has(strId)) {
+        selectedItems.delete(strId);
       } else {
-        selectedItems.add(id);
+        selectedItems.add(strId);
       }
       updateItemPicker();
     }
 
     function selectAllItems() {
-      elements.forEach(el => selectedItems.add(el.id));
+      elements.forEach(el => selectedItems.add(String(el.id)));
       updateItemPicker();
     }
 
@@ -16243,7 +17753,7 @@
       }
 
       const count = selectedItems.size;
-      elements = elements.filter(el => !selectedItems.has(el.id));
+      elements = elements.filter(el => !selectedItems.has(String(el.id)));
       selectedItems.clear();
       selectedElement = null;
 
@@ -18096,109 +19606,6 @@
         init3D();
         render3D();
       }
-    }
-
-    // ===== DETAILED MODEL PREVIEW =====
-    async function previewDetailedCabinetModel() {
-      try {
-        // Switch to 3D view if not already
-        if (currentView !== '3d') {
-          setView('3d');
-          await new Promise(resolve => setTimeout(resolve, 100)); // Wait for view switch
-        }
-
-        const btn = document.getElementById('viewDetailedModel');
-        btn.textContent = 'Loading...';
-        btn.disabled = true;
-
-        // Load the detailed cabinet model
-        const modelClone = await getBaseCabinetModel();
-
-        if (modelClone && scene) {
-          // Remove any existing preview model
-          const existingPreview = scene.getObjectByName('detailedPreviewModel');
-          if (existingPreview) {
-            scene.remove(existingPreview);
-          }
-
-          // Add the loaded model to the scene
-          modelClone.name = 'detailedPreviewModel';
-
-          // Calculate bounding box to scale and position model
-          const box = new THREE.Box3().setFromObject(modelClone);
-          const size = box.getSize(new THREE.Vector3());
-          const center = box.getCenter(new THREE.Vector3());
-
-          console.log('Model dimensions (raw):', size.x, size.y, size.z);
-          console.log('Model center:', center.x, center.y, center.z);
-
-          // Home Designer Pro exports very small - scale up significantly
-          // A 24" cabinet should be 2 feet wide, ~3 feet tall
-          // Calculate scale based on expected cabinet height (3 feet = 36 inches)
-          const expectedHeight = 3; // 3 feet tall for base cabinet
-          const currentHeight = size.y;
-          const scaleFactor = currentHeight > 0 ? expectedHeight / currentHeight : 1;
-
-          console.log('Raw model height:', currentHeight, 'Scale factor:', scaleFactor);
-
-          // Apply scale to make cabinet realistic size
-          modelClone.scale.setScalar(scaleFactor);
-
-          // Recalculate bounds after scaling
-          const scaledBox = new THREE.Box3().setFromObject(modelClone);
-          const scaledSize = scaledBox.getSize(new THREE.Vector3());
-          const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
-
-          console.log('Model dimensions (feet):', scaledSize.x.toFixed(2), scaledSize.y.toFixed(2), scaledSize.z.toFixed(2));
-
-          // Position in center of room, adjust for model's own center offset
-          const posX = roomWidth / 2 - scaledCenter.x + 1;  // Nudge right
-          const posY = -scaledBox.min.y;  // Floor level
-          const posZ = roomDepth / 2 - scaledCenter.z + 1;  // Nudge forward
-          console.log('Positioning at:', posX, posY, posZ, 'Room:', roomWidth, 'x', roomDepth);
-          modelClone.position.set(posX, posY, posZ);
-
-          // Add shadows to all meshes
-          modelClone.traverse(child => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-
-          scene.add(modelClone);
-
-          // Position camera to see the model nicely
-          if (camera && controls) {
-            // Position camera at a good viewing angle
-            const viewDist = Math.max(scaledSize.x, scaledSize.z) * 1.5 + 5;
-            camera.position.set(
-              roomWidth / 2 + viewDist,
-              scaledSize.y + 3,
-              roomDepth / 2 + viewDist
-            );
-            controls.target.set(roomWidth / 2, scaledSize.y / 2, roomDepth / 2);
-            controls.update();
-          }
-
-          btn.textContent = 'Model Loaded';
-          console.log('Detailed cabinet model added to scene');
-        } else {
-          btn.textContent = 'Preview Model';
-          console.warn('Could not load model or scene not available');
-        }
-      } catch (error) {
-        console.error('Error loading detailed model:', error);
-        const btn = document.getElementById('viewDetailedModel');
-        btn.textContent = 'Load Failed';
-        setTimeout(() => {
-          btn.textContent = 'Preview Model';
-          btn.disabled = false;
-        }, 2000);
-      }
-
-      const btn = document.getElementById('viewDetailedModel');
-      btn.disabled = false;
     }
 
     // ===== 3D VIEW =====
@@ -21345,7 +22752,8 @@
           }
 
           // Render waterfall edges (vertical stone panels dropping down from countertop)
-          if (el.edgeProfile === 'waterfall' && el.waterfallSides && el.waterfallSides.length > 0) {
+          // Waterfalls render regardless of edge profile - user can add to any countertop
+          if (el.waterfallSides && el.waterfallSides.length > 0) {
             const waterfallMat = createTexturedMaterial(color, textureUrl, {
               roughness: 0.1,
               metalness: 0.08
@@ -21359,81 +22767,104 @@
             const wfEdgeThickness = is2cm ? 0.035 : 0; // Laminated edge build for 2cm
 
             el.waterfallSides.forEach(side => {
-              let wfPanel, wfW, wfD, wfPosX, wfPosZ, wfRotY = 0;
+              let wfW, wfD, wfPosX, wfPosZ;
+
+              // WATERFALL: Stone appears to make a 90° turn at the edge
+              // The mitered joint creates illusion of one continuous piece bending down
+              // OUTER face of waterfall aligns with countertop edge (continuous surface)
+              // TOP of waterfall aligns with TOP of countertop (seamless corner)
 
               switch(side) {
                 case 'left':
-                  wfW = slabD;
-                  wfD = wfThickness;
-                  wfPosX = -slabW/2 - wfThickness/2;
+                  // LEFT waterfall - outer face at countertop left edge
+                  wfW = wfThickness;
+                  wfD = slabD;
+                  // Outer face at -slabW/2, so center at -slabW/2 + thickness/2
+                  wfPosX = -slabW/2 + wfThickness/2;
                   wfPosZ = 0;
-                  wfRotY = 0;
                   break;
                 case 'right':
-                  wfW = slabD;
-                  wfD = wfThickness;
-                  wfPosX = slabW/2 + wfThickness/2;
+                  // RIGHT waterfall - outer face at countertop right edge
+                  wfW = wfThickness;
+                  wfD = slabD;
+                  // Outer face at +slabW/2, so center at +slabW/2 - thickness/2
+                  wfPosX = slabW/2 - wfThickness/2;
                   wfPosZ = 0;
-                  wfRotY = 0;
                   break;
                 case 'front':
+                  // FRONT waterfall - outer face at countertop front edge
                   wfW = slabW;
                   wfD = wfThickness;
                   wfPosX = 0;
-                  wfPosZ = slabD/2 + wfThickness/2;
-                  wfRotY = 0;
+                  // Outer face at +slabD/2, so center at +slabD/2 - thickness/2
+                  wfPosZ = slabD/2 - wfThickness/2;
                   break;
                 case 'back':
+                  // BACK waterfall - outer face at countertop back edge
                   wfW = slabW;
                   wfD = wfThickness;
                   wfPosX = 0;
-                  wfPosZ = -slabD/2 - wfThickness/2;
-                  wfRotY = 0;
+                  // Outer face at -slabD/2, so center at -slabD/2 + thickness/2
+                  wfPosZ = -slabD/2 + wfThickness/2;
                   break;
               }
 
-              // Main waterfall panel (vertical drop)
-              wfPanel = new THREE.Mesh(
+              // Main waterfall panel - drops from countertop TOP level
+              // TOP of waterfall at TOP of countertop = continuous surface turning 90°
+              const wfPanel = new THREE.Mesh(
                 new THREE.BoxGeometry(wfW, dropHeight, wfD),
                 waterfallMat
               );
-              wfPanel.position.set(wfPosX, -dropHeight/2, wfPosZ);
+              // Y position: panel top at countertop top (slabThickness/2 above countertop center)
+              wfPanel.position.set(wfPosX, slabThickness/2 - dropHeight/2, wfPosZ);
+              wfPanel.castShadow = true;
+              wfPanel.receiveShadow = true;
               group.add(wfPanel);
 
-              // For 2cm stone, add laminated edge build on visible sides
+              // For 2cm stone, add laminated edge on the INNER visible face (faces cabinet)
+              // The outer face is continuous with countertop - no lamination needed there
               if (is2cm && wfEdgeThickness > 0) {
-                // Front face laminated strip (if front/back waterfall, this is the bottom)
                 const lamStripMat = createTexturedMaterial(color, textureUrl, {
                   roughness: 0.1,
                   metalness: 0.08
                 });
+                const yPos = slabThickness/2 - dropHeight/2; // Match waterfall Y position
 
-                // Side laminated strips for left/right waterfalls
-                if (side === 'left' || side === 'right') {
-                  // Front facing strip
-                  const frontStrip = new THREE.Mesh(
+                if (side === 'left') {
+                  // Inner face (right side of left waterfall)
+                  const innerStrip = new THREE.Mesh(
                     new THREE.BoxGeometry(wfEdgeThickness, dropHeight, slabD),
                     lamStripMat
                   );
-                  const stripX = side === 'left' ? wfPosX - wfThickness/2 - wfEdgeThickness/2 : wfPosX + wfThickness/2 + wfEdgeThickness/2;
-                  frontStrip.position.set(stripX, -dropHeight/2, 0);
-                  group.add(frontStrip);
+                  innerStrip.position.set(wfPosX + wfThickness/2 + wfEdgeThickness/2, yPos, 0);
+                  group.add(innerStrip);
+                } else if (side === 'right') {
+                  // Inner face (left side of right waterfall)
+                  const innerStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(wfEdgeThickness, dropHeight, slabD),
+                    lamStripMat
+                  );
+                  innerStrip.position.set(wfPosX - wfThickness/2 - wfEdgeThickness/2, yPos, 0);
+                  group.add(innerStrip);
+                } else if (side === 'front') {
+                  // Inner face (back of front waterfall)
+                  const innerStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(wfW, dropHeight, wfEdgeThickness),
+                    lamStripMat
+                  );
+                  innerStrip.position.set(wfPosX, yPos, wfPosZ - wfThickness/2 - wfEdgeThickness/2);
+                  group.add(innerStrip);
+                } else if (side === 'back') {
+                  // Inner face (front of back waterfall)
+                  const innerStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(wfW, dropHeight, wfEdgeThickness),
+                    lamStripMat
+                  );
+                  innerStrip.position.set(wfPosX, yPos, wfPosZ + wfThickness/2 + wfEdgeThickness/2);
+                  group.add(innerStrip);
                 }
               }
-
-              // Add mitered seam at top where waterfall meets countertop
-              const miterJointMat = new THREE.MeshStandardMaterial({
-                color: 0x444444,
-                roughness: 0.3,
-                transparent: true,
-                opacity: 0.5
-              });
-              const miterJoint = new THREE.Mesh(
-                new THREE.BoxGeometry(wfW + 0.01, 0.003, wfD + 0.01),
-                miterJointMat
-              );
-              miterJoint.position.set(wfPosX, 0, wfPosZ);
-              group.add(miterJoint);
+              // No visible seam - mitered joint is polished smooth to appear seamless
             });
           }
           break;
@@ -22012,18 +23443,19 @@
           const edgeRadius = capThickness * 0.4;
 
           if (edgeProfile === 'bullnose' || edgeProfile === 'half-bullnose' || edgeProfile === 'full-bullnose') {
-            // Front bullnose edge - rounded profile
+            // Front bullnose edge - rounded profile at TOP of front edge
             const frontEdge = new THREE.Mesh(
               new THREE.CylinderGeometry(edgeRadius, edgeRadius, capWidth, 16, 1, false, 0, Math.PI),
               capMat
             );
             frontEdge.rotation.x = Math.PI / 2;
             frontEdge.rotation.z = Math.PI / 2;
-            frontEdge.position.set(0, -capThickness / 2 + edgeRadius * 0.3, d / 2 + overhang);
+            // Position at TOP of edge (positive Y), not bottom
+            frontEdge.position.set(0, capThickness / 2 - edgeRadius * 0.3, d / 2 + overhang);
             frontEdge.castShadow = true;
             group.add(frontEdge);
 
-            // Side bullnose edges (left and right)
+            // Side bullnose edges (left and right) - also at TOP
             [-1, 1].forEach(side => {
               const sideEdge = new THREE.Mesh(
                 new THREE.CylinderGeometry(edgeRadius * 0.8, edgeRadius * 0.8, capDepth - 0.04, 12, 1, false, 0, Math.PI),
@@ -22031,24 +23463,98 @@
               );
               sideEdge.rotation.x = 0;
               sideEdge.rotation.z = side * Math.PI / 2;
-              sideEdge.position.set(side * (capWidth / 2 - edgeRadius * 0.3), -capThickness / 2 + edgeRadius * 0.3, overhang / 2);
+              // Position at TOP of edge
+              sideEdge.position.set(side * (capWidth / 2 - edgeRadius * 0.3), capThickness / 2 - edgeRadius * 0.3, overhang / 2);
               group.add(sideEdge);
             });
           } else if (edgeProfile === 'ogee') {
-            // Ogee profile - decorative S-curve (simplified as layered boxes)
-            const ogeeStep1 = new THREE.Mesh(
+            // Ogee profile - decorative S-curve with bulge at TOP of edge
+            // Upper decorative bulge (convex portion - visible from top)
+            const ogeeBulge = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.02, capThickness * 0.2, 0.025),
+              capMat
+            );
+            ogeeBulge.position.set(0, capThickness * 0.15, d / 2 + overhang + 0.015);
+            ogeeBulge.castShadow = true;
+            group.add(ogeeBulge);
+
+            // Middle concave suggestion (step back creates shadow line)
+            const ogeeMiddle = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.04, capThickness * 0.15, 0.012),
+              capMat
+            );
+            ogeeMiddle.position.set(0, -capThickness * 0.1, d / 2 + overhang + 0.005);
+            group.add(ogeeMiddle);
+
+            // Lower portion - flat face leading to underside
+            const ogeeLower = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.02, capThickness * 0.2, 0.015),
+              capMat
+            );
+            ogeeLower.position.set(0, -capThickness * 0.35, d / 2 + overhang + 0.008);
+            group.add(ogeeLower);
+          } else if (edgeProfile === 'double-ogee') {
+            // Double ogee - two S-curves stacked with bulges at top of each
+            // Upper S-curve bulge
+            const dblOgeeTop = new THREE.Mesh(
               new THREE.BoxGeometry(capWidth - 0.02, capThickness * 0.15, 0.02),
               capMat
             );
-            ogeeStep1.position.set(0, -capThickness * 0.4, d / 2 + overhang + 0.01);
-            group.add(ogeeStep1);
+            dblOgeeTop.position.set(0, capThickness * 0.2, d / 2 + overhang + 0.012);
+            dblOgeeTop.castShadow = true;
+            group.add(dblOgeeTop);
 
-            const ogeeStep2 = new THREE.Mesh(
-              new THREE.BoxGeometry(capWidth - 0.04, capThickness * 0.1, 0.015),
+            // Upper concave
+            const dblOgeeUpperMid = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.04, capThickness * 0.1, 0.008),
               capMat
             );
-            ogeeStep2.position.set(0, -capThickness * 0.52, d / 2 + overhang + 0.02);
-            group.add(ogeeStep2);
+            dblOgeeUpperMid.position.set(0, capThickness * 0.05, d / 2 + overhang + 0.003);
+            group.add(dblOgeeUpperMid);
+
+            // Lower S-curve bulge
+            const dblOgeeLowerBulge = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.02, capThickness * 0.12, 0.018),
+              capMat
+            );
+            dblOgeeLowerBulge.position.set(0, -capThickness * 0.15, d / 2 + overhang + 0.01);
+            group.add(dblOgeeLowerBulge);
+
+            // Lower portion
+            const dblOgeeLower = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.04, capThickness * 0.15, 0.012),
+              capMat
+            );
+            dblOgeeLower.position.set(0, -capThickness * 0.35, d / 2 + overhang + 0.005);
+            group.add(dblOgeeLower);
+          } else if (edgeProfile === 'dupont') {
+            // Dupont - stepped profile with rounded top
+            // Rounded top portion (bullnose-like)
+            const dupontTop = new THREE.Mesh(
+              new THREE.CylinderGeometry(capThickness * 0.2, capThickness * 0.2, capWidth - 0.02, 12, 1, false, 0, Math.PI),
+              capMat
+            );
+            dupontTop.rotation.x = Math.PI / 2;
+            dupontTop.rotation.z = Math.PI / 2;
+            dupontTop.position.set(0, capThickness * 0.15, d / 2 + overhang + 0.01);
+            dupontTop.castShadow = true;
+            group.add(dupontTop);
+
+            // Middle step (the characteristic dupont ledge)
+            const dupontLedge = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.04, capThickness * 0.12, 0.03),
+              capMat
+            );
+            dupontLedge.position.set(0, -capThickness * 0.1, d / 2 + overhang - 0.005);
+            group.add(dupontLedge);
+
+            // Lower flat portion
+            const dupontLower = new THREE.Mesh(
+              new THREE.BoxGeometry(capWidth - 0.02, capThickness * 0.25, 0.015),
+              capMat
+            );
+            dupontLower.position.set(0, -capThickness * 0.35, d / 2 + overhang + 0.008);
+            group.add(dupontLower);
           } else {
             // Eased edge - subtle chamfer
             const easedEdge = new THREE.Mesh(
@@ -27524,8 +29030,10 @@
         const isAgainstBackWall = el2DY < wallThreshold;
 
         // Auto-rotate cabinets/appliances based on wall position (only if no manual rotation set)
+        // Check for undefined/null rotation, not just falsy (0 is a valid rotation)
         let autoRotated = false;
-        if (isCabinetAppliance && !el.rotation) {
+        const hasManualRotation = el.rotation !== undefined && el.rotation !== null && el.rotation !== 0;
+        if (isCabinetAppliance && !hasManualRotation) {
           if (isAgainstRightWall && !isAgainstBackWall) {
             // Right wall - rotate to face left (into room)
             group.rotation.y = -Math.PI / 2;
@@ -27803,6 +29311,11 @@
     }
 
     // ===== ROOM TEMPLATES =====
+    // Rotation guide (top-down view, doors/drawers face INTO room):
+    //   Back wall (y=0):    rotation = 0   (faces down/south into room)
+    //   Right wall (x=max): rotation = 90  (faces left/west into room)
+    //   Front wall (y=max): rotation = 180 (faces up/north into room)
+    //   Left wall (x=0):    rotation = 270 (faces right/east into room)
     const ROOM_TEMPLATES = {
       'kitchen-l': {
         name: 'L-Shaped Kitchen',
@@ -27810,30 +29323,37 @@
         width: 12,
         depth: 10,
         elements: [
-          // BACK WALL (y=0) - Fridge on left, then cabinets, DW, sink
-          // Work Triangle: Fridge (left) -> Sink (center) -> Range (right wall)
-          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge' },
-          { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'DW' },
-          { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base' },
-          { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'countertop', x: 3, y: 0, width: 9, height: 2, label: 'Counter' },
-          { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink' },
-          { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 10, y: 0, width: 2, height: 1, label: 'Upper' },
+          // === BACK WALL (y=0) - faces into room (rotation: 0) ===
+          // Work triangle: Fridge left, Sink center, Range on right wall
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge', rotation: 0 },
+          { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          // Countertop: 2.17' depth (2' cabinet + 2" front overhang)
+          { type: 'countertop', x: 2.88, y: -0.04, width: 9.29, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          // Upper cabinets on back wall
+          { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
+          { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 10, y: 0, width: 2, height: 1, label: 'Upper 24"', rotation: 0 },
 
-          // RIGHT WALL (x=10) - Range with hood, cabinets
-          { type: 'base-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Base' },
-          { type: 'range', x: 10, y: 4, width: 2, height: 2.5, label: 'Range' },
-          { type: 'base-cabinet', x: 10, y: 6.5, width: 2, height: 2, label: 'Base' },
-          { type: 'countertop', x: 10, y: 2, width: 2, height: 6.5, label: 'Counter' },
-          { type: 'range-hood', x: 10, y: 4, width: 2, height: 1, label: 'Hood' },
-          { type: 'wall-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Upper' },
-          { type: 'wall-cabinet', x: 10, y: 6.5, width: 2, height: 2, label: 'Upper' },
+          // === RIGHT WALL (x=10) - faces into room (rotation: 90) ===
+          // Range centered with cabinets on both sides
+          { type: 'base-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 9.83, y: 1.88, width: 2.17, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 10, y: 2, width: 1, height: 2, label: 'Upper', rotation: 90 },
+          { type: 'range', x: 10, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 10, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 8.5, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
+          { type: 'countertop', x: 9.83, y: 6.38, width: 2.17, height: 3.75, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 10, y: 6.5, width: 1, height: 3.5, label: 'Uppers', rotation: 90 },
 
-          // ISLAND in center of room
-          { type: 'island', x: 4, y: 5, width: 4, height: 2.5, label: 'Island' },
+          // === ISLAND - faces seating side (rotation: 180) ===
+          // Island with breakfast bar overhang on seating side, waterfalls on ends
+          { type: 'base-cabinet', x: 2.5, y: 5, width: 5, height: 2, label: 'Island Base', rotation: 180 },
+          { type: 'countertop', x: 2.33, y: 4.83, width: 5.33, height: 3.17, label: 'Island Top', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.167, overhangBack: 0.75, overhangLeft: 0.167, overhangRight: 0.167 },
         ]
       },
       'kitchen-galley': {
@@ -27842,60 +29362,134 @@
         width: 12,
         depth: 8,
         elements: [
-          // BACK WALL (y=0)
-          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'dishwasher', x: 2, y: 0, width: 2, height: 2, label: 'DW' },
-          { type: 'sink-base', x: 4, y: 0, width: 3, height: 2, label: 'Sink Base' },
-          { type: 'base-cabinet', x: 7, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'range', x: 9, y: 0, width: 3, height: 2.5, label: 'Range' },
-          { type: 'countertop', x: 0, y: 0, width: 12, height: 2, label: 'Counter' },
-          { type: 'sink', x: 4.5, y: 0.25, width: 2, height: 1.5, label: 'Sink' },
-          { type: 'wall-cabinet', x: 0, y: 0, width: 4, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 4, y: 0, width: 3, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 7, y: 0, width: 2, height: 1, label: 'Upper' },
-          { type: 'range-hood', x: 9, y: 0, width: 3, height: 1, label: 'Hood' },
+          // === BACK WALL (y=0) - faces into room (rotation: 0) ===
+          // Sink side with dishwasher
+          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 2, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'sink-base', x: 4, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 7, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'base-cabinet', x: 9, y: 0, width: 3, height: 2, label: 'Base 36"', rotation: 0 },
+          { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 4.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          { type: 'wall-cabinet', x: 0, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
+          { type: 'wall-cabinet', x: 4, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 7, y: 0, width: 5, height: 1, label: 'Upper 60"', rotation: 0 },
 
-          // FRONT WALL (y=6)
-          { type: 'refrigerator', x: 0, y: 6, width: 3, height: 2, label: 'Fridge' },
-          { type: 'base-cabinet', x: 3, y: 6, width: 3, height: 2, label: 'Base' },
-          { type: 'base-cabinet', x: 6, y: 6, width: 3, height: 2, label: 'Base' },
-          { type: 'base-cabinet', x: 9, y: 6, width: 3, height: 2, label: 'Base' },
-          { type: 'countertop', x: 3, y: 6, width: 9, height: 2, label: 'Counter' },
-          { type: 'wall-cabinet', x: 3, y: 6, width: 9, height: 1, label: 'Uppers' },
+          // === FRONT WALL (y=6) - faces into room (rotation: 180) ===
+          // Range side with fridge
+          { type: 'refrigerator', x: 0, y: 6, width: 3, height: 2.5, label: 'Fridge', rotation: 180 },
+          { type: 'base-cabinet', x: 3, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
+          { type: 'range', x: 5, y: 5.75, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 180 },
+          { type: 'range-hood', x: 5.25, y: 6, width: 2, height: 1, label: 'Hood', rotation: 180 },
+          { type: 'base-cabinet', x: 7.5, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
+          { type: 'base-cabinet', x: 9.5, y: 6, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
+          { type: 'countertop', x: 2.88, y: 5.79, width: 9.25, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 3, y: 7, width: 2, height: 1, label: 'Upper 24"', rotation: 180 },
+          { type: 'wall-cabinet', x: 7.5, y: 7, width: 4.5, height: 1, label: 'Uppers', rotation: 180 },
         ]
       },
       'kitchen-u': {
         name: 'U-Shaped Kitchen',
         roomType: 'kitchen',
-        width: 12,
-        depth: 10,
+        width: 14,
+        depth: 12,
         elements: [
-          // BACK WALL (y=0)
-          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'dishwasher', x: 2, y: 0, width: 2, height: 2, label: 'DW' },
-          { type: 'sink-base', x: 4, y: 0, width: 3, height: 2, label: 'Sink Base' },
-          { type: 'base-cabinet', x: 7, y: 0, width: 2, height: 2, label: 'Base' },
-          { type: 'range', x: 9, y: 0, width: 3, height: 2.5, label: 'Range' },
-          { type: 'countertop', x: 0, y: 0, width: 12, height: 2, label: 'Counter' },
-          { type: 'sink', x: 4.5, y: 0.25, width: 2, height: 1.5, label: 'Sink' },
-          { type: 'wall-cabinet', x: 0, y: 0, width: 4, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 4, y: 0, width: 3, height: 1, label: 'Upper' },
-          { type: 'wall-cabinet', x: 7, y: 0, width: 2, height: 1, label: 'Upper' },
-          { type: 'range-hood', x: 9, y: 0, width: 3, height: 1, label: 'Hood' },
+          // === BACK WALL (y=0) - faces into room (rotation: 0) ===
+          // Sink centered under window
+          { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 4, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'sink-base', x: 6, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 9, y: 0, width: 3, height: 2, label: 'Base 36"', rotation: 0 },
+          { type: 'countertop', x: 1.88, y: -0.04, width: 10.25, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 6.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          { type: 'wall-cabinet', x: 2, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
+          { type: 'wall-cabinet', x: 6, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 9, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
 
-          // LEFT WALL (x=0)
-          { type: 'refrigerator', x: 0, y: 2, width: 2, height: 3, label: 'Fridge' },
-          { type: 'base-cabinet', x: 0, y: 5, width: 2, height: 2, label: 'Base' },
-          { type: 'base-cabinet', x: 0, y: 7, width: 2, height: 2, label: 'Base' },
-          { type: 'countertop', x: 0, y: 5, width: 2, height: 4, label: 'Counter' },
-          { type: 'wall-cabinet', x: 0, y: 5, width: 1, height: 4, label: 'Uppers' },
+          // === LEFT WALL (x=0) - faces into room (rotation: 270) ===
+          // Fridge at top, then pantry/storage
+          { type: 'refrigerator', x: 0, y: 0, width: 2.5, height: 3, label: 'Fridge', rotation: 270 },
+          { type: 'tall-cabinet', x: 0, y: 3, width: 2, height: 2, label: 'Pantry', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 5, width: 2, height: 2, label: 'Base 24"', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 7, width: 2, height: 2, label: 'Base 24"', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 9, width: 2, height: 2, label: 'Base 24"', rotation: 270 },
+          { type: 'countertop', x: -0.04, y: 4.88, width: 2.21, height: 6.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 0, y: 5, width: 1, height: 6, label: 'Uppers', rotation: 270 },
 
-          // RIGHT WALL (x=10)
-          { type: 'base-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Base' },
-          { type: 'base-cabinet', x: 10, y: 4, width: 2, height: 2, label: 'Base' },
-          { type: 'base-cabinet', x: 10, y: 6, width: 2, height: 2, label: 'Base' },
-          { type: 'countertop', x: 10, y: 2, width: 2, height: 6, label: 'Counter' },
-          { type: 'wall-cabinet', x: 11, y: 2, width: 1, height: 6, label: 'Uppers' },
+          // === RIGHT WALL (x=12) - faces into room (rotation: 90) ===
+          // Range centered with cabinets on both sides
+          { type: 'base-cabinet', x: 12, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 12, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 8.5, width: 2, height: 2.5, label: 'Base 30"', rotation: 90 },
+          { type: 'countertop', x: 11.79, y: -0.125, width: 2.21, height: 4.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 11.79, y: 6.38, width: 2.21, height: 4.75, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'wall-cabinet', x: 12, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
+          { type: 'wall-cabinet', x: 12, y: 6.5, width: 1, height: 4.5, label: 'Uppers', rotation: 90 },
+        ]
+      },
+      'kitchen-single': {
+        name: 'Single Wall Kitchen',
+        roomType: 'kitchen',
+        width: 14,
+        depth: 8,
+        elements: [
+          // === SINGLE WALL (y=0) - compact kitchen on one wall ===
+          // Layout: Fridge - Counter - Sink - Counter - Range - Counter
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge', rotation: 0 },
+          { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 10, y: 0, width: 1.5, height: 2, label: 'Base 18"', rotation: 0 },
+          { type: 'range', x: 11.5, y: 0, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 0 },
+          { type: 'countertop', x: 2.88, y: -0.04, width: 8.75, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
+          { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 10, y: 0, width: 1.5, height: 1, label: 'Upper 18"', rotation: 0 },
+          { type: 'range-hood', x: 11.5, y: 0, width: 2.5, height: 1, label: 'Hood', rotation: 0 },
+
+          // Optional island for extra prep space
+          { type: 'base-cabinet', x: 4, y: 5, width: 6, height: 2, label: 'Island Base', rotation: 180 },
+          { type: 'countertop', x: 3.83, y: 4.83, width: 6.33, height: 3.17, label: 'Island w/ Seating', rotation: 0, overhangFront: 0.167, overhangBack: 0.83, overhangLeft: 0.167, overhangRight: 0.167 },
+        ]
+      },
+      'kitchen-peninsula': {
+        name: 'Peninsula Kitchen',
+        roomType: 'kitchen',
+        width: 14,
+        depth: 12,
+        elements: [
+          // === BACK WALL (y=0) - faces into room (rotation: 0) ===
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge', rotation: 0 },
+          { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
+          { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
+          { type: 'base-cabinet', x: 12, y: 0, width: 2, height: 2, label: 'Corner', rotation: 0 },
+          { type: 'countertop', x: 2.88, y: -0.04, width: 11.25, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
+          { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
+          { type: 'wall-cabinet', x: 10, y: 0, width: 4, height: 1, label: 'Uppers', rotation: 0 },
+
+          // === RIGHT WALL (x=12) - faces into room (rotation: 90) ===
+          { type: 'base-cabinet', x: 12, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 12, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'countertop', x: 11.79, y: 1.88, width: 2.21, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 11.79, y: 6.38, width: 2.21, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'wall-cabinet', x: 12, y: 2, width: 1, height: 2, label: 'Upper', rotation: 90 },
+          { type: 'wall-cabinet', x: 12, y: 6.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
+
+          // === PENINSULA - attached to right wall, extends into room ===
+          // Waterfall on end, breakfast bar overhang on open side
+          { type: 'base-cabinet', x: 12, y: 8.5, width: 2, height: 3.5, label: 'Peninsula Base', rotation: 90 },
+          { type: 'base-cabinet', x: 8, y: 10, width: 4, height: 2, label: 'Peninsula Base', rotation: 180 },
+          { type: 'countertop', x: 7.83, y: 8.38, width: 6.21, height: 3.79, label: 'Peninsula Top', rotation: 0, waterfallSides: ['left'], overhangFront: 0.167, overhangBack: 0.83, overhangLeft: 0.167, overhangRight: 0 },
         ]
       },
       'bathroom-master': {
@@ -28011,6 +29605,66 @@
         ]
       }
     };
+
+    // Export current design as template code (for developers to copy)
+    function exportAsTemplate() {
+      const templateName = prompt('Enter a name for this template:', 'My Kitchen');
+      if (!templateName) return;
+
+      const templateId = templateName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const roomType = document.getElementById('roomType')?.value || 'kitchen';
+
+      // Convert elements to template format (positions in feet, not pixels)
+      const templateElements = elements.map(el => {
+        const elDef = {
+          type: el.type,
+          x: Math.round((el.x / pixelsPerFoot) * 100) / 100,
+          y: Math.round((el.y / pixelsPerFoot) * 100) / 100,
+          width: Math.round(el.width * 100) / 100,
+          height: Math.round(el.height * 100) / 100
+        };
+
+        // Include optional properties if set
+        if (el.label) elDef.label = el.label;
+        if (el.rotation) elDef.rotation = el.rotation;
+        if (el.color && el.color !== getDefaultColor(el.type)) elDef.color = el.color;
+        if (el.waterfallSides && el.waterfallSides.length > 0) elDef.waterfallSides = el.waterfallSides;
+        if (el.waterfallHeight) elDef.waterfallHeight = el.waterfallHeight;
+        if (el.edgeProfile && el.edgeProfile !== 'eased') elDef.edgeProfile = el.edgeProfile;
+        if (el.thickness && el.thickness !== '3cm') elDef.thickness = el.thickness;
+        if (el.finishedEnds && el.finishedEnds.length > 0) elDef.finishedEnds = el.finishedEnds;
+
+        return elDef;
+      });
+
+      // Generate template code
+      const templateCode = `'${templateId}': {
+  name: '${templateName}',
+  roomType: '${roomType}',
+  width: ${roomWidth},
+  depth: ${roomDepth},
+  elements: ${JSON.stringify(templateElements, null, 4).replace(/"([^"]+)":/g, '$1:')}
+}`;
+
+      // Show in a modal or copy to clipboard
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = `
+        <div style="background:#1a1a2e;padding:24px;border-radius:12px;max-width:800px;max-height:80vh;overflow:auto;color:#fff;">
+          <h3 style="margin:0 0 16px;">Template Code</h3>
+          <p style="color:#888;margin-bottom:12px;">Copy this code and add it to ROOM_TEMPLATES in index.html:</p>
+          <textarea id="templateCodeOutput" style="width:100%;height:400px;background:#0d0d15;color:#10b981;font-family:monospace;font-size:12px;padding:12px;border:1px solid #333;border-radius:8px;">${templateCode}</textarea>
+          <div style="margin-top:16px;display:flex;gap:12px;">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('templateCodeOutput').value);this.textContent='Copied!'" style="padding:10px 20px;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;">Copy to Clipboard</button>
+            <button onclick="this.closest('div').parentElement.remove()" style="padding:10px 20px;background:#333;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      document.getElementById('templateCodeOutput').select();
+
+      console.log('Template exported:', templateCode);
+    }
 
     function loadRoomTemplate(templateId) {
       const template = ROOM_TEMPLATES[templateId];
@@ -28325,8 +29979,17 @@
           standardSizeRow.style.display = 'none';
         }
 
+        // Add Countertop button for base cabinets
+        const addCountertopRow = document.getElementById('addCountertopRow');
+        if (addCountertopRow) {
+          const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet', 'lazy-susan', 'island'];
+          const isBaseCabinet = baseCabinetTypes.includes(selectedElement.type);
+          addCountertopRow.style.display = isBaseCabinet ? 'flex' : 'none';
+        }
+
         // Countertop-specific properties (edge profile, backsplash, finished ends)
-        const isCountertop = selectedElement.type === 'countertop';
+        const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+        const isCountertop = countertopTypes.includes(selectedElement.type);
         const edgeProfileRow = document.getElementById('edgeProfileRow');
         const backsplashRow = document.getElementById('backsplashRow');
         const finishedEndsRow = document.getElementById('finishedEndsRow');
@@ -28334,8 +29997,26 @@
         if (edgeProfileRow) {
           edgeProfileRow.style.display = isCountertop ? 'flex' : 'none';
           if (isCountertop) {
-            document.getElementById('propEdgeProfile').value = selectedElement.edgeProfile || 'eased';
+            const profile = selectedElement.edgeProfile || 'eased';
+            document.getElementById('propEdgeProfile').value = profile;
+
+            // Show edge profile durability info
+            const edgeInfo = FABRICATION_STANDARDS?.edgeDurability?.[profile];
+            const infoDiv = document.getElementById('edgeProfileInfo');
+            const infoRow = document.getElementById('edgeProfileInfoRow');
+
+            if (infoDiv && infoRow && edgeInfo) {
+              const stars = '★'.repeat(edgeInfo.rating) + '☆'.repeat(5 - edgeInfo.rating);
+              infoDiv.innerHTML = `<strong>Durability:</strong> ${stars}<br><strong>Chip Resistance:</strong> ${edgeInfo.chipResistance}<br>${edgeInfo.notes}`;
+              infoRow.style.display = 'block';
+            }
           }
+        }
+
+        // Hide edge profile info when not a countertop
+        const edgeProfileInfoRow = document.getElementById('edgeProfileInfoRow');
+        if (edgeProfileInfoRow && !isCountertop) {
+          edgeProfileInfoRow.style.display = 'none';
         }
 
         if (backsplashRow) {
@@ -28380,15 +30061,14 @@
           }
         }
 
-        // Waterfall rows for countertops (only show when waterfall edge profile is selected)
-        const waterfallRow = document.getElementById('waterfallRow');
+        // Waterfall section for countertops - ALWAYS visible for any countertop type
+        const waterfallSectionRow = document.getElementById('waterfallSectionRow');
         const waterfallHeightRow = document.getElementById('waterfallHeightRow');
-        const edgeProfile = selectedElement.edgeProfile || 'eased';
-        const isWaterfall = isCountertop && edgeProfile === 'waterfall';
 
-        if (waterfallRow) {
-          waterfallRow.style.display = isWaterfall ? 'flex' : 'none';
-          if (isWaterfall) {
+        if (waterfallSectionRow) {
+          // Show waterfall section for ALL countertop types
+          waterfallSectionRow.style.display = isCountertop ? 'block' : 'none';
+          if (isCountertop) {
             // Populate waterfall side checkboxes
             const sides = selectedElement.waterfallSides || [];
             const leftCb = document.getElementById('propWaterfallLeft');
@@ -28404,9 +30084,9 @@
 
         if (waterfallHeightRow) {
           const hasWaterfallSides = selectedElement.waterfallSides && selectedElement.waterfallSides.length > 0;
-          waterfallHeightRow.style.display = (isWaterfall && hasWaterfallSides) ? 'flex' : 'none';
-          if (isWaterfall && hasWaterfallSides) {
-            const dropHeight = selectedElement.waterfallHeight || 3;
+          waterfallHeightRow.style.display = (isCountertop && hasWaterfallSides) ? 'flex' : 'none';
+          if (isCountertop && hasWaterfallSides) {
+            const dropHeight = selectedElement.waterfallHeight || 2.9;
             const heightSelect = document.getElementById('propWaterfallHeight');
             if (heightSelect) {
               if (dropHeight === 'floor') {
@@ -28420,6 +30100,40 @@
           }
         }
 
+        // Overhang section for countertops
+        const overhangSectionRow = document.getElementById('overhangSectionRow');
+        if (overhangSectionRow) {
+          overhangSectionRow.style.display = isCountertop ? 'block' : 'none';
+          if (isCountertop) {
+            // Get overhang values (stored in feet, display in inches) - 2" front is standard
+            const front = (selectedElement.overhangFront !== undefined ? selectedElement.overhangFront : 0.167) * 12;
+            const back = (selectedElement.overhangBack !== undefined ? selectedElement.overhangBack : 0) * 12;
+            const left = (selectedElement.overhangLeft !== undefined ? selectedElement.overhangLeft : 0.125) * 12;
+            const right = (selectedElement.overhangRight !== undefined ? selectedElement.overhangRight : 0.125) * 12;
+
+            document.getElementById('propOverhangFront').value = front;
+            document.getElementById('propOverhangBack').value = back;
+            document.getElementById('propOverhangLeft').value = left;
+            document.getElementById('propOverhangRight').value = right;
+
+            // Check if matches a preset (2" = standard front overhang to cover cabinet face)
+            const presetSelect = document.getElementById('propOverhangPreset');
+            if (presetSelect) {
+              if (front === 2 && back === 0 && left === 1.5 && right === 1.5) {
+                presetSelect.value = 'standard';
+              } else if (front === 2 && back === 2 && left === 2 && right === 2) {
+                presetSelect.value = 'island';
+              } else if (front === 12 && back === 2 && left === 1.5 && right === 1.5) {
+                presetSelect.value = 'bar';
+              } else if (front === 15 && back === 2 && left === 1.5 && right === 1.5) {
+                presetSelect.value = 'breakfast';
+              } else {
+                presetSelect.value = '';
+              }
+            }
+          }
+        }
+
         // Seams row for countertops
         const seamsRow = document.getElementById('seamsRow');
         if (seamsRow) {
@@ -28427,6 +30141,29 @@
           if (isCountertop) {
             const seamCount = selectedElement.seams ? selectedElement.seams.length : 0;
             document.getElementById('seamCount').textContent = seamCount + (seamCount === 1 ? ' seam' : ' seams');
+
+            // Show seam requirement info
+            const reqInfo = document.getElementById('seamRequirementInfo');
+            const reqText = document.getElementById('seamRequirementText');
+            if (reqInfo && reqText) {
+              const req = calculateSeamRequirements(selectedElement);
+              if (req.needsSeam) {
+                const needed = req.minSeams - seamCount;
+                if (needed > 0) {
+                  reqText.textContent = `⚠️ ${req.reason}. Need ${needed} more seam${needed > 1 ? 's' : ''}.`;
+                  reqInfo.style.display = 'block';
+                  reqInfo.style.borderLeftColor = '#f59e0b';
+                } else {
+                  reqText.textContent = `✓ Seam requirements met (${req.minSeams} needed)`;
+                  reqInfo.style.display = 'block';
+                  reqInfo.style.borderLeftColor = '#10b981';
+                }
+              } else {
+                reqText.textContent = `✓ Fits within standard slab (120" × 60")`;
+                reqInfo.style.display = 'block';
+                reqInfo.style.borderLeftColor = '#10b981';
+              }
+            }
           }
         }
 
@@ -29569,31 +31306,27 @@
 
     // Update edge profile for countertops
     function updateEdgeProfile() {
-      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
       const profile = document.getElementById('propEdgeProfile').value;
       selectedElement.edgeProfile = profile;
 
-      // Show/hide waterfall controls based on edge profile selection
-      const isWaterfall = profile === 'waterfall';
-      const waterfallRow = document.getElementById('waterfallRow');
-      const waterfallHeightRow = document.getElementById('waterfallHeightRow');
+      // Show edge profile durability info
+      const edgeInfo = FABRICATION_STANDARDS.edgeDurability[profile];
+      const infoDiv = document.getElementById('edgeProfileInfo');
+      const infoRow = document.getElementById('edgeProfileInfoRow');
 
-      if (waterfallRow) {
-        waterfallRow.style.display = isWaterfall ? 'flex' : 'none';
-      }
-      if (waterfallHeightRow) {
-        // Only show height row if waterfall is selected AND at least one side is checked
-        const hasWaterfallSides = selectedElement.waterfallSides && selectedElement.waterfallSides.length > 0;
-        waterfallHeightRow.style.display = (isWaterfall && hasWaterfallSides) ? 'flex' : 'none';
+      if (infoDiv && infoRow && edgeInfo) {
+        const stars = '★'.repeat(edgeInfo.rating) + '☆'.repeat(5 - edgeInfo.rating);
+        infoDiv.innerHTML = `<strong>Durability:</strong> ${stars}<br><strong>Chip Resistance:</strong> ${edgeInfo.chipResistance}<br>${edgeInfo.notes}`;
+        infoRow.style.display = 'block';
+      } else if (infoRow) {
+        infoRow.style.display = 'none';
       }
 
-      // Clear waterfall sides if not waterfall edge
-      if (!isWaterfall) {
-        selectedElement.waterfallSides = null;
-        selectedElement.waterfallHeight = null;
-        selectedElement.waterfallDropFeet = null;
-      }
+      // Waterfall sides are now independent of edge profile - don't clear them
+      // Edge profile only affects the visible edge shape (bullnose, ogee, etc.)
 
       update3DScene();
       calculateQuote();
@@ -29602,7 +31335,8 @@
 
     // Update countertop thickness (2cm vs 3cm)
     function updateCountertopThickness() {
-      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
       const thickness = document.getElementById('propThickness').value;
       const edgeStyle = document.getElementById('propEdgeStyle').value;
@@ -29657,7 +31391,8 @@
 
     // Update waterfall sides (which sides get waterfall treatment)
     function updateWaterfallSides() {
-      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
       const waterfallSides = [];
       if (document.getElementById('propWaterfallLeft')?.checked) waterfallSides.push('left');
@@ -29683,7 +31418,8 @@
 
     // Update waterfall drop height
     function updateWaterfallHeight() {
-      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
       const value = document.getElementById('propWaterfallHeight')?.value;
 
@@ -29705,6 +31441,343 @@
       update3DScene();
       calculateQuote();
       showSnapFeedback(`Waterfall drop: ${selectedElement.waterfallHeight === 'floor' ? 'To floor' : selectedElement.waterfallHeight + "'"}`);
+    }
+
+    // Fabrication guidelines based on Marble Institute of America standards
+    const FABRICATION_STANDARDS = {
+      overhang: {
+        // Maximum unsupported overhang by thickness
+        '2cm': { maxUnsupported: 6, bracketRequired: 6, plywoodRequired: true },
+        '3cm': { maxUnsupported: 10, bracketRequired: 12, plywoodRequired: false }
+      },
+      // Maximum unsupported span (side-to-side between supports)
+      maxSpan: {
+        '2cm': 24, // inches
+        '3cm': 36  // inches
+      },
+      // Seating overhang standards
+      seating: {
+        bar: { depth: 12, description: 'Standard bar seating' },
+        breakfast: { depth: 15, description: 'Comfortable breakfast bar' },
+        ada: { depth: 19, minKneeHeight: 27, description: 'ADA accessible' }
+      },
+      // The 1/3 rule: overhang should not exceed 1/3 of total countertop depth
+      maxOverhangRatio: 1/3,
+      // Minimum support: 2/3 of countertop must be supported
+      minSupportRatio: 2/3,
+      // Edge profile durability ratings (1-5, 5 being most durable)
+      edgeDurability: {
+        'eased': { rating: 4, chipResistance: 'Good', notes: 'Versatile, good for all stone types' },
+        'pencil': { rating: 4, chipResistance: 'Good', notes: 'Small radius, practical' },
+        'quarter-round': { rating: 4, chipResistance: 'Good', notes: 'Larger radius than pencil' },
+        'half-bullnose': { rating: 5, chipResistance: 'Excellent', notes: 'Most practical choice, extremely chip resistant' },
+        'full-bullnose': { rating: 5, chipResistance: 'Excellent', notes: 'Nearly indestructible' },
+        'quarter-bevel': { rating: 4, chipResistance: 'Good', notes: 'Resistant to wear' },
+        'ogee': { rating: 2, chipResistance: 'Low', notes: 'Decorative but prone to chipping' },
+        'double-ogee': { rating: 2, chipResistance: 'Low', notes: 'Very decorative, not for high-traffic' },
+        'dupont': { rating: 3, chipResistance: 'Moderate', notes: 'Complex profile, moderate durability' },
+        'cove': { rating: 3, chipResistance: 'Moderate', notes: 'Concave curve traps moisture' },
+        'mitered': { rating: 4, chipResistance: 'Good', notes: 'Clean modern look' },
+        'waterfall': { rating: 4, chipResistance: 'Good', notes: 'Mitered for waterfall applications' }
+      },
+      // Seam placement rules
+      seams: {
+        // Standard slab dimensions (in inches)
+        maxSlabWidth: 120,  // 10 feet
+        maxSlabDepth: 60,   // 5 feet
+        // Jumbo slab dimensions
+        jumboSlabWidth: 130,
+        jumboSlabDepth: 68,
+        // Minimum distances for seam placement
+        minFromEdge: 6,     // Minimum 6" from countertop edge
+        minFromSink: 4,     // Minimum 4" from sink/cooktop cutout
+        minFromCorner: 6,   // Minimum 6" from inside corners
+        // Seam visibility preference zones (percentage from edge)
+        preferredZone: { min: 0.25, max: 0.75 }, // Middle 50% is preferred
+        // Types of elements to avoid seaming over
+        avoidOver: ['sink', 'sink-double', 'sink-farmhouse', 'cooktop', 'range']
+      }
+    };
+
+    // Check overhang and return warnings/requirements
+    function validateOverhang(overhangInches, thickness = '3cm', countertopDepthInches = 25) {
+      const standards = FABRICATION_STANDARDS.overhang[thickness] || FABRICATION_STANDARDS.overhang['3cm'];
+      const warnings = [];
+      const requirements = [];
+
+      // Check max unsupported overhang
+      if (overhangInches > standards.maxUnsupported) {
+        requirements.push(`Support brackets required (>${standards.maxUnsupported}" for ${thickness})`);
+      }
+
+      // Check bracket requirement threshold
+      if (overhangInches > standards.bracketRequired) {
+        requirements.push(`Heavy-duty brackets needed every 18-24"`);
+      }
+
+      // Check 1/3 rule
+      const maxByRule = countertopDepthInches * FABRICATION_STANDARDS.maxOverhangRatio;
+      if (overhangInches > maxByRule) {
+        warnings.push(`Exceeds 1/3 rule (max ${maxByRule.toFixed(1)}" for ${countertopDepthInches}" depth)`);
+      }
+
+      // 2cm specific requirements
+      if (thickness === '2cm' && standards.plywoodRequired) {
+        requirements.push('Plywood underlayment required for 2cm stone');
+      }
+
+      // Seating depth checks
+      if (overhangInches >= 12) {
+        requirements.push('Ensure support brackets extend within 4" of edge');
+      }
+      if (overhangInches >= 15) {
+        warnings.push('Consider leg supports or corbels for stability');
+      }
+
+      return { warnings, requirements, needsSupport: overhangInches > standards.maxUnsupported };
+    }
+
+    // Update countertop overhang (front, back, left, right)
+    function updateOverhang() {
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
+
+      // Get new values in inches
+      const frontIn = parseFloat(document.getElementById('propOverhangFront')?.value || 1.5);
+      const backIn = parseFloat(document.getElementById('propOverhangBack')?.value || 0);
+      const leftIn = parseFloat(document.getElementById('propOverhangLeft')?.value || 1.5);
+      const rightIn = parseFloat(document.getElementById('propOverhangRight')?.value || 1.5);
+
+      // Convert to feet
+      const frontFt = frontIn / 12;
+      const backFt = backIn / 12;
+      const leftFt = leftIn / 12;
+      const rightFt = rightIn / 12;
+
+      // Get old overhang values (default to 2" front = 0.167ft if not set)
+      const oldFront = selectedElement.overhangFront !== undefined ? selectedElement.overhangFront : 0.167;
+      const oldBack = selectedElement.overhangBack !== undefined ? selectedElement.overhangBack : 0;
+      const oldLeft = selectedElement.overhangLeft !== undefined ? selectedElement.overhangLeft : 0.125;
+      const oldRight = selectedElement.overhangRight !== undefined ? selectedElement.overhangRight : 0.125;
+
+      // Calculate the change in overhang
+      const deltaFront = frontFt - oldFront;
+      const deltaBack = backFt - oldBack;
+      const deltaLeft = leftFt - oldLeft;
+      const deltaRight = rightFt - oldRight;
+
+      // Update countertop dimensions based on overhang changes
+      // Width changes by left + right delta
+      // Height (depth) changes by front + back delta
+      selectedElement.width += (deltaLeft + deltaRight);
+      selectedElement.height += (deltaFront + deltaBack);
+
+      // Update position - move to account for left and back overhang changes
+      // Left overhang increases = move countertop left (decrease x)
+      // Back overhang increases = move countertop up (decrease y)
+      selectedElement.x -= deltaLeft * pixelsPerFoot;
+      selectedElement.y -= deltaBack * pixelsPerFoot;
+
+      // Store new overhang values
+      selectedElement.overhangFront = frontFt;
+      selectedElement.overhangBack = backFt;
+      selectedElement.overhangLeft = leftFt;
+      selectedElement.overhangRight = rightFt;
+
+      // Update dimension display in properties panel
+      document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
+      document.getElementById('propHeight').value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+
+      // Validate against fabrication standards
+      const thickness = selectedElement.thickness || '3cm';
+      const depthInches = selectedElement.height * 12;
+
+      // Check largest overhang
+      const maxOverhang = Math.max(frontIn, backIn, leftIn, rightIn);
+      const validation = validateOverhang(maxOverhang, thickness, depthInches);
+
+      // Store validation results on element
+      selectedElement.needsBrackets = validation.needsSupport;
+      selectedElement.fabricationNotes = [...validation.warnings, ...validation.requirements];
+
+      // Update warning display in UI
+      updateOverhangWarningDisplay(validation);
+
+      // Clear preset selection if manually editing
+      const presetSelect = document.getElementById('propOverhangPreset');
+      if (presetSelect) presetSelect.value = '';
+
+      draw();
+      update3DScene();
+      calculateQuote();
+      saveUndoState();
+    }
+
+    // Apply overhang preset (Standard, Island, Bar, Breakfast Bar, ADA)
+    function applyOverhangPreset() {
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
+
+      const preset = document.getElementById('propOverhangPreset')?.value;
+      if (!preset) return;
+
+      let front = 2, back = 0, left = 1.5, right = 1.5; // Default in inches - 2" front covers cabinet face
+      let presetName = preset;
+
+      switch(preset) {
+        case 'standard':
+          front = 2; back = 0; left = 1.5; right = 1.5;
+          presetName = 'Standard (2" front)';
+          break;
+        case 'island':
+          front = 2; back = 2; left = 2; right = 2;
+          presetName = 'Island (2" all sides)';
+          break;
+        case 'bar':
+          front = 12; back = 2; left = 1.5; right = 1.5;
+          presetName = 'Bar Seating (12" front)';
+          break;
+        case 'breakfast':
+          front = 15; back = 2; left = 1.5; right = 1.5;
+          presetName = 'Breakfast Bar (15" front)';
+          break;
+        case 'ada':
+          front = 19; back = 2; left = 1.5; right = 1.5;
+          presetName = 'ADA Accessible (19" knee clearance)';
+          break;
+      }
+
+      // Update input fields
+      document.getElementById('propOverhangFront').value = front;
+      document.getElementById('propOverhangBack').value = back;
+      document.getElementById('propOverhangLeft').value = left;
+      document.getElementById('propOverhangRight').value = right;
+
+      // Convert to feet
+      const frontFt = front / 12;
+      const backFt = back / 12;
+      const leftFt = left / 12;
+      const rightFt = right / 12;
+
+      // Get old overhang values (default to 2" front = 0.167ft if not set)
+      const oldFront = selectedElement.overhangFront !== undefined ? selectedElement.overhangFront : 0.167;
+      const oldBack = selectedElement.overhangBack !== undefined ? selectedElement.overhangBack : 0;
+      const oldLeft = selectedElement.overhangLeft !== undefined ? selectedElement.overhangLeft : 0.125;
+      const oldRight = selectedElement.overhangRight !== undefined ? selectedElement.overhangRight : 0.125;
+
+      // Calculate deltas
+      const deltaFront = frontFt - oldFront;
+      const deltaBack = backFt - oldBack;
+      const deltaLeft = leftFt - oldLeft;
+      const deltaRight = rightFt - oldRight;
+
+      // Resize countertop
+      selectedElement.width += (deltaLeft + deltaRight);
+      selectedElement.height += (deltaFront + deltaBack);
+
+      // Reposition
+      selectedElement.x -= deltaLeft * pixelsPerFoot;
+      selectedElement.y -= deltaBack * pixelsPerFoot;
+
+      // Store new overhang values
+      selectedElement.overhangFront = frontFt;
+      selectedElement.overhangBack = backFt;
+      selectedElement.overhangLeft = leftFt;
+      selectedElement.overhangRight = rightFt;
+
+      // Update dimension display
+      document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
+      document.getElementById('propHeight').value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+
+      // Validate and show warnings
+      const thickness = selectedElement.thickness || '3cm';
+      const depthInches = selectedElement.height * 12;
+      const maxOverhang = Math.max(front, back, left, right);
+      const validation = validateOverhang(maxOverhang, thickness, depthInches);
+
+      // Store validation results
+      selectedElement.needsBrackets = validation.needsSupport;
+      selectedElement.fabricationNotes = [...validation.warnings, ...validation.requirements];
+
+      // Update warning display
+      updateOverhangWarningDisplay(validation);
+
+      draw();
+      update3DScene();
+      calculateQuote();
+      saveUndoState();
+      showSnapFeedback(`Overhang: ${presetName}`);
+    }
+
+    // Update the overhang warning display in the UI
+    function updateOverhangWarningDisplay(validation) {
+      const warningDiv = document.getElementById('overhangWarning');
+      const warningText = document.getElementById('overhangWarningText');
+
+      if (!warningDiv || !warningText) return;
+
+      const allMessages = [...validation.requirements, ...validation.warnings];
+
+      if (allMessages.length > 0) {
+        warningDiv.style.display = 'block';
+        warningText.innerHTML = allMessages.map(msg => `• ${msg}`).join('<br>');
+      } else {
+        warningDiv.style.display = 'none';
+      }
+    }
+
+    // Add countertop on top of selected cabinet
+    function addCountertopToCabinet() {
+      if (!selectedElement) return;
+
+      // Check if selected element is a cabinet type
+      const cabinetTypes = ['base-cabinet', 'corner-cabinet', 'lazy-susan', 'drawer-base', 'sink-base', 'island'];
+      if (!cabinetTypes.includes(selectedElement.type) && !selectedElement.type.startsWith('base-')) return;
+
+      const cabinet = selectedElement;
+      const cabX = cabinet.x;
+      const cabY = cabinet.y;
+      const cabinetDepth = cabinet.height || cabinet.depth || 2; // Cabinet depth in feet
+
+      // Proper overhang: 2" front (covers cabinet face), 1.5" sides, 0" back (against wall)
+      // For islands, use 2" on all sides so cabinet faces are recessed
+      const isIsland = cabinet.type === 'island' || cabinet.type === 'base-cabinet' && cabinet.y > roomDepth * pixelsPerFoot * 0.3;
+
+      const frontOverhang = 0.167; // 2 inches in feet - covers cabinet door faces
+      const backOverhang = isIsland ? 0.167 : 0; // Islands get overhang all around, wall cabinets don't need back
+      const sideOverhang = 0.125; // 1.5 inches in feet
+
+      // Calculate countertop dimensions with proper overhang
+      // Depth: cabinet depth + front overhang + back overhang
+      const countertopDepth = cabinetDepth + frontOverhang + backOverhang;
+
+      // Create countertop element that fits the cabinet with proper overhang
+      const countertop = {
+        id: generateId(),
+        type: 'countertop',
+        name: 'Countertop',
+        x: cabX - (sideOverhang * pixelsPerFoot),
+        y: cabY - (backOverhang * pixelsPerFoot),
+        width: cabinet.width + (sideOverhang * 2),  // Add 1.5" each side = 3" total
+        height: countertopDepth, // 2" front + cabinet depth (+ 2" back for islands)
+        rotation: cabinet.rotation || 0,
+        color: '#a0a0a0',
+        edgeProfile: 'eased',
+        thickness: '3cm',
+        overhangFront: frontOverhang,
+        overhangBack: backOverhang,
+        overhangLeft: sideOverhang,
+        overhangRight: sideOverhang
+      };
+
+      elements.push(countertop);
+      selectedElement = countertop;
+
+      draw();
+      update3DScene();
+      calculateQuote();
+      updateProperties();
+      showSnapFeedback(`Countertop added (${Math.round(countertopDepth * 12)}" deep with ${Math.round(frontOverhang * 12)}" front overhang)`);
     }
 
     // Update sink properties (color, mount type)
@@ -29745,35 +31818,71 @@
 
     // Add a seam to the selected countertop
     function addSeamToCountertop() {
-      if (!selectedElement || selectedElement.type !== 'countertop') return;
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
       // Initialize seams array if needed
       if (!selectedElement.seams) {
         selectedElement.seams = [];
       }
 
-      // Add seam at a position (percentage along the width)
-      // Default to middle, or offset from existing seams
+      // Calculate seam requirements to suggest optimal placement
+      const requirements = calculateSeamRequirements(selectedElement);
       const existingCount = selectedElement.seams.length;
       let newPosition;
 
-      if (existingCount === 0) {
+      // Use suggested positions if available, otherwise calculate
+      if (requirements.suggestedPositions.length > existingCount) {
+        newPosition = requirements.suggestedPositions[existingCount];
+      } else if (existingCount === 0) {
         newPosition = 0.5; // Center
       } else {
-        // Add at 1/3 or 2/3 position, cycling through
-        const positions = [0.33, 0.67, 0.25, 0.75];
-        newPosition = positions[existingCount % positions.length];
+        // Add at positions that avoid existing seams
+        const existingPositions = selectedElement.seams.map(s => s.position);
+        const candidates = [0.33, 0.67, 0.25, 0.75, 0.4, 0.6];
+        newPosition = candidates.find(pos => {
+          return !existingPositions.some(existing => Math.abs(existing - pos) < 0.1);
+        }) || 0.5;
       }
 
+      // Validate the seam placement
+      const validation = validateSeamPlacement(selectedElement, newPosition);
+
+      // If there are errors, try to find a better position
+      if (!validation.isValid) {
+        // Try alternative positions
+        const alternatives = [0.5, 0.45, 0.55, 0.4, 0.6, 0.35, 0.65];
+        for (const altPos of alternatives) {
+          const altValidation = validateSeamPlacement(selectedElement, altPos);
+          if (altValidation.isValid) {
+            newPosition = altPos;
+            validation.warnings = altValidation.warnings;
+            validation.errors = [];
+            break;
+          }
+        }
+      }
+
+      // Add the seam
       selectedElement.seams.push({
-        position: newPosition,  // 0-1, percentage along width
-        id: Date.now()
+        position: newPosition,
+        id: Date.now(),
+        validation: { warnings: validation.warnings, errors: validation.errors }
       });
 
       updateProperties();
       draw();
       update3DScene();
-      showSnapFeedback(`Seam added at ${Math.round(newPosition * 100)}%`);
+
+      // Show feedback with any warnings
+      const posPercent = Math.round(newPosition * 100);
+      if (validation.errors.length > 0) {
+        showToast(`⚠️ Seam at ${posPercent}%: ${validation.errors[0]}`, 'warning', 4000);
+      } else if (validation.warnings.length > 0) {
+        showToast(`Seam at ${posPercent}% - Note: ${validation.warnings[0]}`, 'info', 3000);
+      } else {
+        showSnapFeedback(`Seam added at ${posPercent}%`);
+      }
     }
 
     // Clear all seams from countertop
@@ -29795,6 +31904,131 @@
       updateProperties();
       draw();
       update3DScene();
+    }
+
+    // Validate seam placement against fabrication standards
+    function validateSeamPlacement(countertop, seamPosition) {
+      const warnings = [];
+      const errors = [];
+      const standards = FABRICATION_STANDARDS.seams;
+
+      const widthInches = countertop.width * 12;
+      const seamPosInches = widthInches * seamPosition;
+
+      // Check minimum distance from edges
+      const distFromLeft = seamPosInches;
+      const distFromRight = widthInches - seamPosInches;
+
+      if (distFromLeft < standards.minFromEdge) {
+        errors.push(`Seam too close to left edge (${distFromLeft.toFixed(1)}" < ${standards.minFromEdge}" min)`);
+      }
+      if (distFromRight < standards.minFromEdge) {
+        errors.push(`Seam too close to right edge (${distFromRight.toFixed(1)}" < ${standards.minFromEdge}" min)`);
+      }
+
+      // Check if seam is in preferred visibility zone
+      if (seamPosition < standards.preferredZone.min || seamPosition > standards.preferredZone.max) {
+        warnings.push('Seam placement outside preferred zone (middle 50% is optimal)');
+      }
+
+      // Check for elements placed on this countertop that the seam might cross
+      const countertopBounds = {
+        left: countertop.x / pixelsPerFoot,
+        right: (countertop.x / pixelsPerFoot) + countertop.width,
+        top: countertop.y / pixelsPerFoot,
+        bottom: (countertop.y / pixelsPerFoot) + countertop.height
+      };
+      const seamXFeet = countertopBounds.left + (countertop.width * seamPosition);
+
+      elements.forEach(el => {
+        if (el === countertop) return;
+        if (!standards.avoidOver.includes(el.type)) return;
+
+        const elLeft = el.x / pixelsPerFoot;
+        const elRight = elLeft + el.width;
+        const elTop = el.y / pixelsPerFoot;
+        const elBottom = elTop + el.height;
+
+        // Check if element overlaps with countertop
+        const overlapsCountertop = !(elRight < countertopBounds.left ||
+                                     elLeft > countertopBounds.right ||
+                                     elBottom < countertopBounds.top ||
+                                     elTop > countertopBounds.bottom);
+
+        if (overlapsCountertop) {
+          // Check if seam passes through this element
+          const seamBuffer = standards.minFromSink / 12; // Convert to feet
+          if (seamXFeet >= (elLeft - seamBuffer) && seamXFeet <= (elRight + seamBuffer)) {
+            errors.push(`Seam crosses over ${el.type.replace(/-/g, ' ')} - water infiltration risk`);
+          }
+        }
+      });
+
+      return {
+        warnings,
+        errors,
+        isValid: errors.length === 0,
+        seamPosition
+      };
+    }
+
+    // Calculate if countertop needs seams based on slab dimensions
+    function calculateSeamRequirements(countertop) {
+      const standards = FABRICATION_STANDARDS.seams;
+      const widthInches = countertop.width * 12;
+      const depthInches = countertop.height * 12;
+
+      const requirements = {
+        needsSeam: false,
+        reason: '',
+        suggestedPositions: [],
+        minSeams: 0
+      };
+
+      // Check if width exceeds max slab width
+      if (widthInches > standards.maxSlabWidth) {
+        requirements.needsSeam = true;
+        requirements.reason = `Width (${widthInches.toFixed(0)}") exceeds max slab width (${standards.maxSlabWidth}")`;
+
+        // Calculate minimum number of seams needed
+        requirements.minSeams = Math.ceil(widthInches / standards.maxSlabWidth) - 1;
+
+        // Suggest evenly distributed seam positions
+        for (let i = 1; i <= requirements.minSeams; i++) {
+          const pos = i / (requirements.minSeams + 1);
+          requirements.suggestedPositions.push(pos);
+        }
+      }
+
+      // Check if depth exceeds max slab depth (would need to reorient slab)
+      if (depthInches > standards.maxSlabDepth && !requirements.needsSeam) {
+        if (widthInches <= standards.maxSlabDepth) {
+          // Can rotate slab - depth becomes width
+          requirements.reason = 'Slab will be oriented lengthwise for depth';
+        } else if (depthInches > standards.jumboSlabDepth) {
+          requirements.needsSeam = true;
+          requirements.reason = `Depth (${depthInches.toFixed(0)}") exceeds jumbo slab depth (${standards.jumboSlabDepth}")`;
+        }
+      }
+
+      return requirements;
+    }
+
+    // Show seam requirement notification
+    function showSeamRequirementCheck() {
+      if (!selectedElement) return;
+
+      const countertopTypes = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      if (!countertopTypes.includes(selectedElement.type)) return;
+
+      const req = calculateSeamRequirements(selectedElement);
+      const currentSeams = selectedElement.seams?.length || 0;
+
+      if (req.needsSeam && currentSeams < req.minSeams) {
+        showToast(`⚠️ ${req.reason}. Need at least ${req.minSeams} seam${req.minSeams > 1 ? 's' : ''}.`, 'warning', 5000);
+      } else if (!req.needsSeam && currentSeams === 0) {
+        showToast('✓ Countertop fits within standard slab dimensions - no seam required', 'success', 3000);
+      }
     }
 
     // Get standard sizes for element type
@@ -30272,6 +32506,13 @@
 
     // Check if action is allowed based on permissions
     function checkPermission(action) {
+      // For pricing-related actions, also check subscription status
+      if (action === 'canViewPrices' || action === 'canViewCosts') {
+        // If user doesn't have subscription access to pricing, deny regardless of share permissions
+        if (!PRICING_ACCESS.canViewPricing) return false;
+      }
+
+      // For shared views, check share permissions
       if (!SHARE_STATE.isSharedView) return true;
       if (!SHARE_STATE.allowedActions) return true;
       return SHARE_STATE.allowedActions[action] !== false;
@@ -30507,6 +32748,24 @@
       const quoteActions = document.getElementById('quoteActions');
       if (quoteActions) {
         quoteActions.style.display = totalRetail > 0 ? 'block' : 'none';
+      }
+
+      // Update quick takeoff stats
+      updateQuickTakeoffStats();
+    }
+
+    // Update the quick takeoff stats in the sidebar
+    function updateQuickTakeoffStats() {
+      const takeoffs = calculateTakeoffs();
+      const statsDiv = document.getElementById('takeoffQuickStats');
+      const slabCount = document.getElementById('quickSlabCount');
+      const cabinetCount = document.getElementById('quickCabinetCount');
+
+      if (statsDiv && slabCount && cabinetCount) {
+        const hasElements = takeoffs.stone.slabsNeeded > 0 || takeoffs.cabinets.totalCount > 0;
+        statsDiv.style.display = hasElements ? 'block' : 'none';
+        slabCount.textContent = takeoffs.stone.slabsNeeded || 0;
+        cabinetCount.textContent = takeoffs.cabinets.totalCount || 0;
       }
     }
 
@@ -31289,30 +33548,52 @@
           break;
         }
         case 'ogee': {
-          // Classic S-curve profile
+          // Classic S-curve profile - concave at bottom, convex bulge at top
+          const frontX = slabDepth * 0.3;
           edgeShape.moveTo(0, 0);
-          edgeShape.lineTo(slabDepth * 0.25, 0);
-          edgeShape.lineTo(slabDepth * 0.25, t * 0.3);
+          edgeShape.lineTo(frontX, 0);
+          // S-curve: concave (inward) at bottom, then convex (outward bulge) at top
           edgeShape.bezierCurveTo(
-            slabDepth * 0.28, t * 0.5,
-            slabDepth * 0.32, t * 0.6,
-            slabDepth * 0.28, t * 0.75
+            frontX - t * 0.12, t * 0.2,   // curves inward (concave)
+            frontX - t * 0.12, t * 0.4,   // still inward
+            frontX, t * 0.5               // back to front plane at midpoint
           );
           edgeShape.bezierCurveTo(
-            slabDepth * 0.24, t * 0.9,
-            slabDepth * 0.18, t,
-            0, t
+            frontX + t * 0.15, t * 0.65,  // bulges outward (convex)
+            frontX + t * 0.12, t * 0.85,  // peak of bulge
+            frontX - t * 0.05, t          // eases to top surface
           );
+          edgeShape.lineTo(0, t);
           break;
         }
         case 'double-ogee': {
-          // Double S-curve
+          // Double S-curve - two ogee profiles stacked
+          const frontX2 = slabDepth * 0.3;
           edgeShape.moveTo(0, 0);
-          edgeShape.lineTo(slabDepth * 0.25, 0);
-          edgeShape.lineTo(slabDepth * 0.25, t * 0.2);
-          edgeShape.bezierCurveTo(slabDepth * 0.28, t * 0.3, slabDepth * 0.30, t * 0.35, slabDepth * 0.28, t * 0.45);
-          edgeShape.bezierCurveTo(slabDepth * 0.26, t * 0.55, slabDepth * 0.28, t * 0.65, slabDepth * 0.30, t * 0.75);
-          edgeShape.bezierCurveTo(slabDepth * 0.28, t * 0.9, slabDepth * 0.2, t, 0, t);
+          edgeShape.lineTo(frontX2, 0);
+          // First S-curve (lower half): concave then convex
+          edgeShape.bezierCurveTo(
+            frontX2 - t * 0.08, t * 0.1,   // inward
+            frontX2 - t * 0.08, t * 0.2,   // still inward
+            frontX2 + t * 0.06, t * 0.3    // bulges out
+          );
+          edgeShape.bezierCurveTo(
+            frontX2 + t * 0.08, t * 0.38,  // peak of first bulge
+            frontX2, t * 0.45,             // returns to plane
+            frontX2 - t * 0.06, t * 0.52   // starts second concave
+          );
+          // Second S-curve (upper half): concave then convex
+          edgeShape.bezierCurveTo(
+            frontX2 - t * 0.08, t * 0.6,   // inward
+            frontX2, t * 0.7,              // back to plane
+            frontX2 + t * 0.1, t * 0.8     // bulges out
+          );
+          edgeShape.bezierCurveTo(
+            frontX2 + t * 0.12, t * 0.9,   // peak of second bulge
+            frontX2, t * 0.95,             // eases back
+            frontX2 - t * 0.05, t          // meets top
+          );
+          edgeShape.lineTo(0, t);
           break;
         }
         case 'bevel':
@@ -31335,14 +33616,26 @@
           break;
         }
         case 'dupont': {
-          // Bevel + bullnose + small step
+          // Dupont edge - stepped profile with rounded bullnose at top
+          const frontXD = slabDepth * 0.3;
           edgeShape.moveTo(0, 0);
-          edgeShape.lineTo(slabDepth * 0.25, 0);
-          edgeShape.lineTo(slabDepth * 0.25, t * 0.25);
-          edgeShape.lineTo(slabDepth * 0.30, t * 0.35);
-          edgeShape.quadraticCurveTo(slabDepth * 0.32, t * 0.5, slabDepth * 0.30, t * 0.65);
-          edgeShape.lineTo(slabDepth * 0.25, t * 0.75);
-          edgeShape.lineTo(slabDepth * 0.25, t);
+          edgeShape.lineTo(frontXD, 0);
+          // Lower step - flat vertical portion
+          edgeShape.lineTo(frontXD, t * 0.4);
+          // Step back (creates the characteristic dupont ledge)
+          edgeShape.lineTo(frontXD - t * 0.15, t * 0.4);
+          edgeShape.lineTo(frontXD - t * 0.15, t * 0.55);
+          // Step forward again
+          edgeShape.lineTo(frontXD, t * 0.55);
+          // Rounded bullnose top portion
+          edgeShape.quadraticCurveTo(
+            frontXD + t * 0.1, t * 0.7,    // curves outward
+            frontXD + t * 0.1, t * 0.85    // peak of rounded top
+          );
+          edgeShape.quadraticCurveTo(
+            frontXD + t * 0.05, t,         // eases to top
+            frontXD - t * 0.1, t           // meets top surface
+          );
           edgeShape.lineTo(0, t);
           break;
         }
@@ -32194,6 +34487,9 @@
           console.log('Auth state changed:', event);
           updateAuthUI();
 
+          // Check pricing access on any auth change
+          checkPricingAccess();
+
           // When user signs in, clear cached designs so they reload from server
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             allDesigns = { my: [], shared: [], recent: [] };
@@ -32312,7 +34608,8 @@
             customPrices: PRICING_STATE.customPrices
           },
           company_name: companyName,
-          current_room_id: currentRoomId  // Store in settings, not as top-level column
+          current_room_id: currentRoomId,  // Store in settings, not as top-level column
+          pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
         },
         // Multi-room support
         rooms: rooms.map(room => ({
@@ -32321,7 +34618,7 @@
         })),
         quote_total: quoteTotal,
         share_mode: permission === 'full_collab' ? 'edit' : 'view',
-        is_public: false
+        is_public: document.getElementById('shareToGallery')?.checked || false
       };
 
       try {
@@ -32547,6 +34844,45 @@
 
         console.log('Loaded elements:', elements.length);
         console.log('Loaded walls:', walls.length);
+
+        // Normalize element positions if saved scale differs from current
+        // This ensures 3D rendering is accurate regardless of viewport size
+        const savedScale = design.settings?.pixelsPerFoot || 40;
+        fitToScreen(); // Calculate current pixelsPerFoot based on viewport
+
+        console.log('Saved scale:', savedScale, 'Current scale:', pixelsPerFoot);
+
+        if (savedScale !== pixelsPerFoot && savedScale > 0) {
+          const scaleRatio = pixelsPerFoot / savedScale;
+          console.log('Normalizing element positions with ratio:', scaleRatio);
+
+          // Scale element positions from saved scale to current scale
+          elements = elements.map(el => ({
+            ...el,
+            x: (el.x || 0) * scaleRatio,
+            y: (el.y || 0) * scaleRatio
+          }));
+
+          // Also scale walls if they have pixel positions
+          walls = walls.map(wall => ({
+            ...wall,
+            x1: wall.x1 !== undefined ? wall.x1 * scaleRatio : undefined,
+            y1: wall.y1 !== undefined ? wall.y1 * scaleRatio : undefined,
+            x2: wall.x2 !== undefined ? wall.x2 * scaleRatio : undefined,
+            y2: wall.y2 !== undefined ? wall.y2 * scaleRatio : undefined
+          }));
+
+          // Scale positions in multi-room data too
+          rooms.forEach(room => {
+            if (room.elements) {
+              room.elements = room.elements.map(el => ({
+                ...el,
+                x: (el.x || 0) * scaleRatio,
+                y: (el.y || 0) * scaleRatio
+              }));
+            }
+          });
+        }
 
         // Ensure elements have required properties
         elements = elements.map(el => ({
@@ -33827,7 +36163,10 @@
         rooms: rooms.map(r => ({
           ...r,
           elements: r.elements?.map(el => ({ ...el, textureImg: null })) || []
-        }))
+        })),
+        settings: {
+          pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
+        }
       };
 
       // Get existing designs
@@ -33916,7 +36255,8 @@
               customPrices: PRICING_STATE.customPrices
             },
             company_name: companyName,
-            current_room_id: currentRoomId
+            current_room_id: currentRoomId,
+            pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
           },
           rooms: rooms.map(room => ({
             ...room,
@@ -34387,8 +36727,27 @@
       // Set local design ID for chat
       SHARE_STATE.designId = design.id;
 
+      // Normalize element positions if saved scale differs from current
+      updateCanvasSize(); // Calculate current pixelsPerFoot first
+      const savedScale = design.settings?.pixelsPerFoot || 40;
+      if (savedScale !== pixelsPerFoot && savedScale > 0) {
+        const scaleRatio = pixelsPerFoot / savedScale;
+        console.log('Normalizing local design positions with ratio:', scaleRatio);
+        elements.forEach(el => {
+          el.x = (el.x || 0) * scaleRatio;
+          el.y = (el.y || 0) * scaleRatio;
+        });
+        if (walls) {
+          walls.forEach(wall => {
+            if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
+            if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
+            if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
+            if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
+          });
+        }
+      }
+
       // Redraw
-      updateCanvasSize();
       draw();
       update3DScene();
       calculateQuote();
