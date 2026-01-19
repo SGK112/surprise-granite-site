@@ -11299,25 +11299,62 @@
       camera.position.set(totalWidth / 2, Math.max(totalWidth, totalDepth) * 1.5, totalDepth * 1.5);
       camera.lookAt(totalWidth / 2, 0, totalDepth / 2);
 
-      // Create renderer
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      // Create renderer with enhanced quality
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        alpha: false
+      });
       renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
       container.appendChild(renderer.domElement);
 
       // Add controls
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.target.set(totalWidth / 2, 0, totalDepth / 2);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
       controls.update();
 
-      // Lighting
-      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      // Enhanced Lighting for clarity
+      // Hemisphere light for natural sky/ground ambient
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+      hemiLight.position.set(0, 20, 0);
+      scene.add(hemiLight);
+
+      // Main ambient for overall illumination
+      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambient);
 
-      const sun = new THREE.DirectionalLight(0xFFFBF0, 1.0);
-      sun.position.set(totalWidth, 20, totalDepth / 2);
+      // Key light (sun) - warm directional
+      const sun = new THREE.DirectionalLight(0xFFFBF0, 1.2);
+      sun.position.set(totalWidth, 25, totalDepth / 2);
       sun.castShadow = true;
+      sun.shadow.mapSize.width = 2048;
+      sun.shadow.mapSize.height = 2048;
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 100;
+      sun.shadow.camera.left = -30;
+      sun.shadow.camera.right = 30;
+      sun.shadow.camera.top = 30;
+      sun.shadow.camera.bottom = -30;
+      sun.shadow.bias = -0.0001;
       scene.add(sun);
+
+      // Fill light - softer, cooler from opposite side
+      const fillLight = new THREE.DirectionalLight(0xE8F0FF, 0.4);
+      fillLight.position.set(-totalWidth, 15, totalDepth);
+      scene.add(fillLight);
+
+      // Rim light for edge definition
+      const rimLight = new THREE.DirectionalLight(0xFFFFFF, 0.3);
+      rimLight.position.set(0, 5, -totalDepth);
+      scene.add(rimLight);
 
       // Render each room
       rooms.forEach((room, roomIndex) => {
@@ -23024,6 +23061,139 @@
         console.log(`Element ${el.type} (${el.label || 'unnamed'}) has texture:`, textureUrl.substring(0, 60) + '...');
       }
 
+      // === WOOD GRAIN TEXTURE GENERATOR ===
+      // Creates procedural wood grain texture for cabinet materials
+      function createWoodGrainTexture(baseColor, grainIntensity = 0.15) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Parse base color to RGB
+        const tempColor = new THREE.Color(baseColor);
+        const r = Math.floor(tempColor.r * 255);
+        const g = Math.floor(tempColor.g * 255);
+        const b = Math.floor(tempColor.b * 255);
+
+        // Fill with base color
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Add wood grain lines
+        ctx.globalAlpha = grainIntensity;
+        for (let i = 0; i < 80; i++) {
+          const y = Math.random() * 512;
+          const thickness = 1 + Math.random() * 3;
+          const variation = (Math.random() - 0.5) * 30;
+
+          // Grain color slightly darker than base
+          const grainR = Math.max(0, r - 25 + variation);
+          const grainG = Math.max(0, g - 20 + variation);
+          const grainB = Math.max(0, b - 15 + variation);
+
+          ctx.strokeStyle = `rgb(${grainR}, ${grainG}, ${grainB})`;
+          ctx.lineWidth = thickness;
+          ctx.beginPath();
+
+          // Wavy grain line
+          ctx.moveTo(0, y);
+          for (let x = 0; x < 512; x += 20) {
+            const waveY = y + Math.sin(x * 0.02 + i) * (3 + Math.random() * 5);
+            ctx.lineTo(x, waveY);
+          }
+          ctx.stroke();
+        }
+
+        // Add subtle knots
+        ctx.globalAlpha = grainIntensity * 0.5;
+        for (let i = 0; i < 3; i++) {
+          const kx = Math.random() * 512;
+          const ky = Math.random() * 512;
+          const kr = 8 + Math.random() * 15;
+
+          const gradient = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+          gradient.addColorStop(0, `rgba(${r - 40}, ${g - 35}, ${b - 30}, 0.6)`);
+          gradient.addColorStop(0.5, `rgba(${r - 20}, ${g - 15}, ${b - 10}, 0.3)`);
+          gradient.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(kx, ky, kr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 2);
+        return texture;
+      }
+
+      // === MODERN BAR HANDLE CREATOR ===
+      // Creates realistic cabinet pull with standoffs
+      function createModernBarHandle(length = 0.25, finish = 'brushed-nickel') {
+        const handleGroup = new THREE.Group();
+
+        // Handle finishes
+        const finishes = {
+          'brushed-nickel': { color: 0xC0C0C0, metalness: 0.85, roughness: 0.25 },
+          'matte-black': { color: 0x1a1a1a, metalness: 0.7, roughness: 0.4 },
+          'polished-chrome': { color: 0xE8E8E8, metalness: 0.95, roughness: 0.1 },
+          'brass': { color: 0xD4AF37, metalness: 0.9, roughness: 0.2 },
+          'oil-rubbed-bronze': { color: 0x3D2B1F, metalness: 0.75, roughness: 0.35 }
+        };
+
+        const mat = finishes[finish] || finishes['brushed-nickel'];
+        const handleMat = new THREE.MeshStandardMaterial({
+          color: mat.color,
+          metalness: mat.metalness,
+          roughness: mat.roughness,
+          envMapIntensity: 1.0
+        });
+
+        // Main bar - rounded rectangle profile
+        const barRadius = 0.012;
+        const barLength = length;
+        const barGeo = new THREE.CylinderGeometry(barRadius, barRadius, barLength, 16);
+        const bar = new THREE.Mesh(barGeo, handleMat);
+        bar.rotation.z = Math.PI / 2; // Horizontal
+        handleGroup.add(bar);
+
+        // Standoffs (mounting posts)
+        const standoffHeight = 0.025;
+        const standoffRadius = 0.015;
+        const standoffSpacing = barLength * 0.7;
+
+        // Left standoff
+        const standoffGeo = new THREE.CylinderGeometry(standoffRadius, standoffRadius, standoffHeight, 12);
+        const leftStandoff = new THREE.Mesh(standoffGeo, handleMat);
+        leftStandoff.position.set(-standoffSpacing / 2, 0, -standoffHeight / 2);
+        leftStandoff.rotation.x = Math.PI / 2;
+        handleGroup.add(leftStandoff);
+
+        // Right standoff
+        const rightStandoff = new THREE.Mesh(standoffGeo, handleMat);
+        rightStandoff.position.set(standoffSpacing / 2, 0, -standoffHeight / 2);
+        rightStandoff.rotation.x = Math.PI / 2;
+        handleGroup.add(rightStandoff);
+
+        // Mounting plates (decorative)
+        const plateGeo = new THREE.CylinderGeometry(standoffRadius * 1.3, standoffRadius * 1.3, 0.004, 16);
+        const leftPlate = new THREE.Mesh(plateGeo, handleMat);
+        leftPlate.position.set(-standoffSpacing / 2, 0, -standoffHeight - 0.002);
+        leftPlate.rotation.x = Math.PI / 2;
+        handleGroup.add(leftPlate);
+
+        const rightPlate = new THREE.Mesh(plateGeo, handleMat);
+        rightPlate.position.set(standoffSpacing / 2, 0, -standoffHeight - 0.002);
+        rightPlate.rotation.x = Math.PI / 2;
+        handleGroup.add(rightPlate);
+
+        return handleGroup;
+      }
+
       // Helper to create cabinet with doors
       function createCabinet(width, height, depth, cabinetColor, isWallCab, doorStyle, construction, overlay) {
         const cabGroup = new THREE.Group();
@@ -23042,40 +23212,65 @@
           gap = overlayType === 'inset' ? 0.06 : 0.02; // Frameless has smaller gaps
         }
 
-        // Cabinet body
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8 });
+        // Cabinet body - interior with darker finish
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: 0x1a1a1a,
+          roughness: 0.9,
+          metalness: 0.0
+        });
         const body = new THREE.Mesh(new THREE.BoxGeometry(width - 0.1, height - 0.1, depth - 0.1), bodyMat);
         body.position.z = -0.02;
+        body.castShadow = true;
+        body.receiveShadow = true;
         cabGroup.add(body);
+
+        // Create wood grain texture for this cabinet
+        const woodTexture = createWoodGrainTexture(cabinetColor, 0.12);
 
         // Face frame for framed cabinets
         if (isFramed) {
-          const frameMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.4 });
+          const frameMat = new THREE.MeshStandardMaterial({
+            color: cabinetColor,
+            map: woodTexture,
+            roughness: 0.35,
+            metalness: 0.02,
+            bumpScale: 0.002
+          });
           const frameW = 0.06; // 1.5" face frame
 
           // Top rail
           const topFrame = new THREE.Mesh(new THREE.BoxGeometry(width, frameW, 0.04), frameMat);
           topFrame.position.set(0, height/2 - frameW/2 - 0.01, depth/2 - 0.01);
+          topFrame.castShadow = true;
           cabGroup.add(topFrame);
 
           // Bottom rail
           const botFrame = new THREE.Mesh(new THREE.BoxGeometry(width, frameW, 0.04), frameMat);
           botFrame.position.set(0, -height/2 + frameW/2 + 0.01, depth/2 - 0.01);
+          botFrame.castShadow = true;
           cabGroup.add(botFrame);
 
           // Left stile
           const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(frameW, height - frameW*2, 0.04), frameMat);
           leftFrame.position.set(-width/2 + frameW/2 + 0.01, 0, depth/2 - 0.01);
+          leftFrame.castShadow = true;
           cabGroup.add(leftFrame);
 
           // Right stile
           const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(frameW, height - frameW*2, 0.04), frameMat);
           rightFrame.position.set(width/2 - frameW/2 - 0.01, 0, depth/2 - 0.01);
+          rightFrame.castShadow = true;
           cabGroup.add(rightFrame);
         }
 
-        // Face material
-        const faceMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.35, metalness: 0.02 });
+        // Face material with wood grain
+        const faceMat = new THREE.MeshStandardMaterial({
+          color: cabinetColor,
+          map: woodTexture,
+          roughness: 0.3,
+          metalness: 0.02,
+          bumpScale: 0.002
+        });
 
         // Door(s)
         const numDoors = Math.max(1, Math.round(width / 1.5));
@@ -23092,79 +23287,102 @@
           door.position.set(dx, 0, depth/2);
           cabGroup.add(door);
 
-          // Door style details
+          // Door style details - with wood grain texture
+          const doorFrameMat = new THREE.MeshStandardMaterial({
+            color: cabinetColor,
+            map: woodTexture,
+            roughness: 0.28,
+            metalness: 0.02
+          });
+
           if (style === 'shaker') {
             // Shaker: flat center panel with raised frame
-            const frameMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.3 });
             const fw = 0.08;
 
             // Top rail
-            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), frameMat);
+            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
             top.position.set(dx, doorH/2 - fw/2 - 0.01, depth/2 + 0.04);
+            top.castShadow = true;
             cabGroup.add(top);
 
             // Bottom rail
-            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), frameMat);
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
             bot.position.set(dx, -doorH/2 + fw/2 + 0.01, depth/2 + 0.04);
+            bot.castShadow = true;
             cabGroup.add(bot);
 
             // Left stile
-            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), frameMat);
+            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
             left.position.set(dx - doorW/2 + fw/2 + 0.01, 0, depth/2 + 0.04);
+            left.castShadow = true;
             cabGroup.add(left);
 
             // Right stile
-            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), frameMat);
+            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
             right.position.set(dx + doorW/2 - fw/2 - 0.01, 0, depth/2 + 0.04);
+            right.castShadow = true;
             cabGroup.add(right);
           } else if (style === 'raised') {
             // Raised panel: outer frame with raised center
-            const frameMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.3 });
             const fw = 0.1;
 
             // Frame pieces
-            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), frameMat);
+            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
             top.position.set(dx, doorH/2 - fw/2 - 0.01, depth/2 + 0.04);
+            top.castShadow = true;
             cabGroup.add(top);
 
-            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), frameMat);
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
             bot.position.set(dx, -doorH/2 + fw/2 + 0.01, depth/2 + 0.04);
+            bot.castShadow = true;
             cabGroup.add(bot);
 
-            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), frameMat);
+            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
             left.position.set(dx - doorW/2 + fw/2 + 0.01, 0, depth/2 + 0.04);
+            left.castShadow = true;
             cabGroup.add(left);
 
-            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), frameMat);
+            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
             right.position.set(dx + doorW/2 - fw/2 - 0.01, 0, depth/2 + 0.04);
+            right.castShadow = true;
             cabGroup.add(right);
 
-            // Raised center panel
+            // Raised center panel with wood grain
             const raisedW = doorW - fw * 2 - 0.06;
             const raisedH = doorH - fw * 2 - 0.06;
-            const raisedMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.25 });
+            const raisedMat = new THREE.MeshStandardMaterial({
+              color: cabinetColor,
+              map: woodTexture,
+              roughness: 0.22,
+              metalness: 0.02
+            });
             const raised = new THREE.Mesh(new THREE.BoxGeometry(raisedW, raisedH, 0.04), raisedMat);
             raised.position.set(dx, 0, depth/2 + 0.06);
+            raised.castShadow = true;
             cabGroup.add(raised);
           } else if (style === 'flat') {
-            // Flat panel: minimal detail, just thin border
-            const borderMat = new THREE.MeshStandardMaterial({ color: cabinetColor, roughness: 0.35 });
-            const borderW = 0.02;
-
-            // Thin groove around door
-            const grooveMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
-            const groove = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.08, doorH - 0.08, 0.01), grooveMat);
-            groove.position.set(dx, 0, depth/2 + 0.03);
+            // Flat panel: minimal detail, recessed center
+            const grooveMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(cabinetColor).multiplyScalar(0.85),
+              roughness: 0.5
+            });
+            const groove = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.1, doorH - 0.1, 0.015), grooveMat);
+            groove.position.set(dx, 0, depth/2 + 0.025);
             cabGroup.add(groove);
           }
-          // 'slab' style = no detail, just plain door
+          // 'slab' style = no detail, just plain door with wood grain
 
-          // Vertical Handle (bar pull)
-          const handleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.9, roughness: 0.15 });
-          const handleY = isWallCab ? -doorH * 0.25 : doorH * 0.25;
-          const handleX = i < numDoors/2 ? doorW/2 - 0.12 : -doorW/2 + 0.12;
-          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.3, 8), handleMat);
-          handle.position.set(dx + handleX, handleY, depth/2 + 0.09);
+          // Modern Bar Handle with standoffs
+          const handleLength = Math.min(doorW * 0.6, 0.3); // Proportional to door width
+          const handleFinish = el.handleFinish || 'brushed-nickel'; // Can be customized
+          const handle = createModernBarHandle(handleLength, handleFinish);
+
+          // Position handle - vertical for tall handles, horizontal positioning
+          const handleY = isWallCab ? -doorH * 0.28 : doorH * 0.28;
+          const handleX = i < numDoors/2 ? doorW/2 - 0.15 : -doorW/2 + 0.15;
+
+          handle.position.set(dx + handleX, handleY, depth/2 + 0.085);
+          handle.rotation.z = Math.PI / 2; // Vertical orientation
           cabGroup.add(handle);
         }
 
@@ -23359,13 +23577,11 @@
             }
             // flat/slab style = no additional detail
 
-            // Centered bar pull handle
-            const handleLen = Math.min(w * 0.4, 0.4);
-            const handle = new THREE.Mesh(
-              new THREE.BoxGeometry(handleLen, 0.025, 0.025),
-              handleMat
-            );
-            handle.position.set(0, drawerY, d/2 + 0.08);
+            // Modern bar pull handle with standoffs
+            const handleLen = Math.min(w * 0.45, 0.35);
+            const handleFinish = el.handleFinish || 'brushed-nickel';
+            const handle = createModernBarHandle(handleLen, handleFinish);
+            handle.position.set(0, drawerY, d/2 + 0.085);
             group.add(handle);
           }
 
@@ -23466,12 +23682,11 @@
             group.add(fdRecess);
           }
 
-          // False drawer handle
-          const fdHandle = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.35, 0.02, 0.02),
-            handleMat
-          );
-          fdHandle.position.set(0, sbToeKickHeight/2 + sbBodyHeight/2 - falseDrawerH/2 - 0.02, d/2 + 0.07);
+          // False drawer - modern bar handle
+          const fdHandleLen = Math.min(w * 0.4, 0.3);
+          const fdHandleFinish = el.handleFinish || 'brushed-nickel';
+          const fdHandle = createModernBarHandle(fdHandleLen, fdHandleFinish);
+          fdHandle.position.set(0, sbToeKickHeight/2 + sbBodyHeight/2 - falseDrawerH/2 - 0.02, d/2 + 0.085);
           group.add(fdHandle);
 
           // Double doors below false drawer
@@ -23520,14 +23735,14 @@
             }
             // flat/slab = no detail
 
-            // Door handle (vertical bar)
-            const handleX = i === 0 ? doorX + doorW/2 - 0.1 : doorX - doorW/2 + 0.1;
-            const handle = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.012, 0.012, 0.3, 8),
-              handleMat
-            );
-            handle.position.set(handleX, doorsY, d/2 + 0.08);
-            group.add(handle);
+            // Modern bar handle for door
+            const doorHandleLen = Math.min(doorsHeight * 0.35, 0.25);
+            const doorHandleFinish = el.handleFinish || 'brushed-nickel';
+            const doorHandle = createModernBarHandle(doorHandleLen, doorHandleFinish);
+            const handleX = i === 0 ? doorX + doorW/2 - 0.12 : doorX - doorW/2 + 0.12;
+            doorHandle.position.set(handleX, doorsY, d/2 + 0.085);
+            doorHandle.rotation.z = Math.PI / 2; // Vertical orientation
+            group.add(doorHandle);
           }
 
           // Toe kick
@@ -23686,14 +23901,13 @@
             inset.position.z = panelThickness/2 + 0.01;
             doorGroup.add(inset);
 
-            // Handle
-            const handle = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.01, 0.01, 0.2, 8),
-              handleMat
-            );
-            handle.rotation.x = Math.PI / 2;
-            const handleXPos = doorIdx === 0 ? halfDoorWidth/2 - 0.08 : -halfDoorWidth/2 + 0.08;
-            handle.position.set(handleXPos, 0, panelThickness/2 + 0.03);
+            // Modern bar handle
+            const handleLen = Math.min(doorHeight * 0.3, 0.2);
+            const lsHandleFinish = el.handleFinish || 'brushed-nickel';
+            const handle = createModernBarHandle(handleLen, lsHandleFinish);
+            const handleXPos = doorIdx === 0 ? halfDoorWidth/2 - 0.1 : -halfDoorWidth/2 + 0.1;
+            handle.position.set(handleXPos, 0, panelThickness/2 + 0.04);
+            handle.rotation.z = Math.PI / 2; // Vertical
             doorGroup.add(handle);
 
             // Position door
@@ -23856,24 +24070,13 @@
           rightGroove.position.set(insetWidth/2 + 0.01, 0, panelThickness/2 + 0.015);
           doorGroup.add(rightGroove);
 
-          // Door handle (bar pull)
-          const handleLength = 0.25;
-          const handle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.012, 0.012, handleLength, 8),
-            handleMat
-          );
-          handle.rotation.x = Math.PI / 2;
-          handle.position.set(diagDoorWidth/2 - 0.2, 0, panelThickness/2 + 0.04);
+          // Modern bar handle with standoffs
+          const cornerHandleLen = 0.22;
+          const cornerHandleFinish = el.handleFinish || 'brushed-nickel';
+          const handle = createModernBarHandle(cornerHandleLen, cornerHandleFinish);
+          handle.position.set(diagDoorWidth/2 - 0.18, 0, panelThickness/2 + 0.05);
+          handle.rotation.z = Math.PI / 2; // Vertical orientation
           doorGroup.add(handle);
-
-          // Handle mounting posts
-          const postGeom = new THREE.CylinderGeometry(0.008, 0.008, 0.04, 6);
-          const post1 = new THREE.Mesh(postGeom, handleMat);
-          post1.position.set(diagDoorWidth/2 - 0.2, handleLength/2 - 0.02, panelThickness/2 + 0.02);
-          doorGroup.add(post1);
-          const post2 = new THREE.Mesh(postGeom, handleMat);
-          post2.position.set(diagDoorWidth/2 - 0.2, -handleLength/2 + 0.02, panelThickness/2 + 0.02);
-          doorGroup.add(post2);
 
           // Position and rotate door group
           const diagCenterX = (diagP1.x + diagP2.x) / 2;
@@ -24011,42 +24214,17 @@
             centerPanel.position.set(doorX, 0, d/2 + 0.02);
             group.add(centerPanel);
 
-            // HANDLE/PULL
-            const handleMat = new THREE.MeshStandardMaterial({
-              color: 0xAAAAAA,
-              roughness: 0.15,
-              metalness: 0.9
-            });
-
+            // Modern bar handle with standoffs
             const handleY = el.type === 'wall-cabinet' ? -doorHeight * 0.25 : doorHeight * 0.25;
             const handleSide = (i < numDoors / 2) ? 1 : -1;
             const handleX = doorX + handleSide * (doorWidth/2 - 0.15);
 
-            // Vertical bar pull
-            const pullLength = 0.35;
-            const pull = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.012, 0.012, pullLength, 8),
-              handleMat
-            );
-            // No rotation - vertical by default
-            pull.position.set(handleX, handleY, d/2 + 0.1);
+            const tallHandleLen = Math.min(doorHeight * 0.2, 0.35);
+            const tallHandleFinish = el.handleFinish || 'brushed-nickel';
+            const pull = createModernBarHandle(tallHandleLen, tallHandleFinish);
+            pull.position.set(handleX, handleY, d/2 + 0.095);
+            pull.rotation.z = Math.PI / 2; // Vertical orientation
             group.add(pull);
-
-            // Pull standoffs (top and bottom of vertical pull)
-            const standoffMat = new THREE.MeshStandardMaterial({
-              color: 0x888888,
-              roughness: 0.2,
-              metalness: 0.85
-            });
-            [-pullLength/2 + 0.04, pullLength/2 - 0.04].forEach(yOffset => {
-              const standoff = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.015, 0.015, 0.035, 8),
-                standoffMat
-              );
-              standoff.rotation.x = Math.PI / 2;
-              standoff.position.set(handleX, handleY + yOffset, d/2 + 0.08);
-              group.add(standoff);
-            });
           }
 
           // Toe kick for tall cabinet - proper recessed void
