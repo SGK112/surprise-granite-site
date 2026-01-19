@@ -11101,17 +11101,6 @@ app.get('/api/customer-portal/:token', async (req, res) => {
   }
 });
 
-// Quick env debug (remove after troubleshooting)
-app.get('/api/env-debug', (req, res) => {
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  res.json({
-    stripe_key_exists: !!stripeKey,
-    stripe_key_length: stripeKey?.length || 0,
-    stripe_key_prefix: stripeKey?.substring(0, 25) || 'NOT SET',
-    all_stripe_vars: Object.keys(process.env).filter(k => k.includes('STRIPE'))
-  });
-});
-
 // Diagnostic endpoint to check Stripe connection
 app.get('/api/stripe-status', async (req, res) => {
   try {
