@@ -4708,7 +4708,11 @@
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Invoices</h3>
-              <div style="display: flex; gap: 12px;">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="syncFromStripe()" id="sync-stripe-btn" title="Import paid invoices and customers from Stripe">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  Sync from Stripe
+                </button>
                 <button class="btn btn-secondary" onclick="openTemplatePreview()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                   Email Templates
@@ -10357,34 +10361,8 @@
       }, 100);
     }
 
-    function createEstimateForCustomer(customerId) {
-      const customer = customerId ? allCustomers.find(c => c.id === customerId) : selectedCustomer;
-      if (customer) selectedCustomer = customer;
-
-      closeCustomerModal();
-      showPage('estimates');
-
-      setTimeout(() => {
-        if (typeof openCreateEstimateModal === 'function') {
-          openCreateEstimateModal();
-
-          // Pre-fill customer info
-          setTimeout(() => {
-            const nameField = document.getElementById('estimate-customer-name');
-            const emailField = document.getElementById('estimate-customer-email');
-            const phoneField = document.getElementById('estimate-customer-phone');
-            const addressField = document.getElementById('estimate-customer-address');
-            const cityField = document.getElementById('estimate-customer-city');
-
-            if (nameField && selectedCustomer) nameField.value = selectedCustomer.name || '';
-            if (emailField && selectedCustomer) emailField.value = selectedCustomer.email || '';
-            if (phoneField && selectedCustomer) phoneField.value = selectedCustomer.phone || '';
-            if (addressField && selectedCustomer) addressField.value = selectedCustomer.address || '';
-            if (cityField && selectedCustomer) cityField.value = [selectedCustomer.city, selectedCustomer.state, selectedCustomer.zip].filter(Boolean).join(', ');
-          }, 100);
-        }
-      }, 100);
-    }
+    // Note: Main createEstimateForCustomer function is defined later with full implementation
+    // This early reference is kept for code that runs before the full definition loads
 
     function quickNewJobForCustomer(customerId) {
       selectedCustomer = allCustomers.find(c => c.id === customerId);
@@ -10809,6 +10787,140 @@
             <button class="btn btn-primary" style="margin-top: 16px;" onclick="openInvoiceModal()">Create Invoice</button>
           </div>
         `;
+      }
+    }
+
+    // Sync paid invoices and customers from Stripe to local database
+    async function syncFromStripe() {
+      const btn = document.getElementById('sync-stripe-btn');
+      const originalHtml = btn.innerHTML;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Syncing...';
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not logged in');
+
+        // Fetch paid invoices from Stripe
+        const response = await fetch(`${API_URL}/api/invoices?status=paid&limit=100`);
+        if (!response.ok) throw new Error('Failed to fetch Stripe invoices');
+
+        const { invoices: stripeInvoices } = await response.json();
+
+        let customersCreated = 0;
+        let invoicesSynced = 0;
+        let jobsCreated = 0;
+
+        for (const inv of stripeInvoices) {
+          if (!inv.customer_email) continue;
+
+          // Check/create customer
+          let customerId = null;
+          const { data: existingCustomer } = await supabaseClient
+            .from('customers')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('email', inv.customer_email)
+            .single();
+
+          if (existingCustomer) {
+            customerId = existingCustomer.id;
+          } else {
+            const { data: newCustomer, error: custErr } = await supabaseClient
+              .from('customers')
+              .insert({
+                user_id: user.id,
+                name: inv.customer_name || 'Customer',
+                email: inv.customer_email,
+                source: 'stripe_sync'
+              })
+              .select()
+              .single();
+
+            if (!custErr && newCustomer) {
+              customerId = newCustomer.id;
+              customersCreated++;
+            }
+          }
+
+          // Check if invoice already exists in Supabase
+          const { data: existingInvoice } = await supabaseClient
+            .from('invoices')
+            .select('id')
+            .or(`stripe_invoice_id.eq.${inv.id},invoice_number.eq.${inv.number}`)
+            .single();
+
+          if (!existingInvoice) {
+            // Create invoice record
+            const { data: newInvoice, error: invErr } = await supabaseClient
+              .from('invoices')
+              .insert({
+                user_id: user.id,
+                invoice_number: inv.number || `STR-${inv.id.slice(-8)}`,
+                customer_id: customerId,
+                customer_name: inv.customer_name || 'Customer',
+                customer_email: inv.customer_email,
+                total: inv.amount_paid || 0,
+                amount_paid: inv.amount_paid || 0,
+                amount_due: 0,
+                status: 'paid',
+                paid_at: new Date().toISOString(),
+                stripe_invoice_id: inv.id,
+                stripe_hosted_url: inv.hosted_invoice_url,
+                stripe_pdf_url: inv.pdf
+              })
+              .select()
+              .single();
+
+            if (!invErr && newInvoice) {
+              invoicesSynced++;
+
+              // Check if job exists for this customer
+              const { data: existingJob } = await supabaseClient
+                .from('jobs')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('stripe_invoice_id', inv.id)
+                .single();
+
+              if (!existingJob && customerId) {
+                // Create job
+                const jobNum = `JOB-${Date.now().toString(36).toUpperCase()}`;
+                const { error: jobErr } = await supabaseClient
+                  .from('jobs')
+                  .insert({
+                    user_id: user.id,
+                    job_number: jobNum,
+                    customer_id: customerId,
+                    invoice_id: newInvoice.id,
+                    customer_name: inv.customer_name || 'Customer',
+                    customer_email: inv.customer_email,
+                    contract_amount: inv.amount_paid || 0,
+                    total_paid: inv.amount_paid || 0,
+                    deposit_paid: true,
+                    deposit_paid_at: new Date().toISOString(),
+                    stripe_invoice_id: inv.id,
+                    status: 'new'
+                  });
+
+                if (!jobErr) jobsCreated++;
+              }
+            }
+          }
+        }
+
+        showToast(`Synced: ${customersCreated} customers, ${invoicesSynced} invoices, ${jobsCreated} jobs`);
+
+        // Reload data
+        await Promise.all([loadInvoices(), loadCustomers(), loadJobs()]);
+
+      } catch (err) {
+        console.error('Sync error:', err);
+        showToast('Sync failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
     }
 
@@ -15858,15 +15970,50 @@
     }
 
     async function createEstimateForCustomer(customerId) {
-      // Find the customer
-      const customer = allCustomers?.find(c => c.id === customerId);
+      // Find the customer - check multiple sources
+      let customer = null;
+
+      if (customerId) {
+        // Try allCustomers array first
+        customer = allCustomers?.find(c => c.id === customerId);
+
+        // If not found, try to fetch from database
+        if (!customer) {
+          try {
+            const { data } = await supabaseClient
+              .from('customers')
+              .select('*')
+              .eq('id', customerId)
+              .single();
+            if (data) {
+              customer = data;
+              // Add to allCustomers for future use
+              if (!allCustomers) allCustomers = [];
+              allCustomers.push(data);
+            }
+          } catch (e) {
+            console.log('Could not fetch customer:', e);
+          }
+        }
+      }
+
+      // Fall back to selectedCustomer if available
+      if (!customer && selectedCustomer) {
+        customer = selectedCustomer;
+        customerId = selectedCustomer.id;
+      }
+
       if (!customer) {
-        showToast('Customer not found', 'error');
+        showToast('Customer not found. Please select a customer first.', 'error');
         return;
       }
 
-      // Close customers modal
-      closeCustomersModal();
+      // Store as selectedCustomer for reference
+      selectedCustomer = customer;
+
+      // Close customers modal if open
+      if (typeof closeCustomersModal === 'function') closeCustomersModal();
+      if (typeof closeCustomerModal === 'function') closeCustomerModal();
 
       // Navigate to estimates page
       showPage('estimates');
