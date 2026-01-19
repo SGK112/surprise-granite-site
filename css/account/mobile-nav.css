@@ -1,0 +1,443 @@
+/**
+ * Mobile Bottom Navigation - iOS Style
+ * For account dashboard on mobile devices (< 768px)
+ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  --mobile-nav-height: 56px;
+  --mobile-nav-bg: rgba(18, 18, 26, 0.98);
+  --mobile-nav-border: rgba(255, 255, 255, 0.08);
+  --mobile-nav-active: #f9cb00;
+  --mobile-nav-inactive: rgba(255, 255, 255, 0.5);
+  --drawer-bg: #1a1a2e;
+  --drawer-handle: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   BOTTOM TAB BAR
+   ============================================ */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--mobile-nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--mobile-nav-border);
+  z-index: 9999;
+}
+
+/* Show on mobile */
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: block;
+  }
+
+  /* Adjust main content padding for bottom nav */
+  .main-content {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 20px) !important;
+  }
+
+  /* Hide sidebar toggle on mobile when using bottom nav */
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+.mobile-nav-tabs {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: var(--mobile-nav-height);
+  width: 100%;
+  padding: 0 8px;
+}
+
+/* ============================================
+   TAB ITEMS
+   ============================================ */
+.mobile-nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  padding: 6px 4px;
+  color: var(--mobile-nav-inactive);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: relative;
+}
+
+.mobile-nav-tab:active {
+  transform: scale(0.92);
+}
+
+.mobile-nav-tab.active {
+  color: var(--mobile-nav-active);
+}
+
+.mobile-nav-tab svg {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 2px;
+  stroke-width: 1.75;
+}
+
+.mobile-nav-tab.active svg {
+  stroke-width: 2.25;
+}
+
+.mobile-nav-tab span {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+/* Badge for unread counts */
+.mobile-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(12px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-nav-badge:empty,
+.mobile-nav-badge[data-count="0"] {
+  display: none;
+}
+
+/* ============================================
+   MORE DRAWER OVERLAY
+   ============================================ */
+.mobile-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 10000;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-drawer-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   MORE DRAWER (Slide-up Sheet)
+   ============================================ */
+.mobile-more-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--drawer-bg);
+  border-radius: 20px 20px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 10001;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-more-drawer.open {
+  transform: translateY(0);
+}
+
+/* Drawer handle */
+.drawer-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--drawer-handle);
+  border-radius: 2px;
+  margin: 12px auto;
+  flex-shrink: 0;
+}
+
+/* Drawer header with user info */
+.drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mobile-nav-border);
+  flex-shrink: 0;
+}
+
+.drawer-user-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.drawer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  flex-shrink: 0;
+}
+
+.drawer-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.drawer-user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.drawer-user-role {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+/* Drawer menu */
+.drawer-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drawer-menu-section {
+  padding: 8px 20px 4px;
+}
+
+.drawer-menu-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.drawer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition: background 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 15px;
+}
+
+.drawer-menu-item:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.drawer-menu-item.active {
+  color: var(--mobile-nav-active);
+  background: rgba(249, 203, 0, 0.08);
+}
+
+.drawer-menu-item svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.drawer-menu-item.active svg {
+  opacity: 1;
+}
+
+.drawer-menu-item .menu-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: rgba(249, 203, 0, 0.2);
+  color: #f9cb00;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Drawer footer */
+.drawer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--mobile-nav-border);
+  flex-shrink: 0;
+}
+
+.drawer-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  color: #ef4444;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.drawer-logout-btn:active {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.drawer-logout-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ============================================
+   HIDE ELEMENTS WHEN DRAWER IS OPEN
+   ============================================ */
+body.drawer-open {
+  overflow: hidden;
+}
+
+body.drawer-open .mobile-bottom-nav {
+  pointer-events: none;
+}
+
+/* ============================================
+   TABLET ADJUSTMENTS (769px - 991px)
+   ============================================ */
+@media (min-width: 769px) and (max-width: 991px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* ============================================
+   LANDSCAPE MODE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mobile-bottom-nav {
+    height: 48px;
+  }
+
+  .mobile-nav-tabs {
+    height: 48px;
+  }
+
+  .mobile-nav-tab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-nav-tab span {
+    font-size: 9px;
+  }
+
+  .mobile-more-drawer {
+    max-height: 90vh;
+  }
+}
+
+/* ============================================
+   SMALL DEVICES (< 375px)
+   ============================================ */
+@media (max-width: 374px) {
+  .mobile-nav-tab span {
+    font-size: 9px;
+  }
+
+  .mobile-nav-tab svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .drawer-menu-item {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+/* ============================================
+   ANIMATION FOR PAGE TRANSITIONS
+   ============================================ */
+.page-section {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Swipe indicator hint */
+.swipe-hint {
+  position: fixed;
+  bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 13px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.swipe-hint.visible {
+  opacity: 1;
+}

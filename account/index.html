@@ -8,6 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="/css/account/mobile-nav.css?v=20260119" rel="stylesheet"/>
   <script src="/js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
   <script src="/js/supabase-init.js"></script>
@@ -4181,8 +4182,9 @@
             <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;">
               <option value="customer">Customer View</option>
               <option value="contractor">Contractor View</option>
+              <option value="fabricator">Fabricator View</option>
               <option value="vendor">Vendor View</option>
-              <option value="admin">Admin View</option>
+              <option value="admin">Admin View (GOD)</option>
             </select>
           </div>
           <button class="btn btn-primary" onclick="openAddLeadModal()">
@@ -7435,12 +7437,16 @@
         nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'products', 'orders', 'messages'],
         features: ['view_own_jobs', 'create_jobs', 'view_estimates', 'send_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews', 'view_contractors', 'manage_customers', 'view_leads', 'hire_subcontractors', 'ai_tools', 'analytics']
       },
+      fabricator: {
+        nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'products', 'orders', 'messages', 'inventory', 'slabs'],
+        features: ['view_own_jobs', 'create_jobs', 'view_estimates', 'send_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews', 'view_contractors', 'manage_customers', 'view_leads', 'hire_subcontractors', 'ai_tools', 'analytics', 'manage_inventory', 'slab_management']
+      },
       vendor: {
         nav: ['dashboard', 'profile', 'products', 'orders', 'messages', 'calendar', 'wallet'],
         features: ['list_products', 'receive_orders', 'view_analytics', 'message_team', 'manage_inventory', 'connect_contractors']
       },
       admin: {
-        nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'admin-users', 'products', 'orders', 'messages'],
+        nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet', 'admin-users', 'products', 'orders', 'messages', 'inventory', 'slabs', 'analytics', 'settings'],
         features: ['full_access']
       }
     };
@@ -7991,7 +7997,7 @@
             'pro_builder': 'Builder Account',
             'super_admin': 'Admin Account'
           };
-          accountTypeLabel.textContent = typeLabels[userRole] || typeLabels[accountType] || 'Account';
+          accountTypeLabel.textContent = isSuperAdmin ? '⚡ GOD MODE' : (typeLabels[userRole] || typeLabels[accountType] || 'Account');
         }
 
         // Safely update profile form
@@ -12239,6 +12245,12 @@
       const user = await supabaseClient.auth.getUser();
       if (!user.data.user) return { allowed: false, remaining: 0 };
 
+      // Check if super admin by email
+      const userEmail = (user.data.user.email || '').toLowerCase();
+      if (SUPER_ADMIN_EMAILS.includes(userEmail)) {
+        return { allowed: true, remaining: Infinity, isPro: true };
+      }
+
       // Check if pro account
       const { data: profile } = await supabaseClient
         .from('sg_users')
@@ -12247,7 +12259,7 @@
         .single();
 
       const accountType = profile?.account_type || 'homeowner';
-      if (accountType.startsWith('pro_') || accountType === 'admin') {
+      if (accountType.startsWith('pro_') || accountType === 'admin' || accountType === 'super_admin') {
         return { allowed: true, remaining: Infinity, isPro: true };
       }
 
@@ -16573,5 +16585,58 @@
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
+
+<!-- Mobile Bottom Navigation -->
+<script src="/js/account/components/mobile-nav.js?v=20260119"></script>
+<script>
+// Integrate mobile nav with account dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  // Update mobile nav when user logs in
+  const originalShowDashboard = window.showDashboard;
+  if (originalShowDashboard) {
+    window.showDashboard = function() {
+      originalShowDashboard.apply(this, arguments);
+      // Update mobile nav for current user
+      if (window.mobileNav && window.userProfile) {
+        window.mobileNav.updateForRole(window.userRole || 'homeowner');
+        window.mobileNav.updateUserInfo(window.userProfile);
+      }
+    };
+  }
+
+  // Dispatch page change events for mobile nav
+  const originalShowPage = window.showPage;
+  if (originalShowPage) {
+    window.showPage = function(page) {
+      originalShowPage.apply(this, arguments);
+      document.dispatchEvent(new CustomEvent('pageChanged', { detail: { page: page } }));
+    };
+  }
+
+  // Update badges when counts change
+  function updateMobileBadges() {
+    if (!window.mobileNav) return;
+
+    // Get counts from existing badge elements
+    const leadsBadge = document.querySelector('.nav-item[data-page="leads"] .nav-badge');
+    const estimatesBadge = document.querySelector('.nav-item[data-page="estimates"] .nav-badge');
+
+    if (leadsBadge) {
+      const count = parseInt(leadsBadge.textContent) || 0;
+      window.mobileNav.updateBadge('leads', count);
+    }
+    if (estimatesBadge) {
+      const count = parseInt(estimatesBadge.textContent) || 0;
+      window.mobileNav.updateBadge('estimates', count);
+    }
+  }
+
+  // Initial badge update
+  setTimeout(updateMobileBadges, 2000);
+
+  // Update badges periodically
+  setInterval(updateMobileBadges, 30000);
+});
+</script>
 </body>
 </html>

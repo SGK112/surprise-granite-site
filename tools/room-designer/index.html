@@ -8369,7 +8369,7 @@
     };
 
     // Account types that can view pricing (paid tiers)
-    const PAID_ACCOUNT_TYPES = ['pro', 'vendor', 'fabricator', 'business', 'enterprise', 'distributor', 'admin'];
+    const PAID_ACCOUNT_TYPES = ['pro', 'vendor', 'fabricator', 'business', 'enterprise', 'distributor', 'admin', 'super_admin'];
 
     // Check if current user can view pricing
     async function checkPricingAccess(forceRefresh = false) {
@@ -8395,11 +8395,21 @@
 
         PRICING_ACCESS.checkedAt = Date.now();
 
+        // Super admin emails always get full access
+        const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+        const isSuperAdmin = user && SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+
         if (!user) {
           // Guest user - no pricing access
           PRICING_ACCESS.isSubscribed = false;
           PRICING_ACCESS.accountType = 'guest';
           PRICING_ACCESS.canViewPricing = false;
+        } else if (isSuperAdmin) {
+          // Super admin - full access regardless of account_type
+          PRICING_ACCESS.accountType = 'super_admin';
+          PRICING_ACCESS.isSubscribed = true;
+          PRICING_ACCESS.canViewPricing = true;
+          console.log('Super Admin detected - full pricing access granted');
         } else if (profile) {
           PRICING_ACCESS.accountType = (profile.account_type || 'homeowner').toLowerCase();
           PRICING_ACCESS.isSubscribed = PAID_ACCOUNT_TYPES.includes(PRICING_ACCESS.accountType);
