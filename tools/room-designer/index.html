@@ -4147,6 +4147,172 @@
       font-size: 12px;
     }
 
+    /* Labor Category Accordion */
+    .labor-categories {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .labor-category {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .labor-category-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    .labor-category-header:hover {
+      background: var(--dark-hover);
+    }
+
+    .labor-category.expanded .labor-category-header {
+      border-bottom: 1px solid var(--border);
+      background: var(--dark-hover);
+    }
+
+    .category-icon {
+      font-size: 16px;
+      color: var(--gold);
+      width: 24px;
+      text-align: center;
+    }
+
+    .category-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .category-toggle {
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+
+    .labor-category.expanded .category-toggle {
+      transform: rotate(180deg);
+    }
+
+    .labor-category-items {
+      display: none;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .labor-category.expanded .labor-category-items {
+      display: block;
+    }
+
+    .labor-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .labor-item:last-child {
+      border-bottom: none;
+    }
+
+    .labor-item-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .labor-item-rate {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .labor-item-rate input {
+      width: 80px;
+      padding: 6px 8px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .labor-item-rate input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .labor-item-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 50px;
+    }
+
+    /* Material Pricing Section */
+    .material-pricing-section {
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .material-price-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .material-price-row:last-child {
+      border-bottom: none;
+    }
+
+    .material-price-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .material-price-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .material-price-inputs input {
+      width: 90px;
+      padding: 6px 8px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .material-price-inputs input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .material-price-inputs span {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     /* Margin Modal */
     .margin-section {
       padding: 8px 0;
@@ -36214,6 +36380,191 @@
         totalRetail += fillerRetail;
       }
 
+      // ===== LABOR COSTS CALCULATION =====
+      // Calculate labor costs based on user labor rates and takeoffs
+      const laborMargin = PRICING_STATE.categoryMargins.labor || PRICING_STATE.globalMargin || 20;
+      let totalLaborCost = 0;
+      let totalLaborRetail = 0;
+
+      // Get totals from current items for labor calculations
+      const totalCountertopSqft = Object.values(items)
+        .filter(item => item.isCountertop)
+        .reduce((sum, item) => sum + item.sqft, 0);
+
+      const totalCabinetCount = Object.values(items)
+        .filter(item => item.isCabinet)
+        .reduce((sum, item) => sum + item.count, 0);
+
+      // Stone fabrication labor (if countertops exist)
+      if (totalCountertopSqft > 0 && userLaborRates.stone) {
+        // Fabrication
+        const fabRate = userLaborRates.stone.fabrication?.rate || 0;
+        if (fabRate > 0) {
+          const fabCost = totalCountertopSqft * fabRate;
+          const fabRetail = fabCost * (1 + laborMargin / 100);
+          items['labor-fabrication'] = {
+            count: 1,
+            costTotal: fabCost,
+            retailTotal: fabRetail,
+            label: `Fabrication (${totalCountertopSqft.toFixed(1)} sqft)`,
+            sqft: totalCountertopSqft,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-FAB',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += fabCost;
+          totalLaborRetail += fabRetail;
+        }
+
+        // Installation
+        const installRate = userLaborRates.stone.installation?.rate || 0;
+        if (installRate > 0) {
+          const installCost = totalCountertopSqft * installRate;
+          const installRetail = installCost * (1 + laborMargin / 100);
+          items['labor-ct-install'] = {
+            count: 1,
+            costTotal: installCost,
+            retailTotal: installRetail,
+            label: `Countertop Installation (${totalCountertopSqft.toFixed(1)} sqft)`,
+            sqft: totalCountertopSqft,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-INST',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += installCost;
+          totalLaborRetail += installRetail;
+        }
+
+        // Template visit (flat fee if countertops exist)
+        const templateRate = userLaborRates.stone.template?.rate || 0;
+        if (templateRate > 0) {
+          const templateRetail = templateRate * (1 + laborMargin / 100);
+          items['labor-template'] = {
+            count: 1,
+            costTotal: templateRate,
+            retailTotal: templateRetail,
+            label: 'Template Visit',
+            sqft: 0,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-TEMP',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += templateRate;
+          totalLaborRetail += templateRetail;
+        }
+      }
+
+      // Cabinet installation labor (if cabinets exist)
+      if (totalCabinetCount > 0 && userLaborRates.cabinet) {
+        const cabInstallRate = userLaborRates.cabinet.installation?.rate || 0;
+        if (cabInstallRate > 0) {
+          const cabInstallCost = totalCabinetCount * cabInstallRate;
+          const cabInstallRetail = cabInstallCost * (1 + laborMargin / 100);
+          items['labor-cab-install'] = {
+            count: totalCabinetCount,
+            costTotal: cabInstallCost,
+            retailTotal: cabInstallRetail,
+            label: `Cabinet Installation (${totalCabinetCount} cabinets)`,
+            sqft: 0,
+            linearFt: 0,
+            boxCount: totalCabinetCount,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-CAB',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += cabInstallCost;
+          totalLaborRetail += cabInstallRetail;
+        }
+      }
+
+      // Check for sinks (plumbing labor)
+      const sinkItems = elements.filter(el => el.type === 'sink' || el.type.includes('sink'));
+      if (sinkItems.length > 0 && userLaborRates.plumbing) {
+        const sinkRate = userLaborRates.plumbing.sinkInstall?.rate || 0;
+        if (sinkRate > 0) {
+          const sinkLaborCost = sinkItems.length * sinkRate;
+          const sinkLaborRetail = sinkLaborCost * (1 + laborMargin / 100);
+          items['labor-sink-install'] = {
+            count: sinkItems.length,
+            costTotal: sinkLaborCost,
+            retailTotal: sinkLaborRetail,
+            label: `Sink Installation (${sinkItems.length})`,
+            sqft: 0,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-SINK',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += sinkLaborCost;
+          totalLaborRetail += sinkLaborRetail;
+        }
+      }
+
+      // Check for faucets
+      const faucetItems = elements.filter(el => el.type === 'faucet' || el.type.includes('faucet'));
+      if (faucetItems.length > 0 && userLaborRates.plumbing) {
+        const faucetRate = userLaborRates.plumbing.faucetInstall?.rate || 0;
+        if (faucetRate > 0) {
+          const faucetLaborCost = faucetItems.length * faucetRate;
+          const faucetLaborRetail = faucetLaborCost * (1 + laborMargin / 100);
+          items['labor-faucet-install'] = {
+            count: faucetItems.length,
+            costTotal: faucetLaborCost,
+            retailTotal: faucetLaborRetail,
+            label: `Faucet Installation (${faucetItems.length})`,
+            sqft: 0,
+            linearFt: 0,
+            boxCount: 0,
+            fillerTotal: 0,
+            margin: laborMargin,
+            priceSource: 'labor',
+            sku: 'LABOR-FAUCET',
+            type: 'labor',
+            isCabinet: false,
+            isCountertop: false,
+            isLabor: true
+          };
+          totalLaborCost += faucetLaborCost;
+          totalLaborRetail += faucetLaborRetail;
+        }
+      }
+
+      // Add labor totals to grand total
+      totalCost += totalLaborCost;
+      totalRetail += totalLaborRetail;
+
       renderQuoteItems(items, totalCost, totalRetail);
     }
 
@@ -36231,10 +36582,15 @@
           </div>
         `;
       } else {
-        // Sort items: countertops first, then cabinets, then others
+        // Sort items: countertops first, then cabinets, then others, then labor
         const sortedItems = Object.entries(items).sort(([, a], [, b]) => {
+          // Labor items always last
+          if (a.isLabor && !b.isLabor) return 1;
+          if (!a.isLabor && b.isLabor) return -1;
+          // Countertops first
           if (a.isCountertop && !b.isCountertop) return -1;
           if (!a.isCountertop && b.isCountertop) return 1;
+          // Then cabinets
           if (a.isCabinet && !b.isCabinet) return -1;
           if (!a.isCabinet && b.isCabinet) return 1;
           return 0;
@@ -36275,10 +36631,20 @@
             `;
           }
 
+          // Determine styling based on item type
+          let itemStyle = '';
+          let itemPrefix = '';
+          if (data.isCountertop) {
+            itemStyle = 'background: rgba(249,203,0,0.05); border-left: 2px solid var(--gold-primary);';
+          } else if (data.isLabor) {
+            itemStyle = 'background: rgba(99,102,241,0.05); border-left: 2px solid var(--primary);';
+            itemPrefix = '<span style="color: var(--primary); font-size: 10px; margin-right: 6px;">⚙</span>';
+          }
+
           return `
-            <div class="quote-item" style="${data.isCountertop ? 'background: rgba(249,203,0,0.05); border-left: 2px solid var(--gold-primary);' : ''}">
+            <div class="quote-item" style="${itemStyle}">
               <span class="quote-item-name">
-                ${data.label} ${quantityInfo}${detailInfo}
+                ${itemPrefix}${data.label} ${quantityInfo}${detailInfo}
                 ${marginBadge}
               </span>
               <span class="quote-item-value">
@@ -37707,6 +38073,235 @@
         const name = item.querySelector('.price-item-name').textContent.toLowerCase();
         item.style.display = name.includes(query) ? 'flex' : 'none';
       });
+    }
+
+    // ===== LABOR RATES MANAGEMENT =====
+    // Store for user-modified labor rates (loaded from localStorage)
+    let userLaborRates = JSON.parse(localStorage.getItem('sg_labor_rates') || 'null') || JSON.parse(JSON.stringify(LABOR_RATES));
+    let userMaterialPricing = JSON.parse(localStorage.getItem('sg_material_pricing') || 'null') || JSON.parse(JSON.stringify(MATERIAL_PRICING));
+
+    // Toggle labor category accordion
+    function toggleLaborCategory(category) {
+      const container = document.getElementById('laborItems' + category.charAt(0).toUpperCase() + category.slice(1));
+      const parentCategory = container.closest('.labor-category');
+
+      // Toggle expanded state
+      parentCategory.classList.toggle('expanded');
+
+      // Render items if expanding and empty
+      if (parentCategory.classList.contains('expanded') && container.innerHTML === '') {
+        renderLaborCategoryItems(category);
+      }
+    }
+
+    // Render items for a specific labor category
+    function renderLaborCategoryItems(category) {
+      const container = document.getElementById('laborItems' + category.charAt(0).toUpperCase() + category.slice(1));
+      if (!container) return;
+
+      const items = userLaborRates[category];
+      if (!items) return;
+
+      let html = '';
+      for (const [key, item] of Object.entries(items)) {
+        const unitLabels = {
+          'sqft': '/ sq ft',
+          'lf': '/ lin ft',
+          'cabinet': '/ cabinet',
+          'each': '/ each',
+          'hour': '/ hour',
+          'visit': '/ visit',
+          'trip': '/ trip',
+          'permit': '/ permit',
+          'piece': '/ piece',
+          'location': '/ location',
+          'load': '/ load',
+          'percent': '%'
+        };
+
+        html += `
+          <div class="labor-item">
+            <span class="labor-item-label">${item.label}</span>
+            <div class="labor-item-rate">
+              <span style="color: var(--text-muted); font-size: 12px;">${item.unit === 'percent' ? '' : '$'}</span>
+              <input type="number"
+                     id="laborRate_${category}_${key}"
+                     value="${item.rate}"
+                     min="0"
+                     step="${item.unit === 'percent' ? '1' : '0.01'}"
+                     onchange="updateLaborRate('${category}', '${key}', this.value)">
+              <span class="labor-item-unit">${unitLabels[item.unit] || item.unit}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Update a specific labor rate
+    function updateLaborRate(category, key, value) {
+      const numValue = parseFloat(value) || 0;
+      if (userLaborRates[category] && userLaborRates[category][key]) {
+        userLaborRates[category][key].rate = numValue;
+      }
+    }
+
+    // Save all labor rates to localStorage
+    function saveLaborRates() {
+      localStorage.setItem('sg_labor_rates', JSON.stringify(userLaborRates));
+      showNotification('Labor rates saved successfully!', 'success');
+
+      // Recalculate quote if open
+      calculateQuote();
+    }
+
+    // Reset labor rates to defaults
+    function resetLaborRates() {
+      if (!confirm('Reset all labor rates to default values?')) return;
+
+      userLaborRates = JSON.parse(JSON.stringify(LABOR_RATES));
+      localStorage.removeItem('sg_labor_rates');
+
+      // Re-render all expanded categories
+      document.querySelectorAll('.labor-category.expanded').forEach(cat => {
+        const itemsContainer = cat.querySelector('.labor-category-items');
+        if (itemsContainer && itemsContainer.id) {
+          const categoryName = itemsContainer.id.replace('laborItems', '').toLowerCase();
+          renderLaborCategoryItems(categoryName);
+        }
+      });
+
+      showNotification('Labor rates reset to defaults', 'info');
+    }
+
+    // Initialize labor rates tab when opening
+    function initLaborRatesTab() {
+      // Expand first category by default
+      const firstCategory = document.querySelector('.labor-category');
+      if (firstCategory && !firstCategory.classList.contains('expanded')) {
+        firstCategory.classList.add('expanded');
+        renderLaborCategoryItems('stone');
+      }
+    }
+
+    // ===== MATERIAL PRICING MANAGEMENT =====
+    // Render slab materials pricing
+    function renderSlabMaterials() {
+      const container = document.getElementById('slabMaterialsList');
+      if (!container) return;
+
+      let html = '';
+      for (const [key, mat] of Object.entries(userMaterialPricing.slabMaterials)) {
+        html += `
+          <div class="material-price-row">
+            <span class="material-price-label">${mat.label}</span>
+            <div class="material-price-inputs">
+              <span>$</span>
+              <input type="number"
+                     id="slabPrice_${key}"
+                     value="${mat.slabPrice}"
+                     min="0"
+                     step="1"
+                     placeholder="Slab price"
+                     onchange="updateSlabPrice('${key}', this.value)">
+              <span>/ slab (~${mat.slabSqft} sqft)</span>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Render sqft materials pricing
+    function renderSqftMaterials() {
+      const container = document.getElementById('sqftMaterialsList');
+      if (!container) return;
+
+      let html = '';
+      for (const [key, mat] of Object.entries(userMaterialPricing.sqftMaterials)) {
+        html += `
+          <div class="material-price-row">
+            <span class="material-price-label">${mat.label}</span>
+            <div class="material-price-inputs">
+              <span>$</span>
+              <input type="number"
+                     id="sqftPrice_${key}"
+                     value="${mat.pricePerSqft}"
+                     min="0"
+                     step="0.01"
+                     placeholder="Price / sqft"
+                     onchange="updateSqftPrice('${key}', this.value)">
+              <span>/ sq ft</span>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Update slab material price
+    function updateSlabPrice(key, value) {
+      const numValue = parseFloat(value) || 0;
+      if (userMaterialPricing.slabMaterials[key]) {
+        userMaterialPricing.slabMaterials[key].slabPrice = numValue;
+      }
+    }
+
+    // Update sqft material price
+    function updateSqftPrice(key, value) {
+      const numValue = parseFloat(value) || 0;
+      if (userMaterialPricing.sqftMaterials[key]) {
+        userMaterialPricing.sqftMaterials[key].pricePerSqft = numValue;
+      }
+    }
+
+    // Save material pricing
+    function saveMaterialPricing() {
+      localStorage.setItem('sg_material_pricing', JSON.stringify(userMaterialPricing));
+      showNotification('Material pricing saved!', 'success');
+      calculateQuote();
+    }
+
+    // Initialize materials tab
+    function initMaterialsTab() {
+      renderSlabMaterials();
+      renderSqftMaterials();
+    }
+
+    // Override showPriceTab to initialize tabs
+    const _originalShowPriceTab = showPriceTab;
+    showPriceTab = function(tab) {
+      // Hide all tabs
+      document.querySelectorAll('.price-tab').forEach(t => t.style.display = 'none');
+      document.querySelectorAll('.price-list-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+
+      // Show selected tab
+      const tabId = 'priceTab' + tab.charAt(0).toUpperCase() + tab.slice(1);
+      const tabEl = document.getElementById(tabId);
+      if (tabEl) tabEl.style.display = 'block';
+
+      // Find and activate the clicked button
+      document.querySelectorAll('.price-list-tabs .tab-btn').forEach(b => {
+        if (b.textContent.toLowerCase().includes(tab.toLowerCase().replace('upload', 'up').replace('saved', 'sav'))) {
+          b.classList.add('active');
+        }
+      });
+
+      // Initialize tab-specific content
+      if (tab === 'labor') {
+        initLaborRatesTab();
+      } else if (tab === 'materials') {
+        initMaterialsTab();
+      }
+    };
+
+    // Override openPriceListModal to show labor tab by default
+    function openPriceListModal() {
+      document.getElementById('priceListModal').classList.add('active');
+      showPriceTab('labor');
     }
 
     // ===== MARGIN MODAL FUNCTIONS =====
