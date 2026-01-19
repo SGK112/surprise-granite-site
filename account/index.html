@@ -11010,109 +11010,185 @@
         if (!user) throw new Error('Not logged in');
 
         // Fetch paid invoices from Stripe
+        console.log('[Sync] Fetching paid invoices from Stripe...');
         const response = await fetch(`${API_URL}/api/invoices?status=paid&limit=100`);
         if (!response.ok) throw new Error('Failed to fetch Stripe invoices');
 
         const { invoices: stripeInvoices } = await response.json();
+        console.log('[Sync] Found', stripeInvoices?.length || 0, 'paid invoices');
+
+        if (!stripeInvoices || stripeInvoices.length === 0) {
+          showToast('No paid invoices found in Stripe', 'info');
+          return;
+        }
 
         let customersCreated = 0;
         let invoicesSynced = 0;
         let jobsCreated = 0;
+        let errors = [];
 
         for (const inv of stripeInvoices) {
-          if (!inv.customer_email) continue;
-
-          // Check/create customer
-          let customerId = null;
-          const { data: existingCustomer } = await supabaseClient
-            .from('customers')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('email', inv.customer_email)
-            .single();
-
-          if (existingCustomer) {
-            customerId = existingCustomer.id;
-          } else {
-            const { data: newCustomer, error: custErr } = await supabaseClient
-              .from('customers')
-              .insert({
-                user_id: user.id,
-                name: inv.customer_name || 'Customer',
-                email: inv.customer_email,
-                source: 'stripe_sync'
-              })
-              .select()
-              .single();
-
-            if (!custErr && newCustomer) {
-              customerId = newCustomer.id;
-              customersCreated++;
-            }
+          if (!inv.customer_email) {
+            console.log('[Sync] Skipping invoice without email:', inv.id);
+            continue;
           }
 
-          // Check if invoice already exists in Supabase
-          const { data: existingInvoice } = await supabaseClient
-            .from('invoices')
-            .select('id')
-            .or(`stripe_invoice_id.eq.${inv.id},invoice_number.eq.${inv.number}`)
-            .single();
+          console.log('[Sync] Processing:', inv.customer_name, inv.customer_email);
 
-          if (!existingInvoice) {
-            // Create invoice record
-            const { data: newInvoice, error: invErr } = await supabaseClient
+          // Step 1: Check/create customer (always do this)
+          let customerId = null;
+          try {
+            const { data: existingCustomer } = await supabaseClient
+              .from('customers')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('email', inv.customer_email)
+              .single();
+
+            if (existingCustomer) {
+              customerId = existingCustomer.id;
+              console.log('[Sync] Found existing customer:', customerId);
+            } else {
+              const { data: newCustomer, error: custErr } = await supabaseClient
+                .from('customers')
+                .insert({
+                  user_id: user.id,
+                  name: inv.customer_name || 'Customer',
+                  email: inv.customer_email,
+                  phone: inv.customer_phone || null,
+                  source: 'stripe_sync'
+                })
+                .select()
+                .single();
+
+              if (!custErr && newCustomer) {
+                customerId = newCustomer.id;
+                customersCreated++;
+                console.log('[Sync] Created customer:', customerId);
+              } else if (custErr) {
+                console.error('[Sync] Customer error:', custErr.message);
+                errors.push(`Customer ${inv.customer_email}: ${custErr.message}`);
+              }
+            }
+          } catch (e) {
+            console.error('[Sync] Customer exception:', e);
+          }
+
+          // Step 2: Try to create invoice (may fail if columns don't exist - that's OK)
+          let invoiceId = null;
+          try {
+            // Check if invoice exists by number
+            const { data: existingInvoice } = await supabaseClient
               .from('invoices')
-              .insert({
+              .select('id')
+              .eq('invoice_number', inv.number)
+              .single();
+
+            if (existingInvoice) {
+              invoiceId = existingInvoice.id;
+              console.log('[Sync] Invoice already exists:', invoiceId);
+            } else {
+              // Try with all columns first
+              const invoiceData = {
                 user_id: user.id,
                 invoice_number: inv.number || `STR-${inv.id.slice(-8)}`,
                 customer_id: customerId,
                 customer_name: inv.customer_name || 'Customer',
                 customer_email: inv.customer_email,
                 total: inv.amount_paid || 0,
-                amount_paid: inv.amount_paid || 0,
-                amount_due: 0,
                 status: 'paid',
-                paid_at: new Date().toISOString(),
-                stripe_invoice_id: inv.id,
-                stripe_hosted_url: inv.hosted_invoice_url,
-                stripe_pdf_url: inv.pdf
-              })
-              .select()
-              .single();
+                paid_at: new Date().toISOString()
+              };
 
-            if (!invErr && newInvoice) {
-              invoicesSynced++;
+              // Add optional stripe columns (may not exist)
+              try {
+                invoiceData.amount_paid = inv.amount_paid || 0;
+                invoiceData.amount_due = 0;
+                invoiceData.stripe_invoice_id = inv.id;
+                invoiceData.stripe_hosted_url = inv.hosted_invoice_url;
+                invoiceData.stripe_pdf_url = inv.pdf;
+              } catch (e) {}
 
-              // Check if job exists for this customer
+              const { data: newInvoice, error: invErr } = await supabaseClient
+                .from('invoices')
+                .insert(invoiceData)
+                .select()
+                .single();
+
+              if (!invErr && newInvoice) {
+                invoiceId = newInvoice.id;
+                invoicesSynced++;
+                console.log('[Sync] Created invoice:', invoiceId);
+              } else if (invErr) {
+                console.error('[Sync] Invoice error:', invErr.message);
+                // Try minimal insert without stripe columns
+                const { data: minInvoice, error: minErr } = await supabaseClient
+                  .from('invoices')
+                  .insert({
+                    user_id: user.id,
+                    invoice_number: inv.number || `STR-${inv.id.slice(-8)}`,
+                    customer_id: customerId,
+                    customer_name: inv.customer_name || 'Customer',
+                    customer_email: inv.customer_email,
+                    total: inv.amount_paid || 0,
+                    status: 'paid'
+                  })
+                  .select()
+                  .single();
+
+                if (!minErr && minInvoice) {
+                  invoiceId = minInvoice.id;
+                  invoicesSynced++;
+                  console.log('[Sync] Created invoice (minimal):', invoiceId);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[Sync] Invoice exception:', e);
+          }
+
+          // Step 3: Create job (even if invoice failed, as long as we have customer)
+          if (customerId) {
+            try {
+              // Check if job exists for this customer email
               const { data: existingJob } = await supabaseClient
                 .from('jobs')
                 .select('id')
                 .eq('user_id', user.id)
-                .eq('stripe_invoice_id', inv.id)
+                .eq('customer_email', inv.customer_email)
                 .single();
 
-              if (!existingJob && customerId) {
-                // Create job
+              if (!existingJob) {
                 const jobNum = `JOB-${Date.now().toString(36).toUpperCase()}`;
+                const jobData = {
+                  user_id: user.id,
+                  job_number: jobNum,
+                  customer_id: customerId,
+                  customer_name: inv.customer_name || 'Customer',
+                  customer_email: inv.customer_email,
+                  contract_amount: inv.amount_paid || 0,
+                  total_paid: inv.amount_paid || 0,
+                  deposit_paid: true,
+                  status: 'new'
+                };
+
+                if (invoiceId) jobData.invoice_id = invoiceId;
+
                 const { error: jobErr } = await supabaseClient
                   .from('jobs')
-                  .insert({
-                    user_id: user.id,
-                    job_number: jobNum,
-                    customer_id: customerId,
-                    invoice_id: newInvoice.id,
-                    customer_name: inv.customer_name || 'Customer',
-                    customer_email: inv.customer_email,
-                    contract_amount: inv.amount_paid || 0,
-                    total_paid: inv.amount_paid || 0,
-                    deposit_paid: true,
-                    deposit_paid_at: new Date().toISOString(),
-                    stripe_invoice_id: inv.id,
-                    status: 'new'
-                  });
+                  .insert(jobData);
 
-                if (!jobErr) jobsCreated++;
+                if (!jobErr) {
+                  jobsCreated++;
+                  console.log('[Sync] Created job:', jobNum);
+                } else {
+                  console.error('[Sync] Job error:', jobErr.message);
+                }
+              } else {
+                console.log('[Sync] Job already exists for customer');
               }
+            } catch (e) {
+              console.error('[Sync] Job exception:', e);
             }
           }
         }
