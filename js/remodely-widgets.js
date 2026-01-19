@@ -266,8 +266,9 @@ Remember: Keep responses brief and conversational!`,
     // Always load booking widget (for CTA buttons across site)
     initBookingWidget();
 
-    // Always load Aria Voice (floating button)
-    initAriaVoice();
+    // Aria Voice is now triggered through the Remodely Hub
+    // Don't auto-show floating button - let hub control it
+    // initAriaVoice(); // Disabled - controlled by remodely-hub.js
 
     // Load Blueprint AI on design/visualizer pages
     const designContainer = document.getElementById('blueprint-ai-container');

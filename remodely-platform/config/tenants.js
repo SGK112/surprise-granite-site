@@ -71,7 +71,7 @@ const TENANTS = {
             ai_transform: true,
             marketplace: true,
             leads: true,
-            whitelabel_badge: true // Shows "Powered by Remodely"
+            whitelabel_badge: false // Disabled - using tools hub instead
         },
 
         contact: {

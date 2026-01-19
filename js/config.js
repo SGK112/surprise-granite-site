@@ -238,13 +238,8 @@
     }
   };
 
-  // Initialize Supabase client if available
-  if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-    window.SG_SUPABASE = window.supabase.createClient(
-      SG_CONFIG.SUPABASE_URL,
-      SG_CONFIG.SUPABASE_ANON_KEY
-    );
-  }
+  // Note: Supabase client is created by /js/supabase-init.js as window._sgSupabaseClient
+  // Do NOT create another client here to avoid session conflicts
 
   // Log initialization
   if (SG_CONFIG.DEBUG) {

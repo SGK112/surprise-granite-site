@@ -40,8 +40,12 @@
     return 'general';
   }
 
-  // Initialize
-  document.addEventListener('DOMContentLoaded', init);
+  // Initialize - handle case where DOMContentLoaded already fired
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   async function init() {
     // Initialize Supabase
@@ -578,10 +582,35 @@
 
       // Haptic feedback
       if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+
+      // Notify linked pro if customer came from referral
+      notifyLinkedPro('favorite_add', product, productType);
     }
 
     saveToLocalStorage();
     updateFavoritesBadge();
+  }
+
+  /**
+   * Notify linked pro when customer adds a favorite
+   * Integrates with the referral tracking system
+   */
+  function notifyLinkedPro(action, product, productType) {
+    // Check if SgReferral is available and customer has a linked pro
+    if (typeof window.SgReferral === 'undefined') return;
+
+    const linkedProId = window.SgReferral.getLinkedProId();
+    if (!linkedProId) return;
+
+    // Track the activity
+    window.SgReferral.trackActivity('favorite_add', {
+      product_title: product.title,
+      product_type: productType,
+      product_url: product.url,
+      product_image: product.image
+    });
+
+    console.log('[Favorites] Notified linked pro of new favorite:', product.title);
   }
 
   function showHeartAnimation(container) {

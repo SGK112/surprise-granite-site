@@ -235,6 +235,9 @@ const { authenticateJWT, requireRole, requirePermission, requireDistributor, log
 // Blueprint Takeoff Analyzer with GPT-4 Vision and Ollama support
 const { analyzeBlueprint, parseBluebeamBAX, CONFIG: TAKEOFF_CONFIG } = require('./lib/takeoff/blueprint-analyzer');
 
+// Pro-Customer System Routes
+const proCustomersRouter = require('./routes/pro-customers');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -2972,6 +2975,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
+// ============ PRO-CUSTOMER SYSTEM ROUTES ============
+app.use('/api/pro', proCustomersRouter);
+
 // ============ ARIA VOICE LEAD CAPTURE ============
 app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
   try {
@@ -4813,6 +4819,115 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
 
   } catch (error) {
     console.error('Visualize error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// ============ AI VIDEO GENERATION ============
+
+// Generate AI video using Replicate (Luma, MiniMax, etc.)
+// Used for hero videos, marketing content, etc.
+app.post('/api/generate-video', aiRateLimiter('ai_video'), async (req, res) => {
+  try {
+    const {
+      prompt,
+      model = 'luma/ray', // luma/ray, minimax/video-01, tencent/hunyuan-video
+      aspectRatio = '16:9',
+      loop = true
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+
+    if (!REPLICATE_API_TOKEN) {
+      return res.status(500).json({ error: 'Replicate API not configured' });
+    }
+
+    // Build model inputs based on model type
+    const modelInputs = { prompt };
+
+    if (model === 'luma/ray') {
+      modelInputs.aspect_ratio = aspectRatio;
+      modelInputs.loop = loop;
+    } else if (model === 'minimax/video-01') {
+      modelInputs.prompt_optimizer = true;
+    }
+
+    console.log(`[Video] Starting generation with ${model}`);
+    console.log(`[Video] Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Create prediction
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        input: modelInputs
+      })
+    });
+
+    const prediction = await response.json();
+
+    if (prediction.error) {
+      console.error('[Video] Replicate error:', prediction.error);
+      return res.status(500).json({ error: prediction.error });
+    }
+
+    // Return prediction ID for polling (video gen takes 2-5 minutes)
+    res.json({
+      success: true,
+      predictionId: prediction.id,
+      status: prediction.status,
+      model: model,
+      message: 'Video generation started. Poll /api/generate-video/status/:id for updates.'
+    });
+
+  } catch (error) {
+    console.error('[Video] Generation error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Poll video generation status
+app.get('/api/generate-video/status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+
+    if (!REPLICATE_API_TOKEN) {
+      return res.status(500).json({ error: 'Replicate API not configured' });
+    }
+
+    const response = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${REPLICATE_API_TOKEN}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (result.error) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      status: result.status,
+      output: result.status === 'succeeded'
+        ? (Array.isArray(result.output) ? result.output[0] : result.output)
+        : null,
+      logs: result.logs,
+      metrics: result.metrics
+    });
+
+  } catch (error) {
+    console.error('[Video] Status check error:', error);
     return handleApiError(res, error);
   }
 });

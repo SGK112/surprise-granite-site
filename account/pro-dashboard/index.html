@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pro Dashboard | Surprise Granite</title>
+  <link rel="icon" type="image/png" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --bg-hover: #22222e;
+      --gold: #d4a855;
+      --gold-light: #e8c878;
+      --gold-dark: #b8943d;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666;
+      --border: #2a2a3a;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      height: 36px;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .notification-btn {
+      position: relative;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .notification-btn:hover {
+      background: var(--bg-hover);
+      color: var(--gold);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 5px;
+      border-radius: 10px;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .user-menu:hover {
+      background: var(--bg-hover);
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .user-info {
+      text-align: right;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .user-role {
+      font-size: 12px;
+      color: var(--gold);
+    }
+
+    /* Main Layout */
+    .main-layout {
+      display: flex;
+      min-height: calc(100vh - 69px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 69px;
+      height: calc(100vh - 69px);
+      overflow-y: auto;
+    }
+
+    .nav-section {
+      margin-bottom: 24px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 0 20px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(212, 168, 85, 0.1);
+      color: var(--gold);
+      border-right: 3px solid var(--gold);
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    .stat-change {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .stat-change.positive {
+      color: var(--success);
+    }
+
+    .stat-change.negative {
+      color: var(--error);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-light);
+    }
+
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--gold);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table th {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+    }
+
+    .table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    /* Customer Row */
+    .customer-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .customer-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .customer-name {
+      font-weight: 500;
+    }
+
+    .customer-email {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Status Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .badge-info {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--info);
+    }
+
+    /* Referral Code Card */
+    .referral-code-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-secondary);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .referral-code {
+      font-family: monospace;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 2px;
+    }
+
+    .referral-url {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+      word-break: break-all;
+    }
+
+    /* Input */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    /* Notification Panel */
+    .notification-panel {
+      position: fixed;
+      top: 69px;
+      right: 0;
+      width: 380px;
+      height: calc(100vh - 69px);
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notification-panel.open {
+      transform: translateX(0);
+    }
+
+    .notification-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .notification-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .notification-item {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: var(--bg-card);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .notification-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .notification-item.unread {
+      border-left: 3px solid var(--gold);
+    }
+
+    .notification-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .notification-message {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .notification-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Wishlist Items */
+    .wishlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .wishlist-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .wishlist-item-image {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      background: var(--bg-hover);
+    }
+
+    .wishlist-item-info {
+      padding: 12px;
+    }
+
+    .wishlist-item-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .wishlist-item-type {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Loading States */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 400;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      border-color: var(--success);
+    }
+
+    .toast.error {
+      border-color: var(--error);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        padding: 16px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .notification-panel {
+        width: 100%;
+      }
+    }
+
+    /* Super Admin Badge */
+    .super-admin-badge {
+      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
+      color: #000;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      animation: rainbow 3s linear infinite;
+    }
+
+    @keyframes rainbow {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    /* Tab Navigation */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <a href="/">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite" class="logo">
+      </a>
+      <span class="header-title">Pro Dashboard</span>
+    </div>
+    <div class="header-right">
+      <button class="notification-btn" onclick="toggleNotifications()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+      </button>
+      <div class="user-menu" id="userMenu">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Loading...</div>
+          <div class="user-role" id="userRole">Pro</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <a class="nav-item active" data-tab="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="9" rx="1"/>
+            <rect x="14" y="3" width="7" height="5" rx="1"/>
+            <rect x="14" y="12" width="7" height="9" rx="1"/>
+            <rect x="3" y="16" width="7" height="5" rx="1"/>
+          </svg>
+          Dashboard
+        </a>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Customers</div>
+        <a class="nav-item" data-tab="customers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          My Customers
+        </a>
+        <a class="nav-item" data-tab="wishlists">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          Wishlists
+        </a>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Marketing</div>
+        <a class="nav-item" data-tab="referrals">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          Referral Links
+        </a>
+      </nav>
+
+      <nav class="nav-section" id="adminSection" style="display: none;">
+        <div class="nav-section-title">Admin</div>
+        <a class="nav-item" data-tab="all-users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          All Users
+        </a>
+        <a class="nav-item" data-tab="activity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Activity Log
+        </a>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Settings</div>
+        <a class="nav-item" data-tab="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Settings
+        </a>
+        <a class="nav-item" href="/account/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Back to Account
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Tab -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Welcome back!</h1>
+            <p class="page-subtitle">Here's what's happening with your customers</p>
+          </div>
+          <button class="btn btn-primary" onclick="openNewReferralModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Referral Link
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Customers</div>
+            <div class="stat-value" id="statCustomers">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active This Week</div>
+            <div class="stat-value" id="statActive">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Favorites</div>
+            <div class="stat-value" id="statFavorites">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending Estimates</div>
+            <div class="stat-value" id="statEstimates">-</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Customer Activity</h2>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('customers')">View All</button>
+          </div>
+          <div class="card-body" id="recentActivity">
+            <div class="loading">
+              <div class="spinner"></div>
+              Loading...
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Your Referral Link</h2>
+          </div>
+          <div class="card-body">
+            <div class="referral-code-box" id="mainReferralBox">
+              <div>
+                <div class="referral-code" id="mainReferralCode">---</div>
+                <div class="referral-url" id="mainReferralUrl">Loading...</div>
+              </div>
+              <button class="btn btn-primary" onclick="copyReferralLink()">Copy Link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customers Tab -->
+      <div class="tab-content" id="tab-customers">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My Customers</h1>
+            <p class="page-subtitle">Customers who connected through your referral links</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <table class="table" id="customersTable">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Favorites</th>
+                  <th>Status</th>
+                  <th>Last Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customersTableBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="loading">
+                      <div class="spinner"></div>
+                      Loading customers...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wishlists Tab -->
+      <div class="tab-content" id="tab-wishlists">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Customer Wishlists</h1>
+            <p class="page-subtitle">View and convert wishlists to estimates</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" id="wishlistsContent">
+            <div class="loading">
+              <div class="spinner"></div>
+              Loading wishlists...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Referrals Tab -->
+      <div class="tab-content" id="tab-referrals">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Referral Links</h1>
+            <p class="page-subtitle">Create and manage your referral campaigns</p>
+          </div>
+          <button class="btn btn-primary" onclick="openNewReferralModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Referral Link
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <table class="table" id="referralsTable">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Uses</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="referralsTableBody">
+                <tr>
+                  <td colspan="6">
+                    <div class="loading">
+                      <div class="spinner"></div>
+                      Loading referral codes...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- All Users Tab (Admin Only) -->
+      <div class="tab-content" id="tab-all-users">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">All Users</h1>
+            <p class="page-subtitle">Platform-wide user management (Super Admin)</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <input type="text" class="form-input" id="userSearchInput" placeholder="Search users..." style="max-width: 300px;">
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="table" id="allUsersTable">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Subscription</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="allUsersTableBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="loading">
+                      <div class="spinner"></div>
+                      Loading users...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Tab (Admin Only) -->
+      <div class="tab-content" id="tab-activity">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Activity Log</h1>
+            <p class="page-subtitle">Platform-wide activity tracking (Super Admin)</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" id="activityLogContent">
+            <div class="loading">
+              <div class="spinner"></div>
+              Loading activity...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div class="tab-content" id="tab-settings">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Notification Settings</h1>
+            <p class="page-subtitle">Configure how you receive notifications</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body" id="settingsContent">
+            <div class="loading">
+              <div class="spinner"></div>
+              Loading settings...
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Notification Panel -->
+  <div class="notification-panel" id="notificationPanel">
+    <div class="notification-panel-header">
+      <h3>Notifications</h3>
+      <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark all read</button>
+    </div>
+    <div class="notification-list" id="notificationList">
+      <!-- Notifications loaded here -->
+    </div>
+  </div>
+
+  <!-- New Referral Modal -->
+  <div class="modal-overlay" id="newReferralModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Referral Link</h3>
+        <button class="modal-close" onclick="closeModal('newReferralModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Campaign Name</label>
+          <input type="text" class="form-input" id="referralName" placeholder="e.g., Kitchen Remodel Campaign">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custom Code (optional)</label>
+          <input type="text" class="form-input" id="referralCustomCode" placeholder="Leave blank for auto-generated">
+          <small style="color: var(--text-muted); font-size: 12px;">Letters and numbers only, will be uppercase</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Uses (optional)</label>
+          <input type="number" class="form-input" id="referralMaxUses" placeholder="Leave blank for unlimited">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('newReferralModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="createReferralCode()">Create Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Detail Modal -->
+  <div class="modal-overlay" id="customerDetailModal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="customerDetailName">Customer Details</h3>
+        <button class="modal-close" onclick="closeModal('customerDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="customerDetailContent">
+        <!-- Customer details loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('customerDetailModal')">Close</button>
+        <button class="btn btn-primary" id="createEstimateBtn">Create Estimate from Wishlist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    let supabase;
+    let currentUser = null;
+    let currentProfile = null;
+    let authToken = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      await checkAuth();
+      setupNavigation();
+    });
+
+    // Check authentication
+    async function checkAuth() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = '/account/?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+
+      currentUser = session.user;
+      authToken = session.access_token;
+
+      // Get profile
+      const { data: profile } = await supabase
+        .from('sg_users')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      currentProfile = profile || {};
+
+      // Update UI
+      updateUserUI();
+
+      // Check if pro user or admin
+      const isPro = ['pro', 'admin', 'super_admin'].includes(currentProfile.role) ||
+                    ['pro', 'enterprise'].includes(currentProfile.pro_subscription_tier);
+
+      if (!isPro) {
+        showToast('Pro subscription required to access this dashboard', 'error');
+        setTimeout(() => {
+          window.location.href = '/account/';
+        }, 2000);
+        return;
+      }
+
+      // Show admin section if super admin
+      if (currentProfile.role === 'super_admin') {
+        document.getElementById('adminSection').style.display = 'block';
+      }
+
+      // Load dashboard data
+      loadDashboard();
+      loadNotifications();
+    }
+
+    // Update user UI
+    function updateUserUI() {
+      const name = currentProfile.full_name || currentUser.email.split('@')[0];
+      document.getElementById('userName').textContent = name;
+      document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+
+      let roleText = 'Pro';
+      if (currentProfile.role === 'super_admin') {
+        roleText = '<span class="super-admin-badge">GOD MODE</span>';
+      } else if (currentProfile.pro_subscription_tier === 'enterprise') {
+        roleText = 'Enterprise';
+      }
+      document.getElementById('userRole').innerHTML = roleText;
+    }
+
+    // Setup navigation
+    function setupNavigation() {
+      document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          switchTab(item.dataset.tab);
+        });
+      });
+    }
+
+    // Switch tab
+    function switchTab(tabId) {
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === tabId);
+      });
+
+      // Update content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `tab-${tabId}`);
+      });
+
+      // Load tab-specific data
+      switch (tabId) {
+        case 'customers':
+          loadCustomers();
+          break;
+        case 'wishlists':
+          loadWishlists();
+          break;
+        case 'referrals':
+          loadReferralCodes();
+          break;
+        case 'all-users':
+          loadAllUsers();
+          break;
+        case 'activity':
+          loadActivityLog();
+          break;
+        case 'settings':
+          loadSettings();
+          break;
+      }
+    }
+
+    // API Helper
+    async function apiCall(endpoint, options = {}) {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          ...options.headers
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(error.error || 'Request failed');
+      }
+
+      return response.json();
+    }
+
+    // Load Dashboard
+    async function loadDashboard() {
+      try {
+        // Load stats
+        const [customersRes, referralsRes] = await Promise.all([
+          apiCall('/api/pro/customers?limit=5'),
+          apiCall('/api/pro/referral-codes')
+        ]);
+
+        // Update stats
+        document.getElementById('statCustomers').textContent = customersRes.customers?.length || 0;
+
+        // Count active this week
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const activeCount = (customersRes.customers || []).filter(c =>
+          new Date(c.last_activity_at) > weekAgo
+        ).length;
+        document.getElementById('statActive').textContent = activeCount;
+
+        // Count total favorites
+        const totalFavorites = (customersRes.customers || []).reduce((sum, c) =>
+          sum + (c.favorites_count || 0), 0
+        );
+        document.getElementById('statFavorites').textContent = totalFavorites;
+
+        // Estimates placeholder
+        document.getElementById('statEstimates').textContent = '0';
+
+        // Display main referral code
+        if (referralsRes.codes?.length > 0) {
+          const mainCode = referralsRes.codes[0];
+          document.getElementById('mainReferralCode').textContent = mainCode.code;
+          document.getElementById('mainReferralUrl').textContent =
+            `${window.location.origin}/?ref=${mainCode.code}`;
+        }
+
+        // Display recent activity
+        displayRecentActivity(customersRes.customers || []);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      }
+    }
+
+    // Display recent activity
+    function displayRecentActivity(customers) {
+      const container = document.getElementById('recentActivity');
+
+      if (customers.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            <h3>No customers yet</h3>
+            <p>Share your referral link to start connecting with customers</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = customers.map(c => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+          <div class="customer-info">
+            <div class="customer-avatar">${(c.customer_name || c.customer_email || '?').charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="customer-name">${c.customer_name || 'Unknown'}</div>
+              <div class="customer-email">${c.customer_email || ''}</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div><span class="badge badge-info">${c.favorites_count || 0} favorites</span></div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              ${formatRelativeTime(c.last_activity_at)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Load Customers
+    async function loadCustomers() {
+      try {
+        const res = await apiCall('/api/pro/customers');
+        displayCustomersTable(res.customers || []);
+      } catch (err) {
+        console.error('Load customers error:', err);
+        document.getElementById('customersTableBody').innerHTML = `
+          <tr><td colspan="5" style="color: var(--error);">Failed to load customers</td></tr>
+        `;
+      }
+    }
+
+    // Display customers table
+    function displayCustomersTable(customers) {
+      const tbody = document.getElementById('customersTableBody');
+
+      if (customers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <h3>No customers yet</h3>
+                <p>Share your referral link to start connecting with customers</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td>
+            <div class="customer-info">
+              <div class="customer-avatar">${(c.customer_name || c.customer_email || '?').charAt(0).toUpperCase()}</div>
+              <div>
+                <div class="customer-name">${c.customer_name || 'Unknown'}</div>
+                <div class="customer-email">${c.customer_email || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-info">${c.favorites_count || 0}</span></td>
+          <td><span class="badge badge-${c.status === 'active' ? 'success' : 'warning'}">${c.status}</span></td>
+          <td>${formatRelativeTime(c.last_activity_at)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="viewCustomer('${c.customer_user_id}')">View</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // View customer details
+    async function viewCustomer(customerId) {
+      try {
+        const res = await apiCall(`/api/pro/customers/${customerId}/favorites`);
+        const favorites = res.favorites || [];
+
+        document.getElementById('customerDetailName').textContent = 'Customer Wishlist';
+        document.getElementById('customerDetailContent').innerHTML = `
+          <div class="wishlist-grid">
+            ${favorites.length === 0 ? '<p style="color: var(--text-secondary);">No favorites yet</p>' :
+              favorites.map(f => `
+                <div class="wishlist-item">
+                  <img src="${f.product_image || 'https://via.placeholder.com/200x140?text=No+Image'}" class="wishlist-item-image" alt="${f.product_title}">
+                  <div class="wishlist-item-info">
+                    <div class="wishlist-item-title">${f.product_title}</div>
+                    <div class="wishlist-item-type">${f.product_type}</div>
+                  </div>
+                </div>
+              `).join('')
+            }
+          </div>
+        `;
+
+        document.getElementById('createEstimateBtn').onclick = () => {
+          // TODO: Create estimate from favorites
+          showToast('Estimate creation coming soon!', 'info');
+        };
+
+        openModal('customerDetailModal');
+      } catch (err) {
+        console.error('View customer error:', err);
+        showToast('Failed to load customer details', 'error');
+      }
+    }
+
+    // Load Wishlists
+    async function loadWishlists() {
+      const content = document.getElementById('wishlistsContent');
+      content.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <h3>Customer Wishlists</h3>
+          <p>When customers share their wishlists with you, they'll appear here</p>
+        </div>
+      `;
+    }
+
+    // Load Referral Codes
+    async function loadReferralCodes() {
+      try {
+        const res = await apiCall('/api/pro/referral-codes');
+        displayReferralCodes(res.codes || []);
+      } catch (err) {
+        console.error('Load referral codes error:', err);
+      }
+    }
+
+    // Display referral codes
+    function displayReferralCodes(codes) {
+      const tbody = document.getElementById('referralsTableBody');
+
+      if (codes.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <h3>No referral codes yet</h3>
+                <p>Create your first referral link to start connecting with customers</p>
+                <button class="btn btn-primary" onclick="openNewReferralModal()" style="margin-top: 16px;">Create Referral Link</button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = codes.map(c => `
+        <tr>
+          <td><code style="background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px; color: var(--gold);">${c.code}</code></td>
+          <td>${c.name || '-'}</td>
+          <td>${c.usage_count}${c.max_uses ? ' / ' + c.max_uses : ''}</td>
+          <td><span class="badge badge-${c.is_active ? 'success' : 'warning'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+          <td>${formatDate(c.created_at)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="copyCode('${c.code}')">Copy</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Create referral code
+    async function createReferralCode() {
+      const name = document.getElementById('referralName').value;
+      const customCode = document.getElementById('referralCustomCode').value;
+      const maxUses = document.getElementById('referralMaxUses').value;
+
+      try {
+        const res = await apiCall('/api/pro/referral-codes', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            customCode: customCode || undefined,
+            maxUses: maxUses ? parseInt(maxUses) : undefined
+          })
+        });
+
+        showToast('Referral code created!', 'success');
+        closeModal('newReferralModal');
+        loadReferralCodes();
+        loadDashboard();
+
+        // Clear form
+        document.getElementById('referralName').value = '';
+        document.getElementById('referralCustomCode').value = '';
+        document.getElementById('referralMaxUses').value = '';
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Copy referral link
+    function copyReferralLink() {
+      const code = document.getElementById('mainReferralCode').textContent;
+      const url = `${window.location.origin}/?ref=${code}`;
+      navigator.clipboard.writeText(url);
+      showToast('Referral link copied!', 'success');
+    }
+
+    // Copy code
+    function copyCode(code) {
+      const url = `${window.location.origin}/?ref=${code}`;
+      navigator.clipboard.writeText(url);
+      showToast('Link copied!', 'success');
+    }
+
+    // Load Notifications
+    async function loadNotifications() {
+      try {
+        const res = await apiCall('/api/pro/notifications?limit=20');
+        displayNotifications(res.notifications || []);
+
+        // Update badge
+        const badge = document.getElementById('notificationBadge');
+        if (res.unreadCount > 0) {
+          badge.textContent = res.unreadCount;
+          badge.style.display = 'block';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Load notifications error:', err);
+      }
+    }
+
+    // Display notifications
+    function displayNotifications(notifications) {
+      const container = document.getElementById('notificationList');
+
+      if (notifications.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="padding: 40px 20px;">
+            <p>No notifications yet</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = notifications.map(n => `
+        <div class="notification-item ${n.is_read ? '' : 'unread'}" onclick="markNotificationRead('${n.id}')">
+          <div class="notification-title">${n.title}</div>
+          <div class="notification-message">${n.message}</div>
+          <div class="notification-time">${formatRelativeTime(n.created_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    // Toggle notifications panel
+    function toggleNotifications() {
+      document.getElementById('notificationPanel').classList.toggle('open');
+    }
+
+    // Mark notification read
+    async function markNotificationRead(id) {
+      try {
+        await apiCall(`/api/pro/notifications/${id}/read`, { method: 'POST' });
+        loadNotifications();
+      } catch (err) {
+        console.error('Mark read error:', err);
+      }
+    }
+
+    // Mark all notifications read
+    async function markAllRead() {
+      try {
+        await apiCall('/api/pro/notifications/read-all', { method: 'POST' });
+        loadNotifications();
+        showToast('All notifications marked as read', 'success');
+      } catch (err) {
+        showToast('Failed to mark notifications', 'error');
+      }
+    }
+
+    // Load All Users (Admin)
+    async function loadAllUsers() {
+      if (currentProfile.role !== 'super_admin') {
+        document.getElementById('allUsersTableBody').innerHTML = `
+          <tr><td colspan="5" style="color: var(--error);">Access denied</td></tr>
+        `;
+        return;
+      }
+
+      try {
+        const res = await apiCall('/api/pro/admin/all-users');
+        displayAllUsers(res.users || []);
+      } catch (err) {
+        console.error('Load all users error:', err);
+      }
+    }
+
+    // Display all users
+    function displayAllUsers(users) {
+      const tbody = document.getElementById('allUsersTableBody');
+
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>
+            <div class="customer-info">
+              <div class="customer-avatar" style="background: ${u.role === 'super_admin' ? 'linear-gradient(135deg, #ff6b6b, #feca57)' : 'var(--gold)'}">
+                ${(u.full_name || u.email || '?').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div class="customer-name">${u.full_name || 'No name'}</div>
+                <div class="customer-email">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            ${u.role === 'super_admin' ? '<span class="super-admin-badge">GOD</span>' :
+              `<span class="badge badge-${u.role === 'pro' ? 'success' : 'info'}">${u.role || 'user'}</span>`}
+          </td>
+          <td><span class="badge badge-info">${u.pro_subscription_tier || 'free'}</span></td>
+          <td>${formatDate(u.created_at)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="viewUserAdmin('${u.id}')">View</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // View user (admin)
+    async function viewUserAdmin(userId) {
+      try {
+        const res = await apiCall(`/api/pro/admin/user/${userId}`);
+        // TODO: Show user detail modal
+        console.log('User details:', res);
+        showToast(`User has ${res.favorites?.length || 0} favorites`, 'info');
+      } catch (err) {
+        showToast('Failed to load user', 'error');
+      }
+    }
+
+    // Load Activity Log (Admin)
+    async function loadActivityLog() {
+      if (currentProfile.role !== 'super_admin') {
+        document.getElementById('activityLogContent').innerHTML = `
+          <div style="color: var(--error);">Access denied</div>
+        `;
+        return;
+      }
+
+      try {
+        const res = await apiCall('/api/pro/admin/all-activity?limit=50');
+        const activity = res.activity || [];
+
+        if (activity.length === 0) {
+          document.getElementById('activityLogContent').innerHTML = `
+            <div class="empty-state">
+              <p>No activity logged yet</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('activityLogContent').innerHTML = activity.map(a => `
+          <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">
+            <div>
+              <span class="badge badge-info">${a.activity_type}</span>
+              <span style="margin-left: 8px;">${a.customer?.full_name || a.customer?.email || 'Unknown'}</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 12px;">${formatRelativeTime(a.created_at)}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Load activity error:', err);
+      }
+    }
+
+    // Load Settings
+    async function loadSettings() {
+      try {
+        const res = await apiCall('/api/pro/notification-preferences');
+        const prefs = res.preferences || {};
+
+        document.getElementById('settingsContent').innerHTML = `
+          <div class="form-group">
+            <label class="form-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" ${prefs.email_new_customer !== false ? 'checked' : ''} onchange="updatePref('email_new_customer', this.checked)">
+              Email me when a new customer connects
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" ${prefs.email_favorite_added !== false ? 'checked' : ''} onchange="updatePref('email_favorite_added', this.checked)">
+              Email me when a customer adds a favorite
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" ${prefs.email_wishlist_shared !== false ? 'checked' : ''} onchange="updatePref('email_wishlist_shared', this.checked)">
+              Email me when a customer shares their wishlist
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" ${prefs.email_weekly_summary !== false ? 'checked' : ''} onchange="updatePref('email_weekly_summary', this.checked)">
+              Send me a weekly activity summary
+            </label>
+          </div>
+          <div class="form-group" style="margin-top: 24px;">
+            <label class="form-label">Email Frequency</label>
+            <select class="form-input" onchange="updatePref('email_digest_frequency', this.value)">
+              <option value="instant" ${prefs.email_digest_frequency === 'instant' ? 'selected' : ''}>Instant</option>
+              <option value="hourly" ${prefs.email_digest_frequency === 'hourly' ? 'selected' : ''}>Hourly digest</option>
+              <option value="daily" ${prefs.email_digest_frequency === 'daily' ? 'selected' : ''}>Daily digest</option>
+            </select>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Load settings error:', err);
+      }
+    }
+
+    // Update preference
+    async function updatePref(key, value) {
+      try {
+        await apiCall('/api/pro/notification-preferences', {
+          method: 'PUT',
+          body: JSON.stringify({ [key]: value })
+        });
+        showToast('Settings saved', 'success');
+      } catch (err) {
+        showToast('Failed to save', 'error');
+      }
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function openNewReferralModal() {
+      openModal('newReferralModal');
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;margin-left:12px;">&times;</button>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Format helpers
+    function formatRelativeTime(dateStr) {
+      if (!dateStr) return 'Never';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return formatDate(dateStr);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    // Close panels when clicking outside
+    document.addEventListener('click', (e) => {
+      const notificationPanel = document.getElementById('notificationPanel');
+      const notificationBtn = document.querySelector('.notification-btn');
+
+      if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
+        notificationPanel.classList.remove('open');
+      }
+    });
+
+    // Search users (admin)
+    document.getElementById('userSearchInput')?.addEventListener('input', debounce(async (e) => {
+      const search = e.target.value;
+      if (currentProfile.role !== 'super_admin') return;
+
+      try {
+        const res = await apiCall(`/api/pro/admin/all-users?search=${encodeURIComponent(search)}`);
+        displayAllUsers(res.users || []);
+      } catch (err) {
+        console.error('Search error:', err);
+      }
+    }, 300));
+
+    function debounce(fn, ms) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn.apply(this, args), ms);
+      };
+    }
+
+  </script>
+
+  <!-- Remodely Tools Hub -->
+  <script defer src="/js/remodely-hub.js?v=20260118"></script>
+
+  <!-- Pro-Customer Referral Tracking -->
+  <script src="/js/referral-tracking.js?v=20260118"></script>
+</body>
+</html>

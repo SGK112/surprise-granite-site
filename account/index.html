@@ -8,9 +8,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="/js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
-<script src="/js/config.js"></script>
-<script src="/js/supabase-init.js"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
+  <script src="/js/auth-state.js"></script>
   <style>
     :root {
       --gold-primary: #f9cb00;
@@ -7503,8 +7505,8 @@
 
       // Update role display
       const roleEl = document.getElementById('user-role');
-      const roleLabels = { customer: 'Customer', contractor: 'Contractor', vendor: 'Vendor', admin: 'Admin' };
-      if (roleEl) roleEl.textContent = roleLabels[newRole] || 'Member';
+      const roleLabels = { homeowner: 'Homeowner', customer: 'Customer', contractor: 'Contractor', vendor: 'Vendor', pro: 'Pro', fabricator: 'Fabricator', admin: 'Admin' };
+      if (roleEl) roleEl.textContent = roleLabels[newRole] || 'Customer';
 
       // Show notification
       showToast(`Switched to ${roleLabels[newRole]} view`);
@@ -7665,14 +7667,6 @@
     });
 
     function showAuth() {
-      // For localhost testing, show dashboard in demo mode
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocalhost) {
-        console.log('Demo mode: Showing dashboard without auth');
-        currentUser = { id: 'demo-user', email: 'demo@example.com' };
-        showDashboard();
-        return;
-      }
       // Check for incoming redirect parameter (e.g., from tools page auth check)
       const params = new URLSearchParams(window.location.search);
       const incomingRedirect = params.get('redirect');
@@ -7969,15 +7963,18 @@
         const roleEl = document.getElementById('user-role');
 
         const roleLabels = {
+          homeowner: 'Homeowner',
           customer: 'Customer',
           contractor: 'Contractor',
           vendor: 'Vendor',
+          pro: 'Pro',
+          fabricator: 'Fabricator',
           admin: 'Admin'
         };
 
         if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
         if (nameEl) nameEl.textContent = name;
-        if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : roleLabels[userRole] || 'Member';
+        if (roleEl) roleEl.textContent = isSuperAdmin ? 'Super Admin' : roleLabels[userRole] || roleLabels[accountType] || 'Customer';
 
         // Update account type label in sidebar header
         const accountTypeLabel = document.getElementById('account-type-label');
@@ -16556,7 +16553,6 @@
       document.getElementById('catalog-picker-modal')?.remove();
     }
   </script>
-<script src="/js/sg-auth.js"></script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js"></script>
 
@@ -16572,7 +16568,10 @@
   });
 </script>
 
-<!-- Powered by Remodely Badge -->
-<script defer src="/js/remodely-badge.js?v=20260118"></script>
+<!-- Remodely Tools Hub -->
+<script defer src="/js/remodely-hub.js?v=20260118"></script>
+
+<!-- Pro-Customer Referral Tracking -->
+<script src="/js/referral-tracking.js?v=20260118"></script>
 </body>
 </html>

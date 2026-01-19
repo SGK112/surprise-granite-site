@@ -45,12 +45,22 @@
 
         // Get current session with error handling for AbortError
         try {
+          console.log('SG Auth: Checking for existing session...');
           const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+          console.log('SG Auth: Session check result:', {
+            hasSession: !!session,
+            error: error?.message,
+            userEmail: session?.user?.email,
+            provider: session?.user?.app_metadata?.provider
+          });
 
           if (session && !error) {
             currentUser = session.user;
             await loadUserProfile();
-            console.log('SG Auth: User logged in', currentUser.email);
+            console.log('SG Auth: User logged in', currentUser.email, 'account_type:', userProfile?.account_type);
+          } else {
+            console.log('SG Auth: No active session found');
           }
         } catch (sessionErr) {
           // AbortError happens when page is refreshing or network issues
@@ -141,15 +151,22 @@
 
       if (!error && data) {
         userProfile = data;
+        console.log('SG Auth: Profile loaded, account_type:', userProfile.account_type);
       } else {
         // Create profile if doesn't exist
+        // Check user_metadata for account_type (may be set via OAuth or signup)
+        const metadataAccountType = currentUser.user_metadata?.account_type;
+        const accountType = metadataAccountType || 'homeowner';
+
+        console.log('SG Auth: Creating new profile, account_type:', accountType);
+
         const { data: newProfile } = await supabaseClient
           .from('sg_users')
           .insert([{
             id: currentUser.id,
             email: currentUser.email,
             full_name: currentUser.user_metadata?.full_name || '',
-            account_type: 'homeowner'
+            account_type: accountType
           }])
           .select()
           .single();

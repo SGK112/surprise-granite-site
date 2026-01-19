@@ -67,8 +67,13 @@
   let allProducts = [];
   let activeCategory = 'all';
 
-  // Wait for DOM
-  document.addEventListener('DOMContentLoaded', init);
+  // Wait for DOM - handle case where DOMContentLoaded already fired
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    // DOM is already ready
+    init();
+  }
 
   // For shop: wait for dynamic products to load
   function waitForShopProducts(callback, maxWait = 10000) {

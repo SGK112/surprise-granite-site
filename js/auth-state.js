@@ -91,9 +91,6 @@
   }
 
   async function init() {
-    // Immediately show logged-out state while we check auth
-    updateAllAuthDisplays(null);
-
     try {
       // Use SgAuth's shared client if available (preferred - avoids multiple clients)
       if (window.SgAuth) {
@@ -101,9 +98,8 @@
         supabaseClient = window.SgAuth.getClient();
         currentUser = window.SgAuth.getUser();
 
-        if (currentUser) {
-          updateAllAuthDisplays(currentUser);
-        }
+        // Only update UI once after auth state is known
+        updateAllAuthDisplays(currentUser);
 
         // Listen for auth changes via SgAuth
         window.SgAuth.onAuthChange((event, data) => {
