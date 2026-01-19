@@ -11105,6 +11105,27 @@ app.get('/api/customer-portal/:token', async (req, res) => {
   }
 });
 
+// Diagnostic endpoint to check Stripe connection
+app.get('/api/stripe-status', async (req, res) => {
+  try {
+    const account = await stripe.accounts.retrieve();
+    const keyPrefix = process.env.STRIPE_SECRET_KEY?.substring(0, 20) || 'NOT SET';
+    res.json({
+      connected: true,
+      account_id: account.id,
+      business_name: account.business_profile?.name || account.settings?.dashboard?.display_name,
+      key_prefix: keyPrefix + '...',
+      livemode: account.charges_enabled
+    });
+  } catch (error) {
+    res.json({
+      connected: false,
+      error: error.message,
+      key_prefix: process.env.STRIPE_SECRET_KEY?.substring(0, 20) || 'NOT SET'
+    });
+  }
+});
+
 // Start server with WebSocket support
 server.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
