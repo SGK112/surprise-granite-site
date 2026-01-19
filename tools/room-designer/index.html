@@ -9038,19 +9038,31 @@
           });
         }
 
-        // ===== CABINETS =====
-        else if (type.includes('base-cabinet') || type.includes('sink-base') || type === 'dishwasher') {
+        // ===== CABINETS (All Types) =====
+        // Base cabinets (including sink-base, drawer-base, corner, lazy-susan)
+        else if (type.includes('base-cabinet') || type.includes('sink-base') ||
+                 type.includes('drawer-base') || type.includes('corner-cabinet') ||
+                 type.includes('lazy-susan') || type.includes('blind-corner') ||
+                 type === 'dishwasher') {
           const cabinetWidth = Math.round(widthInches);
+          const cabinetLabel = type.includes('sink') ? 'Sink Base' :
+                              type.includes('drawer') ? 'Drawer Base' :
+                              type.includes('corner') ? 'Corner Base' :
+                              type.includes('lazy') ? 'Lazy Susan' :
+                              type.includes('blind') ? 'Blind Corner' :
+                              type === 'dishwasher' ? 'Dishwasher' : 'Base';
           takeoffs.cabinets.base.push({
-            label: el.label || `Base ${cabinetWidth}"`,
+            label: el.label || `${cabinetLabel} ${cabinetWidth}"`,
             width: el.width,
             widthInches: cabinetWidth,
             sku: el.sku || `B${cabinetWidth}`,
-            count: 1
+            count: 1,
+            subtype: cabinetLabel
           });
           takeoffs.cabinets.totalCount++;
           takeoffs.cabinets.totalLF += el.width;
         }
+        // Wall cabinets
         else if (type.includes('wall-cabinet')) {
           const cabinetWidth = Math.round(widthInches);
           takeoffs.cabinets.wall.push({
@@ -9063,14 +9075,19 @@
           takeoffs.cabinets.totalCount++;
           takeoffs.cabinets.totalLF += el.width;
         }
-        else if (type.includes('tall-cabinet') || type.includes('pantry')) {
+        // Tall cabinets (including pantry, fridge cabinet)
+        else if (type.includes('tall-cabinet') || type.includes('pantry') ||
+                 type.includes('fridge-cabinet')) {
           const cabinetWidth = Math.round(widthInches);
+          const cabinetLabel = type.includes('pantry') ? 'Pantry' :
+                              type.includes('fridge') ? 'Fridge Cabinet' : 'Tall';
           takeoffs.cabinets.tall.push({
-            label: el.label || `Tall ${cabinetWidth}"`,
+            label: el.label || `${cabinetLabel} ${cabinetWidth}"`,
             width: el.width,
             widthInches: cabinetWidth,
             sku: el.sku || `T${cabinetWidth}`,
-            count: 1
+            count: 1,
+            subtype: cabinetLabel
           });
           takeoffs.cabinets.totalCount++;
         }
@@ -35798,16 +35815,33 @@
       calculateQuote();
     }
 
-    // ===== QUOTE (Enhanced with Margins & Linear Fill Calculation) =====
+    // ===== QUOTE (Enhanced with Full Element Support) =====
     function calculateQuote() {
       const items = {};
       let totalCost = 0;
       let totalRetail = 0;
 
       // Filler pricing (per linear foot)
-      const FILLER_PRICE_PER_LF = 25; // $25 per linear foot for filler strips
-      const MIN_FILLER_WIDTH = 0.125; // 1.5" minimum (anything smaller is ignored)
+      const FILLER_PRICE_PER_LF = 25;
+      const MIN_FILLER_WIDTH = 0.125; // 1.5" minimum
 
+      // All countertop types (sqft pricing)
+      const COUNTERTOP_TYPES = ['countertop', 'countertop-l', 'countertop-u', 'island'];
+      const SQFT_TYPES = [...COUNTERTOP_TYPES, 'backsplash', 'flooring', 'tile'];
+
+      // All cabinet types
+      const CABINET_TYPES = [
+        'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
+        'sink-base', 'drawer-base', 'lazy-susan', 'fridge-cabinet',
+        'pantry', 'blind-corner'
+      ];
+
+      // Helper to check if type is a cabinet
+      function isCabinetType(type) {
+        return CABINET_TYPES.some(ct => type.includes(ct) || type === ct);
+      }
+
+      // Process each element
       elements.forEach(el => {
         const priceInfo = getElementPrice(el);
         const margin = getElementMargin(el);
@@ -35818,41 +35852,54 @@
         let fillerCost = 0;
         let fillerWidth = 0;
         let boxCount = 1;
+        let sqft = 0;
 
-        // Calculate based on element type
-        if (['countertop', 'backsplash', 'flooring', 'tile'].includes(el.type)) {
-          // Square footage pricing
-          const sqft = el.width * el.height;
+        // Determine pricing method based on element type
+        const isCountertop = COUNTERTOP_TYPES.some(ct => el.type.includes(ct) || el.type === ct);
+        const isSqftType = SQFT_TYPES.some(st => el.type.includes(st) || el.type === st);
+        const isCabinet = isCabinetType(el.type);
+
+        if (isCountertop || isSqftType) {
+          // Square footage pricing for countertops and surfaces
+          sqft = el.width * el.height;
           baseCost = sqft * priceInfo.price;
           quantity = sqft;
           unit = 'sqft';
-        } else if (el.skuWidth && el.sku) {
-          // Cabinet from catalog with SKU - calculate linear fill
-          // If cabinet was resized beyond its original SKU width, calculate box count
-          const actualWidth = el.width;
-          const skuWidth = el.skuWidth;
 
-          if (actualWidth > skuWidth * 1.1) {
-            // Cabinet was stretched - calculate how many boxes needed
-            boxCount = Math.floor(actualWidth / skuWidth);
-            const remainder = actualWidth - (boxCount * skuWidth);
+          // Add edge pricing for countertops
+          if (isCountertop && el.edgeProfile && TAKEOFF_STANDARDS?.edgeProfiles) {
+            const edgePrice = TAKEOFF_STANDARDS.edgeProfiles[el.edgeProfile]?.pricePerLF || 0;
+            const hasBackWall = !el.overhangBack || el.overhangBack < 0.1;
+            const perimeter = (el.width + el.height) * 2;
+            const edgeLF = hasBackWall ? perimeter - el.width : perimeter;
+            baseCost += edgeLF * edgePrice;
+          }
+        } else if (isCabinet) {
+          // Cabinet pricing - check for SKU-based or standard
+          if (el.skuWidth && el.sku) {
+            const actualWidth = el.width;
+            const skuWidth = el.skuWidth;
 
-            // Check if remainder needs a filler
-            if (remainder >= MIN_FILLER_WIDTH) {
-              fillerWidth = remainder;
-              fillerCost = fillerWidth * FILLER_PRICE_PER_LF;
+            if (actualWidth > skuWidth * 1.1) {
+              boxCount = Math.ceil(actualWidth / skuWidth);
+              const remainder = actualWidth - ((boxCount - 1) * skuWidth);
+              if (remainder < skuWidth * 0.5 && remainder >= MIN_FILLER_WIDTH) {
+                boxCount--;
+                fillerWidth = remainder;
+                fillerCost = fillerWidth * FILLER_PRICE_PER_LF;
+              }
+              baseCost = priceInfo.price * boxCount;
+              quantity = boxCount;
+              unit = 'boxes';
+            } else {
+              baseCost = priceInfo.price;
+              quantity = 1;
+              unit = 'unit';
             }
-
-            // Price is per box * number of boxes
-            baseCost = priceInfo.price * boxCount;
-            quantity = boxCount;
-            unit = 'boxes';
-
-            // Store on element for display
             el.boxCount = boxCount;
             el.fillerWidth = fillerWidth;
           } else {
-            // Single box
+            // Standard cabinet pricing
             baseCost = priceInfo.price;
             quantity = 1;
             unit = 'unit';
@@ -35860,26 +35907,47 @@
             el.fillerWidth = 0;
           }
         } else {
-          // Standard unit pricing
+          // Standard unit pricing for appliances, fixtures, etc.
           baseCost = priceInfo.price;
           quantity = 1;
           unit = 'unit';
         }
 
-        const retailPrice = (baseCost + fillerCost) * (1 + margin / 100);
         const totalBaseCost = baseCost + fillerCost;
+        const retailPrice = totalBaseCost * (1 + margin / 100);
 
-        // Store calculated prices on element for display
+        // Store calculated prices on element
         el.costPrice = totalBaseCost;
         el.retailPrice = retailPrice;
 
-        // Group items by SKU for cabinets, or type/material for others
-        const materialName = getMaterialName(el.materialId);
-        const itemKey = el.sku ? `cab-${el.sku}-${el.series || 'default'}` :
-                        (el.materialId ? `${el.type}-${el.materialId}` : el.type);
-        const itemLabel = el.sku ?
-                          `${el.skuName || el.sku}${boxCount > 1 ? ` (×${boxCount})` : ''}` :
-                          (materialName ? `${el.label} (${materialName})` : el.label);
+        // Create unique key for each item
+        // Use element ID for individual tracking, but group by type+material for display
+        const materialName = getMaterialName(el.materialId) || el.materialName;
+        const widthInches = Math.round(el.width * 12);
+
+        let itemKey, itemLabel;
+
+        if (isCabinet) {
+          // Group cabinets by type and width for cleaner display
+          const cabinetType = el.type.replace('-cabinet', '').replace('sink-', 'Sink ').replace('drawer-', 'Drawer ');
+          itemKey = `cabinet-${el.type}-${widthInches}`;
+          itemLabel = el.label || `${cabinetType.charAt(0).toUpperCase() + cabinetType.slice(1)} ${widthInches}"`;
+          if (el.sku) {
+            itemKey = `cabinet-${el.sku}`;
+            itemLabel = el.skuName || el.sku;
+          }
+        } else if (isCountertop) {
+          // Group countertops by material
+          itemKey = `countertop-${el.materialId || 'unspecified'}`;
+          itemLabel = materialName ? `Countertop (${materialName})` : (el.label || 'Countertop');
+        } else if (isSqftType) {
+          itemKey = `${el.type}-${el.materialId || 'default'}`;
+          itemLabel = materialName ? `${el.label || el.type} (${materialName})` : (el.label || el.type);
+        } else {
+          // Individual items (appliances, fixtures)
+          itemKey = `${el.type}-${el.id}`;
+          itemLabel = el.label || el.type;
+        }
 
         if (!items[itemKey]) {
           items[itemKey] = {
@@ -35893,7 +35961,10 @@
             fillerTotal: 0,
             margin: margin,
             priceSource: priceInfo.source,
-            sku: el.sku || null
+            sku: el.sku || null,
+            type: el.type,
+            isCabinet: isCabinet,
+            isCountertop: isCountertop
           };
         }
 
@@ -35904,9 +35975,9 @@
         items[itemKey].fillerTotal += fillerWidth;
 
         if (unit === 'sqft') {
-          items[itemKey].sqft += quantity;
+          items[itemKey].sqft += sqft;
         }
-        if (el.sku) {
+        if (isCabinet) {
           items[itemKey].linearFt += el.width;
         }
 
@@ -35914,7 +35985,7 @@
         totalRetail += retailPrice;
       });
 
-      // Add filler items to the quote if any exist
+      // Add filler strips as separate line item if any exist
       const totalFiller = Object.values(items).reduce((sum, item) => sum + item.fillerTotal, 0);
       if (totalFiller > MIN_FILLER_WIDTH) {
         const fillerMargin = 30;
@@ -35931,7 +36002,10 @@
           fillerTotal: totalFiller,
           margin: fillerMargin,
           priceSource: 'standard',
-          sku: 'FILLER'
+          sku: 'FILLER',
+          type: 'filler',
+          isCabinet: false,
+          isCountertop: false
         };
         totalCost += fillerCost;
         totalRetail += fillerRetail;
@@ -35954,31 +36028,54 @@
           </div>
         `;
       } else {
-        quoteItems.innerHTML = Object.entries(items).map(([key, data]) => {
+        // Sort items: countertops first, then cabinets, then others
+        const sortedItems = Object.entries(items).sort(([, a], [, b]) => {
+          if (a.isCountertop && !b.isCountertop) return -1;
+          if (!a.isCountertop && b.isCountertop) return 1;
+          if (a.isCabinet && !b.isCabinet) return -1;
+          if (!a.isCabinet && b.isCabinet) return 1;
+          return 0;
+        });
+
+        quoteItems.innerHTML = sortedItems.map(([key, data]) => {
           const displayPrice = showCost && canViewCosts ? data.costTotal : data.retailTotal;
-          const sqftInfo = data.sqft > 0 ? ` - ${data.sqft.toFixed(1)} sqft` : '';
           const marginBadge = canViewCosts ? `<span class="margin-badge">${data.margin}%</span>` : '';
 
-          // Show box count for cabinets with SKU
-          let quantityInfo = `(${data.count})`;
-          if (data.sku && data.boxCount > 0) {
-            quantityInfo = data.boxCount > 1
-              ? `(${data.boxCount} boxes @ ${(data.linearFt * 12 / data.count).toFixed(0)}" linear)`
-              : `(${data.count})`;
+          // Build quantity/detail info based on item type
+          let quantityInfo = '';
+          let detailInfo = '';
+
+          if (data.isCountertop || data.sqft > 0) {
+            // Countertops: show sqft
+            quantityInfo = data.count > 1 ? `(${data.count} pcs)` : '';
+            detailInfo = `<span style="color: #888; font-size: 11px;"> - ${data.sqft.toFixed(1)} sqft</span>`;
+          } else if (data.isCabinet) {
+            // Cabinets: show count and linear feet
+            const linearInches = Math.round(data.linearFt * 12);
+            if (data.count > 1) {
+              quantityInfo = `(×${data.count})`;
+              detailInfo = `<span style="color: #888; font-size: 11px;"> - ${linearInches}" total</span>`;
+            } else {
+              quantityInfo = '';
+              detailInfo = linearInches > 0 ? `<span style="color: #888; font-size: 11px;"> - ${linearInches}"</span>` : '';
+            }
+          } else {
+            // Other items
+            quantityInfo = data.count > 1 ? `(×${data.count})` : '';
           }
 
           if (!canViewPrices) {
             return `
               <div class="quote-item">
-                <span class="quote-item-name">${data.label} ${quantityInfo}${sqftInfo}</span>
+                <span class="quote-item-name">${data.label} ${quantityInfo}${detailInfo}</span>
               </div>
             `;
           }
 
           return `
-            <div class="quote-item">
+            <div class="quote-item" style="${data.isCountertop ? 'background: rgba(249,203,0,0.05); border-left: 2px solid var(--gold-primary);' : ''}">
               <span class="quote-item-name">
-                ${data.label} ${quantityInfo}${sqftInfo}
+                ${data.label} ${quantityInfo}${detailInfo}
                 ${marginBadge}
               </span>
               <span class="quote-item-value">
