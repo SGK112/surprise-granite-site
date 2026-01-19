@@ -2065,22 +2065,18 @@ function getInvoiceTemplate(templateName, invoice, items, customerName) {
   return template(invoice, items, customerName);
 }
 
-// CORS Middleware - environment-based configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const corsOrigins = isProduction
-  ? [
-      'https://www.surprisegranite.com',
-      'https://surprisegranite.com',
-      'https://surprise-granite-site.onrender.com'
-    ]
-  : [
-      'https://www.surprisegranite.com',
-      'https://surprisegranite.com',
-      'https://surprise-granite-site.onrender.com',
-      'http://localhost:3000',
-      'http://localhost:8888',
-      'http://127.0.0.1:5500'
-    ];
+// CORS Middleware - allow all dev origins in both modes for flexibility
+const corsOrigins = [
+  'https://www.surprisegranite.com',
+  'https://surprisegranite.com',
+  'https://surprise-granite-site.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://localhost:8888',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:8080'
+];
 
 app.use(cors({
   origin: corsOrigins,
