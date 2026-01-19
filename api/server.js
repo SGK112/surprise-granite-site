@@ -116,6 +116,109 @@ setInterval(() => {
 }, 3600000);
 
 // ============================================
+// GENERAL RATE LIMITER FOR PUBLIC ENDPOINTS
+// ============================================
+const publicRateLimitStore = new Map();
+
+function publicRateLimiter(options = {}) {
+  const { maxRequests = 10, windowMs = 60000, message = 'Too many requests' } = options;
+
+  return (req, res, next) => {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const key = `${ip}:${req.path}`;
+    const now = Date.now();
+
+    let record = publicRateLimitStore.get(key) || { timestamps: [] };
+    record.timestamps = record.timestamps.filter(ts => ts > now - windowMs);
+
+    if (record.timestamps.length >= maxRequests) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        message: message,
+        retryAfter: Math.ceil((record.timestamps[0] + windowMs - now) / 1000)
+      });
+    }
+
+    record.timestamps.push(now);
+    publicRateLimitStore.set(key, record);
+    next();
+  };
+}
+
+// Middleware instances for different endpoints
+const leadRateLimiter = publicRateLimiter({ maxRequests: 5, windowMs: 60000, message: 'Too many lead submissions. Please wait a minute.' });
+const emailRateLimiter = publicRateLimiter({ maxRequests: 3, windowMs: 60000, message: 'Too many email requests. Please wait a minute.' });
+const customerRateLimiter = publicRateLimiter({ maxRequests: 10, windowMs: 60000, message: 'Too many requests. Please wait.' });
+
+// ============================================
+// SECURITY HELPERS
+// ============================================
+
+/**
+ * Escape HTML to prevent XSS in email templates
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const str = String(text);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Handle API errors without exposing internal details
+ */
+function handleApiError(res, error, context = 'Operation') {
+  console.error(`${context} error:`, error.message || error);
+
+  // Map known error types to user-friendly messages
+  if (error.type === 'StripeInvalidRequestError') {
+    return res.status(400).json({ error: 'Invalid payment request' });
+  }
+  if (error.code === 'PGRST301' || error.code === '23505') {
+    return res.status(409).json({ error: 'Resource already exists' });
+  }
+  if (error.code === '23503') {
+    return res.status(400).json({ error: 'Referenced resource not found' });
+  }
+  if (error.code === 'PGRST116') {
+    return res.status(404).json({ error: 'Resource not found' });
+  }
+
+  // Generic error - don't expose internal details
+  return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+}
+
+/**
+ * Validate email format
+ */
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
+
+/**
+ * Validate phone format (basic)
+ */
+function isValidPhone(phone) {
+  if (!phone || typeof phone !== 'string') return true; // phone is optional
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length >= 10 && cleaned.length <= 15;
+}
+
+/**
+ * Sanitize string input
+ */
+function sanitizeString(str, maxLength = 1000) {
+  if (!str) return '';
+  return String(str).trim().slice(0, maxLength);
+}
+
+// ============================================
 
 // Initialize Supabase client (service role for backend operations)
 const supabaseUrl = process.env.SUPABASE_URL || 'https://htjvyzmuqsrjpesdurni.supabase.co';
@@ -1959,18 +2062,27 @@ function getInvoiceTemplate(templateName, invoice, items, customerName) {
   return template(invoice, items, customerName);
 }
 
-// CORS Middleware
+// CORS Middleware - environment-based configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOrigins = isProduction
+  ? [
+      'https://www.surprisegranite.com',
+      'https://surprisegranite.com',
+      'https://surprise-granite-site.onrender.com'
+    ]
+  : [
+      'https://www.surprisegranite.com',
+      'https://surprisegranite.com',
+      'https://surprise-granite-site.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:8888',
+      'http://127.0.0.1:5500'
+    ];
+
 app.use(cors({
-  origin: [
-    'https://www.surprisegranite.com',
-    'https://surprisegranite.com',
-    'https://surprise-granite-site.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:8888',
-    'http://127.0.0.1:5500'
-  ],
+  origin: corsOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
 }));
 
 // ============ WEBHOOK HANDLER (MUST BE BEFORE express.json()) ============
@@ -1982,15 +2094,18 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
   let event;
 
   try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      // Dev mode without signature verification
-      event = JSON.parse(req.body.toString());
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET not configured - rejecting webhook');
+      return res.status(500).send('Webhook secret not configured');
     }
+    if (!sig) {
+      console.error('Missing stripe-signature header');
+      return res.status(400).send('Missing signature');
+    }
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error('Webhook signature verification failed');
+    return res.status(400).send('Webhook signature verification failed');
   }
 
   console.log('Webhook event received:', event.type);
@@ -2002,8 +2117,6 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Cart checkout completed successfully
         const session = event.data.object;
         console.log('Checkout session completed:', session.id);
-        console.log('Customer email:', session.customer_details?.email);
-        console.log('Amount total:', session.amount_total / 100);
 
         // Send order confirmation to customer
         if (session.customer_details?.email) {
@@ -2188,7 +2301,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 // Send thank you email to customer with next steps
                 const thankYouEmail = generateThankYouEmail(invoice, newJob);
                 await sendNotification(invoice.customer_email, thankYouEmail.subject, thankYouEmail.html);
-                console.log('Thank you email sent to customer:', invoice.customer_email);
+                console.log('Thank you email sent for invoice:', invoice.id);
               } else if (jobErr) {
                 console.error('Error creating job:', jobErr.message);
               }
@@ -2638,7 +2751,59 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'customer.subscription.created': {
         const subscription = event.data.object;
         const vendorId = subscription.metadata?.vendor_id;
-        if (vendorId) {
+        const userId = subscription.metadata?.user_id;
+        const source = subscription.metadata?.source;
+
+        // Handle Pro subscription (user upgrades)
+        if (userId && source === 'pro_subscription') {
+          const accountType = subscription.metadata?.account_type || subscription.metadata?.plan || 'pro';
+          console.log('Pro subscription created:', subscription.id, 'User:', userId, 'Plan:', accountType);
+
+          // Update user's account_type in database
+          if (supabase) {
+            const { error: updateError } = await supabase
+              .from('sg_users')
+              .update({
+                account_type: accountType,
+                subscription_id: subscription.id,
+                subscription_status: subscription.status,
+                subscription_updated_at: new Date().toISOString(),
+                stripe_customer_id: subscription.customer
+              })
+              .eq('id', userId);
+
+            if (updateError) {
+              console.error('Failed to update user account_type:', updateError);
+            } else {
+              console.log('Updated user', userId, 'to account_type:', accountType, 'customer:', subscription.customer);
+            }
+          }
+
+          // Notify admin of new Pro subscriber
+          const proEmail = {
+            subject: `New Pro Subscription - ${accountType.charAt(0).toUpperCase() + accountType.slice(1)} Plan`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #1a1a2e;">New Pro Subscription!</h2>
+  <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0; color: #2e7d32; font-weight: 600;">A user has upgraded to ${accountType}!</p>
+  </div>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <p><strong>User ID:</strong> ${userId}</p>
+    <p><strong>Plan:</strong> ${accountType}</p>
+    <p><strong>Subscription ID:</strong> ${subscription.id}</p>
+    <p><strong>Status:</strong> ${subscription.status}</p>
+  </div>
+  <p>View in your <a href="https://dashboard.stripe.com/subscriptions/${subscription.id}">Stripe Dashboard</a></p>
+</body>
+</html>`
+          };
+          await sendNotification(ADMIN_EMAIL, proEmail.subject, proEmail.html);
+        }
+        // Handle Vendor subscription
+        else if (vendorId) {
           console.log('Vendor subscription created:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of new vendor subscription
           const subEmail = {
@@ -2670,7 +2835,38 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
         const vendorId = subscription.metadata?.vendor_id;
-        if (vendorId) {
+        const userId = subscription.metadata?.user_id;
+        const source = subscription.metadata?.source;
+
+        // Handle Pro subscription updates (payment issues, plan changes, etc.)
+        if (userId && source === 'pro_subscription') {
+          console.log('Pro subscription updated:', subscription.id, 'User:', userId, 'Status:', subscription.status);
+
+          if (supabase) {
+            // Update subscription status in database
+            const updateData = {
+              subscription_status: subscription.status,
+              subscription_updated_at: new Date().toISOString()
+            };
+
+            // If subscription is past_due or unpaid, optionally restrict access
+            if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+              console.log('Pro subscription payment issue for user:', userId, 'Status:', subscription.status);
+            }
+
+            // If subscription became active again after issue
+            if (subscription.status === 'active') {
+              updateData.account_type = subscription.metadata?.account_type || subscription.metadata?.plan || 'pro';
+            }
+
+            await supabase
+              .from('sg_users')
+              .update(updateData)
+              .eq('id', userId);
+          }
+        }
+        // Handle Vendor subscription updates
+        else if (vendorId) {
           console.log('Vendor subscription updated:', subscription.id, 'Status:', subscription.status);
         }
         break;
@@ -2679,7 +2875,56 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         const vendorId = subscription.metadata?.vendor_id;
-        if (vendorId) {
+        const userId = subscription.metadata?.user_id;
+        const source = subscription.metadata?.source;
+
+        // Handle Pro subscription cancellation
+        if (userId && source === 'pro_subscription') {
+          const previousPlan = subscription.metadata?.account_type || subscription.metadata?.plan || 'pro';
+          console.log('Pro subscription canceled:', subscription.id, 'User:', userId);
+
+          // Downgrade user back to homeowner
+          if (supabase) {
+            const { error: updateError } = await supabase
+              .from('sg_users')
+              .update({
+                account_type: 'homeowner',
+                subscription_id: null,
+                subscription_status: 'canceled',
+                subscription_updated_at: new Date().toISOString()
+              })
+              .eq('id', userId);
+
+            if (updateError) {
+              console.error('Failed to downgrade user account_type:', updateError);
+            } else {
+              console.log('Downgraded user', userId, 'from', previousPlan, 'to homeowner');
+            }
+          }
+
+          // Notify admin of cancellation
+          const cancelProEmail = {
+            subject: `Pro Subscription Canceled - ${previousPlan.charAt(0).toUpperCase() + previousPlan.slice(1)} Plan`,
+            html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  <h2 style="color: #c62828;">Pro Subscription Canceled</h2>
+  <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0; color: #c62828;">A user has canceled their ${previousPlan} subscription.</p>
+  </div>
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <p><strong>User ID:</strong> ${userId}</p>
+    <p><strong>Previous Plan:</strong> ${previousPlan}</p>
+    <p><strong>Subscription ID:</strong> ${subscription.id}</p>
+  </div>
+</body>
+</html>`
+          };
+          await sendNotification(ADMIN_EMAIL, cancelProEmail.subject, cancelProEmail.html);
+        }
+        // Handle Vendor subscription cancellation
+        else if (vendorId) {
           console.log('Vendor subscription canceled:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of cancellation
           const cancelEmail = {
@@ -2728,11 +2973,16 @@ app.get('/health', (req, res) => {
 });
 
 // ============ ARIA VOICE LEAD CAPTURE ============
-app.post('/api/aria-lead', async (req, res) => {
+app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
   try {
     const { name, phone, email, project_type, project_details, preferred_contact_time, notes, source, tool, timestamp } = req.body;
 
-    console.log('[ARIA LEAD] Received:', { name, phone, email, project_type, source });
+    // Validate required fields
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+
+    console.log('[ARIA LEAD] Received from source:', source || 'unknown');
 
     // Build email content
     const leadHtml = `
@@ -2839,7 +3089,7 @@ app.post('/api/aria-lead', async (req, res) => {
     res.json({ success: true, emailSent: emailResult.success });
   } catch (error) {
     console.error('[ARIA LEAD] Error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -2960,7 +3210,7 @@ app.post('/api/customers', async (req, res) => {
     res.json({ customer, isNew: true });
   } catch (error) {
     console.error('Customer error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -2979,7 +3229,7 @@ app.get('/api/customers/:email', async (req, res) => {
     res.json({ customer: customers.data[0] });
   } catch (error) {
     console.error('Get customer error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3043,7 +3293,243 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
   } catch (error) {
     console.error('Checkout session error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
+  }
+});
+
+// ============ PRO SUBSCRIPTION CHECKOUT ============
+
+// Pro subscription plans
+const PRO_PLANS = {
+  pro: {
+    name: 'Pro',
+    monthly_price: 2900, // $29/month in cents
+    yearly_price: 29000, // $290/year in cents (2 months free)
+    features: ['View material pricing', 'Generate quotes & takeoffs', 'Save unlimited designs', 'Priority support']
+  },
+  fabricator: {
+    name: 'Fabricator',
+    monthly_price: 7900, // $79/month
+    yearly_price: 79000, // $790/year (2 months free)
+    features: ['All Pro features', 'Wholesale pricing access', 'Customer management', 'Custom branding', 'API access']
+  },
+  business: {
+    name: 'Business',
+    monthly_price: 14900, // $149/month
+    yearly_price: 149000, // $1490/year (2 months free)
+    features: ['All Fabricator features', 'Multi-user accounts', 'Advanced analytics', 'Dedicated account manager']
+  }
+};
+
+// Create a Pro subscription checkout session
+app.post('/api/create-pro-subscription', async (req, res) => {
+  try {
+    const { user_id, user_email, plan = 'pro', billing_cycle = 'monthly', success_url, cancel_url } = req.body;
+
+    if (!user_id || !user_email) {
+      return res.status(400).json({ error: 'User ID and email are required' });
+    }
+
+    const planConfig = PRO_PLANS[plan.toLowerCase()];
+    if (!planConfig) {
+      return res.status(400).json({ error: 'Invalid plan. Choose: pro, fabricator, or business' });
+    }
+
+    const interval = billing_cycle === 'yearly' ? 'year' : 'month';
+    const amount = billing_cycle === 'yearly' ? planConfig.yearly_price : planConfig.monthly_price;
+
+    // Find or create the product
+    let product;
+    const existingProducts = await stripe.products.list({ limit: 100 });
+    product = existingProducts.data.find(p => p.metadata?.plan_type === plan.toLowerCase() && p.metadata?.source === 'pro_subscription');
+
+    if (!product) {
+      product = await stripe.products.create({
+        name: `Surprise Granite ${planConfig.name} Plan`,
+        description: planConfig.features.join(' • '),
+        metadata: {
+          plan_type: plan.toLowerCase(),
+          source: 'pro_subscription'
+        }
+      });
+      console.log('Created new Stripe product for', plan, ':', product.id);
+    }
+
+    // Create the price
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: amount,
+      currency: 'usd',
+      recurring: {
+        interval: interval
+      },
+      metadata: {
+        plan: plan.toLowerCase(),
+        billing_cycle: billing_cycle
+      }
+    });
+
+    // Find or create customer
+    let customerId;
+    const existingCustomers = await stripe.customers.list({ email: user_email, limit: 1 });
+
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+      // Update customer metadata if needed
+      await stripe.customers.update(customerId, {
+        metadata: { user_id: user_id }
+      });
+    } else {
+      const customer = await stripe.customers.create({
+        email: user_email,
+        metadata: {
+          user_id: user_id,
+          source: 'pro_subscription'
+        }
+      });
+      customerId = customer.id;
+    }
+
+    // Create checkout session for subscription
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{
+        price: price.id,
+        quantity: 1
+      }],
+      mode: 'subscription',
+      success_url: success_url || `https://www.surprisegranite.com/tools/room-designer/?subscription=success&plan=${plan}`,
+      cancel_url: cancel_url || `https://www.surprisegranite.com/tools/room-designer/?subscription=canceled`,
+      metadata: {
+        user_id: user_id,
+        plan: plan.toLowerCase(),
+        billing_cycle: billing_cycle,
+        source: 'pro_subscription'
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user_id,
+          plan: plan.toLowerCase(),
+          account_type: plan.toLowerCase()
+        }
+      },
+      allow_promotion_codes: true
+    });
+
+    console.log('Pro subscription session created:', session.id, 'Plan:', plan, 'User:', user_id);
+
+    res.json({
+      success: true,
+      sessionId: session.id,
+      url: session.url,
+      plan: plan,
+      amount: amount,
+      interval: interval
+    });
+
+  } catch (error) {
+    console.error('Pro subscription error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get available Pro subscription plans
+app.get('/api/pro-plans', (req, res) => {
+  const plans = Object.entries(PRO_PLANS).map(([key, plan]) => ({
+    id: key,
+    name: plan.name,
+    monthly_price: plan.monthly_price,
+    yearly_price: plan.yearly_price,
+    monthly_display: `$${(plan.monthly_price / 100).toFixed(0)}/mo`,
+    yearly_display: `$${(plan.yearly_price / 100).toFixed(0)}/yr`,
+    features: plan.features
+  }));
+
+  res.json({ plans });
+});
+
+// Create a billing portal session for subscription management
+app.post('/api/pro-billing-portal', async (req, res) => {
+  try {
+    const { user_id, return_url } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Get user's stripe_customer_id from database
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { data: user, error: userError } = await supabase
+      .from('sg_users')
+      .select('stripe_customer_id, email')
+      .eq('id', user_id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.stripe_customer_id) {
+      return res.status(400).json({ error: 'No active subscription found. Please subscribe first.' });
+    }
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: user.stripe_customer_id,
+      return_url: return_url || 'https://www.surprisegranite.com/tools/room-designer/'
+    });
+
+    res.json({
+      success: true,
+      url: portalSession.url
+    });
+
+  } catch (error) {
+    console.error('Billing portal error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get user's subscription status
+app.get('/api/pro-subscription/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { data: user, error } = await supabase
+      .from('sg_users')
+      .select('account_type, subscription_id, subscription_status, subscription_updated_at, stripe_customer_id')
+      .eq('id', user_id)
+      .single();
+
+    if (error || !user) {
+      return res.json({
+        active: false,
+        plan: 'homeowner',
+        status: 'none'
+      });
+    }
+
+    const isPaid = ['pro', 'fabricator', 'business', 'enterprise', 'distributor', 'admin'].includes(user.account_type);
+
+    res.json({
+      active: isPaid && user.subscription_status === 'active',
+      plan: user.account_type || 'homeowner',
+      status: user.subscription_status || 'none',
+      subscription_id: user.subscription_id,
+      updated_at: user.subscription_updated_at,
+      can_manage: !!user.stripe_customer_id
+    });
+
+  } catch (error) {
+    console.error('Subscription status error:', error);
+    return handleApiError(res, error);
   }
 });
 
@@ -3099,7 +3585,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
 
   } catch (error) {
     console.error('PaymentIntent error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3207,7 +3693,7 @@ app.post('/api/invoices', async (req, res) => {
     });
   } catch (error) {
     console.error('Invoice error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3252,7 +3738,7 @@ app.get('/api/invoices', async (req, res) => {
     });
   } catch (error) {
     console.error('List invoices error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3286,7 +3772,7 @@ app.get('/api/invoices/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Get invoice error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3297,7 +3783,7 @@ app.post('/api/invoices/:id/remind', async (req, res) => {
     res.json({ success: true, message: 'Reminder sent', invoice_id: invoice.id });
   } catch (error) {
     console.error('Remind invoice error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3308,7 +3794,7 @@ app.post('/api/invoices/:id/void', async (req, res) => {
     res.json({ success: true, message: 'Invoice voided', status: invoice.status });
   } catch (error) {
     console.error('Void invoice error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3395,7 +3881,7 @@ app.get('/api/invoices/:id/views', async (req, res) => {
     });
   } catch (error) {
     console.error('Get invoice views error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3450,7 +3936,7 @@ app.post('/api/payment-links', async (req, res) => {
     });
   } catch (error) {
     console.error('Payment link error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3475,7 +3961,7 @@ app.get('/api/balance', async (req, res) => {
     });
   } catch (error) {
     console.error('Balance error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3499,7 +3985,7 @@ app.get('/api/payouts', async (req, res) => {
     });
   } catch (error) {
     console.error('Payouts error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3525,7 +4011,7 @@ app.get('/api/transactions', async (req, res) => {
     });
   } catch (error) {
     console.error('Transactions error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3551,7 +4037,7 @@ app.get('/api/balance-transactions', async (req, res) => {
     });
   } catch (error) {
     console.error('Balance transactions error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3581,7 +4067,7 @@ app.post('/api/payouts', async (req, res) => {
     });
   } catch (error) {
     console.error('Payout error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3626,7 +4112,7 @@ app.post('/api/connect/accounts', async (req, res) => {
     });
   } catch (error) {
     console.error('Connect account error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3647,7 +4133,7 @@ app.get('/api/connect/accounts/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Get Connect account error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3658,7 +4144,7 @@ app.post('/api/connect/accounts/:id/login', async (req, res) => {
     res.json({ url: loginLink.url });
   } catch (error) {
     console.error('Login link error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3689,7 +4175,7 @@ app.post('/api/connect/payouts', async (req, res) => {
     });
   } catch (error) {
     console.error('Payout error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3805,7 +4291,7 @@ app.post('/api/create-vendor-subscription', async (req, res) => {
 
   } catch (error) {
     console.error('Vendor subscription error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3830,7 +4316,7 @@ app.post('/api/vendor-billing-portal', async (req, res) => {
 
   } catch (error) {
     console.error('Billing portal error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3839,9 +4325,15 @@ app.get('/api/vendor-subscription/:vendor_id', async (req, res) => {
   try {
     const { vendor_id } = req.params;
 
+    // Sanitize vendor_id to prevent query injection
+    const sanitizedVendorId = String(vendor_id).replace(/['"\\]/g, '');
+    if (!sanitizedVendorId || sanitizedVendorId.length > 100) {
+      return res.status(400).json({ error: 'Invalid vendor ID' });
+    }
+
     // Search for subscriptions with this vendor_id in metadata
     const subscriptions = await stripe.subscriptions.search({
-      query: `metadata['vendor_id']:'${vendor_id}'`,
+      query: `metadata['vendor_id']:'${sanitizedVendorId}'`,
       limit: 1
     });
 
@@ -3869,7 +4361,7 @@ app.get('/api/vendor-subscription/:vendor_id', async (req, res) => {
 
   } catch (error) {
     console.error('Get vendor subscription error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -3879,9 +4371,15 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
     const { vendor_id } = req.params;
     const { cancel_immediately = false } = req.body;
 
+    // Sanitize vendor_id to prevent query injection
+    const sanitizedVendorId = String(vendor_id).replace(/['"\\]/g, '');
+    if (!sanitizedVendorId || sanitizedVendorId.length > 100) {
+      return res.status(400).json({ error: 'Invalid vendor ID' });
+    }
+
     // Find the subscription
     const subscriptions = await stripe.subscriptions.search({
-      query: `metadata['vendor_id']:'${vendor_id}'`,
+      query: `metadata['vendor_id']:'${sanitizedVendorId}'`,
       limit: 1
     });
 
@@ -3908,14 +4406,14 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
 
   } catch (error) {
     console.error('Cancel subscription error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
 // ============ LEAD MANAGEMENT ============
 
 // Submit a new lead (from estimate form or booking calendar)
-app.post('/api/leads', async (req, res) => {
+app.post('/api/leads', leadRateLimiter, async (req, res) => {
   try {
     const {
       homeowner_name,
@@ -3934,10 +4432,19 @@ app.post('/api/leads', async (req, res) => {
       message
     } = req.body;
 
+    // Input validation
     if (!homeowner_name || !homeowner_email || !project_zip) {
       return res.status(400).json({
         error: 'Name, email, and ZIP code are required'
       });
+    }
+
+    if (!isValidEmail(homeowner_email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    if (homeowner_phone && !isValidPhone(homeowner_phone)) {
+      return res.status(400).json({ error: 'Invalid phone format' });
     }
 
     // Calculate lead price based on project type
@@ -4084,7 +4591,7 @@ app.post('/api/leads', async (req, res) => {
           });
         }
         await sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
-        console.log('Customer email sent to:', homeowner_email);
+        console.log('Customer confirmation email sent');
       } catch (emailError) {
         // Don't fail the request if customer email fails
         console.error('Failed to send customer email:', emailError.message);
@@ -4100,7 +4607,7 @@ app.post('/api/leads', async (req, res) => {
 
   } catch (error) {
     console.error('Lead submission error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4150,11 +4657,10 @@ app.post('/api/lead-welcome', async (req, res) => {
     const result = await sendNotification(email, welcomeEmail.subject, welcomeEmail.html);
 
     if (result.success) {
-      console.log('Welcome email sent to:', email);
+      console.log('Welcome email sent successfully');
       res.json({
         success: true,
-        message: 'Welcome email sent successfully',
-        recipient: email
+        message: 'Welcome email sent successfully'
       });
     } else {
       console.error('Failed to send welcome email:', result.reason);
@@ -4167,7 +4673,7 @@ app.post('/api/lead-welcome', async (req, res) => {
 
   } catch (error) {
     console.error('Welcome email error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4218,7 +4724,7 @@ app.post('/api/purchase-lead', async (req, res) => {
 
   } catch (error) {
     console.error('Lead purchase error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4307,7 +4813,7 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
 
   } catch (error) {
     console.error('Visualize error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4412,7 +4918,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
 
   } catch (error) {
     console.error('Blueprint analysis error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4738,7 +5244,7 @@ app.post('/api/leads/with-images', async (req, res) => {
 
   } catch (error) {
     console.error('Lead with images submission error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4811,7 +5317,7 @@ app.post('/api/leads/assign', async (req, res) => {
 
   } catch (error) {
     console.error('Lead assignment error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4857,7 +5363,7 @@ app.post('/api/leads/auto-assign', async (req, res) => {
 
   } catch (error) {
     console.error('Auto-assignment error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4877,7 +5383,7 @@ app.get('/api/leads/with-images', async (req, res) => {
 
   } catch (error) {
     console.error('Get leads error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4902,7 +5408,7 @@ app.get('/api/leads/assignment-rules', async (req, res) => {
     });
   } catch (error) {
     console.error('Get assignment rules error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -4942,7 +5448,7 @@ app.post('/api/leads/assignment-rules', async (req, res) => {
 
   } catch (error) {
     console.error('Save assignment rule error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5060,7 +5566,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
 
   } catch (error) {
     console.error('Price sheet parse error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5113,14 +5619,14 @@ app.post('/api/price-sheets/parse-csv', async (req, res) => {
 
   } catch (error) {
     console.error('CSV parse error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
 // ==================== PROFESSIONAL ESTIMATES ====================
 
 // Send professional estimate email to customer
-app.post('/api/send-estimate', async (req, res) => {
+app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
   try {
     const {
       // Support both field naming conventions
@@ -5151,14 +5657,14 @@ app.post('/api/send-estimate', async (req, res) => {
     } = req.body;
 
     // Normalize field names (accept both formats)
-    const custName = customer_name || customerName || 'Valued Customer';
+    const custName = sanitizeString(customer_name || customerName || 'Valued Customer', 200);
     const custEmail = customer_email || to;
     const estNumber = estimate_number || estimateNumber;
     const viewUrl = view_url || approvalUrl;
-    const projType = project_type || projectName;
+    const projType = sanitizeString(project_type || projectName, 200);
 
-    if (!custEmail) {
-      return res.status(400).json({ error: 'Customer email is required' });
+    if (!custEmail || !isValidEmail(custEmail)) {
+      return res.status(400).json({ error: 'Valid customer email is required' });
     }
 
     if (!estNumber && !estimate_id) {
@@ -5462,24 +5968,24 @@ app.post('/api/send-estimate', async (req, res) => {
 
     try {
       await transporter.sendMail(emailOptions);
-      console.log(`Estimate email sent to ${custEmail}${pdfBuffer ? ' with PDF attachment' : ''}`);
+      console.log(`Estimate email sent${pdfBuffer ? ' with PDF attachment' : ''}`);
       res.json({
         success: true,
         message: 'Estimate email sent successfully',
         pdf_attached: !!pdfBuffer
       });
     } catch (emailErr) {
-      console.error('Failed to send estimate email:', emailErr.message);
+      console.error('Failed to send estimate email');
       res.status(500).json({
         success: false,
-        error: emailErr.message || 'Failed to send email',
+        error: 'Failed to send email',
         smtp_configured: !!SMTP_USER
       });
     }
 
   } catch (error) {
     console.error('Send estimate error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5509,7 +6015,7 @@ app.get('/api/jobs', async (req, res) => {
     res.json({ jobs: jobs || [] });
   } catch (error) {
     console.error('Get jobs error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5536,7 +6042,7 @@ app.get('/api/jobs/:id', async (req, res) => {
     res.json({ job });
   } catch (error) {
     console.error('Get job error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5562,7 +6068,7 @@ app.patch('/api/jobs/:id', async (req, res) => {
     res.json({ job });
   } catch (error) {
     console.error('Update job error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5603,7 +6109,7 @@ app.post('/api/jobs/:id/files', async (req, res) => {
     res.json({ file });
   } catch (error) {
     console.error('Upload file error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5632,7 +6138,7 @@ app.get('/api/contractors', async (req, res) => {
     res.json({ contractors: contractors || [] });
   } catch (error) {
     console.error('Get contractors error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5681,7 +6187,7 @@ app.post('/api/contractors', async (req, res) => {
     res.json({ contractor });
   } catch (error) {
     console.error('Create contractor error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5751,7 +6257,7 @@ app.post('/api/jobs/:jobId/assign-contractor', async (req, res) => {
     });
   } catch (error) {
     console.error('Assign contractor error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5811,7 +6317,7 @@ app.post('/api/contractor/respond', async (req, res) => {
     });
   } catch (error) {
     console.error('Contractor respond error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5906,7 +6412,7 @@ app.post('/api/jobs/:jobId/material-order', async (req, res) => {
     });
   } catch (error) {
     console.error('Material order error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5955,7 +6461,7 @@ app.patch('/api/material-orders/:id', async (req, res) => {
     res.json({ order: orderUpdate });
   } catch (error) {
     console.error('Update material order error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -5976,7 +6482,7 @@ app.get('/api/customers-list', async (req, res) => {
     res.json({ customers: customers || [] });
   } catch (error) {
     console.error('Get customers error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6161,7 +6667,7 @@ app.post('/api/auth/provision-sso-user', authenticateJWT, async (req, res) => {
 
   } catch (error) {
     console.error('Provision SSO user error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6200,7 +6706,7 @@ app.get('/api/auth/my-distributors', authenticateJWT, async (req, res) => {
     });
   } catch (error) {
     console.error('Get my distributors error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6226,7 +6732,7 @@ app.get('/api/auth/role/:distributorId', authenticateJWT, async (req, res) => {
     res.json(role);
   } catch (error) {
     console.error('Get role error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6332,7 +6838,7 @@ app.post('/api/distributor/:id/team/invite', authenticateJWT, requireRole('admin
 
   } catch (error) {
     console.error('Invite user error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6396,7 +6902,7 @@ app.post('/api/auth/accept-invite', authenticateJWT, async (req, res) => {
 
   } catch (error) {
     console.error('Accept invite error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6449,7 +6955,7 @@ app.get('/api/distributor/:id/team', authenticateJWT, requireRole('admin', 'sale
 
   } catch (error) {
     console.error('Get team error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6499,7 +7005,7 @@ app.patch('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('a
 
   } catch (error) {
     console.error('Update member error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6531,7 +7037,7 @@ app.delete('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('
 
   } catch (error) {
     console.error('Remove member error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6561,7 +7067,7 @@ app.get('/api/distributor/:id/audit-logs', authenticateJWT, requireRole('admin')
 
   } catch (error) {
     console.error('Get audit logs error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6583,7 +7089,7 @@ app.get('/api/auth/sessions', authenticateJWT, async (req, res) => {
 
   } catch (error) {
     console.error('Get sessions error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6608,7 +7114,7 @@ app.delete('/api/auth/sessions/:sessionId', authenticateJWT, async (req, res) =>
 
   } catch (error) {
     console.error('Revoke session error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6630,7 +7136,7 @@ app.post('/api/auth/sessions/revoke-others', authenticateJWT, async (req, res) =
 
   } catch (error) {
     console.error('Revoke others error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6662,7 +7168,7 @@ app.get('/api/distributor/profile', async (req, res) => {
     res.json({ profile });
   } catch (error) {
     console.error('Get distributor profile error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6692,7 +7198,7 @@ app.patch('/api/distributor/profile', async (req, res) => {
     res.json({ profile });
   } catch (error) {
     console.error('Update distributor profile error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6746,7 +7252,7 @@ app.get('/api/distributor/inventory', async (req, res) => {
     res.json({ slabs: slabs || [], total: count });
   } catch (error) {
     console.error('Get inventory error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6770,7 +7276,7 @@ app.get('/api/distributor/inventory/:id', async (req, res) => {
     res.json({ slab });
   } catch (error) {
     console.error('Get slab error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6824,7 +7330,7 @@ app.post('/api/distributor/inventory', async (req, res) => {
     res.status(201).json({ slab });
   } catch (error) {
     console.error('Create slab error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6884,7 +7390,7 @@ app.patch('/api/distributor/inventory/:id', async (req, res) => {
     res.json({ slab });
   } catch (error) {
     console.error('Update slab error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -6941,7 +7447,7 @@ app.delete('/api/distributor/inventory/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Delete slab error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7075,7 +7581,7 @@ app.post('/api/distributor/inventory/bulk', async (req, res) => {
     });
   } catch (error) {
     console.error('Bulk import error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7108,7 +7614,7 @@ app.get('/api/distributor/locations', async (req, res) => {
     res.json({ locations: locations || [] });
   } catch (error) {
     console.error('Get locations error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7144,7 +7650,7 @@ app.post('/api/distributor/locations', async (req, res) => {
     res.status(201).json({ location });
   } catch (error) {
     console.error('Add location error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7181,7 +7687,7 @@ app.patch('/api/distributor/locations/:id', async (req, res) => {
     res.json({ location });
   } catch (error) {
     console.error('Update location error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7212,7 +7718,7 @@ app.delete('/api/distributor/locations/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Delete location error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7331,7 +7837,7 @@ app.get('/api/marketplace/slabs', async (req, res) => {
     res.json({ slabs: slabs || [] });
   } catch (error) {
     console.error('Search slabs error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7399,7 +7905,7 @@ app.get('/api/marketplace/products', async (req, res) => {
     });
   } catch (error) {
     console.error('Search marketplace products error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7434,7 +7940,7 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     res.json({ product });
   } catch (error) {
     console.error('Get marketplace product error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7493,7 +7999,7 @@ app.get('/api/marketplace/slabs/:id', async (req, res) => {
     res.json({ slab });
   } catch (error) {
     console.error('Get slab detail error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7593,7 +8099,7 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
     });
   } catch (error) {
     console.error('Submit inquiry error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7646,7 +8152,7 @@ app.post('/api/distributor/api-keys', async (req, res) => {
     });
   } catch (error) {
     console.error('Generate API key error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7677,7 +8183,7 @@ app.get('/api/distributor/api-keys', async (req, res) => {
     res.json({ keys: keys || [] });
   } catch (error) {
     console.error('List API keys error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7712,7 +8218,7 @@ app.delete('/api/distributor/api-keys/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Revoke API key error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7769,7 +8275,7 @@ app.get('/api/distributor/inquiries', async (req, res) => {
     });
   } catch (error) {
     console.error('Get inquiries error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7808,7 +8314,7 @@ app.get('/api/distributor/inquiries/:id', async (req, res) => {
     res.json({ inquiry });
   } catch (error) {
     console.error('Get inquiry error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7858,7 +8364,7 @@ app.patch('/api/distributor/inquiries/:id', async (req, res) => {
     res.json({ inquiry });
   } catch (error) {
     console.error('Update inquiry error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7904,7 +8410,7 @@ app.get('/api/distributor/inquiries/stats/summary', async (req, res) => {
     res.json({ stats });
   } catch (error) {
     console.error('Get inquiry stats error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -7968,7 +8474,7 @@ app.get('/api/distributor/analytics', async (req, res) => {
     });
   } catch (error) {
     console.error('Get analytics error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8079,7 +8585,7 @@ app.get('/api/products', async (req, res) => {
     });
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8113,7 +8619,7 @@ app.get('/api/products/stats', async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error('Get product stats error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8158,7 +8664,7 @@ app.get('/api/products/lookup', async (req, res) => {
     res.status(404).json({ error: 'Product not found' });
   } catch (error) {
     console.error('Product lookup error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8190,7 +8696,7 @@ app.get('/api/products/:id', async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error('Get product error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8268,7 +8774,7 @@ app.post('/api/products', async (req, res) => {
     res.status(201).json(product);
   } catch (error) {
     console.error('Create product error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8318,7 +8824,7 @@ app.patch('/api/products/:id', async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error('Update product error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8354,7 +8860,7 @@ app.delete('/api/products/:id', async (req, res) => {
     res.json({ success: true, message: 'Product deleted' });
   } catch (error) {
     console.error('Delete product error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8428,7 +8934,7 @@ app.post('/api/products/bulk', async (req, res) => {
     });
   } catch (error) {
     console.error('Bulk import error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8457,7 +8963,7 @@ app.get('/api/products/:id/inventory', async (req, res) => {
     });
   } catch (error) {
     console.error('Get inventory transactions error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8533,7 +9039,7 @@ app.post('/api/products/:id/inventory', async (req, res) => {
     });
   } catch (error) {
     console.error('Add inventory transaction error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8555,7 +9061,7 @@ app.get('/api/products/:id/skus', async (req, res) => {
     res.json(skus);
   } catch (error) {
     console.error('Get product SKUs error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8598,7 +9104,7 @@ app.post('/api/products/:id/skus', async (req, res) => {
     res.status(201).json(sku);
   } catch (error) {
     console.error('Add SKU mapping error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8634,7 +9140,7 @@ app.delete('/api/products/:id/skus/:skuId', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Delete SKU mapping error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8667,7 +9173,7 @@ app.get('/api/integrations', async (req, res) => {
     res.json(safeIntegrations);
   } catch (error) {
     console.error('Get integrations error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8715,7 +9221,7 @@ app.post('/api/integrations', async (req, res) => {
     });
   } catch (error) {
     console.error('Create integration error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8755,7 +9261,7 @@ app.patch('/api/integrations/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Update integration error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8790,7 +9296,7 @@ app.delete('/api/integrations/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Delete integration error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8839,32 +9345,34 @@ app.post('/api/integrations/:id/sync', async (req, res) => {
       })
       .eq('id', id);
 
-    // TODO: Actually perform sync based on system_type
-    // For now, just mark as completed
+    // Mark sync as pending - actual sync implementations would go here
+    // For now, mark as pending_implementation to be transparent
     setTimeout(async () => {
       await supabase
         .from('sync_logs')
         .update({
-          status: 'completed',
+          status: 'pending_implementation',
           completed_at: new Date().toISOString(),
-          records_processed: 0
+          records_processed: 0,
+          error_message: 'ERP sync not yet implemented for this system type'
         })
         .eq('id', syncLog.id);
 
       await supabase
         .from('erp_integrations')
-        .update({ last_sync_status: 'completed' })
+        .update({ last_sync_status: 'pending_implementation' })
         .eq('id', id);
-    }, 2000);
+    }, 1000);
 
     res.json({
       success: true,
       sync_log_id: syncLog.id,
-      message: 'Sync initiated'
+      message: 'Sync queued - ERP integration is configured but sync functionality is pending implementation',
+      status: 'pending_implementation'
     });
   } catch (error) {
     console.error('Trigger sync error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8902,7 +9410,7 @@ app.get('/api/integrations/:id/logs', async (req, res) => {
     res.json(logs);
   } catch (error) {
     console.error('Get sync logs error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -8928,17 +9436,28 @@ app.post('/api/integrations/:id/test', async (req, res) => {
       return res.status(404).json({ error: 'Integration not found' });
     }
 
-    // TODO: Actually test connection based on system_type
-    // For now, return success if config exists
+    // Check if connection config exists
     const hasConfig = Object.keys(integration.connection_config || {}).length > 0;
 
+    if (!hasConfig) {
+      return res.json({
+        success: false,
+        message: 'No connection configuration found'
+      });
+    }
+
+    // Actual connection testing requires implementation per ERP system
+    // Return status indicating config is present but connection test is not yet implemented
     res.json({
-      success: hasConfig,
-      message: hasConfig ? 'Connection test successful' : 'No connection configuration found'
+      success: true,
+      message: 'Connection configuration is valid. Live connection testing is pending implementation.',
+      config_valid: true,
+      connection_tested: false,
+      system_type: integration.system_type
     });
   } catch (error) {
     console.error('Test connection error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error, 'Test connection');
   }
 });
 
@@ -8951,12 +9470,44 @@ const WebSocket = require('ws');
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ noServer: true });
 
+// WebSocket rate limiting
+const wsConnectionCounts = new Map();
+const WS_MAX_CONNECTIONS_PER_IP = 3;
+
 // Handle WebSocket upgrade for Aria Realtime
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
 
   if (pathname === '/api/aria-realtime') {
+    // Check origin for security
+    const origin = request.headers.origin;
+    const allowedOrigins = isProduction
+      ? ['https://www.surprisegranite.com', 'https://surprisegranite.com']
+      : ['https://www.surprisegranite.com', 'https://surprisegranite.com', 'http://localhost:3000', 'http://localhost:8888', 'http://127.0.0.1:5500'];
+
+    if (origin && !allowedOrigins.includes(origin)) {
+      console.log('[Aria Realtime] Rejected connection from unauthorized origin:', origin);
+      socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    // Rate limit by IP
+    const ip = request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress || 'unknown';
+    const currentCount = wsConnectionCounts.get(ip) || 0;
+
+    if (currentCount >= WS_MAX_CONNECTIONS_PER_IP) {
+      console.log('[Aria Realtime] Rate limit exceeded for IP:', ip);
+      socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    wsConnectionCounts.set(ip, currentCount + 1);
+
     wss.handleUpgrade(request, socket, head, (ws) => {
+      // Track connection for cleanup
+      ws._clientIp = ip;
       wss.emit('connection', ws, request);
     });
   } else {
@@ -9433,6 +9984,15 @@ Be helpful and guide users toward scheduling an appointment or getting a quote.`
     if (openAiWs?.readyState === WebSocket.OPEN) {
       openAiWs.close();
     }
+    // Decrement connection count for rate limiting
+    if (clientWs._clientIp) {
+      const currentCount = wsConnectionCounts.get(clientWs._clientIp) || 1;
+      if (currentCount <= 1) {
+        wsConnectionCounts.delete(clientWs._clientIp);
+      } else {
+        wsConnectionCounts.set(clientWs._clientIp, currentCount - 1);
+      }
+    }
   });
 
   clientWs.on('error', (error) => {
@@ -9540,7 +10100,7 @@ app.post('/api/projects/save', async (req, res) => {
 
   } catch (error) {
     console.error('Project save error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -9577,7 +10137,7 @@ app.get('/api/projects', async (req, res) => {
 
   } catch (error) {
     console.error('Get projects error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -9636,7 +10196,7 @@ app.get('/api/projects/:identifier', async (req, res) => {
 
   } catch (error) {
     console.error('Get project error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -9785,7 +10345,7 @@ app.post('/api/projects/:id/send-quote', async (req, res) => {
 
   } catch (error) {
     console.error('Send quote error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -9859,7 +10419,7 @@ app.post('/api/projects/approve', async (req, res) => {
 
   } catch (error) {
     console.error('Quote approval error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -9993,7 +10553,7 @@ app.post('/api/projects/:id/create-payment', async (req, res) => {
 
   } catch (error) {
     console.error('Create payment error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -10040,7 +10600,7 @@ app.post('/api/projects/:id/status', async (req, res) => {
 
   } catch (error) {
     console.error('Update status error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -10075,7 +10635,7 @@ app.get('/api/projects/:id/activities', async (req, res) => {
 
   } catch (error) {
     console.error('Get activities error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 
@@ -10159,7 +10719,7 @@ app.get('/api/customer-portal/:token', async (req, res) => {
 
   } catch (error) {
     console.error('Customer portal error:', error);
-    res.status(500).json({ error: error.message });
+    return handleApiError(res, error);
   }
 });
 

@@ -6,9 +6,11 @@
 (function() {
   'use strict';
 
-  // Configuration
-  const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
-  const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+  // Configuration - use centralized config if available
+  const STRIPE_PUBLIC_KEY = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.STRIPE_PUBLIC_KEY)
+    || 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
+  const API_BASE = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.API_BASE)
+    || 'https://surprise-granite-email-api.onrender.com';
   const CART_KEY = 'sg_cart';
 
   // Stripe instance
@@ -346,24 +348,19 @@
    * Pre-fill form if user is logged in
    */
   async function prefillUserData() {
-    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    // Use centralized config
+    const SUPABASE_URL = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.SUPABASE_URL)
+      || 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_ANON_KEY = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.SUPABASE_ANON_KEY)
+      || '';
 
     try {
       if (!window.supabase) return;
 
       const { createClient } = window.supabase;
-      // Use global client if available
-      const supabaseClient = window._sgSupabaseClient || createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
-          flowType: 'implicit',
-          lock: false
-        }
-      });
+      // Use global client if available, or create one if we have the key
+      const supabaseClient = window._sgSupabaseClient || window.SG_SUPABASE;
+      if (!supabaseClient) return;
       if (!window._sgSupabaseClient) window._sgSupabaseClient = supabaseClient;
       const { data: { session } } = await supabaseClient.auth.getSession();
 

@@ -5,13 +5,17 @@
  * - Product pages (countertops, flooring, tile)
  * - Tool pages (calculators, visualizers)
  * - Account portal (sidebar)
+ *
+ * Uses centralized configuration from /js/config.js
  */
 
 (function() {
   'use strict';
 
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config or fallback to defaults
+  const config = window.SG_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
   let supabaseClient = null;
   let currentUser = null;
@@ -350,12 +354,39 @@
   // LOGOUT FUNCTION
   // ============================================
   async function logout() {
+    // Use SgAuth's comprehensive logout if available
+    if (window.SgAuth && typeof window.SgAuth.signOut === 'function') {
+      await window.SgAuth.signOut({ redirect: true, redirectUrl: '/' });
+      return;
+    }
+
+    // Fallback logout
     if (supabaseClient) {
       await supabaseClient.auth.signOut();
-      // Supabase handles session cleanup automatically
-      window.location.href = '/';
     }
+
+    // Clear state
+    currentUser = null;
+
+    // Clear localStorage
+    try {
+      const storageKey = window._sgSupabaseConfig?.storageKey || 'sg-auth-token';
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem('sb-ypeypgwsycxcagncgdur-auth-token');
+    } catch (e) {}
+
+    // Update UI before redirect
+    updateAllAuthDisplays(null);
+
+    // Redirect to home
+    window.location.href = '/';
   }
+
+  // Listen for global logout events from other components
+  window.addEventListener('sg-auth-logout', () => {
+    currentUser = null;
+    updateAllAuthDisplays(null);
+  });
 
   // Expose global API
   window.SurpriseGraniteAuth = {

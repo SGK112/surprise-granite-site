@@ -2,6 +2,8 @@
  * Supabase Single Client Initialization
  * This script MUST load immediately after the Supabase library
  * and BEFORE any other auth-related scripts.
+ *
+ * Uses centralized configuration from /js/config.js
  */
 (function() {
   'use strict';
@@ -16,8 +18,11 @@
     return;
   }
 
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config or fallback to defaults
+  const config = window.SG_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  const STORAGE_KEY = config.SUPABASE_STORAGE_KEY || 'sg-auth-token';
 
   const { createClient } = window.supabase;
 
@@ -41,11 +46,18 @@
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: simpleStorage,
-        storageKey: 'sg-auth-token',
+        storageKey: STORAGE_KEY,
         flowType: 'implicit',
         debug: false
       }
     });
+
+    // Store config for reference by other scripts
+    window._sgSupabaseConfig = {
+      url: SUPABASE_URL,
+      storageKey: STORAGE_KEY
+    };
+
   } catch (e) {
     console.warn('Supabase init error, retrying without locks:', e.message);
     // Fallback: Try with minimal options

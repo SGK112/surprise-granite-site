@@ -141,9 +141,9 @@ sf-domain="surprise-granite.myshopify.com"
 src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 
 <!-- Hero Animation CSS -->
-<script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3afeb0909ebb62ac35e%2Fbold_hero_animations-2.0.0.js"></script>
-<script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3c1613b6372611b29b3%2Fbold_scroll_animations-2.0.0.js"></script>
-<script src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3cb282ad3bfc564547a%2Fbold_navbar_effect-2.0.0.js"></script>
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3afeb0909ebb62ac35e%2Fbold_hero_animations-2.0.0.js"></script>
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3c1613b6372611b29b3%2Fbold_scroll_animations-2.0.0.js"></script>
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3cb282ad3bfc564547a%2Fbold_navbar_effect-2.0.0.js"></script>
 
 <!-- Sygnal Attributes 5 | Format --> 
 <link rel="stylesheet" href="/css/webflow-format.css"> 
@@ -1247,66 +1247,287 @@ displayOpeningStatus();
 setInterval(displayOpeningStatus, 60000);
 </script></div></nav></div><main class="main-wrapper" id="main-content"><section class="section_home-hero-header"><div class="home_hero-header_component"><div class="w-embed w-script"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
 
-<!-- Clean Hero Section -->
-<section class="hero-clean">
-  <div class="hero-clean-bg">
-    <div class="hero-slides">
-      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp" alt="Premium Quartz Kitchen" class="hero-slide active" />
-      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6535e32ca24c9a3fff3024e0_bathroom-remodeling-services-arizona.webp" alt="Luxury Bathroom Remodel" class="hero-slide" />
-      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/666c82cd5e8c79229b330f4b_Surprise%20Granite%20Homepage%20Hero.webp" alt="Modern Kitchen Design" class="hero-slide" />
-      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/65335c9d645a5e7646ba6841_Bathroom-Remodel-Silverton.webp" alt="Custom Bathroom Design" class="hero-slide" />
-    </div>
-    <div class="hero-clean-overlay"></div>
+<!-- Modern Hero Section - Audience-Focused -->
+<section class="sg-hero" id="sgHero">
+  <!-- Background -->
+  <div class="sg-hero__bg">
+    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/66751c475ecf56262b237e3b_cambria-surprise-granite-brittanicca-warm-quartz-kitchen-scene.webp"
+         alt="Premium Stone Kitchen"
+         class="sg-hero__img"
+         fetchpriority="high"
+         decoding="async" />
+    <div class="sg-hero__gradient"></div>
+    <div class="sg-hero__noise"></div>
   </div>
 
-  <div class="hero-clean-content">
-    <div class="hero-clean-badge">Arizona's Premier Stone Marketplace</div>
-    <h1 class="hero-clean-title">Find Your Perfect Stone.<br><span>Connect With Pros.</span></h1>
-    <p class="hero-clean-sub">Browse thousands of countertops, tile & flooring. Get quotes from verified fabricators. All in one place.</p>
+  <!-- Content -->
+  <div class="sg-hero__content">
+    <!-- Audience Selector -->
+    <nav class="sg-hero__audience" role="tablist" aria-label="Select your role">
+      <button class="sg-hero__tab active" role="tab" aria-selected="true" data-audience="homeowner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Homeowner
+      </button>
+      <button class="sg-hero__tab" role="tab" aria-selected="false" data-audience="fabricator">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Fabricator
+      </button>
+      <button class="sg-hero__tab" role="tab" aria-selected="false" data-audience="contractor">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        Contractor
+      </button>
+      <button class="sg-hero__tab" role="tab" aria-selected="false" data-audience="designer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+        Designer
+      </button>
+      <button class="sg-hero__tab" role="tab" aria-selected="false" data-audience="vendor">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Vendor
+      </button>
+    </nav>
 
-    <div class="hero-clean-cta">
-      <button class="hero-clean-btn" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">Get Free Estimate</button>
-      <a href="/tools/room-designer/" class="hero-clean-btn hero-design-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        Design Your Kitchen
-      </a>
-      <a href="tel:+16028333189" class="hero-clean-phone">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.88.37 1.74.7 2.55a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.81.33 1.66.57 2.55.7A2 2 0 0122 16.92z"/></svg>
+    <!-- Dynamic Headlines -->
+    <div class="sg-hero__headlines">
+      <!-- Homeowner -->
+      <div class="sg-hero__headline active" data-for="homeowner">
+        <span class="sg-hero__eyebrow">For Homeowners</span>
+        <h1 class="sg-hero__title">Your Dream Kitchen<br><span>Starts Here</span></h1>
+        <p class="sg-hero__desc">Browse thousands of premium countertops. Get instant quotes. Connect with Arizona's top-rated fabricators.</p>
+        <div class="sg-hero__ctas">
+          <button class="sg-hero__btn sg-hero__btn--primary" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
+            Get Free Estimate
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <a href="/tools/room-designer/" class="sg-hero__btn sg-hero__btn--secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            Design Your Space
+          </a>
+        </div>
+        <div class="sg-hero__stats">
+          <div class="sg-hero__stat"><strong>22+</strong><span>Premium Brands</span></div>
+          <div class="sg-hero__stat"><strong>5,000+</strong><span>Stone Colors</span></div>
+          <div class="sg-hero__stat"><strong>4.8</strong><span>Google Rating</span></div>
+        </div>
+      </div>
+
+      <!-- Fabricator -->
+      <div class="sg-hero__headline" data-for="fabricator">
+        <span class="sg-hero__eyebrow">For Fabricators & Installers</span>
+        <h1 class="sg-hero__title">Qualified Leads<br><span>Delivered Daily</span></h1>
+        <p class="sg-hero__desc">Stop chasing leads. Get verified homeowner projects sent directly to your inbox. Earn commissions on every job.</p>
+        <div class="sg-hero__ctas">
+          <a href="/vendor/signup/?type=fab_installer" class="sg-hero__btn sg-hero__btn--primary">
+            Join Pro Network
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/for-pros/fabricators-installers/" class="sg-hero__btn sg-hero__btn--secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Learn More
+          </a>
+        </div>
+        <div class="sg-hero__stats">
+          <div class="sg-hero__stat"><strong>500+</strong><span>Monthly Leads</span></div>
+          <div class="sg-hero__stat"><strong>$2.5M+</strong><span>Project Value</span></div>
+          <div class="sg-hero__stat"><strong>Free</strong><span>To Join</span></div>
+        </div>
+      </div>
+
+      <!-- Contractor -->
+      <div class="sg-hero__headline" data-for="contractor">
+        <span class="sg-hero__eyebrow">For Contractors</span>
+        <h1 class="sg-hero__title">Source Materials<br><span>Win More Bids</span></h1>
+        <p class="sg-hero__desc">Access wholesale pricing on premium materials. Generate instant quotes for clients. Streamline your workflow.</p>
+        <div class="sg-hero__ctas">
+          <a href="/vendor/signup/?type=contractor" class="sg-hero__btn sg-hero__btn--primary">
+            Create Pro Account
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/tools/countertop-calculator/" class="sg-hero__btn sg-hero__btn--secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+            Quick Quote Tool
+          </a>
+        </div>
+        <div class="sg-hero__stats">
+          <div class="sg-hero__stat"><strong>15-30%</strong><span>Below Retail</span></div>
+          <div class="sg-hero__stat"><strong>Same Day</strong><span>Quotes</span></div>
+          <div class="sg-hero__stat"><strong>Net 30</strong><span>Available</span></div>
+        </div>
+      </div>
+
+      <!-- Designer -->
+      <div class="sg-hero__headline" data-for="designer">
+        <span class="sg-hero__eyebrow">For Interior Designers</span>
+        <h1 class="sg-hero__title">Curate. Present.<br><span>Earn Commission.</span></h1>
+        <p class="sg-hero__desc">Access our full material library. Create stunning presentations with our AI visualizer. Earn on every project you specify.</p>
+        <div class="sg-hero__ctas">
+          <a href="/vendor/signup/?type=designer" class="sg-hero__btn sg-hero__btn--primary">
+            Join Designer Program
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/tools/ai-visualizer/" class="sg-hero__btn sg-hero__btn--secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            AI Visualizer
+          </a>
+        </div>
+        <div class="sg-hero__stats">
+          <div class="sg-hero__stat"><strong>5-10%</strong><span>Commission</span></div>
+          <div class="sg-hero__stat"><strong>Free</strong><span>Samples</span></div>
+          <div class="sg-hero__stat"><strong>AI</strong><span>Design Tools</span></div>
+        </div>
+      </div>
+
+      <!-- Vendor -->
+      <div class="sg-hero__headline" data-for="vendor">
+        <span class="sg-hero__eyebrow">For Material Vendors</span>
+        <h1 class="sg-hero__title">Reach Thousands<br><span>Of Arizona Buyers</span></h1>
+        <p class="sg-hero__desc">List your products on Arizona's fastest-growing stone marketplace. Connect directly with homeowners, designers, and pros.</p>
+        <div class="sg-hero__ctas">
+          <a href="/vendor/signup/?type=supplier" class="sg-hero__btn sg-hero__btn--primary">
+            List Your Products
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="mailto:joshb@surprisegranite.com?subject=Enterprise%20Vendor%20Partnership&body=I%27m%20interested%20in%20an%20enterprise%20partnership%20with%20Surprise%20Granite.%0A%0ACompany%20Name%3A%0AContact%20Name%3A%0APhone%3A%0A%0APlease%20tell%20us%20about%20your%20products%3A" class="sg-hero__btn sg-hero__btn--secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            Enterprise Partnership
+          </a>
+        </div>
+        <div class="sg-hero__stats">
+          <div class="sg-hero__stat"><strong>50K+</strong><span>Monthly Visitors</span></div>
+          <div class="sg-hero__stat"><strong>22</strong><span>Partner Brands</span></div>
+          <div class="sg-hero__stat"><strong>Phoenix</strong><span>Metro Coverage</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trust Bar -->
+    <div class="sg-hero__trust">
+      <div class="sg-hero__trust-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <span>4.8 Google</span>
+      </div>
+      <div class="sg-hero__trust-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        <span>ROC #341113</span>
+      </div>
+      <div class="sg-hero__trust-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <span>Lifetime Warranty</span>
+      </div>
+      <a href="tel:+16028333189" class="sg-hero__phone">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.88.37 1.74.7 2.55a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.81.33 1.66.57 2.55.7A2 2 0 0122 16.92z"/></svg>
         (602) 833-3189
       </a>
     </div>
+  </div>
 
-    <div class="hero-clean-trust">
-      <div class="hero-trust-item">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#f9cb00"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-        <span>4.6 Google Rating</span>
-      </div>
-      <div class="hero-trust-divider"></div>
-      <div class="hero-trust-item">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#f9cb00"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-        <span>Licensed & Insured</span>
-      </div>
-      <div class="hero-trust-divider"></div>
-      <div class="hero-trust-item">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#f9cb00"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z"/></svg>
-        <span>Lifetime Warranty</span>
-      </div>
-    </div>
+  <!-- Scroll Indicator -->
+  <div class="sg-hero__scroll">
+    <span>Explore</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
   </div>
 </section>
 
+<!-- Hero Audience Selector Script -->
 <script>
 (function() {
-  const slides = document.querySelectorAll('.hero-slide');
-  let currentSlide = 0;
+  'use strict';
 
-  function nextSlide() {
-    slides[currentSlide].classList.remove('active');
-    currentSlide = (currentSlide + 1) % slides.length;
-    slides[currentSlide].classList.add('active');
+  const tabs = document.querySelectorAll('.sg-hero__tab');
+  const headlines = document.querySelectorAll('.sg-hero__headline');
+  const scrollIndicator = document.querySelector('.sg-hero__scroll');
+  let autoRotate = null;
+  let currentIndex = 0;
+
+  // Switch audience
+  function switchAudience(audience) {
+    // Update tabs
+    tabs.forEach(tab => {
+      const isActive = tab.dataset.audience === audience;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive);
+    });
+
+    // Update headlines with smooth transition
+    headlines.forEach(headline => {
+      const isActive = headline.dataset.for === audience;
+      headline.classList.toggle('active', isActive);
+    });
+
+    // Track which audience for auto-rotate
+    currentIndex = [...tabs].findIndex(t => t.dataset.audience === audience);
   }
 
-  setInterval(nextSlide, 6000);
+  // Auto-rotate audiences (subtle, every 8 seconds)
+  function startAutoRotate() {
+    autoRotate = setInterval(() => {
+      currentIndex = (currentIndex + 1) % tabs.length;
+      const nextAudience = tabs[currentIndex].dataset.audience;
+      switchAudience(nextAudience);
+    }, 8000);
+  }
+
+  // Stop auto-rotate on user interaction
+  function stopAutoRotate() {
+    if (autoRotate) {
+      clearInterval(autoRotate);
+      autoRotate = null;
+    }
+  }
+
+  // Tab click handler
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      stopAutoRotate();
+      switchAudience(tab.dataset.audience);
+    });
+
+    // Keyboard support
+    tab.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        stopAutoRotate();
+        switchAudience(tab.dataset.audience);
+      }
+    });
+  });
+
+  // Scroll indicator click
+  if (scrollIndicator) {
+    scrollIndicator.addEventListener('click', () => {
+      const heroHeight = document.querySelector('.sg-hero').offsetHeight;
+      window.scrollTo({
+        top: heroHeight,
+        behavior: 'smooth'
+      });
+    });
+  }
+
+  // Start auto-rotate after 5 seconds of no interaction
+  let interactionTimeout;
+  function resetAutoRotate() {
+    stopAutoRotate();
+    clearTimeout(interactionTimeout);
+    interactionTimeout = setTimeout(startAutoRotate, 5000);
+  }
+
+  // Stop auto-rotate when user scrolls past hero
+  let scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) {
+        stopAutoRotate();
+      } else {
+        resetAutoRotate();
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const heroSection = document.querySelector('.sg-hero');
+  if (heroSection) {
+    scrollObserver.observe(heroSection);
+  }
+
+  // Initial setup
+  resetAutoRotate();
 })();
 </script>
 
@@ -1427,192 +1648,457 @@ setInterval(displayOpeningStatus, 60000);
 </div>
 
 <style>
-/* ===== CLEAN HERO SECTION ===== */
-.hero-clean {
+/* ===== MODERN HERO - AUDIENCE FOCUSED ===== */
+.sg-hero {
   position: relative;
-  min-height: 85vh;
+  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
 }
 
-.hero-clean-bg {
+/* Background Layer */
+.sg-hero__bg {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
 
-.hero-slides {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.hero-slide {
-  position: absolute;
-  inset: 0;
+.sg-hero__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transform: scale(1.05);
-  transition: opacity 1.5s ease, transform 8s ease;
+  object-position: center 30%;
+  transform: scale(1.02);
+  animation: heroZoom 25s ease-in-out infinite alternate;
 }
 
-.hero-slide.active {
-  opacity: 1;
-  transform: scale(1);
+@keyframes heroZoom {
+  0% { transform: scale(1.02); }
+  100% { transform: scale(1.08); }
 }
 
-.hero-clean-overlay {
+.sg-hero__gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%);
+  background:
+    linear-gradient(180deg, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0.6) 50%, rgba(10,10,15,0.85) 100%),
+    linear-gradient(90deg, rgba(10,10,15,0.5) 0%, transparent 50%, rgba(10,10,15,0.5) 100%);
 }
 
-.hero-clean-content {
+.sg-hero__noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Content Container */
+.sg-hero__content {
   position: relative;
   z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  max-width: 800px;
-  padding: 60px 24px;
 }
 
-.hero-clean-badge {
-  display: inline-block;
-  background: rgba(212,175,55,0.15);
-  border: 1px solid rgba(212,175,55,0.3);
-  color: #f9cb00;
+/* Audience Tabs */
+.sg-hero__audience {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 40px;
+  padding: 6px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px;
+}
+
+.sg-hero__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-radius: 100px;
+  color: rgba(255,255,255,0.6);
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  padding: 8px 20px;
-  border-radius: 30px;
-  margin-bottom: 24px;
-  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
 }
 
-.hero-clean-title {
-  font-size: clamp(36px, 7vw, 64px);
+.sg-hero__tab svg {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.sg-hero__tab:hover {
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.08);
+}
+
+.sg-hero__tab:hover svg {
+  opacity: 1;
+}
+
+.sg-hero__tab.active {
+  background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+  color: #0a0a0f;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(249,203,0,0.35);
+}
+
+.sg-hero__tab.active svg {
+  opacity: 1;
+  stroke: #0a0a0f;
+}
+
+/* Headlines Container */
+.sg-hero__headlines {
+  position: relative;
+  width: 100%;
+  min-height: 380px;
+}
+
+.sg-hero__headline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sg-hero__headline.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  position: relative;
+}
+
+/* Eyebrow */
+.sg-hero__eyebrow {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(249,203,0,0.12);
+  border: 1px solid rgba(249,203,0,0.25);
+  border-radius: 100px;
+  color: #f9cb00;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+/* Title */
+.sg-hero__title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 700;
   color: #fff;
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   margin: 0 0 20px 0;
-  letter-spacing: -1px;
 }
 
-.hero-clean-title span {
+.sg-hero__title span {
   color: #f9cb00;
+  display: block;
 }
 
-.hero-clean-sub {
-  font-size: clamp(16px, 2.5vw, 20px);
-  color: rgba(255,255,255,0.85);
+/* Description */
+.sg-hero__desc {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: rgba(255,255,255,0.75);
   line-height: 1.6;
-  margin: 0 auto 36px auto;
-  max-width: 560px;
+  max-width: 540px;
+  margin: 0 0 32px 0;
 }
 
-.hero-clean-cta {
+/* CTAs */
+.sg-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.sg-hero__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.sg-hero__btn--primary {
+  background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+  color: #0a0a0f;
+  box-shadow: 0 4px 24px rgba(249,203,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.sg-hero__btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(249,203,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.sg-hero__btn--primary:active {
+  transform: translateY(0);
+}
+
+.sg-hero__btn--secondary {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.sg-hero__btn--secondary:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+}
+
+/* Stats */
+.sg-hero__stats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 24px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  max-width: 500px;
+}
+
+.sg-hero__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.sg-hero__stat strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f9cb00;
+  line-height: 1;
+}
+
+.sg-hero__stat span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Trust Bar */
+.sg-hero__trust {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 48px;
+  gap: 20px;
+  margin-top: auto;
+  padding-top: 40px;
 }
 
-.hero-clean-btn {
+.sg-hero__trust-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sg-hero__trust-item svg {
+  color: #f9cb00;
+}
+
+.sg-hero__phone {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 16px 36px;
-  background: linear-gradient(135deg, #f9cb00 0%, #d9b400 100%);
-  border: none;
-  border-radius: 8px;
-  color: #1a1a2e;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(212,175,55,0.3);
-}
-
-.hero-clean-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(212,175,55,0.4);
-}
-
-.hero-clean-btn:active {
-  transform: translateY(0);
-}
-
-.hero-clean-phone {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 24px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 100px;
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
-.hero-clean-phone:hover {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.3);
+.sg-hero__phone:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(249,203,0,0.4);
+  color: #f9cb00;
 }
 
-.hero-clean-trust {
+/* Scroll Indicator */
+.sg-hero__scroll {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-}
-
-.hero-trust-item {
-  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: rgba(255,255,255,0.9);
-  font-size: 14px;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  animation: scrollBounce 2s ease-in-out infinite;
+  cursor: pointer;
+  z-index: 10;
 }
 
-.hero-trust-divider {
-  width: 1px;
-  height: 20px;
-  background: rgba(255,255,255,0.3);
+.sg-hero__scroll:hover {
+  color: rgba(255,255,255,0.7);
 }
 
+@keyframes scrollBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(6px); }
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
-  .hero-clean {
-    min-height: 90vh;
+  .sg-hero {
+    min-height: 100vh;
+    min-height: 100svh;
   }
-  .hero-clean-content {
-    padding: 40px 20px;
+
+  .sg-hero__content {
+    padding: 80px 20px 100px;
   }
-  .hero-clean-cta {
-    flex-direction: column;
+
+  .sg-hero__audience {
+    gap: 6px;
+    padding: 4px;
+    margin-bottom: 32px;
   }
-  .hero-clean-btn, .hero-clean-phone {
-    width: 100%;
-    max-width: 300px;
-    justify-content: center;
+
+  .sg-hero__tab {
+    padding: 8px 12px;
+    font-size: 11px;
   }
-  .hero-trust-divider {
+
+  .sg-hero__tab span:not(.sg-hero__tab svg) {
     display: none;
   }
-  .hero-clean-trust {
-    gap: 16px;
+
+  .sg-hero__tab svg {
+    margin: 0;
+  }
+
+  .sg-hero__headlines {
+    min-height: 420px;
+  }
+
+  .sg-hero__title {
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .sg-hero__desc {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+
+  .sg-hero__ctas {
+    flex-direction: column;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .sg-hero__btn {
+    width: 100%;
+    padding: 16px 24px;
+  }
+
+  .sg-hero__stats {
+    gap: 20px;
+    padding: 20px 0;
+  }
+
+  .sg-hero__stat strong {
+    font-size: 1.25rem;
+  }
+
+  .sg-hero__trust {
+    gap: 12px;
+    padding-top: 24px;
+  }
+
+  .sg-hero__trust-item {
+    font-size: 11px;
+  }
+
+  .sg-hero__scroll {
+    bottom: 16px;
+  }
+}
+
+/* Tablet specific */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sg-hero__content {
+    padding: 100px 32px 80px;
+  }
+
+  .sg-hero__headlines {
+    min-height: 360px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sg-hero__img {
+    animation: none;
+  }
+
+  .sg-hero__headline {
+    transition: opacity 0.3s ease;
+    transform: none;
+  }
+
+  .sg-hero__headline.active {
+    transform: none;
+  }
+
+  .sg-hero__scroll {
+    animation: none;
   }
 }
 
@@ -2517,7 +3003,7 @@ form.addEventListener('submit', async (e) => {
     if (response.ok) {
       closeModal();
       alert('Thank you! We\'ll contact you within 24 hours.');
-      window.location.href = 'https://www.surprisegranite.com/contact-thank-you';
+      window.location.href = 'https://surprisegranite.com/contact-thank-you';
     } else {
       throw new Error('Server error');
     }
@@ -5049,7 +5535,7 @@ form.addEventListener('submit', async (e) => {
         </div>
         <div class="footer-socials">
           <a href="https://www.facebook.com/surprisegranitetops" target="_blank" aria-label="Facebook">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6H13.5C12.9477 6 12.5 6.44772 12.5 7V10H16.5C16.6137 9.99748 16.7216 10.0504 16.7892 10.1419C16.8568 10.2334 16.8758 10.352 16.84 10.46L16.1 12.66C16.0318 12.8619 15.8431 12.9984 15.63 13H12.5V20.5C12.5 20.7761 12.2761 21 12 21H9.5C9.22386 21 9 20.7761 9 20.5V13H7.5C7.22386 13 7 12.7761 7 12.5V10.5C7 10.2239 7.22386 10 7.5 10H9V7C9 4.79086 10.7909 3 13 3H16.5C16.7761 3 17 3.22386 17 3.5V5.5C17 5.77614 16.7761 6 16.5 6Z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2z"/></svg>
           </a>
           <a href="https://www.instagram.com/surprisegranite/" target="_blank" aria-label="Instagram">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3H8C5.23858 3 3 5.23858 3 8V16C3 18.7614 5.23858 21 8 21H16C18.7614 21 21 18.7614 21 16V8C21 5.23858 18.7614 3 16 3ZM19.25 16C19.2445 17.7926 17.7926 19.2445 16 19.25H8C6.20735 19.2445 4.75549 17.7926 4.75 16V8C4.75549 6.20735 6.20735 4.75549 8 4.75H16C17.7926 4.75549 19.2445 6.20735 19.25 8V16ZM16.75 8.25C17.3023 8.25 17.75 7.80228 17.75 7.25C17.75 6.69772 17.3023 6.25 16.75 6.25C16.1977 6.25 15.75 6.69772 15.75 7.25C15.75 7.80228 16.1977 8.25 16.75 8.25ZM12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5ZM9.25 12C9.25 13.5188 10.4812 14.75 12 14.75C13.5188 14.75 14.75 13.5188 14.75 12C14.75 10.4812 13.5188 9.25 12 9.25C10.4812 9.25 9.25 10.4812 9.25 12Z"/></svg>
@@ -5105,9 +5591,12 @@ form.addEventListener('submit', async (e) => {
 .footer-contact { margin-bottom: 16px; }
 .footer-contact p { font-size: 13px; color: rgba(255,255,255,0.7); margin: 0 0 12px 0; line-height: 1.5; }
 .footer-contact strong { color: rgba(255,255,255,0.9); }
-.footer-socials { display: flex; gap: 12px; }
-.footer-socials a { color: rgba(255,255,255,0.6); transition: color 0.2s; padding: 0; }
-.footer-socials a:hover { color: #f9cb00; }
+.footer-socials { display: flex; gap: 12px; position: relative; }
+.footer-socials a { all: unset; cursor: pointer; display: flex !important; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; color: rgba(255,255,255,0.7); transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); box-sizing: border-box; position: relative; }
+.footer-socials a::before, .footer-socials a::after { display: none !important; content: none !important; }
+.footer-socials a:hover { color: #f9cb00; background: rgba(249,203,0,0.1); border-color: rgba(249,203,0,0.3); box-shadow: 0 4px 20px rgba(249,203,0,0.2); transform: translateY(-2px); }
+.footer-socials a:hover::before, .footer-socials a:hover::after { display: none !important; content: none !important; }
+.footer-socials a svg { flex-shrink: 0; display: block; width: 18px; height: 18px; pointer-events: none; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding: 20px 24px; }
 .footer-bottom-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .footer-legal { display: flex; gap: 16px; }

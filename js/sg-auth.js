@@ -2,14 +2,17 @@
  * Surprise Granite - Unified Authentication Service
  * Provides consistent auth state across all pages
  * Syncs with Supabase and updates UI globally
+ *
+ * Uses centralized configuration from /js/config.js
  */
 
 (function() {
   'use strict';
 
-  // Supabase Configuration
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config or fallback to defaults
+  const config = window.SG_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
 
   // State
   let supabaseClient = null;
@@ -69,6 +72,8 @@
               await loadUserProfile();
               notifyListeners('login', { user: currentUser, profile: userProfile });
               updateNavUI();
+              // Sync any local favorites to database
+              syncLocalFavoritesToDB();
             } else if (event === 'SIGNED_OUT') {
               currentUser = null;
               userProfile = null;
@@ -204,14 +209,49 @@
     return data;
   }
 
-  // Sign out
-  async function signOut() {
-    if (!supabaseClient) return;
+  // Sign out - comprehensive cleanup
+  async function signOut(options = {}) {
+    const { redirect = true, redirectUrl = '/' } = options;
 
-    await supabaseClient.auth.signOut();
+    try {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+    } catch (e) {
+      console.warn('SG Auth: Error during signOut', e);
+    }
+
+    // Clear all auth state
     currentUser = null;
     userProfile = null;
+
+    // Clear auth-related localStorage items
+    try {
+      const storageKey = window._sgSupabaseConfig?.storageKey || 'sg-auth-token';
+      localStorage.removeItem(storageKey);
+      // Also clear any legacy keys
+      localStorage.removeItem('sb-ypeypgwsycxcagncgdur-auth-token');
+      // Clear session storage
+      sessionStorage.removeItem('auth_redirect');
+    } catch (e) {
+      console.warn('SG Auth: Error clearing storage', e);
+    }
+
+    // Update UI across all components
     updateNavUI();
+
+    // Notify all listeners
+    notifyListeners('logout', null);
+
+    // Dispatch global event for other scripts to react
+    window.dispatchEvent(new CustomEvent('sg-auth-logout', {
+      detail: { timestamp: Date.now() }
+    }));
+
+    // Redirect if requested
+    if (redirect) {
+      window.location.href = redirectUrl;
+    }
   }
 
   // Sign in with OAuth provider (Google, etc.)
@@ -631,43 +671,98 @@
   async function syncLocalFavoritesToDB() {
     if (!currentUser || !supabaseClient) return;
 
-    const localFavorites = getLocalFavorites();
+    // Get all local favorites from all possible storage keys
+    let localFavorites = {};
+    try {
+      const stored = localStorage.getItem('sg_favorites');
+      if (stored) localFavorites = JSON.parse(stored);
+
+      // Also check unified key
+      const unified = localStorage.getItem('sg_all_favorites');
+      if (unified) {
+        const unifiedParsed = JSON.parse(unified);
+        Object.keys(unifiedParsed).forEach(type => {
+          if (!localFavorites[type]) localFavorites[type] = [];
+          localFavorites[type] = [...localFavorites[type], ...unifiedParsed[type]];
+        });
+      }
+    } catch (e) {
+      console.warn('SG Auth: Error reading local favorites', e);
+      return;
+    }
+
     const allLocal = Object.entries(localFavorites).flatMap(([type, items]) =>
-      items.map(item => ({ ...item, productType: type }))
+      (items || []).map(item => ({ ...item, productType: type }))
     );
 
     if (allLocal.length === 0) return;
 
     console.log('SG Auth: Syncing', allLocal.length, 'local favorites to database');
 
-    for (const item of allLocal) {
-      try {
-        // Check if already exists
-        const { data: existing } = await supabaseClient
-          .from('user_favorites')
-          .select('id')
-          .eq('user_id', currentUser.id)
-          .eq('product_url', item.url)
-          .single();
+    try {
+      // Get all existing favorites from database in one query
+      const { data: existingFavorites, error: fetchError } = await supabaseClient
+        .from('user_favorites')
+        .select('product_url, product_title')
+        .eq('user_id', currentUser.id);
 
-        if (!existing) {
-          await supabaseClient.from('user_favorites').insert([{
-            user_id: currentUser.id,
-            product_title: item.title,
-            product_url: item.url,
-            product_image: item.image,
-            product_material: item.material || '',
-            product_color: item.color || '',
-            product_type: item.productType
-          }]);
-        }
-      } catch (e) {
-        // Ignore duplicates
+      if (fetchError) {
+        console.error('SG Auth: Error fetching existing favorites', fetchError);
+        return;
       }
+
+      // Build set of existing URLs and titles for fast lookup
+      const existingUrls = new Set((existingFavorites || []).map(f => f.product_url));
+      const existingTitles = new Set((existingFavorites || []).map(f => f.product_title));
+
+      // Filter to only new items (not already in database)
+      const newItems = allLocal.filter(item =>
+        !existingUrls.has(item.url) && !existingTitles.has(item.title)
+      );
+
+      if (newItems.length > 0) {
+        // Deduplicate new items by URL
+        const seen = new Set();
+        const uniqueNewItems = newItems.filter(item => {
+          const key = item.url || item.title;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // Insert all new items in one batch
+        const toInsert = uniqueNewItems.map(item => ({
+          user_id: currentUser.id,
+          product_title: item.title,
+          product_url: item.url,
+          product_image: item.image,
+          product_material: item.material || '',
+          product_color: item.color || '',
+          product_type: item.productType
+        }));
+
+        const { error: insertError } = await supabaseClient
+          .from('user_favorites')
+          .insert(toInsert);
+
+        if (insertError) {
+          console.error('SG Auth: Error syncing favorites', insertError);
+        } else {
+          console.log('SG Auth: Synced', toInsert.length, 'new favorites to database');
+        }
+      }
+    } catch (e) {
+      console.error('SG Auth: Error during favorites sync', e);
     }
 
-    // Clear local after sync
-    localStorage.removeItem('sg_favorites');
+    // Clear local favorites after successful sync
+    try {
+      localStorage.removeItem('sg_favorites');
+      localStorage.removeItem('sg_all_favorites');
+      localStorage.removeItem('sg_flooring_favorites');
+      localStorage.removeItem('sg_countertop_favorites');
+    } catch (e) {}
+
     updateFavoritesBadge();
   }
 

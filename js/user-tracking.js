@@ -2,13 +2,18 @@
  * Surprise Granite - User Tracking & Session Management
  * Keeps users signed in across website and portal
  * Tracks behavior, page views, and syncs with Supabase
+ *
+ * Uses centralized configuration from /js/config.js
  */
 
 (function() {
   'use strict';
 
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config or fallback to defaults
+  const config = window.SG_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  const STORAGE_KEY = config.SUPABASE_STORAGE_KEY || 'sg-auth-token';
 
   let supabase = null;
   let currentUser = null;
@@ -60,7 +65,7 @@
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
-          storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+          storageKey: STORAGE_KEY, // Use consistent storage key from config
           flowType: 'implicit',
           lock: false
         }
@@ -68,6 +73,15 @@
       window._sgSupabaseClient = supabase;
     }
   }
+
+  // Listen for logout events from other components
+  window.addEventListener('sg-auth-logout', () => {
+    currentUser = null;
+    // Reset session tracking
+    sessionStartTime = Date.now();
+    pageViewId = null;
+    updateUserInterface();
+  });
 
   async function checkAndRestoreSession() {
     if (!supabase) return;

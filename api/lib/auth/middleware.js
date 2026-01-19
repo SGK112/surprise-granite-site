@@ -184,25 +184,8 @@ async function authenticateJWT(req, res, next) {
       return next();
     }
 
-    // Priority 3: Legacy header (deprecated - will be removed)
-    const userId = req.headers['x-user-id'];
-    if (userId) {
-      console.warn(`DEPRECATED: x-user-id header used from ${ipAddress}. Migrate to JWT auth.`);
-
-      await logAuditEvent({
-        eventType: 'deprecated_auth_used',
-        userId,
-        details: { header: 'x-user-id', ip: ipAddress },
-        ipAddress,
-        userAgent,
-        status: 'success'
-      });
-
-      req.user = { id: userId };
-      req.authMethod = 'legacy';
-      req.isLegacyAuth = true;
-      return next();
-    }
+    // Legacy x-user-id header has been removed for security
+    // All clients must use JWT Bearer tokens or API keys
 
     // No authentication provided
     return res.status(401).json({

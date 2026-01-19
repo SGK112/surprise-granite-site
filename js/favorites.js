@@ -2,14 +2,18 @@
  * Surprise Granite - Unified Favorites System
  * Adds favorite/heart buttons to all product cards across the site
  * Works with: Flooring, Countertops, Tile, Shop products
+ *
+ * Uses centralized configuration from /js/config.js
  */
 
 (function() {
   'use strict';
 
-  // Supabase config
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config or fallback to defaults
+  const config = window.SG_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  const STORAGE_KEY = config.SUPABASE_STORAGE_KEY || 'sg-auth-token';
 
   let supabaseClient = null;
   let currentUser = null;
@@ -182,13 +186,13 @@
     // Fallback to direct Supabase initialization
     try {
       if (window.supabase && window.supabase.createClient) {
-        // Use global client if available
+        // Use global client if available (preferred - maintains single session)
         supabaseClient = window._sgSupabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true,
-            storageKey: 'sb-ypeypgwsycxcagncgdur-auth-token',
+            storageKey: STORAGE_KEY, // Use consistent storage key from config
             flowType: 'implicit',
             lock: false
           }
@@ -204,6 +208,15 @@
       console.log('Favorites: Supabase not available');
     }
   }
+
+  // Listen for auth logout events to update favorites state
+  window.addEventListener('sg-auth-logout', () => {
+    currentUser = null;
+    // Keep localStorage favorites for guest users, but reload from localStorage
+    loadAllFavorites();
+    updateAllHeartButtons();
+    updateFavoritesBadge();
+  });
 
   // Wait for SgAuth to be available
   function waitForSgAuth() {

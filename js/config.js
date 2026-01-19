@@ -25,7 +25,8 @@
 
     // Supabase Configuration
     SUPABASE_URL: 'https://ypeypgwsycxcagncgdur.supabase.co',
-    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1MjU5NzQsImV4cCI6MjA1OTEwMTk3NH0.0I3P4GJRu5FkUn-P6pxTi8mIZxBJ9mP68KXl6G3JRv8',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+    SUPABASE_STORAGE_KEY: 'sg-auth-token',
 
     // Business Settings
     COMMISSION_RATE: 5, // 5% commission on marketplace sales

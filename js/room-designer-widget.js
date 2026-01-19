@@ -1,24 +1,14 @@
 /**
  * Room Designer Widget
- * Adds a floating CTA to promote the room designer tool across the site
- * Also auto-adds "Design Your Kitchen" button to countertop product pages
+ * Floating Remodely house logo - rotates 180° on scroll
  */
 
 (function() {
   'use strict';
 
-  // Don't show on room designer page itself
+  // Only exclude the room designer workspace itself
   if (window.location.pathname.includes('/tools/room-designer')) return;
 
-  // Configuration
-  const config = {
-    showFloatingWidget: true,
-    showOnProductPages: true,
-    widgetDelay: 3000, // Show widget after 3 seconds
-    scrollThreshold: 300 // Show after scrolling 300px
-  };
-
-  // Create floating widget
   function createFloatingWidget() {
     const widget = document.createElement('div');
     widget.id = 'room-designer-widget';
@@ -27,170 +17,173 @@
         #room-designer-widget {
           position: fixed;
           bottom: 100px;
-          right: 20px;
-          z-index: 9999;
-          font-family: 'Inter', -apple-system, sans-serif;
+          right: 28px;
+          z-index: 9998;
+          opacity: 0;
+          transition: opacity 0.5s ease;
         }
-        #room-designer-widget .rdw-btn {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-          color: white;
-          padding: 14px 20px;
-          border-radius: 50px;
+
+        #room-designer-widget.visible {
+          opacity: 1;
+        }
+
+        .rdw-link {
+          display: block;
+          width: 56px;
+          height: 56px;
+          position: relative;
           text-decoration: none;
-          font-weight: 600;
-          font-size: 14px;
-          box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-          transition: all 0.3s ease;
-          border: none;
           cursor: pointer;
         }
-        #room-designer-widget .rdw-btn:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+
+        .rdw-icon {
+          width: 56px;
+          height: 56px;
+          transition: transform 0.4s ease;
         }
-        #room-designer-widget .rdw-btn svg {
-          flex-shrink: 0;
+
+        .rdw-icon svg {
+          width: 100%;
+          height: 100%;
         }
-        #room-designer-widget .rdw-close {
+
+        @keyframes rdwEntrance {
+          0% { transform: rotateY(0deg); }
+          50% { transform: rotateY(180deg); }
+          100% { transform: rotateY(0deg); }
+        }
+
+        .rdw-icon.entrance {
+          animation: rdwEntrance 0.8s ease-out;
+        }
+
+        .rdw-tooltip {
           position: absolute;
-          top: -8px;
-          right: -8px;
-          width: 24px;
-          height: 24px;
-          background: #1a1a2e;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          font-size: 14px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          right: calc(100% + 12px);
+          top: 50%;
+          transform: translateY(-50%) translateX(10px);
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          color: #fff;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-family: 'Inter', -apple-system, sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          white-space: nowrap;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        #room-designer-widget.hidden {
-          display: none;
+
+        .rdw-tooltip::after {
+          content: '';
+          position: absolute;
+          right: -6px;
+          top: 50%;
+          transform: translateY(-50%);
+          border: 6px solid transparent;
+          border-left-color: #16213e;
         }
+
+        .rdw-link:hover .rdw-tooltip {
+          opacity: 1;
+          transform: translateY(-50%) translateX(0);
+        }
+
         @media (max-width: 768px) {
           #room-designer-widget {
-            bottom: 80px;
-            right: 10px;
+            bottom: 100px;
+            right: 32px;
           }
-          #room-designer-widget .rdw-btn {
-            padding: 12px 16px;
-            font-size: 13px;
+          .rdw-link, .rdw-icon {
+            width: 48px;
+            height: 48px;
           }
-          #room-designer-widget .rdw-text {
+          .rdw-tooltip {
             display: none;
           }
         }
       </style>
-      <a href="/tools/room-designer/" class="rdw-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M3 9h18M9 21V9"/>
-        </svg>
-        <span class="rdw-text">Design Your Kitchen</span>
+
+      <a href="/tools/room-designer/" class="rdw-link">
+        <div class="rdw-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="rdwGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4285F4"/>
+                <stop offset="33%" stop-color="#EA4335"/>
+                <stop offset="66%" stop-color="#FBBC05"/>
+                <stop offset="100%" stop-color="#34A853"/>
+              </linearGradient>
+            </defs>
+            <path d="M3 21V10l9-7 9 7v11" stroke="url(#rdwGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 21h-7" stroke="#34A853" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="rdw-tooltip">Room Designer Pro</div>
       </a>
-      <button class="rdw-close" onclick="document.getElementById('room-designer-widget').classList.add('hidden'); localStorage.setItem('rdw-dismissed', Date.now());">×</button>
     `;
 
-    // Check if dismissed recently (within 24 hours)
     const dismissed = localStorage.getItem('rdw-dismissed');
-    if (dismissed && Date.now() - parseInt(dismissed) < 24 * 60 * 60 * 1000) {
-      return; // Don't show if dismissed within 24 hours
-    }
+    if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
 
-    // Add to page after delay and scroll threshold
     let shown = false;
-    function showWidget() {
-      if (shown) return;
-      if (window.scrollY > config.scrollThreshold) {
-        shown = true;
-        document.body.appendChild(widget);
+    let lastScrollY = window.scrollY;
+    let rotation = 0;
+    let icon = null;
+    let isHovered = false;
+
+    function updateRotation() {
+      if (icon && !icon.classList.contains('entrance')) {
+        icon.style.transform = `rotateY(${isHovered ? 180 : rotation}deg)`;
       }
     }
 
-    setTimeout(() => {
-      window.addEventListener('scroll', showWidget, { passive: true });
-      showWidget(); // Check immediately
-    }, config.widgetDelay);
-  }
+    function handleScroll() {
+      const delta = window.scrollY - lastScrollY;
+      lastScrollY = window.scrollY;
 
-  // Add design button to product pages
-  function enhanceProductPages() {
-    // Only on countertop pages
-    if (!window.location.pathname.includes('/countertops/')) return;
-
-    // Get stone slug from URL
-    const pathParts = window.location.pathname.split('/').filter(p => p);
-    const stoneSlug = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
-
-    if (!stoneSlug) return;
-
-    // Find CTA buttons container
-    const ctaContainer = document.querySelector('.cta-buttons');
-    if (!ctaContainer) return;
-
-    // Check if design button already exists
-    if (ctaContainer.querySelector('.btn-design, [href*="room-designer"]')) return;
-
-    // Create design button
-    const designBtn = document.createElement('a');
-    designBtn.href = `/tools/room-designer/?material=${stoneSlug}`;
-    designBtn.className = 'btn-design';
-    designBtn.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-      Design Your Kitchen
-    `;
-
-    // Add styles if not present
-    if (!document.querySelector('#design-btn-styles')) {
-      const style = document.createElement('style');
-      style.id = 'design-btn-styles';
-      style.textContent = `
-        .btn-design {
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-          color: white !important;
-          padding: 16px 32px;
-          border-radius: 12px;
-          text-decoration: none;
-          font-weight: 700;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.2s;
-        }
-        .btn-design:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        }
-      `;
-      document.head.appendChild(style);
+      if (Math.abs(delta) > 3) {
+        // Rotate 180 in one direction based on scroll
+        rotation += delta > 0 ? 10 : -10;
+        rotation = Math.max(0, Math.min(180, rotation));
+        if (!isHovered) updateRotation();
+      }
     }
 
-    // Insert after first button (Get Free Estimate)
-    const firstBtn = ctaContainer.querySelector('a');
-    if (firstBtn) {
-      firstBtn.insertAdjacentElement('afterend', designBtn);
-    } else {
-      ctaContainer.appendChild(designBtn);
+    function showWidget() {
+      if (shown) return;
+      shown = true;
+      document.body.appendChild(widget);
+      icon = widget.querySelector('.rdw-icon');
+      const link = widget.querySelector('.rdw-link');
+
+      // Hover handlers
+      link.addEventListener('mouseenter', () => {
+        isHovered = true;
+        updateRotation();
+      });
+      link.addEventListener('mouseleave', () => {
+        isHovered = false;
+        updateRotation();
+      });
+
+      // Entrance animation
+      icon.classList.add('entrance');
+      icon.addEventListener('animationend', () => {
+        icon.classList.remove('entrance');
+        updateRotation();
+      }, { once: true });
+
+      requestAnimationFrame(() => widget.classList.add('visible'));
+      window.addEventListener('scroll', handleScroll, { passive: true });
     }
+
+    // Show immediately after short delay
+    setTimeout(showWidget, 500);
   }
 
-  // Initialize
-  document.addEventListener('DOMContentLoaded', function() {
-    if (config.showFloatingWidget) createFloatingWidget();
-    if (config.showOnProductPages) enhanceProductPages();
-  });
-
-  // For pages that load dynamically
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    if (config.showOnProductPages) enhanceProductPages();
-  }
+  document.addEventListener('DOMContentLoaded', createFloatingWidget);
 })();

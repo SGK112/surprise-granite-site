@@ -574,6 +574,24 @@
               <div class="type-desc">General contractor</div>
             </div>
           </label>
+
+          <label class="type-option">
+            <input type="radio" name="business_type" value="designer">
+            <div class="type-option-card">
+              <div class="type-icon">&#127912;</div>
+              <div class="type-name">Designer</div>
+              <div class="type-desc">Interior designer</div>
+            </div>
+          </label>
+
+          <label class="type-option">
+            <input type="radio" name="business_type" value="supplier">
+            <div class="type-option-card">
+              <div class="type-icon">&#128230;</div>
+              <div class="type-name">Supplier</div>
+              <div class="type-desc">Material supplier</div>
+            </div>
+          </label>
         </div>
 
         <div class="benefits-list">
@@ -731,6 +749,36 @@
 
     let currentStep = 1;
     let formData = {};
+
+    // Check URL parameter for pre-selected business type
+    (function initFromUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeParam = urlParams.get('type');
+      if (typeParam) {
+        // Map URL params to radio values
+        const typeMap = {
+          'fabricator': 'fabricator',
+          'fab': 'fabricator',
+          'installer': 'installer',
+          'fab_installer': 'fab_installer',
+          'full_service': 'fab_installer',
+          'contractor': 'contractor',
+          'gc': 'contractor',
+          'designer': 'designer',
+          'interior_designer': 'designer',
+          'supplier': 'supplier',
+          'vendor': 'supplier',
+          'material_supplier': 'supplier'
+        };
+        const mappedType = typeMap[typeParam.toLowerCase()] || typeParam.toLowerCase();
+        const radioBtn = document.querySelector(`input[name="business_type"][value="${mappedType}"]`);
+        if (radioBtn) {
+          radioBtn.checked = true;
+          // Add selected class to card
+          radioBtn.closest('.type-option').classList.add('selected');
+        }
+      }
+    })();
 
     // Radius slider
     const radiusSlider = document.getElementById('serviceRadius');
