@@ -4168,6 +4168,100 @@ app.get('/api/payouts', async (req, res) => {
   }
 });
 
+// Get a specific payout with all related transactions
+app.get('/api/payouts/:payoutId', async (req, res) => {
+  try {
+    const { payoutId } = req.params;
+
+    // Get the payout details
+    const payout = await stripe.payouts.retrieve(payoutId);
+
+    // Get balance transactions associated with this payout
+    const balanceTransactions = await stripe.balanceTransactions.list({
+      payout: payoutId,
+      limit: 100
+    });
+
+    // For each charge transaction, get the full charge details
+    const transactionsWithDetails = await Promise.all(
+      balanceTransactions.data.map(async (bt) => {
+        let sourceDetails = null;
+
+        if (bt.source && bt.source.startsWith('ch_')) {
+          try {
+            const charge = await stripe.charges.retrieve(bt.source);
+            sourceDetails = {
+              type: 'charge',
+              id: charge.id,
+              amount: charge.amount / 100,
+              customer_email: charge.billing_details?.email || charge.receipt_email,
+              customer_name: charge.billing_details?.name,
+              description: charge.description,
+              receipt_url: charge.receipt_url,
+              invoice_id: charge.invoice
+            };
+
+            // If there's an invoice, get invoice details
+            if (charge.invoice) {
+              try {
+                const invoice = await stripe.invoices.retrieve(charge.invoice);
+                sourceDetails.invoice = {
+                  id: invoice.id,
+                  number: invoice.number,
+                  customer_email: invoice.customer_email,
+                  customer_name: invoice.customer_name,
+                  amount_paid: invoice.amount_paid / 100,
+                  status: invoice.status,
+                  hosted_invoice_url: invoice.hosted_invoice_url
+                };
+              } catch (e) {}
+            }
+          } catch (e) {
+            console.log('Could not retrieve charge:', bt.source);
+          }
+        }
+
+        return {
+          id: bt.id,
+          amount: bt.amount / 100,
+          net: bt.net / 100,
+          fee: bt.fee / 100,
+          currency: bt.currency,
+          type: bt.type,
+          description: bt.description,
+          created: new Date(bt.created * 1000).toISOString(),
+          source: bt.source,
+          sourceDetails
+        };
+      })
+    );
+
+    res.json({
+      payout: {
+        id: payout.id,
+        amount: payout.amount / 100,
+        currency: payout.currency,
+        status: payout.status,
+        arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
+        created: new Date(payout.created * 1000).toISOString(),
+        method: payout.method,
+        description: payout.description,
+        destination: payout.destination
+      },
+      transactions: transactionsWithDetails,
+      summary: {
+        total_transactions: transactionsWithDetails.length,
+        total_gross: transactionsWithDetails.reduce((sum, t) => sum + (t.amount > 0 ? t.amount : 0), 0),
+        total_fees: transactionsWithDetails.reduce((sum, t) => sum + t.fee, 0),
+        total_net: transactionsWithDetails.reduce((sum, t) => sum + t.net, 0)
+      }
+    });
+  } catch (error) {
+    console.error('Payout detail error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Get recent transactions/charges
 app.get('/api/transactions', async (req, res) => {
   try {
