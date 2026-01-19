@@ -12682,6 +12682,11 @@
       // Check for lead info from account page
       checkLeadInfo();
 
+      // Restore lead context from localStorage (if not coming fresh from account)
+      if (!currentLeadInfo) {
+        restoreLeadInfo();
+      }
+
       // Save initial state
       saveUndoState();
 
@@ -39058,12 +39063,26 @@
       // Update totals
       updateQuotePreviewTotals();
 
-      // Load saved customer info if any
-      const savedCustomer = JSON.parse(localStorage.getItem('sg_quote_customer') || '{}');
-      document.getElementById('quoteCustomerName').value = savedCustomer.name || '';
-      document.getElementById('quoteCustomerEmail').value = savedCustomer.email || '';
-      document.getElementById('quoteCustomerPhone').value = savedCustomer.phone || '';
-      document.getElementById('quoteProjectName').value = currentProjectName || '';
+      // Pre-fill customer info - priority: lead info > saved customer > empty
+      if (currentLeadInfo && currentLeadInfo.name) {
+        // Use lead info (from account dashboard)
+        document.getElementById('quoteCustomerName').value = currentLeadInfo.name || '';
+        document.getElementById('quoteCustomerEmail').value = currentLeadInfo.email || '';
+        document.getElementById('quoteCustomerPhone').value = currentLeadInfo.phone || '';
+        document.getElementById('quoteProjectName').value = currentProjectName || `${currentLeadInfo.projectType || ''} Project`.trim();
+
+        // Pre-fill notes with lead message if available
+        if (currentLeadInfo.notes) {
+          document.getElementById('quoteNotes').value = `Customer Request: ${currentLeadInfo.notes}`;
+        }
+      } else {
+        // Load saved customer info if any
+        const savedCustomer = JSON.parse(localStorage.getItem('sg_quote_customer') || '{}');
+        document.getElementById('quoteCustomerName').value = savedCustomer.name || '';
+        document.getElementById('quoteCustomerEmail').value = savedCustomer.email || '';
+        document.getElementById('quoteCustomerPhone').value = savedCustomer.phone || '';
+        document.getElementById('quoteProjectName').value = currentProjectName || '';
+      }
 
       document.getElementById('quotePreviewModal').classList.add('active');
     }
@@ -39396,10 +39415,19 @@
             show_pricing: shareData.showPricing,
             expires_at: shareData.expiryDays > 0 ? new Date(Date.now() + shareData.expiryDays * 24 * 60 * 60 * 1000).toISOString() : null,
             data: shareData,
+            lead_id: currentLeadInfo?.id || window.currentLeadId || null,
             created_by: (await supabaseClient.auth.getUser()).data?.user?.id || null
           })
           .select()
           .single();
+
+        // If linked to a lead, update lead status to "quoted"
+        if (currentLeadInfo?.id || window.currentLeadId) {
+          await supabaseClient
+            .from('leads')
+            .update({ status: 'quoted', updated_at: new Date().toISOString() })
+            .eq('id', currentLeadInfo?.id || window.currentLeadId);
+        }
 
         if (error) throw error;
 
@@ -41400,6 +41428,9 @@
     }
 
     // Check for lead info passed from account page
+    // Global lead info storage for quote integration
+    let currentLeadInfo = null;
+
     function checkLeadInfo() {
       const urlParams = new URLSearchParams(window.location.search);
       const fromLead = urlParams.get('from_lead');
@@ -41413,11 +41444,23 @@
         const leadInfo = JSON.parse(leadInfoJson);
         console.log('Loading design from lead:', leadInfo);
 
+        // Store lead info globally for use in quotes and estimates
+        currentLeadInfo = {
+          id: leadInfo.id,
+          name: leadInfo.full_name || '',
+          email: leadInfo.email || '',
+          phone: leadInfo.phone || '',
+          address: leadInfo.address || '',
+          projectType: leadInfo.project_type || '',
+          notes: leadInfo.message || ''
+        };
+
         // Pre-fill project name with customer name and project type
         const projectNameField = document.getElementById('projectName');
         if (projectNameField) {
           const projectType = leadInfo.project_type ? `${leadInfo.project_type.charAt(0).toUpperCase() + leadInfo.project_type.slice(1)} ` : '';
           projectNameField.value = `${leadInfo.full_name} - ${projectType}Design`;
+          currentProjectName = projectNameField.value;
         }
 
         // Set room type based on project type
@@ -41439,15 +41482,86 @@
         // Store lead ID for later association
         window.currentLeadId = leadInfo.id;
 
-        // Clear sessionStorage to prevent reuse
+        // Also save to localStorage for persistence if page refreshes
+        localStorage.setItem('sg_current_lead_info', JSON.stringify(currentLeadInfo));
+
+        // Clear sessionStorage to prevent reuse on new tabs
         sessionStorage.removeItem('sg_lead_for_design');
 
         // Clean up URL
         history.replaceState(null, '', window.location.pathname);
 
-        showToast(`Design started for ${leadInfo.full_name}`, 'success');
+        // Show lead context banner
+        showLeadContextBanner(leadInfo.full_name);
+
+        showNotification(`Design started for ${leadInfo.full_name}`, 'success');
       } catch (e) {
         console.error('Error loading lead info:', e);
+      }
+    }
+
+    // Show a banner indicating this design is linked to a lead
+    function showLeadContextBanner(customerName) {
+      // Check if banner already exists
+      if (document.getElementById('leadContextBanner')) return;
+
+      const banner = document.createElement('div');
+      banner.id = 'leadContextBanner';
+      banner.style.cssText = `
+        position: fixed;
+        top: 56px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        padding: 8px 20px;
+        border-radius: 0 0 12px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: white;
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+      `;
+      banner.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+        <span>Designing for: <strong>${customerName}</strong></span>
+        <button onclick="clearLeadContext()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px;margin-left:8px;">
+          Clear
+        </button>
+      `;
+      document.body.appendChild(banner);
+    }
+
+    // Clear lead context
+    function clearLeadContext() {
+      currentLeadInfo = null;
+      window.currentLeadId = null;
+      localStorage.removeItem('sg_current_lead_info');
+
+      const banner = document.getElementById('leadContextBanner');
+      if (banner) banner.remove();
+
+      showNotification('Lead context cleared', 'info');
+    }
+
+    // Restore lead info from localStorage on page load
+    function restoreLeadInfo() {
+      try {
+        const savedLead = localStorage.getItem('sg_current_lead_info');
+        if (savedLead) {
+          currentLeadInfo = JSON.parse(savedLead);
+          window.currentLeadId = currentLeadInfo.id;
+          showLeadContextBanner(currentLeadInfo.name);
+        }
+      } catch (e) {
+        console.error('Error restoring lead info:', e);
       }
     }
 
