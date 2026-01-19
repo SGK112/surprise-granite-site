@@ -7546,6 +7546,201 @@
     let customerFilter = 'all';
     let currentCustomerTab = 'jobs';
 
+    // ============================================
+    // UNIFIED WORKFLOW STATE
+    // Centralized state management for lead → customer → estimate → invoice → job flow
+    // ============================================
+    const workflowState = {
+      currentLead: null,
+      currentCustomer: null,
+      currentEstimate: null,
+      currentInvoice: null,
+      currentJob: null,
+      reset() {
+        this.currentLead = null;
+        this.currentCustomer = null;
+        this.currentEstimate = null;
+        this.currentInvoice = null;
+        this.currentJob = null;
+      }
+    };
+
+    // Modal-specific state for estimate creation
+    let estimateModalState = {
+      customerId: null,
+      leadId: null,
+      editingEstimateId: null
+    };
+
+    // ============================================
+    // HELPER FUNCTIONS FOR UNIFIED FLOW
+    // ============================================
+
+    // Fetch customer from database (not just cached array)
+    async function getCustomer(customerId) {
+      if (!customerId) return null;
+
+      // Try cache first
+      let customer = allCustomers?.find(c => c.id === customerId);
+      if (customer) return customer;
+
+      // Fetch from database
+      try {
+        const { data, error } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .single();
+
+        if (!error && data) {
+          // Add to cache
+          if (!allCustomers) allCustomers = [];
+          allCustomers.push(data);
+          return data;
+        }
+      } catch (e) {
+        console.error('Error fetching customer:', e);
+      }
+      return null;
+    }
+
+    // Find or create customer from lead data
+    async function findOrCreateCustomerFromLead(lead) {
+      if (!lead) return null;
+
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return null;
+
+      // Check if customer already exists with this email
+      if (lead.email) {
+        const { data: existing } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('email', lead.email)
+          .single();
+
+        if (existing) {
+          // Update lead with customer_id reference
+          await supabaseClient.from('leads').update({ customer_id: existing.id }).eq('id', lead.id);
+          return existing;
+        }
+      }
+
+      // Parse name
+      const nameParts = (lead.full_name || '').trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Parse address
+      let address = '', city = '', state = 'AZ', zip = '';
+      if (lead.service_address) {
+        address = lead.service_address;
+      } else if (lead.billing_address) {
+        const parts = lead.billing_address.split(',').map(s => s.trim());
+        address = parts[0] || '';
+        city = parts[1] || '';
+        const stateZip = (parts[2] || '').split(' ');
+        state = stateZip[0] || 'AZ';
+        zip = stateZip[1] || '';
+      }
+
+      // Create new customer
+      const { data: newCustomer, error } = await supabaseClient
+        .from('customers')
+        .insert({
+          user_id: user.id,
+          name: lead.full_name || 'Customer',
+          email: lead.email,
+          phone: lead.phone,
+          address: address,
+          city: city,
+          state: state,
+          zip: zip,
+          source: 'lead_conversion',
+          notes: `Converted from lead. Project: ${lead.project_type || 'N/A'}`
+        })
+        .select()
+        .single();
+
+      if (!error && newCustomer) {
+        // Update lead with customer reference
+        await supabaseClient.from('leads').update({
+          customer_id: newCustomer.id,
+          status: 'qualified'
+        }).eq('id', lead.id);
+
+        // Add to cache
+        if (!allCustomers) allCustomers = [];
+        allCustomers.push(newCustomer);
+
+        return newCustomer;
+      }
+
+      return null;
+    }
+
+    // Create customer from estimate form data
+    async function createCustomerFromEstimateForm(formData) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return null;
+
+      // Check if customer exists with this email
+      if (formData.customerEmail) {
+        const { data: existing } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('email', formData.customerEmail)
+          .single();
+
+        if (existing) return existing;
+      }
+
+      // Create new customer
+      const { data: newCustomer, error } = await supabaseClient
+        .from('customers')
+        .insert({
+          user_id: user.id,
+          name: formData.customerName || 'Customer',
+          email: formData.customerEmail,
+          phone: formData.customerPhone,
+          address: formData.customerAddress,
+          city: formData.customerCity,
+          state: formData.customerState || 'AZ',
+          source: 'estimate_creation'
+        })
+        .select()
+        .single();
+
+      if (!error && newCustomer) {
+        if (!allCustomers) allCustomers = [];
+        allCustomers.push(newCustomer);
+        return newCustomer;
+      }
+
+      return null;
+    }
+
+    // Pre-fill estimate form with customer data
+    function fillEstimateCustomerFields(customer) {
+      if (!customer) return;
+
+      const fields = {
+        'estimate-customer-name': customer.name,
+        'estimate-customer-email': customer.email,
+        'estimate-customer-phone': customer.phone,
+        'estimate-customer-address': customer.address,
+        'estimate-customer-city': customer.city,
+        'estimate-customer-state': customer.state || 'AZ'
+      };
+
+      Object.entries(fields).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el && value) el.value = value;
+      });
+    }
+
     // Initialize with timeout fallback
     document.addEventListener('DOMContentLoaded', async () => {
       // Fallback timer - show dashboard/auth if things take too long
@@ -9810,8 +10005,10 @@
       }
     }
 
-    async function createEstimateFromLead() {
-      if (!selectedLead) {
+    // UNIFIED: Start estimate from lead - ensures customer is created/linked first
+    async function startEstimateFromLead(leadId) {
+      const lead = leadId ? allLeads.find(l => l.id === leadId) : selectedLead;
+      if (!lead) {
         showToast('No lead selected', 'error');
         return;
       }
@@ -9819,46 +10016,56 @@
       // Close lead modal
       closeLeadModal();
 
+      showToast('Creating customer record...', 'info');
+
+      // ALWAYS create/find customer first - this ensures proper linkage
+      const customer = await findOrCreateCustomerFromLead(lead);
+      if (!customer) {
+        showToast('Failed to create customer record', 'error');
+        return;
+      }
+
+      // Update workflow state
+      workflowState.currentLead = lead;
+      workflowState.currentCustomer = customer;
+
       // Navigate to estimates page
       showPage('estimates');
 
       // Small delay to ensure page is rendered
       setTimeout(() => {
-        // Open new estimate modal
-        openCreateEstimateModal();
+        // Set modal state with proper customer linkage
+        estimateModalState = {
+          customerId: customer.id,
+          leadId: lead.id,
+          editingEstimateId: null
+        };
 
-        // Pre-fill customer info from lead
-        const nameField = document.getElementById('estimate-customer-name');
-        const emailField = document.getElementById('estimate-customer-email');
-        const phoneField = document.getElementById('estimate-customer-phone');
-        const addressField = document.getElementById('estimate-customer-address');
-        const cityField = document.getElementById('estimate-customer-city');
+        // Open estimate modal (preserveState=true since we set estimateModalState above)
+        openCreateEstimateModal(true);
+
+        // Pre-fill customer info
+        fillEstimateCustomerFields(customer);
+
+        // Pre-fill project info from lead
         const projectNameField = document.getElementById('estimate-project-name');
         const projectDescField = document.getElementById('estimate-project-desc');
-
-        if (nameField) nameField.value = selectedLead.full_name || '';
-        if (emailField) emailField.value = selectedLead.email || '';
-        if (phoneField) phoneField.value = selectedLead.phone || '';
-        if (addressField) addressField.value = selectedLead.project_address || selectedLead.address || '';
-        if (projectNameField) projectNameField.value = selectedLead.project_type ? `${selectedLead.project_type} Project` : 'New Project';
-        if (projectDescField) projectDescField.value = selectedLead.message || selectedLead.project_details || '';
-
-        // Parse city from address if available
-        const addressParts = (selectedLead.project_address || '').split(',').map(s => s.trim());
-        if (cityField && addressParts[1]) cityField.value = addressParts[1];
-
-        // Store lead ID for reference
-        const modal = document.getElementById('create-estimate-modal');
-        if (modal) modal.dataset.leadId = selectedLead.id;
+        if (projectNameField) projectNameField.value = lead.project_type ? `${lead.project_type} Project` : 'New Project';
+        if (projectDescField) projectDescField.value = lead.message || lead.project_details || '';
 
         // Update lead status to "quoted"
         supabaseClient
           .from('leads')
           .update({ status: 'quoted', updated_at: new Date().toISOString() })
-          .eq('id', selectedLead.id);
+          .eq('id', lead.id);
 
-        showToast('Lead info loaded into estimate form');
+        showToast(`Estimate linked to customer: ${customer.name}`);
       }, 150);
+    }
+
+    // Backward compatibility alias
+    async function createEstimateFromLead() {
+      return startEstimateFromLead(selectedLead?.id);
     }
 
     // Create room design from lead
@@ -12963,10 +13170,19 @@
       loadEstimates();
     }
 
-    async function openCreateEstimateModal() {
+    async function openCreateEstimateModal(preserveState = false) {
       const modal = document.getElementById('create-estimate-modal');
       modal.classList.add('active');
       document.getElementById('create-estimate-form').reset();
+
+      // Reset state unless preserveState is true (called from startEstimateFromLead/Customer)
+      if (!preserveState) {
+        estimateModalState = {
+          customerId: null,
+          leadId: null,
+          editingEstimateId: null
+        };
+      }
 
       // Reset line items container with empty message
       const container = document.getElementById('estimate-line-items');
@@ -13589,14 +13805,36 @@
         const timelineEl = document.getElementById('estimate-timeline');
         const paymentScheduleType = document.getElementById('payment-schedule-type').value || 'deposit-balance';
 
-        // Get customer_id if linked from customer modal
-        const modal = document.getElementById('create-estimate-modal');
-        const customerId = modal?.dataset?.customerId || null;
+        // Get customer_id from unified state (not dataset attributes)
+        let customerId = estimateModalState.customerId || null;
+        const leadId = estimateModalState.leadId || null;
+
+        // If no customer linked, auto-create from form data
+        const customerEmail = document.getElementById('estimate-customer-email').value.trim();
+        const customerName = document.getElementById('estimate-customer-name').value.trim();
+
+        if (!customerId && customerEmail) {
+          console.log('[Estimate] No customer_id, creating customer from form...');
+          const formData = {
+            customerName: customerName,
+            customerEmail: customerEmail,
+            customerPhone: document.getElementById('estimate-customer-phone').value.trim(),
+            customerAddress: document.getElementById('estimate-customer-address').value.trim(),
+            customerCity: document.getElementById('estimate-customer-city').value.trim(),
+            customerState: document.getElementById('estimate-customer-state').value.trim()
+          };
+          const newCustomer = await createCustomerFromEstimateForm(formData);
+          if (newCustomer) {
+            customerId = newCustomer.id;
+            console.log('[Estimate] Auto-created customer:', customerId);
+          }
+        }
 
         // Create estimate
         const estimateData = {
           user_id: user.id,
           customer_id: customerId,
+          lead_id: leadId,
           customer_name: document.getElementById('estimate-customer-name').value.trim(),
           customer_email: document.getElementById('estimate-customer-email').value.trim() || null,
           customer_phone: document.getElementById('estimate-customer-phone').value.trim() || null,
@@ -13694,9 +13932,9 @@
         loadEstimates();
 
         const viewLink = `${window.location.origin}/estimate/view/?token=${token}`;
-        const customerEmail = document.getElementById('estimate-customer-email').value.trim();
 
         // Try to send email via API, but don't fail if it doesn't work
+        // (customerEmail was already defined earlier in this function)
         if (customerEmail) {
           try {
             const emailController = new AbortController();
@@ -13783,12 +14021,33 @@
           throw new Error('Please enter a customer name');
         }
 
+        // Get customer_id from unified state (preserve customer link in drafts!)
+        let customerId = estimateModalState.customerId || null;
+        const leadId = estimateModalState.leadId || null;
+
+        // If no customer linked, auto-create from form data (even for drafts)
+        const customerEmail = document.getElementById('estimate-customer-email').value.trim();
+        if (!customerId && customerEmail) {
+          const formData = {
+            customerName: customerName,
+            customerEmail: customerEmail,
+            customerPhone: document.getElementById('estimate-customer-phone').value.trim(),
+            customerAddress: document.getElementById('estimate-customer-address').value.trim(),
+            customerCity: document.getElementById('estimate-customer-city').value.trim(),
+            customerState: document.getElementById('estimate-customer-state').value.trim()
+          };
+          const newCustomer = await createCustomerFromEstimateForm(formData);
+          if (newCustomer) customerId = newCustomer.id;
+        }
+
         // Get totals
         const subtotal = parseFloat(document.getElementById('estimate-subtotal').textContent.replace('$', '').replace(',', '')) || 0;
         const total = parseFloat(document.getElementById('estimate-total').textContent.replace('$', '').replace(',', '')) || 0;
 
         const estimateData = {
           user_id: user.id,
+          customer_id: customerId,
+          lead_id: leadId,
           customer_name: customerName,
           customer_email: document.getElementById('estimate-customer-email').value.trim() || null,
           customer_phone: document.getElementById('estimate-customer-phone').value.trim() || null,
@@ -15969,49 +16228,21 @@
       }
     }
 
-    async function createEstimateForCustomer(customerId) {
-      // Find the customer - check multiple sources
-      let customer = null;
-
-      if (customerId) {
-        // Try allCustomers array first
-        customer = allCustomers?.find(c => c.id === customerId);
-
-        // If not found, try to fetch from database
-        if (!customer) {
-          try {
-            const { data } = await supabaseClient
-              .from('customers')
-              .select('*')
-              .eq('id', customerId)
-              .single();
-            if (data) {
-              customer = data;
-              // Add to allCustomers for future use
-              if (!allCustomers) allCustomers = [];
-              allCustomers.push(data);
-            }
-          } catch (e) {
-            console.log('Could not fetch customer:', e);
-          }
-        }
-      }
-
-      // Fall back to selectedCustomer if available
-      if (!customer && selectedCustomer) {
-        customer = selectedCustomer;
-        customerId = selectedCustomer.id;
-      }
+    // UNIFIED: Start estimate from customer - uses centralized state
+    async function startEstimateFromCustomer(customerId) {
+      // Use helper to fetch customer (handles cache and DB lookup)
+      const customer = await getCustomer(customerId) || selectedCustomer;
 
       if (!customer) {
         showToast('Customer not found. Please select a customer first.', 'error');
         return;
       }
 
-      // Store as selectedCustomer for reference
+      // Update unified workflow state
+      workflowState.currentCustomer = customer;
       selectedCustomer = customer;
 
-      // Close customers modal if open
+      // Close any open modals
       if (typeof closeCustomersModal === 'function') closeCustomersModal();
       if (typeof closeCustomerModal === 'function') closeCustomerModal();
 
@@ -16020,28 +16251,26 @@
 
       // Small delay to ensure page is rendered
       setTimeout(() => {
-        // Open new estimate modal with customer pre-filled
-        openCreateEstimateModal();
+        // Set modal state with proper customer linkage (no more dataset attributes)
+        estimateModalState = {
+          customerId: customer.id,
+          leadId: null,
+          editingEstimateId: null
+        };
 
-        // Pre-fill customer info using correct field IDs
-        const nameField = document.getElementById('estimate-customer-name');
-        const emailField = document.getElementById('estimate-customer-email');
-        const phoneField = document.getElementById('estimate-customer-phone');
-        const addressField = document.getElementById('estimate-customer-address');
-        const cityField = document.getElementById('estimate-customer-city');
-        const stateField = document.getElementById('estimate-customer-state');
+        // Open estimate modal (preserveState=true since we set estimateModalState above)
+        openCreateEstimateModal(true);
 
-        if (nameField) nameField.value = customer.name || '';
-        if (emailField) emailField.value = customer.email || '';
-        if (phoneField) phoneField.value = customer.phone || '';
-        if (addressField) addressField.value = customer.address || '';
-        if (cityField) cityField.value = customer.city || '';
-        if (stateField) stateField.value = customer.state || 'AZ';
+        // Pre-fill customer info using helper
+        fillEstimateCustomerFields(customer);
 
-        // Store customer ID for linking
-        const modal = document.getElementById('create-estimate-modal');
-        if (modal) modal.dataset.customerId = customerId;
+        showToast(`Creating estimate for ${customer.name}`);
       }, 100);
+    }
+
+    // Backward compatibility alias
+    async function createEstimateForCustomer(customerId) {
+      return startEstimateFromCustomer(customerId);
     }
 
     async function loadCustomersModal() {
