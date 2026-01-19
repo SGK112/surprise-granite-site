@@ -7979,20 +7979,142 @@
 
   <!-- Price List Modal -->
   <div class="modal-overlay" id="priceListModal">
-    <div class="modal" style="max-width: 700px;">
+    <div class="modal" style="max-width: 800px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
       <div class="modal-header">
         <h3 class="modal-title">Price List Manager</h3>
         <button class="modal-close" onclick="closeModal('priceListModal')">×</button>
       </div>
 
       <div class="price-list-tabs">
-        <button class="tab-btn active" onclick="showPriceTab('upload')">Upload</button>
+        <button class="tab-btn active" onclick="showPriceTab('labor')">Labor Rates</button>
+        <button class="tab-btn" onclick="showPriceTab('materials')">Materials</button>
+        <button class="tab-btn" onclick="showPriceTab('upload')">Upload</button>
         <button class="tab-btn" onclick="showPriceTab('saved')">Saved Lists</button>
-        <button class="tab-btn" onclick="showPriceTab('current')">Current Prices</button>
+      </div>
+
+      <!-- Labor Rates Tab -->
+      <div class="price-tab" id="priceTabLabor" style="overflow-y: auto; max-height: calc(90vh - 140px);">
+        <div style="padding: 12px; background: rgba(249,203,0,0.1); border-radius: 8px; margin-bottom: 16px;">
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+            <strong style="color: var(--gold-primary);">Labor Rates</strong> - Set your pricing for fabrication, installation, and services. These rates are used to calculate labor costs in quotes.
+          </p>
+        </div>
+
+        <!-- Labor Category Accordion -->
+        <div class="labor-categories" id="laborCategoriesContainer">
+          <!-- Stone/Countertop Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('stone')">
+              <span class="category-icon">◆</span>
+              <span class="category-title">Stone / Countertop Services</span>
+              <span class="category-toggle" id="toggleStone">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsStone"></div>
+          </div>
+
+          <!-- Cabinet Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('cabinet')">
+              <span class="category-icon">▣</span>
+              <span class="category-title">Cabinet Services</span>
+              <span class="category-toggle" id="toggleCabinet">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsCabinet"></div>
+          </div>
+
+          <!-- Plumbing Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('plumbing')">
+              <span class="category-icon">⚙</span>
+              <span class="category-title">Plumbing Services</span>
+              <span class="category-toggle" id="togglePlumbing">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsPlumbing"></div>
+          </div>
+
+          <!-- Electrical Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('electrical')">
+              <span class="category-icon">⚡</span>
+              <span class="category-title">Electrical Services</span>
+              <span class="category-toggle" id="toggleElectrical">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsElectrical"></div>
+          </div>
+
+          <!-- Flooring Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('flooring')">
+              <span class="category-icon">▦</span>
+              <span class="category-title">Flooring Services</span>
+              <span class="category-toggle" id="toggleFlooring">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsFlooring"></div>
+          </div>
+
+          <!-- Demo & Prep Services -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('demo')">
+              <span class="category-icon">⛏</span>
+              <span class="category-title">Demo & Prep</span>
+              <span class="category-toggle" id="toggleDemo">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsDemo"></div>
+          </div>
+
+          <!-- Finishing/Specialty -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('finishing')">
+              <span class="category-icon">✦</span>
+              <span class="category-title">Finishing & Specialty</span>
+              <span class="category-toggle" id="toggleFinishing">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsFinishing"></div>
+          </div>
+
+          <!-- Project Fees -->
+          <div class="labor-category">
+            <div class="labor-category-header" onclick="toggleLaborCategory('fees')">
+              <span class="category-icon">$</span>
+              <span class="category-title">Project Fees</span>
+              <span class="category-toggle" id="toggleFees">▼</span>
+            </div>
+            <div class="labor-category-items" id="laborItemsFees"></div>
+          </div>
+        </div>
+
+        <div style="padding: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="resetLaborRates()">Reset to Defaults</button>
+          <button class="btn btn-primary" onclick="saveLaborRates()">Save Rates</button>
+        </div>
+      </div>
+
+      <!-- Materials Tab (Slab Pricing) -->
+      <div class="price-tab" id="priceTabMaterials" style="display:none; overflow-y: auto; max-height: calc(90vh - 140px);">
+        <div style="padding: 12px; background: rgba(249,203,0,0.1); border-radius: 8px; margin-bottom: 16px;">
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+            <strong style="color: var(--gold-primary);">Material Pricing</strong> - Materials sold by the slab are priced per slab, then fabrication/installation calculated per sqft.
+          </p>
+        </div>
+
+        <div class="material-pricing-section">
+          <h4 style="margin-bottom: 12px; color: #fff;">Slab Materials</h4>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Enter slab cost. Fab & install are calculated from Labor Rates based on sqft.</p>
+          <div id="slabMaterialsList"></div>
+        </div>
+
+        <div class="material-pricing-section" style="margin-top: 24px;">
+          <h4 style="margin-bottom: 12px; color: #fff;">Per-Sqft Materials</h4>
+          <div id="sqftMaterialsList"></div>
+        </div>
+
+        <div style="padding: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px; justify-content: flex-end;">
+          <button class="btn btn-primary" onclick="saveMaterialPricing()">Save Material Prices</button>
+        </div>
       </div>
 
       <!-- Upload Tab -->
-      <div class="price-tab" id="priceTabUpload">
+      <div class="price-tab" id="priceTabUpload" style="display:none;">
         <div class="upload-dropzone" id="priceListDropzone" onclick="document.getElementById('priceListFile').click()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:12px;opacity:0.5;">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -8000,18 +8122,18 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           <p style="margin-bottom:4px;">Drop Excel or CSV file here</p>
-          <p class="hint" style="font-size:12px;color:var(--text-muted);">Supports .xlsx, .xls, .csv</p>
+          <p class="hint" style="font-size:12px;color:var(--text-muted);">Supports .xlsx, .xls, .csv for material or labor price lists</p>
           <input type="file" id="priceListFile" accept=".xlsx,.xls,.csv" onchange="handlePriceListUpload(event)" style="display:none">
         </div>
 
         <div class="column-mapping" id="columnMapping" style="display:none;">
           <h4 style="margin-bottom:12px;">Map Columns</h4>
           <div class="mapping-row">
-            <label>Material ID/SKU</label>
+            <label>Item ID/SKU</label>
             <select id="mapMaterialId" class="property-select" onchange="updateMappingPreview()"></select>
           </div>
           <div class="mapping-row">
-            <label>Material Name</label>
+            <label>Item Name</label>
             <select id="mapMaterialName" class="property-select" onchange="updateMappingPreview()"></select>
           </div>
           <div class="mapping-row">
@@ -8036,14 +8158,6 @@
           <p class="empty-state">No saved price lists</p>
         </div>
         <button class="btn btn-primary" onclick="savePriceList()" style="margin-top:16px;">Save Current Prices</button>
-      </div>
-
-      <!-- Current Prices Tab -->
-      <div class="price-tab" id="priceTabCurrent" style="display:none;">
-        <div class="current-prices-header">
-          <input type="text" class="search-input" id="priceSearchInput" placeholder="Search materials..." oninput="filterCurrentPrices()">
-        </div>
-        <div class="current-prices-list" id="currentPricesList"></div>
       </div>
     </div>
   </div>
@@ -8942,6 +9056,95 @@
       },
       // Cooktop cutout
       cooktopCutout: { price: 125, label: 'Cooktop Cutout' }
+    };
+
+    // ===== LABOR RATES CONFIGURATION =====
+    // Editable labor pricing for all services
+    const LABOR_RATES = {
+      // Stone/Countertop Services (per sqft unless noted)
+      stone: {
+        fabrication: { rate: 35, unit: 'sqft', label: 'Stone Fabrication', category: 'countertop' },
+        installation: { rate: 15, unit: 'sqft', label: 'Countertop Installation', category: 'countertop' },
+        polish: { rate: 8, unit: 'sqft', label: 'Polish/Seal', category: 'countertop' },
+        template: { rate: 150, unit: 'visit', label: 'Template Visit', category: 'countertop' },
+        delivery: { rate: 125, unit: 'trip', label: 'Delivery', category: 'countertop' }
+      },
+      // Cabinet Services
+      cabinet: {
+        installation: { rate: 85, unit: 'cabinet', label: 'Cabinet Installation', category: 'cabinet' },
+        assembly: { rate: 45, unit: 'cabinet', label: 'Cabinet Assembly (RTA)', category: 'cabinet' },
+        crownMolding: { rate: 12, unit: 'lf', label: 'Crown Molding Install', category: 'cabinet' },
+        hardwareInstall: { rate: 8, unit: 'piece', label: 'Hardware Installation', category: 'cabinet' },
+        modification: { rate: 75, unit: 'hour', label: 'Cabinet Modification', category: 'cabinet' }
+      },
+      // Plumbing Services
+      plumbing: {
+        sinkInstall: { rate: 175, unit: 'each', label: 'Sink Installation', category: 'plumbing' },
+        faucetInstall: { rate: 125, unit: 'each', label: 'Faucet Installation', category: 'plumbing' },
+        disposal: { rate: 150, unit: 'each', label: 'Garbage Disposal Install', category: 'plumbing' },
+        dishwasherHookup: { rate: 125, unit: 'each', label: 'Dishwasher Hookup', category: 'plumbing' },
+        roughIn: { rate: 350, unit: 'location', label: 'Plumbing Rough-In', category: 'plumbing' },
+        waterLine: { rate: 85, unit: 'hour', label: 'Water Line Work', category: 'plumbing' }
+      },
+      // Electrical Services
+      electrical: {
+        outletInstall: { rate: 125, unit: 'each', label: 'Outlet Installation', category: 'electrical' },
+        underCabinetLight: { rate: 85, unit: 'lf', label: 'Under-Cabinet Lighting', category: 'electrical' },
+        applianceCircuit: { rate: 275, unit: 'each', label: 'Appliance Circuit', category: 'electrical' },
+        permitFee: { rate: 150, unit: 'permit', label: 'Electrical Permit', category: 'electrical' }
+      },
+      // Flooring Services
+      flooring: {
+        tileInstall: { rate: 12, unit: 'sqft', label: 'Tile Installation', category: 'flooring' },
+        hardwoodInstall: { rate: 8, unit: 'sqft', label: 'Hardwood Installation', category: 'flooring' },
+        lvpInstall: { rate: 5, unit: 'sqft', label: 'LVP/LVT Installation', category: 'flooring' },
+        subfloorPrep: { rate: 3, unit: 'sqft', label: 'Subfloor Prep', category: 'flooring' },
+        grout: { rate: 2, unit: 'sqft', label: 'Grouting', category: 'flooring' },
+        baseboardInstall: { rate: 4, unit: 'lf', label: 'Baseboard Installation', category: 'flooring' }
+      },
+      // Demo & Prep Services
+      demo: {
+        cabinetRemoval: { rate: 45, unit: 'cabinet', label: 'Cabinet Removal', category: 'demo' },
+        countertopRemoval: { rate: 8, unit: 'sqft', label: 'Countertop Removal', category: 'demo' },
+        flooringRemoval: { rate: 3, unit: 'sqft', label: 'Flooring Removal', category: 'demo' },
+        backsplashRemoval: { rate: 6, unit: 'sqft', label: 'Backsplash Removal', category: 'demo' },
+        applianceRemoval: { rate: 75, unit: 'each', label: 'Appliance Removal', category: 'demo' },
+        dumpster: { rate: 450, unit: 'load', label: 'Dumpster/Haul Away', category: 'demo' },
+        generalDemo: { rate: 65, unit: 'hour', label: 'General Demo Labor', category: 'demo' }
+      },
+      // Finishing/Specialty
+      finishing: {
+        drywall: { rate: 4, unit: 'sqft', label: 'Drywall Repair', category: 'finishing' },
+        paint: { rate: 3, unit: 'sqft', label: 'Painting', category: 'finishing' },
+        caulk: { rate: 4, unit: 'lf', label: 'Caulking', category: 'finishing' },
+        trim: { rate: 6, unit: 'lf', label: 'Trim Work', category: 'finishing' },
+        carpentry: { rate: 75, unit: 'hour', label: 'General Carpentry', category: 'finishing' }
+      },
+      // Project Fees
+      fees: {
+        projectManagement: { rate: 0, unit: 'percent', label: 'Project Management', category: 'fees', percentOf: 'total' },
+        permit: { rate: 250, unit: 'permit', label: 'Building Permit', category: 'fees' },
+        design: { rate: 150, unit: 'hour', label: 'Design Services', category: 'fees' },
+        inspection: { rate: 100, unit: 'visit', label: 'Site Inspection', category: 'fees' }
+      }
+    };
+
+    // Material pricing modes (slab vs sqft)
+    const MATERIAL_PRICING = {
+      // Slab-based materials (sold by slab, fabricated by sqft)
+      slabMaterials: {
+        granite: { slabPrice: 0, slabSqft: 45, label: 'Granite', priceMode: 'slab' },
+        marble: { slabPrice: 0, slabSqft: 45, label: 'Marble', priceMode: 'slab' },
+        quartzite: { slabPrice: 0, slabSqft: 45, label: 'Quartzite', priceMode: 'slab' },
+        quartz: { slabPrice: 0, slabSqft: 50, label: 'Quartz', priceMode: 'slab' },
+        porcelain: { slabPrice: 0, slabSqft: 32, label: 'Porcelain Slab', priceMode: 'slab' }
+      },
+      // Per-sqft materials
+      sqftMaterials: {
+        laminate: { pricePerSqft: 25, label: 'Laminate', priceMode: 'sqft' },
+        solidSurface: { pricePerSqft: 45, label: 'Solid Surface', priceMode: 'sqft' },
+        butcherBlock: { pricePerSqft: 35, label: 'Butcher Block', priceMode: 'sqft' }
+      }
     };
 
     // ===== TAKEOFF CALCULATIONS =====
