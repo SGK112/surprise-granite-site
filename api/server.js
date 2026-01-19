@@ -2340,11 +2340,11 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                       customer_name: invoice.customer_name || 'Customer',
                       customer_email: invoice.customer_email,
                       customer_phone: invoice.customer_phone,
-                      subtotal: invoice.subtotal / 100,
-                      tax_amount: invoice.tax / 100,
-                      total: invoice.amount_paid / 100,
+                      subtotal: (invoice.subtotal || 0) / 100,
+                      tax_amount: (invoice.tax || 0) / 100,
+                      total: (invoice.amount_paid || 0) / 100,
                       amount_due: 0,
-                      amount_paid: invoice.amount_paid / 100,
+                      amount_paid: (invoice.amount_paid || 0) / 100,
                       status: 'paid',
                       paid_at: new Date().toISOString(),
                       stripe_invoice_id: invoice.id,
@@ -2374,7 +2374,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                     .update({
                       status: 'paid',
                       paid_at: new Date().toISOString(),
-                      amount_paid: invoice.amount_paid / 100,
+                      amount_paid: (invoice.amount_paid || 0) / 100,
                       amount_due: 0
                     })
                     .eq('stripe_invoice_id', invoice.id);
