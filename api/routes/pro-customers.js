@@ -8,10 +8,16 @@ const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase with service role for admin operations
-const supabase = createClient(
-  process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Only create client if credentials are available
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+} else {
+  console.warn('Pro-customers: Supabase credentials not configured - routes will be disabled');
+}
 
 // Email service for notifications
 const emailService = require('../services/emailService');
@@ -21,6 +27,10 @@ const emailService = require('../services/emailService');
 // ============================================================
 const verifyProUser = async (req, res, next) => {
   try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database not configured' });
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Missing authorization token' });
