@@ -11129,7 +11129,7 @@ app.get('/api/stripe-status', async (req, res) => {
 // Start server with WebSocket support
 server.listen(PORT, () => {
   console.log(`Surprise Granite API running on port ${PORT}`);
-  console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY}`);
+  console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY} (key starts with: ${process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'NOT SET'})`);
   console.log(`Supabase configured: ${!!supabase}`);
   console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
   console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
