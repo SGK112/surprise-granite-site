@@ -691,6 +691,29 @@ CREATE POLICY "estimate_items_public_via_token" ON public.estimate_items
   );
 
 -- ============================================================
+-- INVOICE STRIPE INTEGRATION COLUMNS
+-- Run this migration to add Stripe-specific columns for syncing
+-- ============================================================
+
+-- Add customer_id for linking to customers table
+ALTER TABLE public.invoices
+  ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL;
+
+-- Add Stripe integration columns
+ALTER TABLE public.invoices
+  ADD COLUMN IF NOT EXISTS stripe_invoice_id TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS stripe_hosted_url TEXT,
+  ADD COLUMN IF NOT EXISTS stripe_pdf_url TEXT;
+
+-- Add amount_due (alias for balance_due for Stripe compatibility)
+ALTER TABLE public.invoices
+  ADD COLUMN IF NOT EXISTS amount_due DECIMAL(10,2) DEFAULT 0;
+
+-- Create index for Stripe invoice ID lookups
+CREATE INDEX IF NOT EXISTS invoices_stripe_id_idx ON public.invoices(stripe_invoice_id);
+CREATE INDEX IF NOT EXISTS invoices_customer_id_idx ON public.invoices(customer_id);
+
+-- ============================================================
 -- DONE
 -- ============================================================
 COMMENT ON TABLE public.estimates IS 'Customer estimates/quotes with line items and approval workflow';

@@ -2308,6 +2308,81 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               } else if (jobErr) {
                 console.error('Error creating job:', jobErr.message);
               }
+
+              // Sync invoice to Supabase for reliable display in dashboard
+              try {
+                // Check if invoice already exists
+                const { data: existingInvoice } = await supabase
+                  .from('invoices')
+                  .select('id')
+                  .eq('stripe_invoice_id', invoice.id)
+                  .single();
+
+                if (!existingInvoice) {
+                  // Generate invoice number
+                  const { data: invSettings } = await supabase
+                    .from('business_settings')
+                    .select('invoice_prefix, invoice_next_number')
+                    .eq('user_id', adminUserId)
+                    .single();
+
+                  const invPrefix = invSettings?.invoice_prefix || 'INV-';
+                  const invNum = invSettings?.invoice_next_number || 1001;
+                  const invoiceNumber = `${invPrefix}${invNum}`;
+
+                  // Insert invoice record
+                  const { error: invErr } = await supabase
+                    .from('invoices')
+                    .insert({
+                      user_id: adminUserId,
+                      invoice_number: invoiceNumber,
+                      customer_id: customerId,
+                      customer_name: invoice.customer_name || 'Customer',
+                      customer_email: invoice.customer_email,
+                      customer_phone: invoice.customer_phone,
+                      subtotal: invoice.subtotal / 100,
+                      tax_amount: invoice.tax / 100,
+                      total: invoice.amount_paid / 100,
+                      amount_due: 0,
+                      amount_paid: invoice.amount_paid / 100,
+                      status: 'paid',
+                      paid_at: new Date().toISOString(),
+                      stripe_invoice_id: invoice.id,
+                      stripe_hosted_url: invoice.hosted_invoice_url,
+                      stripe_pdf_url: invoice.invoice_pdf,
+                      notes: projectDescription
+                    });
+
+                  if (!invErr) {
+                    console.log('Synced invoice to Supabase:', invoiceNumber);
+
+                    // Update next invoice number
+                    await supabase
+                      .from('business_settings')
+                      .upsert({
+                        user_id: adminUserId,
+                        invoice_prefix: invPrefix,
+                        invoice_next_number: invNum + 1
+                      }, { onConflict: 'user_id' });
+                  } else {
+                    console.error('Error syncing invoice:', invErr.message);
+                  }
+                } else {
+                  // Update existing invoice to paid
+                  await supabase
+                    .from('invoices')
+                    .update({
+                      status: 'paid',
+                      paid_at: new Date().toISOString(),
+                      amount_paid: invoice.amount_paid / 100,
+                      amount_due: 0
+                    })
+                    .eq('stripe_invoice_id', invoice.id);
+                  console.log('Updated existing invoice to paid:', invoice.id);
+                }
+              } catch (invSyncErr) {
+                console.error('Invoice sync error:', invSyncErr.message);
+              }
             }
           } catch (dbErr) {
             console.error('Database error in invoice.paid:', dbErr.message);
@@ -2328,9 +2403,107 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         console.log('Invoice sent:', event.data.object.id);
         break;
 
-      case 'invoice.finalized':
-        console.log('Invoice finalized:', event.data.object.id);
+      case 'invoice.finalized': {
+        const invoice = event.data.object;
+        console.log('Invoice finalized:', invoice.id, invoice.number);
+
+        // Sync newly created invoice to Supabase
+        if (supabase && invoice.customer_email) {
+          try {
+            // Get admin user ID
+            const { data: adminUser } = await supabase
+              .from('sg_users')
+              .select('id')
+              .eq('account_type', 'admin')
+              .limit(1)
+              .single();
+
+            const adminUserId = adminUser?.id;
+
+            if (adminUserId) {
+              // Check if invoice already exists
+              const { data: existingInvoice } = await supabase
+                .from('invoices')
+                .select('id')
+                .eq('stripe_invoice_id', invoice.id)
+                .single();
+
+              if (!existingInvoice) {
+                // Find or create customer
+                let customerId = null;
+                const { data: existingCustomer } = await supabase
+                  .from('customers')
+                  .select('id')
+                  .eq('user_id', adminUserId)
+                  .eq('email', invoice.customer_email)
+                  .single();
+
+                if (existingCustomer) {
+                  customerId = existingCustomer.id;
+                } else {
+                  const { data: newCustomer } = await supabase
+                    .from('customers')
+                    .insert({
+                      user_id: adminUserId,
+                      name: invoice.customer_name || 'Customer',
+                      email: invoice.customer_email,
+                      phone: invoice.customer_phone,
+                      stripe_customer_id: invoice.customer,
+                      source: 'stripe_invoice'
+                    })
+                    .select()
+                    .single();
+                  if (newCustomer) customerId = newCustomer.id;
+                }
+
+                // Get line items description
+                let projectDescription = '';
+                if (invoice.lines?.data) {
+                  projectDescription = invoice.lines.data
+                    .map(line => line.description)
+                    .filter(Boolean)
+                    .join(', ');
+                }
+
+                // Generate invoice number (use Stripe's if available)
+                const invoiceNumber = invoice.number || `STR-${invoice.id.slice(-8).toUpperCase()}`;
+
+                // Insert invoice record
+                const { error: invErr } = await supabase
+                  .from('invoices')
+                  .insert({
+                    user_id: adminUserId,
+                    invoice_number: invoiceNumber,
+                    customer_id: customerId,
+                    customer_name: invoice.customer_name || 'Customer',
+                    customer_email: invoice.customer_email,
+                    customer_phone: invoice.customer_phone,
+                    subtotal: (invoice.subtotal || 0) / 100,
+                    tax_amount: (invoice.tax || 0) / 100,
+                    total: (invoice.total || 0) / 100,
+                    amount_due: (invoice.amount_due || 0) / 100,
+                    amount_paid: (invoice.amount_paid || 0) / 100,
+                    status: invoice.status === 'open' ? 'sent' : invoice.status,
+                    due_date: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null,
+                    stripe_invoice_id: invoice.id,
+                    stripe_hosted_url: invoice.hosted_invoice_url,
+                    stripe_pdf_url: invoice.invoice_pdf,
+                    notes: projectDescription
+                  });
+
+                if (!invErr) {
+                  console.log('Synced new invoice to Supabase:', invoiceNumber);
+                } else {
+                  console.error('Error syncing invoice:', invErr.message);
+                }
+              }
+            }
+          } catch (dbErr) {
+            console.error('Database error in invoice.finalized:', dbErr.message);
+          }
+        }
         break;
+      }
 
       case 'account.updated':
         console.log('Connect account updated:', event.data.object.id);
