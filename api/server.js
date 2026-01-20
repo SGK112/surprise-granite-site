@@ -3455,6 +3455,9 @@ app.get('/api/customers/:email', async (req, res) => {
 
 // ============ CHECKOUT SESSION ============
 
+// Price validator for server-side price verification
+const { validateCartPrices, buildStripeLineItems } = require('./validators/price-validator');
+
 // Create a Stripe Checkout Session for cart purchases
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
@@ -3464,21 +3467,25 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'No items provided' });
     }
 
-    // Build line items for Stripe
-    const lineItems = items.map(item => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: item.name,
-          images: item.image ? [item.image] : [],
-          metadata: {
-            product_id: item.id || ''
-          }
-        },
-        unit_amount: item.price // Price should already be in cents
-      },
-      quantity: item.quantity || 1
-    }));
+    // SERVER-SIDE PRICE VALIDATION
+    // Validate all prices against database to prevent price manipulation
+    const validation = await validateCartPrices(items, supabase);
+
+    if (!validation.valid) {
+      logger.warn('Cart validation failed', { errors: validation.errors });
+      return res.status(400).json({
+        error: 'Invalid cart items',
+        details: validation.errors
+      });
+    }
+
+    // Log any warnings (price adjustments, unverified items)
+    if (validation.warnings.length > 0) {
+      logger.info('Cart validation warnings', { warnings: validation.warnings });
+    }
+
+    // Build line items using VALIDATED prices (not client prices)
+    const lineItems = buildStripeLineItems(validation);
 
     // Create checkout session config
     const sessionConfig = {
@@ -3492,7 +3499,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
         allowed_countries: ['US']
       },
       metadata: {
-        order_source: 'website_cart'
+        order_source: 'website_cart',
+        validated_total: validation.calculatedTotals.total,
+        price_adjustments: validation.warnings.length > 0 ? 'yes' : 'no'
       }
     };
 
@@ -3504,11 +3513,22 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Create the session
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    logger.info('Checkout session created:', session.id);
+    logger.info('Checkout session created', {
+      sessionId: session.id,
+      total: validation.calculatedTotals.total,
+      itemCount: validation.validatedItems.length
+    });
 
     res.json({
       sessionId: session.id,
-      url: session.url
+      url: session.url,
+      // Return calculated totals so client can update display
+      totals: {
+        subtotal: validation.calculatedTotals.subtotal,
+        shipping: validation.calculatedTotals.shipping,
+        tax: validation.calculatedTotals.tax,
+        total: validation.calculatedTotals.total
+      }
     });
 
   } catch (error) {
