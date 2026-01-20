@@ -165,14 +165,24 @@
     });
   }
 
+  // HTML escape helper to prevent XSS
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
   function getUserDisplayInfo(user) {
     if (!user) return { displayName: 'Guest', initial: 'G' };
 
-    const displayName = user.user_metadata?.first_name ||
-                        user.user_metadata?.full_name?.split(' ')[0] ||
-                        user.email?.split('@')[0] ||
-                        'Account';
-    const initial = displayName.charAt(0).toUpperCase();
+    const rawName = user.user_metadata?.first_name ||
+                    user.user_metadata?.full_name?.split(' ')[0] ||
+                    user.email?.split('@')[0] ||
+                    'Account';
+    // Escape to prevent XSS
+    const displayName = escapeHtml(rawName);
+    const initial = escapeHtml(rawName.charAt(0).toUpperCase());
 
     return { displayName, initial };
   }

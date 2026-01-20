@@ -6,6 +6,25 @@
 (function() {
   'use strict';
 
+  // Security: HTML escape helper to prevent XSS
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  // Security: Escape attribute values
+  function escapeAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Configuration - use centralized config if available
   const STRIPE_PUBLIC_KEY = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.STRIPE_PUBLIC_KEY)
     || 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
@@ -108,20 +127,27 @@
       return false;
     }
 
-    // Render items
-    orderItems.innerHTML = cart.map(item => `
+    // Render items (with XSS protection)
+    orderItems.innerHTML = cart.map(item => {
+      const safeName = escapeHtml(item.name);
+      const safeImage = escapeAttr(item.image || '/images/placeholder.jpg');
+      const safeVariant = escapeHtml(item.variant || '');
+      const safePrice = parseFloat(item.price) || 0;
+      const safeQty = parseInt(item.quantity) || 1;
+
+      return `
       <div class="order-item">
         <div class="order-item-image">
-          <img src="${item.image || '/images/placeholder.jpg'}" alt="${item.name}" loading="lazy">
-          <span class="order-item-quantity">${item.quantity}</span>
+          <img src="${safeImage}" alt="${safeName}" loading="lazy">
+          <span class="order-item-quantity">${safeQty}</span>
         </div>
         <div class="order-item-details">
-          <p class="order-item-name">${item.name}</p>
-          ${item.variant ? `<p class="order-item-variant">${item.variant}</p>` : ''}
+          <p class="order-item-name">${safeName}</p>
+          ${item.variant ? `<p class="order-item-variant">${safeVariant}</p>` : ''}
         </div>
-        <div class="order-item-price">${formatPrice(item.price * item.quantity)}</div>
+        <div class="order-item-price">${formatPrice(safePrice * safeQty)}</div>
       </div>
-    `).join('');
+    `}).join('');
 
     // Update totals
     document.getElementById('summarySubtotal').textContent = formatPrice(totals.subtotal);
@@ -129,15 +155,20 @@
     document.getElementById('summaryTax').textContent = formatPrice(totals.tax);
     document.getElementById('summaryTotal').textContent = formatPrice(totals.total);
 
-    // Show promo if applied
+    // Show promo if applied (safely using textContent)
     const promoData = localStorage.getItem('sg_promo');
     if (promoData) {
-      const promo = JSON.parse(promoData);
-      const promoApplied = document.getElementById('promoApplied');
-      const promoText = document.getElementById('promoText');
-      if (promoApplied && promoText) {
-        promoApplied.style.display = 'flex';
-        promoText.textContent = `${promo.code}: ${promo.message}`;
+      try {
+        const promo = JSON.parse(promoData);
+        const promoApplied = document.getElementById('promoApplied');
+        const promoText = document.getElementById('promoText');
+        if (promoApplied && promoText && promo.code && promo.message) {
+          promoApplied.style.display = 'flex';
+          // Using textContent is safe (no XSS)
+          promoText.textContent = `${promo.code}: ${promo.message}`;
+        }
+      } catch (e) {
+        // Invalid promo data, ignore
       }
     }
 
@@ -150,18 +181,19 @@
   function showPaymentMessage(message, isError = false) {
     const paymentElement = document.getElementById('payment-element');
     if (paymentElement) {
+      const safeMessage = escapeHtml(message);
       paymentElement.innerHTML = `
         <div style="text-align: center; padding: 40px 20px;">
           ${isError ? `
             <svg width="48" height="48" viewBox="0 0 24 24" fill="#ef4444" style="margin-bottom: 16px;">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
-            <p style="color: #ef4444; margin: 0 0 12px; font-weight: 600;">${message}</p>
+            <p style="color: #ef4444; margin: 0 0 12px; font-weight: 600;">${safeMessage}</p>
           ` : `
             <svg width="48" height="48" viewBox="0 0 24 24" fill="#22c55e" style="margin-bottom: 16px;">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
-            <p style="color: #22c55e; margin: 0 0 12px; font-weight: 600;">${message}</p>
+            <p style="color: #22c55e; margin: 0 0 12px; font-weight: 600;">${safeMessage}</p>
           `}
         </div>
       `;

@@ -238,6 +238,15 @@ const { analyzeBlueprint, parseBluebeamBAX, CONFIG: TAKEOFF_CONFIG } = require('
 // Pro-Customer System Routes
 const proCustomersRouter = require('./routes/pro-customers');
 
+// Workflow Conversion Routes (Lead → Customer → Estimate → Invoice → Job)
+const workflowRouter = require('./routes/workflow');
+
+// Email Routes (new modular structure)
+const emailRouter = require('./routes/email');
+
+// CSRF Protection Middleware
+const { csrfOriginCheck } = require('./middleware/csrf');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -2273,24 +2282,47 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                   .join(', ');
               }
 
-              // Create job record
+              // Check if there's an existing invoice in Supabase with traceability data
+              let existingInvoiceData = null;
+              try {
+                const { data: existingInv } = await supabase
+                  .from('invoices')
+                  .select('id, estimate_id, lead_id')
+                  .or(`stripe_invoice_id.eq.${invoice.id},invoice_number.eq.${invoice.number}`)
+                  .single();
+                existingInvoiceData = existingInv;
+              } catch (e) {
+                // No existing invoice found, that's OK
+              }
+
+              // Create job record with full traceability
+              const jobData = {
+                user_id: adminUserId,
+                job_number: jobNumber,
+                customer_id: customerId,
+                customer_name: invoice.customer_name || 'Customer',
+                customer_email: invoice.customer_email,
+                customer_phone: invoice.customer_phone,
+                project_description: projectDescription || `Invoice #${invoice.number}`,
+                contract_amount: invoice.amount_paid / 100,
+                total_paid: invoice.amount_paid / 100,
+                deposit_paid: true,
+                deposit_paid_at: new Date().toISOString(),
+                stripe_invoice_id: invoice.id,
+                status: 'new'
+              };
+
+              // Add traceability IDs if we found existing invoice data
+              if (existingInvoiceData) {
+                if (existingInvoiceData.id) jobData.invoice_id = existingInvoiceData.id;
+                if (existingInvoiceData.estimate_id) jobData.estimate_id = existingInvoiceData.estimate_id;
+                if (existingInvoiceData.lead_id) jobData.lead_id = existingInvoiceData.lead_id;
+                console.log('Job traceability: invoice_id=' + existingInvoiceData.id + ', estimate_id=' + existingInvoiceData.estimate_id + ', lead_id=' + existingInvoiceData.lead_id);
+              }
+
               const { data: newJob, error: jobErr } = await supabase
                 .from('jobs')
-                .insert({
-                  user_id: adminUserId,
-                  job_number: jobNumber,
-                  customer_id: customerId,
-                  customer_name: invoice.customer_name || 'Customer',
-                  customer_email: invoice.customer_email,
-                  customer_phone: invoice.customer_phone,
-                  project_description: projectDescription || `Invoice #${invoice.number}`,
-                  contract_amount: invoice.amount_paid / 100,
-                  total_paid: invoice.amount_paid / 100,
-                  deposit_paid: true,
-                  deposit_paid_at: new Date().toISOString(),
-                  stripe_invoice_id: invoice.id,
-                  status: 'new'
-                })
+                .insert(jobData)
                 .select()
                 .single();
 
@@ -3135,6 +3167,9 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 // JSON body parser - AFTER webhook route
 app.use(express.json());
 
+// CSRF Protection - checks Origin/Referer for state-changing requests
+app.use(csrfOriginCheck());
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'Surprise Granite API' });
@@ -3146,6 +3181,13 @@ app.get('/health', (req, res) => {
 
 // ============ PRO-CUSTOMER SYSTEM ROUTES ============
 app.use('/api/pro', proCustomersRouter);
+
+// ============ WORKFLOW CONVERSION ROUTES ============
+// Lead → Customer → Estimate → Invoice → Job conversions
+app.use('/api/workflow', workflowRouter);
+
+// ============ EMAIL ROUTES (MODULAR) ============
+app.use('/api/email', emailRouter);
 
 // ============ ARIA VOICE LEAD CAPTURE ============
 app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {

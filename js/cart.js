@@ -6,6 +6,25 @@
 (function() {
   'use strict';
 
+  // Security: HTML escape helper to prevent XSS
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  // Security: Escape attribute values
+  function escapeAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Stripe Configuration
   const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
   const API_BASE = 'https://surprise-granite-email-api.onrender.com';
@@ -162,7 +181,7 @@
           ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'
           : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>'}
       </svg>
-      <span>${message}</span>
+      <span>${escapeHtml(message)}</span>
     `;
 
     document.body.appendChild(notification);
@@ -210,25 +229,34 @@
     if (cartItems) cartItems.style.display = 'block';
     if (cartSummary) cartSummary.style.display = 'block';
 
-    // Render items
-    cartItems.innerHTML = cart.map(item => `
-      <div class="cart-item" data-id="${item.id}" data-variant="${item.variant}">
+    // Render items (with XSS protection)
+    cartItems.innerHTML = cart.map(item => {
+      const safeId = escapeAttr(item.id);
+      const safeVariant = escapeAttr(item.variant || '');
+      const safeName = escapeHtml(item.name);
+      const safeImage = escapeAttr(item.image || '/images/placeholder.jpg');
+      const safeHref = escapeAttr(item.href || '#');
+      const safePrice = parseFloat(item.price) || 0;
+      const safeQty = parseInt(item.quantity) || 1;
+
+      return `
+      <div class="cart-item" data-id="${safeId}" data-variant="${safeVariant}">
         <div class="cart-item-image">
-          <img src="${item.image || '/images/placeholder.jpg'}" alt="${item.name}" loading="lazy">
+          <img src="${safeImage}" alt="${safeName}" loading="lazy">
         </div>
         <div class="cart-item-details">
-          <a href="${item.href || '#'}" class="cart-item-name">${item.name}</a>
-          ${item.variant ? `<div class="cart-item-variant">${item.variant}</div>` : ''}
-          <div class="cart-item-price">${formatPrice(item.price)} each</div>
+          <a href="${safeHref}" class="cart-item-name">${safeName}</a>
+          ${item.variant ? `<div class="cart-item-variant">${escapeHtml(item.variant)}</div>` : ''}
+          <div class="cart-item-price">${formatPrice(safePrice)} each</div>
         </div>
         <div class="cart-item-actions">
-          <div class="cart-item-total">${formatPrice(item.price * item.quantity)}</div>
+          <div class="cart-item-total">${formatPrice(safePrice * safeQty)}</div>
           <div class="quantity-selector">
-            <button type="button" class="quantity-btn" onclick="window.SgCart.updateQuantity('${item.id}', '${item.variant}', ${item.quantity - 1})" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
-            <span class="quantity-value">${item.quantity}</span>
-            <button type="button" class="quantity-btn" onclick="window.SgCart.updateQuantity('${item.id}', '${item.variant}', ${item.quantity + 1})">+</button>
+            <button type="button" class="quantity-btn" onclick="window.SgCart.updateQuantity('${safeId}', '${safeVariant}', ${safeQty - 1})" ${safeQty <= 1 ? 'disabled' : ''}>-</button>
+            <span class="quantity-value">${safeQty}</span>
+            <button type="button" class="quantity-btn" onclick="window.SgCart.updateQuantity('${safeId}', '${safeVariant}', ${safeQty + 1})">+</button>
           </div>
-          <button type="button" class="remove-item" onclick="window.SgCart.removeFromCart('${item.id}', '${item.variant}')">
+          <button type="button" class="remove-item" onclick="window.SgCart.removeFromCart('${safeId}', '${safeVariant}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
             </svg>
@@ -236,7 +264,7 @@
           </button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
 
     // Update totals
     if (cartSubtotal) cartSubtotal.textContent = formatPrice(totals.subtotal);

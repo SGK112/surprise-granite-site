@@ -1,281 +1,318 @@
 /**
  * Validation Schemas
- * Joi schemas for request validation
+ * Joi schemas for validating API request data
  */
 
 const Joi = require('joi');
 
-// Common field patterns
-const email = Joi.string().email().lowercase().trim().max(255);
-const phone = Joi.string().pattern(/^[\d\s\-\(\)\+\.]+$/).max(30).allow('', null);
-const uuid = Joi.string().uuid();
-const pagination = {
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+// ============================================================
+// COMMON PATTERNS
+// ============================================================
+
+const patterns = {
+  uuid: Joi.string().uuid(),
+  email: Joi.string().email().max(255).lowercase().trim(),
+  phone: Joi.string().pattern(/^[\d\s\-\(\)\+\.]+$/).min(10).max(20),
+  zipCode: Joi.string().pattern(/^\d{5}(-\d{4})?$/).max(10),
+  url: Joi.string().uri().max(2000),
+  currency: Joi.number().min(0).max(9999999.99).precision(2),
+  percentage: Joi.number().min(0).max(100).precision(2),
+  positiveInt: Joi.number().integer().min(0).max(999999),
+  safeString: (max = 500) => Joi.string().max(max).trim(),
+  safeText: (max = 5000) => Joi.string().max(max).trim()
 };
 
-/**
- * Lead Schemas
- */
+// ============================================================
+// LEAD SCHEMAS
+// ============================================================
+
 const leadSchemas = {
   create: Joi.object({
-    name: Joi.string().trim().min(1).max(200).required(),
-    email: email.required(),
-    phone: phone,
-    message: Joi.string().trim().min(10).max(5000).required(),
-    source: Joi.string().max(100).default('website'),
-    project_type: Joi.string().valid(
-      'kitchen_countertops',
-      'bathroom',
-      'full_remodel',
-      'commercial',
-      'flooring',
-      'tile',
-      'other'
-    ),
-    project_zip: Joi.string().pattern(/^\d{5}(-\d{4})?$/).allow('', null),
-    budget_range: Joi.string().max(50),
-    timeline: Joi.string().max(100),
-    referral_source: Joi.string().max(100),
-    metadata: Joi.object().default({})
+    first_name: patterns.safeString(100),
+    last_name: patterns.safeString(100),
+    full_name: patterns.safeString(200),
+    homeowner_name: patterns.safeString(200),
+    email: patterns.email.required(),
+    homeowner_email: patterns.email,
+    phone: patterns.phone,
+    homeowner_phone: patterns.phone,
+    address: patterns.safeString(500),
+    project_address: patterns.safeString(500),
+    city: patterns.safeString(100),
+    state: patterns.safeString(50),
+    zip: patterns.zipCode,
+    zip_code: patterns.zipCode,
+    project_zip: patterns.zipCode,
+    project_type: patterns.safeString(100),
+    project_budget: patterns.safeString(50),
+    project_timeline: patterns.safeString(100),
+    project_details: patterns.safeText(2000),
+    message: patterns.safeText(2000),
+    source: patterns.safeString(50).default('website'),
+    form_name: patterns.safeString(100),
+    page_url: patterns.url,
+    appointment_date: Joi.date().iso(),
+    appointment_time: patterns.safeString(20),
+    appointment_type: patterns.safeString(50)
   }),
 
   update: Joi.object({
     status: Joi.string().valid('new', 'contacted', 'qualified', 'quoted', 'won', 'lost'),
-    notes: Joi.string().max(5000),
-    assigned_to: Joi.string().max(100),
-    follow_up_date: Joi.date().iso(),
-    metadata: Joi.object()
-  }),
-
-  list: Joi.object({
-    status: Joi.string().valid('new', 'contacted', 'qualified', 'quoted', 'won', 'lost'),
-    source: Joi.string().max(100),
-    search: Joi.string().max(100),
-    start_date: Joi.date().iso(),
-    end_date: Joi.date().iso(),
-    ...pagination
+    notes: patterns.safeText(2000),
+    assigned_to: patterns.uuid,
+    follow_up_date: Joi.date().iso()
   })
 };
 
-/**
- * Customer Schemas
- */
+// ============================================================
+// CUSTOMER SCHEMAS
+// ============================================================
+
 const customerSchemas = {
   create: Joi.object({
-    email: email.required(),
-    name: Joi.string().trim().max(200),
-    phone: phone,
-    company: Joi.string().trim().max(200),
-    address: Joi.string().trim().max(500),
-    metadata: Joi.object().default({})
+    first_name: patterns.safeString(100).required(),
+    last_name: patterns.safeString(100),
+    email: patterns.email.required(),
+    phone: patterns.phone,
+    address: patterns.safeString(500),
+    city: patterns.safeString(100),
+    state: patterns.safeString(50),
+    zip: patterns.zipCode,
+    notes: patterns.safeText(2000),
+    source: patterns.safeString(50),
+    lead_id: patterns.uuid
   }),
 
   update: Joi.object({
-    name: Joi.string().trim().max(200),
-    phone: phone,
-    company: Joi.string().trim().max(200),
-    address: Joi.string().trim().max(500),
-    metadata: Joi.object()
-  }),
-
-  list: Joi.object({
-    search: Joi.string().max(100),
-    ...pagination
+    first_name: patterns.safeString(100),
+    last_name: patterns.safeString(100),
+    email: patterns.email,
+    phone: patterns.phone,
+    address: patterns.safeString(500),
+    city: patterns.safeString(100),
+    state: patterns.safeString(50),
+    zip: patterns.zipCode,
+    notes: patterns.safeText(2000)
   })
 };
 
-/**
- * Invoice Schemas
- */
-const invoiceSchemas = {
-  create: Joi.object({
-    customer_email: email.required(),
-    customer_name: Joi.string().trim().max(200),
-    items: Joi.array().items(
-      Joi.object({
-        description: Joi.string().trim().min(1).max(500).required(),
-        amount: Joi.number().positive().required(),
-        quantity: Joi.number().integer().positive().default(1)
-      })
-    ).min(1).required(),
-    description: Joi.string().trim().max(1000),
-    due_date: Joi.date().iso().min('now'),
-    notes: Joi.string().trim().max(2000),
-    send_email: Joi.boolean().default(true)
-  }),
+// ============================================================
+// ESTIMATE SCHEMAS
+// ============================================================
 
-  list: Joi.object({
-    status: Joi.string().valid('draft', 'open', 'paid', 'void', 'uncollectible'),
-    customer_id: Joi.string().max(100),
-    starting_after: Joi.string().max(100),
-    ...pagination
-  })
-};
+const estimateLineItem = Joi.object({
+  name: patterns.safeString(200),
+  description: patterns.safeString(500),
+  quantity: Joi.number().min(0.01).max(99999).required(),
+  unit_price: patterns.currency.required(),
+  unit_type: patterns.safeString(50),
+  category: patterns.safeString(100),
+  total: patterns.currency
+});
 
-/**
- * Product Schemas
- */
-const productSchemas = {
-  create: Joi.object({
-    sku: Joi.string().trim().max(100),
-    external_sku: Joi.string().trim().max(100),
-    upc: Joi.string().trim().max(50),
-    product_type: Joi.string().valid('slab', 'tile', 'flooring', 'sink', 'faucet', 'accessory', 'other').default('slab'),
-    name: Joi.string().trim().min(1).max(300).required(),
-    brand: Joi.string().trim().max(100),
-    description: Joi.string().trim().max(2000),
-    material_type: Joi.string().trim().max(100),
-    color_family: Joi.string().trim().max(100),
-    finish: Joi.string().trim().max(100),
-    quantity: Joi.number().integer().min(0).default(1),
-    quantity_unit: Joi.string().valid('each', 'sqft', 'lnft', 'box', 'pallet').default('each'),
-    min_stock_level: Joi.number().integer().min(0).default(0),
-    cost_price: Joi.number().min(0),
-    wholesale_price: Joi.number().min(0),
-    retail_price: Joi.number().min(0),
-    price_unit: Joi.string().valid('each', 'sqft', 'lnft').default('each'),
-    location_id: uuid,
-    warehouse_zone: Joi.string().trim().max(50),
-    bin_location: Joi.string().trim().max(50),
-    status: Joi.string().valid('active', 'inactive', 'out_of_stock').default('active'),
-    is_featured: Joi.boolean().default(false),
-    is_public: Joi.boolean().default(true),
-    images: Joi.array().items(Joi.string().uri()).max(20),
-    tags: Joi.array().items(Joi.string().max(50)).max(20),
-    custom_attributes: Joi.object(),
-    type_data: Joi.object({
-      length_inches: Joi.number().positive(),
-      width_inches: Joi.number().positive(),
-      thickness_cm: Joi.number().positive(),
-      lot_number: Joi.string().max(100),
-      slab_number: Joi.string().max(100)
-    })
-  }),
-
-  update: Joi.object({
-    sku: Joi.string().trim().max(100),
-    name: Joi.string().trim().min(1).max(300),
-    brand: Joi.string().trim().max(100),
-    description: Joi.string().trim().max(2000),
-    material_type: Joi.string().trim().max(100),
-    color_family: Joi.string().trim().max(100),
-    finish: Joi.string().trim().max(100),
-    quantity: Joi.number().integer().min(0),
-    min_stock_level: Joi.number().integer().min(0),
-    cost_price: Joi.number().min(0),
-    wholesale_price: Joi.number().min(0),
-    retail_price: Joi.number().min(0),
-    warehouse_zone: Joi.string().trim().max(50),
-    bin_location: Joi.string().trim().max(50),
-    status: Joi.string().valid('active', 'inactive', 'out_of_stock'),
-    is_featured: Joi.boolean(),
-    is_public: Joi.boolean(),
-    images: Joi.array().items(Joi.string().uri()).max(20),
-    tags: Joi.array().items(Joi.string().max(50)).max(20),
-    custom_attributes: Joi.object(),
-    type_data: Joi.object()
-  }),
-
-  list: Joi.object({
-    product_type: Joi.string().valid('slab', 'tile', 'flooring', 'sink', 'faucet', 'accessory', 'other'),
-    material_type: Joi.string().max(100),
-    brand: Joi.string().max(100),
-    color_family: Joi.string().max(100),
-    status: Joi.string().valid('active', 'inactive', 'out_of_stock'),
-    search: Joi.string().max(100),
-    min_price: Joi.number().min(0),
-    max_price: Joi.number().min(0),
-    is_public: Joi.boolean(),
-    ...pagination
-  }),
-
-  inventoryTransaction: Joi.object({
-    transaction_type: Joi.string().valid('receive', 'sell', 'adjust', 'transfer', 'damage', 'return').required(),
-    quantity_change: Joi.number().integer().required(),
-    reference_type: Joi.string().max(50),
-    reference_id: Joi.string().max(100),
-    notes: Joi.string().max(500)
-  }),
-
-  skuMapping: Joi.object({
-    system_name: Joi.string().trim().min(1).max(100).required(),
-    sku_value: Joi.string().trim().min(1).max(100).required()
-  })
-};
-
-/**
- * Estimate Schemas
- */
 const estimateSchemas = {
   create: Joi.object({
-    customer_email: email.required(),
-    customer_name: Joi.string().trim().max(200).required(),
-    customer_phone: phone,
-    customer_address: Joi.string().trim().max(500),
-    items: Joi.array().items(
-      Joi.object({
-        description: Joi.string().trim().min(1).max(500).required(),
-        quantity: Joi.number().positive().required(),
-        unit: Joi.string().max(20).default('each'),
-        unit_price: Joi.number().min(0).required()
-      })
-    ).min(1).required(),
-    notes: Joi.string().trim().max(2000),
-    valid_days: Joi.number().integer().min(1).max(365).default(30),
-    terms: Joi.string().trim().max(5000)
-  })
-};
-
-/**
- * Payment Schemas
- */
-const paymentSchemas = {
-  quickPayment: Joi.object({
-    amount: Joi.number().positive().max(1000000).required(),
-    description: Joi.string().trim().min(1).max(500).required(),
-    customer_email: email,
-    customer_name: Joi.string().trim().max(200),
-    metadata: Joi.object()
+    customer_id: patterns.uuid,
+    lead_id: patterns.uuid,
+    customer_name: patterns.safeString(200),
+    customer_email: patterns.email,
+    customer_phone: patterns.phone,
+    customer_address: patterns.safeString(500),
+    project_name: patterns.safeString(200),
+    project_type: patterns.safeString(100),
+    project_description: patterns.safeText(2000),
+    items: Joi.array().items(estimateLineItem).min(1).required(),
+    subtotal: patterns.currency.required(),
+    tax_rate: patterns.percentage.default(0),
+    tax_amount: patterns.currency.default(0),
+    discount_type: Joi.string().valid('percent', 'fixed'),
+    discount_value: Joi.number().min(0).max(100),
+    discount_amount: patterns.currency.default(0),
+    total: patterns.currency.required(),
+    deposit_percent: patterns.percentage,
+    deposit_amount: patterns.currency,
+    inclusions: patterns.safeText(2000),
+    exclusions: patterns.safeText(2000),
+    terms_conditions: patterns.safeText(5000),
+    estimated_timeline: patterns.safeString(200),
+    valid_until: Joi.date().iso(),
+    warranty_terms: patterns.safeText(2000),
+    notes: patterns.safeText(2000),
+    internal_notes: patterns.safeText(2000),
+    status: Joi.string().valid('draft', 'sent', 'approved', 'rejected', 'expired', 'converted').default('draft')
   }),
 
-  checkout: Joi.object({
-    items: Joi.array().items(
-      Joi.object({
-        id: Joi.string().max(100),
-        name: Joi.string().trim().min(1).max(200).required(),
-        price: Joi.number().positive().required(),
-        quantity: Joi.number().integer().positive().default(1),
-        description: Joi.string().trim().max(500)
-      })
-    ).min(1).required(),
-    customer_email: email,
-    customer_phone: phone,
-    success_url: Joi.string().uri(),
-    cancel_url: Joi.string().uri(),
-    metadata: Joi.object()
+  sendEmail: Joi.object({
+    customer_email: patterns.email.required(),
+    customer_name: patterns.safeString(200),
+    estimate_number: patterns.safeString(50),
+    estimate_id: patterns.uuid,
+    items: Joi.array().items(estimateLineItem),
+    subtotal: patterns.currency,
+    total: patterns.currency,
+    notes: patterns.safeText(2000),
+    view_url: patterns.url
   })
 };
 
-/**
- * Inquiry Schemas
- */
-const inquirySchemas = {
+// ============================================================
+// INVOICE SCHEMAS
+// ============================================================
+
+const invoiceLineItem = Joi.object({
+  description: patterns.safeString(500).required(),
+  quantity: Joi.number().min(0.01).max(99999).required(),
+  unit_price: patterns.currency.required(),
+  total: patterns.currency
+});
+
+const invoiceSchemas = {
   create: Joi.object({
-    name: Joi.string().trim().min(1).max(200).required(),
-    email: email.required(),
-    phone: phone,
-    company: Joi.string().trim().max(200),
-    message: Joi.string().trim().min(10).max(2000).required()
+    customer_id: patterns.uuid,
+    estimate_id: patterns.uuid,
+    customer_name: patterns.safeString(200),
+    customer_email: patterns.email.required(),
+    customer_phone: patterns.phone,
+    customer_address: patterns.safeString(500),
+    items: Joi.array().items(invoiceLineItem).min(1).required(),
+    subtotal: patterns.currency.required(),
+    tax_rate: patterns.percentage.default(0),
+    tax_amount: patterns.currency.default(0),
+    total: patterns.currency.required(),
+    due_date: Joi.date().iso(),
+    payment_terms: patterns.safeString(200),
+    notes: patterns.safeText(2000),
+    status: Joi.string().valid('draft', 'sent', 'paid', 'void', 'overdue').default('draft')
+  }),
+
+  update: Joi.object({
+    status: Joi.string().valid('draft', 'sent', 'paid', 'void', 'overdue'),
+    amount_paid: patterns.currency,
+    notes: patterns.safeText(2000)
   })
 };
+
+// ============================================================
+// JOB SCHEMAS
+// ============================================================
+
+const jobSchemas = {
+  create: Joi.object({
+    customer_id: patterns.uuid.required(),
+    invoice_id: patterns.uuid,
+    estimate_id: patterns.uuid,
+    lead_id: patterns.uuid,
+    customer_name: patterns.safeString(200),
+    customer_email: patterns.email,
+    customer_phone: patterns.phone,
+    customer_address: patterns.safeString(500),
+    title: patterns.safeString(200),
+    project_description: patterns.safeText(2000),
+    project_type: patterns.safeString(100),
+    scheduled_date: Joi.date().iso(),
+    estimated_start_date: Joi.date().iso(),
+    estimated_end_date: Joi.date().iso(),
+    contract_amount: patterns.currency,
+    deposit_amount: patterns.currency,
+    status: Joi.string().valid(
+      'new', 'assigned', 'scheduled', 'material_ordered', 'material_received',
+      'in_progress', 'on_hold', 'completed', 'cancelled', 'archived'
+    ).default('new'),
+    priority: Joi.string().valid('low', 'medium', 'high', 'urgent').default('medium'),
+    notes: patterns.safeText(2000),
+    internal_notes: patterns.safeText(2000)
+  }),
+
+  update: Joi.object({
+    status: Joi.string().valid(
+      'new', 'assigned', 'scheduled', 'material_ordered', 'material_received',
+      'in_progress', 'on_hold', 'completed', 'cancelled', 'archived'
+    ),
+    priority: Joi.string().valid('low', 'medium', 'high', 'urgent'),
+    scheduled_date: Joi.date().iso(),
+    assigned_to: patterns.uuid,
+    notes: patterns.safeText(2000),
+    internal_notes: patterns.safeText(2000)
+  })
+};
+
+// ============================================================
+// EMAIL SCHEMAS
+// ============================================================
+
+const emailSchemas = {
+  send: Joi.object({
+    to: patterns.email.required(),
+    subject: patterns.safeString(200).required(),
+    message: patterns.safeText(5000).required(),
+    type: Joi.string().valid('info', 'success', 'warning', 'error').default('info')
+  }),
+
+  contact: Joi.object({
+    name: patterns.safeString(200).required(),
+    email: patterns.email.required(),
+    phone: patterns.phone,
+    subject: patterns.safeString(200),
+    message: patterns.safeText(2000).required()
+  })
+};
+
+// ============================================================
+// QUERY SCHEMAS
+// ============================================================
+
+const querySchemas = {
+  pagination: Joi.object({
+    limit: Joi.number().integer().min(1).max(100).default(50),
+    offset: Joi.number().integer().min(0).default(0),
+    page: Joi.number().integer().min(1)
+  }),
+
+  leadFilters: Joi.object({
+    status: Joi.string().valid('new', 'contacted', 'qualified', 'quoted', 'won', 'lost'),
+    source: patterns.safeString(50),
+    limit: Joi.number().integer().min(1).max(100).default(50),
+    offset: Joi.number().integer().min(0).default(0)
+  }),
+
+  jobFilters: Joi.object({
+    status: Joi.string().valid(
+      'new', 'assigned', 'scheduled', 'material_ordered', 'material_received',
+      'in_progress', 'on_hold', 'completed', 'cancelled', 'archived'
+    ),
+    priority: Joi.string().valid('low', 'medium', 'high', 'urgent'),
+    customer_id: patterns.uuid,
+    limit: Joi.number().integer().min(1).max(100).default(50),
+    offset: Joi.number().integer().min(0).default(0)
+  })
+};
+
+// ============================================================
+// PARAM SCHEMAS
+// ============================================================
+
+const paramSchemas = {
+  id: Joi.object({
+    id: patterns.uuid.required()
+  }),
+
+  email: Joi.object({
+    email: patterns.email.required()
+  })
+};
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
-  leadSchemas,
-  customerSchemas,
-  invoiceSchemas,
-  productSchemas,
-  estimateSchemas,
-  paymentSchemas,
-  inquirySchemas
+  patterns,
+  lead: leadSchemas,
+  customer: customerSchemas,
+  estimate: estimateSchemas,
+  invoice: invoiceSchemas,
+  job: jobSchemas,
+  email: emailSchemas,
+  query: querySchemas,
+  params: paramSchemas
 };
