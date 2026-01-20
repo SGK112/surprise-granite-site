@@ -6,6 +6,9 @@ const PDFDocument = require('pdfkit');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: __dirname + '/.env', override: true });
 
+// Structured logging
+const logger = require('./utils/logger');
+
 // ============================================
 // REMODELY.AI RATE LIMITER (SERVER-SIDE)
 // ============================================
@@ -172,7 +175,7 @@ function escapeHtml(text) {
  * Handle API errors without exposing internal details
  */
 function handleApiError(res, error, context = 'Operation') {
-  console.error(`${context} error:`, error.message || error);
+  logger.error(`${context} error:`, error.message || error);
 
   // Map known error types to user-friendly messages
   if (error.type === 'StripeInvalidRequestError') {
@@ -274,7 +277,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@surprisegranite.com';
 async function sendNotification(to, subject, html) {
   try {
     if (!SMTP_USER) {
-      console.log('Email notification (SMTP not configured):', { to, subject });
+      logger.info('Email notification (SMTP not configured):', { to, subject });
       return { success: false, reason: 'SMTP not configured' };
     }
 
@@ -284,10 +287,10 @@ async function sendNotification(to, subject, html) {
       subject,
       html
     });
-    console.log('Email sent:', subject);
+    logger.info('Email sent:', subject);
     return { success: true };
   } catch (err) {
-    console.error('Email error:', err.message);
+    logger.error('Email error:', err.message);
     return { success: false, reason: err.message };
   }
 }
@@ -1329,7 +1332,7 @@ function generateGoogleCalendarUrl(data) {
       endDate = formatDate(endDateObj);
     }
   } catch (e) {
-    console.error('Error parsing date for calendar:', e);
+    logger.error('Error parsing date for calendar:', e);
   }
 
   // If we couldn't parse the date, use a placeholder
@@ -1383,7 +1386,7 @@ function generateOutlookCalendarUrl(data) {
       endDate = new Date(dateObj.getTime() + 60 * 60 * 1000).toISOString();
     }
   } catch (e) {
-    console.error('Error parsing date for Outlook calendar:', e);
+    logger.error('Error parsing date for Outlook calendar:', e);
   }
 
   if (!startDate) {
@@ -1434,7 +1437,7 @@ function generateYahooCalendarUrl(data) {
       st = dateObj.toISOString().replace(/[-:]/g, '').split('.')[0];
     }
   } catch (e) {
-    console.error('Error parsing date for Yahoo calendar:', e);
+    logger.error('Error parsing date for Yahoo calendar:', e);
   }
 
   if (!st) {
@@ -2103,20 +2106,20 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
   try {
     if (!webhookSecret) {
-      console.error('STRIPE_WEBHOOK_SECRET not configured - rejecting webhook');
+      logger.error('STRIPE_WEBHOOK_SECRET not configured - rejecting webhook');
       return res.status(500).send('Webhook secret not configured');
     }
     if (!sig) {
-      console.error('Missing stripe-signature header');
+      logger.error('Missing stripe-signature header');
       return res.status(400).send('Missing signature');
     }
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    console.error('Webhook signature verification failed');
+    logger.error('Webhook signature verification failed');
     return res.status(400).send('Webhook signature verification failed');
   }
 
-  console.log('Webhook event received:', event.type);
+  logger.info('Webhook event received:', event.type);
 
   // Handle the event
   try {
@@ -2124,7 +2127,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       case 'checkout.session.completed': {
         // Cart checkout completed successfully
         const session = event.data.object;
-        console.log('Checkout session completed:', session.id);
+        logger.info('Checkout session completed:', session.id);
 
         // Send order confirmation to customer
         if (session.customer_details?.email) {
@@ -2202,7 +2205,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
       case 'invoice.paid': {
         const invoice = event.data.object;
-        console.log('Invoice paid:', invoice.id);
+        logger.info('Invoice paid:', invoice.id);
 
         // Send admin notification
         const paidEmail = emailTemplates.paymentReceived(invoice);
@@ -2249,7 +2252,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
                 if (!custErr && newCustomer) {
                   customerId = newCustomer.id;
-                  console.log('Created customer:', customerId);
+                  logger.info('Created customer:', customerId);
                 }
               }
 
@@ -2317,7 +2320,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 if (existingInvoiceData.id) jobData.invoice_id = existingInvoiceData.id;
                 if (existingInvoiceData.estimate_id) jobData.estimate_id = existingInvoiceData.estimate_id;
                 if (existingInvoiceData.lead_id) jobData.lead_id = existingInvoiceData.lead_id;
-                console.log('Job traceability: invoice_id=' + existingInvoiceData.id + ', estimate_id=' + existingInvoiceData.estimate_id + ', lead_id=' + existingInvoiceData.lead_id);
+                logger.info('Job traceability: invoice_id=' + existingInvoiceData.id + ', estimate_id=' + existingInvoiceData.estimate_id + ', lead_id=' + existingInvoiceData.lead_id);
               }
 
               const { data: newJob, error: jobErr } = await supabase
@@ -2327,14 +2330,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                 .single();
 
               if (!jobErr && newJob) {
-                console.log('Created job:', newJob.job_number);
+                logger.info('Created job:', newJob.job_number);
 
                 // Send thank you email to customer with next steps
                 const thankYouEmail = generateThankYouEmail(invoice, newJob);
                 await sendNotification(invoice.customer_email, thankYouEmail.subject, thankYouEmail.html);
-                console.log('Thank you email sent for invoice:', invoice.id);
+                logger.info('Thank you email sent for invoice:', invoice.id);
               } else if (jobErr) {
-                console.error('Error creating job:', jobErr.message);
+                logger.error('Error creating job:', jobErr.message);
               }
 
               // Sync invoice to Supabase for reliable display in dashboard
@@ -2382,7 +2385,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                     });
 
                   if (!invErr) {
-                    console.log('Synced invoice to Supabase:', invoiceNumber);
+                    logger.info('Synced invoice to Supabase:', invoiceNumber);
 
                     // Update next invoice number
                     await supabase
@@ -2393,7 +2396,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                         invoice_next_number: invNum + 1
                       }, { onConflict: 'user_id' });
                   } else {
-                    console.error('Error syncing invoice:', invErr.message);
+                    logger.error('Error syncing invoice:', invErr.message);
                   }
                 } else {
                   // Update existing invoice to paid
@@ -2406,14 +2409,14 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                       amount_due: 0
                     })
                     .eq('stripe_invoice_id', invoice.id);
-                  console.log('Updated existing invoice to paid:', invoice.id);
+                  logger.info('Updated existing invoice to paid:', invoice.id);
                 }
               } catch (invSyncErr) {
-                console.error('Invoice sync error:', invSyncErr.message);
+                logger.error('Invoice sync error:', invSyncErr.message);
               }
             }
           } catch (dbErr) {
-            console.error('Database error in invoice.paid:', dbErr.message);
+            logger.error('Database error in invoice.paid:', dbErr.message);
           }
         }
         break;
@@ -2421,19 +2424,19 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        console.log('Invoice payment failed:', invoice.id);
+        logger.info('Invoice payment failed:', invoice.id);
         const failedEmail = emailTemplates.paymentFailed(invoice);
         await sendNotification(ADMIN_EMAIL, failedEmail.subject, failedEmail.html);
         break;
       }
 
       case 'invoice.sent':
-        console.log('Invoice sent:', event.data.object.id);
+        logger.info('Invoice sent:', event.data.object.id);
         break;
 
       case 'invoice.finalized': {
         const invoice = event.data.object;
-        console.log('Invoice finalized:', invoice.id, invoice.number);
+        logger.info('Invoice finalized:', invoice.id, invoice.number);
 
         // Sync newly created invoice to Supabase
         if (supabase && invoice.customer_email) {
@@ -2520,27 +2523,27 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                   });
 
                 if (!invErr) {
-                  console.log('Synced new invoice to Supabase:', invoiceNumber);
+                  logger.info('Synced new invoice to Supabase:', invoiceNumber);
                 } else {
-                  console.error('Error syncing invoice:', invErr.message);
+                  logger.error('Error syncing invoice:', invErr.message);
                 }
               }
             }
           } catch (dbErr) {
-            console.error('Database error in invoice.finalized:', dbErr.message);
+            logger.error('Database error in invoice.finalized:', dbErr.message);
           }
         }
         break;
       }
 
       case 'account.updated':
-        console.log('Connect account updated:', event.data.object.id);
+        logger.info('Connect account updated:', event.data.object.id);
         break;
 
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
-        console.log('Payment intent succeeded:', paymentIntent.id);
-        console.log('Amount:', paymentIntent.amount / 100);
+        logger.info('Payment intent succeeded:', paymentIntent.id);
+        logger.info('Amount:', paymentIntent.amount / 100);
 
         // Send order confirmation if we have shipping/customer details
         const shipping = paymentIntent.shipping;
@@ -2799,7 +2802,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       }
 
       case 'payment_intent.payment_failed':
-        console.log('Payment intent failed:', event.data.object.id);
+        logger.info('Payment intent failed:', event.data.object.id);
         break;
 
       // ============ PROJECT PAYMENT EVENTS ============
@@ -2808,7 +2811,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
         // Check if this is a project payment
         if (pi.metadata?.project_id) {
-          console.log('Project payment succeeded:', pi.id, 'Project:', pi.metadata.project_id);
+          logger.info('Project payment succeeded:', pi.id, 'Project:', pi.metadata.project_id);
 
           const projectId = pi.metadata.project_id;
           const amount = pi.amount / 100;
@@ -2961,7 +2964,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Handle Pro subscription (user upgrades)
         if (userId && source === 'pro_subscription') {
           const accountType = subscription.metadata?.account_type || subscription.metadata?.plan || 'pro';
-          console.log('Pro subscription created:', subscription.id, 'User:', userId, 'Plan:', accountType);
+          logger.info('Pro subscription created:', subscription.id, 'User:', userId, 'Plan:', accountType);
 
           // Update user's account_type in database
           if (supabase) {
@@ -2977,9 +2980,9 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               .eq('id', userId);
 
             if (updateError) {
-              console.error('Failed to update user account_type:', updateError);
+              logger.error('Failed to update user account_type:', updateError);
             } else {
-              console.log('Updated user', userId, 'to account_type:', accountType, 'customer:', subscription.customer);
+              logger.info('Updated user', userId, 'to account_type:', accountType, 'customer:', subscription.customer);
             }
           }
 
@@ -3008,7 +3011,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         }
         // Handle Vendor subscription
         else if (vendorId) {
-          console.log('Vendor subscription created:', subscription.id, 'Vendor:', vendorId);
+          logger.info('Vendor subscription created:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of new vendor subscription
           const subEmail = {
             subject: `New Vendor Subscription - ${subscription.metadata?.plan || 'Unknown'} Plan`,
@@ -3044,7 +3047,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
         // Handle Pro subscription updates (payment issues, plan changes, etc.)
         if (userId && source === 'pro_subscription') {
-          console.log('Pro subscription updated:', subscription.id, 'User:', userId, 'Status:', subscription.status);
+          logger.info('Pro subscription updated:', subscription.id, 'User:', userId, 'Status:', subscription.status);
 
           if (supabase) {
             // Update subscription status in database
@@ -3055,7 +3058,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 
             // If subscription is past_due or unpaid, optionally restrict access
             if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
-              console.log('Pro subscription payment issue for user:', userId, 'Status:', subscription.status);
+              logger.info('Pro subscription payment issue for user:', userId, 'Status:', subscription.status);
             }
 
             // If subscription became active again after issue
@@ -3071,7 +3074,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         }
         // Handle Vendor subscription updates
         else if (vendorId) {
-          console.log('Vendor subscription updated:', subscription.id, 'Status:', subscription.status);
+          logger.info('Vendor subscription updated:', subscription.id, 'Status:', subscription.status);
         }
         break;
       }
@@ -3085,7 +3088,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         // Handle Pro subscription cancellation
         if (userId && source === 'pro_subscription') {
           const previousPlan = subscription.metadata?.account_type || subscription.metadata?.plan || 'pro';
-          console.log('Pro subscription canceled:', subscription.id, 'User:', userId);
+          logger.info('Pro subscription canceled:', subscription.id, 'User:', userId);
 
           // Downgrade user back to homeowner
           if (supabase) {
@@ -3100,9 +3103,9 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
               .eq('id', userId);
 
             if (updateError) {
-              console.error('Failed to downgrade user account_type:', updateError);
+              logger.error('Failed to downgrade user account_type:', updateError);
             } else {
-              console.log('Downgraded user', userId, 'from', previousPlan, 'to homeowner');
+              logger.info('Downgraded user', userId, 'from', previousPlan, 'to homeowner');
             }
           }
 
@@ -3129,7 +3132,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         }
         // Handle Vendor subscription cancellation
         else if (vendorId) {
-          console.log('Vendor subscription canceled:', subscription.id, 'Vendor:', vendorId);
+          logger.info('Vendor subscription canceled:', subscription.id, 'Vendor:', vendorId);
           // Notify admin of cancellation
           const cancelEmail = {
             subject: `Vendor Subscription Canceled - ${subscription.metadata?.plan || 'Unknown'} Plan`,
@@ -3155,10 +3158,10 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.info(`Unhandled event type: ${event.type}`);
     }
   } catch (err) {
-    console.error('Error processing webhook event:', err);
+    logger.error('Error processing webhook event:', err);
   }
 
   res.json({ received: true });
@@ -3199,7 +3202,7 @@ app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Valid email is required' });
     }
 
-    console.log('[ARIA LEAD] Received from source:', source || 'unknown');
+    logger.info('[ARIA LEAD] Received from source:', source || 'unknown');
 
     // Build email content
     const leadHtml = `
@@ -3297,15 +3300,15 @@ app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
           tool,
           created_at: timestamp || new Date().toISOString()
         }]);
-        console.log('[ARIA LEAD] Saved to database');
+        logger.info('[ARIA LEAD] Saved to database');
       } catch (dbErr) {
-        console.log('[ARIA LEAD] Database save skipped:', dbErr.message);
+        logger.info('[ARIA LEAD] Database save skipped:', dbErr.message);
       }
     }
 
     res.json({ success: true, emailSent: emailResult.success });
   } catch (error) {
-    console.error('[ARIA LEAD] Error:', error);
+    logger.error('[ARIA LEAD] Error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3384,7 +3387,7 @@ app.post('/api/test-email', async (req, res) => {
       res.status(500).json({ success: false, error: result.reason });
     }
   } catch (err) {
-    console.error('Test email error:', err);
+    logger.error('Test email error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -3426,7 +3429,7 @@ app.post('/api/customers', async (req, res) => {
 
     res.json({ customer, isNew: true });
   } catch (error) {
-    console.error('Customer error:', error);
+    logger.error('Customer error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3445,7 +3448,7 @@ app.get('/api/customers/:email', async (req, res) => {
 
     res.json({ customer: customers.data[0] });
   } catch (error) {
-    console.error('Get customer error:', error);
+    logger.error('Get customer error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3501,7 +3504,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Create the session
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    console.log('Checkout session created:', session.id);
+    logger.info('Checkout session created:', session.id);
 
     res.json({
       sessionId: session.id,
@@ -3509,7 +3512,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Checkout session error:', error);
+    logger.error('Checkout session error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3569,7 +3572,7 @@ app.post('/api/create-pro-subscription', async (req, res) => {
           source: 'pro_subscription'
         }
       });
-      console.log('Created new Stripe product for', plan, ':', product.id);
+      logger.info('Created new Stripe product for', plan, ':', product.id);
     }
 
     // Create the price
@@ -3634,7 +3637,7 @@ app.post('/api/create-pro-subscription', async (req, res) => {
       allow_promotion_codes: true
     });
 
-    console.log('Pro subscription session created:', session.id, 'Plan:', plan, 'User:', user_id);
+    logger.info('Pro subscription session created:', session.id, 'Plan:', plan, 'User:', user_id);
 
     res.json({
       success: true,
@@ -3646,7 +3649,7 @@ app.post('/api/create-pro-subscription', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Pro subscription error:', error);
+    logger.error('Pro subscription error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3705,7 +3708,7 @@ app.post('/api/pro-billing-portal', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Billing portal error:', error);
+    logger.error('Billing portal error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3745,7 +3748,7 @@ app.get('/api/pro-subscription/:user_id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Subscription status error:', error);
+    logger.error('Subscription status error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3793,7 +3796,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
     // Create the PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentConfig);
 
-    console.log('PaymentIntent created:', paymentIntent.id, 'Amount:', amount / 100);
+    logger.info('PaymentIntent created:', paymentIntent.id, 'Amount:', amount / 100);
 
     res.json({
       clientSecret: paymentIntent.client_secret,
@@ -3801,7 +3804,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('PaymentIntent error:', error);
+    logger.error('PaymentIntent error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3909,7 +3912,7 @@ app.post('/api/invoices', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Invoice error:', error);
+    logger.error('Invoice error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3954,7 +3957,7 @@ app.get('/api/invoices', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('List invoices error:', error);
+    logger.error('List invoices error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3988,7 +3991,7 @@ app.get('/api/invoices/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get invoice error:', error);
+    logger.error('Get invoice error:', error);
     return handleApiError(res, error);
   }
 });
@@ -3999,7 +4002,7 @@ app.post('/api/invoices/:id/remind', async (req, res) => {
     const invoice = await stripe.invoices.sendInvoice(req.params.id);
     res.json({ success: true, message: 'Reminder sent', invoice_id: invoice.id });
   } catch (error) {
-    console.error('Remind invoice error:', error);
+    logger.error('Remind invoice error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4010,7 +4013,7 @@ app.post('/api/invoices/:id/void', async (req, res) => {
     const invoice = await stripe.invoices.voidInvoice(req.params.id);
     res.json({ success: true, message: 'Invoice voided', status: invoice.status });
   } catch (error) {
-    console.error('Void invoice error:', error);
+    logger.error('Void invoice error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4041,7 +4044,7 @@ app.get('/invoice/view/:id', async (req, res) => {
           user_agent: userAgent
         });
       } catch (dbErr) {
-        console.log('Could not log invoice view:', dbErr.message);
+        logger.info('Could not log invoice view:', dbErr.message);
       }
     }
 
@@ -4057,13 +4060,13 @@ app.get('/invoice/view/:id', async (req, res) => {
         }
       });
     } catch (metaErr) {
-      console.log('Could not update invoice metadata:', metaErr.message);
+      logger.info('Could not update invoice metadata:', metaErr.message);
     }
 
     // Redirect to Stripe hosted invoice page
     res.redirect(invoice.hosted_invoice_url);
   } catch (error) {
-    console.error('Invoice view tracking error:', error);
+    logger.error('Invoice view tracking error:', error);
     res.status(500).send('Error loading invoice');
   }
 });
@@ -4097,7 +4100,7 @@ app.get('/api/invoices/:id/views', async (req, res) => {
       views: views
     });
   } catch (error) {
-    console.error('Get invoice views error:', error);
+    logger.error('Get invoice views error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4152,7 +4155,7 @@ app.post('/api/payment-links', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Payment link error:', error);
+    logger.error('Payment link error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4177,7 +4180,7 @@ app.get('/api/balance', async (req, res) => {
       total_pending: balance.pending.reduce((sum, b) => sum + b.amount, 0) / 100
     });
   } catch (error) {
-    console.error('Balance error:', error);
+    logger.error('Balance error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4201,7 +4204,7 @@ app.get('/api/payouts', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Payouts error:', error);
+    logger.error('Payouts error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4255,7 +4258,7 @@ app.get('/api/payouts/:payoutId', async (req, res) => {
               } catch (e) {}
             }
           } catch (e) {
-            console.log('Could not retrieve charge:', bt.source);
+            logger.info('Could not retrieve charge:', bt.source);
           }
         }
 
@@ -4295,7 +4298,7 @@ app.get('/api/payouts/:payoutId', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Payout detail error:', error);
+    logger.error('Payout detail error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4321,7 +4324,7 @@ app.get('/api/transactions', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Transactions error:', error);
+    logger.error('Transactions error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4347,7 +4350,7 @@ app.get('/api/balance-transactions', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Balance transactions error:', error);
+    logger.error('Balance transactions error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4377,7 +4380,7 @@ app.post('/api/payouts', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Payout error:', error);
+    logger.error('Payout error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4422,7 +4425,7 @@ app.post('/api/connect/accounts', async (req, res) => {
       onboarding_url: accountLink.url
     });
   } catch (error) {
-    console.error('Connect account error:', error);
+    logger.error('Connect account error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4443,7 +4446,7 @@ app.get('/api/connect/accounts/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get Connect account error:', error);
+    logger.error('Get Connect account error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4454,7 +4457,7 @@ app.post('/api/connect/accounts/:id/login', async (req, res) => {
     const loginLink = await stripe.accounts.createLoginLink(req.params.id);
     res.json({ url: loginLink.url });
   } catch (error) {
-    console.error('Login link error:', error);
+    logger.error('Login link error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4485,7 +4488,7 @@ app.post('/api/connect/payouts', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Payout error:', error);
+    logger.error('Payout error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4592,7 +4595,7 @@ app.post('/api/create-vendor-subscription', async (req, res) => {
       allow_promotion_codes: true
     });
 
-    console.log('Vendor subscription session created:', session.id, 'Plan:', plan_name);
+    logger.info('Vendor subscription session created:', session.id, 'Plan:', plan_name);
 
     res.json({
       success: true,
@@ -4601,7 +4604,7 @@ app.post('/api/create-vendor-subscription', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Vendor subscription error:', error);
+    logger.error('Vendor subscription error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4626,7 +4629,7 @@ app.post('/api/vendor-billing-portal', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Billing portal error:', error);
+    logger.error('Billing portal error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4671,7 +4674,7 @@ app.get('/api/vendor-subscription/:vendor_id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get vendor subscription error:', error);
+    logger.error('Get vendor subscription error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4716,7 +4719,7 @@ app.post('/api/vendor-subscription/:vendor_id/cancel', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Cancel subscription error:', error);
+    logger.error('Cancel subscription error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4785,7 +4788,7 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
       expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() // 72 hours
     };
 
-    console.log('New lead received:', leadData);
+    logger.info('New lead received:', leadData);
 
     // Determine if this is an appointment request
     const isAppointment = appointment_date || appointment_time || source === 'Booking Calendar';
@@ -4902,10 +4905,10 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
           });
         }
         await sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
-        console.log('Customer confirmation email sent');
+        logger.info('Customer confirmation email sent');
       } catch (emailError) {
         // Don't fail the request if customer email fails
-        console.error('Failed to send customer email:', emailError.message);
+        logger.error('Failed to send customer email:', emailError.message);
       }
     }
 
@@ -4917,7 +4920,7 @@ app.post('/api/leads', leadRateLimiter, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Lead submission error:', error);
+    logger.error('Lead submission error:', error);
     return handleApiError(res, error);
   }
 });
@@ -4968,13 +4971,13 @@ app.post('/api/lead-welcome', async (req, res) => {
     const result = await sendNotification(email, welcomeEmail.subject, welcomeEmail.html);
 
     if (result.success) {
-      console.log('Welcome email sent successfully');
+      logger.info('Welcome email sent successfully');
       res.json({
         success: true,
         message: 'Welcome email sent successfully'
       });
     } else {
-      console.error('Failed to send welcome email:', result.reason);
+      logger.error('Failed to send welcome email:', result.reason);
       res.status(500).json({
         success: false,
         error: 'Failed to send email',
@@ -4983,7 +4986,7 @@ app.post('/api/lead-welcome', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Welcome email error:', error);
+    logger.error('Welcome email error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5025,7 +5028,7 @@ app.post('/api/purchase-lead', async (req, res) => {
       }
     });
 
-    console.log('Lead purchase session created:', session.id);
+    logger.info('Lead purchase session created:', session.id);
 
     res.json({
       success: true,
@@ -5034,7 +5037,7 @@ app.post('/api/purchase-lead', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Lead purchase error:', error);
+    logger.error('Lead purchase error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5054,7 +5057,7 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
     if (!REPLICATE_API_TOKEN) {
-      console.log('Replicate API not configured, returning demo mode');
+      logger.info('Replicate API not configured, returning demo mode');
       return res.json({
         success: true,
         demo: true,
@@ -5085,7 +5088,7 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
     const prediction = await response.json();
 
     if (prediction.error) {
-      console.error('Replicate error:', prediction.error);
+      logger.error('Replicate error:', prediction.error);
       return res.status(500).json({ error: prediction.error });
     }
 
@@ -5108,7 +5111,7 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
     }
 
     if (result.status === 'failed') {
-      console.error('Prediction failed:', result.error);
+      logger.error('Prediction failed:', result.error);
       return res.status(500).json({ error: 'Image generation failed' });
     }
 
@@ -5123,7 +5126,7 @@ app.post('/api/visualize', aiRateLimiter('ai_vision'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Visualize error:', error);
+    logger.error('Visualize error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5161,8 +5164,8 @@ app.post('/api/generate-video', aiRateLimiter('ai_video'), async (req, res) => {
       modelInputs.prompt_optimizer = true;
     }
 
-    console.log(`[Video] Starting generation with ${model}`);
-    console.log(`[Video] Prompt: ${prompt.substring(0, 100)}...`);
+    logger.info(`[Video] Starting generation with ${model}`);
+    logger.info(`[Video] Prompt: ${prompt.substring(0, 100)}...`);
 
     // Create prediction
     const response = await fetch('https://api.replicate.com/v1/predictions', {
@@ -5180,7 +5183,7 @@ app.post('/api/generate-video', aiRateLimiter('ai_video'), async (req, res) => {
     const prediction = await response.json();
 
     if (prediction.error) {
-      console.error('[Video] Replicate error:', prediction.error);
+      logger.error('[Video] Replicate error:', prediction.error);
       return res.status(500).json({ error: prediction.error });
     }
 
@@ -5194,7 +5197,7 @@ app.post('/api/generate-video', aiRateLimiter('ai_video'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Video] Generation error:', error);
+    logger.error('[Video] Generation error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5232,7 +5235,7 @@ app.get('/api/generate-video/status/:id', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Video] Status check error:', error);
+    logger.error('[Video] Status check error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5264,7 +5267,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
 
     // Handle Bluebeam BAX file (XML markup data)
     if (baxFile) {
-      console.log('Processing Bluebeam BAX file...');
+      logger.info('Processing Bluebeam BAX file...');
       analysisResults = parseBluebeamBAX(baxFile);
 
     } else {
@@ -5273,7 +5276,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
 
       // Convert URL to base64 if needed
       if (blueprintUrl) {
-        console.log('Processing blueprint from URL:', blueprintUrl);
+        logger.info('Processing blueprint from URL:', blueprintUrl);
         try {
           const fetch = (await import('node-fetch')).default;
           const response = await fetch(blueprintUrl);
@@ -5281,7 +5284,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
           const mimeType = response.headers.get('content-type') || 'image/png';
           blueprintData = `data:${mimeType};base64,${buffer.toString('base64')}`;
         } catch (urlError) {
-          console.error('Error fetching URL:', urlError);
+          logger.error('Error fetching URL:', urlError);
           // Fall back to demo mode if URL fetch fails
           blueprintData = null;
         }
@@ -5294,7 +5297,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
       if (blueprintData && (hasOpenAI || hasOllama)) {
         // Use AI-powered analysis
         const provider = hasOllama ? 'ollama' : 'openai';
-        console.log(`Analyzing blueprint with ${provider}...`);
+        logger.info(`Analyzing blueprint with ${provider}...`);
 
         try {
           const aiResult = await analyzeBlueprint({
@@ -5312,14 +5315,14 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
           analysisResults.provider = provider;
 
         } catch (aiError) {
-          console.error('AI analysis error, falling back to demo:', aiError);
+          logger.error('AI analysis error, falling back to demo:', aiError);
           analysisResults = generateTakeoffAnalysis(projectType);
           analysisResults.mode = 'demo';
           analysisResults.aiError = aiError.message;
         }
       } else {
         // Fallback to demo data
-        console.log('No AI configured, using demo analysis...');
+        logger.info('No AI configured, using demo analysis...');
         analysisResults = generateTakeoffAnalysis(projectType);
         analysisResults.mode = 'demo';
 
@@ -5337,7 +5340,7 @@ app.post('/api/analyze-blueprint', aiRateLimiter('ai_blueprint'), async (req, re
     res.json(analysisResults);
 
   } catch (error) {
-    console.error('Blueprint analysis error:', error);
+    logger.error('Blueprint analysis error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5567,7 +5570,7 @@ app.post('/api/leads/with-images', async (req, res) => {
       expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
     };
 
-    console.log('New lead with images received:', {
+    logger.info('New lead with images received', {
       name: leadData.homeowner_name,
       project: leadData.project_type,
       zip: leadData.project_zip,
@@ -5663,7 +5666,7 @@ app.post('/api/leads/with-images', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Lead with images submission error:', error);
+    logger.error('Lead with images submission error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5700,7 +5703,7 @@ app.post('/api/leads/assign', async (req, res) => {
       status: 'assigned'
     };
 
-    console.log('Lead assignment:', assignment);
+    logger.info('Lead assignment:', assignment);
 
     // Send notification to assigned vendor/user if requested
     if (notify_vendor && (vendor_id || user_id)) {
@@ -5736,7 +5739,7 @@ app.post('/api/leads/assign', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Lead assignment error:', error);
+    logger.error('Lead assignment error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5769,7 +5772,7 @@ app.post('/api/leads/auto-assign', async (req, res) => {
       }
     ];
 
-    console.log(`Auto-assignment for lead ${lead_id} in ZIP ${project_zip}:`, matchedVendors);
+    logger.info(`Auto-assignment for lead ${lead_id} in ZIP ${project_zip}:`, matchedVendors);
 
     res.json({
       success: true,
@@ -5782,7 +5785,7 @@ app.post('/api/leads/auto-assign', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Auto-assignment error:', error);
+    logger.error('Auto-assignment error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5802,7 +5805,7 @@ app.get('/api/leads/with-images', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get leads error:', error);
+    logger.error('Get leads error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5827,7 +5830,7 @@ app.get('/api/leads/assignment-rules', async (req, res) => {
       ]
     });
   } catch (error) {
-    console.error('Get assignment rules error:', error);
+    logger.error('Get assignment rules error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5858,7 +5861,7 @@ app.post('/api/leads/assignment-rules', async (req, res) => {
       updated_at: new Date().toISOString()
     };
 
-    console.log('Assignment rule saved:', rule);
+    logger.info('Assignment rule saved:', rule);
 
     res.json({
       success: true,
@@ -5867,7 +5870,7 @@ app.post('/api/leads/assignment-rules', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Save assignment rule error:', error);
+    logger.error('Save assignment rule error:', error);
     return handleApiError(res, error);
   }
 });
@@ -5958,7 +5961,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI error:', error);
+      logger.error('OpenAI error:', error);
       return res.status(500).json({ error: 'Failed to parse price sheet' });
     }
 
@@ -5974,7 +5977,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
                         [null, content];
       parsedData = JSON.parse(jsonMatch[1] || content);
     } catch (e) {
-      console.error('Failed to parse AI response:', content);
+      logger.error('Failed to parse AI response:', content);
       parsedData = { products: [], error: 'Could not parse response' };
     }
 
@@ -5985,7 +5988,7 @@ Extract ALL products visible. Use 0.00 for prices if not clearly visible. Be tho
     });
 
   } catch (error) {
-    console.error('Price sheet parse error:', error);
+    logger.error('Price sheet parse error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6038,7 +6041,7 @@ app.post('/api/price-sheets/parse-csv', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('CSV parse error:', error);
+    logger.error('CSV parse error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6352,15 +6355,15 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
         valid_until: validUntil,
         created_at: req.body.created_at || new Date().toISOString()
       });
-      console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+      logger.info('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
     } catch (pdfErr) {
-      console.error('PDF generation error:', pdfErr.message);
+      logger.error('PDF generation error:', pdfErr.message);
       // Continue without PDF if generation fails
     }
 
     // Check if SMTP is configured
     if (!SMTP_USER) {
-      console.log('Email notification (SMTP not configured):', { to: custEmail });
+      logger.info('Email notification (SMTP not configured):', { to: custEmail });
       return res.status(500).json({
         success: false,
         error: 'SMTP not configured',
@@ -6388,14 +6391,14 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
 
     try {
       await transporter.sendMail(emailOptions);
-      console.log(`Estimate email sent${pdfBuffer ? ' with PDF attachment' : ''}`);
+      logger.info(`Estimate email sent${pdfBuffer ? ' with PDF attachment' : ''}`);
       res.json({
         success: true,
         message: 'Estimate email sent successfully',
         pdf_attached: !!pdfBuffer
       });
     } catch (emailErr) {
-      console.error('Failed to send estimate email');
+      logger.error('Failed to send estimate email');
       res.status(500).json({
         success: false,
         error: 'Failed to send email',
@@ -6404,7 +6407,7 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Send estimate error:', error);
+    logger.error('Send estimate error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6434,7 +6437,7 @@ app.get('/api/jobs', async (req, res) => {
 
     res.json({ jobs: jobs || [] });
   } catch (error) {
-    console.error('Get jobs error:', error);
+    logger.error('Get jobs error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6461,7 +6464,7 @@ app.get('/api/jobs/:id', async (req, res) => {
 
     res.json({ job });
   } catch (error) {
-    console.error('Get job error:', error);
+    logger.error('Get job error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6487,7 +6490,7 @@ app.patch('/api/jobs/:id', async (req, res) => {
 
     res.json({ job });
   } catch (error) {
-    console.error('Update job error:', error);
+    logger.error('Update job error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6528,7 +6531,7 @@ app.post('/api/jobs/:id/files', async (req, res) => {
 
     res.json({ file });
   } catch (error) {
-    console.error('Upload file error:', error);
+    logger.error('Upload file error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6557,7 +6560,7 @@ app.get('/api/contractors', async (req, res) => {
 
     res.json({ contractors: contractors || [] });
   } catch (error) {
-    console.error('Get contractors error:', error);
+    logger.error('Get contractors error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6606,7 +6609,7 @@ app.post('/api/contractors', async (req, res) => {
 
     res.json({ contractor });
   } catch (error) {
-    console.error('Create contractor error:', error);
+    logger.error('Create contractor error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6676,7 +6679,7 @@ app.post('/api/jobs/:jobId/assign-contractor', async (req, res) => {
       invite_sent: send_invite && !!contractor.email
     });
   } catch (error) {
-    console.error('Assign contractor error:', error);
+    logger.error('Assign contractor error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6736,7 +6739,7 @@ app.post('/api/contractor/respond', async (req, res) => {
       job: assignment.job
     });
   } catch (error) {
-    console.error('Contractor respond error:', error);
+    logger.error('Contractor respond error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6831,7 +6834,7 @@ app.post('/api/jobs/:jobId/material-order', async (req, res) => {
       email_sent: emailSent
     });
   } catch (error) {
-    console.error('Material order error:', error);
+    logger.error('Material order error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6880,7 +6883,7 @@ app.patch('/api/material-orders/:id', async (req, res) => {
 
     res.json({ order: orderUpdate });
   } catch (error) {
-    console.error('Update material order error:', error);
+    logger.error('Update material order error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6901,7 +6904,7 @@ app.get('/api/customers-list', async (req, res) => {
 
     res.json({ customers: customers || [] });
   } catch (error) {
-    console.error('Get customers error:', error);
+    logger.error('Get customers error:', error);
     return handleApiError(res, error);
   }
 });
@@ -6979,7 +6982,7 @@ app.post('/api/auth/check-sso-domain', async (req, res) => {
       res.json({ sso_required: false, sso_available: false });
     }
   } catch (error) {
-    console.error('Check SSO domain error:', error);
+    logger.error('Check SSO domain error:', error);
     res.json({ sso_required: false, sso_available: false });
   }
 });
@@ -7086,7 +7089,7 @@ app.post('/api/auth/provision-sso-user', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Provision SSO user error:', error);
+    logger.error('Provision SSO user error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7125,7 +7128,7 @@ app.get('/api/auth/my-distributors', authenticateJWT, async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get my distributors error:', error);
+    logger.error('Get my distributors error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7151,7 +7154,7 @@ app.get('/api/auth/role/:distributorId', authenticateJWT, async (req, res) => {
 
     res.json(role);
   } catch (error) {
-    console.error('Get role error:', error);
+    logger.error('Get role error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7257,7 +7260,7 @@ app.post('/api/distributor/:id/team/invite', authenticateJWT, requireRole('admin
     });
 
   } catch (error) {
-    console.error('Invite user error:', error);
+    logger.error('Invite user error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7321,7 +7324,7 @@ app.post('/api/auth/accept-invite', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Accept invite error:', error);
+    logger.error('Accept invite error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7374,7 +7377,7 @@ app.get('/api/distributor/:id/team', authenticateJWT, requireRole('admin', 'sale
     });
 
   } catch (error) {
-    console.error('Get team error:', error);
+    logger.error('Get team error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7424,7 +7427,7 @@ app.patch('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('a
     res.json(data);
 
   } catch (error) {
-    console.error('Update member error:', error);
+    logger.error('Update member error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7456,7 +7459,7 @@ app.delete('/api/distributor/:id/team/:memberId', authenticateJWT, requireRole('
     res.json({ success: true });
 
   } catch (error) {
-    console.error('Remove member error:', error);
+    logger.error('Remove member error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7486,7 +7489,7 @@ app.get('/api/distributor/:id/audit-logs', authenticateJWT, requireRole('admin')
     res.json({ logs, total: count, limit: parseInt(limit), offset: parseInt(offset) });
 
   } catch (error) {
-    console.error('Get audit logs error:', error);
+    logger.error('Get audit logs error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7508,7 +7511,7 @@ app.get('/api/auth/sessions', authenticateJWT, async (req, res) => {
     res.json({ sessions });
 
   } catch (error) {
-    console.error('Get sessions error:', error);
+    logger.error('Get sessions error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7533,7 +7536,7 @@ app.delete('/api/auth/sessions/:sessionId', authenticateJWT, async (req, res) =>
     res.json({ success: true });
 
   } catch (error) {
-    console.error('Revoke session error:', error);
+    logger.error('Revoke session error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7555,7 +7558,7 @@ app.post('/api/auth/sessions/revoke-others', authenticateJWT, async (req, res) =
     res.json({ success: true, revoked_count: count });
 
   } catch (error) {
-    console.error('Revoke others error:', error);
+    logger.error('Revoke others error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7587,7 +7590,7 @@ app.get('/api/distributor/profile', async (req, res) => {
 
     res.json({ profile });
   } catch (error) {
-    console.error('Get distributor profile error:', error);
+    logger.error('Get distributor profile error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7617,7 +7620,7 @@ app.patch('/api/distributor/profile', async (req, res) => {
 
     res.json({ profile });
   } catch (error) {
-    console.error('Update distributor profile error:', error);
+    logger.error('Update distributor profile error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7671,7 +7674,7 @@ app.get('/api/distributor/inventory', async (req, res) => {
 
     res.json({ slabs: slabs || [], total: count });
   } catch (error) {
-    console.error('Get inventory error:', error);
+    logger.error('Get inventory error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7695,7 +7698,7 @@ app.get('/api/distributor/inventory/:id', async (req, res) => {
 
     res.json({ slab });
   } catch (error) {
-    console.error('Get slab error:', error);
+    logger.error('Get slab error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7749,7 +7752,7 @@ app.post('/api/distributor/inventory', async (req, res) => {
 
     res.status(201).json({ slab });
   } catch (error) {
-    console.error('Create slab error:', error);
+    logger.error('Create slab error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7809,7 +7812,7 @@ app.patch('/api/distributor/inventory/:id', async (req, res) => {
 
     res.json({ slab });
   } catch (error) {
-    console.error('Update slab error:', error);
+    logger.error('Update slab error:', error);
     return handleApiError(res, error);
   }
 });
@@ -7866,7 +7869,7 @@ app.delete('/api/distributor/inventory/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete slab error:', error);
+    logger.error('Delete slab error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8000,7 +8003,7 @@ app.post('/api/distributor/inventory/bulk', async (req, res) => {
       results
     });
   } catch (error) {
-    console.error('Bulk import error:', error);
+    logger.error('Bulk import error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8033,7 +8036,7 @@ app.get('/api/distributor/locations', async (req, res) => {
 
     res.json({ locations: locations || [] });
   } catch (error) {
-    console.error('Get locations error:', error);
+    logger.error('Get locations error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8069,7 +8072,7 @@ app.post('/api/distributor/locations', async (req, res) => {
 
     res.status(201).json({ location });
   } catch (error) {
-    console.error('Add location error:', error);
+    logger.error('Add location error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8106,7 +8109,7 @@ app.patch('/api/distributor/locations/:id', async (req, res) => {
 
     res.json({ location });
   } catch (error) {
-    console.error('Update location error:', error);
+    logger.error('Update location error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8137,7 +8140,7 @@ app.delete('/api/distributor/locations/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete location error:', error);
+    logger.error('Delete location error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8256,7 +8259,7 @@ app.get('/api/marketplace/slabs', async (req, res) => {
 
     res.json({ slabs: slabs || [] });
   } catch (error) {
-    console.error('Search slabs error:', error);
+    logger.error('Search slabs error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8324,7 +8327,7 @@ app.get('/api/marketplace/products', async (req, res) => {
       offset: parseInt(offset)
     });
   } catch (error) {
-    console.error('Search marketplace products error:', error);
+    logger.error('Search marketplace products error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8359,7 +8362,7 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
 
     res.json({ product });
   } catch (error) {
-    console.error('Get marketplace product error:', error);
+    logger.error('Get marketplace product error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8418,7 +8421,7 @@ app.get('/api/marketplace/slabs/:id', async (req, res) => {
 
     res.json({ slab });
   } catch (error) {
-    console.error('Get slab detail error:', error);
+    logger.error('Get slab detail error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8473,7 +8476,7 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
       if (!error) inquiry = data;
     } catch (e) {
       // Table may not exist yet, continue without storing
-      console.log('product_inquiries table not available, sending email only');
+      logger.info('product_inquiries table not available, sending email only');
     }
 
     // Send email notification to distributor
@@ -8518,7 +8521,7 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
       message: 'Inquiry submitted successfully'
     });
   } catch (error) {
-    console.error('Submit inquiry error:', error);
+    logger.error('Submit inquiry error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8571,7 +8574,7 @@ app.post('/api/distributor/api-keys', async (req, res) => {
       warning: 'Save this API key now. It cannot be retrieved again.'
     });
   } catch (error) {
-    console.error('Generate API key error:', error);
+    logger.error('Generate API key error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8602,7 +8605,7 @@ app.get('/api/distributor/api-keys', async (req, res) => {
 
     res.json({ keys: keys || [] });
   } catch (error) {
-    console.error('List API keys error:', error);
+    logger.error('List API keys error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8637,7 +8640,7 @@ app.delete('/api/distributor/api-keys/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Revoke API key error:', error);
+    logger.error('Revoke API key error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8694,7 +8697,7 @@ app.get('/api/distributor/inquiries', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get inquiries error:', error);
+    logger.error('Get inquiries error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8733,7 +8736,7 @@ app.get('/api/distributor/inquiries/:id', async (req, res) => {
 
     res.json({ inquiry });
   } catch (error) {
-    console.error('Get inquiry error:', error);
+    logger.error('Get inquiry error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8783,7 +8786,7 @@ app.patch('/api/distributor/inquiries/:id', async (req, res) => {
 
     res.json({ inquiry });
   } catch (error) {
-    console.error('Update inquiry error:', error);
+    logger.error('Update inquiry error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8829,7 +8832,7 @@ app.get('/api/distributor/inquiries/stats/summary', async (req, res) => {
 
     res.json({ stats });
   } catch (error) {
-    console.error('Get inquiry stats error:', error);
+    logger.error('Get inquiry stats error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8893,7 +8896,7 @@ app.get('/api/distributor/analytics', async (req, res) => {
       daily: dailyStats || []
     });
   } catch (error) {
-    console.error('Get analytics error:', error);
+    logger.error('Get analytics error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9004,7 +9007,7 @@ app.get('/api/products', async (req, res) => {
       offset: parseInt(offset)
     });
   } catch (error) {
-    console.error('Get products error:', error);
+    logger.error('Get products error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9038,7 +9041,7 @@ app.get('/api/products/stats', async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    console.error('Get product stats error:', error);
+    logger.error('Get product stats error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9083,7 +9086,7 @@ app.get('/api/products/lookup', async (req, res) => {
 
     res.status(404).json({ error: 'Product not found' });
   } catch (error) {
-    console.error('Product lookup error:', error);
+    logger.error('Product lookup error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9115,7 +9118,7 @@ app.get('/api/products/:id', async (req, res) => {
 
     res.json(product);
   } catch (error) {
-    console.error('Get product error:', error);
+    logger.error('Get product error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9174,7 +9177,7 @@ app.post('/api/products', async (req, res) => {
         });
 
       if (typeError) {
-        console.error(`Error inserting ${typeTable}:`, typeError);
+        logger.error(`Error inserting ${typeTable}:`, typeError);
       }
     }
 
@@ -9193,7 +9196,7 @@ app.post('/api/products', async (req, res) => {
 
     res.status(201).json(product);
   } catch (error) {
-    console.error('Create product error:', error);
+    logger.error('Create product error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9243,7 +9246,7 @@ app.patch('/api/products/:id', async (req, res) => {
 
     res.json(product);
   } catch (error) {
-    console.error('Update product error:', error);
+    logger.error('Update product error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9279,7 +9282,7 @@ app.delete('/api/products/:id', async (req, res) => {
 
     res.json({ success: true, message: 'Product deleted' });
   } catch (error) {
-    console.error('Delete product error:', error);
+    logger.error('Delete product error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9353,7 +9356,7 @@ app.post('/api/products/bulk', async (req, res) => {
       ...results
     });
   } catch (error) {
-    console.error('Bulk import error:', error);
+    logger.error('Bulk import error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9382,7 +9385,7 @@ app.get('/api/products/:id/inventory', async (req, res) => {
       offset: parseInt(offset)
     });
   } catch (error) {
-    console.error('Get inventory transactions error:', error);
+    logger.error('Get inventory transactions error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9458,7 +9461,7 @@ app.post('/api/products/:id/inventory', async (req, res) => {
       new_quantity: newQuantity
     });
   } catch (error) {
-    console.error('Add inventory transaction error:', error);
+    logger.error('Add inventory transaction error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9480,7 +9483,7 @@ app.get('/api/products/:id/skus', async (req, res) => {
 
     res.json(skus);
   } catch (error) {
-    console.error('Get product SKUs error:', error);
+    logger.error('Get product SKUs error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9523,7 +9526,7 @@ app.post('/api/products/:id/skus', async (req, res) => {
 
     res.status(201).json(sku);
   } catch (error) {
-    console.error('Add SKU mapping error:', error);
+    logger.error('Add SKU mapping error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9559,7 +9562,7 @@ app.delete('/api/products/:id/skus/:skuId', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete SKU mapping error:', error);
+    logger.error('Delete SKU mapping error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9592,7 +9595,7 @@ app.get('/api/integrations', async (req, res) => {
 
     res.json(safeIntegrations);
   } catch (error) {
-    console.error('Get integrations error:', error);
+    logger.error('Get integrations error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9640,7 +9643,7 @@ app.post('/api/integrations', async (req, res) => {
       connection_config: { configured: true }
     });
   } catch (error) {
-    console.error('Create integration error:', error);
+    logger.error('Create integration error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9680,7 +9683,7 @@ app.patch('/api/integrations/:id', async (req, res) => {
       connection_config: { configured: Object.keys(integration.connection_config || {}).length > 0 }
     });
   } catch (error) {
-    console.error('Update integration error:', error);
+    logger.error('Update integration error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9715,7 +9718,7 @@ app.delete('/api/integrations/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete integration error:', error);
+    logger.error('Delete integration error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9791,7 +9794,7 @@ app.post('/api/integrations/:id/sync', async (req, res) => {
       status: 'pending_implementation'
     });
   } catch (error) {
-    console.error('Trigger sync error:', error);
+    logger.error('Trigger sync error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9829,7 +9832,7 @@ app.get('/api/integrations/:id/logs', async (req, res) => {
 
     res.json(logs);
   } catch (error) {
-    console.error('Get sync logs error:', error);
+    logger.error('Get sync logs error:', error);
     return handleApiError(res, error);
   }
 });
@@ -9876,7 +9879,7 @@ app.post('/api/integrations/:id/test', async (req, res) => {
       system_type: integration.system_type
     });
   } catch (error) {
-    console.error('Test connection error:', error);
+    logger.error('Test connection error:', error);
     return handleApiError(res, error, 'Test connection');
   }
 });
@@ -9906,7 +9909,7 @@ server.on('upgrade', (request, socket, head) => {
       : ['https://www.surprisegranite.com', 'https://surprisegranite.com', 'http://localhost:3000', 'http://localhost:8888', 'http://127.0.0.1:5500'];
 
     if (origin && !allowedOrigins.includes(origin)) {
-      console.log('[Aria Realtime] Rejected connection from unauthorized origin:', origin);
+      logger.info('[Aria Realtime] Rejected connection from unauthorized origin:', origin);
       socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
       socket.destroy();
       return;
@@ -9917,7 +9920,7 @@ server.on('upgrade', (request, socket, head) => {
     const currentCount = wsConnectionCounts.get(ip) || 0;
 
     if (currentCount >= WS_MAX_CONNECTIONS_PER_IP) {
-      console.log('[Aria Realtime] Rate limit exceeded for IP:', ip);
+      logger.info('[Aria Realtime] Rate limit exceeded for IP:', ip);
       socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
       socket.destroy();
       return;
@@ -9937,7 +9940,7 @@ server.on('upgrade', (request, socket, head) => {
 
 // Aria Realtime WebSocket handler
 wss.on('connection', (clientWs) => {
-  console.log('[Aria Realtime] Client connected');
+  logger.info('[Aria Realtime] Client connected');
 
   let openAiWs = null;
   let sessionConfig = null;
@@ -9966,7 +9969,7 @@ wss.on('connection', (clientWs) => {
           break;
 
         case 'start_listening':
-          console.log('[Aria Realtime] Client started listening');
+          logger.info('[Aria Realtime] Client started listening');
           break;
 
         case 'stop_listening':
@@ -10008,7 +10011,7 @@ wss.on('connection', (clientWs) => {
           break;
       }
     } catch (error) {
-      console.error('[Aria Realtime] Message parse error:', error);
+      logger.error('[Aria Realtime] Message parse error:', error);
     }
   });
 
@@ -10028,7 +10031,7 @@ wss.on('connection', (clientWs) => {
       });
 
       openAiWs.on('open', () => {
-        console.log('[Aria Realtime] Connected to OpenAI');
+        logger.info('[Aria Realtime] Connected to OpenAI');
 
         // Configure the session
         const config = {
@@ -10096,22 +10099,22 @@ wss.on('connection', (clientWs) => {
           const response = JSON.parse(data.toString());
           handleOpenAIMessage(response);
         } catch (error) {
-          console.error('[Aria Realtime] OpenAI message parse error:', error);
+          logger.error('[Aria Realtime] OpenAI message parse error:', error);
         }
       });
 
       openAiWs.on('error', (error) => {
-        console.error('[Aria Realtime] OpenAI WebSocket error:', error);
+        logger.error('[Aria Realtime] OpenAI WebSocket error:', error);
         clientWs.send(JSON.stringify({ type: 'error', message: 'OpenAI connection error' }));
       });
 
       openAiWs.on('close', () => {
-        console.log('[Aria Realtime] OpenAI connection closed');
+        logger.info('[Aria Realtime] OpenAI connection closed');
         isSessionReady = false;
       });
 
     } catch (error) {
-      console.error('[Aria Realtime] Failed to connect to OpenAI:', error);
+      logger.error('[Aria Realtime] Failed to connect to OpenAI:', error);
       clientWs.send(JSON.stringify({ type: 'error', message: 'Failed to connect to voice service' }));
     }
   }
@@ -10123,7 +10126,7 @@ wss.on('connection', (clientWs) => {
       case 'session.updated':
         isSessionReady = true;
         clientWs.send(JSON.stringify({ type: 'connected' }));
-        console.log('[Aria Realtime] Session ready');
+        logger.info('[Aria Realtime] Session ready');
         break;
 
       case 'response.audio.delta':
@@ -10182,7 +10185,7 @@ wss.on('connection', (clientWs) => {
         break;
 
       case 'error':
-        console.error('[Aria Realtime] OpenAI error:', response.error);
+        logger.error('[Aria Realtime] OpenAI error:', response.error);
         clientWs.send(JSON.stringify({
           type: 'error',
           message: response.error?.message || 'Unknown error'
@@ -10199,11 +10202,11 @@ wss.on('connection', (clientWs) => {
     try {
       args = JSON.parse(response.arguments || '{}');
     } catch (e) {
-      console.error('[Aria Realtime] Failed to parse tool args:', e);
+      logger.error('[Aria Realtime] Failed to parse tool args:', e);
       return;
     }
 
-    console.log(`[Aria Realtime] Tool call: ${functionName}`, args);
+    logger.info(`[Aria Realtime] Tool call: ${functionName}`, args);
 
     if (functionName === 'capture_lead' || functionName === 'schedule_estimate') {
       // Get admin email from session config or use default
@@ -10236,7 +10239,7 @@ wss.on('connection', (clientWs) => {
             leadHtml
           );
 
-          console.log(`[Aria Realtime] Lead sent to ${adminEmail}`);
+          logger.info(`[Aria Realtime] Lead sent to ${adminEmail}`);
 
           // Also save to database if available
           if (supabase) {
@@ -10247,7 +10250,7 @@ wss.on('connection', (clientWs) => {
                 business_name: businessName
               }]);
             } catch (dbErr) {
-              console.log('[Aria Realtime] DB save skipped:', dbErr.message);
+              logger.info('[Aria Realtime] DB save skipped:', dbErr.message);
             }
           }
 
@@ -10258,7 +10261,7 @@ wss.on('connection', (clientWs) => {
           }));
 
         } catch (error) {
-          console.error('[Aria Realtime] Failed to send lead:', error);
+          logger.error('[Aria Realtime] Failed to send lead:', error);
         }
       }
 
@@ -10400,7 +10403,7 @@ Be helpful and guide users toward scheduling an appointment or getting a quote.`
 
   // Cleanup on disconnect
   clientWs.on('close', () => {
-    console.log('[Aria Realtime] Client disconnected');
+    logger.info('[Aria Realtime] Client disconnected');
     if (openAiWs?.readyState === WebSocket.OPEN) {
       openAiWs.close();
     }
@@ -10416,7 +10419,7 @@ Be helpful and guide users toward scheduling an appointment or getting a quote.`
   });
 
   clientWs.on('error', (error) => {
-    console.error('[Aria Realtime] Client WebSocket error:', error);
+    logger.error('[Aria Realtime] Client WebSocket error:', error);
   });
 });
 
@@ -10519,7 +10522,7 @@ app.post('/api/projects/save', async (req, res) => {
     res.json({ success: true, project: result });
 
   } catch (error) {
-    console.error('Project save error:', error);
+    logger.error('Project save error:', error);
     return handleApiError(res, error);
   }
 });
@@ -10556,7 +10559,7 @@ app.get('/api/projects', async (req, res) => {
     res.json({ projects: data, count: data.length });
 
   } catch (error) {
-    console.error('Get projects error:', error);
+    logger.error('Get projects error:', error);
     return handleApiError(res, error);
   }
 });
@@ -10615,7 +10618,7 @@ app.get('/api/projects/:identifier', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get project error:', error);
+    logger.error('Get project error:', error);
     return handleApiError(res, error);
   }
 });
@@ -10764,7 +10767,7 @@ app.post('/api/projects/:id/send-quote', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Send quote error:', error);
+    logger.error('Send quote error:', error);
     return handleApiError(res, error);
   }
 });
@@ -10838,7 +10841,7 @@ app.post('/api/projects/approve', async (req, res) => {
     res.json({ success: true, project_id: project.id });
 
   } catch (error) {
-    console.error('Quote approval error:', error);
+    logger.error('Quote approval error:', error);
     return handleApiError(res, error);
   }
 });
@@ -10972,7 +10975,7 @@ app.post('/api/projects/:id/create-payment', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create payment error:', error);
+    logger.error('Create payment error:', error);
     return handleApiError(res, error);
   }
 });
@@ -11019,7 +11022,7 @@ app.post('/api/projects/:id/status', async (req, res) => {
     res.json({ success: true, status });
 
   } catch (error) {
-    console.error('Update status error:', error);
+    logger.error('Update status error:', error);
     return handleApiError(res, error);
   }
 });
@@ -11054,7 +11057,7 @@ app.get('/api/projects/:id/activities', async (req, res) => {
     res.json({ activities });
 
   } catch (error) {
-    console.error('Get activities error:', error);
+    logger.error('Get activities error:', error);
     return handleApiError(res, error);
   }
 });
@@ -11138,7 +11141,7 @@ app.get('/api/customer-portal/:token', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Customer portal error:', error);
+    logger.error('Customer portal error:', error);
     return handleApiError(res, error);
   }
 });
@@ -11166,11 +11169,11 @@ app.get('/api/stripe-status', async (req, res) => {
 
 // Start server with WebSocket support
 server.listen(PORT, () => {
-  console.log(`Surprise Granite API running on port ${PORT}`);
-  console.log(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY} (key starts with: ${process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'NOT SET'})`);
-  console.log(`Supabase configured: ${!!supabase}`);
-  console.log(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
-  console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
-  console.log(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
-  console.log(`Aria Realtime WebSocket: /api/aria-realtime`);
+  logger.info(`Surprise Granite API running on port ${PORT}`);
+  logger.info(`Stripe configured: ${!!process.env.STRIPE_SECRET_KEY} (key starts with: ${process.env.STRIPE_SECRET_KEY?.substring(0, 15) || 'NOT SET'})`);
+  logger.info(`Supabase configured: ${!!supabase}`);
+  logger.info(`Replicate configured: ${!!process.env.REPLICATE_API_TOKEN}`);
+  logger.info(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
+  logger.info(`SMTP configured: ${!!SMTP_USER} (${SMTP_USER ? 'User: ' + SMTP_USER.substring(0, 3) + '***' : 'Not set'})`);
+  logger.info(`Aria Realtime WebSocket: /api/aria-realtime`);
 });
