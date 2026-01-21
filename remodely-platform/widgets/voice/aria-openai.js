@@ -443,9 +443,10 @@
           .aria-quick-actions {
             display: flex;
             gap: 8px;
-            margin-top: 14px;
+            margin-top: 12px;
             overflow-x: auto;
-            padding-bottom: 4px;
+            overflow-y: visible;
+            padding: 4px 0 6px;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
           }
