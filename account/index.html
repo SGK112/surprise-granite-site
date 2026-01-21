@@ -131,45 +131,6 @@
       justify-content: center;
     }
 
-    /* Sidebar Toggle Button */
-    .sidebar > .sidebar-toggle,
-    .sidebar-toggle {
-      position: absolute !important;
-      top: 50% !important;
-      right: -14px !important;
-      transform: translateY(-50%) !important;
-      width: 28px !important;
-      height: 28px !important;
-      border-radius: 50% !important;
-      background: var(--gold-primary) !important;
-      border: 3px solid var(--dark-deep) !important;
-      cursor: pointer !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      color: var(--dark-primary) !important;
-      z-index: 200 !important;
-      transition: all 0.3s ease !important;
-      flex-shrink: 0 !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-    }
-
-    .sidebar-toggle:hover {
-      transform: translateY(-50%) scale(1.15) !important;
-      box-shadow: 0 4px 12px rgba(249, 203, 0, 0.4) !important;
-    }
-
-    .sidebar-toggle svg {
-      width: 14px !important;
-      height: 14px !important;
-      transition: transform 0.3s ease !important;
-      flex-shrink: 0 !important;
-    }
-
-    .sidebar.collapsed .sidebar-toggle svg {
-      transform: rotate(180deg) !important;
-    }
-
     /* Hide zero badges */
     .nav-badge.empty,
     .nav-badge[data-count="0"] {
@@ -665,7 +626,19 @@
     }
 
     .stat-icon {
-      margin-bottom: 8px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(249, 203, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .stat-icon svg {
+      width: 24px;
+      height: 24px;
     }
 
     /* Profile Form */
@@ -2874,16 +2847,47 @@
       .sidebar {
         transform: translateX(-100%);
         top: var(--unified-nav-height);
-        width: var(--sidebar-width); /* Always full width on mobile */
+        width: 85%;
+        max-width: 320px;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
       }
 
       .sidebar.open {
         transform: translateX(0);
       }
 
+      /* Make nav items larger for touch */
+      .sidebar .nav-item {
+        padding: 14px 20px;
+        min-height: 48px;
+        font-size: 15px;
+      }
+
+      .sidebar .nav-item svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* Section titles */
+      .sidebar .nav-section-title {
+        padding: 12px 20px 8px;
+        font-size: 11px;
+      }
+
+      /* User menu at bottom */
+      .sidebar .sidebar-footer {
+        padding: 16px 20px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      .sidebar .user-menu {
+        padding: 12px;
+      }
+
       /* Disable collapsed state on mobile */
       .sidebar.collapsed {
-        width: var(--sidebar-width);
+        width: 85%;
+        max-width: 320px;
       }
 
       .sidebar.collapsed .sidebar-logo-text,
@@ -2899,7 +2903,7 @@
 
       .sidebar.collapsed .nav-item {
         justify-content: flex-start;
-        padding: 12px 16px;
+        padding: 14px 20px;
       }
 
       .sidebar.collapsed .nav-badge {
@@ -2909,21 +2913,12 @@
         font-size: 11px;
       }
 
-      /* Hide the collapse toggle on mobile */
-      .sidebar-toggle {
-        display: none;
-      }
-
       .main-content {
         margin-left: 0;
       }
 
       body.sidebar-collapsed .main-content {
         margin-left: 0;
-      }
-
-      .mobile-menu-btn {
-        display: block;
       }
 
       .sidebar-overlay {
@@ -3107,6 +3102,1818 @@
       .modal-overlay .btn {
         min-height: 48px;
         font-size: 15px;
+      }
+
+      /* Modal Modern styles for mobile */
+      .modal-modern-overlay {
+        align-items: flex-end !important;
+      }
+
+      .modal-modern {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 90vh !important;
+        max-height: 90dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+        margin: 0 !important;
+      }
+
+      .modal-modern-header {
+        position: sticky;
+        top: 0;
+        background: var(--dark-surface);
+        z-index: 5;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .modal-modern-body {
+        padding: 16px 20px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .modal-modern-footer {
+        position: sticky;
+        bottom: 0;
+        background: var(--dark-surface);
+        z-index: 5;
+        padding: 16px 20px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .modal-modern-footer .btn,
+      .modal-modern-footer .btn-modern {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Drag handle for modals */
+      .modal-drag-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--border-light);
+        border-radius: 2px;
+        margin: 8px auto 0;
+      }
+    }
+
+    /* ============================================
+       ENHANCED MOBILE OPTIMIZATION
+       ============================================ */
+
+    /* Mobile-specific: 480px and below */
+    @media (max-width: 480px) {
+      /* Stats grid single column on small phones */
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .stat-card {
+        padding: 16px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+
+      /* Topbar mobile adjustments - clean single row */
+      .topbar {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .topbar-title {
+        font-size: 18px;
+        flex: 1;
+      }
+
+      .topbar-actions {
+        flex-shrink: 0;
+      }
+
+      /* Compact button on mobile - icon only */
+      .topbar-actions .btn-modern {
+        padding: 12px;
+        min-width: 44px;
+        min-height: 44px;
+      }
+
+      .topbar-actions .btn-modern .btn-text {
+        display: none;
+      }
+
+      .topbar-actions .btn-modern svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      /* Content area tighter padding */
+      .content-area {
+        padding: 16px;
+      }
+
+      /* Card headers stack on mobile */
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .card-header .btn-modern,
+      .card-header button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Touch-friendly targets for all mobile */
+    @media (max-width: 991px) {
+      /* Minimum touch target sizes (44x44px per Apple/Google guidelines) */
+      .btn,
+      .btn-modern,
+      .filter-btn,
+      .filter-pill,
+      .tab-btn,
+      .nav-item {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Filter buttons larger on mobile */
+      .filter-btn,
+      .filter-pill {
+        padding: 12px 18px;
+        font-size: 14px;
+      }
+
+      .table-filters {
+        gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+        flex-wrap: nowrap;
+      }
+
+      .table-filters::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Mobile hamburger menu button */
+      .mobile-menu-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: var(--dark-elevated);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .mobile-menu-btn:hover {
+        background: var(--dark-surface);
+        border-color: var(--gold-primary);
+      }
+
+      .mobile-menu-btn:active {
+        background: var(--gold-primary);
+        color: var(--dark-primary);
+        transform: scale(0.95);
+      }
+
+      .mobile-menu-btn svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* Table horizontal scroll */
+      .table-container {
+        overflow: visible;
+      }
+
+      .table-container table,
+      table.data-table,
+      .leads-table,
+      .customers-table,
+      .estimates-table,
+      .invoices-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+      }
+
+      /* Table cell minimum widths for readability */
+      th, td {
+        min-width: 100px;
+        padding: 14px 16px;
+      }
+
+      th:first-child, td:first-child {
+        min-width: 150px;
+        position: sticky;
+        left: 0;
+        background: var(--dark-elevated);
+        z-index: 1;
+      }
+
+      /* Lead/Customer cards as stacked cards on mobile */
+      .lead-row,
+      .customer-row,
+      .estimate-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .lead-row > *,
+      .customer-row > *,
+      .estimate-row > * {
+        white-space: normal;
+      }
+
+      /* Mobile Form Inputs - Touch Optimized */
+      input[type="text"],
+      input[type="email"],
+      input[type="tel"],
+      input[type="number"],
+      input[type="password"],
+      input[type="date"],
+      input[type="datetime-local"],
+      select,
+      textarea {
+        min-height: 48px;
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+        padding: 12px 16px;
+        border-radius: 10px;
+      }
+
+      textarea {
+        min-height: 100px;
+      }
+
+      /* Form groups spacing */
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        font-size: 14px;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      /* Form rows stack on mobile */
+      .form-row {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .form-row .form-group {
+        width: 100%;
+        margin-bottom: 0;
+      }
+
+      /* Checkbox and radio touch targets */
+      input[type="checkbox"],
+      input[type="radio"] {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+      }
+
+      /* Select dropdown */
+      select {
+        background-position: right 16px center;
+        padding-right: 44px;
+      }
+
+      /* Search inputs */
+      .search-box {
+        width: 100%;
+      }
+
+      .search-box input {
+        width: 100%;
+        font-size: 16px;
+      }
+    }
+
+    /* Calendar Mobile Optimization */
+    @media (max-width: 768px) {
+      /* Calendar switches to agenda/list view on mobile */
+      .calendar-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .calendar-header-row,
+      .calendar-grid {
+        min-width: 700px; /* Force horizontal scroll */
+      }
+
+      .calendar-day {
+        min-height: 80px;
+        padding: 6px;
+      }
+
+      .calendar-day-number {
+        font-size: 12px;
+      }
+
+      .calendar-event {
+        font-size: 10px;
+        padding: 3px 6px;
+      }
+
+      /* Alternative: Mobile calendar agenda view */
+      .calendar-mobile-view {
+        display: block;
+      }
+
+      .calendar-desktop-view {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .calendar-mobile-view {
+        display: none;
+      }
+
+      .calendar-desktop-view {
+        display: block;
+      }
+    }
+
+    /* Quick Actions mobile grid */
+    @media (max-width: 600px) {
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .quick-action-card {
+        padding: 16px !important;
+      }
+
+      .quick-action-card svg {
+        width: 28px !important;
+        height: 28px !important;
+      }
+
+      .quick-action-card span {
+        font-size: 12px !important;
+      }
+    }
+
+    /* Estimate/Invoice Card Mobile Optimizations */
+    @media (max-width: 768px) {
+      .estimate-card,
+      .invoice-card,
+      .job-card {
+        padding: 16px !important;
+      }
+
+      /* Stack card header on mobile */
+      .estimate-card > div:first-child,
+      .invoice-card > div:first-child,
+      .job-card > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+      }
+
+      /* Full width price/meta on mobile */
+      .estimate-card > div:first-child > div:last-child,
+      .invoice-card > div:first-child > div:last-child,
+      .job-card > div:first-child > div:last-child {
+        text-align: left !important;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      /* Action buttons wrap and fill width */
+      .estimate-card > div:last-child,
+      .invoice-card > div:last-child,
+      .job-card > div:last-child {
+        flex-wrap: wrap !important;
+      }
+
+      .estimate-card .btn-modern,
+      .invoice-card .btn-modern,
+      .job-card .btn-modern {
+        flex: 1 1 auto !important;
+        min-width: 80px;
+        justify-content: center;
+      }
+
+      /* Button text wrap */
+      .estimate-card .btn-modern.small,
+      .invoice-card .btn-modern.small,
+      .job-card .btn-modern.small {
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+      }
+
+      /* Filter pills scroll horizontally */
+      .filter-pills {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 8px;
+        padding-bottom: 8px;
+        flex-wrap: nowrap;
+      }
+
+      .filter-pills::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-pill {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      /* Stat grid responsive */
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .stat-grid .stat-card {
+        padding: 14px !important;
+      }
+
+      .stat-grid .stat-value {
+        font-size: 20px !important;
+      }
+
+      .stat-grid .stat-label {
+        font-size: 11px !important;
+      }
+    }
+
+    /* Small phones - single column cards */
+    @media (max-width: 480px) {
+      .stat-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+
+      /* Estimate card buttons stack */
+      .estimate-card > div:last-child {
+        flex-direction: column !important;
+      }
+
+      .estimate-card .btn-modern {
+        width: 100% !important;
+      }
+
+      /* Sync button full width */
+      #sync-stripe-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Card header button groups stack on small screens */
+      .card-header > div[style*="display: flex"],
+      .card-header > div[style*="flex"] {
+        width: 100%;
+      }
+
+      .card-header .btn-modern,
+      .card-header button.btn-modern {
+        flex: 1 1 100%;
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Invoice page specific */
+      #page-invoices .card-header > div {
+        width: 100%;
+      }
+
+      #page-invoices .card-header .btn-modern {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* Table filters scroll */
+      .table-filters {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+      }
+
+      .table-filters .filter-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+    }
+
+    /* Ensure good tap targets on all mobile */
+    @media (max-width: 768px) {
+      /* All clickable elements should have proper tap targets */
+      .clickable,
+      [onclick],
+      button,
+      a,
+      .btn,
+      .btn-modern,
+      .filter-btn,
+      .filter-pill,
+      .nav-item {
+        -webkit-tap-highlight-color: rgba(249, 203, 0, 0.2);
+      }
+
+      /* Prevent text selection on tap */
+      button,
+      .btn,
+      .btn-modern,
+      .filter-btn,
+      .filter-pill {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Add active state feedback */
+      button:active,
+      .btn:active,
+      .btn-modern:active,
+      .filter-btn:active,
+      .filter-pill:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+      }
+
+      /* Empty state mobile improvements */
+      .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+      }
+
+      .empty-state svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .empty-state p {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .empty-state .btn-modern {
+        margin-top: 16px;
+      }
+    }
+
+    /* Lead detail panel mobile */
+    @media (max-width: 768px) {
+      .lead-detail-panel,
+      .estimate-detail-panel,
+      .customer-detail-panel {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+        z-index: 200;
+      }
+
+      .panel-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--dark-surface);
+      }
+
+      .panel-content {
+        padding-bottom: 100px;
+      }
+
+      .panel-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        background: var(--dark-surface);
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        gap: 12px;
+      }
+
+      .panel-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* Search box mobile */
+    @media (max-width: 600px) {
+      .search-box {
+        width: 100%;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+
+      .table-header {
+        padding: 16px;
+      }
+    }
+
+    /* ============================================
+       COMPREHENSIVE MOBILE SCREEN OPTIMIZATIONS
+       ============================================ */
+
+    /* === DASHBOARD PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-dashboard .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      #page-dashboard .stat-card {
+        padding: 16px;
+      }
+
+      #page-dashboard .stat-card.clickable {
+        min-height: 100px;
+      }
+
+      #page-dashboard .stat-icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 8px;
+      }
+
+      #page-dashboard .stat-icon svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      #page-dashboard .stat-value {
+        font-size: 22px;
+      }
+
+      #page-dashboard .stat-label {
+        font-size: 12px;
+      }
+
+      /* Quick actions grid */
+      #page-dashboard .quick-actions {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+
+      #page-dashboard .action-card {
+        padding: 16px;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+      }
+
+      #page-dashboard .action-card .action-icon {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+      }
+
+      #page-dashboard .action-card .action-text h4 {
+        font-size: 15px;
+        margin-bottom: 4px;
+      }
+
+      #page-dashboard .action-card .action-text p {
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #page-dashboard .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      #page-dashboard .stat-card {
+        padding: 14px;
+      }
+
+      #page-dashboard .stat-value {
+        font-size: 20px;
+      }
+    }
+
+    /* === PROFILE PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-profile .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-profile .card-header .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #page-profile .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      #page-profile .form-group {
+        margin-bottom: 16px;
+      }
+
+      #page-profile input,
+      #page-profile select,
+      #page-profile textarea {
+        width: 100%;
+      }
+    }
+
+    /* === FAVORITES & DESIGNS PAGES MOBILE === */
+    @media (max-width: 768px) {
+      #page-favorites .favorites-grid,
+      #page-my-designs .designs-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+      }
+
+      .favorite-card,
+      .design-card {
+        border-radius: 10px;
+      }
+
+      .favorite-card img,
+      .design-card img {
+        height: 120px;
+      }
+
+      .favorite-card-body,
+      .design-card-body {
+        padding: 12px;
+      }
+
+      .favorite-card-title,
+      .design-card-title {
+        font-size: 14px;
+        line-height: 1.3;
+      }
+
+      .favorite-card-actions,
+      .design-card-actions {
+        padding: 8px 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #page-favorites .favorites-grid,
+      #page-my-designs .designs-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .favorite-card img,
+      .design-card img {
+        height: 160px;
+      }
+    }
+
+    /* === LISTINGS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-listings .listings-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+      }
+
+      .listing-card {
+        border-radius: 10px;
+      }
+
+      .listing-image {
+        height: 140px;
+      }
+
+      .listing-details {
+        padding: 12px;
+      }
+
+      .listing-price {
+        font-size: 16px;
+      }
+
+      .listing-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .listing-actions .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #page-listings .listings-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* === TOOLS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-tools .tools-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+      }
+
+      .tool-card {
+        padding: 16px;
+        text-align: center;
+      }
+
+      .tool-card-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 12px;
+      }
+
+      .tool-card-title {
+        font-size: 14px;
+      }
+
+      .tool-card-desc {
+        font-size: 12px;
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #page-tools .tools-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+
+    /* === LEADS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-leads .table-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-leads .table-header > div {
+        width: 100%;
+      }
+
+      #page-leads .search-bar-modern {
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+
+      #page-leads .filter-pills {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #page-leads .filter-pill {
+        flex-shrink: 0;
+      }
+
+      /* Lead cards instead of table rows */
+      #leads-table .lead-row {
+        display: flex;
+        flex-direction: column;
+        background: var(--dark-elevated);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-subtle);
+      }
+
+      #leads-table .lead-row > * {
+        padding: 4px 0;
+      }
+    }
+
+    /* === CUSTOMERS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-customers .table-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-customers .table-header > div {
+        width: 100%;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+
+      #page-customers .search-bar-modern {
+        max-width: 100% !important;
+      }
+
+      #page-customers .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Customers list as cards */
+      #customers-list .customer-card {
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        background: var(--dark-elevated);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-subtle);
+      }
+    }
+
+    /* === ESTIMATES PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-estimates .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-estimates .card-header > div {
+        width: 100%;
+      }
+
+      #page-estimates .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Stat row for estimates */
+      #page-estimates .estimates-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+      }
+
+      #page-estimates .stat-mini {
+        padding: 12px;
+        text-align: center;
+      }
+
+      /* Estimate cards mobile */
+      .estimate-card {
+        padding: 14px !important;
+      }
+
+      .estimate-card > div:first-child {
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+
+      .estimate-card .status-badge {
+        align-self: flex-start;
+      }
+
+      .estimate-card > div:last-child {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .estimate-card .btn-modern.small {
+        padding: 10px 12px !important;
+        font-size: 12px !important;
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .estimate-card > div:last-child {
+        flex-direction: column !important;
+      }
+
+      .estimate-card .btn-modern.small {
+        width: 100% !important;
+      }
+    }
+
+    /* === INVOICES PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-invoices .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-invoices .card-header > div {
+        width: 100%;
+        flex-direction: column !important;
+      }
+
+      #page-invoices .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #page-invoices .table-filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #page-invoices .filter-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+    }
+
+    /* === JOBS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-jobs .stat-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+      }
+
+      #page-jobs .stat-card {
+        padding: 14px !important;
+      }
+
+      #page-jobs .stat-value {
+        font-size: 18px !important;
+      }
+
+      #page-jobs .stat-label {
+        font-size: 11px !important;
+      }
+
+      #page-jobs .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-jobs .card-header > div {
+        width: 100%;
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+
+      /* View toggle full width */
+      #page-jobs .view-toggle {
+        width: 100%;
+        justify-content: center;
+      }
+
+      #page-jobs .view-toggle .view-btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      #page-jobs .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Kanban board horizontal scroll */
+      #page-jobs .kanban-board {
+        padding: 0 0 16px 0 !important;
+        margin: 0 -16px;
+        padding-left: 16px !important;
+      }
+
+      #page-jobs .kanban-column {
+        min-width: 260px !important;
+        padding: 12px !important;
+      }
+
+      #page-jobs .kanban-column:last-child {
+        margin-right: 16px;
+      }
+
+      /* Job cards */
+      .job-card {
+        padding: 14px !important;
+      }
+    }
+
+    /* === CONTRACTORS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-contractors .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-contractors .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Contractor cards */
+      .contractor-card {
+        padding: 16px;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .contractor-card .contractor-avatar {
+        align-self: center;
+      }
+
+      .contractor-card .contractor-info {
+        text-align: center;
+      }
+
+      .contractor-card .contractor-actions {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* === CALENDAR PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-calendar .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #page-calendar .card-header > div {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Calendar navigation */
+      #page-calendar #calendar-month-year {
+        min-width: 120px !important;
+        font-size: 15px;
+      }
+
+      /* Calendar grid scrollable */
+      #page-calendar .calendar-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -16px;
+        padding: 0 16px;
+      }
+
+      #page-calendar .calendar-header-row,
+      #page-calendar .calendar-grid {
+        min-width: 560px;
+      }
+
+      #page-calendar .calendar-header-cell {
+        padding: 8px 4px;
+        font-size: 11px;
+      }
+
+      #page-calendar .calendar-day {
+        min-height: 70px;
+        padding: 4px;
+      }
+
+      #page-calendar .calendar-day-number {
+        font-size: 12px;
+      }
+
+      #page-calendar .calendar-event {
+        font-size: 9px;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+      }
+
+      /* Legend inline */
+      #page-calendar .card-body > div {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 12px !important;
+      }
+
+      .calendar-event-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+    }
+
+    @media (max-width: 480px) {
+      /* Show mobile agenda view on small phones */
+      #page-calendar .calendar-container {
+        display: none;
+      }
+
+      #page-calendar .calendar-mobile-agenda {
+        display: block;
+      }
+    }
+
+    /* === WALLET PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-wallet .wallet-balance-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+
+      #page-wallet .balance-card {
+        padding: 20px;
+        text-align: center;
+      }
+
+      #page-wallet .balance-amount {
+        font-size: 28px;
+      }
+
+      /* Transaction list */
+      #page-wallet .transaction-list {
+        padding: 0;
+      }
+
+      #page-wallet .transaction-item {
+        padding: 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      #page-wallet .transaction-item > div:last-child {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      /* Payout card */
+      #page-wallet .payout-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+    }
+
+    /* === ADMIN USERS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-admin-users .admin-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .admin-user-card {
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        background: var(--dark-elevated);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        gap: 12px;
+      }
+
+      .admin-user-card .user-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .admin-user-card .btn-modern {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* === PRODUCTS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-products .products-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+      }
+
+      .product-card {
+        border-radius: 10px;
+      }
+
+      .product-card-image {
+        height: 120px;
+      }
+
+      .product-card-body {
+        padding: 12px;
+      }
+
+      .product-card-title {
+        font-size: 14px;
+      }
+
+      .product-card-price {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #page-products .products-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .product-card-image {
+        height: 160px;
+      }
+    }
+
+    /* === ORDERS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-orders .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .order-card {
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        background: var(--dark-elevated);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        gap: 12px;
+      }
+
+      .order-card .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .order-card .order-items {
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 12px;
+      }
+
+      .order-card .order-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .order-card .btn-modern {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* === MESSAGES PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-messages .messages-container {
+        flex-direction: column;
+        height: calc(100vh - 180px);
+      }
+
+      #page-messages .conversations-list {
+        max-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      #page-messages .message-thread {
+        flex: 1;
+        min-height: 300px;
+      }
+
+      #page-messages .message-input-area {
+        position: sticky;
+        bottom: 0;
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .message-bubble {
+        max-width: 85%;
+      }
+    }
+
+    /* === GLOBAL MOBILE MODAL IMPROVEMENTS === */
+    @media (max-width: 768px) {
+      /* All modals bottom sheet style */
+      .modal-overlay,
+      .modal-modern-overlay {
+        align-items: flex-end !important;
+      }
+
+      .modal,
+      .modal-modern,
+      .modal-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 90vh !important;
+        max-height: 90dvh !important;
+        margin: 0 !important;
+        border-radius: 20px 20px 0 0 !important;
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      /* Modal drag handle indicator */
+      .modal-header::before,
+      .modal-modern-header::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--border-light);
+        border-radius: 2px;
+        margin: 0 auto 12px;
+      }
+
+      /* Sticky headers and footers */
+      .modal-header,
+      .modal-modern-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--dark-surface);
+      }
+
+      .modal-footer,
+      .modal-modern-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        background: var(--dark-surface);
+        padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .modal-footer .btn,
+      .modal-footer .btn-modern,
+      .modal-modern-footer .btn,
+      .modal-modern-footer .btn-modern {
+        flex: 1;
+        justify-content: center;
+        min-height: 48px;
+      }
+    }
+
+    /* === GLOBAL TABLE MOBILE STYLES === */
+    @media (max-width: 768px) {
+      /* Convert tables to card-like rows */
+      table.data-table,
+      .table-container table {
+        display: block;
+      }
+
+      table.data-table thead,
+      .table-container thead {
+        display: none;
+      }
+
+      table.data-table tbody,
+      .table-container tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      table.data-table tr,
+      .table-container tr {
+        display: flex;
+        flex-direction: column;
+        background: var(--dark-elevated);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid var(--border-subtle);
+      }
+
+      table.data-table td,
+      .table-container td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      table.data-table td:last-child,
+      .table-container td:last-child {
+        border-bottom: none;
+      }
+
+      table.data-table td::before,
+      .table-container td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+    }
+
+    /* === MOBILE FLOATING ACTION BUTTON === */
+    @media (max-width: 768px) {
+      .fab-modern {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--gold-primary);
+        color: var(--dark-primary);
+        border: none;
+        box-shadow: 0 4px 16px rgba(249, 203, 0, 0.4);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .fab-modern:active {
+        transform: scale(0.95);
+      }
+
+      .fab-modern svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    /* ============================================
+       MODERN LIST STYLES
+       ============================================ */
+    .list-modern {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .list-item-modern {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .list-item-modern:hover {
+      background: var(--dark-surface);
+      border-color: var(--border-light);
+      transform: translateX(4px);
+    }
+
+    .list-item-modern:active {
+      transform: scale(0.98);
+    }
+
+    .list-item-icon {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .list-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .list-item-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-item-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-item-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .list-item-date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Badge Modern Styles */
+    .badge-modern {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .badge-modern.badge-new,
+    .badge-new {
+      background: rgba(249, 203, 0, 0.15);
+      color: #f9cb00;
+    }
+
+    .badge-modern.badge-contacted,
+    .badge-contacted {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .badge-modern.badge-qualified,
+    .badge-qualified {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+
+    .badge-modern.badge-quoted,
+    .badge-quoted {
+      background: rgba(6, 182, 212, 0.15);
+      color: #06b6d4;
+    }
+
+    .badge-modern.badge-won,
+    .badge-modern.badge-approved,
+    .badge-modern.badge-paid,
+    .badge-modern.badge-completed,
+    .badge-won, .badge-approved, .badge-paid, .badge-completed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .badge-modern.badge-lost,
+    .badge-modern.badge-cancelled,
+    .badge-modern.badge-overdue,
+    .badge-lost, .badge-cancelled, .badge-overdue {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .badge-modern.badge-archived,
+    .badge-modern.badge-draft,
+    .badge-archived, .badge-draft {
+      background: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+    }
+
+    .badge-modern.badge-sent,
+    .badge-sent {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .badge-modern.badge-scheduled,
+    .badge-scheduled {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+
+    .badge-modern.badge-in_progress,
+    .badge-in_progress {
+      background: rgba(6, 182, 212, 0.15);
+      color: #06b6d4;
+    }
+
+    /* Button Modern Styles */
+    .btn-modern {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-modern.primary {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: var(--dark-primary);
+    }
+
+    .btn-modern.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(249, 203, 0, 0.3);
+    }
+
+    .btn-modern.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+
+    .btn-modern.secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--gold-primary);
+    }
+
+    .btn-modern.ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-modern.ghost:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .btn-modern.danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-modern.danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-modern:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* List Item Mobile Responsive */
+    @media (max-width: 480px) {
+      .list-item-modern {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .list-item-content {
+        flex: 1 1 calc(100% - 60px);
+      }
+
+      .list-item-meta {
+        flex: 1 1 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
       }
     }
 
@@ -4183,11 +5990,6 @@
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <!-- Toggle Button -->
-      <button class="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Toggle Sidebar">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-      </button>
-
       <div class="sidebar-header">
         <a href="/" class="sidebar-logo">
           <div class="sidebar-logo-icon">SG</div>
@@ -4335,9 +6137,9 @@
               <option value="admin">Admin View (GOD)</option>
             </select>
           </div>
-          <button class="btn-modern primary" onclick="openAddLeadModal()">
+          <button class="btn-modern primary" onclick="openAddLeadModal()" title="Add New Lead">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Add New Lead
+            <span class="btn-text">Add New Lead</span>
           </button>
         </div>
       </div>
@@ -5349,6 +7151,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
       </button>
     </main>
+
   </div>
 
   <!-- Lead Detail Modal - Modern Sheet Style -->
@@ -9436,7 +11239,7 @@
         const { data: designs, error } = await supabaseClient
           .from('room_designs')
           .select('*')
-          .eq('created_by', user.id)
+          .eq('user_id', user.id)
           .order('updated_at', { ascending: false });
 
         if (error) throw error;
@@ -9899,10 +11702,11 @@
         `;
       }
 
-      // Setup filter buttons
-      document.querySelectorAll('.filter-btn').forEach(btn => {
+      // Setup leads filter buttons (filter-pill with data-status)
+      document.querySelectorAll('.filter-pills .filter-pill[data-status]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          // Only toggle active within leads filter pills
+          btn.closest('.filter-pills').querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentFilter = btn.dataset.status;
           renderLeads();
@@ -10014,6 +11818,16 @@
         loadEstimates();
       }
 
+      // Load invoices when that page is shown
+      if (page === 'invoices') {
+        loadInvoices();
+      }
+
+      // Load leads when that page is shown (if not already loaded by setupDashboard)
+      if (page === 'leads' && (!allLeads || allLeads.length === 0)) {
+        loadLeads();
+      }
+
       // Load favorites when that page is shown
       if (page === 'favorites') {
         loadFavorites();
@@ -10039,6 +11853,12 @@
         loadContractors();
       }
 
+      // Load calendar when that page is shown
+      if (page === 'calendar') {
+        renderCalendar();
+        loadCalendarEvents();
+      }
+
       // Load customers when that page is shown
       if (page === 'customers') {
         loadCustomers();
@@ -10048,8 +11868,10 @@
       updateFabVisibility(page);
 
       // Close mobile sidebar
-      document.getElementById('sidebar').classList.remove('open');
-      document.querySelector('.sidebar-overlay').classList.remove('active');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      if (sidebar) sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
     }
 
     // Show/hide the appropriate FAB based on current page
@@ -10084,8 +11906,10 @@
     });
 
     function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.querySelector('.sidebar-overlay').classList.toggle('active');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      if (sidebar) sidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('active');
     }
 
     // Toggle sidebar collapse state (desktop)
@@ -10530,6 +12354,10 @@
       btn.innerHTML = '<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Saving...';
 
       try {
+        // Get current user for lead ownership
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Please log in to add leads');
+
         const firstName = document.getElementById('new-lead-first-name').value.trim();
         const lastName = document.getElementById('new-lead-last-name').value.trim();
         const fullName = `${firstName} ${lastName}`.trim();
@@ -10590,6 +12418,8 @@
         const fullMessage = userMessage + appointmentInfo;
 
         const leadData = {
+          // Note: assigned_to references sg_users, not auth.users
+          // Leave null - leads can be assigned later via admin panel
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
@@ -11893,15 +13723,26 @@
     let invoiceItemCount = 1;
 
     async function loadInvoices() {
+      console.log('[Invoices] Loading invoices...');
       const invoicesList = document.getElementById('invoices-list');
-      if (!invoicesList) return;
+      if (!invoicesList) {
+        console.warn('[Invoices] No invoices-list container found');
+        return;
+      }
 
       try {
         // Show loading state
         invoicesList.innerHTML = '<div class="empty-state"><p>Loading invoices...</p></div>';
 
+        if (!supabaseClient) {
+          console.error('[Invoices] supabaseClient not initialized');
+          invoicesList.innerHTML = '<div class="empty-state"><p>Database connection not ready. Please refresh.</p></div>';
+          return;
+        }
+
         // Fetch from both Stripe API and Supabase in parallel
         const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log('[Invoices] User:', user?.id);
 
         const [stripeResponse, supabaseResult] = await Promise.all([
           fetch(`${API_URL}/api/invoices?limit=50`).catch(() => null),
@@ -11946,6 +13787,7 @@
           return dateB - dateA;
         });
 
+        console.log('[Invoices] Loaded', stripeInvoices.length, 'from Stripe,', supabaseInvoices.length, 'from Supabase');
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
@@ -11962,15 +13804,29 @@
 
     // Sync paid invoices and customers from Stripe to local database
     async function syncFromStripe() {
+      console.log('[Sync] Starting sync from Stripe...');
       const btn = document.getElementById('sync-stripe-btn');
+      if (!btn) {
+        console.error('[Sync] Sync button not found');
+        return;
+      }
       const originalHtml = btn.innerHTML;
 
       try {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;margin-right:8px;"></span> Syncing...';
 
+        if (!supabaseClient) {
+          throw new Error('Database connection not ready');
+        }
+
+        if (!API_URL) {
+          throw new Error('API URL not configured');
+        }
+
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) throw new Error('Not logged in');
+        console.log('[Sync] User authenticated:', user.id);
 
         // Fetch paid invoices from Stripe
         console.log('[Sync] Fetching paid invoices from Stripe...');
@@ -14068,13 +15924,23 @@
     let businessSettings = null;
 
     async function loadEstimates() {
+      console.log('[Estimates] Loading estimates...');
       const listContainer = document.getElementById('estimates-list');
-      if (!listContainer) return;
+      if (!listContainer) {
+        console.warn('[Estimates] No estimates-list container found');
+        return;
+      }
 
       listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><div class="loading-spinner"></div><p>Loading estimates...</p></div>';
 
       try {
+        if (!supabaseClient) {
+          console.error('[Estimates] supabaseClient not initialized');
+          listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><p>Database connection not ready. Please refresh.</p></div>';
+          return;
+        }
         const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log('[Estimates] User:', user?.id);
         if (!user) {
           listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><p>Please log in to view estimates</p></div>';
           return;
@@ -14098,6 +15964,7 @@
         }
 
         const { data: estimates, error } = await query;
+        console.log('[Estimates] Query result:', estimates?.length || 0, 'estimates', error ? 'Error: ' + error.message : '');
 
         if (error) throw error;
 
@@ -18334,57 +20201,5 @@
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
 
-<!-- Mobile Bottom Navigation -->
-<script src="/js/account/components/mobile-nav.js?v=20260119"></script>
-<script>
-// Integrate mobile nav with account dashboard
-document.addEventListener('DOMContentLoaded', function() {
-  // Update mobile nav when user logs in
-  const originalShowDashboard = window.showDashboard;
-  if (originalShowDashboard) {
-    window.showDashboard = function() {
-      originalShowDashboard.apply(this, arguments);
-      // Update mobile nav for current user
-      if (window.mobileNav && window.userProfile) {
-        window.mobileNav.updateForRole(window.userRole || 'homeowner');
-        window.mobileNav.updateUserInfo(window.userProfile);
-      }
-    };
-  }
-
-  // Dispatch page change events for mobile nav
-  const originalShowPage = window.showPage;
-  if (originalShowPage) {
-    window.showPage = function(page) {
-      originalShowPage.apply(this, arguments);
-      document.dispatchEvent(new CustomEvent('pageChanged', { detail: { page: page } }));
-    };
-  }
-
-  // Update badges when counts change
-  function updateMobileBadges() {
-    if (!window.mobileNav) return;
-
-    // Get counts from existing badge elements
-    const leadsBadge = document.querySelector('.nav-item[data-page="leads"] .nav-badge');
-    const estimatesBadge = document.querySelector('.nav-item[data-page="estimates"] .nav-badge');
-
-    if (leadsBadge) {
-      const count = parseInt(leadsBadge.textContent) || 0;
-      window.mobileNav.updateBadge('leads', count);
-    }
-    if (estimatesBadge) {
-      const count = parseInt(estimatesBadge.textContent) || 0;
-      window.mobileNav.updateBadge('estimates', count);
-    }
-  }
-
-  // Initial badge update
-  setTimeout(updateMobileBadges, 2000);
-
-  // Update badges periodically
-  setInterval(updateMobileBadges, 30000);
-});
-</script>
 </body>
 </html>

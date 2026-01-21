@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/css/design-system.css?v=20260111">
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260111">
   <link rel="stylesheet" href="/css/marketplace.css?v=20260112">
+  <link rel="stylesheet" href="/css/stone-selector.css?v=20260120">
   <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260111">
 
   <style>
@@ -126,6 +127,9 @@
           <option value="Goodyear, AZ">Goodyear</option>
         </select>
 
+        <!-- Stone Filter -->
+        <div id="stone-filter-container"></div>
+
         <select id="filter-material" class="marketplace-filter-select">
           <option value="">All Materials</option>
         </select>
@@ -188,7 +192,7 @@
         </svg>
         <h3>No listings found</h3>
         <p>Try adjusting your search or filters to find what you're looking for.</p>
-        <button class="sg-btn sg-btn-outline" onclick="document.getElementById('marketplace-search').value=''; document.getElementById('filter-material').value=''; document.getElementById('filter-type').value=''; window.SurpriseMarketplace.filter();">
+        <button class="sg-btn sg-btn-outline" onclick="document.getElementById('marketplace-search').value=''; document.getElementById('filter-material').value=''; document.getElementById('filter-type').value=''; document.getElementById('filter-location').value=''; if(window.SurpriseMarketplace.clearStone) window.SurpriseMarketplace.clearStone(); else window.SurpriseMarketplace.filter();">
           Clear Filters
         </button>
       </div>
@@ -341,7 +345,8 @@
 
   <!-- Scripts -->
   <script defer src="/js/unified-nav.js?v=20260111"></script>
-  <script defer src="/js/marketplace.js?v=20260112"></script>
+  <script defer src="/js/stone-selector.js?v=20260120"></script>
+  <script defer src="/js/marketplace.js?v=20260120"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>

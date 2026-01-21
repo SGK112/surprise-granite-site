@@ -36,6 +36,8 @@
   let currentView = 'grid';
   let selectedListing = null;
   let userLocation = null;
+  let selectedStone = null;
+  let stoneFilter = null;
 
   // DOM Elements
   let gridContainer;
@@ -70,11 +72,27 @@
     // Set up event listeners
     setupEventListeners();
 
+    // Initialize stone filter
+    initStoneFilter();
+
     // Load listings
     loadListings();
 
     // Check for saved location preference
     checkSavedLocation();
+  }
+
+  function initStoneFilter() {
+    const container = document.getElementById('stone-filter-container');
+    if (!container || typeof StoneFilter === 'undefined') return;
+
+    stoneFilter = new StoneFilter(container, {
+      placeholder: 'Filter by stone...',
+      onChange: function(stoneSlug) {
+        selectedStone = stoneSlug;
+        filterListings();
+      }
+    });
   }
 
   function setupEventListeners() {
@@ -308,6 +326,11 @@
         quantity: listing.quantity,
         created_at: listing.created_at,
         views: listing.views,
+        // Stone/Color info
+        stone_slug: listing.stone_slug,
+        color: listing.color,
+        color_tags: listing.color_tags || [],
+        primary_color: listing.primary_color || listing.stone_slug,
         // Seller info
         seller: listing.seller,
         show_phone: listing.show_phone,
@@ -379,7 +402,17 @@
       // Type filter (uses category column)
       const matchesType = !type || listing.category === type;
 
-      return matchesSearch && matchesLocation && matchesMaterial && matchesType;
+      // Stone filter
+      let matchesStone = true;
+      if (selectedStone) {
+        const listingStones = listing.color_tags || [];
+        // Match if selected stone is in listing's stone tags or matches the listing's stone_slug
+        matchesStone = listingStones.includes(selectedStone) ||
+                       listing.stone_slug === selectedStone ||
+                       listing.primary_color === selectedStone;
+      }
+
+      return matchesSearch && matchesLocation && matchesMaterial && matchesType && matchesStone;
     });
 
     // Calculate distances for all listings
@@ -519,6 +552,7 @@
             ` : ''}
           </div>
           ${distanceHtml}
+          ${renderStoneTags(listing)}
           ${listing.seller ? `
             <div class="listing-seller">
               <svg class="listing-seller-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -763,6 +797,46 @@
   }
 
   // ===== UTILITY FUNCTIONS =====
+
+  // Format stone slug to readable name
+  function formatStoneSlug(slug) {
+    if (!slug) return '';
+    return slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .replace(/Quartz$/, '')
+      .replace(/Granite$/, '')
+      .trim();
+  }
+
+  function renderStoneTags(listing) {
+    const stones = listing.color_tags || [];
+    if (stones.length === 0) {
+      // Show the primary stone_slug if available
+      if (listing.stone_slug) {
+        return `
+          <div class="listing-card-stones">
+            <span class="listing-stone-tag">
+              <span class="listing-stone-tag-name">${escapeHtml(formatStoneSlug(listing.stone_slug))}</span>
+            </span>
+          </div>
+        `;
+      }
+      return '';
+    }
+
+    const tags = stones.slice(0, 2).map(slug => `
+      <span class="listing-stone-tag">
+        <span class="listing-stone-tag-name">${escapeHtml(formatStoneSlug(slug))}</span>
+      </span>
+    `).join('');
+
+    const moreCount = stones.length > 2 ? `<span class="listing-stone-tag">+${stones.length - 2}</span>` : '';
+
+    return `<div class="listing-card-stones">${tags}${moreCount}</div>`;
+  }
+
   function formatPrice(price) {
     if (!price && price !== 0) return 'Contact for Price';
     return new Intl.NumberFormat('en-US', {
@@ -844,7 +918,15 @@
         locationBtn.querySelector('span').textContent = 'Near Me';
       }
       filterListings();
-    }
+    },
+    clearStone: () => {
+      selectedStone = null;
+      if (stoneFilter) {
+        stoneFilter.reset();
+      }
+      filterListings();
+    },
+    getSelectedStone: () => selectedStone
   };
 
 })();

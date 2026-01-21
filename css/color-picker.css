@@ -1,0 +1,518 @@
+/**
+ * Stone Color Picker Component Styles
+ * Supports the visual color selection UI for the marketplace
+ */
+
+/* Color Picker Container */
+.color-picker {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.color-picker.has-focus {
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.1);
+}
+
+/* Color Picker Header */
+.color-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.color-picker-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.color-picker-clear {
+  font-size: 12px;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.color-picker-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Color Family Tabs */
+.color-picker-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.color-picker-tab {
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-picker-tab:hover {
+  border-color: #ccc;
+  background: #f0f0f0;
+}
+
+.color-picker-tab.active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+/* Color Swatches Grid */
+.color-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Individual Color Swatch */
+.color-swatch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+  background: transparent;
+}
+
+.color-swatch:hover {
+  background: #f8f9fa;
+}
+
+.color-swatch.selected {
+  background: #fef9e7;
+  border-color: #f9cb00;
+}
+
+.color-swatch.primary {
+  border-color: #1a1a2e;
+  background: #f0f4ff;
+}
+
+.color-swatch.primary::after {
+  content: '1st';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #fff;
+  background: #1a1a2e;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* Swatch Color Circle */
+.color-swatch-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.color-swatch:hover .color-swatch-circle {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.color-swatch.selected .color-swatch-circle {
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 2px #f9cb00;
+}
+
+/* Checkmark indicator */
+.color-swatch-check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.color-swatch.selected .color-swatch-check {
+  opacity: 1;
+}
+
+/* Swatch text label */
+.color-swatch-name {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-swatch.selected .color-swatch-name {
+  color: #333;
+  font-weight: 600;
+}
+
+/* Special styling for white color */
+.color-swatch-circle[data-color="white"],
+.color-swatch-circle[data-color="#FFFFFF"],
+.color-swatch-circle[data-color="#ffffff"] {
+  border-color: #d0d0d0;
+}
+
+/* Multi-color gradient */
+.color-swatch-circle.multi-color {
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #22c55e 50%, #3b82f6 75%, #8b5cf6 100%) !important;
+}
+
+/* Selected Colors Display */
+.color-picker-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+  min-height: 40px;
+}
+
+.color-picker-selected:empty::before {
+  content: 'Click colors above to select';
+  color: #999;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Selected Color Chip */
+.color-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #333;
+  transition: all 0.15s;
+}
+
+.color-chip.primary {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+.color-chip-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.color-chip-name {
+  font-weight: 500;
+}
+
+.color-chip-primary-label {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.color-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  margin-left: 2px;
+  transition: all 0.15s;
+}
+
+.color-chip-remove:hover {
+  background: rgba(0,0,0,0.1);
+  color: #666;
+}
+
+.color-chip.primary .color-chip-remove {
+  color: rgba(255,255,255,0.7);
+}
+
+.color-chip.primary .color-chip-remove:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* Primary Color Hint */
+.color-picker-hint {
+  font-size: 11px;
+  color: #888;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-picker-hint svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* === Marketplace Color Filter Styles === */
+
+/* Color Filter Dropdown */
+.color-filter-wrapper {
+  position: relative;
+}
+
+.color-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 140px;
+}
+
+.color-filter-btn:hover {
+  border-color: #ccc;
+}
+
+.color-filter-btn.active {
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.2);
+}
+
+.color-filter-btn-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.color-filter-btn-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #e0e0e0;
+}
+
+.color-filter-btn-text {
+  flex: 1;
+}
+
+.color-filter-btn-arrow {
+  width: 16px;
+  height: 16px;
+  color: #666;
+  transition: transform 0.2s;
+}
+
+.color-filter-btn.open .color-filter-btn-arrow {
+  transform: rotate(180deg);
+}
+
+/* Color Filter Dropdown Panel */
+.color-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding: 16px;
+  min-width: 320px;
+  display: none;
+}
+
+.color-filter-dropdown.show {
+  display: block;
+}
+
+/* Color Filter Grid in Dropdown */
+.color-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.color-filter-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+}
+
+.color-filter-swatch:hover {
+  background: #f8f9fa;
+}
+
+.color-filter-swatch.selected {
+  background: #fef9e7;
+  border-color: #f9cb00;
+}
+
+.color-filter-swatch-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+}
+
+.color-filter-swatch.selected .color-filter-swatch-circle {
+  border-color: #f9cb00;
+}
+
+.color-filter-swatch-name {
+  font-size: 9px;
+  color: #666;
+  text-align: center;
+}
+
+/* Color Filter Actions */
+.color-filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.color-filter-clear {
+  font-size: 12px;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.color-filter-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.color-filter-apply {
+  padding: 8px 16px;
+  background: #f9cb00;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-filter-apply:hover {
+  background: #e6b800;
+}
+
+/* Color Tags on Listing Cards */
+.listing-card-colors {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.listing-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.listing-color-dot.multi-color {
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 25%, #22c55e 50%, #3b82f6 75%, #8b5cf6 100%);
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .color-picker-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .color-swatch-circle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .color-picker-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .color-picker-tab {
+    flex-shrink: 0;
+  }
+
+  .color-filter-dropdown {
+    min-width: 280px;
+    right: 0;
+    left: auto;
+  }
+
+  .color-filter-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 400px) {
+  .color-picker-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .color-filter-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

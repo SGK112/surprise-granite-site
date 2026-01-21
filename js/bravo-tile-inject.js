@@ -34,7 +34,7 @@
 
     // Match the exact structure of existing Webflow CMS items
     card.innerHTML = `
-      <a href="/vendors/bravo-tile/#${product.slug}" class="materials_item-link w-inline-block">
+      <a href="/vendors/bravo-tile/" class="materials_item-link w-inline-block" title="${product.name} - Bravo Tile">
         <div class="materials_image-wrapper">
           <img alt="${product.name}"
                loading="lazy"

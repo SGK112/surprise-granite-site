@@ -1,0 +1,499 @@
+/**
+ * Stone Selector Component Styles
+ * Searchable stone tagging for the marketplace
+ */
+
+/* === Stone Selector (List Form) === */
+
+.stone-selector {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.stone-selector-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.stone-selector-input-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.stone-selector-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #999;
+  pointer-events: none;
+}
+
+.stone-selector-input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.stone-selector-input:focus {
+  outline: none;
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.1);
+}
+
+.stone-selector-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.stone-selector-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.stone-selector-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #f9cb00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dropdown */
+.stone-selector-dropdown {
+  display: none;
+  position: relative;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 50;
+}
+
+.stone-selector-dropdown.show {
+  display: block;
+}
+
+.stone-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stone-selector-item:last-child {
+  border-bottom: none;
+}
+
+.stone-selector-item:hover,
+.stone-selector-item.highlighted {
+  background: #f8f9fa;
+}
+
+.stone-selector-item-image {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #e0e0e0;
+  flex-shrink: 0;
+}
+
+.stone-selector-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stone-selector-item-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stone-selector-item-meta {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stone-selector-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Selected Tags */
+.stone-selector-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stone-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.stone-tag.primary {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+.stone-tag-image {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.stone-tag-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stone-tag-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #f9cb00;
+  color: #1a1a2e;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.stone-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #999;
+  border-radius: 50%;
+  transition: all 0.15s;
+}
+
+.stone-tag-remove:hover {
+  background: rgba(0,0,0,0.1);
+  color: #666;
+}
+
+.stone-tag-remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stone-tag.primary .stone-tag-remove {
+  color: rgba(255,255,255,0.7);
+}
+
+.stone-tag.primary .stone-tag-remove:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.stone-selector-hint {
+  font-size: 11px;
+  color: #888;
+  margin-top: 10px;
+}
+
+/* === Stone Filter (Browse Page) === */
+
+.stone-filter {
+  position: relative;
+}
+
+.stone-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 160px;
+  text-align: left;
+}
+
+.stone-filter-btn:hover {
+  border-color: #ccc;
+}
+
+.stone-filter-btn.active {
+  border-color: #f9cb00;
+  background: #fffdf5;
+}
+
+.stone-filter-btn.open {
+  border-color: #f9cb00;
+  box-shadow: 0 0 0 2px rgba(249, 203, 0, 0.2);
+}
+
+.stone-filter-preview {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.stone-filter-preview img {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.stone-filter-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stone-filter-arrow {
+  width: 16px;
+  height: 16px;
+  color: #666;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.stone-filter-btn.open .stone-filter-arrow {
+  transform: rotate(180deg);
+}
+
+/* Filter Dropdown */
+.stone-filter-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 280px;
+  overflow: hidden;
+}
+
+.stone-filter-dropdown.show {
+  display: block;
+}
+
+.stone-filter-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.stone-filter-search svg {
+  width: 18px;
+  height: 18px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.stone-filter-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.stone-filter-search input::placeholder {
+  color: #999;
+}
+
+.stone-filter-results {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.stone-filter-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  padding: 10px 12px 6px;
+  font-weight: 600;
+}
+
+.stone-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.stone-filter-item:hover {
+  background: #f8f9fa;
+}
+
+.stone-filter-item.selected {
+  background: #fef9e7;
+}
+
+.stone-filter-item img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.stone-filter-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stone-filter-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stone-filter-item-meta {
+  font-size: 11px;
+  color: #666;
+}
+
+.stone-filter-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+}
+
+.stone-filter-actions {
+  padding: 10px 12px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stone-filter-clear {
+  font-size: 13px;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.stone-filter-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Listing Card Stone Tags */
+.listing-card-stones {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.listing-stone-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 3px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #666;
+}
+
+.listing-stone-tag img {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.listing-stone-tag-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .stone-filter-dropdown {
+    width: 260px;
+    right: 0;
+    left: auto;
+  }
+
+  .stone-tag {
+    padding: 4px 8px 4px 4px;
+  }
+
+  .stone-tag-image {
+    width: 24px;
+    height: 24px;
+  }
+
+  .stone-tag-name {
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stone Selector Preview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/stone-selector.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+    .preview-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 40px;
+    }
+    .preview-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .preview-section h2 {
+      font-size: 18px;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-section h2 span {
+      font-size: 12px;
+      background: #f9cb00;
+      color: #1a1a2e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .preview-section p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .preview-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .preview-col {
+      flex: 1;
+    }
+    .output-panel {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 16px;
+      color: #fff;
+      font-family: monospace;
+      font-size: 12px;
+      min-height: 120px;
+    }
+    .output-panel h4 {
+      color: #f9cb00;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .output-panel pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    @media (max-width: 700px) {
+      .preview-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <h1>Stone Color Tagging System</h1>
+    <p class="subtitle">Preview of the catalog-powered stone selector for the fabricator marketplace</p>
+
+    <!-- Stone Selector (List Form) -->
+    <div class="preview-section">
+      <h2>Stone Selector <span>List Remnant Form</span></h2>
+      <p>Fabricators search and tag their remnants with actual stones from your catalog. Supports up to 3 tags.</p>
+
+      <div class="preview-row">
+        <div class="preview-col">
+          <div id="stone-selector-demo"></div>
+        </div>
+        <div class="preview-col">
+          <div class="output-panel">
+            <h4>Selected Data</h4>
+            <pre id="selector-output">No stones selected yet.
+Search for a stone above (try "Calacatta" or "White")</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stone Filter (Browse Page) -->
+    <div class="preview-section">
+      <h2>Stone Filter <span>Marketplace Browse</span></h2>
+      <p>Buyers filter listings by stone name. Shows popular stones by default, with search capability.</p>
+
+      <div class="preview-row">
+        <div class="preview-col">
+          <div id="stone-filter-demo" style="width: fit-content;"></div>
+        </div>
+        <div class="preview-col">
+          <div class="output-panel">
+            <h4>Filter Value</h4>
+            <pre id="filter-output">No filter applied.
+Click the dropdown to select a stone.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample Listing Card -->
+    <div class="preview-section">
+      <h2>Listing Card Preview <span>With Stone Tags</span></h2>
+      <p>How stone tags appear on marketplace listing cards.</p>
+
+      <div style="max-width: 320px;">
+        <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="height: 180px; background: linear-gradient(135deg, #e8e8e8, #f5f5f5); display: flex; align-items: center; justify-content: center; color: #999;">
+            Stone Image
+          </div>
+          <div style="padding: 16px;">
+            <div style="font-size: 12px; color: #f9cb00; font-weight: 600; margin-bottom: 4px;">QUARTZ</div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Calacatta Gold Remnant - 48x26</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Beautiful remnant, perfect for bathroom vanity or small kitchen island.</p>
+
+            <!-- Stone Tags -->
+            <div class="listing-card-stones">
+              <span class="listing-stone-tag">
+                <span class="listing-stone-tag-name">Calacatta Gold</span>
+              </span>
+              <span class="listing-stone-tag">
+                <span class="listing-stone-tag-name">Calacatta Arno</span>
+              </span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee;">
+              <span style="font-size: 20px; font-weight: 700; color: #1a1a2e;">$275</span>
+              <button style="background: #f9cb00; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Contact</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/stone-selector.js"></script>
+  <script>
+    // Initialize Stone Selector demo
+    const selector = new StoneSelector('#stone-selector-demo', {
+      maxTags: 3,
+      label: 'Tag Stone Colors (from catalog)',
+      placeholder: 'Search stones (e.g., Calacatta, White Ice...)',
+      onChange: function(data) {
+        document.getElementById('selector-output').textContent = JSON.stringify({
+          slugs: data.slugs,
+          primaryStone: data.primaryStone?.name || null,
+          count: data.stones.length
+        }, null, 2);
+      }
+    });
+
+    // Initialize Stone Filter demo
+    const filter = new StoneFilter('#stone-filter-demo', {
+      placeholder: 'Search stones...',
+      onChange: function(stoneSlug) {
+        document.getElementById('filter-output').textContent = stoneSlug
+          ? `Filtering by: "${stoneSlug}"\n\nListings will show only remnants\ntagged with this stone.`
+          : 'No filter applied.\nShowing all listings.';
+      }
+    });
+  </script>
+</body>
+</html>

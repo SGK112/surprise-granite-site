@@ -491,6 +491,7 @@
     </style>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260110c">
+<link rel="stylesheet" href="/css/stone-selector.css?v=20260120">
 <script defer src="/js/unified-nav.js?v=20260110e"></script>
 
 </head>
@@ -586,20 +587,10 @@
                                 <label for="brand">Brand</label>
                                 <input type="text" id="brand" name="brand" placeholder="e.g. MSI, Cambria, Silestone">
                             </div>
-                            <div class="form-group">
-                                <label for="color">Primary Color</label>
-                                <select id="color" name="color">
-                                    <option value="">Select color...</option>
-                                    <option value="White">White</option>
-                                    <option value="Gray">Gray</option>
-                                    <option value="Black">Black</option>
-                                    <option value="Brown">Brown</option>
-                                    <option value="Beige">Beige</option>
-                                    <option value="Blue">Blue</option>
-                                    <option value="Green">Green</option>
-                                    <option value="Gold">Gold</option>
-                                    <option value="Multi">Multi-color</option>
-                                </select>
+                            <div class="form-group full">
+                                <div id="stoneSelectorContainer"></div>
+                                <input type="hidden" id="stoneTags" name="stoneTags">
+                                <input type="hidden" id="primaryStoneSlug" name="primaryStoneSlug">
                             </div>
                             <div class="form-group">
                                 <label for="length">Length (inches) *</label>
@@ -800,6 +791,8 @@
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Stone Selector Component -->
+    <script src="/js/stone-selector.js?v=20260120"></script>
 
     <script>
     (function() {
@@ -814,6 +807,7 @@
       let catalogData = { countertops: [], flooring: [], tile: [] };
       let selectedCatalogItem = null;
       let currentCategory = 'countertops';
+      let stoneSelector = null;
 
       // Initialize
       document.addEventListener('DOMContentLoaded', async function() {
@@ -841,6 +835,7 @@
         setupPhotoPreview();
         setupContactPrefs();
         setupFormSubmission();
+        setupStoneSelector();
       });
 
       function showLoginPrompt() {
@@ -1019,15 +1014,9 @@
           document.getElementById('brand').value = formatBrand(item.brand);
         }
 
-        // Set color
-        if (item.primaryColor) {
-          const colorSelect = document.getElementById('color');
-          for (let option of colorSelect.options) {
-            if (option.value.toLowerCase() === item.primaryColor.toLowerCase()) {
-              colorSelect.value = option.value;
-              break;
-            }
-          }
+        // Auto-select this stone in the stone selector
+        if (item.slug && stoneSelector) {
+          stoneSelector.setStones([item.slug]);
         }
 
         // Store catalog images
@@ -1059,7 +1048,10 @@
         document.getElementById('stoneName').value = '';
         document.getElementById('stoneType').value = '';
         document.getElementById('brand').value = '';
-        document.getElementById('color').value = '';
+        // Reset stone selector
+        if (stoneSelector) {
+          stoneSelector.reset();
+        }
       };
 
       function setupPhotoPreview() {
@@ -1096,6 +1088,22 @@
 
         showEmail.addEventListener('change', function() {
           if (this.checked) contactFormOnly.checked = false;
+        });
+      }
+
+      function setupStoneSelector() {
+        const container = document.getElementById('stoneSelectorContainer');
+        if (!container || typeof StoneSelector === 'undefined') return;
+
+        stoneSelector = new StoneSelector(container, {
+          maxTags: 3,
+          label: 'Tag Stone Colors (from catalog)',
+          placeholder: 'Search stones (e.g., Calacatta, White Ice...)',
+          onChange: function(data) {
+            // Update hidden fields
+            document.getElementById('stoneTags').value = JSON.stringify(data.slugs);
+            document.getElementById('primaryStoneSlug').value = data.primaryStone?.slug || '';
+          }
         });
       }
 
@@ -1168,13 +1176,26 @@
             const length = formData.get('length');
             const width = formData.get('width');
 
+            // Get stone tags from stone selector
+            const stoneTagsInput = document.getElementById('stoneTags');
+            const primaryStoneInput = document.getElementById('primaryStoneSlug');
+            let stoneTags = [];
+            try {
+              stoneTags = stoneTagsInput.value ? JSON.parse(stoneTagsInput.value) : [];
+            } catch (e) {
+              stoneTags = [];
+            }
+            const primaryStone = primaryStoneInput.value || (stoneTags[0] || null);
+
             const listingData = {
               user_id: currentUser.id,
               stone_name: formData.get('stoneName'),
-              stone_slug: formData.get('catalogSlug') || null,
+              stone_slug: formData.get('catalogSlug') || primaryStone,
               material_type: formData.get('stoneType').toLowerCase(),
               brand: formData.get('brand') || null,
-              color: formData.get('color') || null,
+              color: null,
+              color_tags: stoneTags,
+              primary_color: primaryStone,
               title: `${formData.get('stoneName')} ${formData.get('stoneType')} Remnant - ${length}x${width}`,
               description: formData.get('description') || null,
               dimensions: `${length} x ${width} inches`,
