@@ -174,8 +174,7 @@
         .aria-el-btn,
         .aria-voice-btn,
         .aria-realtime-btn,
-        [class*="aria"][class*="floating"],
-        [class*="aria"][class*="trigger"]:not([data-hub-controlled]) {
+        .aria-floating-btn {
           display: none !important;
         }
 
