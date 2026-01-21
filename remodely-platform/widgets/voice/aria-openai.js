@@ -1,6 +1,6 @@
 /**
- * ARIA VOICE WIDGET - ElevenLabs Powered
- * Uses VoiceNow CRM backend for AI + ElevenLabs TTS
+ * ARIA VOICE WIDGET - OpenAI TTS Powered
+ * Uses VoiceNow CRM backend for AI + OpenAI TTS (tts-1-hd, nova voice)
  * Natural-sounding voice assistant
  * Version: 1.0
  */
@@ -63,7 +63,7 @@ GOALS:
 4. Be genuinely helpful`
   };
 
-  class AriaElevenLabs {
+  class AriaOpenAI {
     constructor(config = {}) {
       this.config = { ...DEFAULT_CONFIG, ...config };
       this.state = {
@@ -72,7 +72,8 @@ GOALS:
         isSpeaking: false,
         isProcessing: false,
         conversationHistory: [],
-        transcript: ''
+        transcript: '',
+        continuousMode: true // Auto-listen after Aria speaks
       };
 
       // Audio
@@ -133,19 +134,28 @@ GOALS:
       this.recognition.onend = () => {
         this.state.isListening = false;
         this.updateUI();
+
+        // Auto-restart if in continuous mode and modal is open (but not while speaking/processing)
+        if (this.state.continuousMode && this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
+          setTimeout(() => {
+            if (this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
+              this.startListening();
+            }
+          }, 500);
+        }
       };
     }
 
     // Inject CSS
     injectStyles() {
-      if (document.getElementById('aria-elevenlabs-styles')) return;
+      if (document.getElementById('aria-openai-styles')) return;
 
       const primary = this.config.primaryColor;
       const secondary = this.config.secondaryColor;
       const isDark = this.config.theme === 'dark';
 
       const styles = document.createElement('style');
-      styles.id = 'aria-elevenlabs-styles';
+      styles.id = 'aria-openai-styles';
       styles.textContent = `
         .aria-el * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
@@ -582,7 +592,12 @@ GOALS:
       utterance.onend = () => {
         this.state.isSpeaking = false;
         this.updateUI();
-        this.updateStatus('Ready to help');
+        this.updateStatus('Listening...');
+
+        // Auto-restart listening after speaking if in continuous mode
+        if (this.state.continuousMode && this.state.isOpen) {
+          setTimeout(() => this.startListening(), 300);
+        }
       };
 
       window.speechSynthesis.speak(utterance);
@@ -721,11 +736,11 @@ GOALS:
       this.stopListening();
       if (this.floatingBtn) this.floatingBtn.remove();
       if (this.modalOverlay) this.modalOverlay.remove();
-      const styles = document.getElementById('aria-elevenlabs-styles');
+      const styles = document.getElementById('aria-openai-styles');
       if (styles) styles.remove();
     }
   }
 
   // Export
-  window.AriaElevenLabs = AriaElevenLabs;
+  window.AriaOpenAI = AriaOpenAI;
 })();

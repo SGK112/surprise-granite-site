@@ -16,8 +16,11 @@
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
 
-  // Aria configuration for Surprise Granite (browser-based voice)
+  // Aria configuration for Surprise Granite (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
+    // API Configuration - VoiceNow CRM backend for OpenAI TTS
+    apiEndpoint: 'https://voiceflow-crm.onrender.com',
+
     businessName: 'Surprise Granite',
     assistantName: 'Aria',
     primaryColor: '#f9cb00',
@@ -26,12 +29,8 @@
     position: 'right',
     triggerType: 'none', // We control opening via hub
 
-    // Voice settings (browser speech synthesis)
-    language: 'en-US',
-    speed: 1.0,
-
     // Greeting
-    greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today? I can answer questions about materials, pricing, design ideas, or help you schedule a free estimate.",
+    greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today?",
 
     // Phone number for transfers
     phone: '(602) 833-7194',
@@ -134,39 +133,27 @@
     ariaLoading = true;
 
     try {
-      // Load Aria ElevenLabs - uses VoiceNow CRM backend for AI + natural TTS
-      await loadScript(`${WIDGET_BASE}/voice/aria-elevenlabs.js`);
+      // Load the Aria OpenAI script (OpenAI TTS via VoiceNow CRM backend)
+      await loadScript(`${WIDGET_BASE}/voice/aria-openai.js`);
 
-      if (window.AriaElevenLabs) {
-        // Merge hub config with ElevenLabs config
-        const elevenLabsConfig = {
-          businessName: ARIA_CONFIG.businessName,
-          assistantName: 'Aria',
-          primaryColor: ARIA_CONFIG.primaryColor,
-          secondaryColor: ARIA_CONFIG.secondaryColor,
-          theme: 'dark',
-          greeting: ARIA_CONFIG.greeting,
-          businessContext: ARIA_CONFIG.businessContext,
-          knowledge: ARIA_CONFIG.knowledge
-        };
-
-        ariaInstance = new window.AriaElevenLabs(elevenLabsConfig);
+      if (window.AriaOpenAI) {
+        ariaInstance = new window.AriaOpenAI(ARIA_CONFIG);
         ariaInstance.init(); // No floating button since we control it via hub
 
         // Store globally for other scripts
-        window.ariaVoice = ariaInstance;
-        window.ariaElevenLabs = ariaInstance;
+        window.ariaOpenAI = ariaInstance;
+        window.ariaVoice = ariaInstance; // Backwards compatibility
 
-        console.log('Aria ElevenLabs Voice loaded via Remodely Hub (natural voice)');
+        console.log('Aria (OpenAI TTS) loaded via Remodely Hub');
 
         // Open it
         ariaInstance.open();
       } else {
-        console.error('AriaElevenLabs class not found after loading script');
+        console.error('AriaOpenAI class not found after loading script');
         window.location.href = '/contact-us/';
       }
     } catch (err) {
-      console.error('Failed to load Aria ElevenLabs:', err);
+      console.error('Failed to load Aria:', err);
       window.location.href = '/contact-us/';
     } finally {
       ariaLoading = false;
