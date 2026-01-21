@@ -73,7 +73,7 @@ GOALS:
         isProcessing: false,
         conversationHistory: [],
         transcript: '',
-        continuousMode: true // Auto-listen after Aria speaks
+        voiceChatActive: false // True when in continuous voice chat mode
       };
 
       // Audio
@@ -135,10 +135,10 @@ GOALS:
         this.state.isListening = false;
         this.updateUI();
 
-        // Auto-restart if in continuous mode and modal is open (but not while speaking/processing)
-        if (this.state.continuousMode && this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
+        // Auto-restart if in voice chat mode and not speaking/processing
+        if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
           setTimeout(() => {
-            if (this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
+            if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking && !this.state.isProcessing) {
               this.startListening();
             }
           }, 500);
@@ -340,6 +340,47 @@ GOALS:
         .aria-el-send-btn:hover { transform: scale(1.05); }
         .aria-el-send-btn svg { width: 20px; height: 20px; color: ${secondary}; }
 
+        /* Voice Chat Button */
+        .aria-el-voice-chat {
+          padding: 16px 20px;
+          border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+        }
+
+        .aria-el-voice-btn {
+          width: 100%;
+          padding: 16px 24px;
+          border-radius: 30px;
+          border: none;
+          background: linear-gradient(135deg, ${primary}, ${this.adjustColor(primary, -20)});
+          color: ${secondary};
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(249, 203, 0, 0.3);
+        }
+        .aria-el-voice-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(249, 203, 0, 0.4);
+        }
+        .aria-el-voice-btn svg { width: 24px; height: 24px; }
+        .aria-el-voice-btn.active {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: #fff;
+          animation: voicePulse 2s infinite;
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        .aria-el-voice-btn.active svg { color: #fff; }
+
+        @keyframes voicePulse {
+          0%, 100% { box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+          50% { box-shadow: 0 4px 25px rgba(239, 68, 68, 0.6); }
+        }
+
         .aria-el-footer {
           padding: 12px;
           text-align: center;
@@ -394,7 +435,9 @@ GOALS:
         this.modalOverlay.classList.remove('open');
       }
       this.state.isOpen = false;
+      this.state.voiceChatActive = false;
       this.stopListening();
+      this.updateVoiceButton();
     }
 
     // Create modal
@@ -404,7 +447,7 @@ GOALS:
       overlay.innerHTML = `
         <div class="aria-el-modal">
           <div class="aria-el-header" style="position: relative;">
-            <button class="aria-el-close" onclick="window.ariaElevenLabs.close()">
+            <button class="aria-el-close" id="ariaElClose">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -424,17 +467,24 @@ GOALS:
             <div class="aria-el-transcript" id="ariaElTranscript"></div>
           </div>
 
-          <div class="aria-el-input">
-            <input type="text" class="aria-el-text-input" id="ariaElTextInput" placeholder="Type a message..." />
-            <button class="aria-el-send-btn" id="ariaElSendBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            </button>
-            <button class="aria-el-mic-btn" id="ariaElMicBtn">
+          <!-- Voice Chat Button - Main CTA -->
+          <div class="aria-el-voice-chat">
+            <button class="aria-el-voice-btn" id="ariaElVoiceBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+              <span id="ariaElVoiceBtnText">Start Voice Chat</span>
+            </button>
+          </div>
+
+          <div class="aria-el-input">
+            <input type="text" class="aria-el-text-input" id="ariaElTextInput" placeholder="Or type a message..." />
+            <button class="aria-el-send-btn" id="ariaElSendBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             </button>
           </div>
@@ -456,16 +506,64 @@ GOALS:
 
     // Attach events
     attachEvents() {
-      const micBtn = document.getElementById('ariaElMicBtn');
+      const closeBtn = document.getElementById('ariaElClose');
+      const voiceBtn = document.getElementById('ariaElVoiceBtn');
       const sendBtn = document.getElementById('ariaElSendBtn');
       const textInput = document.getElementById('ariaElTextInput');
 
-      if (micBtn) micBtn.onclick = () => this.toggleListening();
+      if (closeBtn) closeBtn.onclick = () => this.close();
+      if (voiceBtn) voiceBtn.onclick = () => this.toggleVoiceChat();
       if (sendBtn) sendBtn.onclick = () => this.sendTextMessage();
       if (textInput) {
         textInput.onkeypress = (e) => {
           if (e.key === 'Enter') this.sendTextMessage();
         };
+      }
+    }
+
+    // Toggle voice chat mode
+    toggleVoiceChat() {
+      if (this.state.voiceChatActive) {
+        this.endVoiceChat();
+      } else {
+        this.startVoiceChat();
+      }
+    }
+
+    // Start continuous voice chat
+    startVoiceChat() {
+      if (!this.recognition) {
+        this.addMessage('assistant', "Sorry, voice chat isn't supported in your browser. Please type your message instead.");
+        return;
+      }
+
+      this.state.voiceChatActive = true;
+      this.updateVoiceButton();
+      this.updateStatus('Listening...');
+      this.startListening();
+    }
+
+    // End voice chat
+    endVoiceChat() {
+      this.state.voiceChatActive = false;
+      this.stopListening();
+      this.updateVoiceButton();
+      this.updateStatus('Ready to help');
+    }
+
+    // Update voice button appearance
+    updateVoiceButton() {
+      const btn = document.getElementById('ariaElVoiceBtn');
+      const btnText = document.getElementById('ariaElVoiceBtnText');
+
+      if (btn && btnText) {
+        if (this.state.voiceChatActive) {
+          btn.classList.add('active');
+          btnText.textContent = 'End Voice Chat';
+        } else {
+          btn.classList.remove('active');
+          btnText.textContent = 'Start Voice Chat';
+        }
       }
     }
 
@@ -592,11 +690,17 @@ GOALS:
       utterance.onend = () => {
         this.state.isSpeaking = false;
         this.updateUI();
-        this.updateStatus('Listening...');
 
-        // Auto-restart listening after speaking if in continuous mode
-        if (this.state.continuousMode && this.state.isOpen) {
-          setTimeout(() => this.startListening(), 300);
+        // Auto-restart listening after speaking if in voice chat mode
+        if (this.state.voiceChatActive && this.state.isOpen) {
+          this.updateStatus('Listening...');
+          setTimeout(() => {
+            if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking) {
+              this.startListening();
+            }
+          }, 300);
+        } else {
+          this.updateStatus('Ready to help');
         }
       };
 
@@ -671,7 +775,18 @@ GOALS:
         source.onended = () => {
           this.state.isSpeaking = false;
           this.updateUI();
-          this.updateStatus('Ready to help');
+
+          // Auto-restart listening after speaking if in voice chat mode
+          if (this.state.voiceChatActive && this.state.isOpen) {
+            this.updateStatus('Listening...');
+            setTimeout(() => {
+              if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking) {
+                this.startListening();
+              }
+            }, 300);
+          } else {
+            this.updateStatus('Ready to help');
+          }
         };
 
         source.start(0);
