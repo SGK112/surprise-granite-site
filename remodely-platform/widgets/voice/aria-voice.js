@@ -50,8 +50,8 @@
       { question: 'estimate', answer: 'I can help you get a free estimate! Would you like to schedule a consultation?' }
     ],
 
-    // API Configuration
-    apiEndpoint: 'https://api.remodely.ai',
+    // API Configuration - VoiceNow CRM backend
+    apiEndpoint: 'https://voiceflow-crm.onrender.com',
     openaiKey: '', // Set via environment
     webhookUrl: '',
 
@@ -672,14 +672,49 @@
       utterance.rate = this.config.speed;
       utterance.lang = this.config.language;
 
-      // Try to find a good voice
+      // Try to find an American English voice (avoid British)
       const voices = this.synthesis.getVoices();
-      const preferredVoice = voices.find(v =>
-        v.lang.startsWith(this.config.language.split('-')[0]) && v.name.includes('Female')
-      ) || voices.find(v => v.lang.startsWith(this.config.language.split('-')[0]));
+
+      // Priority order for American English female voices
+      const americanVoiceNames = ['Samantha', 'Ava', 'Allison', 'Susan', 'Zira', 'Aria', 'Jenny', 'Siri'];
+      const britishIndicators = ['Daniel', 'Kate', 'British', 'UK', 'en-GB', 'en_GB'];
+
+      // Filter to only American English voices (en-US)
+      const americanVoices = voices.filter(v =>
+        (v.lang === 'en-US' || v.lang === 'en_US') &&
+        !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
+      );
+
+      // Try to find a preferred American voice
+      let preferredVoice = americanVoices.find(v =>
+        americanVoiceNames.some(name => v.name.includes(name))
+      );
+
+      // Fallback to any American female voice
+      if (!preferredVoice) {
+        preferredVoice = americanVoices.find(v =>
+          v.name.toLowerCase().includes('female') ||
+          v.name.includes('Samantha') ||
+          v.name.includes('Ava')
+        );
+      }
+
+      // Fallback to any American voice
+      if (!preferredVoice && americanVoices.length > 0) {
+        preferredVoice = americanVoices[0];
+      }
+
+      // Last resort: any en voice that's NOT British
+      if (!preferredVoice) {
+        preferredVoice = voices.find(v =>
+          v.lang.startsWith('en') &&
+          !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
+        );
+      }
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
+        console.log('Using voice:', preferredVoice.name, preferredVoice.lang);
       }
 
       utterance.onstart = () => {
@@ -755,7 +790,7 @@
           return `Countertop pricing depends on the material - quartz runs $45-85 per square foot, granite $40-75, marble $60-150. A typical kitchen is $2,500-5,000 installed. Say "schedule" or click Schedule Visit for a free in-home estimate!`;
 
         case 'hours':
-          return `We're open ${this.config.businessContext.businessHours}. Our showroom at 15084 W Bell Rd in Surprise has over 200 slabs you can see in person. Would you like to schedule a visit?`;
+          return `We're available ${this.config.businessContext.businessHours}. We come to you for free onsite consultations! To see slabs in person, visit one of our stone supplier partners at surprisegranite.com/company/vendors-list/. Would you like to schedule an appointment?`;
 
         case 'services':
           const services = this.config.businessContext.services.join(', ');
@@ -765,7 +800,7 @@
           this.trackEvent('intent_transfer');
           // Offer to call directly
           setTimeout(() => this.triggerAction('callPhone'), 2500);
-          return `Of course! I'll connect you now. If the call doesn't start automatically, our number is ${this.config.phone || '602-833-7194'}.`;
+          return `Of course! I'll connect you now. If the call doesn't start automatically, our number is ${this.config.phone || '(602) 833-3189'}.`;
 
         case 'design':
           this.trackEvent('intent_design');
@@ -774,7 +809,7 @@
 
         case 'showroom':
           this.trackEvent('intent_showroom');
-          return `Our showroom is at 15084 W Bell Rd in Surprise, right near the 303. We have over 200 slabs on display! We're open Monday through Saturday, 8am to 6pm. Would you like to schedule a visit?`;
+          return `We don't have a showroom - we come to you for free onsite consultations! To see slabs in person, visit one of our stone distribution partners. Check out our vendors list at surprisegranite.com/company/vendors-list/ to find a location near you. Would you like to schedule an appointment?`;
 
         case 'timeline':
           this.trackEvent('intent_timeline');
@@ -788,6 +823,16 @@
           const knowledgeResponse = this.searchKnowledge(userMessage);
           if (knowledgeResponse) {
             return knowledgeResponse;
+          }
+
+          // Call VoiceNow CRM AI for intelligent response
+          try {
+            const aiResponse = await this.callExternalAI(userMessage);
+            if (aiResponse && !aiResponse.includes('getDefaultResponse')) {
+              return aiResponse;
+            }
+          } catch (e) {
+            console.error('AI response failed:', e);
           }
 
           return this.getDefaultResponse();
@@ -847,10 +892,10 @@
       return 'general';
     }
 
-    // Call external AI
+    // Call external AI via VoiceNow CRM
     async callExternalAI(message) {
       try {
-        const response = await fetch(`${this.config.apiEndpoint}/voice/chat`, {
+        const response = await fetch(`${this.config.apiEndpoint}/api/copilot/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -858,14 +903,18 @@
           body: JSON.stringify({
             message,
             history: this.state.conversationHistory.slice(-10),
-            businessContext: this.config.businessContext,
-            businessName: this.config.businessName
+            context: {
+              businessName: this.config.businessName,
+              businessContext: this.config.businessContext,
+              assistant: 'Aria',
+              role: 'You are Aria, a helpful AI voice assistant for ' + this.config.businessName + '. Keep responses brief and conversational (1-2 sentences). Help with scheduling, quotes, and answering questions about countertops, tile, cabinets, and remodeling services.'
+            }
           })
         });
 
         if (response.ok) {
           const data = await response.json();
-          return data.response;
+          return data.response || data.message || data.text;
         }
       } catch (e) {
         console.error('External AI call failed:', e);
@@ -915,7 +964,7 @@
       const responses = [
         `I'd be happy to help with that! You can ask me about materials like quartz, granite, or marble, get pricing info, or schedule a free estimate. What would you like to know?`,
         `Great question! I can help with countertop materials, pricing, timeline, or scheduling. We also have a Room Designer tool if you want to visualize your project. What interests you most?`,
-        `I'm here to help! Whether you need material recommendations, cost estimates, or want to schedule a showroom visit, just let me know. What project are you working on?`,
+        `I'm here to help! Whether you need material recommendations, cost estimates, or want to schedule a free onsite consultation, just let me know. What project are you working on?`,
         `I'd love to help you find the perfect countertops! Are you interested in learning about materials, getting a price estimate, or scheduling a free consultation?`
       ];
       return responses[Math.floor(Math.random() * responses.length)];
@@ -960,11 +1009,11 @@
 
         case 'openShowroom':
           this.close();
-          window.location.href = '/showroom/';
+          window.location.href = '/company/vendors-list/';
           break;
 
         case 'callPhone':
-          window.location.href = `tel:${this.config.phone || '+16028337194'}`;
+          window.location.href = `tel:${this.config.phone || '+16028333189'}`;
           break;
 
         case 'openCatalog':

@@ -34,7 +34,7 @@
     greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today?",
 
     // Phone number for transfers
-    phone: '(602) 833-7194',
+    phone: '(602) 833-3189',
 
     // Business context
     businessContext: {
@@ -46,15 +46,15 @@
 
     // FAQ responses
     faqs: [
-      { question: 'hours', answer: "We're open Monday through Saturday, 8am to 6pm. Feel free to stop by our showroom!" },
-      { question: 'location', answer: "We're at 15084 W Bell Rd in Surprise, Arizona - right near the 303. We serve the entire Phoenix metro area including Scottsdale, Peoria, and Goodyear." },
+      { question: 'hours', answer: "We're available Monday through Saturday, 8am to 6pm for appointments. Give us a call at (602) 833-3189 to schedule!" },
+      { question: 'location', answer: "We serve the entire Phoenix metro area including Surprise, Scottsdale, Peoria, Goodyear, and more. We come to you for free onsite consultations! To view slabs in person, visit one of our stone supplier partners - check out our vendors list at surprisegranite.com/company/vendors-list/" },
       { question: 'estimate', answer: "Absolutely! Our estimates are always free. I can help you schedule an in-home consultation where we'll measure your space and discuss materials. What day works best for you?" },
       { question: 'cost', answer: "Countertop pricing depends on the material. Quartz runs $45-85 per square foot, granite $40-75, marble $60-150, and quartzite $70-120. That includes professional installation. Want me to give you a rough estimate for your project?" },
       { question: 'price', answer: "Great question! Our countertops range from $40-150 per square foot installed. Quartz is our most popular at $45-85/sq ft. A typical kitchen runs $2,500-5,000. Would you like a free estimate?" },
       { question: 'how long', answer: "Most countertop projects take 1-2 weeks from template to installation. We'll measure your space, fabricate the counters, and install them - usually all within 7-10 business days." },
       { question: 'warranty', answer: "We stand behind our work! All installations come with our craftsmanship warranty, and most materials have manufacturer warranties - Silestone offers 25 years, MSI quartz has lifetime coverage." },
       { question: 'financing', answer: "Yes, we offer financing options! We work with several lenders to help make your dream kitchen affordable. Ask about our 12-month same-as-cash option." },
-      { question: 'showroom', answer: "Our showroom has over 200 slabs you can see in person! We're at 15084 W Bell Rd in Surprise. Come touch the materials, see the colors in natural light, and get inspired." }
+      { question: 'showroom', answer: "We don't have a showroom - we come to you! For free onsite consultations, just schedule an appointment. To see slabs in person, visit one of our stone distribution partners. Check out our vendors list at surprisegranite.com/company/vendors-list/ to find a location near you." }
     ],
 
     // Comprehensive knowledge base
@@ -89,7 +89,7 @@
         'cabinet|cabinets': "We offer cabinet installation too! We work with quality cabinet lines and can do full replacements or refacing. White shaker and modern gray are trending right now.",
         'flooring|floor|lvp|hardwood': "We install flooring as well - tile, LVP, and hardwood. LVP is super popular right now because it's waterproof and looks like real wood. Prices start around $6-12 per square foot installed.",
         'waterfall|island': "Waterfall edges are stunning! That's where the countertop material flows down the sides of your island. It's a modern, high-end look. Usually adds $500-1500 depending on the size.",
-        'edge|edges|profile': "We offer lots of edge profiles! Standard eased edge is included, and we also do beveled, bullnose, ogee, and mitered edges. I can show you samples at our showroom.",
+        'edge|edges|profile': "We offer lots of edge profiles! Standard eased edge is included, and we also do beveled, bullnose, ogee, and mitered edges. We can show you samples during your onsite consultation.",
         'seam|seams': "We minimize seams as much as possible and place them strategically. Our fabricators are experts at making seams nearly invisible. Most kitchens have 1-2 seams depending on the layout.",
         'undermount|sink|faucet': "Undermount sinks are the most popular - they create a seamless look and are easy to clean. We do all the sink cutouts and can recommend great plumbers for the install.",
         'maintenance|care|clean': "Quartz is the easiest to maintain - just wipe with soap and water. Granite needs annual sealing. Marble requires more care but we'll teach you everything you need to know.",

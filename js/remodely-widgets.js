@@ -12,9 +12,9 @@
     businessName: 'Surprise Granite',
     primaryColor: '#f9cb00',
     secondaryColor: '#1a1a2e',
-    phone: '+1 (602) 833-7194',
+    phone: '+1 (602) 833-3189',
     email: 'info@surprisegranite.com',
-    address: '15084 W Bell Rd, Surprise, AZ 85374',
+    address: 'Serving the Greater Phoenix Area - We come to you!',
     theme: 'dark',
     apiEndpoint: 'https://api.remodely.ai',
     supabaseUrl: 'https://ypeypgwsycxcagncgdur.supabase.co',
@@ -153,9 +153,10 @@ PERSONALITY:
 
 BUSINESS INFO:
 - Company: Surprise Granite
-- Location: 15084 W Bell Rd, Surprise, AZ 85374
-- Phone: (602) 833-7194
+- Phone: (602) 833-3189
 - Hours: Monday-Saturday 8am-6pm
+- WE COME TO YOU for free onsite consultations
+- To see slabs: Visit our stone supplier partners at surprisegranite.com/company/vendors-list/
 - Service Areas: ${SG_CONFIG.serviceAreas.join(', ')}
 
 SERVICES:

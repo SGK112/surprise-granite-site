@@ -34,7 +34,7 @@ const TENANTS = {
         },
 
         contact: {
-            phone: '+1 (602) 833-7194',
+            phone: '+1 (602) 833-3189',
             email: 'hello@remodely.ai',
             address: 'Phoenix, AZ'
         },
@@ -75,9 +75,9 @@ const TENANTS = {
         },
 
         contact: {
-            phone: '+1 (602) 833-7194',
+            phone: '+1 (602) 833-3189',
             email: 'info@surprisegranite.com',
-            address: '15084 W Bell Rd, Surprise, AZ 85374'
+            address: 'Serving the Greater Phoenix Area - We come to you!'
         },
 
         serviceAreas: [
@@ -121,7 +121,7 @@ const TENANTS = {
         },
 
         contact: {
-            phone: '+1 (602) 833-7194',
+            phone: '+1 (602) 833-3189',
             email: 'info@lc4h.com',
             address: 'Phoenix, AZ'
         }
@@ -156,7 +156,7 @@ const TENANTS = {
         },
 
         contact: {
-            phone: '+1 (602) 833-7194',
+            phone: '+1 (602) 833-3189',
             email: 'hello@newcountertops.com'
         }
     },

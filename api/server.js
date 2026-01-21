@@ -2910,7 +2910,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
       ` : ''}
     </div>
     <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
-      <p style="color: #999; font-size: 12px; margin: 0;">Questions? Call (602) 833-7194</p>
+      <p style="color: #999; font-size: 12px; margin: 0;">Questions? Call (602) 833-3189</p>
     </div>
   </div>
 </body>
@@ -10398,7 +10398,7 @@ BUSINESS INFO:
 - Services: ${ctx.services?.join(', ') || 'countertops, tile, flooring, cabinets, full remodels'}
 - Service Area: ${ctx.serviceArea || 'Phoenix metro area'}
 - Hours: ${ctx.businessHours || 'Monday-Saturday 8am-6pm'}
-- Phone: (602) 833-7194
+- Phone: (602) 833-3189
 
 CAPABILITIES:
 - Answer questions about services and materials
@@ -10765,7 +10765,7 @@ app.post('/api/projects/:id/send-quote', async (req, res) => {
     </div>
     <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee;">
       <p style="color: #999; font-size: 12px; margin: 0;">
-        Questions? Reply to this email or call (602) 833-7194
+        Questions? Reply to this email or call (602) 833-3189
       </p>
     </div>
   </div>

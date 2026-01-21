@@ -81,9 +81,9 @@
     // Contact Information
     COMPANY: {
       NAME: 'Surprise Granite',
-      PHONE: '(623) 466-9004',
+      PHONE: '(602) 833-3189',
       EMAIL: 'info@surprisegranite.com',
-      ADDRESS: 'Surprise, Arizona',
+      ADDRESS: 'Serving the Greater Phoenix Area - We come to you!',
       SUPPORT_EMAIL: 'support@surprisegranite.com',
       DISTRIBUTOR_EMAIL: 'distributors@surprisegranite.com'
     },
