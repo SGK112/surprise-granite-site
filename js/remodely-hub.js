@@ -134,26 +134,39 @@
     ariaLoading = true;
 
     try {
-      // Load the Aria Voice script (browser-based, no backend required)
-      await loadScript(`${WIDGET_BASE}/voice/aria-voice.js`);
+      // Load Aria ElevenLabs - uses VoiceNow CRM backend for AI + natural TTS
+      await loadScript(`${WIDGET_BASE}/voice/aria-elevenlabs.js`);
 
-      if (window.AriaVoice) {
-        ariaInstance = new window.AriaVoice(ARIA_CONFIG);
+      if (window.AriaElevenLabs) {
+        // Merge hub config with ElevenLabs config
+        const elevenLabsConfig = {
+          businessName: ARIA_CONFIG.businessName,
+          assistantName: 'Aria',
+          primaryColor: ARIA_CONFIG.primaryColor,
+          secondaryColor: ARIA_CONFIG.secondaryColor,
+          theme: 'dark',
+          greeting: ARIA_CONFIG.greeting,
+          businessContext: ARIA_CONFIG.businessContext,
+          knowledge: ARIA_CONFIG.knowledge
+        };
+
+        ariaInstance = new window.AriaElevenLabs(elevenLabsConfig);
         ariaInstance.init(); // No floating button since we control it via hub
 
         // Store globally for other scripts
         window.ariaVoice = ariaInstance;
+        window.ariaElevenLabs = ariaInstance;
 
-        console.log('Aria Voice loaded via Remodely Hub');
+        console.log('Aria ElevenLabs Voice loaded via Remodely Hub (natural voice)');
 
         // Open it
         ariaInstance.open();
       } else {
-        console.error('AriaVoice class not found after loading script');
+        console.error('AriaElevenLabs class not found after loading script');
         window.location.href = '/contact-us/';
       }
     } catch (err) {
-      console.error('Failed to load Aria:', err);
+      console.error('Failed to load Aria ElevenLabs:', err);
       window.location.href = '/contact-us/';
     } finally {
       ariaLoading = false;
