@@ -15,7 +15,7 @@
 
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
-  const WIDGET_VERSION = 'v4'; // Cache bust - 2024-01-21
+  const WIDGET_VERSION = '20250121a'; // Cache bust
 
   // Aria configuration for Surprise Granite (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
