@@ -1,6 +1,6 @@
 /**
- * ARIA CHAT WIDGET v3
- * Text + Voice chat with OpenAI TTS
+ * ARIA VOICE CHAT v4
+ * Continuous voice conversation with OpenAI TTS
  */
 (function() {
   'use strict';
@@ -12,7 +12,7 @@
       this.config = {
         apiEndpoint: config.apiEndpoint || 'https://voiceflow-crm.onrender.com',
         assistantName: config.assistantName || 'Aria',
-        greeting: config.greeting || "Hi! I'm Aria. How can I help you today?",
+        greeting: config.greeting || "Hi! I'm Aria from Surprise Granite. How can I help you today?",
         phone: config.phone || '(602) 833-7194',
         ...config
       };
@@ -20,38 +20,82 @@
       this.isProcessing = false;
       this.isPlaying = false;
       this.isListening = false;
+      this.voiceModeActive = false;
       this.currentAudio = null;
       this.recognition = null;
       this.widget = null;
+      this.silenceTimer = null;
       this.initSpeechRecognition();
     }
 
     initSpeechRecognition() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SR) {
-        this.recognition = new SR();
-        this.recognition.continuous = false;
-        this.recognition.interimResults = true;
-        this.recognition.lang = 'en-US';
+      if (!SR) return;
 
-        this.recognition.onresult = (e) => {
-          const result = e.results[e.results.length - 1];
-          const transcript = result[0].transcript;
-          const input = this.widget?.querySelector('.aw-input');
-          if (input) input.value = transcript;
-          if (result.isFinal) {
-            this.stopListening();
-            setTimeout(() => this.send(), 100);
+      this.recognition = new SR();
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.lang = 'en-US';
+
+      this.recognition.onresult = (e) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const transcript = e.results[i][0].transcript;
+          if (e.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
           }
-        };
+        }
 
-        this.recognition.onerror = () => this.stopListening();
-        this.recognition.onend = () => this.stopListening();
-      }
+        // Show in input
+        const input = this.widget?.querySelector('#avInput');
+        if (input) {
+          input.value = finalTranscript || interimTranscript;
+        }
+
+        // Update visual indicator
+        this.updateWaveform(true);
+
+        // Reset silence timer on any speech
+        this.resetSilenceTimer();
+      };
+
+      this.recognition.onerror = (e) => {
+        console.log('[Aria] Speech error:', e.error);
+        if (e.error === 'not-allowed') {
+          alert('Microphone access denied. Please allow microphone access to use voice chat.');
+          this.stopVoiceMode();
+        }
+      };
+
+      this.recognition.onend = () => {
+        // Auto-restart if voice mode is still active
+        if (this.voiceModeActive && !this.isProcessing && !this.isPlaying) {
+          try {
+            this.recognition.start();
+          } catch (e) {}
+        }
+      };
+    }
+
+    resetSilenceTimer() {
+      clearTimeout(this.silenceTimer);
+      // After 1.5 seconds of silence with text, send it
+      this.silenceTimer = setTimeout(() => {
+        const input = this.widget?.querySelector('#avInput');
+        if (input && input.value.trim() && !this.isProcessing) {
+          const text = input.value.trim();
+          input.value = '';
+          this.send(text);
+        }
+      }, 1500);
     }
 
     init() {
-      console.log('[Aria] v3 Ready');
+      console.log('[Aria] v4 Voice Chat Ready');
     }
 
     open() {
@@ -64,266 +108,238 @@
     }
 
     close() {
+      this.stopVoiceMode();
       if (this.widget) {
         this.widget.style.display = 'none';
         document.body.style.overflow = '';
       }
       this.stopAudio();
-      this.stopListening();
     }
 
     createWidget() {
       this.widget = document.createElement('div');
-      this.widget.className = 'aw-root';
+      this.widget.className = 'av-root';
 
       this.widget.innerHTML = `
         <style>
-          .aw-root {
+          .av-root {
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
+            inset: 0 !important;
             z-index: 2147483647 !important;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+            background: rgba(10, 10, 20, 0.85) !important;
+            backdrop-filter: blur(20px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
           }
-          .aw-root * {
-            box-sizing: border-box !important;
-            font-family: inherit !important;
-          }
-          .aw-overlay {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            background: rgba(0,0,0,0.8) !important;
-          }
-          .aw-panel {
-            position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            background: #1a1a2e !important;
-            border-radius: 24px 24px 0 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            max-height: 85vh !important;
-            overflow: hidden !important;
-          }
-          @media (min-width: 500px) {
-            .aw-panel {
-              width: 420px !important;
-              max-height: 620px !important;
-              bottom: 24px !important;
-              left: 50% !important;
-              right: auto !important;
-              transform: translateX(-50%) !important;
-              border-radius: 24px !important;
-            }
-          }
-          .aw-header {
+          .av-root * { box-sizing: border-box !important; }
+
+          .av-header {
             display: flex !important;
             align-items: center !important;
-            gap: 12px !important;
+            justify-content: space-between !important;
             padding: 16px 20px !important;
-            background: #252542 !important;
-            border-radius: 24px 24px 0 0 !important;
+            padding-top: max(16px, env(safe-area-inset-top)) !important;
           }
-          .aw-avatar {
-            width: 48px !important;
-            height: 48px !important;
-            border-radius: 50% !important;
-            background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 24px !important;
-            flex-shrink: 0 !important;
-          }
-          .aw-info {
-            flex: 1 !important;
-          }
-          .aw-name {
+          .av-title {
             color: #fff !important;
             font-size: 18px !important;
             font-weight: 600 !important;
-            margin: 0 !important;
           }
-          .aw-status {
-            color: rgba(255,255,255,0.5) !important;
-            font-size: 13px !important;
-            margin: 2px 0 0 !important;
-          }
-          .aw-status.thinking { color: #f9cb00 !important; }
-          .aw-status.speaking { color: #22c55e !important; }
-          .aw-status.listening { color: #ef4444 !important; }
-          .aw-close {
-            width: 44px !important;
-            height: 44px !important;
+          .av-close {
+            width: 40px !important;
+            height: 40px !important;
             border-radius: 50% !important;
-            background: rgba(255,255,255,0.2) !important;
+            background: rgba(255,255,255,0.1) !important;
             border: none !important;
             color: #fff !important;
-            font-size: 28px !important;
-            font-weight: 300 !important;
+            font-size: 24px !important;
             cursor: pointer !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            line-height: 1 !important;
-            padding: 0 !important;
-            padding-bottom: 3px !important;
           }
-          .aw-close:active {
-            background: rgba(255,255,255,0.3) !important;
-            transform: scale(0.95) !important;
-          }
-          .aw-messages {
+          .av-close:active { background: rgba(255,255,255,0.2) !important; }
+
+          .av-main {
             flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            min-height: 50vh !important;
+          }
+
+          .av-orb {
+            width: 180px !important;
+            height: 180px !important;
+            border-radius: 50% !important;
+            background: linear-gradient(135deg, #f9cb00 0%, #ff9500 50%, #f9cb00 100%) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 64px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 0 60px rgba(249,203,0,0.3) !important;
+          }
+          .av-orb.listening {
+            animation: orbPulse 1.5s ease-in-out infinite !important;
+            box-shadow: 0 0 80px rgba(249,203,0,0.5) !important;
+          }
+          .av-orb.speaking {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #22c55e 100%) !important;
+            box-shadow: 0 0 80px rgba(34,197,94,0.5) !important;
+            animation: orbPulse 0.8s ease-in-out infinite !important;
+          }
+          .av-orb.thinking {
+            animation: orbSpin 2s linear infinite !important;
+          }
+          @keyframes orbPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+          }
+          @keyframes orbSpin {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+          }
+
+          .av-status {
+            color: rgba(255,255,255,0.7) !important;
+            font-size: 18px !important;
+            margin-top: 24px !important;
+            text-align: center !important;
+          }
+          .av-status.listening { color: #f9cb00 !important; }
+          .av-status.speaking { color: #22c55e !important; }
+          .av-status.thinking { color: #f9cb00 !important; }
+
+          .av-transcript {
+            color: rgba(255,255,255,0.5) !important;
+            font-size: 14px !important;
+            margin-top: 12px !important;
+            text-align: center !important;
+            min-height: 20px !important;
+            max-width: 300px !important;
+          }
+
+          .av-messages {
+            max-height: 30vh !important;
             overflow-y: auto !important;
-            padding: 16px 20px !important;
-            min-height: 150px !important;
-            max-height: 40vh !important;
+            padding: 0 20px !important;
+            width: 100% !important;
             -webkit-overflow-scrolling: touch !important;
           }
-          .aw-msg {
+          .av-msg {
             max-width: 85% !important;
             padding: 12px 16px !important;
-            border-radius: 18px !important;
-            margin-bottom: 10px !important;
-            font-size: 16px !important;
+            border-radius: 16px !important;
+            margin-bottom: 8px !important;
+            font-size: 15px !important;
             line-height: 1.4 !important;
-            word-wrap: break-word !important;
           }
-          .aw-msg.assistant {
+          .av-msg.assistant {
             background: rgba(255,255,255,0.1) !important;
             color: #fff !important;
             margin-right: auto !important;
-            border-bottom-left-radius: 4px !important;
           }
-          .aw-msg.user {
+          .av-msg.user {
             background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
             color: #1a1a2e !important;
             margin-left: auto !important;
-            border-bottom-right-radius: 4px !important;
             font-weight: 500 !important;
           }
-          .aw-call {
+
+          .av-bottom {
+            padding: 16px 20px !important;
+            padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+          }
+          .av-input-row {
             display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
             gap: 10px !important;
-            margin: 8px 20px 16px !important;
-            padding: 14px !important;
-            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-            color: #fff !important;
-            text-decoration: none !important;
-            border-radius: 14px !important;
-            font-size: 16px !important;
-            font-weight: 600 !important;
+            margin-bottom: 12px !important;
           }
-          .aw-call:active {
-            transform: scale(0.98) !important;
-            opacity: 0.9 !important;
-          }
-          .aw-inputbar {
-            display: flex !important;
-            align-items: center !important;
-            gap: 10px !important;
-            padding: 12px 16px 24px !important;
-            background: rgba(0,0,0,0.25) !important;
-          }
-          @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .aw-inputbar {
-              padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
-            }
-          }
-          .aw-mic {
-            width: 50px !important;
-            height: 50px !important;
-            border-radius: 50% !important;
-            border: 2px solid rgba(255,255,255,0.3) !important;
-            background: transparent !important;
-            color: #fff !important;
-            font-size: 22px !important;
-            cursor: pointer !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            flex-shrink: 0 !important;
-            padding: 0 !important;
-          }
-          .aw-mic:active {
-            transform: scale(0.95) !important;
-          }
-          .aw-mic.listening {
-            background: #ef4444 !important;
-            border-color: #ef4444 !important;
-            animation: awpulse 1s infinite !important;
-          }
-          @keyframes awpulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-            50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
-          }
-          .aw-input {
+          .av-input {
             flex: 1 !important;
             padding: 14px 18px !important;
             border-radius: 25px !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
-            background: rgba(255,255,255,0.1) !important;
+            background: rgba(255,255,255,0.08) !important;
             color: #fff !important;
             font-size: 16px !important;
             outline: none !important;
             -webkit-appearance: none !important;
-            min-width: 0 !important;
           }
-          .aw-input::placeholder {
-            color: rgba(255,255,255,0.4) !important;
-          }
-          .aw-input:focus {
-            border-color: #f9cb00 !important;
-            background: rgba(255,255,255,0.15) !important;
-          }
-          .aw-send {
+          .av-input::placeholder { color: rgba(255,255,255,0.4) !important; }
+          .av-send {
             width: 50px !important;
             height: 50px !important;
             border-radius: 50% !important;
             border: none !important;
             background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
             color: #1a1a2e !important;
-            font-size: 22px !important;
+            font-size: 20px !important;
             cursor: pointer !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            flex-shrink: 0 !important;
-            padding: 0 !important;
-            padding-left: 3px !important;
           }
-          .aw-send:active {
-            transform: scale(0.95) !important;
+          .av-send:active { transform: scale(0.95) !important; }
+
+          .av-actions {
+            display: flex !important;
+            gap: 12px !important;
           }
-          .aw-send:disabled {
-            opacity: 0.5 !important;
+          .av-btn {
+            flex: 1 !important;
+            padding: 14px !important;
+            border-radius: 14px !important;
+            border: none !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+          }
+          .av-btn:active { transform: scale(0.98) !important; }
+          .av-btn-voice {
+            background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
+            color: #1a1a2e !important;
+          }
+          .av-btn-voice.active {
+            background: #ef4444 !important;
+            color: #fff !important;
+          }
+          .av-btn-call {
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+            color: #fff !important;
+            text-decoration: none !important;
           }
         </style>
-        <div class="aw-overlay"></div>
-        <div class="aw-panel">
-          <div class="aw-header">
-            <div class="aw-avatar">🎤</div>
-            <div class="aw-info">
-              <div class="aw-name">${this.config.assistantName}</div>
-              <div class="aw-status">Online</div>
-            </div>
-            <button class="aw-close" type="button">×</button>
+
+        <div class="av-header">
+          <div class="av-title">${this.config.assistantName}</div>
+          <button class="av-close" type="button">×</button>
+        </div>
+
+        <div class="av-main">
+          <div class="av-orb" id="avOrb">🎤</div>
+          <div class="av-status" id="avStatus">Tap to start voice chat</div>
+          <div class="av-transcript" id="avTranscript"></div>
+        </div>
+
+        <div class="av-messages" id="avMessages"></div>
+
+        <div class="av-bottom">
+          <div class="av-input-row">
+            <input type="text" class="av-input" id="avInput" placeholder="Or type a message..." autocomplete="off" />
+            <button class="av-send" id="avSend" type="button">➤</button>
           </div>
-          <div class="aw-messages"></div>
-          <a class="aw-call" href="tel:${this.config.phone}">📞 Call ${this.config.phone}</a>
-          <div class="aw-inputbar">
-            <button class="aw-mic" type="button">🎙️</button>
-            <input type="text" class="aw-input" placeholder="Type a message..." autocomplete="off" />
-            <button class="aw-send" type="button">➤</button>
+          <div class="av-actions">
+            <button class="av-btn av-btn-voice" id="avVoice" type="button">🎙️ Start Voice Chat</button>
+            <a class="av-btn av-btn-call" href="tel:${this.config.phone}">📞 Call Us</a>
           </div>
         </div>
       `;
@@ -332,86 +348,151 @@
       document.body.style.overflow = 'hidden';
 
       // Events
-      this.widget.querySelector('.aw-overlay').onclick = () => this.close();
-      this.widget.querySelector('.aw-close').onclick = () => this.close();
-      this.widget.querySelector('.aw-mic').onclick = () => this.toggleListening();
-      this.widget.querySelector('.aw-send').onclick = () => this.send();
-      this.widget.querySelector('.aw-input').onkeypress = (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); this.send(); }
+      this.widget.querySelector('.av-close').onclick = () => this.close();
+      this.widget.querySelector('#avOrb').onclick = () => this.toggleVoiceMode();
+      this.widget.querySelector('#avVoice').onclick = () => this.toggleVoiceMode();
+      this.widget.querySelector('#avSend').onclick = () => {
+        const input = this.widget.querySelector('#avInput');
+        if (input.value.trim()) {
+          this.send(input.value.trim());
+          input.value = '';
+        }
+      };
+      this.widget.querySelector('#avInput').onkeypress = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const input = this.widget.querySelector('#avInput');
+          if (input.value.trim()) {
+            this.send(input.value.trim());
+            input.value = '';
+          }
+        }
       };
 
       // Greeting
       if (this.messages.length === 0) {
         this.addMessage('assistant', this.config.greeting);
+        // Play greeting audio
+        this.speakGreeting();
       }
     }
 
-    toggleListening() {
-      if (this.isListening) {
-        this.stopListening();
+    async speakGreeting() {
+      try {
+        const res = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Say hello', conversationHistory: [] })
+        });
+        const data = await res.json();
+        if (data.audio) {
+          this.setStatus('Speaking...', 'speaking');
+          await this.playAudio(data.audio);
+          this.setStatus('Tap to start voice chat', '');
+        }
+      } catch (e) {}
+    }
+
+    toggleVoiceMode() {
+      if (this.voiceModeActive) {
+        this.stopVoiceMode();
       } else {
-        this.startListening();
+        this.startVoiceMode();
       }
     }
 
-    startListening() {
+    startVoiceMode() {
       if (!this.recognition) {
-        alert('Voice input not available. Please type your message.');
+        alert('Voice chat not supported on this device. Please type your message or call us.');
         return;
       }
+
       try {
         this.recognition.start();
+        this.voiceModeActive = true;
         this.isListening = true;
-        this.widget.querySelector('.aw-mic').classList.add('listening');
+
+        const orb = this.widget.querySelector('#avOrb');
+        const btn = this.widget.querySelector('#avVoice');
+        orb.classList.add('listening');
+        btn.classList.add('active');
+        btn.innerHTML = '⏹️ Stop Voice Chat';
+
         this.setStatus('Listening...', 'listening');
       } catch (e) {
-        console.log('[Aria] Mic error:', e);
+        console.log('[Aria] Could not start voice:', e);
       }
     }
 
-    stopListening() {
-      if (this.recognition && this.isListening) {
+    stopVoiceMode() {
+      clearTimeout(this.silenceTimer);
+      this.voiceModeActive = false;
+      this.isListening = false;
+
+      if (this.recognition) {
         try { this.recognition.stop(); } catch (e) {}
       }
-      this.isListening = false;
-      const mic = this.widget?.querySelector('.aw-mic');
-      if (mic) mic.classList.remove('listening');
-      if (!this.isProcessing && !this.isPlaying) {
-        this.setStatus('Online', '');
+
+      const orb = this.widget?.querySelector('#avOrb');
+      const btn = this.widget?.querySelector('#avVoice');
+      if (orb) orb.classList.remove('listening', 'speaking', 'thinking');
+      if (btn) {
+        btn.classList.remove('active');
+        btn.innerHTML = '🎙️ Start Voice Chat';
+      }
+
+      this.setStatus('Tap to start voice chat', '');
+    }
+
+    updateWaveform(active) {
+      const orb = this.widget?.querySelector('#avOrb');
+      if (orb && this.voiceModeActive) {
+        if (active) {
+          orb.classList.add('listening');
+        }
+      }
+    }
+
+    setStatus(text, cls = '') {
+      const el = this.widget?.querySelector('#avStatus');
+      if (el) {
+        el.textContent = text;
+        el.className = 'av-status' + (cls ? ' ' + cls : '');
+      }
+
+      const orb = this.widget?.querySelector('#avOrb');
+      if (orb) {
+        orb.classList.remove('listening', 'speaking', 'thinking');
+        if (cls) orb.classList.add(cls);
       }
     }
 
     addMessage(role, text) {
       this.messages.push({ role, content: text });
-      const container = this.widget?.querySelector('.aw-messages');
+      const container = this.widget?.querySelector('#avMessages');
       if (!container) return;
       const div = document.createElement('div');
-      div.className = 'aw-msg ' + role;
+      div.className = 'av-msg ' + role;
       div.textContent = text;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
-    }
 
-    setStatus(text, cls = '') {
-      const el = this.widget?.querySelector('.aw-status');
-      if (el) {
-        el.textContent = text;
-        el.className = 'aw-status' + (cls ? ' ' + cls : '');
+      // Update transcript display
+      const transcript = this.widget?.querySelector('#avTranscript');
+      if (transcript) {
+        transcript.textContent = role === 'user' ? `You: "${text}"` : '';
       }
     }
 
-    async send() {
-      const input = this.widget?.querySelector('.aw-input');
-      const sendBtn = this.widget?.querySelector('.aw-send');
-      if (!input || !sendBtn) return;
-
-      const text = input.value.trim();
+    async send(text) {
       if (!text || this.isProcessing) return;
 
-      input.value = '';
-      sendBtn.disabled = true;
-      this.isProcessing = true;
+      // Stop listening while processing
+      if (this.recognition && this.isListening) {
+        try { this.recognition.stop(); } catch (e) {}
+      }
 
+      this.isProcessing = true;
       this.addMessage('user', text);
       this.setStatus('Thinking...', 'thinking');
 
@@ -430,22 +511,28 @@
 
         if (data.success && data.response) {
           this.addMessage('assistant', data.response);
+
           if (data.audio) {
             this.setStatus('Speaking...', 'speaking');
             await this.playAudio(data.audio);
           }
         } else {
-          this.addMessage('assistant', 'Sorry, something went wrong. Please try again.');
+          this.addMessage('assistant', 'Sorry, I had trouble with that. Please try again.');
         }
       } catch (err) {
         console.error('[Aria] Error:', err);
         this.addMessage('assistant', 'Connection error. Please try again or call us.');
       }
 
-      this.setStatus('Online', '');
       this.isProcessing = false;
-      sendBtn.disabled = false;
-      input.focus();
+
+      // Resume listening if voice mode is active
+      if (this.voiceModeActive) {
+        this.setStatus('Listening...', 'listening');
+        try { this.recognition.start(); } catch (e) {}
+      } else {
+        this.setStatus('Tap to start voice chat', '');
+      }
     }
 
     playAudio(base64) {
@@ -454,9 +541,22 @@
         try {
           this.currentAudio = new Audio('data:audio/mp3;base64,' + base64);
           this.isPlaying = true;
-          this.currentAudio.onended = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
-          this.currentAudio.onerror = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
-          this.currentAudio.play().catch(() => { this.isPlaying = false; this.currentAudio = null; resolve(); });
+
+          this.currentAudio.onended = () => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          };
+          this.currentAudio.onerror = () => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          };
+          this.currentAudio.play().catch(() => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          });
         } catch (e) { resolve(); }
       });
     }
