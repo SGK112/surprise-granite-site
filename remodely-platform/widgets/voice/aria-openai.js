@@ -1,468 +1,471 @@
 /**
- * ARIA VOICE WIDGET - OpenAI TTS
+ * ARIA CHAT WIDGET
+ * Simple, reliable text chat with OpenAI voice responses
+ * Mobile-first design that actually works
  */
 (function() {
   'use strict';
+
+  // Prevent double initialization
+  if (window.AriaOpenAI) return;
 
   class AriaOpenAI {
     constructor(config = {}) {
       this.config = {
         apiEndpoint: config.apiEndpoint || 'https://voiceflow-crm.onrender.com',
         assistantName: config.assistantName || 'Aria',
-        greeting: config.greeting || "Hey! I'm Aria. How can I help you today?",
+        greeting: config.greeting || "Hi! I'm Aria. How can I help you today?",
+        phone: config.phone || '(602) 833-7194',
         ...config
       };
-
-      this.state = {
-        isOpen: false,
-        isListening: false,
-        isSpeaking: false,
-        isProcessing: false,
-        voiceChatActive: false,
-        messages: []
-      };
-
-      this.recognition = null;
-      this.overlay = null;
+      this.messages = [];
+      this.isProcessing = false;
+      this.isPlaying = false;
+      this.currentAudio = null;
+      this.widget = null;
     }
 
     init() {
-      this.setupRecognition();
-      console.log('Aria initialized');
-    }
-
-    setupRecognition() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        console.log('Speech recognition not supported');
-        return;
-      }
-
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognition = new SR();
-      this.recognition.continuous = false;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'en-US';
-
-      const self = this;
-
-      this.recognition.onstart = function() {
-        console.log('Listening started');
-        self.state.isListening = true;
-        self.updateListeningUI();
-      };
-
-      this.recognition.onresult = function(event) {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        self.showTranscript(transcript);
-
-        if (event.results[event.resultIndex].isFinal) {
-          console.log('Final transcript:', transcript);
-          self.sendMessage(transcript);
-        }
-      };
-
-      this.recognition.onerror = function(event) {
-        console.error('Recognition error:', event.error);
-        self.state.isListening = false;
-        self.updateListeningUI();
-      };
-
-      this.recognition.onend = function() {
-        console.log('Listening ended');
-        self.state.isListening = false;
-        self.updateListeningUI();
-
-        // Auto-restart if voice chat is active
-        if (self.state.voiceChatActive && self.state.isOpen && !self.state.isSpeaking && !self.state.isProcessing) {
-          setTimeout(function() {
-            if (self.state.voiceChatActive && self.state.isOpen) {
-              self.startListening();
-            }
-          }, 500);
-        }
-      };
+      console.log('[Aria] Ready');
     }
 
     open() {
-      if (!this.overlay) {
-        this.createUI();
+      if (this.widget) {
+        this.widget.style.display = 'block';
+        this.focusInput();
+        return;
       }
-      this.overlay.style.display = 'flex';
-      this.state.isOpen = true;
-
-      if (this.state.messages.length === 0) {
-        this.addMessage('assistant', this.config.greeting);
-      }
+      this.createWidget();
     }
 
     close() {
-      if (this.overlay) {
-        this.overlay.style.display = 'none';
+      if (this.widget) {
+        this.widget.style.display = 'none';
       }
-      this.state.isOpen = false;
-      this.stopVoiceChat();
+      this.stopAudio();
     }
 
-    createUI() {
-      // Create overlay
-      this.overlay = document.createElement('div');
-      this.overlay.id = 'aria-widget-overlay';
+    createWidget() {
+      // Create container
+      this.widget = document.createElement('div');
+      this.widget.id = 'aria-widget-container';
 
-      this.overlay.innerHTML = `
-        <style>
-          #aria-widget-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999999;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-          }
-          #aria-widget-box {
-            background: #1e1e2e;
-            width: 340px;
-            max-width: 95vw;
-            max-height: 70vh;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-          }
-          #aria-widget-header {
-            background: #2a2a3e;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-          #aria-widget-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #f9cb00;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          #aria-widget-avatar.listening {
-            background: #ef4444;
-            animation: pulse 1s infinite;
-          }
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-          }
-          #aria-widget-avatar svg {
-            width: 18px;
-            height: 18px;
-            stroke: #1e1e2e;
-          }
-          #aria-widget-avatar.listening svg {
-            stroke: white;
-          }
-          #aria-widget-title {
-            flex: 1;
-            color: white;
-            font-weight: 600;
-            font-size: 15px;
-          }
-          #aria-widget-status {
-            color: rgba(255,255,255,0.6);
-            font-size: 11px;
-          }
-          #aria-widget-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 20px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          #aria-widget-close:hover {
-            background: rgba(255,255,255,0.2);
-          }
-          #aria-widget-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            min-height: 150px;
-            max-height: 250px;
-          }
-          .aria-msg {
-            margin-bottom: 8px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.4;
-            max-width: 85%;
-          }
-          .aria-msg.assistant {
-            background: rgba(255,255,255,0.1);
-            color: white;
-          }
-          .aria-msg.user {
-            background: #f9cb00;
-            color: #1e1e2e;
-            margin-left: auto;
-          }
-          #aria-widget-transcript {
-            padding: 8px 12px;
-            margin: 0 12px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            font-style: italic;
-            min-height: 28px;
-          }
-          #aria-widget-controls {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          #aria-widget-voice-btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 24px;
-            border: none;
-            background: linear-gradient(135deg, #f9cb00, #e5b800);
-            color: #1e1e2e;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-          }
-          #aria-widget-voice-btn.active {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-          }
-          #aria-widget-voice-btn svg {
-            width: 18px;
-            height: 18px;
-          }
-          #aria-widget-input-row {
-            display: flex;
-            gap: 8px;
-          }
-          #aria-widget-input {
-            flex: 1;
-            padding: 10px 14px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05);
-            color: white;
-            font-size: 13px;
-            outline: none;
-          }
-          #aria-widget-send {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: none;
-            background: #f9cb00;
-            color: #1e1e2e;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          #aria-widget-send svg {
-            width: 16px;
-            height: 16px;
-          }
-        </style>
-        <div id="aria-widget-box">
-          <div id="aria-widget-header">
-            <div id="aria-widget-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              </svg>
-            </div>
-            <div>
-              <div id="aria-widget-title">${this.config.assistantName}</div>
-              <div id="aria-widget-status">Ready</div>
-            </div>
-            <button id="aria-widget-close" type="button">&times;</button>
-          </div>
-          <div id="aria-widget-messages"></div>
-          <div id="aria-widget-transcript"></div>
-          <div id="aria-widget-controls">
-            <button id="aria-widget-voice-btn" type="button">
+      // Build HTML
+      this.widget.innerHTML = `
+        <div id="aria-backdrop"></div>
+        <div id="aria-panel">
+          <div id="aria-header">
+            <div id="aria-avatar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
               </svg>
-              <span>Start Voice Chat</span>
-            </button>
-            <div id="aria-widget-input-row">
-              <input type="text" id="aria-widget-input" placeholder="Type a message..." />
-              <button id="aria-widget-send" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                </svg>
-              </button>
             </div>
+            <div id="aria-title">
+              <span id="aria-name">${this.config.assistantName}</span>
+              <span id="aria-status">Online</span>
+            </div>
+            <button id="aria-close" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
+
+          <div id="aria-chat"></div>
+
+          <a id="aria-phone" href="tel:${this.config.phone}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>Call ${this.config.phone}</span>
+          </a>
+
+          <form id="aria-form">
+            <input type="text" id="aria-input" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit" id="aria-send" aria-label="Send">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+            </button>
+          </form>
         </div>
       `;
 
-      document.body.appendChild(this.overlay);
+      // Add styles
+      const style = document.createElement('style');
+      style.textContent = this.getStyles();
+      this.widget.appendChild(style);
 
-      // Event listeners
-      const self = this;
+      // Add to page
+      document.body.appendChild(this.widget);
 
-      // Close on overlay click
-      this.overlay.addEventListener('click', function(e) {
-        if (e.target === self.overlay) {
-          self.close();
+      // Setup events
+      this.setupEvents();
+
+      // Show greeting
+      if (this.messages.length === 0) {
+        this.addMessage('assistant', this.config.greeting);
+      }
+
+      // Focus input
+      this.focusInput();
+    }
+
+    getStyles() {
+      return `
+        #aria-widget-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 2147483647;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        #aria-backdrop {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+        }
+
+        #aria-panel {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: #1a1a2e;
+          border-radius: 20px 20px 0 0;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        }
+
+        @media (min-width: 500px) {
+          #aria-panel {
+            bottom: 20px;
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            width: 400px;
+            max-height: 600px;
+            border-radius: 20px;
+          }
+        }
+
+        #aria-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 20px;
+          background: linear-gradient(135deg, #252538 0%, #1f1f30 100%);
+          border-radius: 20px 20px 0 0;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (min-width: 500px) {
+          #aria-header {
+            border-radius: 20px 20px 0 0;
+          }
+        }
+
+        #aria-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #f9cb00, #ff9500);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        #aria-avatar svg {
+          width: 22px;
+          height: 22px;
+          stroke: #1a1a2e;
+        }
+
+        #aria-title {
+          flex: 1;
+          min-width: 0;
+        }
+
+        #aria-name {
+          display: block;
+          color: #fff;
+          font-size: 17px;
+          font-weight: 600;
+        }
+
+        #aria-status {
+          display: block;
+          color: rgba(255,255,255,0.5);
+          font-size: 13px;
+        }
+
+        #aria-status.thinking {
+          color: #f9cb00;
+        }
+
+        #aria-status.speaking {
+          color: #22c55e;
+        }
+
+        #aria-close {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        #aria-close svg {
+          width: 22px;
+          height: 22px;
+          stroke: #fff;
+        }
+
+        #aria-close:active {
+          background: rgba(255,255,255,0.2);
+          transform: scale(0.95);
+        }
+
+        #aria-chat {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px;
+          min-height: 200px;
+          max-height: 50vh;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .aria-msg {
+          max-width: 85%;
+          padding: 12px 16px;
+          border-radius: 18px;
+          margin-bottom: 10px;
+          font-size: 15px;
+          line-height: 1.4;
+          word-wrap: break-word;
+        }
+
+        .aria-msg.assistant {
+          background: rgba(255,255,255,0.1);
+          color: #fff;
+          margin-right: auto;
+          border-bottom-left-radius: 6px;
+        }
+
+        .aria-msg.user {
+          background: linear-gradient(135deg, #f9cb00, #ff9500);
+          color: #1a1a2e;
+          margin-left: auto;
+          border-bottom-right-radius: 6px;
+          font-weight: 500;
+        }
+
+        .aria-msg.typing {
+          color: rgba(255,255,255,0.6);
+        }
+
+        .aria-msg.typing::after {
+          content: '';
+          animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+          0%, 20% { content: '.'; }
+          40% { content: '..'; }
+          60%, 100% { content: '...'; }
+        }
+
+        #aria-phone {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin: 0 16px 12px;
+          padding: 14px;
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          color: #fff;
+          text-decoration: none;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 600;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        #aria-phone svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        #aria-phone:active {
+          transform: scale(0.98);
+          opacity: 0.9;
+        }
+
+        #aria-form {
+          display: flex;
+          gap: 10px;
+          padding: 16px 16px 20px;
+          background: rgba(0,0,0,0.2);
+        }
+
+        @supports (padding: env(safe-area-inset-bottom)) {
+          #aria-form {
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+          }
+        }
+
+        #aria-input {
+          flex: 1;
+          padding: 14px 18px;
+          border-radius: 24px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          font-size: 16px;
+          outline: none;
+          -webkit-appearance: none;
+        }
+
+        #aria-input::placeholder {
+          color: rgba(255,255,255,0.4);
+        }
+
+        #aria-input:focus {
+          border-color: rgba(249,203,0,0.5);
+          background: rgba(255,255,255,0.12);
+        }
+
+        #aria-send {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: none;
+          background: linear-gradient(135deg, #f9cb00, #ff9500);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        #aria-send svg {
+          width: 22px;
+          height: 22px;
+          stroke: #1a1a2e;
+        }
+
+        #aria-send:active {
+          transform: scale(0.95);
+        }
+
+        #aria-send:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `;
+    }
+
+    setupEvents() {
+      const backdrop = this.widget.querySelector('#aria-backdrop');
+      const closeBtn = this.widget.querySelector('#aria-close');
+      const form = this.widget.querySelector('#aria-form');
+
+      // Close events
+      backdrop.addEventListener('click', () => this.close());
+      closeBtn.addEventListener('click', () => this.close());
+
+      // Form submit
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.send();
+      });
+
+      // ESC key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.widget.style.display !== 'none') {
+          this.close();
         }
       });
-
-      // Close button
-      document.getElementById('aria-widget-close').addEventListener('click', function() {
-        self.close();
-      });
-
-      // Voice button
-      document.getElementById('aria-widget-voice-btn').addEventListener('click', function() {
-        self.toggleVoiceChat();
-      });
-
-      // Send button
-      document.getElementById('aria-widget-send').addEventListener('click', function() {
-        self.sendTextInput();
-      });
-
-      // Enter key
-      document.getElementById('aria-widget-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          self.sendTextInput();
-        }
-      });
     }
 
-    toggleVoiceChat() {
-      if (this.state.voiceChatActive) {
-        this.stopVoiceChat();
-      } else {
-        this.startVoiceChat();
+    focusInput() {
+      setTimeout(() => {
+        const input = this.widget.querySelector('#aria-input');
+        if (input) input.focus();
+      }, 100);
+    }
+
+    addMessage(role, text) {
+      this.messages.push({ role, content: text });
+
+      const chat = this.widget.querySelector('#aria-chat');
+      const msg = document.createElement('div');
+      msg.className = 'aria-msg ' + role;
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+
+      return msg;
+    }
+
+    setStatus(text, className = '') {
+      const status = this.widget.querySelector('#aria-status');
+      if (status) {
+        status.textContent = text;
+        status.className = className;
       }
     }
 
-    startVoiceChat() {
-      if (!this.recognition) {
-        this.addMessage('assistant', "Voice not supported. Please type instead.");
-        return;
-      }
-      this.state.voiceChatActive = true;
-      this.updateVoiceButton();
-      this.startListening();
+    showTyping() {
+      const chat = this.widget.querySelector('#aria-chat');
+      const typing = document.createElement('div');
+      typing.className = 'aria-msg assistant typing';
+      typing.id = 'aria-typing';
+      typing.textContent = 'Typing';
+      chat.appendChild(typing);
+      chat.scrollTop = chat.scrollHeight;
     }
 
-    stopVoiceChat() {
-      this.state.voiceChatActive = false;
-      this.stopListening();
-      this.updateVoiceButton();
-      this.setStatus('Ready');
+    hideTyping() {
+      const typing = this.widget.querySelector('#aria-typing');
+      if (typing) typing.remove();
     }
 
-    startListening() {
-      if (!this.recognition || this.state.isListening) return;
-      try {
-        this.recognition.start();
-        this.setStatus('Listening...');
-      } catch (e) {
-        console.error('Start error:', e);
-      }
-    }
+    async send() {
+      const input = this.widget.querySelector('#aria-input');
+      const sendBtn = this.widget.querySelector('#aria-send');
+      const text = input.value.trim();
 
-    stopListening() {
-      if (this.recognition && this.state.isListening) {
-        try {
-          this.recognition.stop();
-        } catch (e) {}
-      }
-      this.state.isListening = false;
-      this.updateListeningUI();
-    }
+      if (!text || this.isProcessing) return;
 
-    updateListeningUI() {
-      const avatar = document.getElementById('aria-widget-avatar');
-      if (avatar) {
-        if (this.state.isListening) {
-          avatar.classList.add('listening');
-        } else {
-          avatar.classList.remove('listening');
-        }
-      }
-    }
+      // Clear input and disable
+      input.value = '';
+      sendBtn.disabled = true;
+      this.isProcessing = true;
 
-    updateVoiceButton() {
-      const btn = document.getElementById('aria-widget-voice-btn');
-      if (btn) {
-        if (this.state.voiceChatActive) {
-          btn.classList.add('active');
-          btn.querySelector('span').textContent = 'End Voice Chat';
-        } else {
-          btn.classList.remove('active');
-          btn.querySelector('span').textContent = 'Start Voice Chat';
-        }
-      }
-    }
-
-    setStatus(text) {
-      const el = document.getElementById('aria-widget-status');
-      if (el) el.textContent = text;
-    }
-
-    showTranscript(text) {
-      const el = document.getElementById('aria-widget-transcript');
-      if (el) el.textContent = text;
-    }
-
-    sendTextInput() {
-      const input = document.getElementById('aria-widget-input');
-      if (input && input.value.trim()) {
-        this.sendMessage(input.value.trim());
-        input.value = '';
-      }
-    }
-
-    addMessage(role, content) {
-      this.state.messages.push({ role, content });
-
-      const container = document.getElementById('aria-widget-messages');
-      if (container) {
-        const div = document.createElement('div');
-        div.className = 'aria-msg ' + role;
-        div.textContent = content;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-
-    async sendMessage(text) {
+      // Add user message
       this.addMessage('user', text);
-      this.showTranscript('');
-      this.state.isProcessing = true;
-      this.setStatus('Thinking...');
+
+      // Show typing
+      this.showTyping();
+      this.setStatus('Thinking...', 'thinking');
 
       try {
         const res = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-chat', {
@@ -470,65 +473,77 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: text,
-            conversationHistory: this.state.messages.slice(-6)
+            conversationHistory: this.messages.slice(-6)
           })
         });
 
         const data = await res.json();
+        this.hideTyping();
 
-        if (data.response) {
+        if (data.success && data.response) {
           this.addMessage('assistant', data.response);
 
+          // Play audio
           if (data.audio) {
+            this.setStatus('Speaking...', 'speaking');
             await this.playAudio(data.audio);
-          } else {
-            this.setStatus('Ready');
           }
+        } else {
+          this.addMessage('assistant', 'Sorry, something went wrong. Please try again or call us.');
         }
       } catch (err) {
-        console.error('API error:', err);
-        this.addMessage('assistant', 'Sorry, connection error. Try again.');
-        this.setStatus('Ready');
+        console.error('[Aria] Error:', err);
+        this.hideTyping();
+        this.addMessage('assistant', 'Connection error. Please try again or call us directly.');
       }
 
-      this.state.isProcessing = false;
+      this.setStatus('Online', '');
+      this.isProcessing = false;
+      sendBtn.disabled = false;
+      input.focus();
     }
 
     playAudio(base64) {
-      const self = this;
-      return new Promise(function(resolve) {
-        self.state.isSpeaking = true;
-        self.setStatus('Speaking...');
+      return new Promise((resolve) => {
+        this.stopAudio();
 
-        const audio = new Audio('data:audio/mp3;base64,' + base64);
+        try {
+          this.currentAudio = new Audio('data:audio/mp3;base64,' + base64);
+          this.isPlaying = true;
 
-        audio.onended = function() {
-          self.state.isSpeaking = false;
-          if (self.state.voiceChatActive && self.state.isOpen) {
-            self.setStatus('Listening...');
-            setTimeout(function() {
-              self.startListening();
-            }, 300);
-          } else {
-            self.setStatus('Ready');
-          }
+          this.currentAudio.onended = () => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          };
+
+          this.currentAudio.onerror = () => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          };
+
+          this.currentAudio.play().catch(() => {
+            this.isPlaying = false;
+            this.currentAudio = null;
+            resolve();
+          });
+        } catch (e) {
+          console.error('[Aria] Audio error:', e);
           resolve();
-        };
-
-        audio.onerror = function() {
-          self.state.isSpeaking = false;
-          self.setStatus('Ready');
-          resolve();
-        };
-
-        audio.play().catch(function() {
-          self.state.isSpeaking = false;
-          self.setStatus('Ready');
-          resolve();
-        });
+        }
       });
+    }
+
+    stopAudio() {
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+        this.isPlaying = false;
+      }
     }
   }
 
+  // Export
   window.AriaOpenAI = AriaOpenAI;
 })();
