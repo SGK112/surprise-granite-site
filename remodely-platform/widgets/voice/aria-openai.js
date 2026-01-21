@@ -473,10 +473,9 @@
         };
       });
 
-      // Greeting
+      // Greeting (text only - no auto-voice)
       if (this.messages.length === 0) {
         this.addMessage('assistant', this.config.greeting);
-        this.speakGreeting();
       }
     }
 
@@ -486,18 +485,6 @@
         this.send(input.value.trim());
         input.value = '';
       }
-    }
-
-    async speakGreeting() {
-      try {
-        const res = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'Say hello', conversationHistory: [] })
-        });
-        const data = await res.json();
-        if (data.audio) await this.playAudio(data.audio);
-      } catch (e) {}
     }
 
     toggleVoiceMode() {
@@ -582,7 +569,8 @@
 
         if (data.success && data.response) {
           this.addMessage('assistant', data.response);
-          if (data.audio) {
+          // Only play audio if voice mode is active
+          if (data.audio && this.voiceModeActive) {
             this.setStatus('Speaking...', '');
             await this.playAudio(data.audio);
           }

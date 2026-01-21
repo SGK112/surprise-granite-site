@@ -4329,13 +4329,33 @@
     }
 
     @media (max-width: 480px) {
-      /* Show mobile agenda view on small phones */
-      #page-calendar .calendar-container {
-        display: none;
+      /* On very small phones, make upcoming events more prominent */
+      #page-calendar > .card:first-child {
+        margin-bottom: 16px;
       }
 
-      #page-calendar .calendar-mobile-agenda {
-        display: block;
+      /* Smaller calendar grid for very small phones */
+      #page-calendar .calendar-header-row,
+      #page-calendar .calendar-grid {
+        min-width: 480px;
+      }
+
+      #page-calendar .calendar-day {
+        min-height: 60px;
+        padding: 2px;
+      }
+
+      #page-calendar .calendar-event {
+        font-size: 8px;
+        padding: 1px 3px;
+      }
+
+      /* Make upcoming events more visible as primary view */
+      #page-calendar > .card:last-child {
+        order: -1;
+        margin-top: 0;
+        margin-bottom: 16px;
+        border: 2px solid var(--gold-primary);
       }
     }
 
@@ -4523,6 +4543,62 @@
       }
     }
 
+    /* === GLOBAL SEARCH BAR MOBILE STYLES === */
+    @media (max-width: 768px) {
+      .search-bar-modern {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .search-bar-modern input {
+        width: 100%;
+        min-height: 44px;
+        font-size: 16px !important;
+      }
+
+      /* Input groups full width */
+      .input-group,
+      .form-group {
+        width: 100%;
+      }
+
+      /* Button groups stack on mobile */
+      .btn-group,
+      .button-group {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn-group .btn,
+      .btn-group .btn-modern,
+      .button-group .btn,
+      .button-group .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Table header layouts */
+      .table-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+      }
+
+      .table-header > div {
+        width: 100%;
+      }
+
+      .table-header .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .table-title {
+        margin-bottom: 8px;
+      }
+    }
+
     /* === GLOBAL MOBILE MODAL IMPROVEMENTS === */
     @media (max-width: 768px) {
       /* All modals bottom sheet style */
@@ -4674,6 +4750,202 @@
       .fab-modern svg {
         width: 24px;
         height: 24px;
+      }
+    }
+
+    /* === GLOBAL MOBILE POLISH === */
+    @media (max-width: 991px) {
+      /* Smooth scrolling for all scrollable areas */
+      html, body {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Prevent horizontal overflow */
+      body {
+        overflow-x: hidden;
+      }
+
+      /* Better focus states for accessibility */
+      input:focus,
+      select:focus,
+      textarea:focus,
+      button:focus,
+      .btn:focus,
+      .btn-modern:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.3);
+      }
+
+      /* Prevent text selection on interactive elements */
+      button,
+      .btn,
+      .btn-modern,
+      .nav-item,
+      .filter-btn,
+      .filter-pill,
+      .tab-btn {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Loading states */
+      .loading,
+      .skeleton {
+        background: linear-gradient(90deg, var(--dark-elevated) 25%, var(--dark-surface) 50%, var(--dark-elevated) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      /* Better spacing for content areas */
+      .content-area {
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      /* Card spacing on mobile */
+      .card {
+        margin-bottom: 16px;
+        border-radius: 12px;
+      }
+
+      .card-header {
+        padding: 14px 16px;
+      }
+
+      .card-body {
+        padding: 16px;
+      }
+
+      /* Pull to refresh indicator area */
+      .main-content {
+        padding-top: 0;
+      }
+
+      /* Toast notifications mobile positioning */
+      .toast,
+      .toast-notification {
+        left: 16px !important;
+        right: 16px !important;
+        bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+        max-width: none !important;
+        border-radius: 12px !important;
+      }
+
+      /* Context menu mobile */
+      .context-menu {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding-bottom: env(safe-area-inset-bottom);
+        animation: slideUp 0.2s ease;
+      }
+
+      .context-menu-item {
+        padding: 16px 20px;
+        min-height: 52px;
+        font-size: 15px;
+      }
+
+      /* Dropdown menus mobile */
+      .dropdown-menu {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        max-width: 100% !important;
+        max-height: 60vh !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Spinner sizing */
+      .spinner,
+      .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 3px;
+      }
+
+      /* Status badges */
+      .status-badge,
+      .badge-modern {
+        padding: 5px 10px;
+        font-size: 11px;
+        border-radius: 20px;
+      }
+
+      /* Action buttons consistent sizing */
+      .actions-row,
+      .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions-row .btn-modern,
+      .action-buttons .btn-modern {
+        flex: 1 1 auto;
+        min-width: 80px;
+        justify-content: center;
+      }
+
+      /* Transitions for smoother animations */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Safe area padding for fixed elements */
+      .fixed-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .fixed-top {
+        padding-top: env(safe-area-inset-top);
+      }
+    }
+
+    /* Very small phones adjustments */
+    @media (max-width: 360px) {
+      .content-area {
+        padding: 12px;
+      }
+
+      .card-header,
+      .card-body {
+        padding: 12px;
+      }
+
+      .btn-modern {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      .stats-grid {
+        gap: 8px;
+      }
+
+      .stat-card {
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 18px;
+      }
+
+      .stat-label {
+        font-size: 11px;
       }
     }
 
