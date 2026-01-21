@@ -168,9 +168,14 @@
     hub.id = HUB_ID;
     hub.innerHTML = `
       <style>
-        /* Hide legacy calculator widget - now integrated into hub */
+        /* Hide legacy widgets - now integrated into hub */
         .sg-widget,
-        #sgWidget {
+        #sgWidget,
+        .aria-el-btn,
+        .aria-voice-btn,
+        .aria-realtime-btn,
+        [class*="aria"][class*="floating"],
+        [class*="aria"][class*="trigger"]:not([data-hub-controlled]) {
           display: none !important;
         }
 

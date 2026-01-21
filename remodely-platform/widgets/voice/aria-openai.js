@@ -96,13 +96,14 @@ GOALS:
         if (this.container) {
           this.renderInline();
         }
-      } else {
+      } else if (this.config.triggerType !== 'none') {
+        // Only create floating button if not controlled by another UI (like Tool Hub)
         this.createFloatingButton();
       }
 
       this.injectStyles();
       this.initSpeechRecognition();
-      console.log('Aria ElevenLabs Voice Widget initialized');
+      console.log('Aria OpenAI Voice Widget initialized');
     }
 
     // Initialize speech recognition
