@@ -189,11 +189,11 @@ GOALS:
         .aria-el-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.8);
+          background: rgba(0,0,0,0.9);
           backdrop-filter: blur(8px);
           z-index: 99999;
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
           opacity: 0;
           visibility: hidden;
@@ -203,77 +203,89 @@ GOALS:
 
         .aria-el-modal {
           background: ${isDark ? secondary : '#ffffff'};
-          border-radius: 24px;
+          border-radius: 20px 20px 0 0;
           width: 100%;
-          max-width: 400px;
-          max-height: 85vh;
-          overflow: hidden;
-          transform: translateY(20px);
-          transition: all 0.3s;
+          max-width: 500px;
+          height: 90vh;
+          max-height: 700px;
+          display: flex;
+          flex-direction: column;
+          transform: translateY(100%);
+          transition: all 0.3s ease-out;
         }
         .aria-el-overlay.open .aria-el-modal { transform: translateY(0); }
 
         .aria-el-header {
-          padding: 24px;
+          padding: 16px 20px;
           background: linear-gradient(135deg, ${secondary}, ${this.adjustColor(secondary, 15)});
           color: #fff;
-          text-align: center;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-shrink: 0;
         }
 
         .aria-el-avatar {
-          width: 80px;
-          height: 80px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           background: linear-gradient(135deg, ${primary}, ${this.adjustColor(primary, -30)});
-          margin: 0 auto 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          position: relative;
+          flex-shrink: 0;
         }
-        .aria-el-avatar svg { width: 40px; height: 40px; color: ${secondary}; }
+        .aria-el-avatar svg { width: 24px; height: 24px; color: ${secondary}; }
         .aria-el-avatar.speaking { animation: speakingPulse 0.8s infinite; }
         .aria-el-avatar.listening { background: #ef4444; }
 
         @keyframes speakingPulse {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
+          50% { transform: scale(1.08); }
         }
 
+        .aria-el-header-info { flex: 1; }
+        .aria-el-name { font-size: 18px; font-weight: 600; }
+        .aria-el-status { font-size: 12px; opacity: 0.8; }
+
         .aria-el-close {
-          position: absolute;
-          top: 12px;
-          right: 12px;
           background: rgba(255,255,255,0.2);
           border: none;
-          width: 36px;
-          height: 36px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           color: #fff;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: background 0.2s;
         }
-
-        .aria-el-name { font-size: 24px; font-weight: 700; }
-        .aria-el-status { font-size: 14px; opacity: 0.8; margin-top: 4px; }
+        .aria-el-close:hover { background: rgba(255,255,255,0.3); }
+        .aria-el-close svg { width: 24px; height: 24px; }
 
         .aria-el-body {
-          padding: 20px;
+          flex: 1;
+          padding: 16px;
           color: ${isDark ? '#fff' : '#1a1a2e'};
-          max-height: 300px;
           overflow-y: auto;
+          display: flex;
+          flex-direction: column;
         }
 
         .aria-el-messages {
           display: flex;
           flex-direction: column;
           gap: 12px;
+          flex: 1;
         }
 
         .aria-el-msg {
           padding: 12px 16px;
-          border-radius: 16px;
-          font-size: 14px;
-          line-height: 1.5;
+          border-radius: 18px;
+          font-size: 15px;
+          line-height: 1.4;
           max-width: 85%;
         }
         .aria-el-msg.assistant {
@@ -392,8 +404,16 @@ GOALS:
         .aria-el-footer a { color: ${primary}; text-decoration: none; }
 
         @media (max-width: 480px) {
-          .aria-el-modal { max-width: 100%; border-radius: 20px 20px 0 0; }
-          .aria-el-overlay { align-items: flex-end; }
+          .aria-el-modal {
+            max-width: 100%;
+            height: 100vh;
+            max-height: 100vh;
+            border-radius: 0;
+          }
+          .aria-el-header { padding: 12px 16px; }
+          .aria-el-body { padding: 12px; }
+          .aria-el-voice-chat { padding: 12px 16px; }
+          .aria-el-input { padding: 12px 16px; }
         }
       `;
       document.head.appendChild(styles);
@@ -447,20 +467,22 @@ GOALS:
       overlay.className = 'aria-el-overlay aria-el';
       overlay.innerHTML = `
         <div class="aria-el-modal">
-          <div class="aria-el-header" style="position: relative;">
-            <button class="aria-el-close" id="ariaElClose">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+          <div class="aria-el-header">
             <div class="aria-el-avatar" id="ariaElAvatar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
               </svg>
             </div>
-            <div class="aria-el-name">${this.config.assistantName}</div>
-            <div class="aria-el-status" id="ariaElStatus">Ready to help</div>
+            <div class="aria-el-header-info">
+              <div class="aria-el-name">${this.config.assistantName}</div>
+              <div class="aria-el-status" id="ariaElStatus">Ready to help</div>
+            </div>
+            <button class="aria-el-close" id="ariaElClose">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
 
           <div class="aria-el-body">
@@ -741,62 +763,59 @@ GOALS:
       };
     }
 
-    // Play audio (base64)
+    // Play audio (base64) - uses HTML5 Audio for better mobile compatibility
     async playAudio(base64Audio) {
-      try {
-        this.state.isSpeaking = true;
-        this.updateUI();
-        this.updateStatus('Speaking...');
+      return new Promise((resolve) => {
+        try {
+          this.state.isSpeaking = true;
+          this.updateUI();
+          this.updateStatus('Speaking...');
 
-        // Initialize audio context if needed
-        if (!this.audioContext) {
-          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
+          // Use HTML5 Audio element - more reliable on mobile
+          const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
 
-        // Resume if suspended
-        if (this.audioContext.state === 'suspended') {
-          await this.audioContext.resume();
-        }
+          audio.onended = () => {
+            this.state.isSpeaking = false;
+            this.updateUI();
 
-        // Decode base64 to array buffer
-        const binaryString = atob(base64Audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
+            // Auto-restart listening after speaking if in voice chat mode
+            if (this.state.voiceChatActive && this.state.isOpen) {
+              this.updateStatus('Listening...');
+              setTimeout(() => {
+                if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking) {
+                  this.startListening();
+                }
+              }, 300);
+            } else {
+              this.updateStatus('Ready to help');
+            }
+            resolve();
+          };
 
-        // Decode audio data
-        const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
+          audio.onerror = (e) => {
+            console.error('Audio playback error:', e);
+            this.state.isSpeaking = false;
+            this.updateUI();
+            this.updateStatus('Ready to help');
+            resolve();
+          };
 
-        // Play
-        const source = this.audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(this.audioContext.destination);
+          // Play the audio
+          audio.play().catch(err => {
+            console.error('Audio play failed:', err);
+            this.state.isSpeaking = false;
+            this.updateUI();
+            this.updateStatus('Ready to help');
+            resolve();
+          });
 
-        source.onended = () => {
+        } catch (error) {
+          console.error('Audio setup error:', error);
           this.state.isSpeaking = false;
           this.updateUI();
-
-          // Auto-restart listening after speaking if in voice chat mode
-          if (this.state.voiceChatActive && this.state.isOpen) {
-            this.updateStatus('Listening...');
-            setTimeout(() => {
-              if (this.state.voiceChatActive && this.state.isOpen && !this.state.isSpeaking) {
-                this.startListening();
-              }
-            }, 300);
-          } else {
-            this.updateStatus('Ready to help');
-          }
-        };
-
-        source.start(0);
-
-      } catch (error) {
-        console.error('Audio playback error:', error);
-        this.state.isSpeaking = false;
-        this.updateUI();
-      }
+          resolve();
+        }
+      });
     }
 
     // Add message to conversation
