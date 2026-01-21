@@ -790,7 +790,7 @@
           return `Countertop pricing depends on the material - quartz runs $45-85 per square foot, granite $40-75, marble $60-150. A typical kitchen is $2,500-5,000 installed. Say "schedule" or click Schedule Visit for a free in-home estimate!`;
 
         case 'hours':
-          return `We're available ${this.config.businessContext.businessHours}. We come to you for free onsite consultations! To see slabs in person, visit one of our stone supplier partners at surprisegranite.com/company/vendors-list/. Would you like to schedule an appointment?`;
+          return `We're available ${this.config.businessContext.businessHours}. We come to you for free onsite consultations! To see slabs in person, visit one of our stone supplier partners at surprisegranite.com/stone-yards/. Would you like to schedule an appointment?`;
 
         case 'services':
           const services = this.config.businessContext.services.join(', ');
@@ -809,7 +809,7 @@
 
         case 'showroom':
           this.trackEvent('intent_showroom');
-          return `We don't have a showroom - we come to you for free onsite consultations! To see slabs in person, visit one of our stone distribution partners. Check out our vendors list at surprisegranite.com/company/vendors-list/ to find a location near you. Would you like to schedule an appointment?`;
+          return `We don't have a showroom - we come to you for free onsite consultations! To see slabs in person, visit one of our stone distribution partners. Check out our vendors list at surprisegranite.com/stone-yards/ to find a location near you. Would you like to schedule an appointment?`;
 
         case 'timeline':
           this.trackEvent('intent_timeline');
@@ -1009,7 +1009,7 @@
 
         case 'openShowroom':
           this.close();
-          window.location.href = '/company/vendors-list/';
+          window.location.href = '/stone-yards/';
           break;
 
         case 'callPhone':

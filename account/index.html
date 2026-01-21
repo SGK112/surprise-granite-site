@@ -198,16 +198,21 @@
     .nav-section,
     .sidebar-nav .nav-section {
       margin-bottom: 24px;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
+    }
+
+    .nav-section.hidden,
+    .sidebar-nav .nav-section.hidden {
+      display: none !important;
     }
 
     .nav-item,
     .sidebar-nav .nav-item {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
+      display: flex;
+    }
+
+    .nav-item.hidden,
+    .sidebar-nav .nav-item.hidden {
+      display: none !important;
     }
 
     .nav-section-title {
@@ -6213,6 +6218,629 @@
       gap: 12px;
       justify-content: flex-end;
     }
+
+    /* ============================================
+       COMPREHENSIVE MOBILE OPTIMIZATIONS
+       All screens optimized for mobile users
+       ============================================ */
+
+    /* Mobile-first touch targets (44x44px minimum) */
+    @media (max-width: 768px) {
+      /* Global touch-friendly sizing */
+      .btn-modern, .filter-pill, .tab-btn, .nav-item {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Sidebar - Full screen overlay on mobile */
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .sidebar.open + .sidebar-overlay,
+      body.sidebar-open .sidebar-overlay {
+        display: block;
+      }
+
+      /* Main content full width */
+      .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 16px !important;
+        padding-bottom: 80px !important; /* Space for FAB */
+      }
+
+      /* Mobile header with hamburger */
+      .topbar {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .mobile-menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        background: var(--dark-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        color: var(--text-primary);
+        cursor: pointer;
+      }
+
+      .page-title {
+        font-size: 18px !important;
+      }
+
+      /* Cards - Full width, reduced padding */
+      .card, .table-container {
+        border-radius: 12px;
+        padding: 0;
+      }
+
+      .card-header, .table-header {
+        padding: 16px;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 12px;
+      }
+
+      .card-body {
+        padding: 16px;
+      }
+
+      /* Stat cards - 2 column grid */
+      .stat-grid, .dashboard-stats, #dashboard-stats {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .stat-card {
+        padding: 16px 12px !important;
+        min-height: auto;
+      }
+
+      .stat-value {
+        font-size: 24px !important;
+      }
+
+      .stat-label {
+        font-size: 11px !important;
+      }
+
+      /* Filter pills - horizontal scroll */
+      .filter-pills {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .filter-pills::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-pill {
+        flex-shrink: 0;
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+
+      /* Tables - Card-based layout */
+      table {
+        display: block;
+        width: 100%;
+      }
+
+      table thead {
+        display: none;
+      }
+
+      table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      table tr {
+        display: flex;
+        flex-direction: column;
+        background: var(--dark-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 16px;
+        gap: 8px;
+      }
+
+      table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        border: none !important;
+        font-size: 14px;
+      }
+
+      table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      /* Buttons - Stack vertically */
+      .btn-group, .modal-footer, .card-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .btn-modern {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+        font-size: 15px;
+      }
+
+      /* Forms - Full width inputs */
+      .form-group, .input-group {
+        width: 100%;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 16px; /* Prevents iOS zoom */
+        border-radius: 10px;
+      }
+
+      /* Search bar */
+      .search-bar-modern {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      .search-bar-modern input {
+        padding: 14px 16px 14px 44px;
+      }
+
+      /* Modals - Bottom sheet style */
+      .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+      }
+
+      .modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 90vh;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        padding: 20px 16px 16px;
+        position: relative;
+      }
+
+      .modal-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: var(--border-light);
+        border-radius: 2px;
+      }
+
+      .modal-body {
+        padding: 16px;
+        max-height: 60vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .modal-footer {
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      /* Customer tabs - scrollable */
+      .customer-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+      }
+
+      .customer-tabs .tab-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding: 12px 16px;
+      }
+
+      /* Lead/Customer cards */
+      .lead-card, .customer-card, .estimate-card, .invoice-card, .job-card {
+        padding: 16px;
+      }
+
+      .lead-header, .customer-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      /* Quick actions - 2 column grid */
+      .quick-actions, #quick-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .action-card {
+        flex-direction: column;
+        padding: 16px;
+        text-align: center;
+        gap: 8px;
+      }
+
+      .action-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto;
+      }
+
+      .action-text h4 {
+        font-size: 13px;
+      }
+
+      .action-text p {
+        font-size: 11px;
+        display: none; /* Hide description on mobile */
+      }
+
+      /* Listings grid - single column */
+      .listings-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px;
+      }
+
+      /* Favorites grid - 2 columns */
+      .favorites-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+      }
+
+      .favorite-card {
+        padding: 12px;
+      }
+
+      .favorite-card img {
+        height: 100px;
+      }
+
+      /* Calendar mobile */
+      .calendar-grid {
+        font-size: 12px;
+      }
+
+      .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+      }
+
+      /* Detail rows - stack */
+      .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .detail-label {
+        font-size: 11px;
+      }
+
+      .detail-value {
+        font-size: 14px;
+      }
+
+      /* Topbar actions */
+      .topbar-actions {
+        gap: 8px;
+      }
+
+      .topbar-actions .btn-modern .btn-text {
+        display: none;
+      }
+
+      .topbar-actions .btn-modern {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        min-width: 44px;
+      }
+
+      /* Role switcher */
+      #role-switcher {
+        display: none !important; /* Hide on mobile - use settings instead */
+      }
+
+      /* User menu in sidebar footer */
+      .sidebar-footer {
+        padding: 16px;
+      }
+
+      .user-menu {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      /* Estimate/Invoice items */
+      .line-item {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .line-item-details {
+        width: 100%;
+      }
+
+      .line-item-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      /* Empty states */
+      .empty-state {
+        padding: 40px 20px;
+      }
+
+      .empty-state svg {
+        width: 48px;
+        height: 48px;
+      }
+
+      .empty-state h3 {
+        font-size: 16px;
+      }
+
+      .empty-state p {
+        font-size: 13px;
+      }
+    }
+
+    /* Extra small screens (phones in portrait) */
+    @media (max-width: 480px) {
+      /* Even smaller text */
+      .page-title {
+        font-size: 16px !important;
+      }
+
+      /* Single column stats on very small screens */
+      .stat-grid, .dashboard-stats, #dashboard-stats {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Quick actions single column */
+      .quick-actions, #quick-actions {
+        grid-template-columns: 1fr !important;
+      }
+
+      .action-card {
+        flex-direction: row;
+        text-align: left;
+        padding: 14px;
+      }
+
+      .action-icon {
+        width: 40px;
+        height: 40px;
+        margin: 0;
+      }
+
+      .action-text p {
+        display: block;
+      }
+
+      /* Favorites single column */
+      .favorites-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Modal even more compact */
+      .modal-header {
+        padding: 16px 12px 12px;
+      }
+
+      .modal-title {
+        font-size: 18px;
+      }
+
+      .modal-body {
+        padding: 12px;
+      }
+
+      /* Smaller buttons */
+      .btn-modern {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      /* Table cards more compact */
+      table tr {
+        padding: 12px;
+      }
+
+      table td {
+        font-size: 13px;
+      }
+    }
+
+    /* Mobile FAB (Floating Action Button) */
+    .mobile-fab {
+      display: none;
+      position: fixed;
+      bottom: calc(20px + env(safe-area-inset-bottom));
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: var(--dark-primary);
+      border: none;
+      box-shadow: 0 4px 20px rgba(249, 203, 0, 0.4);
+      cursor: pointer;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .mobile-fab:active {
+      transform: scale(0.95);
+    }
+
+    .mobile-fab svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-fab {
+        display: flex;
+      }
+    }
+
+    /* Pull to refresh indicator */
+    .pull-indicator {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: var(--dark-elevated);
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    /* Swipe actions hint */
+    .swipe-hint {
+      display: none;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .swipe-hint {
+        display: block;
+      }
+    }
+
+    /* Safe area padding for notched phones */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      @media (max-width: 768px) {
+        .main-content {
+          padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        }
+
+        .modal-footer {
+          padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+
+        .sidebar {
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
+    }
+
+    /* Smooth scrolling on iOS */
+    @media (max-width: 768px) {
+      .modal-body,
+      .sidebar-nav,
+      .table-container,
+      .card-body {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Prevent body scroll when modal open */
+      body.modal-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+      }
+
+      /* Disable hover effects on touch */
+      @media (hover: none) {
+        .btn-modern:hover,
+        .nav-item:hover,
+        .filter-pill:hover,
+        .card:hover,
+        .listing-card:hover {
+          transform: none;
+          box-shadow: none;
+        }
+      }
+    }
+
+    /* Landscape phone adjustments */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .modal {
+        max-height: 85vh;
+      }
+
+      .modal-body {
+        max-height: 50vh;
+      }
+
+      .stat-grid, .dashboard-stats, #dashboard-stats {
+        grid-template-columns: repeat(4, 1fr) !important;
+      }
+    }
   </style>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260112b">
@@ -6470,7 +7098,7 @@
         </div>
 
         <!-- Sales Section (Admin/Contractor) -->
-        <div class="nav-section" id="sales-nav" style="display: none;">
+        <div class="nav-section hidden" id="sales-nav">
           <div class="nav-section-title">Sales</div>
           <a class="nav-item" data-page="leads" onclick="showPage('leads')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
@@ -6494,7 +7122,7 @@
         </div>
 
         <!-- Operations Section (Admin/Contractor) -->
-        <div class="nav-section" id="operations-nav" style="display: none;">
+        <div class="nav-section hidden" id="operations-nav">
           <div class="nav-section-title">Operations</div>
           <a class="nav-item" data-page="jobs" onclick="showPage('jobs')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
@@ -6512,7 +7140,7 @@
         </div>
 
         <!-- Finance Section (Admin Only) -->
-        <div class="nav-section" id="finance-nav" style="display: none;">
+        <div class="nav-section hidden" id="finance-nav">
           <div class="nav-section-title">Finance</div>
           <a class="nav-item" data-page="wallet" onclick="showPage('wallet')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
@@ -6521,7 +7149,7 @@
         </div>
 
         <!-- Admin Section (Super Admin Only) -->
-        <div class="nav-section" id="admin-nav" style="display: none;">
+        <div class="nav-section hidden" id="admin-nav">
           <div class="nav-section-title">Admin</div>
           <a class="nav-item" data-page="admin-users" onclick="showPage('admin-users')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -6530,7 +7158,7 @@
         </div>
 
         <!-- Store Section (Vendor) -->
-        <div class="nav-section" id="vendor-nav" style="display: none;">
+        <div class="nav-section hidden" id="vendor-nav">
           <div class="nav-section-title">Store</div>
           <a class="nav-item" data-page="products" onclick="showPage('products')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -7927,10 +8555,18 @@
         <div id="customer-info" style="margin-bottom: 24px;"></div>
 
         <!-- Tabs -->
-        <div class="customer-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px;">
+        <div class="customer-tabs" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px; flex-wrap: wrap;">
           <button class="tab-btn active" onclick="showCustomerTab('jobs')" data-tab="jobs">Jobs</button>
           <button class="tab-btn" onclick="showCustomerTab('estimates')" data-tab="estimates">Estimates</button>
           <button class="tab-btn" onclick="showCustomerTab('invoices')" data-tab="invoices">Invoices</button>
+          <button class="tab-btn" onclick="showCustomerTab('favorites')" data-tab="favorites">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            Favorites
+          </button>
+          <button class="tab-btn" onclick="showCustomerTab('messages')" data-tab="messages">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            Messages
+          </button>
           <button class="tab-btn" onclick="showCustomerTab('notes')" data-tab="notes">Notes</button>
         </div>
 
@@ -10034,15 +10670,17 @@
       const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.customer;
       const allowedNavItems = permissions.nav;
 
+      console.log('Applying nav for role:', role, 'Allowed items:', allowedNavItems);
+
       // Get all nav items with data-page attribute
       const navItems = document.querySelectorAll('.nav-item[data-page]');
 
       navItems.forEach(item => {
         const page = item.dataset.page;
         if (allowedNavItems.includes(page)) {
-          item.style.display = '';
+          item.classList.remove('hidden');
         } else {
-          item.style.display = 'none';
+          item.classList.add('hidden');
         }
       });
 
@@ -10056,31 +10694,36 @@
       // Sales section - visible to contractors and admins
       if (salesNavEl) {
         const showSalesNav = ['contractor', 'fabricator', 'admin'].includes(role);
-        salesNavEl.style.display = showSalesNav ? 'block' : 'none';
+        salesNavEl.classList.toggle('hidden', !showSalesNav);
+        console.log('Sales nav:', showSalesNav ? 'visible' : 'hidden');
       }
 
       // Operations section - visible to contractors and admins
       if (operationsNavEl) {
         const showOpsNav = ['contractor', 'fabricator', 'admin'].includes(role);
-        operationsNavEl.style.display = showOpsNav ? 'block' : 'none';
+        operationsNavEl.classList.toggle('hidden', !showOpsNav);
+        console.log('Operations nav:', showOpsNav ? 'visible' : 'hidden');
       }
 
       // Finance section - visible to admins only
       if (financeNavEl) {
         const showFinanceNav = ['admin'].includes(role);
-        financeNavEl.style.display = showFinanceNav ? 'block' : 'none';
+        financeNavEl.classList.toggle('hidden', !showFinanceNav);
+        console.log('Finance nav:', showFinanceNav ? 'visible' : 'hidden');
       }
 
       // Admin section - visible to super admins only
       if (adminNavEl) {
         const showAdminNav = isSuperAdmin || role === 'admin';
-        adminNavEl.style.display = showAdminNav ? 'block' : 'none';
+        adminNavEl.classList.toggle('hidden', !showAdminNav);
+        console.log('Admin nav:', showAdminNav ? 'visible' : 'hidden');
       }
 
       // Vendor/Store section - visible to vendors and admins
       if (vendorNavEl) {
         const showVendorNav = ['vendor', 'admin'].includes(role);
-        vendorNavEl.style.display = showVendorNav ? 'block' : 'none';
+        vendorNavEl.classList.toggle('hidden', !showVendorNav);
+        console.log('Vendor nav:', showVendorNav ? 'visible' : 'hidden');
       }
 
       // Add role indicator to body for CSS targeting
@@ -10123,11 +10766,17 @@
       }
     }
 
-    // Show role switcher for admins or demo mode
+    // GOD mode emails - only these users can access the role switcher
+    const GOD_MODE_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+
+    // Show role switcher only for GOD mode users
     function enableRoleSwitcher() {
       const switcher = document.getElementById('role-switcher');
       const select = document.getElementById('role-select');
-      if (switcher && select) {
+      const userEmail = currentUser?.email?.toLowerCase() || '';
+
+      // Only show for GOD mode emails
+      if (switcher && select && GOD_MODE_EMAILS.includes(userEmail)) {
         switcher.style.display = 'block';
         select.value = userRole;
       }
@@ -12053,6 +12702,45 @@
       }
     }
 
+    // Load subscriber/user statistics
+    async function loadSubscriberStats() {
+      try {
+        // Get total users count
+        const { count: totalUsers, error: totalError } = await supabaseClient
+          .from('sg_users')
+          .select('*', { count: 'exact', head: true });
+
+        if (totalError) throw totalError;
+
+        // Get new users (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const { count: newUsers, error: newError } = await supabaseClient
+          .from('sg_users')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', sevenDaysAgo.toISOString());
+
+        if (newError) throw newError;
+
+        // Update UI
+        const totalUsersEl = document.getElementById('stat-total-users');
+        const newUsersEl = document.getElementById('stat-new-users');
+
+        if (totalUsersEl) totalUsersEl.textContent = totalUsers || 0;
+        if (newUsersEl) newUsersEl.textContent = newUsers || 0;
+
+        console.log('Subscriber stats loaded:', { totalUsers, newUsers });
+      } catch (err) {
+        console.warn('Error loading subscriber stats:', err.message);
+        // Set fallback values
+        const totalUsersEl = document.getElementById('stat-total-users');
+        const newUsersEl = document.getElementById('stat-new-users');
+        if (totalUsersEl) totalUsersEl.textContent = '0';
+        if (newUsersEl) newUsersEl.textContent = '0';
+      }
+    }
+
     function setupDashboard() {
       // Setup stats and quick actions based on role
       const statsEl = document.getElementById('dashboard-stats');
@@ -12061,6 +12749,7 @@
       if (isAdmin) {
         loadLeads();
         loadCustomers();
+        loadSubscriberStats();
         setupLeadsRealtime();
         // Also refresh leads every 30 seconds to catch any missed updates
         setInterval(loadLeads, 30000);
@@ -12074,12 +12763,12 @@
             <div class="stat-value" id="stat-new">-</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Contacted</div>
-            <div class="stat-value" id="stat-contacted">-</div>
+            <div class="stat-label">New Users</div>
+            <div class="stat-value" id="stat-new-users">-</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Won</div>
-            <div class="stat-value" id="stat-won">-</div>
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="stat-total-users">-</div>
           </div>
         `;
         actionsEl.innerHTML = `
@@ -13685,6 +14374,110 @@
               </table>
             `;
           }
+        } else if (tab === 'favorites') {
+          // Load customer's favorites if they have a user account
+          let favorites = [];
+
+          // Try to find user by email
+          if (selectedCustomer.email) {
+            const { data: userData } = await supabaseClient
+              .from('sg_users')
+              .select('id')
+              .eq('email', selectedCustomer.email)
+              .single();
+
+            if (userData) {
+              const { data: favData } = await supabaseClient
+                .from('user_favorites')
+                .select('*')
+                .eq('user_id', userData.id)
+                .order('created_at', { ascending: false });
+
+              favorites = favData || [];
+            }
+          }
+
+          if (!favorites || favorites.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color: var(--text-muted); margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <p>No favorites found for this customer.</p>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Customer may not have an account or hasn't saved any favorites yet.</p>
+              </div>
+            `;
+          } else {
+            container.innerHTML = `
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                ${favorites.map(fav => `
+                  <div class="favorite-card" style="background: var(--dark-elevated); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-subtle);">
+                    ${fav.image_url ? `<img src="${fav.image_url}" alt="${fav.product_name || 'Product'}" style="width: 100%; height: 120px; object-fit: cover;">` : `<div style="width: 100%; height: 120px; background: var(--dark-surface); display: flex; align-items: center; justify-content: center; color: var(--text-muted);"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>`}
+                    <div style="padding: 12px;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">${fav.product_name || 'Unknown Product'}</div>
+                      <div style="font-size: 12px; color: var(--text-muted);">${fav.product_type || fav.category || 'Material'}</div>
+                      ${fav.product_url ? `<a href="${fav.product_url}" target="_blank" class="btn-modern secondary" style="margin-top: 8px; font-size: 12px; padding: 6px 10px;">View Product</a>` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <p style="margin-top: 16px; font-size: 12px; color: var(--text-muted);">These are materials and products your customer has saved as favorites.</p>
+            `;
+          }
+        } else if (tab === 'messages') {
+          // Load messages/correspondence with this customer
+          let messages = [];
+
+          if (selectedCustomer.id) {
+            const { data: msgData } = await supabaseClient
+              .from('customer_messages')
+              .select('*')
+              .eq('customer_id', selectedCustomer.id)
+              .order('created_at', { ascending: false });
+
+            messages = msgData || [];
+          }
+
+          container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Message Input -->
+              <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; border: 1px solid var(--border-subtle);">
+                <textarea id="new-customer-message" rows="3" placeholder="Type a message to this customer..." style="width: 100%; padding: 12px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); resize: vertical; margin-bottom: 12px;"></textarea>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <button class="btn-modern secondary" onclick="sendCustomerEmail()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Send Email
+                  </button>
+                  <button class="btn-modern primary" onclick="sendCustomerSMS()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    Send SMS
+                  </button>
+                </div>
+              </div>
+
+              <!-- Message History -->
+              <div style="background: var(--dark-elevated); border-radius: 12px; padding: 16px; border: 1px solid var(--border-subtle);">
+                <h4 style="margin-bottom: 12px; color: var(--text-secondary);">Message History</h4>
+                ${messages.length === 0 ? `
+                  <div class="empty-state" style="padding: 24px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color: var(--text-muted); margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <p>No messages yet.</p>
+                    <p style="font-size: 12px; color: var(--text-muted);">Send your first message to start the conversation.</p>
+                  </div>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto;">
+                    ${messages.map(msg => `
+                      <div style="padding: 12px; background: var(--dark-surface); border-radius: 8px; border-left: 3px solid ${msg.direction === 'outbound' ? 'var(--gold-primary)' : '#3b82f6'};">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                          <span style="font-size: 12px; color: var(--text-muted);">${msg.direction === 'outbound' ? 'Sent' : 'Received'} via ${msg.channel || 'email'}</span>
+                          <span style="font-size: 12px; color: var(--text-muted);">${new Date(msg.created_at).toLocaleString()}</span>
+                        </div>
+                        <div style="color: var(--text-primary);">${msg.message || msg.content || ''}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
         } else if (tab === 'notes') {
           container.innerHTML = `
             <div style="padding: 16px;">
@@ -13714,6 +14507,93 @@
         showToast('Notes saved!');
       } catch (err) {
         showToast('Error saving notes: ' + err.message, 'error');
+      }
+    }
+
+    // Send email to customer
+    async function sendCustomerEmail() {
+      if (!selectedCustomer) return;
+
+      const message = document.getElementById('new-customer-message')?.value?.trim();
+      if (!message) {
+        showToast('Please enter a message', 'error');
+        return;
+      }
+
+      if (!selectedCustomer.email) {
+        showToast('Customer has no email address', 'error');
+        return;
+      }
+
+      try {
+        // Log the message to database
+        const { error } = await supabaseClient.from('customer_messages').insert({
+          customer_id: selectedCustomer.id,
+          sender_id: currentUser.id,
+          direction: 'outbound',
+          channel: 'email',
+          message: message,
+          sent_to: selectedCustomer.email,
+          status: 'sent',
+          created_at: new Date().toISOString()
+        });
+
+        if (error) throw error;
+
+        // Open email client as fallback
+        const subject = encodeURIComponent('Message from Surprise Granite');
+        const body = encodeURIComponent(message);
+        window.open(`mailto:${selectedCustomer.email}?subject=${subject}&body=${body}`, '_blank');
+
+        document.getElementById('new-customer-message').value = '';
+        showToast('Message logged! Email client opened.');
+        loadCustomerTabContent('messages');
+      } catch (err) {
+        console.error('Email error:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // Send SMS to customer
+    async function sendCustomerSMS() {
+      if (!selectedCustomer) return;
+
+      const message = document.getElementById('new-customer-message')?.value?.trim();
+      if (!message) {
+        showToast('Please enter a message', 'error');
+        return;
+      }
+
+      if (!selectedCustomer.phone) {
+        showToast('Customer has no phone number', 'error');
+        return;
+      }
+
+      try {
+        // Log the message to database
+        const { error } = await supabaseClient.from('customer_messages').insert({
+          customer_id: selectedCustomer.id,
+          sender_id: currentUser.id,
+          direction: 'outbound',
+          channel: 'sms',
+          message: message,
+          sent_to: selectedCustomer.phone,
+          status: 'sent',
+          created_at: new Date().toISOString()
+        });
+
+        if (error) throw error;
+
+        // Open SMS app as fallback (works on mobile)
+        const smsBody = encodeURIComponent(message);
+        window.open(`sms:${selectedCustomer.phone}?body=${smsBody}`, '_blank');
+
+        document.getElementById('new-customer-message').value = '';
+        showToast('Message logged! SMS app opened.');
+        loadCustomerTabContent('messages');
+      } catch (err) {
+        console.error('SMS error:', err);
+        showToast('Error: ' + err.message, 'error');
       }
     }
 

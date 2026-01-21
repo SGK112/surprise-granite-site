@@ -156,7 +156,7 @@ BUSINESS INFO:
 - Phone: (602) 833-3189
 - Hours: Monday-Saturday 8am-6pm
 - WE COME TO YOU for free onsite consultations
-- To see slabs: Visit our stone supplier partners at surprisegranite.com/company/vendors-list/
+- To see slabs: Visit our stone supplier partners at surprisegranite.com/stone-yards/
 - Service Areas: ${SG_CONFIG.serviceAreas.join(', ')}
 
 SERVICES:
