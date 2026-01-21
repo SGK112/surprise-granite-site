@@ -1,7 +1,6 @@
 /**
- * ARIA CHAT WIDGET v2
- * Text + Voice chat with OpenAI TTS responses
- * Mobile-first design
+ * ARIA CHAT WIDGET v3
+ * Text + Voice chat with OpenAI TTS
  */
 (function() {
   'use strict';
@@ -28,9 +27,9 @@
     }
 
     initSpeechRecognition() {
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        this.recognition = new SpeechRecognition();
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) {
+        this.recognition = new SR();
         this.recognition.continuous = false;
         this.recognition.interimResults = true;
         this.recognition.lang = 'en-US';
@@ -38,35 +37,27 @@
         this.recognition.onresult = (e) => {
           const result = e.results[e.results.length - 1];
           const transcript = result[0].transcript;
-          const input = this.widget?.querySelector('#ariaInput');
+          const input = this.widget?.querySelector('.aw-input');
           if (input) input.value = transcript;
-
           if (result.isFinal) {
             this.stopListening();
             setTimeout(() => this.send(), 100);
           }
         };
 
-        this.recognition.onerror = (e) => {
-          console.log('[Aria] Speech error:', e.error);
-          this.stopListening();
-        };
-
-        this.recognition.onend = () => {
-          this.stopListening();
-        };
+        this.recognition.onerror = () => this.stopListening();
+        this.recognition.onend = () => this.stopListening();
       }
     }
 
     init() {
-      console.log('[Aria] v2 Ready');
+      console.log('[Aria] v3 Ready');
     }
 
     open() {
       if (this.widget) {
         this.widget.style.display = 'block';
         document.body.style.overflow = 'hidden';
-        this.focusInput();
         return;
       }
       this.createWidget();
@@ -83,347 +74,276 @@
 
     createWidget() {
       this.widget = document.createElement('div');
-      this.widget.id = 'aria-widget-v2';
+      this.widget.className = 'aw-root';
 
       this.widget.innerHTML = `
-        <div class="aria-overlay"></div>
-        <div class="aria-panel">
-          <div class="aria-head">
-            <div class="aria-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" stroke-width="2.5">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              </svg>
+        <style>
+          .aw-root {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 2147483647 !important;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+          }
+          .aw-root * {
+            box-sizing: border-box !important;
+            font-family: inherit !important;
+          }
+          .aw-overlay {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0,0,0,0.8) !important;
+          }
+          .aw-panel {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: #1a1a2e !important;
+            border-radius: 24px 24px 0 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            max-height: 85vh !important;
+            overflow: hidden !important;
+          }
+          @media (min-width: 500px) {
+            .aw-panel {
+              width: 420px !important;
+              max-height: 620px !important;
+              bottom: 24px !important;
+              left: 50% !important;
+              right: auto !important;
+              transform: translateX(-50%) !important;
+              border-radius: 24px !important;
+            }
+          }
+          .aw-header {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 16px 20px !important;
+            background: #252542 !important;
+            border-radius: 24px 24px 0 0 !important;
+          }
+          .aw-avatar {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 50% !important;
+            background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 24px !important;
+            flex-shrink: 0 !important;
+          }
+          .aw-info {
+            flex: 1 !important;
+          }
+          .aw-name {
+            color: #fff !important;
+            font-size: 18px !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+          }
+          .aw-status {
+            color: rgba(255,255,255,0.5) !important;
+            font-size: 13px !important;
+            margin: 2px 0 0 !important;
+          }
+          .aw-status.thinking { color: #f9cb00 !important; }
+          .aw-status.speaking { color: #22c55e !important; }
+          .aw-status.listening { color: #ef4444 !important; }
+          .aw-close {
+            width: 44px !important;
+            height: 44px !important;
+            border-radius: 50% !important;
+            background: rgba(255,255,255,0.2) !important;
+            border: none !important;
+            color: #fff !important;
+            font-size: 28px !important;
+            font-weight: 300 !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1 !important;
+            padding: 0 !important;
+            padding-bottom: 3px !important;
+          }
+          .aw-close:active {
+            background: rgba(255,255,255,0.3) !important;
+            transform: scale(0.95) !important;
+          }
+          .aw-messages {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            padding: 16px 20px !important;
+            min-height: 150px !important;
+            max-height: 40vh !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          .aw-msg {
+            max-width: 85% !important;
+            padding: 12px 16px !important;
+            border-radius: 18px !important;
+            margin-bottom: 10px !important;
+            font-size: 16px !important;
+            line-height: 1.4 !important;
+            word-wrap: break-word !important;
+          }
+          .aw-msg.assistant {
+            background: rgba(255,255,255,0.1) !important;
+            color: #fff !important;
+            margin-right: auto !important;
+            border-bottom-left-radius: 4px !important;
+          }
+          .aw-msg.user {
+            background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
+            color: #1a1a2e !important;
+            margin-left: auto !important;
+            border-bottom-right-radius: 4px !important;
+            font-weight: 500 !important;
+          }
+          .aw-call {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            margin: 8px 20px 16px !important;
+            padding: 14px !important;
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+            color: #fff !important;
+            text-decoration: none !important;
+            border-radius: 14px !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+          }
+          .aw-call:active {
+            transform: scale(0.98) !important;
+            opacity: 0.9 !important;
+          }
+          .aw-inputbar {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            padding: 12px 16px 24px !important;
+            background: rgba(0,0,0,0.25) !important;
+          }
+          @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .aw-inputbar {
+              padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+            }
+          }
+          .aw-mic {
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 50% !important;
+            border: 2px solid rgba(255,255,255,0.3) !important;
+            background: transparent !important;
+            color: #fff !important;
+            font-size: 22px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            padding: 0 !important;
+          }
+          .aw-mic:active {
+            transform: scale(0.95) !important;
+          }
+          .aw-mic.listening {
+            background: #ef4444 !important;
+            border-color: #ef4444 !important;
+            animation: awpulse 1s infinite !important;
+          }
+          @keyframes awpulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+          }
+          .aw-input {
+            flex: 1 !important;
+            padding: 14px 18px !important;
+            border-radius: 25px !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            background: rgba(255,255,255,0.1) !important;
+            color: #fff !important;
+            font-size: 16px !important;
+            outline: none !important;
+            -webkit-appearance: none !important;
+            min-width: 0 !important;
+          }
+          .aw-input::placeholder {
+            color: rgba(255,255,255,0.4) !important;
+          }
+          .aw-input:focus {
+            border-color: #f9cb00 !important;
+            background: rgba(255,255,255,0.15) !important;
+          }
+          .aw-send {
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 50% !important;
+            border: none !important;
+            background: linear-gradient(135deg, #f9cb00, #ff9500) !important;
+            color: #1a1a2e !important;
+            font-size: 22px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            padding: 0 !important;
+            padding-left: 3px !important;
+          }
+          .aw-send:active {
+            transform: scale(0.95) !important;
+          }
+          .aw-send:disabled {
+            opacity: 0.5 !important;
+          }
+        </style>
+        <div class="aw-overlay"></div>
+        <div class="aw-panel">
+          <div class="aw-header">
+            <div class="aw-avatar">🎤</div>
+            <div class="aw-info">
+              <div class="aw-name">${this.config.assistantName}</div>
+              <div class="aw-status">Online</div>
             </div>
-            <div class="aria-info">
-              <div class="aria-name">${this.config.assistantName}</div>
-              <div class="aria-status" id="ariaStatus">Online</div>
-            </div>
-            <button class="aria-close" id="ariaClose" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
+            <button class="aw-close" type="button">×</button>
           </div>
-
-          <div class="aria-msgs" id="ariaMsgs"></div>
-
-          <a class="aria-call" href="tel:${this.config.phone}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            Call ${this.config.phone}
-          </a>
-
-          <div class="aria-bar">
-            <button class="aria-mic" id="ariaMic" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </button>
-            <input type="text" class="aria-input" id="ariaInput" placeholder="Type a message..." autocomplete="off" />
-            <button class="aria-send" id="ariaSend" type="button">
-              <svg viewBox="0 0 24 24" fill="#1a1a2e" stroke="none">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-              </svg>
-            </button>
+          <div class="aw-messages"></div>
+          <a class="aw-call" href="tel:${this.config.phone}">📞 Call ${this.config.phone}</a>
+          <div class="aw-inputbar">
+            <button class="aw-mic" type="button">🎙️</button>
+            <input type="text" class="aw-input" placeholder="Type a message..." autocomplete="off" />
+            <button class="aw-send" type="button">➤</button>
           </div>
         </div>
       `;
 
-      const style = document.createElement('style');
-      style.textContent = `
-        #aria-widget-v2 {
-          position: fixed;
-          inset: 0;
-          z-index: 2147483647;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        #aria-widget-v2 * { box-sizing: border-box; }
-
-        .aria-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.75);
-        }
-
-        .aria-panel {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: #1a1a2e;
-          border-radius: 24px 24px 0 0;
-          display: flex;
-          flex-direction: column;
-          max-height: 90vh;
-        }
-
-        @media (min-width: 500px) {
-          .aria-panel {
-            width: 420px;
-            max-height: 650px;
-            bottom: 20px;
-            left: 50%;
-            right: auto;
-            transform: translateX(-50%);
-            border-radius: 24px;
-          }
-        }
-
-        .aria-head {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 18px 20px;
-          background: #252540;
-          border-radius: 24px 24px 0 0;
-        }
-
-        @media (min-width: 500px) {
-          .aria-head { border-radius: 24px 24px 0 0; }
-        }
-
-        .aria-avatar {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #f9cb00, #ff9500);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .aria-avatar svg {
-          width: 26px;
-          height: 26px;
-        }
-
-        .aria-info { flex: 1; }
-        .aria-name {
-          color: #fff;
-          font-size: 18px;
-          font-weight: 600;
-        }
-        .aria-status {
-          color: rgba(255,255,255,0.5);
-          font-size: 14px;
-        }
-        .aria-status.thinking { color: #f9cb00; }
-        .aria-status.speaking { color: #22c55e; }
-        .aria-status.listening { color: #ef4444; }
-
-        .aria-close {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.15);
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .aria-close svg {
-          width: 24px;
-          height: 24px;
-        }
-        .aria-close:active {
-          background: rgba(255,255,255,0.25);
-          transform: scale(0.95);
-        }
-
-        .aria-msgs {
-          flex: 1;
-          overflow-y: auto;
-          padding: 20px;
-          min-height: 180px;
-          max-height: 45vh;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .aria-msg {
-          max-width: 85%;
-          padding: 14px 18px;
-          border-radius: 20px;
-          margin-bottom: 12px;
-          font-size: 16px;
-          line-height: 1.45;
-          word-wrap: break-word;
-        }
-        .aria-msg.assistant {
-          background: rgba(255,255,255,0.12);
-          color: #fff;
-          margin-right: auto;
-          border-bottom-left-radius: 6px;
-        }
-        .aria-msg.user {
-          background: linear-gradient(135deg, #f9cb00, #ff9500);
-          color: #1a1a2e;
-          margin-left: auto;
-          border-bottom-right-radius: 6px;
-          font-weight: 500;
-        }
-        .aria-msg.typing {
-          color: rgba(255,255,255,0.6);
-        }
-
-        .aria-call {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          margin: 0 20px 16px;
-          padding: 16px;
-          background: linear-gradient(135deg, #22c55e, #16a34a);
-          color: #fff;
-          text-decoration: none;
-          border-radius: 16px;
-          font-size: 17px;
-          font-weight: 600;
-        }
-        .aria-call svg {
-          width: 22px;
-          height: 22px;
-        }
-        .aria-call:active {
-          transform: scale(0.98);
-          opacity: 0.9;
-        }
-
-        .aria-bar {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 16px 20px 24px;
-          background: rgba(0,0,0,0.3);
-        }
-
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-          .aria-bar {
-            padding-bottom: calc(24px + env(safe-area-inset-bottom));
-          }
-        }
-
-        .aria-mic {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.2);
-          background: transparent;
-          color: rgba(255,255,255,0.7);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          transition: all 0.2s;
-        }
-        .aria-mic svg {
-          width: 24px;
-          height: 24px;
-        }
-        .aria-mic:active {
-          transform: scale(0.95);
-        }
-        .aria-mic.listening {
-          background: #ef4444;
-          border-color: #ef4444;
-          color: #fff;
-          animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-          50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
-        }
-
-        .aria-input {
-          flex: 1;
-          padding: 16px 20px;
-          border-radius: 26px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.08);
-          color: #fff;
-          font-size: 16px;
-          outline: none;
-          -webkit-appearance: none;
-          min-width: 0;
-        }
-        .aria-input::placeholder {
-          color: rgba(255,255,255,0.4);
-        }
-        .aria-input:focus {
-          border-color: rgba(249,203,0,0.5);
-          background: rgba(255,255,255,0.12);
-        }
-
-        .aria-send {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
-          border: none;
-          background: linear-gradient(135deg, #f9cb00, #ff9500);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .aria-send svg {
-          width: 24px;
-          height: 24px;
-          margin-left: 3px;
-        }
-        .aria-send:active {
-          transform: scale(0.95);
-        }
-        .aria-send:disabled {
-          opacity: 0.5;
-        }
-      `;
-
-      this.widget.appendChild(style);
       document.body.appendChild(this.widget);
       document.body.style.overflow = 'hidden';
 
-      this.setupEvents();
+      // Events
+      this.widget.querySelector('.aw-overlay').onclick = () => this.close();
+      this.widget.querySelector('.aw-close').onclick = () => this.close();
+      this.widget.querySelector('.aw-mic').onclick = () => this.toggleListening();
+      this.widget.querySelector('.aw-send').onclick = () => this.send();
+      this.widget.querySelector('.aw-input').onkeypress = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); this.send(); }
+      };
 
+      // Greeting
       if (this.messages.length === 0) {
         this.addMessage('assistant', this.config.greeting);
       }
-
-      this.focusInput();
-    }
-
-    setupEvents() {
-      const overlay = this.widget.querySelector('.aria-overlay');
-      const closeBtn = this.widget.querySelector('#ariaClose');
-      const micBtn = this.widget.querySelector('#ariaMic');
-      const sendBtn = this.widget.querySelector('#ariaSend');
-      const input = this.widget.querySelector('#ariaInput');
-
-      overlay.addEventListener('click', () => this.close());
-      closeBtn.addEventListener('click', () => this.close());
-
-      micBtn.addEventListener('click', () => this.toggleListening());
-
-      sendBtn.addEventListener('click', () => this.send());
-      input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          this.send();
-        }
-      });
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.widget?.style.display !== 'none') {
-          this.close();
-        }
-      });
     }
 
     toggleListening() {
@@ -436,85 +356,53 @@
 
     startListening() {
       if (!this.recognition) {
-        alert('Voice input not supported on this device. Please type your message.');
+        alert('Voice input not available. Please type your message.');
         return;
       }
-
       try {
         this.recognition.start();
         this.isListening = true;
-        const micBtn = this.widget.querySelector('#ariaMic');
-        if (micBtn) micBtn.classList.add('listening');
+        this.widget.querySelector('.aw-mic').classList.add('listening');
         this.setStatus('Listening...', 'listening');
       } catch (e) {
-        console.log('[Aria] Could not start listening:', e);
+        console.log('[Aria] Mic error:', e);
       }
     }
 
     stopListening() {
       if (this.recognition && this.isListening) {
-        try {
-          this.recognition.stop();
-        } catch (e) {}
+        try { this.recognition.stop(); } catch (e) {}
       }
       this.isListening = false;
-      const micBtn = this.widget?.querySelector('#ariaMic');
-      if (micBtn) micBtn.classList.remove('listening');
+      const mic = this.widget?.querySelector('.aw-mic');
+      if (mic) mic.classList.remove('listening');
       if (!this.isProcessing && !this.isPlaying) {
         this.setStatus('Online', '');
       }
     }
 
-    focusInput() {
-      setTimeout(() => {
-        const input = this.widget?.querySelector('#ariaInput');
-        if (input) input.focus();
-      }, 100);
-    }
-
     addMessage(role, text) {
       this.messages.push({ role, content: text });
-
-      const msgs = this.widget?.querySelector('#ariaMsgs');
-      if (!msgs) return;
-
+      const container = this.widget?.querySelector('.aw-messages');
+      if (!container) return;
       const div = document.createElement('div');
-      div.className = 'aria-msg ' + role;
+      div.className = 'aw-msg ' + role;
       div.textContent = text;
-      msgs.appendChild(div);
-      msgs.scrollTop = msgs.scrollHeight;
-
-      return div;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
     }
 
     setStatus(text, cls = '') {
-      const el = this.widget?.querySelector('#ariaStatus');
+      const el = this.widget?.querySelector('.aw-status');
       if (el) {
         el.textContent = text;
-        el.className = 'aria-status' + (cls ? ' ' + cls : '');
+        el.className = 'aw-status' + (cls ? ' ' + cls : '');
       }
     }
 
-    showTyping() {
-      const msgs = this.widget?.querySelector('#ariaMsgs');
-      if (!msgs) return;
-
-      const div = document.createElement('div');
-      div.className = 'aria-msg assistant typing';
-      div.id = 'ariaTyping';
-      div.textContent = 'Typing...';
-      msgs.appendChild(div);
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-
-    hideTyping() {
-      const el = this.widget?.querySelector('#ariaTyping');
-      if (el) el.remove();
-    }
-
     async send() {
-      const input = this.widget?.querySelector('#ariaInput');
-      const sendBtn = this.widget?.querySelector('#ariaSend');
+      const input = this.widget?.querySelector('.aw-input');
+      const sendBtn = this.widget?.querySelector('.aw-send');
       if (!input || !sendBtn) return;
 
       const text = input.value.trim();
@@ -525,41 +413,33 @@
       this.isProcessing = true;
 
       this.addMessage('user', text);
-      this.showTyping();
       this.setStatus('Thinking...', 'thinking');
 
       try {
         const history = this.messages.slice(0, -1).slice(-6).map(m => ({
-          role: m.role,
-          content: m.content
+          role: m.role, content: m.content
         }));
 
         const res = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: text,
-            conversationHistory: history
-          })
+          body: JSON.stringify({ message: text, conversationHistory: history })
         });
 
         const data = await res.json();
-        this.hideTyping();
 
         if (data.success && data.response) {
           this.addMessage('assistant', data.response);
-
           if (data.audio) {
             this.setStatus('Speaking...', 'speaking');
             await this.playAudio(data.audio);
           }
         } else {
-          this.addMessage('assistant', 'Sorry, something went wrong. Please try again or call us.');
+          this.addMessage('assistant', 'Sorry, something went wrong. Please try again.');
         }
       } catch (err) {
         console.error('[Aria] Error:', err);
-        this.hideTyping();
-        this.addMessage('assistant', 'Connection error. Please try again or call us directly.');
+        this.addMessage('assistant', 'Connection error. Please try again or call us.');
       }
 
       this.setStatus('Online', '');
@@ -571,32 +451,13 @@
     playAudio(base64) {
       return new Promise((resolve) => {
         this.stopAudio();
-
         try {
           this.currentAudio = new Audio('data:audio/mp3;base64,' + base64);
           this.isPlaying = true;
-
-          this.currentAudio.onended = () => {
-            this.isPlaying = false;
-            this.currentAudio = null;
-            resolve();
-          };
-
-          this.currentAudio.onerror = () => {
-            this.isPlaying = false;
-            this.currentAudio = null;
-            resolve();
-          };
-
-          this.currentAudio.play().catch(() => {
-            this.isPlaying = false;
-            this.currentAudio = null;
-            resolve();
-          });
-        } catch (e) {
-          console.error('[Aria] Audio error:', e);
-          resolve();
-        }
+          this.currentAudio.onended = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
+          this.currentAudio.onerror = () => { this.isPlaying = false; this.currentAudio = null; resolve(); };
+          this.currentAudio.play().catch(() => { this.isPlaying = false; this.currentAudio = null; resolve(); });
+        } catch (e) { resolve(); }
       });
     }
 
