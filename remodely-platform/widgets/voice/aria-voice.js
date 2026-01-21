@@ -128,6 +128,11 @@
       };
 
       this.recognition.onresult = (event) => {
+        // Don't process if speaking (prevents feedback loop)
+        if (this.state.isSpeaking || this.state.isProcessing) {
+          return;
+        }
+
         let transcript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript;
@@ -136,6 +141,7 @@
         this.updateTranscript(transcript);
 
         if (event.results[event.results.length - 1].isFinal) {
+          this.stopListening(); // Stop listening before processing
           this.processUserInput(transcript);
         }
       };
@@ -145,8 +151,13 @@
         this.state.isListening = false;
         this.updateUI();
 
+        // Don't speak on errors to prevent loops - just update UI
         if (event.error === 'no-speech') {
-          this.speak("I didn't catch that. Please try again.");
+          this.updateTranscript("I didn't catch that. Tap the mic to try again.");
+        } else if (event.error === 'aborted') {
+          // User stopped - do nothing
+        } else {
+          this.updateTranscript("Voice recognition error. Try typing instead.");
         }
       };
 
@@ -587,9 +598,10 @@
             </div>
 
             <div class="aria-quick-actions">
-              <button class="aria-quick-action" onclick="window.ariaVoice.quickAction('schedule')">Schedule Visit</button>
+              <button class="aria-quick-action" onclick="window.ariaVoice.triggerAction('openBooking')">Schedule Visit</button>
               <button class="aria-quick-action" onclick="window.ariaVoice.quickAction('quote')">Get Quote</button>
-              <button class="aria-quick-action" onclick="window.ariaVoice.quickAction('hours')">Business Hours</button>
+              <button class="aria-quick-action" onclick="window.ariaVoice.triggerAction('callPhone')">Call Now</button>
+              <button class="aria-quick-action" onclick="window.ariaVoice.triggerAction('openDesigner')">Room Designer</button>
             </div>
           </div>
 
@@ -653,7 +665,7 @@
         return;
       }
 
-      // Cancel any ongoing speech
+      // Cancel any ongoing speech first
       this.stopSpeaking();
 
       const utterance = new SpeechSynthesisUtterance(text);
@@ -697,6 +709,12 @@
     async processUserInput(text) {
       if (!text.trim()) return;
 
+      // Prevent processing while already processing or speaking (loop prevention)
+      if (this.state.isProcessing || this.state.isSpeaking) {
+        console.log('[Aria] Already processing/speaking, ignoring input:', text.substring(0, 30));
+        return;
+      }
+
       this.addMessage('user', text);
       this.state.conversationHistory.push({ role: 'user', content: text });
       this.state.isProcessing = true;
@@ -708,7 +726,8 @@
         this.speak(response);
       } catch (error) {
         console.error('AI response error:', error);
-        this.speak("I'm having trouble connecting right now. Please try again or call us directly.");
+        // Don't speak on errors - just show in UI to prevent loops
+        this.addMessage('assistant', "I'm having trouble right now. Please try again or call us at " + (this.config.phone || 'our office') + ".");
       }
 
       this.state.isProcessing = false;
@@ -727,27 +746,48 @@
       switch (intent) {
         case 'schedule':
           this.trackEvent('intent_schedule');
-          return `I'd love to help you schedule an appointment! Let me connect you with our booking system. You can also call us at ${this.config.phone || 'our office'} to speak with someone directly.`;
+          // Open booking form immediately after brief response
+          setTimeout(() => this.triggerAction('openBooking'), 1500);
+          return `Perfect! Opening our scheduling form now.`;
 
         case 'quote':
           this.trackEvent('intent_quote');
-          return `Great! I can help you get an estimate. To give you an accurate quote, I'll need some details about your project. What type of work are you looking to have done?`;
+          return `Countertop pricing depends on the material - quartz runs $45-85 per square foot, granite $40-75, marble $60-150. A typical kitchen is $2,500-5,000 installed. Say "schedule" or click Schedule Visit for a free in-home estimate!`;
 
         case 'hours':
-          return `We're open ${this.config.businessContext.businessHours}. Would you like to schedule a visit during our business hours?`;
+          return `We're open ${this.config.businessContext.businessHours}. Our showroom at 15084 W Bell Rd in Surprise has over 200 slabs you can see in person. Would you like to schedule a visit?`;
 
         case 'services':
           const services = this.config.businessContext.services.join(', ');
-          return `We specialize in ${services}. Which of these are you interested in learning more about?`;
+          return `We specialize in ${services}. We handle everything from simple countertop replacements to full kitchen remodels. What project are you working on?`;
 
         case 'transfer':
           this.trackEvent('intent_transfer');
-          return `I'll connect you with one of our team members. Please hold on, or you can call us directly at ${this.config.phone || 'our office number'}.`;
+          // Offer to call directly
+          setTimeout(() => this.triggerAction('callPhone'), 2500);
+          return `Of course! I'll connect you now. If the call doesn't start automatically, our number is ${this.config.phone || '602-833-7194'}.`;
+
+        case 'design':
+          this.trackEvent('intent_design');
+          setTimeout(() => this.triggerAction('openDesigner'), 2500);
+          return `Great idea! Let me open our Room Designer for you. You can plan your kitchen layout, try different cabinet styles, and visualize materials in 3D.`;
+
+        case 'showroom':
+          this.trackEvent('intent_showroom');
+          return `Our showroom is at 15084 W Bell Rd in Surprise, right near the 303. We have over 200 slabs on display! We're open Monday through Saturday, 8am to 6pm. Would you like to schedule a visit?`;
+
+        case 'timeline':
+          this.trackEvent('intent_timeline');
+          return `Most countertop projects take 7-10 business days from start to finish. We'll template your space within a few days, fabricate for about a week, then install - usually in just one day! You can use your kitchen that same evening.`;
+
+        case 'warranty':
+          return `We stand behind our work! All installations come with our craftsmanship warranty. Most materials also have manufacturer warranties - Silestone offers 25 years, MSI quartz has lifetime coverage, and granite is typically 10-15 years.`;
 
         default:
-          // Call external AI API if configured
-          if (this.config.apiEndpoint) {
-            return await this.callExternalAI(userMessage);
+          // Use knowledge base for intelligent responses
+          const knowledgeResponse = this.searchKnowledge(userMessage);
+          if (knowledgeResponse) {
+            return knowledgeResponse;
           }
 
           return this.getDefaultResponse();
@@ -767,14 +807,35 @@
 
     // Detect user intent
     detectIntent(message) {
-      const lowerMessage = message.toLowerCase();
+      const lowerMessage = message.toLowerCase().trim();
+
+      // Check for day names - user is trying to schedule
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'tomorrow', 'today', 'next week', 'this week'];
+      if (days.some(day => lowerMessage.includes(day))) {
+        return 'schedule';
+      }
+
+      // Check for confirmation words after scheduling context
+      const confirmations = ['yes', 'yeah', 'sure', 'ok', 'okay', 'please', 'yep', 'absolutely', 'definitely', "let's do it", 'sounds good'];
+      if (confirmations.some(c => lowerMessage === c || lowerMessage.startsWith(c + ' '))) {
+        // If last conversation was about scheduling, treat as schedule
+        const lastAssistantMsg = this.state.conversationHistory.filter(m => m.role === 'assistant').pop();
+        if (lastAssistantMsg && (lastAssistantMsg.content.includes('schedule') || lastAssistantMsg.content.includes('estimate') || lastAssistantMsg.content.includes('appointment'))) {
+          return 'schedule';
+        }
+        return 'transfer'; // Default confirmation = talk to someone
+      }
 
       const intents = {
-        schedule: ['schedule', 'appointment', 'book', 'visit', 'come out', 'available', 'meeting'],
-        quote: ['quote', 'estimate', 'price', 'cost', 'how much', 'pricing', 'bid'],
-        hours: ['hours', 'open', 'close', 'when are you', 'business hours', 'availability'],
-        services: ['services', 'what do you', 'offer', 'specialize', 'work on'],
-        transfer: ['speak to someone', 'human', 'real person', 'representative', 'talk to']
+        schedule: ['schedule', 'appointment', 'book a', 'book an', 'visit', 'come out', 'come over', 'meeting', 'consultation', 'free estimate', 'get an estimate', 'set up', 'arrange', 'measure my'],
+        quote: ['quote', 'price', 'cost', 'how much', 'pricing', 'bid', 'budget', 'afford', 'expensive', 'cheap'],
+        hours: ['hours', 'open', 'close', 'when are you', 'business hours'],
+        services: ['services', 'what do you', 'offer', 'specialize', 'work on', 'do you do'],
+        transfer: ['speak to someone', 'human', 'real person', 'representative', 'talk to', 'call me', 'phone', 'call us', 'contact'],
+        design: ['design', 'designer', 'room designer', 'visualize', 'see what it looks like', 'plan', 'layout', '3d', 'tool'],
+        showroom: ['showroom', 'see samples', 'in person', 'look at', 'come in', 'location', 'where are you', 'address', 'directions'],
+        timeline: ['how long', 'timeline', 'turnaround', 'when can', 'delivery', 'install date', 'take'],
+        warranty: ['warranty', 'guarantee', 'last', 'durable', 'durability']
       };
 
       for (const [intent, keywords] of Object.entries(intents)) {
@@ -813,12 +874,49 @@
       return this.getDefaultResponse();
     }
 
+    // Search knowledge base for relevant response
+    searchKnowledge(message) {
+      const lowerMessage = message.toLowerCase();
+      const knowledge = this.config.knowledge || {};
+
+      // Search materials
+      if (knowledge.materials) {
+        for (const [key, info] of Object.entries(knowledge.materials)) {
+          if (lowerMessage.includes(key.toLowerCase())) {
+            return info;
+          }
+        }
+      }
+
+      // Search topics
+      if (knowledge.topics) {
+        for (const [key, info] of Object.entries(knowledge.topics)) {
+          const keywords = key.toLowerCase().split('|');
+          if (keywords.some(kw => lowerMessage.includes(kw.trim()))) {
+            return info;
+          }
+        }
+      }
+
+      // Search vendors
+      if (knowledge.vendors) {
+        for (const [key, info] of Object.entries(knowledge.vendors)) {
+          if (lowerMessage.includes(key.toLowerCase())) {
+            return info;
+          }
+        }
+      }
+
+      return null;
+    }
+
     // Get default response
     getDefaultResponse() {
       const responses = [
-        `I'd be happy to help with that! Could you tell me more about what you're looking for?`,
-        `That's a great question. Let me help you with that. What specific information do you need?`,
-        `I understand. Would you like me to connect you with one of our specialists who can help further?`
+        `I'd be happy to help with that! You can ask me about materials like quartz, granite, or marble, get pricing info, or schedule a free estimate. What would you like to know?`,
+        `Great question! I can help with countertop materials, pricing, timeline, or scheduling. We also have a Room Designer tool if you want to visualize your project. What interests you most?`,
+        `I'm here to help! Whether you need material recommendations, cost estimates, or want to schedule a showroom visit, just let me know. What project are you working on?`,
+        `I'd love to help you find the perfect countertops! Are you interested in learning about materials, getting a price estimate, or scheduling a free consultation?`
       ];
       return responses[Math.floor(Math.random() * responses.length)];
     }
@@ -826,11 +924,57 @@
     // Quick action handlers
     quickAction(action) {
       const messages = {
-        schedule: "I'd like to schedule an appointment",
-        quote: "I need a quote for my project",
-        hours: "What are your business hours?"
+        schedule: "I'd like to schedule a free estimate",
+        quote: "How much do countertops cost?",
+        hours: "What are your business hours?",
+        materials: "What countertop materials do you offer?",
+        design: "Tell me about your design tools"
       };
-      this.processUserInput(messages[action]);
+      this.processUserInput(messages[action] || action);
+    }
+
+    // Trigger real actions (booking, calls, navigation)
+    triggerAction(action) {
+      switch (action) {
+        case 'openBooking':
+          this.close(); // Close Aria first
+          // Try multiple ways to open booking
+          if (window.SGWidgets && typeof window.SGWidgets.showBookingModal === 'function') {
+            setTimeout(() => window.SGWidgets.showBookingModal(), 300);
+          } else if (window.remodelyBooking && typeof window.remodelyBooking.open === 'function') {
+            setTimeout(() => window.remodelyBooking.open(), 300);
+          } else if (window.Calendly) {
+            // Try Calendly if available
+            window.Calendly.initPopupWidget({url: 'https://calendly.com/surprisegranite/free-estimate'});
+          } else {
+            // Fallback to contact page
+            console.log('[Aria] No booking widget found, redirecting to contact');
+            window.location.href = '/contact-us/';
+          }
+          break;
+
+        case 'openDesigner':
+          this.close();
+          window.location.href = '/tools/room-designer/';
+          break;
+
+        case 'openShowroom':
+          this.close();
+          window.location.href = '/showroom/';
+          break;
+
+        case 'callPhone':
+          window.location.href = `tel:${this.config.phone || '+16028337194'}`;
+          break;
+
+        case 'openCatalog':
+          this.close();
+          window.location.href = '/countertops/';
+          break;
+
+        default:
+          console.log('[Aria] Unknown action:', action);
+      }
     }
 
     // Toggle text input

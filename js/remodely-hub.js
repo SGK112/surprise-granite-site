@@ -14,6 +14,151 @@
   if (window.location.pathname.includes('/tools/room-designer')) return;
 
   const HUB_ID = 'remodely-hub';
+  const WIDGET_BASE = '/remodely-platform/widgets';
+
+  // Aria configuration for Surprise Granite (browser-based voice)
+  const ARIA_CONFIG = {
+    businessName: 'Surprise Granite',
+    assistantName: 'Aria',
+    primaryColor: '#f9cb00',
+    secondaryColor: '#1a1a2e',
+    theme: 'dark',
+    position: 'right',
+    triggerType: 'none', // We control opening via hub
+
+    // Voice settings (browser speech synthesis)
+    language: 'en-US',
+    speed: 1.0,
+
+    // Greeting
+    greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today? I can answer questions about materials, pricing, design ideas, or help you schedule a free estimate.",
+
+    // Phone number for transfers
+    phone: '(602) 833-7194',
+
+    // Business context
+    businessContext: {
+      industry: 'countertops',
+      services: ['Countertops', 'Tile & Backsplash', 'Cabinets', 'Flooring', 'Full Remodel'],
+      serviceArea: 'Surprise, Peoria, Sun City, Glendale, Phoenix, Scottsdale, Goodyear, Buckeye, Avondale, Litchfield Park, El Mirage, Youngtown',
+      businessHours: 'Monday-Saturday 8am-6pm'
+    },
+
+    // FAQ responses
+    faqs: [
+      { question: 'hours', answer: "We're open Monday through Saturday, 8am to 6pm. Feel free to stop by our showroom!" },
+      { question: 'location', answer: "We're at 15084 W Bell Rd in Surprise, Arizona - right near the 303. We serve the entire Phoenix metro area including Scottsdale, Peoria, and Goodyear." },
+      { question: 'estimate', answer: "Absolutely! Our estimates are always free. I can help you schedule an in-home consultation where we'll measure your space and discuss materials. What day works best for you?" },
+      { question: 'cost', answer: "Countertop pricing depends on the material. Quartz runs $45-85 per square foot, granite $40-75, marble $60-150, and quartzite $70-120. That includes professional installation. Want me to give you a rough estimate for your project?" },
+      { question: 'price', answer: "Great question! Our countertops range from $40-150 per square foot installed. Quartz is our most popular at $45-85/sq ft. A typical kitchen runs $2,500-5,000. Would you like a free estimate?" },
+      { question: 'how long', answer: "Most countertop projects take 1-2 weeks from template to installation. We'll measure your space, fabricate the counters, and install them - usually all within 7-10 business days." },
+      { question: 'warranty', answer: "We stand behind our work! All installations come with our craftsmanship warranty, and most materials have manufacturer warranties - Silestone offers 25 years, MSI quartz has lifetime coverage." },
+      { question: 'financing', answer: "Yes, we offer financing options! We work with several lenders to help make your dream kitchen affordable. Ask about our 12-month same-as-cash option." },
+      { question: 'showroom', answer: "Our showroom has over 200 slabs you can see in person! We're at 15084 W Bell Rd in Surprise. Come touch the materials, see the colors in natural light, and get inspired." }
+    ],
+
+    // Comprehensive knowledge base
+    knowledge: {
+      // Material types
+      materials: {
+        'quartz': "Quartz is our most popular choice - it's engineered stone that's non-porous, scratch-resistant, and never needs sealing. We carry MSI, Silestone, Cambria, and more. Prices range from $45-85 per square foot installed. Popular styles include Calacatta, marble-look, and solid colors.",
+        'granite': "Granite is a natural stone that's heat-resistant and timeless. Each slab is unique! We source premium granite starting at $40 per square foot installed. It does need sealing once a year, but many people love the natural variations.",
+        'marble': "Marble is the ultimate luxury surface - perfect for elegant kitchens and bathrooms. It's softer than granite so it needs more care, but nothing beats that classic look. Prices start around $60 per square foot.",
+        'quartzite': "Quartzite is natural stone that's actually harder than granite! It has the beauty of marble with superior durability. It's great for busy kitchens. Prices range from $70-120 per square foot.",
+        'porcelain': "Porcelain slabs are a newer option - ultra-thin, lightweight, and virtually indestructible. They resist UV, heat, and scratches. Great for indoor/outdoor kitchens. Starting around $50 per square foot.",
+        'dekton': "Dekton by Cosentino is an ultra-compact surface made with extreme heat and pressure. It's virtually indestructible - resistant to scratches, stains, UV, and heat up to 600°F. Perfect for outdoor kitchens and heavy-use areas.",
+        'silestone': "Silestone is premium quartz by Cosentino with built-in antimicrobial protection. They offer unique colors and the marble-look Calacatta series is stunning. Comes with a 25-year warranty.",
+        'cambria': "Cambria is American-made quartz - all their slabs are produced in Minnesota. Known for durability and innovative designs like their Brittanicca collection that mimics natural marble beautifully."
+      },
+
+      // Vendors
+      vendors: {
+        'msi': "MSI Surfaces is one of our main suppliers. They offer great value on quartz, granite, and porcelain. Their Q Premium Natural Quartz line is very popular - lots of calacatta and marble-look options.",
+        'daltile': "Daltile is our go-to for tile and backsplash. They make everything from subway tile to large-format porcelain. Great quality, huge selection, and they're a trusted American brand.",
+        'cosentino': "Cosentino makes Silestone quartz and Dekton ultra-compact surfaces. Premium products from Spain with excellent warranties and innovative technology like N-Boost for stain resistance.",
+        'bravo tile': "Bravo Tile offers beautiful mosaic and specialty tiles. Perfect for unique backsplashes and accent walls. Great for adding personality to your kitchen or bathroom."
+      },
+
+      // Topics (keywords separated by |)
+      topics: {
+        'calacatta|calcatta|white marble': "Calacatta-look is our most requested style! We have it in quartz from MSI (Calacatta Arno, Calacatta Gold), Silestone (Calacatta Gold), and Cambria (Brittanicca). You get the marble look without the maintenance. Would you like to see samples?",
+        'backsplash|back splash|tile': "We install beautiful backsplashes! Popular options include subway tile, marble mosaics, and large-format porcelain that matches your countertops. A backsplash can totally transform your kitchen. Prices start around $15-25 per square foot installed.",
+        'kitchen remodel|full kitchen|renovation': "We do full kitchen remodels! Countertops, cabinets, backsplash, flooring - the whole package. We'll help you design your dream kitchen and coordinate everything. Want to schedule a design consultation?",
+        'bathroom|vanity|bath': "We love bathroom projects! From vanity tops to shower surrounds, we've got you covered. Quartz and marble are popular for bathrooms. A new vanity top can start as low as $500 installed.",
+        'outdoor|bbq|grill': "Outdoor kitchens are huge in Arizona! Dekton and granite are perfect for outdoor use - they handle the heat and sun. We can build your dream outdoor entertaining space.",
+        'cabinet|cabinets': "We offer cabinet installation too! We work with quality cabinet lines and can do full replacements or refacing. White shaker and modern gray are trending right now.",
+        'flooring|floor|lvp|hardwood': "We install flooring as well - tile, LVP, and hardwood. LVP is super popular right now because it's waterproof and looks like real wood. Prices start around $6-12 per square foot installed.",
+        'waterfall|island': "Waterfall edges are stunning! That's where the countertop material flows down the sides of your island. It's a modern, high-end look. Usually adds $500-1500 depending on the size.",
+        'edge|edges|profile': "We offer lots of edge profiles! Standard eased edge is included, and we also do beveled, bullnose, ogee, and mitered edges. I can show you samples at our showroom.",
+        'seam|seams': "We minimize seams as much as possible and place them strategically. Our fabricators are experts at making seams nearly invisible. Most kitchens have 1-2 seams depending on the layout.",
+        'undermount|sink|faucet': "Undermount sinks are the most popular - they create a seamless look and are easy to clean. We do all the sink cutouts and can recommend great plumbers for the install.",
+        'maintenance|care|clean': "Quartz is the easiest to maintain - just wipe with soap and water. Granite needs annual sealing. Marble requires more care but we'll teach you everything you need to know.",
+        'design|style|trend|color': "Current trends include white and gray tones, bold veining, waterfall islands, and mixed materials. Navy cabinets with white quartz is super popular right now. Want design ideas? Try our Room Designer tool!",
+        'measure|template|templating': "After you choose your material, we'll send a templater to your home to create exact measurements using laser technology. It takes about 30-60 minutes and ensures a perfect fit.",
+        'install|installation': "Installation usually takes just 1 day for most kitchens! Our crews are fast and clean. We'll remove your old counters, install the new ones, and clean up. You can use your kitchen that same evening.",
+        'timeline|how long|turnaround': "From selection to installation, most projects take 7-10 business days. Template happens within a few days of your order, then fabrication takes about a week, and installation is scheduled right after."
+      }
+    }
+  };
+
+  // Aria instance
+  let ariaInstance = null;
+  let ariaLoading = false;
+
+  // Load a script dynamically
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  // Initialize and open Aria
+  async function openAria() {
+    // If already loaded, just open
+    if (ariaInstance) {
+      ariaInstance.open();
+      return;
+    }
+
+    // Prevent double loading
+    if (ariaLoading) return;
+    ariaLoading = true;
+
+    try {
+      // Load the Aria Voice script (browser-based, no backend required)
+      await loadScript(`${WIDGET_BASE}/voice/aria-voice.js`);
+
+      if (window.AriaVoice) {
+        ariaInstance = new window.AriaVoice(ARIA_CONFIG);
+        ariaInstance.init(); // No floating button since we control it via hub
+
+        // Store globally for other scripts
+        window.ariaVoice = ariaInstance;
+
+        console.log('Aria Voice loaded via Remodely Hub');
+
+        // Open it
+        ariaInstance.open();
+      } else {
+        console.error('AriaVoice class not found after loading script');
+        window.location.href = '/contact-us/';
+      }
+    } catch (err) {
+      console.error('Failed to load Aria:', err);
+      window.location.href = '/contact-us/';
+    } finally {
+      ariaLoading = false;
+    }
+  }
 
   function createRemodelyHub() {
     // Check if already exists
@@ -440,20 +585,10 @@
       }
     });
 
-    // Aria button - trigger Aria widget
+    // Aria button - trigger Aria widget (loads directly, no dependency on remodely-widgets.js)
     ariaBtn.addEventListener('click', () => {
       closeMenu();
-      // Try to open Aria using SGWidgets API
-      if (window.SGWidgets && typeof window.SGWidgets.showAriaVoice === 'function') {
-        window.SGWidgets.showAriaVoice();
-      } else if (window.ariaVoice && typeof window.ariaVoice.open === 'function') {
-        window.ariaVoice.open();
-      } else if (window.ariaRealtime && typeof window.ariaRealtime.open === 'function') {
-        window.ariaRealtime.open();
-      } else {
-        // Fallback - redirect to contact
-        window.location.href = '/contact-us/';
-      }
+      openAria();
     });
 
     // Close menu when clicking a link
@@ -467,5 +602,18 @@
     document.addEventListener('DOMContentLoaded', createRemodelyHub);
   } else {
     createRemodelyHub();
+  }
+
+  // Expose openAria globally for other scripts
+  window.RemodelyHub = {
+    openAria: openAria
+  };
+
+  // Compatibility layer for SGWidgets.showAriaVoice
+  if (!window.SGWidgets) {
+    window.SGWidgets = {};
+  }
+  if (!window.SGWidgets.showAriaVoice) {
+    window.SGWidgets.showAriaVoice = openAria;
   }
 })();
