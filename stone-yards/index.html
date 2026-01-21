@@ -459,22 +459,98 @@
 
   <!-- Map -->
   <section class="map-section">
-    <div class="map-container">
-      <iframe
-        src="https://www.google.com/maps/d/embed?mid=1_YOUR_MAP_ID&ehbc=2E312F"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        title="Stone Yards Map">
-      </iframe>
-      <!-- Fallback static map if embed doesn't work -->
-      <iframe
-        src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d212867.83130948405!2d-112.19379068964844!3d33.47620100000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sstone%20slab%20warehouse%20phoenix%20az!5e0!3m2!1sen!2sus!4v1705875600000!5m2!1sen!2sus"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        title="Stone Yards in Phoenix Area">
-      </iframe>
-    </div>
+    <div class="map-container" id="stone-yards-map"></div>
   </section>
+
+  <script>
+    // Initialize interactive map with all stone yard locations
+    function initStoneYardsMap() {
+      const mapContainer = document.getElementById('stone-yards-map');
+      if (!mapContainer) return;
+
+      // Stone yard locations with coordinates
+      const locations = [
+        { name: 'MSI Surfaces', address: '4405 W Roosevelt St, Phoenix, AZ 85043', lat: 33.4583, lng: -112.1407, phone: '(602) 393-6330' },
+        { name: 'Arizona Tile', address: '8829 S Priest Dr, Tempe, AZ 85284', lat: 33.3456, lng: -111.9606, phone: '(480) 893-9393' },
+        { name: 'Cactus Stone & Tile', address: '401 S 50th St, Phoenix, AZ 85034', lat: 33.4438, lng: -111.9811, phone: '(602) 275-6400' },
+        { name: 'Cosentino Center', address: '8307 S Priest Dr, Tempe, AZ 85284', lat: 33.3511, lng: -111.9606, phone: '(480) 763-9400' },
+        { name: 'Cambria Gallery', address: '1250 N Fairway Dr, Avondale, AZ 85323', lat: 33.4536, lng: -112.3234, phone: '(623) 932-1482' },
+        { name: 'Daltile Stone & Slab', address: '2040 W Rio Salado Pkwy, Tempe, AZ 85281', lat: 33.4317, lng: -111.9642, phone: '(602) 243-2772' },
+        { name: 'Bolder Image Stone', address: '4101 W Van Buren St, Phoenix, AZ 85009', lat: 33.4516, lng: -112.1306, phone: '(602) 484-7700' },
+        { name: 'Aracruz Granite', address: '2310 W Sherman St, Phoenix, AZ 85009', lat: 33.4283, lng: -112.0964, phone: '(602) 252-1171' },
+        { name: 'Classic Surfaces', address: '4645 W McDowell Rd, Phoenix, AZ 85035', lat: 33.4650, lng: -112.1378, phone: '(219) 213-4239' },
+        { name: 'Architectural Surfaces', address: '9175 E Pima Center Pkwy, Scottsdale, AZ 85258', lat: 33.6114, lng: -111.8867, phone: '(480) 210-3570' }
+      ];
+
+      // Create static map with markers using Google Static Maps API alternative
+      // Using iframe with search query as fallback
+      const centerLat = 33.45;
+      const centerLng = -112.05;
+
+      mapContainer.innerHTML = `
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d212867.8!2d-112.15!3d33.45!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x872b12ed50a179cb%3A0x8c69c7f8354a1bac!2sPhoenix%2C%20AZ!5e0!3m2!1sen!2sus!4v1706000000000!5m2!1sen!2sus"
+          width="100%"
+          height="100%"
+          style="border:0;"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+        <div class="map-overlay">
+          <div class="map-locations-list">
+            ${locations.map((loc, i) => `
+              <a href="https://maps.google.com/?q=${encodeURIComponent(loc.address)}" target="_blank" class="map-location-pin" title="${loc.name}">
+                <span class="pin-number">${i + 1}</span>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initStoneYardsMap);
+    } else {
+      initStoneYardsMap();
+    }
+  </script>
+
+  <style>
+    .map-container {
+      position: relative;
+    }
+    .map-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+    .map-location-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      color: var(--dark);
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      pointer-events: auto;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .map-location-pin:hover {
+      transform: scale(1.15);
+    }
+  </style>
 
   <!-- Stone Yards List -->
   <section class="content-wrapper">
