@@ -6589,6 +6589,7 @@
           <!-- Role Switcher (for demo/testing - remove in production) -->
           <div id="role-switcher" style="display: none; margin-right: 12px;">
             <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;">
+              <option value="homeowner">Homeowner View</option>
               <option value="customer">Customer View</option>
               <option value="contractor">Contractor View</option>
               <option value="fabricator">Fabricator View</option>
@@ -10002,6 +10003,10 @@
 
     // Role-based feature permissions
     const ROLE_PERMISSIONS = {
+      homeowner: {
+        nav: ['dashboard', 'profile', 'favorites', 'tools', 'calendar'],
+        features: ['view_own_jobs', 'view_estimates', 'approve_estimates', 'pay_invoices', 'view_calendar', 'upload_files', 'leave_reviews']
+      },
       customer: {
         nav: ['dashboard', 'profile', 'favorites', 'listings', 'calendar', 'messages'],
         features: ['view_own_jobs', 'view_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews']
@@ -10095,6 +10100,11 @@
       if (!ROLE_PERMISSIONS[newRole]) return;
 
       userRole = newRole;
+
+      // Update role flags based on new role
+      isAdmin = ['admin', 'super_admin'].includes(newRole);
+      isSuperAdmin = newRole === 'super_admin';
+
       applyRoleBasedNav(newRole);
 
       // Update role display
@@ -10105,9 +10115,11 @@
       // Show notification
       showToast(`Switched to ${roleLabels[newRole]} view`);
 
-      // Refresh dashboard to show role-specific content
-      if (document.getElementById('page-dashboard').classList.contains('active')) {
-        setupDashboard();
+      // Refresh current page to show role-specific content
+      const activePage = document.querySelector('.page.active');
+      if (activePage) {
+        const pageId = activePage.id.replace('page-', '');
+        showPage(pageId);
       }
     }
 

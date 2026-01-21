@@ -51,12 +51,12 @@
       color: var(--text);
       background: var(--bg);
       line-height: 1.5;
-      padding-top: 120px; /* Account for fixed nav */
+      padding-top: 140px; /* Account for fixed nav (140px desktop) */
     }
 
     @media (max-width: 767px) {
       body {
-        padding-top: 70px; /* Smaller nav on mobile */
+        padding-top: 64px; /* Mobile nav is 64px */
       }
     }
 
@@ -113,15 +113,36 @@
        FILTER SIDEBAR
        ============================================ */
     .filter-sidebar {
+      position: sticky;
+      top: 160px; /* Nav height (140px) + 20px gap */
       align-self: start;
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+      z-index: 100;
+      scrollbar-width: thin;
+    }
+
+    .filter-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .filter-sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .filter-sidebar::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+
+    .filter-sidebar::-webkit-scrollbar-thumb:hover {
+      background: #aaa;
     }
 
     .filter-card {
       background: var(--bg-light);
       border-radius: 12px;
       padding: 16px;
-      max-height: calc(100vh - 160px);
-      overflow-y: auto;
     }
 
     /* Results Bar */
@@ -256,7 +277,7 @@
       padding: 8px 10px;
       background: #fafafa;
       border-top: 2px solid var(--accent);
-      max-height: 220px;
+      max-height: 180px;
       overflow-y: auto;
     }
 
