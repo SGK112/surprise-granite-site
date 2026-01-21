@@ -425,11 +425,11 @@
       return msg;
     }
 
-    setStatus(text, className = '') {
+    setStatus(text, statusClass = '') {
       const status = this.widget.querySelector('#aria-status');
       if (status) {
         status.textContent = text;
-        status.className = className;
+        status.className = statusClass; // thinking, speaking, or empty
       }
     }
 
@@ -449,10 +449,14 @@
     }
 
     async send() {
+      if (!this.widget) return;
+
       const input = this.widget.querySelector('#aria-input');
       const sendBtn = this.widget.querySelector('#aria-send');
-      const text = input.value.trim();
 
+      if (!input || !sendBtn) return;
+
+      const text = input.value.trim();
       if (!text || this.isProcessing) return;
 
       // Clear input and disable
@@ -468,14 +472,24 @@
       this.setStatus('Thinking...', 'thinking');
 
       try {
+        // Build conversation history (exclude the message we just added)
+        const history = this.messages.slice(0, -1).slice(-6).map(m => ({
+          role: m.role,
+          content: m.content
+        }));
+
         const res = await fetch(this.config.apiEndpoint + '/api/surprise-granite/aria-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: text,
-            conversationHistory: this.messages.slice(-6)
+            conversationHistory: history
           })
         });
+
+        if (!res.ok) {
+          throw new Error('Server returned ' + res.status);
+        }
 
         const data = await res.json();
         this.hideTyping();
@@ -483,13 +497,15 @@
         if (data.success && data.response) {
           this.addMessage('assistant', data.response);
 
-          // Play audio
+          // Play audio if available
           if (data.audio) {
             this.setStatus('Speaking...', 'speaking');
             await this.playAudio(data.audio);
           }
         } else {
-          this.addMessage('assistant', 'Sorry, something went wrong. Please try again or call us.');
+          const errMsg = data.error || 'Something went wrong';
+          console.error('[Aria] API error:', errMsg);
+          this.addMessage('assistant', 'Sorry, I had trouble with that. Please try again or call us.');
         }
       } catch (err) {
         console.error('[Aria] Error:', err);
