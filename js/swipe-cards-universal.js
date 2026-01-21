@@ -42,8 +42,8 @@
     productType = 'tile';
     productLabel = 'Tiles';
     jsonPath = '/data/tile.json';
-    jsonKey = 'tile';
-    urlPrefix = '/tile/';
+    jsonKey = 'tiles';
+    urlPrefix = '/tiles/';
   } else if (path.includes('cabinet')) {
     productType = 'cabinet';
     productLabel = 'Cabinets';
@@ -631,7 +631,7 @@
       return `Quality tile for walls, floors, and backsplashes. Durable, easy to maintain, and available in various sizes.`;
     }
 
-    return `Quality ${type} available at our showroom. Schedule a free consultation to see samples and get expert advice.`;
+    return `Quality ${type} available through our stone supplier partners. Schedule a free in-home consultation or visit a stone yard to see samples.`;
   }
 
   function showIntroOverlay() {
