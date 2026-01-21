@@ -15,6 +15,7 @@
 
   const HUB_ID = 'remodely-hub';
   const WIDGET_BASE = '/remodely-platform/widgets';
+  const WIDGET_VERSION = 'v3'; // Cache bust
 
   // Aria configuration for Surprise Granite (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
@@ -104,15 +105,18 @@
   let ariaInstance = null;
   let ariaLoading = false;
 
-  // Load a script dynamically
+  // Load a script dynamically with cache busting
   function loadScript(src) {
     return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-        resolve();
-        return;
-      }
+      // Add version for cache busting
+      const versionedSrc = src + '?' + WIDGET_VERSION;
+
+      // Remove any old versions of this script
+      const oldScript = document.querySelector(`script[src^="${src}"]`);
+      if (oldScript) oldScript.remove();
+
       const script = document.createElement('script');
-      script.src = src;
+      script.src = versionedSrc;
       script.async = true;
       script.onload = resolve;
       script.onerror = reject;
@@ -123,7 +127,7 @@
   // Initialize and open Aria
   async function openAria() {
     // If already loaded, just open
-    if (ariaInstance) {
+    if (ariaInstance && ariaInstance.widget) {
       ariaInstance.open();
       return;
     }
@@ -133,18 +137,26 @@
     ariaLoading = true;
 
     try {
+      // Clear any old widget from DOM
+      const oldWidget = document.getElementById('aria-widget-container');
+      if (oldWidget) oldWidget.remove();
+
+      // Clear old class reference to force fresh load
+      delete window.AriaOpenAI;
+      ariaInstance = null;
+
       // Load the Aria OpenAI script (OpenAI TTS via VoiceNow CRM backend)
       await loadScript(`${WIDGET_BASE}/voice/aria-openai.js`);
 
       if (window.AriaOpenAI) {
         ariaInstance = new window.AriaOpenAI(ARIA_CONFIG);
-        ariaInstance.init(); // No floating button since we control it via hub
+        ariaInstance.init();
 
         // Store globally for other scripts
         window.ariaOpenAI = ariaInstance;
-        window.ariaVoice = ariaInstance; // Backwards compatibility
+        window.ariaVoice = ariaInstance;
 
-        console.log('Aria (OpenAI TTS) loaded via Remodely Hub');
+        console.log('Aria ' + WIDGET_VERSION + ' loaded via Remodely Hub');
 
         // Open it
         ariaInstance.open();
