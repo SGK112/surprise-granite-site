@@ -69,37 +69,78 @@ async function sendAdminNotification(subject, html) {
 }
 
 /**
- * Generate standard email wrapper
+ * Generate standard email wrapper - Premium Design
  */
 function wrapEmailTemplate(content, options = {}) {
-  const { headerColor = '#f9cb00', headerText = '' } = options;
+  const { headerColor = '#1a1a2e', accentColor = '#f9cb00', headerText = '', showLogo = true } = options;
 
   return `
 <!DOCTYPE html>
 <html>
-<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f5f5f5;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f0f0f0;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+      <td align="center" style="padding: 30px 15px;">
+        <!-- Main Container -->
+        <table width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+          <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, ${headerColor} 0%, #e6b800 100%); padding: 25px; text-align: center;">
-              <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 40px; width: auto; margin-bottom: 10px;">
-              ${headerText ? `<h1 style="margin: 0; color: #1a1a2e; font-size: 22px; font-weight: 700;">${escapeHtml(headerText)}</h1>` : ''}
+            <td style="background: ${headerColor}; padding: 28px 30px; text-align: center;">
+              ${showLogo ? `
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6778a498803fe5d7ad57cef2_surprise-granite-logo-white-gold.png" alt="${COMPANY.shortName}" style="max-height: 45px; width: auto;">
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
+              ${headerText ? `
+              <h1 style="margin: ${showLogo ? '16px' : '0'} 0 0; color: #ffffff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px;">${escapeHtml(headerText)}</h1>
+              ` : ''}
             </td>
           </tr>
+          <!-- Accent Bar -->
           <tr>
-            <td style="padding: 30px;">
+            <td style="background: ${accentColor}; height: 4px;"></td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 35px 30px;">
               ${content}
             </td>
           </tr>
+          <!-- Footer -->
           <tr>
-            <td style="background: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #e5e5e5;">
-              <p style="margin: 0 0 8px; color: #666; font-size: 13px;">
-                <a href="mailto:${COMPANY.email}" style="color: #1a1a2e; text-decoration: none;">${COMPANY.email}</a> •
-                <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none;">${COMPANY.phone}</a>
+            <td style="background: #fafafa; padding: 25px 30px; border-top: 1px solid #eaeaea;">
+              <table width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0 0 8px; color: #1a1a2e; font-size: 14px; font-weight: 600;">${COMPANY.shortName}</p>
+                    <p style="margin: 0 0 12px; color: #666; font-size: 13px;">
+                      <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; text-decoration: none; font-weight: 500;">${COMPANY.phone}</a>
+                      &nbsp;&nbsp;•&nbsp;&nbsp;
+                      <a href="mailto:${COMPANY.email}" style="color: #666; text-decoration: none;">${COMPANY.email}</a>
+                    </p>
+                    <p style="margin: 0 0 8px; color: #888; font-size: 12px;">${COMPANY.address}</p>
+                    <p style="margin: 0; color: #aaa; font-size: 11px;">${COMPANY.license} • Licensed, Bonded & Insured</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <!-- Bottom Text -->
+        <table width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px;">
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <p style="margin: 0; color: #999; font-size: 11px;">
+                © ${new Date().getFullYear()} ${COMPANY.name}. All rights reserved.
               </p>
-              <p style="margin: 0; color: #999; font-size: 11px;">${COMPANY.license} • Licensed & Insured</p>
             </td>
           </tr>
         </table>
@@ -153,35 +194,74 @@ function generateLeadNotificationEmail(lead) {
 }
 
 /**
- * Generate customer confirmation email
+ * Generate customer confirmation email - Premium Design
  */
 function generateCustomerConfirmationEmail(data) {
+  const firstName = (data.name || 'there').split(' ')[0];
+
   const content = `
-    <div style="text-align: center; margin-bottom: 25px;">
-      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 50%; margin: 0 auto 15px; line-height: 60px;">
-        <span style="font-size: 30px; color: #fff;">✓</span>
-      </div>
-      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 22px;">Thank You, ${escapeHtml(data.name || 'Valued Customer')}!</h2>
-      <p style="margin: 0; color: #666; font-size: 15px;">We've received your inquiry and will be in touch shortly.</p>
-    </div>
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.6;">
+      Hi ${escapeHtml(firstName)},
+    </p>
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      Thank you for reaching out to ${COMPANY.shortName}! We've received your inquiry and our team is reviewing it now.
+    </p>
 
-    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h3 style="margin: 0 0 12px; color: #1a1a2e; font-size: 16px;">What happens next?</h3>
-      <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px; line-height: 1.8;">
-        <li>Our team will review your project details</li>
-        <li>We'll contact you within 24 hours</li>
-        <li>We'll schedule a free consultation at your convenience</li>
-      </ul>
-    </div>
+    <!-- Timeline -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="background: #fafafa; border-radius: 12px; padding: 24px;">
+          <p style="margin: 0 0 16px; color: #1a1a2e; font-size: 14px; font-weight: 600;">What happens next:</p>
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 10px 0;">
+                <table cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="width: 32px; vertical-align: top;">
+                      <div style="width: 24px; height: 24px; background: #f9cb00; border-radius: 50%; text-align: center; line-height: 24px; color: #1a1a2e; font-size: 12px; font-weight: 700;">1</div>
+                    </td>
+                    <td style="padding-left: 12px; color: #555; font-size: 14px;">We'll review your project details</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0;">
+                <table cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="width: 32px; vertical-align: top;">
+                      <div style="width: 24px; height: 24px; background: #f9cb00; border-radius: 50%; text-align: center; line-height: 24px; color: #1a1a2e; font-size: 12px; font-weight: 700;">2</div>
+                    </td>
+                    <td style="padding-left: 12px; color: #555; font-size: 14px;">A team member will call within 24 hours</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0;">
+                <table cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="width: 32px; vertical-align: top;">
+                      <div style="width: 24px; height: 24px; background: #f9cb00; border-radius: 50%; text-align: center; line-height: 24px; color: #1a1a2e; font-size: 12px; font-weight: 700;">3</div>
+                    </td>
+                    <td style="padding-left: 12px; color: #555; font-size: 14px;">We'll schedule a free consultation at your convenience</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
-      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+    <p style="margin: 24px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Questions? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a>
     </p>
   `;
 
   return {
-    subject: `Thanks for contacting ${COMPANY.shortName}!`,
-    html: wrapEmailTemplate(content, { headerText: 'Request Received' })
+    subject: `We received your request - ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerText: 'Thank You!' })
   };
 }
 
@@ -540,136 +620,197 @@ function generateContractorAssignmentEmail(job, contractor) {
 }
 
 /**
- * Generate portal welcome email with access link
+ * Generate portal welcome email with access link - Premium Design
  */
 function generatePortalWelcomeEmail(data) {
   const { name, portal_url, appointment, pin_code } = data;
+  const firstName = (name || 'there').split(' ')[0];
 
   let appointmentSection = '';
   if (appointment && appointment.date) {
     const apptDate = new Date(appointment.date);
-    const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     appointmentSection = `
-      <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #ffc107;">
-        <h3 style="margin: 0 0 10px; color: #856404; font-size: 16px;">Your Appointment</h3>
-        <p style="margin: 0; color: #1a1a2e; font-size: 18px; font-weight: 600;">${formattedDate}</p>
-        ${appointment.time ? `<p style="margin: 5px 0 0; color: #666; font-size: 15px;">at ${escapeHtml(appointment.time)}</p>` : ''}
-      </div>
+      <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+        <tr>
+          <td style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); border-radius: 12px; padding: 24px; text-align: center;">
+            <p style="margin: 0 0 4px; color: #f9cb00; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Upcoming Appointment</p>
+            <p style="margin: 0 0 4px; color: #ffffff; font-size: 20px; font-weight: 700;">${formattedDate}</p>
+            ${appointment.time ? `<p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 15px;">${escapeHtml(appointment.time)}</p>` : ''}
+          </td>
+        </tr>
+      </table>
     `;
   }
 
   let pinSection = '';
   if (pin_code) {
     pinSection = `
-      <div style="background: #f8f8f8; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
-        <p style="margin: 0 0 5px; color: #666; font-size: 13px;">Your Portal PIN</p>
-        <p style="margin: 0; color: #1a1a2e; font-size: 24px; font-weight: 700; letter-spacing: 4px;">${escapeHtml(pin_code)}</p>
-      </div>
+      <table width="100%" cellspacing="0" cellpadding="0" style="margin-top: 20px;">
+        <tr>
+          <td style="background: #f5f5f5; border-radius: 8px; padding: 16px; text-align: center;">
+            <p style="margin: 0 0 6px; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Your Secure PIN</p>
+            <p style="margin: 0; color: #1a1a2e; font-size: 28px; font-weight: 700; letter-spacing: 6px; font-family: monospace;">${escapeHtml(pin_code)}</p>
+          </td>
+        </tr>
+      </table>
     `;
   }
 
   const content = `
-    <div style="text-align: center; margin-bottom: 25px;">
-      <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); border-radius: 50%; margin: 0 auto 20px; line-height: 70px;">
-        <span style="font-size: 35px;">🏠</span>
-      </div>
-      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Welcome to Your Customer Portal!</h2>
-    </div>
-
-    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
-      Hi ${escapeHtml(name || 'Valued Customer')},
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.6;">
+      Hi ${escapeHtml(firstName)},
     </p>
-    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
-      Thank you for choosing ${COMPANY.shortName}! We've created a personal portal just for you where you can track your project, view estimates, and communicate with our team.
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      Thank you for choosing ${COMPANY.shortName}! We've set up a personal project portal where you can track progress, view documents, and stay connected with our team.
     </p>
 
     ${appointmentSection}
 
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(249,203,0,0.3);">Access Your Portal</a>
-    </div>
+    <!-- CTA Button -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+      <tr>
+        <td align="center">
+          <a href="${portal_url}" style="display: inline-block; background: #f9cb00; color: #1a1a2e; text-decoration: none; padding: 16px 36px; border-radius: 8px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px;">Access Your Portal</a>
+        </td>
+      </tr>
+    </table>
 
-    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 25px 0;">
-      <h3 style="margin: 0 0 12px; color: #1a1a2e; font-size: 16px;">What you can do in your portal:</h3>
-      <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px; line-height: 1.8;">
-        <li>View your appointment details</li>
-        <li>Upload photos of your project</li>
-        <li>Review and approve estimates</li>
-        <li>Pay invoices securely online</li>
-        <li>Message our team directly</li>
-        <li>Track your project status</li>
-      </ul>
-    </div>
+    <!-- Features Grid -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="background: #fafafa; border-radius: 12px; padding: 24px;">
+          <p style="margin: 0 0 16px; color: #1a1a2e; font-size: 14px; font-weight: 600;">In your portal, you can:</p>
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td width="50%" style="padding: 6px 0; color: #555; font-size: 13px;">✓ View appointments</td>
+              <td width="50%" style="padding: 6px 0; color: #555; font-size: 13px;">✓ Upload project photos</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #555; font-size: 13px;">✓ Review estimates</td>
+              <td style="padding: 6px 0; color: #555; font-size: 13px;">✓ Pay invoices online</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #555; font-size: 13px;">✓ Message our team</td>
+              <td style="padding: 6px 0; color: #555; font-size: 13px;">✓ Track project status</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
     ${pinSection}
 
-    <p style="margin: 25px 0 0; color: #666; font-size: 14px; text-align: center;">
-      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a> or reply to this email.
+    <p style="margin: 24px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Questions? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a> or reply to this email.
     </p>
   `;
 
   return {
-    subject: `Your ${COMPANY.shortName} Customer Portal is Ready!`,
-    html: wrapEmailTemplate(content, { headerText: 'Your Project Portal' })
+    subject: `Welcome to ${COMPANY.shortName} - Your Project Portal is Ready`,
+    html: wrapEmailTemplate(content, { headerText: 'Welcome!' })
   };
 }
 
 /**
- * Generate appointment confirmation with portal link
+ * Generate appointment confirmation with portal link - Premium Design
  */
 function generateAppointmentWithPortalEmail(data) {
   const { name, appointment_date, appointment_time, portal_url, address } = data;
+  const firstName = (name || 'there').split(' ')[0];
 
   const apptDate = new Date(appointment_date);
-  const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const dayName = apptDate.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthDay = apptDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  const year = apptDate.getFullYear();
 
   const content = `
-    <div style="text-align: center; margin-bottom: 25px;">
-      <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); border-radius: 50%; margin: 0 auto 20px; line-height: 70px;">
-        <span style="font-size: 35px; color: #fff;">✓</span>
-      </div>
-      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Appointment Confirmed!</h2>
-    </div>
-
-    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
-      Hi ${escapeHtml(name || 'Valued Customer')},
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.6;">
+      Hi ${escapeHtml(firstName)},
     </p>
-    <p style="margin: 0 0 25px; color: #444; font-size: 15px;">
-      Great news! Your consultation with ${COMPANY.shortName} has been scheduled.
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      Great news! Your consultation with ${COMPANY.shortName} has been confirmed.
     </p>
 
-    <div style="background: #e8f5e9; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 25px; border: 1px solid #4caf50;">
-      <p style="margin: 0 0 5px; color: #2e7d32; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Your Appointment</p>
-      <p style="margin: 0 0 5px; color: #1a1a2e; font-size: 22px; font-weight: 700;">${formattedDate}</p>
-      ${appointment_time ? `<p style="margin: 0; color: #1a1a2e; font-size: 18px;">${escapeHtml(appointment_time)}</p>` : ''}
-      ${address ? `<p style="margin: 10px 0 0; color: #666; font-size: 14px;">${escapeHtml(address)}</p>` : ''}
-    </div>
+    <!-- Appointment Card -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); border-radius: 12px; overflow: hidden;">
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 24px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <p style="margin: 0 0 4px; color: #4caf50; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">✓ Appointment Confirmed</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px; text-align: center;">
+                <p style="margin: 0 0 4px; color: rgba(255,255,255,0.6); font-size: 14px;">${dayName}</p>
+                <p style="margin: 0 0 4px; color: #ffffff; font-size: 28px; font-weight: 700;">${monthDay}</p>
+                <p style="margin: 0 0 12px; color: rgba(255,255,255,0.6); font-size: 14px;">${year}</p>
+                ${appointment_time ? `
+                <table cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background: #f9cb00; color: #1a1a2e; padding: 8px 20px; border-radius: 20px; font-size: 15px; font-weight: 600;">${escapeHtml(appointment_time)}</td>
+                  </tr>
+                </table>
+                ` : ''}
+                ${address ? `<p style="margin: 16px 0 0; color: rgba(255,255,255,0.5); font-size: 13px;">${escapeHtml(address)}</p>` : ''}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-      <h3 style="margin: 0 0 12px; color: #1a1a2e; font-size: 16px;">Before your appointment:</h3>
-      <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px; line-height: 1.8;">
-        <li>Have an idea of your material preferences (granite, quartz, marble)</li>
-        <li>Know your approximate budget range</li>
-        <li>Take photos of your current countertops if possible</li>
-        <li>Note any specific requirements or concerns</li>
-      </ul>
-    </div>
+    <!-- Preparation Tips -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="background: #fafafa; border-radius: 12px; padding: 24px;">
+          <p style="margin: 0 0 14px; color: #1a1a2e; font-size: 14px; font-weight: 600;">To prepare for your visit:</p>
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 8px 0; color: #555; font-size: 13px; line-height: 1.5;">
+                <span style="color: #f9cb00; font-weight: bold; margin-right: 8px;">1.</span>
+                Think about your material preferences (granite, quartz, marble)
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #555; font-size: 13px; line-height: 1.5;">
+                <span style="color: #f9cb00; font-weight: bold; margin-right: 8px;">2.</span>
+                Have a budget range in mind
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #555; font-size: 13px; line-height: 1.5;">
+                <span style="color: #f9cb00; font-weight: bold; margin-right: 8px;">3.</span>
+                Take photos of your current space to share
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
     ${portal_url ? `
-    <div style="text-align: center; margin: 25px 0;">
-      <p style="margin: 0 0 15px; color: #666; font-size: 14px;">Upload photos and track your project in your personal portal:</p>
-      <a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 15px;">Access Your Portal</a>
-    </div>
+    <!-- Portal CTA -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+      <tr>
+        <td align="center">
+          <p style="margin: 0 0 14px; color: #666; font-size: 14px;">Upload photos and track your project:</p>
+          <a href="${portal_url}" style="display: inline-block; background: #f9cb00; color: #1a1a2e; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 14px;">Open Project Portal</a>
+        </td>
+      </tr>
+    </table>
     ` : ''}
 
-    <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
-      Need to reschedule? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+    <p style="margin: 24px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Need to reschedule? Call <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a>
     </p>
   `;
 
   return {
-    subject: `Appointment Confirmed - ${formattedDate} | ${COMPANY.shortName}`,
-    html: wrapEmailTemplate(content, { headerColor: '#4caf50', headerText: '' })
+    subject: `Confirmed: ${dayName}, ${monthDay} - ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerText: 'Appointment Confirmed', accentColor: '#4caf50' })
   };
 }
 

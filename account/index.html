@@ -15760,6 +15760,41 @@
 
         if (error) throw error;
 
+        // Create portal token for the new lead
+        let portalUrl = null;
+        try {
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          const { data: token, error: tokenError } = await supabaseClient
+            .from('portal_tokens')
+            .insert([{
+              lead_id: data.id,
+              owner_id: user.id,
+              email: email,
+              phone: phone,
+              permissions: {
+                view_project: true,
+                view_estimates: true,
+                approve_estimates: true,
+                view_invoices: true,
+                pay_invoices: true,
+                upload_photos: true,
+                send_messages: true,
+                view_appointments: true
+              }
+            }])
+            .select()
+            .single();
+
+          if (token && !tokenError) {
+            portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
+            console.log('Portal token created:', token.id);
+          } else if (tokenError) {
+            console.warn('Portal token error:', tokenError.message);
+          }
+        } catch (tokenErr) {
+          console.warn('Portal token creation error:', tokenErr);
+        }
+
         // Send welcome email if checkbox is checked
         const sendEmail = document.getElementById('new-lead-send-email').checked;
         if (sendEmail && email) {
@@ -15773,7 +15808,8 @@
               hasAppointment,
               apptDate,
               apptTime,
-              apptType
+              apptType,
+              portalUrl
             });
           } catch (emailErr) {
             console.warn('Welcome email error (non-blocking):', emailErr);
@@ -15802,7 +15838,7 @@
 
     // Send welcome email to new lead
     async function sendLeadWelcomeEmail(leadInfo) {
-      const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType, notes } = leadInfo;
+      const { firstName, lastName, email, phone, projectType, hasAppointment, apptDate, apptTime, apptType, notes, portalUrl } = leadInfo;
 
       const projectTypeLabels = {
         'kitchen': 'Kitchen Countertops',
@@ -15849,6 +15885,7 @@
             appointment_date: hasAppointment ? formattedDate : null,
             appointment_time: hasAppointment ? apptTime : null,
             appointment_type: hasAppointment ? (apptTypeLabels[apptType] || 'Appointment') : null,
+            portal_url: portalUrl || null,
             source: 'Manual Entry - Account'
           })
         });
