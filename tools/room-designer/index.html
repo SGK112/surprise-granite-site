@@ -22656,37 +22656,8 @@
     }
 
     // Duplicate selected element
-    function duplicateSelectedElement() {
-      if (!selectedElement) return;
-      const newEl = JSON.parse(JSON.stringify(selectedElement));
-      newEl.id = Date.now() + Math.random();
-      newEl.x += pixelsPerFoot * 0.5; // Offset slightly
-      newEl.y += pixelsPerFoot * 0.5;
-      elements.push(newEl);
-      selectedElement = newEl;
-      saveState();
-      updateProperties();
-      updateElementList();
-      updateElementSelector();
-      draw();
-      showToast('Element duplicated');
-    }
-
-    // Delete selected element
-    function deleteSelectedElement() {
-      if (!selectedElement) return;
-      const idx = elements.indexOf(selectedElement);
-      if (idx >= 0) {
-        elements.splice(idx, 1);
-        selectedElement = null;
-        saveState();
-        updateProperties();
-        updateElementList();
-        updateElementSelector();
-        draw();
-        showToast('Element deleted');
-      }
-    }
+    // NOTE: duplicateSelectedElement and deleteSelectedElement are defined earlier
+    // with proper locked status checks and 3D scene updates
 
     // Center view on element
     function centerOnElement(index) {
@@ -25593,16 +25564,43 @@
       scene.add(surfaceLight.target);
 
       // Subtle rim light for depth separation
-      const back = new THREE.DirectionalLight(0xE8F0FF, 0.08);
+      const back = new THREE.DirectionalLight(0xE8F0FF, 0.12);
       back.name = 'backLight';
       back.position.set(roomWidth / 2, 5, -10);
       scene.add(back);
 
       // Edge accent light - highlights countertop edges and profiles
-      const edgeLight = new THREE.DirectionalLight(0xFFFFFF, 0.1);
+      // Enhanced for better definition on white/light countertops
+      const edgeLight = new THREE.DirectionalLight(0xF0F8FF, 0.15);
       edgeLight.name = 'edgeLight';
       edgeLight.position.set(-5, 4, roomDepth / 2);
       scene.add(edgeLight);
+
+      // === ENHANCED WHITE SURFACE DEFINITION ===
+      // Additional lighting for light-colored/white countertops visibility
+      // Low-angle light creates subtle shadows on edges for definition
+      const contrastLight = new THREE.DirectionalLight(0xE8E8F0, 0.12);
+      contrastLight.name = 'contrastLight';
+      contrastLight.position.set(roomWidth * 0.8, 3.5, -3);
+      contrastLight.castShadow = true;
+      contrastLight.shadow.mapSize.width = 2048;
+      contrastLight.shadow.mapSize.height = 2048;
+      contrastLight.shadow.camera.near = 0.1;
+      contrastLight.shadow.camera.far = 25;
+      contrastLight.shadow.bias = -0.0003;
+      scene.add(contrastLight);
+
+      // Side definition light - grazing angle for edge highlight on white surfaces
+      const sideDefinition = new THREE.DirectionalLight(0xFFF8F0, 0.08);
+      sideDefinition.name = 'sideDefinition';
+      sideDefinition.position.set(roomWidth + 5, 4, roomDepth / 2);
+      scene.add(sideDefinition);
+
+      // Under-cabinet subtle shadow light for countertop edge definition
+      const underCabinetShadow = new THREE.DirectionalLight(0xF5F5FF, 0.06);
+      underCabinetShadow.name = 'underCabinetShadow';
+      underCabinetShadow.position.set(roomWidth / 2, 5, roomDepth + 3);
+      scene.add(underCabinetShadow);
 
       // === ENHANCED ENVIRONMENT MAP FOR REALISTIC REFLECTIONS ===
       // High-quality HDR-like environment for polished stone and metallic surfaces
@@ -26861,11 +26859,24 @@
         const isPolished = options.finish === 'polished' || options.roughness < 0.3;
         const isCountertop = options.isCountertop || false;
 
+        // Detect if this is a light/white colored surface for enhanced definition
+        const colorHex = typeof baseColor === 'number' ? baseColor : parseInt(baseColor.replace('#', ''), 16);
+        const r = (colorHex >> 16) & 255;
+        const g = (colorHex >> 8) & 255;
+        const b = colorHex & 255;
+        const brightness = (r + g + b) / 3;
+        const isLightColored = brightness > 180; // White/light surfaces need special handling
+
         // Default roughness values optimized for different stone types
         let defaultRoughness = 0.45; // Balanced for color visibility
         if (isPolished) defaultRoughness = 0.25;
         if (options.finish === 'honed') defaultRoughness = 0.55;
         if (options.finish === 'leathered') defaultRoughness = 0.65;
+
+        // Slightly increase roughness for white surfaces to show subtle shadows better
+        if (isLightColored && isCountertop) {
+          defaultRoughness = Math.min(defaultRoughness + 0.08, 0.6);
+        }
 
         const matOptions = {
           color: textureUrl ? 0xFFFFFF : baseColor, // Pure white when textured for accurate colors
@@ -26889,11 +26900,12 @@
             material.envMap = window.roomEnvMap;
             if (options.finish === 'polished' || isPolished) {
               // Polished granite/quartz has noticeable reflections
-              material.envMapIntensity = 0.45;
-              material.roughness = Math.min(material.roughness, 0.15);
+              // Reduce reflection intensity for white/light surfaces to maintain definition
+              material.envMapIntensity = isLightColored ? 0.25 : 0.45;
+              material.roughness = Math.min(material.roughness, isLightColored ? 0.2 : 0.15);
             } else if (options.finish === 'honed') {
               // Honed has subtle matte reflections
-              material.envMapIntensity = 0.15;
+              material.envMapIntensity = isLightColored ? 0.1 : 0.15;
               material.roughness = Math.max(material.roughness, 0.4);
             } else if (options.finish === 'leathered') {
               // Leathered has minimal, diffuse reflections
@@ -26901,7 +26913,8 @@
               material.roughness = Math.max(material.roughness, 0.6);
             } else {
               // Default to semi-polished look
-              material.envMapIntensity = 0.3;
+              // White surfaces get reduced reflection to maintain edge visibility
+              material.envMapIntensity = isLightColored ? 0.2 : 0.3;
             }
           } else if (isPolished) {
             material.envMap = window.roomEnvMap;
