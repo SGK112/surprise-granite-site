@@ -10154,6 +10154,51 @@
       tolerance: 0.0833  // 1" snap tolerance
     };
 
+    // ===== MATERIAL TYPE RESTRICTIONS =====
+    // Controls which material categories can be applied to which element types
+    const MATERIAL_TYPE_MAP = {
+      // Stone materials (granite, quartz, marble, quartzite) -> countertops only
+      granite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      quartz: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      marble: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      quartzite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      stone: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      // Cabinet finishes -> cabinets only
+      cabinets: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'sink-base',
+                 'drawer-base', 'lazy-susan', 'fridge-cabinet', 'pantry', 'blind-corner',
+                 'microwave-cabinet', 'island'],
+      cabinet: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'sink-base',
+                'drawer-base', 'lazy-susan', 'fridge-cabinet', 'pantry', 'blind-corner',
+                'microwave-cabinet', 'island'],
+      // Tile -> backsplash, flooring
+      tile: ['backsplash', 'flooring', 'tile', 'shower-wall', 'shower-floor'],
+      // Flooring -> floor elements
+      flooring: ['flooring', 'tile']
+    };
+
+    // Helper function to check if a material category can be applied to an element
+    function canApplyMaterialToElement(category, element, showWarning = true) {
+      if (!category) return true; // No category restriction
+
+      const normalizedCategory = category.toLowerCase().trim();
+      const allowedTypes = MATERIAL_TYPE_MAP[normalizedCategory];
+
+      // No restriction for this category
+      if (!allowedTypes) return true;
+
+      // Check if element type matches any allowed type
+      const elementType = element.type || '';
+      const isAllowed = allowedTypes.some(t => elementType.includes(t) || elementType === t);
+
+      if (!isAllowed && showWarning) {
+        const categoryLabel = normalizedCategory.charAt(0).toUpperCase() + normalizedCategory.slice(1);
+        showToast(`${categoryLabel} materials can only be applied to ${allowedTypes.slice(0, 3).join(', ')}${allowedTypes.length > 3 ? '...' : ''}`, 'warning');
+      }
+
+      console.log('Material type check:', { category: normalizedCategory, elementType, allowedTypes, isAllowed });
+      return isAllowed;
+    }
+
     // ===== SLAB & MATERIAL STANDARDS =====
     const SLAB_STANDARDS = {
       // Standard slab sizes by material type (in inches)
@@ -14652,6 +14697,12 @@
       const product = selectedStoreProduct;
       console.log('Applying store product to element:', product.name, 'Element type:', element.type);
 
+      // Check material type compatibility using product type
+      const productType = product.type?.toLowerCase() || '';
+      if (!canApplyMaterialToElement(productType, element)) {
+        return false;
+      }
+
       // Store complete product info on element for 3D rendering
       element.storeProduct = {
         name: product.name,
@@ -14764,39 +14815,8 @@
     function applyMaterialToElement(element) {
       if (!selectedMaterial) return false;
 
-      // Define which material categories can apply to which element types
-      const MATERIAL_TYPE_MAP = {
-        // Stone materials (granite, quartz, marble, quartzite) -> countertops only
-        granite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
-        quartz: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
-        marble: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
-        quartzite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
-        // Cabinet finishes -> cabinets only
-        cabinets: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'sink-base',
-                   'drawer-base', 'lazy-susan', 'fridge-cabinet', 'pantry', 'blind-corner',
-                   'microwave-cabinet', 'island'],
-        // Tile -> backsplash, flooring
-        tile: ['backsplash', 'flooring', 'tile', 'shower-wall', 'shower-floor'],
-        // Flooring -> floor elements
-        flooring: ['flooring', 'tile']
-      };
-
-      const materialCategory = selectedMaterial.category;
-      const allowedTypes = MATERIAL_TYPE_MAP[materialCategory];
-
-      console.log('Material application check:', {
-        materialCategory,
-        elementType: element.type,
-        allowedTypes,
-        hasRestriction: !!allowedTypes
-      });
-
-      // Check if this material can be applied to this element type
-      if (allowedTypes && !allowedTypes.some(t => element.type.includes(t) || element.type === t)) {
-        // Show helpful error message
-        const categoryLabel = materialCategory.charAt(0).toUpperCase() + materialCategory.slice(1);
-        const elementLabel = element.label || element.type;
-        showToast(`${categoryLabel} materials can only be applied to ${allowedTypes.slice(0, 3).join(', ')}${allowedTypes.length > 3 ? '...' : ''}`, 'warning');
+      // Use global helper to check material type compatibility
+      if (!canApplyMaterialToElement(selectedMaterial.category, element)) {
         return false;
       }
 
@@ -21396,6 +21416,11 @@
     function applyStoreProductToExistingElement(element, product) {
       // Determine best element type match
       const productType = product.type?.toLowerCase() || '';
+
+      // Check material type compatibility
+      if (!canApplyMaterialToElement(productType, element)) {
+        return false;
+      }
 
       // Get image URL - prefer primaryImage, fall back to images array or image property
       const imageUrl = product.primaryImage || product.images?.[0] || product.image;
@@ -39857,6 +39882,13 @@
           const element = room?.elements?.find(el => el.id === elementId);
 
           if (element) {
+            // Check material type compatibility before applying
+            const materialCategory = material.category || material.type || '';
+            if (!canApplyMaterialToElement(materialCategory, element)) {
+              dropPreviewMesh = null;
+              return;
+            }
+
             // Apply material to element
             element.material = material.name;
             element.materialId = material.id;
@@ -39881,12 +39913,25 @@
       document.querySelectorAll('.material-card, .product-card').forEach(card => {
         card.draggable = true;
         card.addEventListener('dragstart', (e) => {
+          // Try to determine material category from the id or data attributes
+          let category = card.dataset.category || card.dataset.type || '';
+          if (!category && card.dataset.id) {
+            // Look up category from MATERIALS object
+            for (const [cat, materials] of Object.entries(MATERIALS)) {
+              if (materials.find(m => m.id === card.dataset.id)) {
+                category = cat;
+                break;
+              }
+            }
+          }
           const materialData = {
             id: card.dataset.id,
             name: card.dataset.name || card.querySelector('.material-name, .product-name')?.textContent,
             image: card.dataset.image || card.querySelector('img')?.src,
             color: card.dataset.color,
-            price: card.dataset.price
+            price: card.dataset.price,
+            category: category,
+            type: card.dataset.type || category
           };
           e.dataTransfer.setData('application/json', JSON.stringify(materialData));
           e.dataTransfer.effectAllowed = 'copy';
