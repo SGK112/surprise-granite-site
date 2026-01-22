@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>My Project | Surprise Granite</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="icon" type="image/png" href="/images/sg-favicon.png">
+  <link rel="icon" type="image/png" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://js.stripe.com/v3/"></script>
@@ -818,7 +818,7 @@
     // Supabase setup
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Global state
     let portalData = null;
@@ -849,7 +849,7 @@
     async function loadPortalData() {
       try {
         // Validate token and get data
-        const { data: tokenData, error: tokenError } = await supabase
+        const { data: tokenData, error: tokenError } = await db
           .from('portal_tokens')
           .select('*, leads(*), customers(*)')
           .eq('token', portalToken)
@@ -868,7 +868,7 @@
         }
 
         // Update access tracking
-        await supabase
+        await db
           .from('portal_tokens')
           .update({
             last_accessed_at: new Date().toISOString(),
@@ -1071,7 +1071,7 @@
 
         if (!customerId && !leadId) return;
 
-        let query = supabase.from('estimates').select('*');
+        let query = db.from('estimates').select('*');
         if (customerId) query = query.eq('customer_id', customerId);
         else if (leadId) query = query.eq('lead_id', leadId);
 
@@ -1106,7 +1106,7 @@
         const customerId = portalData.customer_id;
         if (!customerId) return;
 
-        const { data: invoices } = await supabase
+        const { data: invoices } = await db
           .from('invoices')
           .select('*')
           .eq('customer_id', customerId)
@@ -1140,7 +1140,7 @@
         const customerId = portalData.customer_id;
         if (!customerId) return;
 
-        const { data: messages } = await supabase
+        const { data: messages } = await db
           .from('customer_messages')
           .select('*')
           .eq('customer_id', customerId)
@@ -1186,7 +1186,7 @@
           return;
         }
 
-        await supabase.from('customer_messages').insert({
+        await db.from('customer_messages').insert({
           customer_id: customerId,
           direction: 'inbound',
           channel: 'in_app',
@@ -1220,7 +1220,7 @@
       for (const file of files) {
         try {
           const fileName = `${portalToken}/${Date.now()}-${file.name}`;
-          const { error } = await supabase.storage
+          const { error } = await db.storage
             .from('portal-photos')
             .upload(fileName, file);
 
@@ -1240,7 +1240,7 @@
       try {
         const leadId = portalData.lead_id;
         if (leadId) {
-          await supabase.from('leads').update({ appointment_status: 'confirmed' }).eq('id', leadId);
+          await db.from('leads').update({ appointment_status: 'confirmed' }).eq('id', leadId);
         }
         await logActivity('appointment_confirmed');
         showToast('Appointment confirmed!');
@@ -1274,7 +1274,7 @@
 
     async function logActivity(type, details = {}) {
       try {
-        await supabase.from('portal_activity').insert({
+        await db.from('portal_activity').insert({
           portal_token_id: portalData.id,
           activity_type: type,
           details: details

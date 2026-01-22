@@ -94,7 +94,7 @@ function wrapEmailTemplate(content, options = {}) {
               <table width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6778a498803fe5d7ad57cef2_surprise-granite-logo-white-gold.png" alt="${COMPANY.shortName}" style="max-height: 45px; width: auto;">
+                    <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="max-height: 45px; width: auto;">
                   </td>
                 </tr>
               </table>
