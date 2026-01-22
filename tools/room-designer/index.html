@@ -5569,6 +5569,63 @@
       font-weight: 500;
     }
 
+    /* Live Sync Indicator */
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .live-indicator.connected {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .live-indicator.disconnected {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .live-indicator .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: livePulse 2s ease-in-out infinite;
+    }
+
+    .live-indicator.connected .live-dot {
+      background: #22c55e;
+    }
+
+    .live-indicator.disconnected .live-dot {
+      background: #ef4444;
+      animation: none;
+    }
+
+    .live-indicator.flash {
+      animation: liveFlash 0.5s ease;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    @keyframes liveFlash {
+      0% { background: rgba(34, 197, 94, 0.15); }
+      50% { background: rgba(34, 197, 94, 0.4); }
+      100% { background: rgba(34, 197, 94, 0.15); }
+    }
+
     .review-header-right {
       display: flex;
       gap: 8px;
@@ -9683,8 +9740,161 @@
       designToken: null,          // Current design's share token
       permission: 'full_collab',  // Current user's permission level
       isSharedView: false,        // Whether viewing a shared design
-      allowedActions: null        // Actions permitted by current permission
+      allowedActions: null,       // Actions permitted by current permission
+      realtimeChannel: null,      // Supabase realtime subscription channel
+      isLiveConnected: false,     // Whether realtime is connected
+      lastSyncTime: null          // Last time design was synced
     };
+
+    // ===== REALTIME SYNC FOR SHARED DESIGNS =====
+    // Enables hot-reload: customers see designer changes instantly
+
+    function subscribeToDesignUpdates(designId) {
+      const supabase = getSupabaseClient();
+      if (!supabase || !designId) {
+        console.log('Cannot subscribe to realtime: no supabase client or design ID');
+        return;
+      }
+
+      // Unsubscribe from any existing channel
+      if (SHARE_STATE.realtimeChannel) {
+        supabase.removeChannel(SHARE_STATE.realtimeChannel);
+      }
+
+      try {
+        // Subscribe to changes on this specific design
+        const channel = supabase.channel(`design-${designId}`)
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'room_designs',
+            filter: `id=eq.${designId}`
+          }, (payload) => {
+            console.log('Realtime update received:', payload);
+            handleRealtimeUpdate(payload.new);
+          })
+          .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+            SHARE_STATE.isLiveConnected = (status === 'SUBSCRIBED');
+            updateLiveIndicator();
+          });
+
+        SHARE_STATE.realtimeChannel = channel;
+        console.log('Subscribed to realtime updates for design:', designId);
+
+      } catch (err) {
+        console.error('Failed to subscribe to realtime:', err);
+      }
+    }
+
+    function handleRealtimeUpdate(newData) {
+      if (!newData) return;
+
+      console.log('Applying realtime update...');
+      SHARE_STATE.lastSyncTime = new Date();
+
+      // Show sync notification
+      showToast('Design updated by designer', 'info', 2000);
+
+      // Update elements
+      if (newData.elements && Array.isArray(newData.elements)) {
+        elements.length = 0;
+        newData.elements.forEach(el => {
+          el.textureImg = null; // Clear texture references
+          elements.push(el);
+        });
+      }
+
+      // Update room dimensions
+      if (newData.room_width) roomWidth = newData.room_width;
+      if (newData.room_depth) roomDepth = newData.room_depth;
+
+      // Update rooms array if present
+      if (newData.rooms && Array.isArray(newData.rooms)) {
+        rooms.length = 0;
+        newData.rooms.forEach(room => {
+          room.elements = room.elements || [];
+          room.elements.forEach(el => el.textureImg = null);
+          rooms.push(room);
+        });
+      }
+
+      // Update settings
+      if (newData.settings) {
+        if (newData.settings.walls) walls = newData.settings.walls;
+        if (newData.settings.pricing_config) {
+          PRICING_STATE.globalMargin = newData.settings.pricing_config.globalMargin || 30;
+          PRICING_STATE.categoryMargins = newData.settings.pricing_config.categoryMargins || {};
+        }
+      }
+
+      // Reload textures and redraw
+      elements.forEach(el => {
+        if (el.texture) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            el.textureImg = img;
+            draw();
+          };
+          img.src = el.texture;
+        }
+      });
+
+      // Redraw 2D canvas
+      draw();
+
+      // Update 3D view
+      if (currentView === '3d') {
+        init3D();
+        render3D();
+      }
+
+      // Update quote
+      calculateQuote();
+      buildQuotePreviewData();
+      renderQuotePreview();
+
+      // Update review panel if visible
+      if (document.getElementById('reviewElements')) {
+        populateReviewElements();
+      }
+
+      // Flash the live indicator
+      flashLiveIndicator();
+    }
+
+    function updateLiveIndicator() {
+      const indicator = document.getElementById('liveIndicator');
+      if (indicator) {
+        indicator.className = SHARE_STATE.isLiveConnected ? 'live-indicator connected' : 'live-indicator disconnected';
+        indicator.title = SHARE_STATE.isLiveConnected ? 'Live sync active - changes appear instantly' : 'Disconnected - refresh to see changes';
+      }
+    }
+
+    function flashLiveIndicator() {
+      const indicator = document.getElementById('liveIndicator');
+      if (indicator) {
+        indicator.classList.add('flash');
+        setTimeout(() => indicator.classList.remove('flash'), 1000);
+      }
+    }
+
+    // Broadcast design changes to connected viewers (called on auto-save)
+    async function broadcastDesignUpdate() {
+      if (!SHARE_STATE.designId) return;
+
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
+      try {
+        // The database update will trigger the realtime subscription
+        // Just update the design record - subscribers will get notified automatically
+        console.log('Design update will broadcast via Supabase Realtime');
+      } catch (err) {
+        console.error('Broadcast error:', err);
+      }
+    }
 
     // Pricing access control - only paid subscribers see pricing
     const PRICING_ACCESS = {
@@ -13878,7 +14088,7 @@
       // Debounce auto-save to avoid excessive writes
       if (autosaveTimeout) clearTimeout(autosaveTimeout);
 
-      const doSave = () => {
+      const doSave = async () => {
         try {
           const saveData = {
             elements: elements.map(el => ({
@@ -13902,6 +14112,12 @@
 
           // Show subtle auto-save feedback
           showAutoSaveIndicator();
+
+          // ===== REALTIME SYNC TO CLOUD =====
+          // If design is saved to cloud, sync changes for live viewers
+          if (SHARE_STATE.designId && !SHARE_STATE.isSharedView) {
+            syncDesignToCloud();
+          }
         } catch (e) {
           console.warn('Auto-save failed:', e);
         }
@@ -13912,6 +14128,56 @@
       } else {
         autosaveTimeout = setTimeout(doSave, 1000); // 1 second debounce
       }
+    }
+
+    // Sync design changes to cloud for realtime updates
+    let cloudSyncTimeout = null;
+    async function syncDesignToCloud() {
+      // Debounce cloud sync to avoid excessive API calls
+      if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+
+      cloudSyncTimeout = setTimeout(async () => {
+        if (!SHARE_STATE.designId) return;
+
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+
+        try {
+          const updateData = {
+            elements: elements.map(el => ({ ...el, textureImg: null })),
+            walls: walls,
+            room_width: roomWidth,
+            room_depth: roomDepth,
+            rooms: rooms.map(room => ({
+              ...room,
+              elements: room.elements?.map(el => ({ ...el, textureImg: null })) || []
+            })),
+            settings: {
+              walls: walls,
+              pricing_config: {
+                globalMargin: PRICING_STATE.globalMargin,
+                categoryMargins: PRICING_STATE.categoryMargins,
+                customPrices: PRICING_STATE.customPrices
+              },
+              pixelsPerFoot: pixelsPerFoot
+            },
+            updated_at: new Date().toISOString()
+          };
+
+          const { error } = await supabase
+            .from('room_designs')
+            .update(updateData)
+            .eq('id', SHARE_STATE.designId);
+
+          if (error) {
+            console.warn('Cloud sync failed:', error);
+          } else {
+            console.log('Design synced to cloud - live viewers will see update');
+          }
+        } catch (err) {
+          console.warn('Cloud sync error:', err);
+        }
+      }, 2000); // 2 second debounce for cloud sync
     }
 
     // Save before page unload
@@ -48143,6 +48409,13 @@
             console.log('=== loadDesignData COMPLETE ===');
             // Log view activity
             logActivity('view');
+
+            // Subscribe to realtime updates for live sync
+            // Customers will see designer changes instantly
+            if (SHARE_STATE.isSharedView && SHARE_STATE.designId) {
+              subscribeToDesignUpdates(SHARE_STATE.designId);
+              console.log('Realtime subscription initiated for design:', SHARE_STATE.designId);
+            }
           }, 300);
         }, 800);
 
@@ -48351,6 +48624,10 @@
           <div class="review-header-left">
             <h2 class="review-title">${projectName || 'Design Review'}</h2>
             <span class="review-permission-badge">${permInfo?.name || permission}</span>
+            <div id="liveIndicator" class="live-indicator disconnected" title="Connecting to live updates...">
+              <span class="live-dot"></span>
+              <span>LIVE</span>
+            </div>
           </div>
           <div class="review-header-right">
             <button class="btn btn-secondary" onclick="toggleReviewPanel()">
