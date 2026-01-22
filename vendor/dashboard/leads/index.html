@@ -137,6 +137,21 @@
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
     @media (max-width: 991px) { .sidebar-overlay.active { display: block; } }
 
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 16px; width: 90%; max-width: 400px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 24px; line-height: 1; }
+    .modal-body { padding: 24px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border-subtle); }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-input { width: 100%; padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-primary); font-size: 16px; font-family: inherit; }
+    .form-input:focus { outline: none; border-color: var(--gold-primary); }
+    .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
     /* Lead Stats */
     .lead-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
     @media (max-width: 900px) { .lead-stats { grid-template-columns: repeat(2, 1fr); } }
@@ -257,6 +272,31 @@
     </svg>
   </button>
 
+  <!-- Job Won Modal -->
+  <div class="modal-overlay" id="jobWonModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Congratulations on Winning the Job!</h3>
+        <button class="modal-close" onclick="closeJobWonModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Job Value (Optional)</label>
+          <input type="number" class="form-input" id="jobValueInput" placeholder="Enter job value in dollars" min="0" step="100">
+          <p class="form-hint">Enter the total value of this job to track your earnings</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes (Optional)</label>
+          <input type="text" class="form-input" id="jobNotesInput" placeholder="Any notes about this job">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeJobWonModal()">Skip</button>
+        <button class="btn btn-primary" onclick="saveJobWon()">Save & Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
@@ -265,6 +305,7 @@
     let vendorProfile = null;
     let allLeads = [];
     let currentFilter = 'all';
+    let pendingWonLeadId = null;
 
     async function initPage() {
       try {
@@ -452,13 +493,23 @@
     }
 
     async function updateLeadStatus(distId, status) {
+      // For "won" status, show modal to collect job value
+      if (status === 'won') {
+        pendingWonLeadId = distId;
+        document.getElementById('jobValueInput').value = '';
+        document.getElementById('jobNotesInput').value = '';
+        document.getElementById('jobWonModal').classList.add('open');
+        document.querySelectorAll('.status-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+        return;
+      }
+
       try {
         const updates = { status, updated_at: new Date().toISOString() };
         if (status === 'contacted' && !allLeads.find(l => l.id === distId)?.first_contact_at) {
           updates.first_contact_at = new Date().toISOString();
         }
         if (status === 'quoted') updates.quote_sent_at = new Date().toISOString();
-        if (status === 'won' || status === 'lost') updates.outcome_at = new Date().toISOString();
+        if (status === 'lost') updates.outcome_at = new Date().toISOString();
 
         await supabaseClient.from('lead_distributions').update(updates).eq('id', distId);
         await loadLeads();
@@ -466,6 +517,58 @@
       } catch (err) {
         console.error('Update status error:', err);
         alert('Failed to update status');
+      }
+    }
+
+    function closeJobWonModal() {
+      document.getElementById('jobWonModal').classList.remove('open');
+      pendingWonLeadId = null;
+    }
+
+    async function saveJobWon() {
+      if (!pendingWonLeadId) return;
+
+      const jobValue = parseFloat(document.getElementById('jobValueInput').value) || 0;
+      const notes = document.getElementById('jobNotesInput').value || '';
+
+      try {
+        // Update lead distribution with won status and job value
+        const updates = {
+          status: 'won',
+          outcome_at: new Date().toISOString(),
+          job_value: jobValue > 0 ? jobValue : null,
+          vendor_notes: notes || null,
+          updated_at: new Date().toISOString()
+        };
+
+        await supabaseClient.from('lead_distributions').update(updates).eq('id', pendingWonLeadId);
+
+        // Update vendor profile stats
+        const profileUpdates = {
+          total_jobs_won: (vendorProfile.total_jobs_won || 0) + 1,
+          updated_at: new Date().toISOString()
+        };
+
+        if (jobValue > 0) {
+          profileUpdates.total_revenue = (vendorProfile.total_revenue || 0) + jobValue;
+        }
+
+        await supabaseClient.from('vendor_profiles').update(profileUpdates).eq('id', vendorProfile.id);
+
+        // Update local profile
+        vendorProfile.total_jobs_won = profileUpdates.total_jobs_won;
+        if (jobValue > 0) {
+          vendorProfile.total_revenue = profileUpdates.total_revenue;
+        }
+
+        closeJobWonModal();
+        await loadLeads();
+
+        // Show success message
+        alert('Congratulations! Job marked as won.' + (jobValue > 0 ? ` Added $${jobValue.toLocaleString()} to your earnings.` : ''));
+      } catch (err) {
+        console.error('Save job won error:', err);
+        alert('Failed to save. Please try again.');
       }
     }
 
