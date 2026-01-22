@@ -9753,6 +9753,8 @@
       const supabase = getSupabaseClient();
       if (!supabase || !designId) {
         console.log('Cannot subscribe to realtime: no supabase client or design ID');
+        // Start polling fallback
+        startPollingFallback(designId);
         return;
       }
 
@@ -9770,21 +9772,89 @@
             table: 'room_designs',
             filter: `id=eq.${designId}`
           }, (payload) => {
-            console.log('Realtime update received:', payload);
+            console.log('🔴 Realtime update received:', payload);
             handleRealtimeUpdate(payload.new);
           })
-          .subscribe((status) => {
-            console.log('Realtime subscription status:', status);
-            SHARE_STATE.isLiveConnected = (status === 'SUBSCRIBED');
+          .subscribe((status, err) => {
+            console.log('Realtime subscription status:', status, err || '');
+            if (status === 'SUBSCRIBED') {
+              SHARE_STATE.isLiveConnected = true;
+              // Clear polling if realtime connects
+              if (SHARE_STATE.pollingInterval) {
+                clearInterval(SHARE_STATE.pollingInterval);
+                SHARE_STATE.pollingInterval = null;
+              }
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              SHARE_STATE.isLiveConnected = false;
+              console.warn('Realtime failed, starting polling fallback');
+              startPollingFallback(designId);
+            }
             updateLiveIndicator();
           });
 
         SHARE_STATE.realtimeChannel = channel;
         console.log('Subscribed to realtime updates for design:', designId);
 
+        // Also start polling as backup (will be cleared if realtime works)
+        setTimeout(() => {
+          if (!SHARE_STATE.isLiveConnected) {
+            console.log('Realtime not connected after 5s, starting polling');
+            startPollingFallback(designId);
+          }
+        }, 5000);
+
       } catch (err) {
         console.error('Failed to subscribe to realtime:', err);
+        startPollingFallback(designId);
       }
+    }
+
+    // Polling fallback when Realtime isn't available
+    function startPollingFallback(designId) {
+      if (SHARE_STATE.pollingInterval) return; // Already polling
+
+      console.log('Starting polling fallback for design:', designId);
+      SHARE_STATE.lastPollData = null;
+
+      const pollForUpdates = async () => {
+        if (!designId) return;
+
+        try {
+          const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/room_designs?id=eq.${designId}&select=updated_at,elements,rooms,room_width,room_depth,settings`,
+            {
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+              }
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.length > 0) {
+              const design = data[0];
+              // Check if updated since last poll
+              if (SHARE_STATE.lastPollData && design.updated_at !== SHARE_STATE.lastPollData) {
+                console.log('Polling detected update:', design.updated_at);
+                handleRealtimeUpdate(design);
+              }
+              SHARE_STATE.lastPollData = design.updated_at;
+              SHARE_STATE.isLiveConnected = true;
+              updateLiveIndicator();
+            }
+          }
+        } catch (err) {
+          console.warn('Poll failed:', err);
+        }
+      };
+
+      // Poll every 5 seconds
+      SHARE_STATE.pollingInterval = setInterval(pollForUpdates, 5000);
+      pollForUpdates(); // Initial poll
     }
 
     function handleRealtimeUpdate(newData) {
@@ -10293,8 +10363,8 @@
         canApprove: false
       },
       quote_approval: {
-        name: 'Quote Approval',
-        description: 'Customer can view quote and approve with payment',
+        name: 'Design Approval',
+        description: 'Customer can view design and approve with payment',
         canEdit: false,
         canViewPrices: true,
         canViewCosts: false,
@@ -30365,15 +30435,9 @@
             const countertopWithHole = new THREE.Mesh(topGeo, ctopMat);
             countertopWithHole.position.set(slabOffsetX, -effectiveH/2, slabOffsetZ);
             group.add(countertopWithHole);
-          } else {
-            // Simple box for top surface when no sinks
-            const topSurface = new THREE.Mesh(
-              new THREE.BoxGeometry(slabW - 0.02, 0.003, slabD - 0.02),
-              topMat
-            );
-            topSurface.position.set(slabOffsetX, effectiveH/2 + 0.002, slabOffsetZ);
-            group.add(topSurface);
           }
+          // NOTE: Removed separate top surface mesh - was causing visible seam/cut line
+          // The main body already has the textured top face from ctopMat
 
           // Render seams as subtle grooves in the countertop
           if (el.seams && el.seams.length > 0) {
@@ -48330,7 +48394,14 @@
 
         if (shareData) {
           SHARE_STATE.shareId = shareData.id;
+          SHARE_STATE.shareToken = shareData.share_token;
+          SHARE_STATE.leadId = shareData.lead_id;
           SHARE_STATE.comments = shareData.comments || [];
+
+          // Load comments from customer_messages if lead_id exists
+          if (shareData.lead_id) {
+            loadCommentsFromMessages(shareData.lead_id, shareData.id);
+          }
         }
 
         // Load design data into form fields
@@ -48936,7 +49007,8 @@
       const newComment = {
         text: text,
         timestamp: new Date().toISOString(),
-        author: 'Reviewer'
+        author: 'Customer',
+        direction: 'inbound'
       };
 
       SHARE_STATE.comments = SHARE_STATE.comments || [];
@@ -48947,7 +49019,75 @@
       // Log comment activity
       logActivity('comment', null, null, text);
 
+      // Save to customer_messages for unified communication
+      if (SHARE_STATE.leadId) {
+        try {
+          const API_BASE = window.location.hostname === 'localhost'
+            ? 'http://localhost:3001'
+            : 'https://surprise-granite-connections-api.onrender.com';
+
+          await fetch(`${API_BASE}/api/design-comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lead_id: SHARE_STATE.leadId,
+              share_id: SHARE_STATE.shareId,
+              design_id: SHARE_STATE.designId,
+              message: text,
+              author: 'Customer',
+              direction: 'inbound'
+            })
+          });
+        } catch (err) {
+          console.warn('Could not save comment to messages:', err);
+        }
+      }
+
       await saveReviewState();
+    }
+
+    // Load comments from customer_messages table
+    async function loadCommentsFromMessages(leadId, shareId) {
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+
+        const { data: messages, error } = await supabase
+          .from('customer_messages')
+          .select('*')
+          .eq('customer_id', leadId)
+          .eq('channel', 'design_share')
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.warn('Could not load messages:', error);
+          return;
+        }
+
+        if (messages && messages.length > 0) {
+          // Convert messages to comment format and merge with existing
+          const messageComments = messages
+            .filter(m => !m.metadata?.share_id || m.metadata?.share_id === shareId)
+            .map(m => ({
+              text: m.message,
+              timestamp: m.created_at,
+              author: m.direction === 'outbound' ? (m.metadata?.author || 'Surprise Granite') : 'Customer',
+              direction: m.direction,
+              messageId: m.id
+            }));
+
+          // Merge with any existing JSONB comments, avoiding duplicates
+          const existingTexts = new Set(SHARE_STATE.comments.map(c => c.text + c.timestamp));
+          const newComments = messageComments.filter(c => !existingTexts.has(c.text + c.timestamp));
+
+          SHARE_STATE.comments = [...SHARE_STATE.comments, ...newComments]
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+          updateReviewComments();
+        }
+      } catch (err) {
+        console.warn('Error loading comments from messages:', err);
+      }
     }
 
     // Update comments display
@@ -48958,22 +49098,32 @@
       const comments = SHARE_STATE.comments || [];
 
       if (comments.length === 0) {
-        container.innerHTML = '<p class="empty-state">No comments yet</p>';
+        container.innerHTML = '<p class="empty-state">No comments yet. Start the conversation!</p>';
         return;
       }
 
-      container.innerHTML = comments.map(c => `
-        <div class="review-comment">
-          <div class="comment-header">
-            <span class="comment-author">${c.author || 'Anonymous'}</span>
-            ${c.elementLabel ? `<span class="comment-element">on ${c.elementLabel}</span>` : ''}
-            <span class="comment-time">${new Date(c.timestamp).toLocaleString()}</span>
+      container.innerHTML = comments.map(c => {
+        const isStaff = c.direction === 'outbound' || (c.author && c.author !== 'Customer' && c.author !== 'Reviewer');
+        return `
+          <div class="review-comment ${isStaff ? 'staff-comment' : 'customer-comment'}" style="${isStaff ? 'background: rgba(249, 168, 37, 0.1); border-left: 3px solid var(--gold);' : ''}">
+            <div class="comment-header">
+              <span class="comment-author" style="${isStaff ? 'color: var(--gold);' : ''}">${c.author || 'Customer'}</span>
+              ${c.elementLabel ? `<span class="comment-element">on ${c.elementLabel}</span>` : ''}
+              <span class="comment-time">${new Date(c.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="comment-text">${escapeHtml(c.text)}</div>
           </div>
-          <div class="comment-text">${c.text}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       container.scrollTop = container.scrollHeight;
+    }
+
+    // Escape HTML to prevent XSS in comments
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // Update review stats
@@ -49003,7 +49153,7 @@
         console.log('Calculated total:', total);
         totalEl.textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
       } else if (totalEl) {
-        totalEl.textContent = 'Hidden';
+        totalEl.textContent = '--';
       }
 
       if (countEl) countEl.textContent = elements.length;
