@@ -10225,6 +10225,43 @@
     };
 
     const TAKEOFF_STANDARDS = {
+      // Cabinet standards
+      cabinet: {
+        // Standard cabinet widths in inches (most common sizes)
+        standardWidths: [9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
+        // Toe kick specifications
+        toeKick: {
+          height: 4.5,  // inches
+          depth: 3,     // inches recessed
+          pricePerLF: 4.50  // $/LF
+        },
+        // Scribe molding for walls
+        scribe: {
+          pricePerLF: 8.50,
+          widths: [0.5, 0.75, 1.5]  // inches
+        },
+        // Filler strips
+        filler: {
+          minWidth: 1.5,   // inches - minimum practical filler
+          maxWidth: 6,     // inches - max before using cabinet
+          pricePerLF: 12,  // $/LF height (typically 30" or 34.5" for base)
+          standardWidths: [3, 6]  // inches
+        },
+        // Heights
+        baseHeight: 34.5,  // inches (without countertop)
+        wallHeight: 30,    // inches (standard wall cabinet)
+        tallHeight: 84     // inches (tall/pantry cabinet)
+      },
+      // Slab/stone calculations
+      slab: {
+        standardSizes: [
+          { name: 'Half Slab', width: 60, height: 55, sqft: 22.9 },
+          { name: 'Standard Slab', width: 120, height: 55, sqft: 45.8 },
+          { name: 'Jumbo Slab', width: 130, height: 65, sqft: 58.7 }
+        ],
+        wastePercent: 20,  // typical waste for countertop fabrication
+        seamAllowance: 0.125  // 1/8" seam allowance
+      },
       // Flooring waste factors
       flooring: {
         tile: { wastePercent: 15, boxSqft: 10, label: 'Tile' },
@@ -14726,6 +14763,35 @@
 
     function applyMaterialToElement(element) {
       if (!selectedMaterial) return false;
+
+      // Define which material categories can apply to which element types
+      const MATERIAL_TYPE_MAP = {
+        // Stone materials (granite, quartz, marble, quartzite) -> countertops only
+        granite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+        quartz: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+        marble: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+        quartzite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+        // Cabinet finishes -> cabinets only
+        cabinets: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'sink-base',
+                   'drawer-base', 'lazy-susan', 'fridge-cabinet', 'pantry', 'blind-corner',
+                   'microwave-cabinet', 'island'],
+        // Tile -> backsplash, flooring
+        tile: ['backsplash', 'flooring', 'tile', 'shower-wall', 'shower-floor'],
+        // Flooring -> floor elements
+        flooring: ['flooring', 'tile']
+      };
+
+      const materialCategory = selectedMaterial.category;
+      const allowedTypes = MATERIAL_TYPE_MAP[materialCategory];
+
+      // Check if this material can be applied to this element type
+      if (allowedTypes && !allowedTypes.some(t => element.type.includes(t) || element.type === t)) {
+        // Show helpful error message
+        const categoryLabel = materialCategory.charAt(0).toUpperCase() + materialCategory.slice(1);
+        const elementLabel = element.label || element.type;
+        showToast(`${categoryLabel} materials can only be applied to ${allowedTypes.slice(0, 3).join(', ')}${allowedTypes.length > 3 ? '...' : ''}`, 'warning');
+        return false;
+      }
 
       // Apply the material
       element.color = selectedMaterial.color;
@@ -43631,6 +43697,123 @@
       calculateQuote();
     }
 
+    // ===== CABINET RUN BREAKDOWN HELPER =====
+    // Break down a cabinet run into individual standard-size cabinets + fillers
+    function breakdownCabinetRun(widthFt, cabinetType, unitPrice) {
+      const widthInches = widthFt * 12;
+      const standards = TAKEOFF_STANDARDS.cabinet;
+      const standardWidths = standards.standardWidths; // [9, 12, 15, 18, 21, 24, 27, 30, 33, 36]
+
+      // Results
+      const result = {
+        cabinets: [],        // Array of { width, count, price }
+        fillers: [],         // Array of { width, count, price }
+        toeKick: { lengthLF: 0, price: 0 },
+        scribe: { lengthLF: 0, price: 0 },
+        totalCabinets: 0,
+        totalFillers: 0,
+        summary: ''
+      };
+
+      // Find optimal cabinet combination to fill the width
+      let remaining = widthInches;
+      const cabinetCounts = {};
+
+      // Greedy algorithm: use largest cabinets first
+      const sortedWidths = [...standardWidths].sort((a, b) => b - a);
+
+      for (const cabWidth of sortedWidths) {
+        if (remaining >= cabWidth) {
+          const count = Math.floor(remaining / cabWidth);
+          if (count > 0) {
+            cabinetCounts[cabWidth] = count;
+            remaining -= count * cabWidth;
+          }
+        }
+      }
+
+      // Handle remaining space
+      if (remaining > 0) {
+        if (remaining >= standards.filler.minWidth && remaining <= standards.filler.maxWidth) {
+          // Small gap - use filler
+          result.fillers.push({
+            width: remaining,
+            count: 1,
+            price: (remaining / 12) * standards.filler.pricePerLF * (standards.baseHeight / 12)
+          });
+          result.totalFillers++;
+        } else if (remaining > standards.filler.maxWidth) {
+          // Larger gap - try to use smallest standard cabinet + filler
+          const smallestCab = Math.min(...standardWidths);
+          if (remaining >= smallestCab) {
+            cabinetCounts[smallestCab] = (cabinetCounts[smallestCab] || 0) + 1;
+            remaining -= smallestCab;
+            if (remaining >= standards.filler.minWidth) {
+              result.fillers.push({
+                width: remaining,
+                count: 1,
+                price: (remaining / 12) * standards.filler.pricePerLF * (standards.baseHeight / 12)
+              });
+              result.totalFillers++;
+            }
+          }
+        }
+        // Very small remainder (< 1.5") - absorbed as acceptable gap
+      }
+
+      // Convert counts to result array with prices
+      for (const [width, count] of Object.entries(cabinetCounts)) {
+        const widthNum = parseInt(width);
+        // Price scales roughly with width (using a simple scaling from unit price)
+        const scaledPrice = unitPrice * (widthNum / 30); // 30" as baseline
+        result.cabinets.push({
+          width: widthNum,
+          count: count,
+          priceEach: scaledPrice,
+          priceTotal: scaledPrice * count
+        });
+        result.totalCabinets += count;
+      }
+
+      // Calculate toe kick (runs full length of cabinet run)
+      result.toeKick.lengthLF = widthFt;
+      result.toeKick.price = widthFt * standards.toeKick.pricePerLF;
+
+      // Build summary string
+      const cabinetSummary = result.cabinets
+        .sort((a, b) => b.width - a.width)
+        .map(c => `${c.count}x ${c.width}"`)
+        .join(' + ');
+      const fillerSummary = result.fillers.length > 0
+        ? ` + ${result.fillers.map(f => `${f.width.toFixed(1)}" filler`).join(', ')}`
+        : '';
+      result.summary = cabinetSummary + fillerSummary;
+
+      return result;
+    }
+
+    // ===== SLAB CALCULATION HELPER =====
+    // Calculate how many slabs needed for countertop area
+    function calculateSlabRequirement(totalSqft) {
+      const slabStandards = TAKEOFF_STANDARDS.slab;
+      const grossSqft = totalSqft * (1 + slabStandards.wastePercent / 100);
+
+      // Try standard slab first (most common)
+      const standardSlab = slabStandards.standardSizes.find(s => s.name === 'Standard Slab');
+      const slabSqft = standardSlab?.sqft || 45.8;
+
+      const slabsNeeded = Math.ceil(grossSqft / slabSqft);
+
+      return {
+        netSqft: totalSqft,
+        grossSqft: grossSqft,
+        wastePercent: slabStandards.wastePercent,
+        slabsNeeded: slabsNeeded,
+        slabSize: standardSlab?.name || 'Standard Slab',
+        slabSqft: slabSqft
+      };
+    }
+
     // ===== QUOTE (Enhanced with Full Element Support) =====
     function calculateQuote() {
       const items = {};
@@ -43691,8 +43874,32 @@
             baseCost += edgeLF * edgePrice;
           }
         } else if (isCabinet) {
-          // Cabinet pricing - check for SKU-based or standard
-          if (el.skuWidth && el.sku) {
+          // Cabinet pricing - use breakdown for larger runs
+          const widthInches = el.width * 12;
+
+          // If cabinet is wider than largest standard (36"), break it down
+          if (widthInches > 36) {
+            const breakdown = breakdownCabinetRun(el.width, el.type, priceInfo.price);
+
+            // Calculate total cost from breakdown
+            baseCost = breakdown.cabinets.reduce((sum, c) => sum + c.priceTotal, 0);
+            baseCost += breakdown.fillers.reduce((sum, f) => sum + f.price, 0);
+            baseCost += breakdown.toeKick.price;
+
+            boxCount = breakdown.totalCabinets;
+            fillerWidth = breakdown.fillers.reduce((sum, f) => sum + f.width, 0) / 12; // Convert to feet
+            fillerCost = breakdown.fillers.reduce((sum, f) => sum + f.price, 0);
+
+            quantity = boxCount;
+            unit = 'cabinets';
+
+            // Store breakdown details on element for display
+            el.breakdown = breakdown;
+            el.boxCount = boxCount;
+            el.fillerWidth = fillerWidth;
+            el.toeKickLF = breakdown.toeKick.lengthLF;
+          } else if (el.skuWidth && el.sku) {
+            // SKU-based pricing for catalog cabinets
             const actualWidth = el.width;
             const skuWidth = el.skuWidth;
 
@@ -43715,12 +43922,17 @@
             el.boxCount = boxCount;
             el.fillerWidth = fillerWidth;
           } else {
-            // Standard cabinet pricing
+            // Standard single cabinet pricing
             baseCost = priceInfo.price;
             quantity = 1;
             unit = 'unit';
             el.boxCount = 1;
             el.fillerWidth = 0;
+
+            // Add toe kick for single cabinets too
+            const toeKickCost = el.width * TAKEOFF_STANDARDS.cabinet.toeKick.pricePerLF;
+            baseCost += toeKickCost;
+            el.toeKickLF = el.width;
           }
         } else {
           // Standard unit pricing for appliances, fixtures, etc.
@@ -43825,6 +44037,61 @@
         };
         totalCost += fillerCost;
         totalRetail += fillerRetail;
+      }
+
+      // Add toe kick as separate line item
+      const totalToeKickLF = elements
+        .filter(el => CABINET_TYPES.some(ct => el.type.includes(ct) || el.type === ct))
+        .reduce((sum, el) => sum + (el.toeKickLF || el.width), 0);
+      if (totalToeKickLF > 0) {
+        const toeKickMargin = 25;
+        const toeKickCost = totalToeKickLF * TAKEOFF_STANDARDS.cabinet.toeKick.pricePerLF;
+        const toeKickRetail = toeKickCost * (1 + toeKickMargin / 100);
+        items['toe-kick'] = {
+          count: 1,
+          costTotal: toeKickCost,
+          retailTotal: toeKickRetail,
+          label: `Toe Kick (${totalToeKickLF.toFixed(1)} LF)`,
+          sqft: 0,
+          linearFt: totalToeKickLF,
+          boxCount: 0,
+          fillerTotal: 0,
+          margin: toeKickMargin,
+          priceSource: 'standard',
+          sku: 'TOEKICK',
+          type: 'toekick',
+          isCabinet: false,
+          isCountertop: false
+        };
+        totalCost += toeKickCost;
+        totalRetail += toeKickRetail;
+      }
+
+      // Add slab calculation for countertops
+      const totalCountertopSqftForSlabs = elements
+        .filter(el => COUNTERTOP_TYPES.some(ct => el.type.includes(ct) || el.type === ct))
+        .reduce((sum, el) => sum + getElementSqft(el), 0);
+      if (totalCountertopSqftForSlabs > 0) {
+        const slabCalc = calculateSlabRequirement(totalCountertopSqftForSlabs);
+        // Store slab info for display (not as cost item, just informational)
+        items['slab-info'] = {
+          count: slabCalc.slabsNeeded,
+          costTotal: 0, // Material cost already included in countertop pricing
+          retailTotal: 0,
+          label: `Stone Slabs Needed`,
+          sqft: slabCalc.grossSqft,
+          linearFt: 0,
+          boxCount: 0,
+          fillerTotal: 0,
+          margin: 0,
+          priceSource: 'info',
+          sku: 'SLAB-INFO',
+          type: 'info',
+          isCabinet: false,
+          isCountertop: false,
+          isInfo: true,
+          slabDetails: `${slabCalc.slabsNeeded} ${slabCalc.slabSize}(s) @ ${slabCalc.slabSqft} sqft each (includes ${slabCalc.wastePercent}% waste)`
+        };
       }
 
       // ===== LABOR COSTS CALCULATION =====
@@ -44056,11 +44323,19 @@
             quantityInfo = data.count > 1 ? `(${data.count} pcs)` : '';
             detailInfo = `<span style="color: #888; font-size: 11px;"> - ${data.sqft.toFixed(1)} sqft</span>`;
           } else if (data.isCabinet) {
-            // Cabinets: show count and linear feet
+            // Cabinets: show breakdown details
             const linearInches = Math.round(data.linearFt * 12);
-            if (data.count > 1) {
+            if (data.boxCount > 1) {
+              // Show cabinet breakdown for runs
+              quantityInfo = `(${data.boxCount} cabs)`;
+              let breakdownDetail = `${linearInches}" run`;
+              if (data.fillerTotal > 0) {
+                breakdownDetail += ` + ${(data.fillerTotal * 12).toFixed(1)}" filler`;
+              }
+              detailInfo = `<span style="color: #888; font-size: 11px;"> - ${breakdownDetail}</span>`;
+            } else if (data.count > 1) {
               quantityInfo = `(×${data.count})`;
-              detailInfo = `<span style="color: #888; font-size: 11px;"> - ${linearInches}" total</span>`;
+              detailInfo = linearInches > 0 ? `<span style="color: #888; font-size: 11px;"> - ${linearInches}" total</span>` : '';
             } else {
               quantityInfo = '';
               detailInfo = linearInches > 0 ? `<span style="color: #888; font-size: 11px;"> - ${linearInches}"</span>` : '';
@@ -44086,6 +44361,20 @@
           } else if (data.isLabor) {
             itemStyle = 'background: rgba(99,102,241,0.05); border-left: 2px solid var(--primary);';
             itemPrefix = '<span style="color: var(--primary); font-size: 10px; margin-right: 6px;">⚙</span>';
+          } else if (data.isInfo) {
+            // Info-only items (like slab count)
+            itemStyle = 'background: rgba(100,149,237,0.05); border-left: 2px solid cornflowerblue; font-style: italic;';
+            return `
+              <div class="quote-item" style="${itemStyle}">
+                <span class="quote-item-name" style="font-size: 11px;">
+                  <span style="color: cornflowerblue;">ℹ</span> ${data.label}: ${data.count}
+                  <br><span style="color: #888; font-size: 10px;">${data.slabDetails || ''}</span>
+                </span>
+              </div>
+            `;
+          } else if (data.type === 'filler' || data.type === 'toekick') {
+            itemStyle = 'background: rgba(139,69,19,0.05); border-left: 2px solid #8B4513;';
+            itemPrefix = '<span style="color: #8B4513; font-size: 10px; margin-right: 6px;">┃</span>';
           }
 
           return `
