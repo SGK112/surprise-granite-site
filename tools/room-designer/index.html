@@ -8761,6 +8761,22 @@
         </div>
       </div>
 
+      <!-- Customer Email for Comment Notifications -->
+      <div class="customer-email-section" style="margin: 20px 0; padding: 16px; background: rgba(249, 168, 37, 0.05); border-radius: 12px; border: 1px solid rgba(249, 168, 37, 0.2);">
+        <div style="font-weight: 600; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f9a825" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Link to Customer (Optional)
+        </div>
+        <input type="email" id="shareCustomerEmail" placeholder="customer@email.com"
+               style="width: 100%; padding: 10px 14px; background: var(--dark-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px;">
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          Enter customer email to enable comment notifications. They'll be notified when you reply to their comments.
+        </div>
+      </div>
+
       <!-- Share to Gallery Option -->
       <div class="gallery-share-option" style="margin: 20px 0; padding: 16px; background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(79,70,229,0.08)); border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
         <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
@@ -48285,16 +48301,64 @@
           }
         }
 
+        // Check if customer email provided to link to a lead
+        const customerEmail = document.getElementById('shareCustomerEmail')?.value?.trim();
+        let leadId = null;
+
+        if (customerEmail) {
+          try {
+            // First try to find existing lead by email
+            const leadResponse = await fetch(
+              `${SUPABASE_URL}/rest/v1/leads?email=eq.${encodeURIComponent(customerEmail)}&select=id&order=created_at.desc&limit=1`,
+              { headers }
+            );
+            const leads = await leadResponse.json();
+
+            if (leads && leads.length > 0) {
+              leadId = leads[0].id;
+              console.log('Found existing lead:', leadId);
+            } else {
+              // Create a new lead for this customer
+              const newLeadResponse = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                  email: customerEmail,
+                  full_name: customerEmail.split('@')[0],
+                  source: 'Design Share',
+                  project_type: roomType,
+                  owner_id: user.id,
+                  status: 'new',
+                  message: `Design project: ${projectName}`
+                })
+              });
+              const newLeads = await newLeadResponse.json();
+              if (newLeads && newLeads.length > 0) {
+                leadId = newLeads[0].id;
+                console.log('Created new lead:', leadId);
+              }
+            }
+          } catch (leadErr) {
+            console.warn('Could not link to lead:', leadErr);
+          }
+        }
+
         // Create share record with specific permission
         const shareToken = generateToken(12);
+        const shareData = {
+          design_id: designId,
+          share_token: shareToken,
+          permission_level: permission
+        };
+
+        if (leadId) {
+          shareData.lead_id = leadId;
+        }
+
         const shareResponse = await fetch(`${SUPABASE_URL}/rest/v1/room_design_shares`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            design_id: designId,
-            share_token: shareToken,
-            permission_level: permission
-          })
+          body: JSON.stringify(shareData)
         });
 
         if (!shareResponse.ok) {
