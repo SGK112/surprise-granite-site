@@ -822,6 +822,15 @@
               <div class="type-desc">Direct from the source</div>
             </div>
           </label>
+
+          <label class="type-card">
+            <input type="radio" name="company_type" value="stone_yard">
+            <div class="type-card-inner">
+              <div class="type-icon">🪨</div>
+              <div class="type-name">Stone Yard</div>
+              <div class="type-desc">Retail stone supplier</div>
+            </div>
+          </label>
         </div>
 
         <div class="benefits-section">
@@ -1142,6 +1151,32 @@
     let currentStep = 1;
     let formData = {};
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Check for partner=stone-yard parameter and pre-select that option
+    const urlParams = new URLSearchParams(window.location.search);
+    const partnerType = urlParams.get('partner');
+
+    if (partnerType === 'stone-yard') {
+      // Pre-select stone yard option
+      document.addEventListener('DOMContentLoaded', () => {
+        const stoneYardRadio = document.querySelector('input[name="company_type"][value="stone_yard"]');
+        if (stoneYardRadio) {
+          stoneYardRadio.checked = true;
+        }
+        // Update hero text for stone yard partners
+        document.querySelector('.hero-title').innerHTML = 'Partner Stone Yard<br/>Application';
+        document.querySelector('.hero-subtitle').textContent = 'Join our Stone Yards network and get featured on our interactive map. Send your customers to us for fabrication, and we\'ll send our customers to you for slab selection.';
+        document.querySelector('.hero-badge').innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Stone Yard Partner
+        `;
+      });
+    }
 
     // Check if user is already logged in and redirect to dashboard
     async function checkExistingAuth() {

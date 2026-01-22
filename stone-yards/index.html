@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>Stone Yards Near Phoenix | Visit Our Slab Partners | Surprise Granite</title>
   <meta name="description" content="Find stone yards near you in the Phoenix metro area. Visit our partner slab warehouses to see granite, quartz, marble, and quartzite slabs in person. Tell them Surprise Granite is your fabricator!"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <link rel="canonical" href="https://surprisegranite.com/stone-yards/"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -18,13 +18,14 @@
       --gold: #f9cb00;
       --gold-dark: #cca600;
       --dark: #0a0a0a;
-      --surface: #141414;
-      --surface-elevated: #1c1c1c;
-      --surface-hover: #242424;
-      --border: rgba(255,255,255,0.08);
+      --surface: #111;
+      --surface-elevated: #1a1a1a;
+      --surface-hover: #222;
+      --border: rgba(255,255,255,0.1);
       --text: #ffffff;
       --text-secondary: rgba(255,255,255,0.7);
       --text-muted: rgba(255,255,255,0.5);
+      --radius: 12px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -36,195 +37,284 @@
       min-height: 100vh;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    /* Hero Section */
+    /* ========== HERO - Mobile First ========== */
     .hero {
-      background: linear-gradient(135deg, var(--surface) 0%, var(--dark) 100%);
-      padding: 140px 24px 60px;
+      padding: 100px 16px 24px;
       text-align: center;
-      border-bottom: 1px solid var(--border);
+      background: var(--dark);
     }
 
-    .hero-badge {
+    .hero-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: rgba(249, 203, 0, 0.1);
-      border: 1px solid rgba(249, 203, 0, 0.3);
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(249, 203, 0, 0.15);
       border-radius: 100px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--gold);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hero-eyebrow svg {
+      width: 14px;
+      height: 14px;
     }
 
     .hero h1 {
-      font-size: clamp(32px, 5vw, 48px);
+      font-size: 28px;
       font-weight: 800;
       letter-spacing: -0.5px;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      margin-bottom: 12px;
+      line-height: 1.15;
     }
 
-    .hero p {
-      font-size: 18px;
+    .hero-subtitle {
+      font-size: 15px;
       color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 24px;
+      margin-bottom: 16px;
+      line-height: 1.5;
     }
 
-    .hero-notice {
+    .hero-tip {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 14px 24px;
-      background: rgba(249, 203, 0, 0.08);
-      border: 1px solid rgba(249, 203, 0, 0.2);
-      border-radius: 12px;
+      gap: 8px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, rgba(249,203,0,0.12) 0%, rgba(249,203,0,0.06) 100%);
+      border: 1px solid rgba(249, 203, 0, 0.25);
+      border-radius: 10px;
+      font-size: 13px;
       color: var(--gold);
-      font-size: 15px;
-      font-weight: 500;
     }
 
-    .hero-notice svg {
-      width: 20px;
-      height: 20px;
+    .hero-tip svg {
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
     }
 
-    /* Map Section */
+    @media (min-width: 768px) {
+      .hero {
+        padding: 120px 24px 32px;
+      }
+      .hero h1 {
+        font-size: 42px;
+      }
+      .hero-subtitle {
+        font-size: 17px;
+      }
+    }
+
+    /* ========== INTERACTIVE MAP ========== */
     .map-section {
-      padding: 0;
+      position: relative;
+      background: var(--surface);
     }
 
     .map-container {
       width: 100%;
-      height: 500px;
-      background: var(--surface);
+      height: 320px;
       position: relative;
+      background: #1a1a1a;
     }
 
     .map-container iframe {
       width: 100%;
       height: 100%;
       border: none;
-      filter: grayscale(20%) contrast(1.1);
     }
 
-    /* Content Layout */
+    /* Map CTA - Vendor Onboarding */
+    .map-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .map-cta span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .map-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--gold);
+      border-radius: 100px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .map-cta-btn:hover {
+      background: var(--gold);
+      color: var(--dark);
+    }
+
+    @media (max-width: 480px) {
+      .map-cta {
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .map-container {
+        height: 420px;
+      }
+    }
+
+    /* ========== LOCATIONS GRID ========== */
     .content-wrapper {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 60px 24px 80px;
+      padding: 48px 16px 64px;
     }
 
     .section-header {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 32px;
     }
 
     .section-header h2 {
-      font-size: 28px;
+      font-size: 22px;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .section-header p {
       color: var(--text-secondary);
-      font-size: 16px;
+      font-size: 14px;
+    }
+
+    @media (min-width: 768px) {
+      .content-wrapper {
+        padding: 64px 24px 80px;
+      }
+      .section-header {
+        margin-bottom: 48px;
+      }
+      .section-header h2 {
+        font-size: 28px;
+      }
+      .section-header p {
+        font-size: 16px;
+      }
     }
 
     /* Stone Yards Grid */
     .yards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 24px;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 640px) {
+      .yards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .yards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
     }
 
     .yard-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--radius);
       overflow: hidden;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
     }
 
     .yard-card:hover {
-      border-color: rgba(249, 203, 0, 0.3);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5);
+      border-color: rgba(249, 203, 0, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -8px rgba(0,0,0,0.5);
     }
 
     .yard-header {
-      padding: 24px 24px 20px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       border-bottom: 1px solid var(--border);
     }
 
-    .yard-logo {
-      width: 56px;
-      height: 56px;
-      background: #fff;
-      border-radius: 12px;
+    .yard-num {
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: var(--dark);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
       flex-shrink: 0;
     }
 
-    .yard-logo img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
     .yard-info h3 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .yard-tag {
-      display: inline-block;
-      padding: 4px 10px;
-      background: rgba(249, 203, 0, 0.1);
-      border-radius: 6px;
       font-size: 12px;
-      font-weight: 600;
-      color: var(--gold);
+      color: var(--text-muted);
     }
 
     .yard-body {
-      padding: 20px 24px 24px;
+      padding: 16px 20px 20px;
     }
 
     .yard-detail {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin-bottom: 12px;
       color: var(--text-secondary);
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .yard-detail:last-of-type {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .yard-detail svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       color: var(--gold);
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .yard-detail a {
@@ -239,7 +329,7 @@
 
     .yard-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     .yard-btn {
@@ -247,10 +337,10 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 14px;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       transition: all 0.2s ease;
@@ -259,8 +349,8 @@
     }
 
     .yard-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
 
     .yard-btn-primary {
@@ -269,8 +359,8 @@
     }
 
     .yard-btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px -4px rgba(249, 203, 0, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px -4px rgba(249, 203, 0, 0.4);
     }
 
     .yard-btn-secondary {
@@ -284,53 +374,53 @@
       border-color: rgba(255,255,255,0.15);
     }
 
-    /* CTA Section */
+    /* ========== CTA SECTION ========== */
     .cta-section {
-      background: linear-gradient(135deg, var(--surface) 0%, var(--dark) 100%);
+      background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 80px 24px;
+      padding: 48px 16px;
       text-align: center;
     }
 
     .cta-content {
-      max-width: 600px;
+      max-width: 500px;
       margin: 0 auto;
     }
 
     .cta-content h2 {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 800;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .cta-content p {
       color: var(--text-secondary);
-      font-size: 18px;
-      margin-bottom: 32px;
+      font-size: 15px;
+      margin-bottom: 24px;
     }
 
     .cta-buttons {
       display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .cta-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 15px;
       font-weight: 600;
       text-decoration: none;
       transition: all 0.2s ease;
     }
 
     .cta-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
 
     .cta-btn-primary {
@@ -340,7 +430,7 @@
 
     .cta-btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 24px -4px rgba(249, 203, 0, 0.4);
+      box-shadow: 0 10px 24px -4px rgba(249, 203, 0, 0.4);
     }
 
     .cta-btn-secondary {
@@ -354,59 +444,22 @@
       border-color: rgba(255,255,255,0.15);
     }
 
+    @media (min-width: 640px) {
+      .cta-section {
+        padding: 64px 24px;
+      }
+      .cta-content h2 {
+        font-size: 28px;
+      }
+      .cta-buttons {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+
     /* Footer spacing */
     .footer-spacer {
       height: 80px;
-    }
-
-    /* Mobile */
-    @media (max-width: 768px) {
-      .hero {
-        padding: 120px 20px 48px;
-      }
-
-      .hero h1 {
-        font-size: 28px;
-      }
-
-      .hero p {
-        font-size: 16px;
-      }
-
-      .hero-notice {
-        flex-direction: column;
-        text-align: center;
-        gap: 8px;
-      }
-
-      .map-container {
-        height: 350px;
-      }
-
-      .yards-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .content-wrapper {
-        padding: 40px 16px 60px;
-      }
-
-      .cta-section {
-        padding: 60px 20px;
-      }
-
-      .cta-content h2 {
-        font-size: 24px;
-      }
-
-      .cta-buttons {
-        flex-direction: column;
-      }
-
-      .cta-btn {
-        width: 100%;
-        justify-content: center;
-      }
     }
   </style>
 
@@ -416,156 +469,348 @@
     "@type": "ItemList",
     "name": "Stone Yards Near Phoenix",
     "description": "Partner stone slab warehouses where you can view granite, quartz, marble, and quartzite slabs in person",
-    "numberOfItems": 10,
+    "numberOfItems": 5,
     "itemListElement": [
-      {
-        "@type": "LocalBusiness",
-        "position": 1,
-        "name": "MSI Surfaces",
-        "address": "4405 W Roosevelt St, Phoenix, AZ 85043",
-        "telephone": "+1-602-393-6330"
-      },
-      {
-        "@type": "LocalBusiness",
-        "position": 2,
-        "name": "Arizona Tile",
-        "address": "8829 S Priest Dr, Tempe, AZ 85284",
-        "telephone": "+1-480-893-9393"
-      }
+      { "@type": "LocalBusiness", "position": 1, "name": "MSI Surfaces", "address": "4405 W Roosevelt St, Phoenix, AZ 85043", "telephone": "+1-602-393-6330" },
+      { "@type": "LocalBusiness", "position": 2, "name": "Arizona Tile", "address": "8829 S Priest Dr, Tempe, AZ 85284", "telephone": "+1-480-893-9393" },
+      { "@type": "LocalBusiness", "position": 3, "name": "Cactus Stone & Tile", "address": "401 S 50th St, Phoenix, AZ 85034", "telephone": "+1-602-275-6400" },
+      { "@type": "LocalBusiness", "position": 4, "name": "Cosentino Center", "address": "8307 S Priest Dr, Tempe, AZ 85284", "telephone": "+1-480-763-9400" },
+      { "@type": "LocalBusiness", "position": 5, "name": "Cambria Gallery", "address": "1250 N Fairway Dr, Avondale, AZ 85323", "telephone": "+1-623-932-1482" }
     ]
   }
   </script>
 </head>
 <body>
 
-  <!-- Hero -->
+  <!-- Hero - Compact & Mobile Optimized -->
   <section class="hero">
-    <div class="hero-badge">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-      10+ Locations
-    </div>
-    <h1>Stone Yards Near Phoenix</h1>
-    <p>Visit our partner slab warehouses to see granite, quartz, marble, and quartzite slabs in person before you buy.</p>
-    <div class="hero-notice">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-      <span>When visiting, tell them <strong>"Surprise Granite is my fabricator"</strong></span>
+    <div class="hero-inner">
+      <div class="hero-eyebrow">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Phoenix Metro
+      </div>
+      <h1>Stone Yards Near Phoenix</h1>
+      <p class="hero-subtitle">Visit our partner slab warehouses to hand-pick your granite, quartz, marble, or quartzite.</p>
+      <div class="hero-tip">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        <span>Tell them <strong>"Surprise Granite is my fabricator"</strong></span>
+      </div>
     </div>
   </section>
 
-  <!-- Map -->
-  <section class="map-section">
-    <div class="map-container" id="stone-yards-map"></div>
-  </section>
-
-  <script>
-    // Initialize interactive map with all stone yard locations
-    function initStoneYardsMap() {
-      const mapContainer = document.getElementById('stone-yards-map');
-      if (!mapContainer) return;
-
-      // Stone yard locations with coordinates
-      const locations = [
-        { name: 'MSI Surfaces', address: '4405 W Roosevelt St, Phoenix, AZ 85043', lat: 33.4583, lng: -112.1407, phone: '(602) 393-6330' },
-        { name: 'Arizona Tile', address: '8829 S Priest Dr, Tempe, AZ 85284', lat: 33.3456, lng: -111.9606, phone: '(480) 893-9393' },
-        { name: 'Cactus Stone & Tile', address: '401 S 50th St, Phoenix, AZ 85034', lat: 33.4438, lng: -111.9811, phone: '(602) 275-6400' },
-        { name: 'Cosentino Center', address: '8307 S Priest Dr, Tempe, AZ 85284', lat: 33.3511, lng: -111.9606, phone: '(480) 763-9400' },
-        { name: 'Cambria Gallery', address: '1250 N Fairway Dr, Avondale, AZ 85323', lat: 33.4536, lng: -112.3234, phone: '(623) 932-1482' },
-        { name: 'Daltile Stone & Slab', address: '2040 W Rio Salado Pkwy, Tempe, AZ 85281', lat: 33.4317, lng: -111.9642, phone: '(602) 243-2772' },
-        { name: 'Bolder Image Stone', address: '4101 W Van Buren St, Phoenix, AZ 85009', lat: 33.4516, lng: -112.1306, phone: '(602) 484-7700' },
-        { name: 'Aracruz Granite', address: '2310 W Sherman St, Phoenix, AZ 85009', lat: 33.4283, lng: -112.0964, phone: '(602) 252-1171' },
-        { name: 'Classic Surfaces', address: '4645 W McDowell Rd, Phoenix, AZ 85035', lat: 33.4650, lng: -112.1378, phone: '(219) 213-4239' },
-        { name: 'Architectural Surfaces', address: '9175 E Pima Center Pkwy, Scottsdale, AZ 85258', lat: 33.6114, lng: -111.8867, phone: '(480) 210-3570' }
-      ];
-
-      // Create static map with markers using Google Static Maps API alternative
-      // Using iframe with search query as fallback
-      const centerLat = 33.45;
-      const centerLng = -112.05;
-
-      mapContainer.innerHTML = `
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d212867.8!2d-112.15!3d33.45!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x872b12ed50a179cb%3A0x8c69c7f8354a1bac!2sPhoenix%2C%20AZ!5e0!3m2!1sen!2sus!4v1706000000000!5m2!1sen!2sus"
-          width="100%"
-          height="100%"
-          style="border:0;"
-          allowfullscreen=""
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
-        <div class="map-overlay">
-          <div class="map-locations-list">
-            ${locations.map((loc, i) => `
-              <a href="https://maps.google.com/?q=${encodeURIComponent(loc.address)}" target="_blank" class="map-location-pin" title="${loc.name}">
-                <span class="pin-number">${i + 1}</span>
-              </a>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // Run on DOM ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initStoneYardsMap);
-    } else {
-      initStoneYardsMap();
-    }
-  </script>
+  <!-- Partner Map with Leaflet (no API key needed) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    .map-container {
+    #partner-map {
+      width: 100%;
+      height: 320px;
+      background: #f5f5f5;
+    }
+    @media (min-width: 768px) {
+      #partner-map { height: 420px; }
+    }
+
+    /* Custom Marker Pin */
+    .marker-pin {
+      width: 30px;
+      height: 42px;
       position: relative;
     }
-    .map-overlay {
+    .marker-pin-inner {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(180deg, #f9cb00 0%, #e5b800 100%);
+      border: 3px solid #fff;
+      border-radius: 50% 50% 50% 0;
       position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      pointer-events: none;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    .map-location-pin {
+    .marker-pin-inner::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Popup */
+    .leaflet-popup-content-wrapper {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      padding: 0;
+      overflow: hidden;
+      min-width: 240px;
+    }
+    .leaflet-popup-tip {
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .leaflet-popup-content {
+      margin: 0;
+      width: 100% !important;
+    }
+    .popup-card {
+      padding: 18px 20px 20px;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+    .popup-card h4 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
+      padding-right: 20px;
+    }
+    .popup-card .popup-address {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+    }
+    .popup-card .popup-address svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: #f9cb00;
+      margin-top: 1px;
+    }
+    .popup-card .popup-phone {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      font-size: 13px;
+    }
+    .popup-card .popup-phone svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: #f9cb00;
+    }
+    .popup-card .popup-phone a {
+      color: #1a1a1a;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .popup-card .popup-phone a:hover {
+      color: #e5b800;
+    }
+    .popup-card .popup-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      background: var(--gold);
-      color: var(--dark);
-      border-radius: 50%;
-      font-size: 12px;
-      font-weight: 700;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+      color: #1a1a1a;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
       text-decoration: none;
-      pointer-events: auto;
-      transition: transform 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transition: all 0.2s;
     }
-    .map-location-pin:hover {
-      transform: scale(1.15);
+    .popup-card .popup-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(249,203,0,0.4);
+    }
+    .popup-card .popup-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    .leaflet-popup-close-button {
+      color: #999 !important;
+      font-size: 20px !important;
+      top: 8px !important;
+      right: 8px !important;
+      width: 24px !important;
+      height: 24px !important;
+      line-height: 24px !important;
+      text-align: center !important;
+      padding: 0 !important;
+      font-weight: 400 !important;
+    }
+    .leaflet-popup-close-button:hover {
+      color: #333 !important;
+      background: #f0f0f0 !important;
+      border-radius: 50% !important;
     }
   </style>
+
+  <section class="map-section">
+    <div id="partner-map"></div>
+    <div class="map-cta">
+      <span>Are you a stone yard?</span>
+      <a href="/distributor/signup/?partner=stone-yard" class="map-cta-btn">Become a Partner</a>
+    </div>
+  </section>
+
+  <script>
+    // Fallback data if API is not available
+    const fallbackPartners = [
+      { name: 'MSI Surfaces', address: '4405 W Roosevelt St, Phoenix, AZ', city: 'Phoenix', state: 'AZ', zip: '85043', phone: '(602) 393-6330', lat: 33.4583, lng: -112.1407, website: 'https://www.msisurfaces.com', tag: 'Granite • Quartz • Porcelain' },
+      { name: 'Arizona Tile', address: '8829 S Priest Dr, Tempe, AZ', city: 'Tempe', state: 'AZ', zip: '85284', phone: '(480) 893-9393', lat: 33.3456, lng: -111.9606, website: 'https://www.arizonatile.com/locations/tempe/', tag: 'Showroom & Slab Warehouse' },
+      { name: 'Cactus Stone & Tile', address: '401 S 50th St, Phoenix, AZ', city: 'Phoenix', state: 'AZ', zip: '85034', phone: '(602) 275-6400', lat: 33.4438, lng: -111.9811, website: 'https://cactustile.com/', tag: 'Natural Stone Specialists' },
+      { name: 'Cosentino Center', address: '8307 S Priest Dr, Tempe, AZ', city: 'Tempe', state: 'AZ', zip: '85284', phone: '(480) 763-9400', lat: 33.3511, lng: -111.9606, website: 'https://www.cosentino.com/usa/cosentino-center/', tag: 'Silestone • Dekton • Sensa' },
+      { name: 'Cambria Gallery', address: '1250 N Fairway Dr Bldg C #103, Avondale, AZ', city: 'Avondale', state: 'AZ', zip: '85323', phone: '(623) 932-1482', lat: 33.4536, lng: -112.3234, website: 'https://www.cambriausa.com/galleries/phoenix/', tag: 'Premium Quartz • By Appointment' },
+      { name: 'Daltile Stone & Slab', address: '2040 W Rio Salado Pkwy, Tempe, AZ', city: 'Tempe', state: 'AZ', zip: '85281', phone: '(602) 243-2772', lat: 33.4317, lng: -111.9642, website: 'https://locations.daltile.com/az/tempe/393/', tag: 'Tile • Slabs • Design Center' },
+      { name: 'Bolder Image Stone', address: '4101 W Van Buren St #3, Phoenix, AZ', city: 'Phoenix', state: 'AZ', zip: '85009', phone: '(602) 484-7700', lat: 33.4516, lng: -112.1306, website: 'https://bolderimagestone.com/', tag: 'Granite • Quartzite • Marble' },
+      { name: 'Aracruz Granite', address: '2310 W Sherman St, Phoenix, AZ', city: 'Phoenix', state: 'AZ', zip: '85009', phone: '(602) 252-1171', lat: 33.4283, lng: -112.0964, website: 'http://aracruzgranite.com/', tag: 'Appointment Required' },
+      { name: 'Classic Surfaces', address: '4645 W McDowell Rd #101, Phoenix, AZ', city: 'Phoenix', state: 'AZ', zip: '85035', phone: '(219) 213-4239', lat: 33.4650, lng: -112.1378, website: 'https://www.classic-surfaces.com/', tag: 'Warehouse Location' },
+      { name: 'Architectural Surfaces', address: '9175 E Pima Center Pkwy A-1, Scottsdale, AZ', city: 'Scottsdale', state: 'AZ', zip: '85258', phone: '(480) 210-3570', lat: 33.6114, lng: -111.8867, website: 'https://arcsurfaces.com/', tag: 'Appointment Required' }
+    ];
+
+    // API base URL
+    const API_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:3001'
+      : 'https://surprise-granite-email-api.onrender.com';
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Initialize map
+      const map = L.map('partner-map', {
+        scrollWheelZoom: false,
+        zoomControl: true
+      }).setView([33.45, -112.07], 10);
+
+      // OpenStreetMap light tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Custom pin icon
+      const pinIcon = L.divIcon({
+        className: 'marker-pin-wrapper',
+        html: '<div class="marker-pin"><div class="marker-pin-inner"></div></div>',
+        iconSize: [30, 42],
+        iconAnchor: [15, 42],
+        popupAnchor: [0, -38]
+      });
+
+      // Try to fetch partners from API, fallback to hardcoded
+      let partners = fallbackPartners;
+      try {
+        const response = await fetch(`${API_BASE}/api/marketplace/stone-yards`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.partners && data.partners.length > 0) {
+            // Transform API data to map format
+            partners = data.partners.map(p => ({
+              name: p.company_name,
+              address: `${p.address}, ${p.city}, ${p.state}`,
+              city: p.city,
+              state: p.state,
+              zip: p.zip_code,
+              phone: p.phone,
+              lat: parseFloat(p.latitude),
+              lng: parseFloat(p.longitude),
+              website: p.website,
+              tag: p.material_types?.join(' • ') || 'Stone Yard Partner'
+            }));
+            console.log('Loaded partners from database:', partners.length);
+          }
+        }
+      } catch (err) {
+        console.log('Using fallback partner data');
+      }
+
+      // Add markers to map
+      const markers = [];
+      partners.forEach(p => {
+        const marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+        marker.bindPopup(`
+          <div class="popup-card">
+            <h4>${p.name}</h4>
+            <div class="popup-address">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span>${p.address}</span>
+            </div>
+            <div class="popup-phone">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              <a href="tel:${p.phone.replace(/[^0-9]/g, '')}">${p.phone}</a>
+            </div>
+            <a href="https://maps.google.com/maps?daddr=${encodeURIComponent(p.address)}" target="_blank" class="popup-btn">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+              Get Directions
+            </a>
+          </div>
+        `, { maxWidth: 280 });
+        markers.push(marker);
+      });
+
+      // Fit bounds
+      const group = L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.1));
+
+      // Also update the cards grid if partners came from API
+      if (partners !== fallbackPartners) {
+        updateYardsGrid(partners);
+      }
+    });
+
+    // Function to dynamically update the yards grid
+    function updateYardsGrid(partners) {
+      const grid = document.querySelector('.yards-grid');
+      if (!grid || partners.length === 0) return;
+
+      grid.innerHTML = partners.map((p, i) => `
+        <div class="yard-card">
+          <div class="yard-header">
+            <div class="yard-num">${i + 1}</div>
+            <div class="yard-info">
+              <h3>${p.name}</h3>
+              <span class="yard-tag">${p.tag || 'Stone Yard Partner'}</span>
+            </div>
+          </div>
+          <div class="yard-body">
+            <div class="yard-detail">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span>${p.address}${p.zip ? ' ' + p.zip : ''}</span>
+            </div>
+            <div class="yard-detail">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              <a href="tel:${p.phone.replace(/[^0-9]/g, '')}">${p.phone}</a>
+            </div>
+            <div class="yard-actions">
+              <a href="https://maps.google.com/?q=${encodeURIComponent(p.address)}" target="_blank" class="yard-btn yard-btn-primary">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                Directions
+              </a>
+              ${p.website ? `<a href="${p.website}" target="_blank" class="yard-btn yard-btn-secondary">Website</a>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
 
   <!-- Stone Yards List -->
   <section class="content-wrapper">
     <div class="section-header">
       <h2>Our Partner Stone Yards</h2>
-      <p>Browse slabs at any of these locations. Call ahead to check inventory.</p>
+      <p>Browse slabs in person. Call ahead to check inventory.</p>
     </div>
 
     <div class="yards-grid">
-      <!-- MSI Surfaces -->
+      <!-- 1. MSI Surfaces -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb24947fbad82_msi-logo.svg" alt="MSI Surfaces">
-          </div>
+          <div class="yard-num">1</div>
           <div class="yard-info">
             <h3>MSI Surfaces</h3>
             <span class="yard-tag">Granite • Quartz • Porcelain</span>
@@ -573,38 +818,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>4405 W Roosevelt St, Phoenix, AZ 85043</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16023936330">(602) 393-6330</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=4405+W+Roosevelt+St+Phoenix+AZ+85043" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://www.msisurfaces.com" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://www.msisurfaces.com" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Arizona Tile -->
+      <!-- 2. Arizona Tile -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb20376fbaf61_az-tile-logo.svg" alt="Arizona Tile">
-          </div>
+          <div class="yard-num">2</div>
           <div class="yard-info">
             <h3>Arizona Tile</h3>
             <span class="yard-tag">Showroom & Slab Warehouse</span>
@@ -612,38 +846,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>8829 S Priest Dr, Tempe, AZ 85284</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+14808939393">(480) 893-9393</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=8829+S+Priest+Dr+Tempe+AZ+85284" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://www.arizonatile.com/locations/tempe/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://www.arizonatile.com/locations/tempe/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Cactus Stone & Tile -->
+      <!-- 3. Cactus Stone & Tile -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb29d5dfbaee3_cactus-stone-tile-logo.png" alt="Cactus Stone & Tile">
-          </div>
+          <div class="yard-num">3</div>
           <div class="yard-info">
             <h3>Cactus Stone & Tile</h3>
             <span class="yard-tag">Natural Stone Specialists</span>
@@ -651,38 +874,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>401 S 50th Street, Phoenix, AZ 85034</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16022756400">(602) 275-6400</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=401+S+50th+Street+Phoenix+AZ+85034" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://cactustile.com/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://cactustile.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Cosentino -->
+      <!-- 4. Cosentino -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2750efbaf62_cosentino-vector-logo.png" alt="Cosentino">
-          </div>
+          <div class="yard-num">4</div>
           <div class="yard-info">
             <h3>Cosentino Center</h3>
             <span class="yard-tag">Silestone • Dekton • Sensa</span>
@@ -690,38 +902,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>8307 S Priest Dr, Tempe, AZ 85284</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+14807639400">(480) 763-9400</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=8307+S+Priest+Dr+Tempe+AZ+85284" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://www.cosentino.com/usa/cosentino-center/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://www.cosentino.com/usa/cosentino-center/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Cambria -->
+      <!-- 5. Cambria -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb24deafbaf44_cambria-logo.jpg" alt="Cambria">
-          </div>
+          <div class="yard-num">5</div>
           <div class="yard-info">
             <h3>Cambria Gallery</h3>
             <span class="yard-tag">Premium Quartz • By Appointment</span>
@@ -729,38 +930,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <span>1250 N Fairway Dr Bldg C #103, Avondale, AZ 85323</span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>1250 N Fairway Dr Bldg C #103, Avondale, AZ</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16239321482">(623) 932-1482</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=1250+N+Fairway+Dr+Avondale+AZ+85323" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://www.cambriausa.com/galleries/phoenix/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://www.cambriausa.com/galleries/phoenix/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Daltile -->
+      <!-- 6. Daltile -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2399efbaf64_daltile-logo.svg" alt="Daltile">
-          </div>
+          <div class="yard-num">6</div>
           <div class="yard-info">
             <h3>Daltile Stone & Slab</h3>
             <span class="yard-tag">Tile • Slabs • Design Center</span>
@@ -768,38 +958,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>2040 W Rio Salado Pkwy, Tempe, AZ 85281</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16022432772">(602) 243-2772</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=2040+W+Rio+Salado+Pkwy+Tempe+AZ+85281" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://locations.daltile.com/az/tempe/393/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://locations.daltile.com/az/tempe/393/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Bolder Image Stone -->
+      <!-- 7. Bolder Image Stone -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb239f3fbae89_bolder-image-stone-logo.png" alt="Bolder Image Stone">
-          </div>
+          <div class="yard-num">7</div>
           <div class="yard-info">
             <h3>Bolder Image Stone</h3>
             <span class="yard-tag">Granite • Quartzite • Marble</span>
@@ -807,38 +986,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>4101 W Van Buren St #3, Phoenix, AZ 85009</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16024847700">(602) 484-7700</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=4101+W+Van+Buren+St+Phoenix+AZ+85009" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://bolderimagestone.com/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://bolderimagestone.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Aracruz Granite -->
+      <!-- 8. Aracruz Granite -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2f054fbad53_aracruzre-300.png" alt="Aracruz Granite">
-          </div>
+          <div class="yard-num">8</div>
           <div class="yard-info">
             <h3>Aracruz Granite</h3>
             <span class="yard-tag">Appointment Required</span>
@@ -846,38 +1014,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>2310 W Sherman St, Phoenix, AZ 85009</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+16022521171">(602) 252-1171</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=2310+W+Sherman+St+Phoenix+AZ+85009" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="http://aracruzgranite.com/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="http://aracruzgranite.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Classic Surfaces -->
+      <!-- 9. Classic Surfaces -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6259fa3a193e9d1afdf459b2/64018ed3626c757b381999ee_Screenshot%202023-03-02%20230809.jpg" alt="Classic Surfaces">
-          </div>
+          <div class="yard-num">9</div>
           <div class="yard-info">
             <h3>Classic Surfaces</h3>
             <span class="yard-tag">Warehouse Location</span>
@@ -885,38 +1042,27 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>4645 W McDowell Rd #101, Phoenix, AZ 85035</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+12192134239">(219) 213-4239</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=4645+W+McDowell+Rd+Phoenix+AZ+85035" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://www.classic-surfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://www.classic-surfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
 
-      <!-- Architectural Surfaces -->
+      <!-- 10. Architectural Surfaces -->
       <div class="yard-card">
         <div class="yard-header">
-          <div class="yard-logo">
-            <img src="https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4476abb212e7fbb369_architectural_surfaces_logo.jpg" alt="Architectural Surfaces">
-          </div>
+          <div class="yard-num">10</div>
           <div class="yard-info">
             <h3>Architectural Surfaces</h3>
             <span class="yard-tag">Appointment Required</span>
@@ -924,32 +1070,22 @@
         </div>
         <div class="yard-body">
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <span>9175 E Pima Center Pkwy A-1, Scottsdale, AZ 85258</span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>9175 E Pima Center Pkwy A-1, Scottsdale, AZ</span>
           </div>
           <div class="yard-detail">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-            </svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
             <a href="tel:+14802103570">(480) 210-3570</a>
           </div>
           <div class="yard-actions">
             <a href="https://maps.google.com/?q=9175+E+Pima+Center+Pkwy+Scottsdale+AZ+85258" target="_blank" class="yard-btn yard-btn-primary">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               Directions
             </a>
-            <a href="https://arcsurfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">
-              Website
-            </a>
+            <a href="https://arcsurfaces.com/" target="_blank" class="yard-btn yard-btn-secondary">Website</a>
           </div>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -960,15 +1096,11 @@
       <p>Found your perfect slab? Schedule a free in-home estimate and we'll bring samples to you!</p>
       <div class="cta-buttons">
         <a href="/book/" class="cta-btn cta-btn-primary">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           Schedule Free Estimate
         </a>
         <a href="tel:+16028333189" class="cta-btn cta-btn-secondary">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
           Call (602) 833-3189
         </a>
       </div>

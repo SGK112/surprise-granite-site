@@ -8167,6 +8167,65 @@ app.delete('/api/distributor/locations/:id', async (req, res) => {
 
 // ============ PUBLIC MARKETPLACE API ============
 
+// Get stone yard partners (for /stone-yards/ page)
+app.get('/api/marketplace/stone-yards', async (req, res) => {
+  if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+
+  try {
+    // Try the RPC function first
+    const { data: partners, error } = await supabase.rpc('get_stone_yard_partners');
+
+    if (error) {
+      // Fallback: direct query if function doesn't exist
+      const { data: fallbackPartners, error: fallbackError } = await supabase
+        .from('distributor_profiles')
+        .select(`
+          id, company_name, company_type, primary_contact_phone,
+          website, material_types,
+          distributor_locations!inner (
+            location_name, address_line1, city, state, zip_code,
+            latitude, longitude, has_showroom, has_slab_yard
+          )
+        `)
+        .eq('is_stone_yard_partner', true)
+        .eq('is_active', true)
+        .eq('verification_status', 'verified')
+        .eq('distributor_locations.is_primary', true)
+        .order('company_name');
+
+      if (fallbackError) {
+        logger.error('Get stone yard partners error:', fallbackError);
+        return res.status(500).json({ error: 'Failed to fetch partners' });
+      }
+
+      const transformed = (fallbackPartners || []).map(p => ({
+        id: p.id,
+        company_name: p.company_name,
+        company_type: p.company_type,
+        phone: p.primary_contact_phone,
+        website: p.website,
+        material_types: p.material_types,
+        location_name: p.distributor_locations?.[0]?.location_name,
+        address: p.distributor_locations?.[0]?.address_line1,
+        city: p.distributor_locations?.[0]?.city,
+        state: p.distributor_locations?.[0]?.state,
+        zip_code: p.distributor_locations?.[0]?.zip_code,
+        latitude: p.distributor_locations?.[0]?.latitude,
+        longitude: p.distributor_locations?.[0]?.longitude,
+        has_showroom: p.distributor_locations?.[0]?.has_showroom,
+        has_slab_yard: p.distributor_locations?.[0]?.has_slab_yard
+      }));
+
+      return res.json({ partners: transformed });
+    }
+
+    res.json({ partners: partners || [] });
+  } catch (error) {
+    logger.error('Get stone yard partners error:', error);
+    return res.status(500).json({ error: 'Failed to fetch partners' });
+  }
+});
+
 // Search slabs (public) - Updated to use products table
 app.get('/api/marketplace/slabs', async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });

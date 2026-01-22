@@ -400,6 +400,77 @@ router.get('/featured', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Get stone yard partners (for /stone-yards/ page)
+ * GET /api/marketplace/stone-yards
+ */
+router.get('/stone-yards', asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  // Try using the get_stone_yard_partners function
+  const { data: partners, error } = await supabase.rpc('get_stone_yard_partners');
+
+  if (error) {
+    // Fallback: direct query if function doesn't exist yet
+    const { data: fallbackPartners, error: fallbackError } = await supabase
+      .from('distributor_profiles')
+      .select(`
+        id,
+        company_name,
+        company_type,
+        primary_contact_phone,
+        website,
+        material_types,
+        distributor_locations!inner (
+          location_name,
+          address_line1,
+          city,
+          state,
+          zip_code,
+          latitude,
+          longitude,
+          has_showroom,
+          has_slab_yard
+        )
+      `)
+      .eq('is_stone_yard_partner', true)
+      .eq('is_active', true)
+      .eq('verification_status', 'verified')
+      .eq('distributor_locations.is_primary', true)
+      .order('company_name');
+
+    if (fallbackError) {
+      return handleApiError(res, fallbackError, 'Get stone yard partners');
+    }
+
+    // Transform to expected format
+    const transformedPartners = (fallbackPartners || []).map(p => ({
+      id: p.id,
+      company_name: p.company_name,
+      company_type: p.company_type,
+      phone: p.primary_contact_phone,
+      website: p.website,
+      material_types: p.material_types,
+      location_name: p.distributor_locations?.[0]?.location_name,
+      address: p.distributor_locations?.[0]?.address_line1,
+      city: p.distributor_locations?.[0]?.city,
+      state: p.distributor_locations?.[0]?.state,
+      zip_code: p.distributor_locations?.[0]?.zip_code,
+      latitude: p.distributor_locations?.[0]?.latitude,
+      longitude: p.distributor_locations?.[0]?.longitude,
+      has_showroom: p.distributor_locations?.[0]?.has_showroom,
+      has_slab_yard: p.distributor_locations?.[0]?.has_slab_yard
+    }));
+
+    return res.json({ partners: transformedPartners });
+  }
+
+  res.json({ partners: partners || [] });
+}));
+
+/**
  * Get available material types and brands (for filters)
  * GET /api/marketplace/filters
  */
