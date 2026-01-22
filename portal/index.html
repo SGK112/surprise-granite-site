@@ -1064,16 +1064,12 @@
     }
 
     async function loadEstimates() {
-      // Load estimates linked to this lead/customer
+      // Load estimates linked to this lead
       try {
-        const customerId = portalData.customer_id;
         const leadId = portalData.lead_id;
+        if (!leadId) return;
 
-        if (!customerId && !leadId) return;
-
-        let query = db.from('estimates').select('*');
-        if (customerId) query = query.eq('customer_id', customerId);
-        else if (leadId) query = query.eq('lead_id', leadId);
+        let query = db.from('estimates').select('*').eq('lead_id', leadId);
 
         const { data: estimates } = await query.order('created_at', { ascending: false });
 
@@ -1101,15 +1097,15 @@
     }
 
     async function loadInvoices() {
-      // Load invoices linked to this customer
+      // Load invoices linked to this customer/lead
       try {
-        const customerId = portalData.customer_id;
-        if (!customerId) return;
+        const leadId = portalData.lead_id;
+        if (!leadId) return;
 
         const { data: invoices } = await db
           .from('invoices')
           .select('*')
-          .eq('customer_id', customerId)
+          .eq('customer_id', leadId)
           .order('created_at', { ascending: false });
 
         const container = document.getElementById('invoices-list');
@@ -1137,13 +1133,13 @@
 
     async function loadMessages() {
       try {
-        const customerId = portalData.customer_id;
-        if (!customerId) return;
+        const leadId = portalData.lead_id;
+        if (!leadId) return;
 
         const { data: messages } = await db
           .from('customer_messages')
           .select('*')
-          .eq('customer_id', customerId)
+          .eq('customer_id', leadId)
           .order('created_at', { ascending: true })
           .limit(50);
 
@@ -1180,14 +1176,14 @@
       if (!message) return;
 
       try {
-        const customerId = portalData.customer_id;
-        if (!customerId) {
+        const leadId = portalData.lead_id;
+        if (!leadId) {
           showToast('Unable to send message');
           return;
         }
 
         await db.from('customer_messages').insert({
-          customer_id: customerId,
+          customer_id: leadId,
           direction: 'inbound',
           channel: 'in_app',
           message: message,
