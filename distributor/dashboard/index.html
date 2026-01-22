@@ -725,6 +725,14 @@
 
     let currentUser = null;
     let distributorProfile = null;
+    let isAdmin = false;
+
+    // Super admin emails that can view any distributor
+    const SUPER_ADMIN_EMAILS = [
+      'steve@surprisegranite.com',
+      'admin@surprisegranite.com',
+      'sgk112@gmail.com'
+    ];
 
     // Check auth on load
     async function init() {
@@ -743,6 +751,7 @@
       }
 
       currentUser = user;
+      isAdmin = SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
       await loadDashboard();
     }
 
@@ -765,17 +774,99 @@
       `;
     }
 
+    // Admin view - show list of all distributors to pick from
+    async function showAdminDistributorPicker() {
+      document.getElementById('companyName').textContent = 'Admin View';
+      document.getElementById('userName').textContent = 'Super Admin';
+      document.getElementById('userEmail').textContent = currentUser.email;
+      document.getElementById('userAvatar').textContent = '⚡';
+
+      // Fetch all distributors
+      const { data: distributors, error } = await supabaseClient
+        .from('distributor_profiles')
+        .select('id, company_name, company_type, is_stone_yard_partner, verification_status, created_at')
+        .order('company_name');
+
+      if (error) {
+        console.error('Error loading distributors:', error);
+        return;
+      }
+
+      const content = document.getElementById('activityContent') || document.querySelector('.dashboard-content');
+      content.innerHTML = `
+        <div style="padding: 24px;">
+          <div style="background: linear-gradient(135deg, rgba(249,203,0,0.15) 0%, rgba(249,203,0,0.05) 100%); border: 1px solid rgba(249,203,0,0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="margin: 0 0 8px; color: #f9cb00; font-size: 16px;">⚡ Admin Mode</h3>
+            <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 14px;">Select a distributor to view their dashboard, or manage stone yard partners.</p>
+          </div>
+
+          <h3 style="margin: 0 0 16px; font-size: 18px;">All Distributors (${distributors.length})</h3>
+          <div style="display: grid; gap: 12px;">
+            ${distributors.map(d => `
+              <a href="/distributor/dashboard/?distributor=${d.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--dark-elevated, #1e1e2d); border: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.2s;">
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 4px;">${d.company_name}</div>
+                  <div style="font-size: 12px; color: rgba(255,255,255,0.5);">
+                    ${d.company_type}${d.is_stone_yard_partner ? ' • Stone Yard Partner' : ''} • ${d.verification_status}
+                  </div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;"><path d="M9 18l6-6-6-6"/></svg>
+              </a>
+            `).join('')}
+          </div>
+
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="/account/" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--dark-surface, #12121a); border: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); border-radius: 8px; color: inherit; text-decoration: none; font-size: 14px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Back to Account
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
     async function loadDashboard() {
       try {
-        // Get distributor profile
-        const { data: profile, error } = await supabaseClient
-          .from('distributor_profiles')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .single();
+        // Check for admin viewing specific distributor via ?distributor=id
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewDistributorId = urlParams.get('distributor');
 
-        if (error || !profile) {
-          // Not a distributor - redirect to signup
+        let profile = null;
+
+        if (isAdmin && viewDistributorId) {
+          // Admin viewing specific distributor
+          const { data, error } = await supabaseClient
+            .from('distributor_profiles')
+            .select('*')
+            .eq('id', viewDistributorId)
+            .single();
+
+          if (!error && data) {
+            profile = data;
+            console.log('Admin viewing distributor:', profile.company_name);
+          }
+        }
+
+        if (!profile) {
+          // Get own distributor profile
+          const { data, error } = await supabaseClient
+            .from('distributor_profiles')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .single();
+
+          if (!error && data) {
+            profile = data;
+          }
+        }
+
+        if (!profile) {
+          // Not a distributor - check if admin
+          if (isAdmin) {
+            showAdminDistributorPicker();
+            return;
+          }
+          // Regular user without distributor profile - redirect to signup
           window.location.href = '/distributor/signup/';
           return;
         }
@@ -787,6 +878,23 @@
         document.getElementById('userName').textContent = profile.primary_contact_name;
         document.getElementById('userEmail').textContent = profile.primary_contact_email;
         document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
+
+        // Show admin banner if viewing as admin
+        const urlParams = new URLSearchParams(window.location.search);
+        if (isAdmin && urlParams.get('distributor')) {
+          const banner = document.createElement('div');
+          banner.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(249,203,0,0.2) 0%, rgba(249,203,0,0.1) 100%); border-bottom: 1px solid rgba(249,203,0,0.3); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">⚡</span>
+                <span style="font-size: 13px; color: #f9cb00; font-weight: 600;">Admin View</span>
+                <span style="font-size: 13px; color: rgba(255,255,255,0.6);">Viewing: ${profile.company_name}</span>
+              </div>
+              <a href="/distributor/dashboard/" style="font-size: 12px; color: #f9cb00; text-decoration: none;">← Back to All Distributors</a>
+            </div>
+          `;
+          document.body.insertBefore(banner, document.body.firstChild);
+        }
 
         // Load stats
         await loadStats();
