@@ -13722,9 +13722,6 @@
         restoreLeadInfo();
       }
 
-      // Save initial state
-      saveUndoState();
-
       // Keyboard shortcuts for undo/redo
       document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -13772,6 +13769,9 @@
           render3D();
         }
       }
+
+      // Save initial undo state AFTER loading any saved design
+      saveUndoState();
 
       // Initialize element selector dropdown and item picker
       updateElementSelector();
@@ -45316,7 +45316,7 @@
             renderer.render(scene, camera);
             canvas = renderer.domElement;
           } else {
-            canvas = document.getElementById('canvas2d');
+            canvas = document.getElementById('canvas');
           }
 
           const dataUrl = canvas.toDataURL('image/png');
@@ -45338,7 +45338,7 @@
           renderer.render(scene, camera);
           canvas = renderer.domElement;
         } else {
-          canvas = document.getElementById('canvas2d');
+          canvas = document.getElementById('canvas');
         }
 
         const link = document.createElement('a');
@@ -48879,7 +48879,7 @@
       doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 72);
 
       // Canvas image - 2D floor plan
-      const canvas2D = document.getElementById('canvas2d');
+      const canvas2D = document.getElementById('canvas');
       const imgData2D = canvas2D.toDataURL('image/png');
       doc.text('2D Floor Plan', 15, 85);
       doc.addImage(imgData2D, 'PNG', 15, 88, 85, 65);
@@ -49090,7 +49090,7 @@
         renderer.render(scene, camera);
         canvas = renderer.domElement;
       } else {
-        canvas = document.getElementById('canvas2d');
+        canvas = document.getElementById('canvas');
       }
 
       const link = document.createElement('a');
