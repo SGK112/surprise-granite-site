@@ -14784,6 +14784,13 @@
       const materialCategory = selectedMaterial.category;
       const allowedTypes = MATERIAL_TYPE_MAP[materialCategory];
 
+      console.log('Material application check:', {
+        materialCategory,
+        elementType: element.type,
+        allowedTypes,
+        hasRestriction: !!allowedTypes
+      });
+
       // Check if this material can be applied to this element type
       if (allowedTypes && !allowedTypes.some(t => element.type.includes(t) || element.type === t)) {
         // Show helpful error message
@@ -20364,10 +20371,13 @@
 
         // If a material is selected, apply it to the clicked element
         if (selectedMaterial) {
-          applyMaterialToElement(clicked);
-          selectedElement = clicked;
-          updateProperties();
-          draw();
+          const applied = applyMaterialToElement(clicked);
+          if (applied) {
+            selectedElement = clicked;
+            updateProperties();
+            draw();
+          }
+          // Always return - either material was applied or error was shown
           return;
         }
 
