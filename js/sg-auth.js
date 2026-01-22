@@ -152,6 +152,11 @@
       if (!error && data) {
         userProfile = data;
         console.log('SG Auth: Profile loaded, account_type:', userProfile.account_type);
+
+        // Load linked Shopify customer data if available
+        if (userProfile.shopify_customer_id) {
+          await loadShopifyCustomerData(userProfile.shopify_customer_id);
+        }
       } else {
         // Create profile if doesn't exist
         // Check user_metadata for account_type (may be set via OAuth or signup)
@@ -172,12 +177,143 @@
           .single();
 
         userProfile = newProfile;
+
+        // Try to link Shopify customer by email (trigger will do this, but also try here)
+        await linkShopifyCustomerByEmail(currentUser.email);
       }
     } catch (e) {
       console.error('SG Auth: Error loading profile', e);
     }
 
     return userProfile;
+  }
+
+  // Load linked Shopify customer data
+  let shopifyCustomerData = null;
+
+  async function loadShopifyCustomerData(shopifyCustomerId) {
+    if (!supabaseClient || !shopifyCustomerId) return null;
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('shopify_customers')
+        .select('*')
+        .eq('id', shopifyCustomerId)
+        .single();
+
+      if (!error && data) {
+        shopifyCustomerData = data;
+        console.log('SG Auth: Shopify customer data loaded', {
+          totalOrders: data.total_orders,
+          totalSpent: data.total_spent
+        });
+      }
+    } catch (e) {
+      console.error('SG Auth: Error loading Shopify customer data', e);
+    }
+
+    return shopifyCustomerData;
+  }
+
+  // Link Shopify customer by email
+  async function linkShopifyCustomerByEmail(email) {
+    if (!supabaseClient || !currentUser || !email) return false;
+
+    try {
+      // Find Shopify customer by email
+      const { data: shopifyCustomer } = await supabaseClient
+        .from('shopify_customers')
+        .select('id')
+        .ilike('email', email)
+        .single();
+
+      if (shopifyCustomer) {
+        // Update sg_users with the link
+        await supabaseClient
+          .from('sg_users')
+          .update({ shopify_customer_id: shopifyCustomer.id })
+          .eq('id', currentUser.id);
+
+        userProfile.shopify_customer_id = shopifyCustomer.id;
+        await loadShopifyCustomerData(shopifyCustomer.id);
+        console.log('SG Auth: Linked Shopify customer to account');
+        return true;
+      }
+    } catch (e) {
+      console.log('SG Auth: No Shopify customer found for email');
+    }
+
+    return false;
+  }
+
+  // Get Shopify customer data
+  function getShopifyCustomer() {
+    return shopifyCustomerData;
+  }
+
+  // Get user's complete order history (from both website orders and Shopify history)
+  async function getOrderHistory() {
+    if (!currentUser || !supabaseClient) return [];
+
+    try {
+      // Get orders from both tables in parallel
+      const [websiteOrders, shopifyOrders] = await Promise.all([
+        // Website orders (from checkout)
+        supabaseClient
+          .from('orders')
+          .select('*')
+          .eq('customer_email', currentUser.email)
+          .order('created_at', { ascending: false }),
+        // Historical Shopify orders
+        supabaseClient
+          .from('shopify_orders')
+          .select('*')
+          .eq('customer_email', currentUser.email)
+          .order('shopify_created_at', { ascending: false })
+      ]);
+
+      // Normalize website orders to match shopify format
+      const normalizedWebsiteOrders = (websiteOrders.data || []).map(o => ({
+        ...o,
+        order_number: o.order_number,
+        total: o.total,
+        financial_status: o.payment_status === 'paid' ? 'PAID' : 'PENDING',
+        fulfillment_status: o.status === 'shipped' ? 'FULFILLED' : 'UNFULFILLED',
+        shopify_created_at: o.created_at,
+        line_items: o.items || [],
+        source: 'website'
+      }));
+
+      // Mark Shopify orders with source
+      const normalizedShopifyOrders = (shopifyOrders.data || []).map(o => ({
+        ...o,
+        source: 'shopify'
+      }));
+
+      // Combine and sort by date
+      const allOrders = [...normalizedWebsiteOrders, ...normalizedShopifyOrders]
+        .sort((a, b) => new Date(b.shopify_created_at) - new Date(a.shopify_created_at));
+
+      return allOrders;
+    } catch (e) {
+      console.error('SG Auth: Error getting order history', e);
+    }
+
+    return [];
+  }
+
+  // Get recent orders (limit 5)
+  async function getRecentOrders() {
+    if (!currentUser || !supabaseClient) return [];
+
+    try {
+      const allOrders = await getOrderHistory();
+      return allOrders.slice(0, 5);
+    } catch (e) {
+      console.error('SG Auth: Error getting recent orders', e);
+    }
+
+    return [];
   }
 
   // Sign in with email/password
@@ -819,7 +955,12 @@
     getQuotesCount,
     getDashboardStats,
     updateFavoritesBadge,
-    syncLocalFavoritesToDB
+    syncLocalFavoritesToDB,
+    // Shopify customer data
+    getShopifyCustomer,
+    getOrderHistory,
+    getRecentOrders,
+    linkShopifyCustomerByEmail
   };
 
 })();

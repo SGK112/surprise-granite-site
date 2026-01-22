@@ -150,14 +150,57 @@ async function validateSingleItem(item, supabase) {
   }
 
   // Try to find product in database
-  if (supabase && item.id) {
+  if (supabase) {
     try {
-      // Try distributor_products first
-      const { data: product } = await supabase
-        .from('distributor_products')
-        .select('id, name, retail_price, wholesale_price')
-        .eq('id', item.id)
-        .single();
+      let product = null;
+
+      // 1. Try shopify_products first (migrated Shopify products)
+      if (item.id) {
+        // Try by UUID
+        const { data: shopifyProduct } = await supabase
+          .from('shopify_products')
+          .select('id, name, price, compare_at_price, handle, status')
+          .eq('id', item.id)
+          .single();
+
+        if (shopifyProduct) {
+          product = {
+            ...shopifyProduct,
+            retail_price: shopifyProduct.price,
+            source: 'shopify_products'
+          };
+        }
+      }
+
+      // 2. Try by handle if no UUID match
+      if (!product && item.handle) {
+        const { data: shopifyProduct } = await supabase
+          .from('shopify_products')
+          .select('id, name, price, compare_at_price, handle, status')
+          .eq('handle', item.handle)
+          .single();
+
+        if (shopifyProduct) {
+          product = {
+            ...shopifyProduct,
+            retail_price: shopifyProduct.price,
+            source: 'shopify_products'
+          };
+        }
+      }
+
+      // 3. Fall back to distributor_products
+      if (!product && item.id) {
+        const { data: distProduct } = await supabase
+          .from('distributor_products')
+          .select('id, name, retail_price, wholesale_price')
+          .eq('id', item.id)
+          .single();
+
+        if (distProduct) {
+          product = { ...distProduct, source: 'distributor_products' };
+        }
+      }
 
       if (product && product.retail_price) {
         const dbPriceCents = Math.round(product.retail_price * 100);
@@ -169,7 +212,7 @@ async function validateSingleItem(item, supabase) {
         if (variance <= MAX_PRICE_VARIANCE) {
           // Use database price (authoritative)
           result.validatedPrice = dbPriceCents;
-          result.priceSource = 'database';
+          result.priceSource = product.source || 'database';
           return result;
         } else {
           // Price mismatch - potential manipulation
@@ -178,12 +221,13 @@ async function validateSingleItem(item, supabase) {
             itemName: item.name,
             clientPrice: clientPriceCents,
             dbPrice: dbPriceCents,
-            variance: `${(variance * 100).toFixed(2)}%`
+            variance: `${(variance * 100).toFixed(2)}%`,
+            source: product.source
           });
 
           // Use database price instead
           result.validatedPrice = dbPriceCents;
-          result.priceSource = 'database_override';
+          result.priceSource = `${product.source}_override`;
           result.warning = `Price adjusted for "${item.name}" from $${(clientPriceCents/100).toFixed(2)} to $${(dbPriceCents/100).toFixed(2)}`;
           return result;
         }

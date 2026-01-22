@@ -307,7 +307,10 @@
 
     try {
       // Build line items for Stripe - include products, tax, and shipping
+      // Include id and handle for server-side price validation against shopify_products
       const lineItems = cart.map(item => ({
+        id: item.id || null,
+        handle: item.handle || null,
         name: item.name,
         price: Math.round(item.price * 100), // Convert to cents
         quantity: item.quantity || 1,

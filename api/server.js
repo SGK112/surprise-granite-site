@@ -11338,6 +11338,262 @@ app.get('/api/projects/:id/activities', async (req, res) => {
   }
 });
 
+// ============ DESIGN SHARE COMMENTS ============
+// Unified communication for design share comments
+
+app.post('/api/design-comments', async (req, res) => {
+  try {
+    const { lead_id, share_id, design_id, message, author, direction = 'inbound' } = req.body;
+
+    if (!lead_id || !message) {
+      return res.status(400).json({ error: 'lead_id and message are required' });
+    }
+
+    // Save comment to customer_messages table
+    const { data: savedMessage, error: insertError } = await supabase
+      .from('customer_messages')
+      .insert({
+        customer_id: lead_id,
+        direction: direction,
+        channel: 'design_share',
+        message: message,
+        sent_from: author || 'Customer',
+        status: 'sent',
+        metadata: {
+          share_id: share_id,
+          design_id: design_id,
+          author: author
+        }
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      logger.error('Failed to save design comment:', insertError);
+      throw insertError;
+    }
+
+    // Get lead info for notification
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('full_name, email, owner_id')
+      .eq('id', lead_id)
+      .single();
+
+    // Get design info
+    const { data: design } = await supabase
+      .from('room_designs')
+      .select('project_name, user_id')
+      .eq('id', design_id)
+      .single();
+
+    // Send email notification to staff if this is a customer comment
+    if (direction === 'inbound' && lead) {
+      try {
+        // Get owner email
+        let ownerEmail = process.env.ADMIN_EMAIL || 'info@surprisegranite.com';
+
+        if (lead.owner_id) {
+          const { data: owner } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', lead.owner_id)
+            .single();
+          if (owner?.email) ownerEmail = owner.email;
+        } else if (design?.user_id) {
+          const { data: designer } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', design.user_id)
+            .single();
+          if (designer?.email) ownerEmail = designer.email;
+        }
+
+        // Send notification email
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        });
+
+        const projectName = design?.project_name || 'Design Project';
+        const customerName = lead.full_name || 'A customer';
+
+        await transporter.sendMail({
+          from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
+          to: ownerEmail,
+          subject: `💬 New Comment from ${customerName} on ${projectName}`,
+          html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
+  <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #f9a825; margin: 0; font-size: 20px;">💬 New Comment</h1>
+    </div>
+    <div style="padding: 25px;">
+      <p style="margin: 0 0 15px; color: #333;"><strong>${customerName}</strong> commented on <strong>${projectName}</strong>:</p>
+      <div style="background: #f8f9fa; border-left: 4px solid #f9a825; padding: 15px; margin: 15px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #333; font-style: italic;">"${message}"</p>
+      </div>
+      <p style="margin: 15px 0 0; color: #666; font-size: 14px;">Reply directly in the account dashboard to respond.</p>
+      <a href="https://www.surprisegranite.com/account/#/customers" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #f9a825; color: #1a1a2e; text-decoration: none; border-radius: 8px; font-weight: 600;">View in Dashboard</a>
+    </div>
+  </div>
+</body>
+</html>
+          `
+        });
+
+        logger.info('Design comment notification sent to:', ownerEmail);
+      } catch (emailError) {
+        logger.warn('Failed to send comment notification email:', emailError.message);
+        // Don't fail the request if email fails
+      }
+    }
+
+    res.json({
+      success: true,
+      message: savedMessage,
+      notified: direction === 'inbound'
+    });
+
+  } catch (error) {
+    logger.error('Design comment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get design comments for a share
+app.get('/api/design-comments/:share_id', async (req, res) => {
+  try {
+    const { share_id } = req.params;
+
+    // Get the share to find lead_id
+    const { data: share } = await supabase
+      .from('room_design_shares')
+      .select('lead_id')
+      .eq('id', share_id)
+      .single();
+
+    if (!share?.lead_id) {
+      return res.json({ comments: [] });
+    }
+
+    // Get comments from customer_messages
+    const { data: comments, error } = await supabase
+      .from('customer_messages')
+      .select('*')
+      .eq('customer_id', share.lead_id)
+      .eq('channel', 'design_share')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ comments: comments || [] });
+
+  } catch (error) {
+    logger.error('Get design comments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Staff reply to design comment
+app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
+  try {
+    const { lead_id } = req.params;
+    const { message, share_id, design_id, author = 'Surprise Granite' } = req.body;
+    const user_id = req.headers['x-user-id'];
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Save staff reply to customer_messages
+    const { data: savedMessage, error: insertError } = await supabase
+      .from('customer_messages')
+      .insert({
+        customer_id: lead_id,
+        sender_id: user_id,
+        direction: 'outbound',
+        channel: 'design_share',
+        message: message,
+        sent_from: author,
+        status: 'sent',
+        metadata: {
+          share_id: share_id,
+          design_id: design_id,
+          author: author,
+          staff_id: user_id
+        }
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    // Get lead info to notify customer
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('full_name, email')
+      .eq('id', lead_id)
+      .single();
+
+    // Optionally send email to customer about the reply
+    if (lead?.email) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          }
+        });
+
+        await transporter.sendMail({
+          from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
+          to: lead.email,
+          subject: `New reply on your design project`,
+          html: `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
+  <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
+      <h1 style="color: #f9a825; margin: 0; font-size: 20px;">New Reply on Your Project</h1>
+    </div>
+    <div style="padding: 25px;">
+      <p style="margin: 0 0 15px; color: #333;">Hi ${lead.full_name?.split(' ')[0] || 'there'},</p>
+      <p style="margin: 0 0 15px; color: #333;"><strong>${author}</strong> replied to your comment:</p>
+      <div style="background: #f8f9fa; border-left: 4px solid #f9a825; padding: 15px; margin: 15px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #333;">"${message}"</p>
+      </div>
+      <p style="margin: 15px 0; color: #666; font-size: 14px;">View the full conversation on your project page.</p>
+    </div>
+  </div>
+</body>
+</html>
+          `
+        });
+      } catch (emailError) {
+        logger.warn('Failed to send reply notification to customer:', emailError.message);
+      }
+    }
+
+    res.json({ success: true, message: savedMessage });
+
+  } catch (error) {
+    logger.error('Staff reply error:', error);
+    return handleApiError(res, error);
+  }
+});
+
 // Customer portal - get project by token
 app.get('/api/customer-portal/:token', async (req, res) => {
   try {

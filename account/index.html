@@ -9920,6 +9920,23 @@
         </div>
       </div>
 
+      <!-- Messages Section -->
+      <div class="detail-section" style="padding: 0 24px 16px;">
+        <div class="detail-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>💬 Messages & Comments</span>
+          <span id="lead-unread-badge" style="display: none; background: var(--gold-primary); color: var(--dark-bg); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">0 new</span>
+        </div>
+        <div id="lead-messages-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;">
+          <div style="padding: 16px; color: var(--text-muted); font-size: 13px; text-align: center;">No messages yet</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="lead-message-input" placeholder="Type a reply..." class="input-modern" style="flex: 1; padding: 10px 14px; font-size: 14px;">
+          <button class="btn-modern primary" onclick="sendLeadReply()" style="padding: 10px 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Quick Actions Grid -->
       <div style="padding: 0 24px 16px;">
         <div class="detail-section-title">Status</div>
@@ -15604,8 +15621,116 @@
         }
       }
 
+      // Load messages for this lead
+      loadLeadMessages(selectedLead.id);
+
       document.getElementById('lead-status-select').value = selectedLead.status || 'new';
       document.getElementById('lead-modal').classList.add('active');
+    }
+
+    async function loadLeadMessages(leadId) {
+      const container = document.getElementById('lead-messages-list');
+      const badge = document.getElementById('lead-unread-badge');
+
+      if (!container) return;
+
+      container.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 12px; text-align: center;">Loading messages...</div>';
+
+      try {
+        const { data: messages } = await supabaseClient
+          .from('customer_messages')
+          .select('*')
+          .eq('customer_id', leadId)
+          .order('created_at', { ascending: true });
+
+        if (!messages || messages.length === 0) {
+          container.innerHTML = '<div style="padding: 16px; color: var(--text-muted); font-size: 13px; text-align: center;">No messages yet. Comments from design shares will appear here.</div>';
+          if (badge) badge.style.display = 'none';
+          return;
+        }
+
+        // Count unread inbound messages
+        const unread = messages.filter(m => m.direction === 'inbound' && m.status !== 'read').length;
+        if (badge) {
+          if (unread > 0) {
+            badge.textContent = `${unread} new`;
+            badge.style.display = 'inline';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+
+        container.innerHTML = messages.map(msg => {
+          const isInbound = msg.direction === 'inbound';
+          const channelIcon = msg.channel === 'design_share' ? '🎨' : (msg.channel === 'sms' ? '📱' : '✉️');
+          return `
+            <div style="padding: 10px; margin-bottom: 8px; background: var(--dark-${isInbound ? 'bg' : 'elevated'}); border-radius: 8px; border-left: 3px solid ${isInbound ? '#3b82f6' : 'var(--gold-primary)'};">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-size: 11px; color: var(--text-muted);">
+                  ${channelIcon} ${isInbound ? (msg.sent_from || 'Customer') : 'You'}
+                  ${msg.channel === 'design_share' ? '• Design Comment' : ''}
+                </span>
+                <span style="font-size: 11px; color: var(--text-muted);">${new Date(msg.created_at).toLocaleString()}</span>
+              </div>
+              <div style="color: var(--text-primary); font-size: 13px; line-height: 1.4;">${escapeHtml(msg.message || '')}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+
+        // Mark as read
+        const unreadIds = messages.filter(m => m.direction === 'inbound' && m.status !== 'read').map(m => m.id);
+        if (unreadIds.length > 0) {
+          supabaseClient
+            .from('customer_messages')
+            .update({ status: 'read', read_at: new Date().toISOString() })
+            .in('id', unreadIds)
+            .then(() => {
+              if (badge) badge.style.display = 'none';
+            });
+        }
+      } catch (err) {
+        console.error('Load lead messages error:', err);
+        container.innerHTML = '<div style="padding: 16px; color: var(--error); font-size: 13px; text-align: center;">Error loading messages</div>';
+      }
+    }
+
+    async function sendLeadReply() {
+      if (!selectedLead) return;
+
+      const input = document.getElementById('lead-message-input');
+      const message = input?.value?.trim();
+      if (!message) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const API_BASE = window.location.hostname === 'localhost'
+          ? 'http://localhost:3001'
+          : 'https://surprise-granite-connections-api.onrender.com';
+
+        const response = await fetch(`${API_BASE}/api/design-comments/${selectedLead.id}/reply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user?.id || ''
+          },
+          body: JSON.stringify({
+            message: message,
+            author: 'Surprise Granite'
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to send reply');
+
+        input.value = '';
+        showNotification('Reply sent!', 'success');
+        loadLeadMessages(selectedLead.id);
+      } catch (err) {
+        console.error('Send reply error:', err);
+        showNotification('Failed to send reply', 'error');
+      }
     }
 
     function closeLeadModal() {
