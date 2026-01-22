@@ -84,6 +84,10 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
   logger.info('New lead received', { source, project_type, isAppointment });
 
   // Store in database if available
+  let savedLead = null;
+  let portalToken = null;
+  let portalUrl = null;
+
   if (supabase) {
     try {
       const { data: lead, error } = await supabase
@@ -94,6 +98,42 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
 
       if (error) {
         logger.apiError(error, { context: 'Lead insert' });
+      } else {
+        savedLead = lead;
+
+        // Auto-generate portal token for the lead
+        try {
+          const { data: token, error: tokenError } = await supabase
+            .from('portal_tokens')
+            .insert([{
+              lead_id: lead.id,
+              owner_id: lead.assigned_to || lead.user_id || '00000000-0000-0000-0000-000000000000', // System user if no owner
+              email: homeowner_email,
+              phone: homeowner_phone,
+              permissions: {
+                view_project: true,
+                view_estimates: true,
+                approve_estimates: true,
+                view_invoices: true,
+                pay_invoices: true,
+                upload_photos: true,
+                send_messages: true,
+                view_appointments: true
+              }
+            }])
+            .select()
+            .single();
+
+          if (token && !tokenError) {
+            portalToken = token;
+            portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
+            logger.info('Portal token auto-created for lead', { leadId: lead.id, tokenId: token.id });
+          } else if (tokenError) {
+            logger.warn('Failed to create portal token for lead', { error: tokenError.message });
+          }
+        } catch (tokenErr) {
+          logger.warn('Portal token creation error', { error: tokenErr.message });
+        }
       }
     } catch (dbErr) {
       logger.apiError(dbErr, { context: 'Lead database error' });
@@ -115,12 +155,35 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     logger.apiError(emailErr, { context: 'Admin notification failed' });
   }
 
-  // Send customer confirmation
+  // Send customer confirmation with portal link
   if (homeowner_email) {
     try {
-      const customerEmail = emailService.generateCustomerConfirmationEmail({
-        name: homeowner_name
-      });
+      let customerEmail;
+
+      // If appointment was scheduled and portal was created, send appointment+portal email
+      if (isAppointment && portalUrl) {
+        customerEmail = emailService.generateAppointmentWithPortalEmail({
+          name: homeowner_name,
+          appointment_date,
+          appointment_time,
+          portal_url: portalUrl,
+          address: project_address
+        });
+      }
+      // If portal was created (no appointment), send portal welcome email
+      else if (portalUrl) {
+        customerEmail = emailService.generatePortalWelcomeEmail({
+          name: homeowner_name,
+          portal_url: portalUrl
+        });
+      }
+      // Fallback to regular confirmation
+      else {
+        customerEmail = emailService.generateCustomerConfirmationEmail({
+          name: homeowner_name
+        });
+      }
+
       await emailService.sendNotification(homeowner_email, customerEmail.subject, customerEmail.html);
     } catch (emailErr) {
       logger.apiError(emailErr, { context: 'Customer email failed' });
@@ -132,7 +195,8 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
     message: isAppointment
       ? 'Appointment booked successfully! Check your email for confirmation.'
       : 'Lead submitted successfully! Check your email for confirmation.',
-    lead_id: `lead_${Date.now()}`
+    lead_id: savedLead?.id || `lead_${Date.now()}`,
+    portal_url: portalUrl || null
   });
 }));
 

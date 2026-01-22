@@ -539,6 +539,140 @@ function generateContractorAssignmentEmail(job, contractor) {
   };
 }
 
+/**
+ * Generate portal welcome email with access link
+ */
+function generatePortalWelcomeEmail(data) {
+  const { name, portal_url, appointment, pin_code } = data;
+
+  let appointmentSection = '';
+  if (appointment && appointment.date) {
+    const apptDate = new Date(appointment.date);
+    const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    appointmentSection = `
+      <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #ffc107;">
+        <h3 style="margin: 0 0 10px; color: #856404; font-size: 16px;">Your Appointment</h3>
+        <p style="margin: 0; color: #1a1a2e; font-size: 18px; font-weight: 600;">${formattedDate}</p>
+        ${appointment.time ? `<p style="margin: 5px 0 0; color: #666; font-size: 15px;">at ${escapeHtml(appointment.time)}</p>` : ''}
+      </div>
+    `;
+  }
+
+  let pinSection = '';
+  if (pin_code) {
+    pinSection = `
+      <div style="background: #f8f8f8; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+        <p style="margin: 0 0 5px; color: #666; font-size: 13px;">Your Portal PIN</p>
+        <p style="margin: 0; color: #1a1a2e; font-size: 24px; font-weight: 700; letter-spacing: 4px;">${escapeHtml(pin_code)}</p>
+      </div>
+    `;
+  }
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); border-radius: 50%; margin: 0 auto 20px; line-height: 70px;">
+        <span style="font-size: 35px;">🏠</span>
+      </div>
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Welcome to Your Customer Portal!</h2>
+    </div>
+
+    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
+      Hi ${escapeHtml(name || 'Valued Customer')},
+    </p>
+    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
+      Thank you for choosing ${COMPANY.shortName}! We've created a personal portal just for you where you can track your project, view estimates, and communicate with our team.
+    </p>
+
+    ${appointmentSection}
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(249,203,0,0.3);">Access Your Portal</a>
+    </div>
+
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 25px 0;">
+      <h3 style="margin: 0 0 12px; color: #1a1a2e; font-size: 16px;">What you can do in your portal:</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px; line-height: 1.8;">
+        <li>View your appointment details</li>
+        <li>Upload photos of your project</li>
+        <li>Review and approve estimates</li>
+        <li>Pay invoices securely online</li>
+        <li>Message our team directly</li>
+        <li>Track your project status</li>
+      </ul>
+    </div>
+
+    ${pinSection}
+
+    <p style="margin: 25px 0 0; color: #666; font-size: 14px; text-align: center;">
+      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a> or reply to this email.
+    </p>
+  `;
+
+  return {
+    subject: `Your ${COMPANY.shortName} Customer Portal is Ready!`,
+    html: wrapEmailTemplate(content, { headerText: 'Your Project Portal' })
+  };
+}
+
+/**
+ * Generate appointment confirmation with portal link
+ */
+function generateAppointmentWithPortalEmail(data) {
+  const { name, appointment_date, appointment_time, portal_url, address } = data;
+
+  const apptDate = new Date(appointment_date);
+  const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); border-radius: 50%; margin: 0 auto 20px; line-height: 70px;">
+        <span style="font-size: 35px; color: #fff;">✓</span>
+      </div>
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Appointment Confirmed!</h2>
+    </div>
+
+    <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
+      Hi ${escapeHtml(name || 'Valued Customer')},
+    </p>
+    <p style="margin: 0 0 25px; color: #444; font-size: 15px;">
+      Great news! Your consultation with ${COMPANY.shortName} has been scheduled.
+    </p>
+
+    <div style="background: #e8f5e9; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 25px; border: 1px solid #4caf50;">
+      <p style="margin: 0 0 5px; color: #2e7d32; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Your Appointment</p>
+      <p style="margin: 0 0 5px; color: #1a1a2e; font-size: 22px; font-weight: 700;">${formattedDate}</p>
+      ${appointment_time ? `<p style="margin: 0; color: #1a1a2e; font-size: 18px;">${escapeHtml(appointment_time)}</p>` : ''}
+      ${address ? `<p style="margin: 10px 0 0; color: #666; font-size: 14px;">${escapeHtml(address)}</p>` : ''}
+    </div>
+
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <h3 style="margin: 0 0 12px; color: #1a1a2e; font-size: 16px;">Before your appointment:</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #666; font-size: 14px; line-height: 1.8;">
+        <li>Have an idea of your material preferences (granite, quartz, marble)</li>
+        <li>Know your approximate budget range</li>
+        <li>Take photos of your current countertops if possible</li>
+        <li>Note any specific requirements or concerns</li>
+      </ul>
+    </div>
+
+    ${portal_url ? `
+    <div style="text-align: center; margin: 25px 0;">
+      <p style="margin: 0 0 15px; color: #666; font-size: 14px;">Upload photos and track your project in your personal portal:</p>
+      <a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 15px;">Access Your Portal</a>
+    </div>
+    ` : ''}
+
+    <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+      Need to reschedule? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  return {
+    subject: `Appointment Confirmed - ${formattedDate} | ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerColor: '#4caf50', headerText: '' })
+  };
+}
+
 module.exports = {
   sendNotification,
   sendAdminNotification,
@@ -553,6 +687,8 @@ module.exports = {
   generateJobStatusEmail,
   generateAppointmentReminderEmail,
   generateContractorAssignmentEmail,
+  generatePortalWelcomeEmail,
+  generateAppointmentWithPortalEmail,
   COMPANY,
   ADMIN_EMAIL,
   isConfigured: () => !!SMTP_USER

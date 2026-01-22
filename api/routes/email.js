@@ -214,4 +214,110 @@ router.post('/contact', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Send welcome email to new lead with optional portal link
+ * POST /api/email/lead-welcome
+ */
+router.post('/lead-welcome', asyncHandler(async (req, res) => {
+  const {
+    email,
+    first_name,
+    last_name,
+    full_name,
+    project_type,
+    notes,
+    has_appointment,
+    appointment_date,
+    appointment_time,
+    appointment_type,
+    portal_url,
+    source
+  } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  const name = full_name || `${first_name || ''} ${last_name || ''}`.trim() || 'Valued Customer';
+
+  try {
+    let emailContent;
+
+    // If has appointment and portal URL, use combined template
+    if (has_appointment && portal_url) {
+      emailContent = emailService.generateAppointmentWithPortalEmail({
+        name,
+        appointment_date,
+        appointment_time,
+        portal_url,
+        address: null
+      });
+    }
+    // If has portal URL but no appointment
+    else if (portal_url) {
+      emailContent = emailService.generatePortalWelcomeEmail({
+        name,
+        portal_url
+      });
+    }
+    // If has appointment but no portal
+    else if (has_appointment) {
+      const apptDate = appointment_date ? new Date(appointment_date) : null;
+      const formattedDate = apptDate ? apptDate.toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      }) : 'TBD';
+
+      const html = emailService.wrapEmailTemplate(`
+        <div style="text-align: center; margin-bottom: 25px;">
+          <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); border-radius: 50%; margin: 0 auto 20px; line-height: 70px;">
+            <span style="font-size: 35px; color: #fff;">✓</span>
+          </div>
+          <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 24px;">Appointment Confirmed!</h2>
+        </div>
+
+        <p style="margin: 0 0 20px; color: #444; font-size: 15px;">
+          Hi ${sanitizeString(name, 100)},
+        </p>
+        <p style="margin: 0 0 25px; color: #444; font-size: 15px;">
+          Thank you for scheduling with ${COMPANY.name}! We're looking forward to helping you with your ${sanitizeString(project_type || 'project', 100)}.
+        </p>
+
+        <div style="background: #e8f5e9; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 25px; border: 1px solid #4caf50;">
+          <p style="margin: 0 0 5px; color: #2e7d32; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">${sanitizeString(appointment_type || 'Your Appointment', 50)}</p>
+          <p style="margin: 0 0 5px; color: #1a1a2e; font-size: 22px; font-weight: 700;">${formattedDate}</p>
+          ${appointment_time ? `<p style="margin: 0; color: #1a1a2e; font-size: 18px;">${sanitizeString(appointment_time, 20)}</p>` : ''}
+        </div>
+
+        <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+          Need to reschedule? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600;">${COMPANY.phone}</a>
+        </p>
+      `, { headerColor: '#4caf50', headerText: '' });
+
+      emailContent = {
+        subject: `Appointment Confirmed - ${COMPANY.name}`,
+        html
+      };
+    }
+    // Standard welcome email
+    else {
+      emailContent = emailService.generateCustomerConfirmationEmail({ name });
+    }
+
+    // Send the email
+    const result = await emailService.sendNotification(email, emailContent.subject, emailContent.html);
+
+    if (!result.success) {
+      logger.warn('Lead welcome email failed', { email: email.substring(0, 3) + '***', reason: result.reason });
+      return res.status(500).json({ error: 'Failed to send email', reason: result.reason });
+    }
+
+    logger.info('Lead welcome email sent', { email: email.substring(0, 3) + '***', hasAppointment: has_appointment });
+
+    res.json({ success: true, message: 'Welcome email sent successfully' });
+  } catch (err) {
+    logger.apiError(err, { context: 'Lead welcome email failed' });
+    res.status(500).json({ error: 'Failed to send welcome email' });
+  }
+}));
+
 module.exports = router;

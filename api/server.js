@@ -2083,18 +2083,24 @@ const corsOrigins = [
   'https://surprisegranite.com',
   'https://surprise-granite-site.onrender.com',
   'http://localhost:3000',
+  'http://localhost:3333',
   'http://localhost:8080',
   'http://localhost:8888',
   'http://localhost:5500',
+  'http://127.0.0.1:3333',
   'http://127.0.0.1:5500',
   'http://127.0.0.1:8080'
 ];
 
 app.use(cors({
   origin: corsOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-user-id', 'x-user-plan'],
+  credentials: true
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 // ============ WEBHOOK HANDLER (MUST BE BEFORE express.json()) ============
 // Stripe webhooks require raw body for signature verification
@@ -3293,6 +3299,10 @@ app.use('/api/workflow', workflowRouter);
 
 // ============ EMAIL ROUTES (MODULAR) ============
 app.use('/api/email', emailRouter);
+
+// ============ CUSTOMER PORTAL ROUTES ============
+const portalRouter = require('./routes/portal');
+app.use('/api/portal', portalRouter);
 
 // ============ ARIA VOICE LEAD CAPTURE ============
 app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
