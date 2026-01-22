@@ -9896,6 +9896,61 @@
       }
     }
 
+    // ===== REALTIME SYNC TEST FUNCTIONS =====
+    // Call these from browser console to test realtime functionality
+
+    window.testRealtimeStatus = function() {
+      console.log('=== REALTIME SYNC STATUS ===');
+      console.log('Design ID:', SHARE_STATE.designId);
+      console.log('Is Shared View:', SHARE_STATE.isSharedView);
+      console.log('Is Live Connected:', SHARE_STATE.isLiveConnected);
+      console.log('Realtime Channel:', SHARE_STATE.realtimeChannel ? 'Active' : 'Not subscribed');
+      console.log('Last Sync Time:', SHARE_STATE.lastSyncTime);
+      console.log('Supabase Client:', getSupabaseClient() ? 'Available' : 'Not available');
+      return SHARE_STATE;
+    };
+
+    window.testRealtimeUpdate = async function() {
+      if (!SHARE_STATE.designId) {
+        console.log('No design ID - save design to cloud first');
+        return;
+      }
+
+      console.log('=== TESTING REALTIME UPDATE ===');
+      console.log('Triggering cloud sync...');
+
+      // Force a sync to trigger realtime for any connected viewers
+      await syncDesignToCloud();
+
+      console.log('Sync triggered - check connected viewer for update');
+    };
+
+    window.testRealtimeSubscribe = function(designId) {
+      const id = designId || SHARE_STATE.designId;
+      if (!id) {
+        console.log('Please provide a design ID: testRealtimeSubscribe("your-design-id")');
+        return;
+      }
+
+      console.log('=== SUBSCRIBING TO DESIGN ===');
+      subscribeToDesignUpdates(id);
+      console.log('Check console for subscription status messages');
+    };
+
+    window.simulateRealtimeUpdate = function() {
+      console.log('=== SIMULATING REALTIME UPDATE ===');
+      // Simulate what happens when a realtime update is received
+      handleRealtimeUpdate({
+        elements: elements.map(el => ({
+          ...el,
+          color: '#' + Math.floor(Math.random()*16777215).toString(16) // Random color
+        })),
+        room_width: roomWidth,
+        room_depth: roomDepth
+      });
+      console.log('Simulated update applied - elements should have random colors');
+    };
+
     // Pricing access control - only paid subscribers see pricing
     const PRICING_ACCESS = {
       isSubscribed: false,        // Whether user has paid subscription
