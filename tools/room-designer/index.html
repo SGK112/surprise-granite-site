@@ -9899,7 +9899,7 @@
 
             ${!isLoggedIn ? `
               <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
-                Already have an account? <a href="#" onclick="showLoginPrompt('Log in to access your subscription.'); return false;" style="color:#6366f1;">Log in</a>
+                Already have an account? <a href="javascript:void(0)" onclick="showLoginPrompt('Log in to access your subscription.'); return false;" style="color:#6366f1;">Log in</a>
               </div>
             ` : accountType === 'homeowner' ? `
               <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
@@ -12517,33 +12517,34 @@
         { id: 'cabinet-black', name: 'Onyx Black', color: '#1a1a1a', url: '/images/6456ce4476abb24601fbb0e8_Onyx%20Black%20Shaker.webp' },
         { id: 'cabinet-uptown', name: 'Uptown White', color: '#fefefe', url: '/images/6456ce4476abb232ddfbb0eb_Uptown%20White%20Shaker.webp' },
         // MSI Cabinet Collection - Base Cabinets (Jan 2025 Pricing)
-        { id: 'msi-cab-b09', name: 'MSI Base 9"', color: '#f5f5f5', sku: 'B09', price: 119.13, brand: 'MSI', type: 'base', width: 9 },
-        { id: 'msi-cab-b12', name: 'MSI Base 12"', color: '#f5f5f5', sku: 'B12', price: 127.63, brand: 'MSI', type: 'base', width: 12 },
-        { id: 'msi-cab-b15', name: 'MSI Base 15"', color: '#f5f5f5', sku: 'B15', price: 137.25, brand: 'MSI', type: 'base', width: 15 },
-        { id: 'msi-cab-b18', name: 'MSI Base 18"', color: '#f5f5f5', sku: 'B18', price: 146.30, brand: 'MSI', type: 'base', width: 18 },
-        { id: 'msi-cab-b21', name: 'MSI Base 21"', color: '#f5f5f5', sku: 'B21', price: 155.00, brand: 'MSI', type: 'base', width: 21 },
-        { id: 'msi-cab-b24', name: 'MSI Base 24"', color: '#f5f5f5', sku: 'B24', price: 175.71, brand: 'MSI', type: 'base', width: 24 },
-        { id: 'msi-cab-b30', name: 'MSI Base 30"', color: '#f5f5f5', sku: 'B30', price: 196.45, brand: 'MSI', type: 'base', width: 30 },
-        { id: 'msi-cab-b36', name: 'MSI Base 36"', color: '#f5f5f5', sku: 'B36', price: 245.41, brand: 'MSI', type: 'base', width: 36 },
-        { id: 'msi-cab-sb30', name: 'MSI Sink Base 30"', color: '#f5f5f5', sku: 'SB30', price: 151.82, brand: 'MSI', type: 'sink', width: 30 },
-        { id: 'msi-cab-sb36', name: 'MSI Sink Base 36"', color: '#f5f5f5', sku: 'SB36', price: 171.82, brand: 'MSI', type: 'sink', width: 36 },
-        { id: 'msi-cab-3db15', name: 'MSI Drawer Base 15"', color: '#f5f5f5', sku: '3DB15', price: 206.32, brand: 'MSI', type: 'drawer', width: 15 },
-        { id: 'msi-cab-3db18', name: 'MSI Drawer Base 18"', color: '#f5f5f5', sku: '3DB18', price: 219.00, brand: 'MSI', type: 'drawer', width: 18 },
+        // Colors represent default shaker white finish - actual color changes based on selected series
+        { id: 'msi-cab-b09', name: 'MSI Base 9"', color: '#e8ddd0', sku: 'B09', price: 119.13, brand: 'MSI', type: 'base', width: 9, finish: 'shaker-white' },
+        { id: 'msi-cab-b12', name: 'MSI Base 12"', color: '#e8ddd0', sku: 'B12', price: 127.63, brand: 'MSI', type: 'base', width: 12, finish: 'shaker-white' },
+        { id: 'msi-cab-b15', name: 'MSI Base 15"', color: '#e8ddd0', sku: 'B15', price: 137.25, brand: 'MSI', type: 'base', width: 15, finish: 'shaker-white' },
+        { id: 'msi-cab-b18', name: 'MSI Base 18"', color: '#e8ddd0', sku: 'B18', price: 146.30, brand: 'MSI', type: 'base', width: 18, finish: 'shaker-white' },
+        { id: 'msi-cab-b21', name: 'MSI Base 21"', color: '#d4a76a', sku: 'B21', price: 155.00, brand: 'MSI', type: 'base', width: 21, finish: 'natural-oak' },
+        { id: 'msi-cab-b24', name: 'MSI Base 24"', color: '#d4a76a', sku: 'B24', price: 175.71, brand: 'MSI', type: 'base', width: 24, finish: 'natural-oak' },
+        { id: 'msi-cab-b30', name: 'MSI Base 30"', color: '#5d4037', sku: 'B30', price: 196.45, brand: 'MSI', type: 'base', width: 30, finish: 'rustic-walnut' },
+        { id: 'msi-cab-b36', name: 'MSI Base 36"', color: '#5d4037', sku: 'B36', price: 245.41, brand: 'MSI', type: 'base', width: 36, finish: 'rustic-walnut' },
+        { id: 'msi-cab-sb30', name: 'MSI Sink Base 30"', color: '#6a6a6a', sku: 'SB30', price: 151.82, brand: 'MSI', type: 'sink', width: 30, finish: 'euro-grey' },
+        { id: 'msi-cab-sb36', name: 'MSI Sink Base 36"', color: '#6a6a6a', sku: 'SB36', price: 171.82, brand: 'MSI', type: 'sink', width: 36, finish: 'euro-grey' },
+        { id: 'msi-cab-3db15', name: 'MSI Drawer Base 15"', color: '#c78b4a', sku: '3DB15', price: 206.32, brand: 'MSI', type: 'drawer', width: 15, finish: 'autumn-oak' },
+        { id: 'msi-cab-3db18', name: 'MSI Drawer Base 18"', color: '#c78b4a', sku: '3DB18', price: 219.00, brand: 'MSI', type: 'drawer', width: 18, finish: 'autumn-oak' },
         // MSI Cabinet Collection - Wall Cabinets
-        { id: 'msi-cab-w1236', name: 'MSI Wall 12x36"', color: '#f5f5f5', sku: 'W1236', price: 82.15, brand: 'MSI', type: 'wall', width: 12, height: 36 },
-        { id: 'msi-cab-w1536', name: 'MSI Wall 15x36"', color: '#f5f5f5', sku: 'W1536', price: 92.77, brand: 'MSI', type: 'wall', width: 15, height: 36 },
-        { id: 'msi-cab-w1836', name: 'MSI Wall 18x36"', color: '#f5f5f5', sku: 'W1836', price: 103.55, brand: 'MSI', type: 'wall', width: 18, height: 36 },
-        { id: 'msi-cab-w2436', name: 'MSI Wall 24x36"', color: '#f5f5f5', sku: 'W2436', price: 136.01, brand: 'MSI', type: 'wall', width: 24, height: 36 },
-        { id: 'msi-cab-w3036', name: 'MSI Wall 30x36"', color: '#f5f5f5', sku: 'W3036', price: 154.95, brand: 'MSI', type: 'wall', width: 30, height: 36 },
-        { id: 'msi-cab-w3630', name: 'MSI Wall 36x30"', color: '#f5f5f5', sku: 'W3630', price: 154.95, brand: 'MSI', type: 'wall', width: 36, height: 30 },
-        { id: 'msi-cab-w1242', name: 'MSI Wall 12x42"', color: '#f5f5f5', sku: 'W1242', price: 95.99, brand: 'MSI', type: 'wall', width: 12, height: 42 },
-        { id: 'msi-cab-w2442', name: 'MSI Wall 24x42"', color: '#f5f5f5', sku: 'W2442', price: 159.90, brand: 'MSI', type: 'wall', width: 24, height: 42 },
-        { id: 'msi-cab-w3042', name: 'MSI Wall 30x42"', color: '#f5f5f5', sku: 'W3042', price: 184.23, brand: 'MSI', type: 'wall', width: 30, height: 42 },
+        { id: 'msi-cab-w1236', name: 'MSI Wall 12x36"', color: '#e0c8a0', sku: 'W1236', price: 82.15, brand: 'MSI', type: 'wall', width: 12, height: 36, finish: 'light-oak' },
+        { id: 'msi-cab-w1536', name: 'MSI Wall 15x36"', color: '#e0c8a0', sku: 'W1536', price: 92.77, brand: 'MSI', type: 'wall', width: 15, height: 36, finish: 'light-oak' },
+        { id: 'msi-cab-w1836', name: 'MSI Wall 18x36"', color: '#9e8b7d', sku: 'W1836', price: 103.55, brand: 'MSI', type: 'wall', width: 18, height: 36, finish: 'driftwood' },
+        { id: 'msi-cab-w2436', name: 'MSI Wall 24x36"', color: '#9e8b7d', sku: 'W2436', price: 136.01, brand: 'MSI', type: 'wall', width: 24, height: 36, finish: 'driftwood' },
+        { id: 'msi-cab-w3036', name: 'MSI Wall 30x36"', color: '#3d2b1f', sku: 'W3036', price: 154.95, brand: 'MSI', type: 'wall', width: 30, height: 36, finish: 'java' },
+        { id: 'msi-cab-w3630', name: 'MSI Wall 36x30"', color: '#3d2b1f', sku: 'W3630', price: 154.95, brand: 'MSI', type: 'wall', width: 36, height: 30, finish: 'java' },
+        { id: 'msi-cab-w1242', name: 'MSI Wall 12x42"', color: '#8b7355', sku: 'W1242', price: 95.99, brand: 'MSI', type: 'wall', width: 12, height: 42, finish: 'toffee' },
+        { id: 'msi-cab-w2442', name: 'MSI Wall 24x42"', color: '#8b7355', sku: 'W2442', price: 159.90, brand: 'MSI', type: 'wall', width: 24, height: 42, finish: 'toffee' },
+        { id: 'msi-cab-w3042', name: 'MSI Wall 30x42"', color: '#6b5344', sku: 'W3042', price: 184.23, brand: 'MSI', type: 'wall', width: 30, height: 42, finish: 'barnwood' },
         // MSI Cabinet Collection - Vanity Cabinets
-        { id: 'msi-cab-v3021', name: 'MSI Vanity 30x21"', color: '#f5f5f5', sku: 'V3021', price: 152.48, brand: 'MSI', type: 'vanity', width: 30 },
-        { id: 'msi-cab-v3621', name: 'MSI Vanity 36x21"', color: '#f5f5f5', sku: 'V3621', price: 172.00, brand: 'MSI', type: 'vanity', width: 36 },
-        { id: 'msi-cab-vdb4221', name: 'MSI Vanity Combo 42x21"', color: '#f5f5f5', sku: 'VDB4221R', price: 328.93, brand: 'MSI', type: 'vanity', width: 42 },
-        { id: 'msi-cab-vdb4821', name: 'MSI Vanity Combo 48x21"', color: '#f5f5f5', sku: 'VDB4821', price: 361.88, brand: 'MSI', type: 'vanity', width: 48 }
+        { id: 'msi-cab-v3021', name: 'MSI Vanity 30x21"', color: '#d3d3d3', sku: 'V3021', price: 152.48, brand: 'MSI', type: 'vanity', width: 30, finish: 'shaker-dove' },
+        { id: 'msi-cab-v3621', name: 'MSI Vanity 36x21"', color: '#d3d3d3', sku: 'V3621', price: 172.00, brand: 'MSI', type: 'vanity', width: 36, finish: 'shaker-dove' },
+        { id: 'msi-cab-vdb4221', name: 'MSI Vanity Combo 42x21"', color: '#7b3f00', sku: 'VDB4221R', price: 328.93, brand: 'MSI', type: 'vanity', width: 42, finish: 'chestnut' },
+        { id: 'msi-cab-vdb4821', name: 'MSI Vanity Combo 48x21"', color: '#7b3f00', sku: 'VDB4821', price: 361.88, brand: 'MSI', type: 'vanity', width: 48, finish: 'chestnut' }
       ],
       tile: [
         // Existing tiles
@@ -12818,9 +12819,30 @@
         name: 'ProCraft Cabinetry',
         logo: '/images/6456ce4476abb265e5fbb1f1_62708265be16bc2ec3e69111_procraft-cabinetry-p-500.png',
         series: {
-          'shaker-white': { name: 'Shaker White', color: '#f5f5f5' },
-          'shaker-grey': { name: 'Shaker Grey', color: '#7a7a7a' },
-          'shaker-espresso': { name: 'Shaker Espresso', color: '#3d2b1f' }
+          // Painted Finishes (flat/no grain)
+          'shaker-white': { name: 'Shaker White', color: '#f5f5f5', finish: 'painted', grainType: 'flat' },
+          'shaker-grey': { name: 'Shaker Grey', color: '#7a7a7a', finish: 'painted', grainType: 'flat' },
+          'dove-grey': { name: 'Dove Grey', color: '#b0b0b0', finish: 'painted', grainType: 'flat' },
+          'navy-blue': { name: 'Navy Blue', color: '#1e3a5f', finish: 'painted', grainType: 'flat' },
+          'sage-green': { name: 'Sage Green', color: '#8fbc8f', finish: 'painted', grainType: 'flat' },
+          'onyx-black': { name: 'Onyx Black', color: '#1a1a1a', finish: 'painted', grainType: 'flat' },
+          // Wood Grain Finishes - Oak
+          'natural-oak': { name: 'Natural Oak', color: '#d4a76a', finish: 'wood-grain', grainType: 'oak' },
+          'honey-oak': { name: 'Honey Oak', color: '#c4973d', finish: 'wood-grain', grainType: 'oak' },
+          'golden-oak': { name: 'Golden Oak', color: '#bb8b41', finish: 'wood-grain', grainType: 'oak' },
+          // Wood Grain Finishes - Maple
+          'natural-maple': { name: 'Natural Maple', color: '#f5deb3', finish: 'wood-grain', grainType: 'maple' },
+          'honey-maple': { name: 'Honey Maple', color: '#e8c07d', finish: 'wood-grain', grainType: 'maple' },
+          // Wood Grain Finishes - Cherry
+          'cherry': { name: 'Cherry', color: '#a0522d', finish: 'wood-grain', grainType: 'cherry' },
+          'dark-cherry': { name: 'Dark Cherry', color: '#8b2500', finish: 'wood-grain', grainType: 'cherry' },
+          // Wood Grain Finishes - Walnut
+          'walnut': { name: 'Walnut', color: '#5d4037', finish: 'wood-grain', grainType: 'walnut' },
+          'dark-walnut': { name: 'Dark Walnut', color: '#3e2723', finish: 'wood-grain', grainType: 'walnut' },
+          'shaker-espresso': { name: 'Espresso', color: '#3d2b1f', finish: 'wood-grain', grainType: 'walnut' },
+          // Wood Grain Finishes - Hickory
+          'hickory': { name: 'Hickory', color: '#b8860b', finish: 'wood-grain', grainType: 'hickory' },
+          'pecan': { name: 'Pecan', color: '#9e7b57', finish: 'wood-grain', grainType: 'hickory' }
         },
         cabinets: {
           base: [
@@ -12899,10 +12921,26 @@
         name: 'MSI Cabinetry',
         logo: null,
         series: {
-          'euro-white': { name: 'Euro White', color: '#ffffff' },
-          'euro-grey': { name: 'Euro Grey', color: '#6a6a6a' },
-          'shaker-dove': { name: 'Shaker Dove', color: '#d3d3d3' },
-          'shaker-graphite': { name: 'Shaker Graphite', color: '#4a4a4a' }
+          // Painted/Laminate Finishes (flat/no grain)
+          'euro-white': { name: 'Euro White', color: '#ffffff', finish: 'matte', grainType: 'flat' },
+          'euro-grey': { name: 'Euro Grey', color: '#6a6a6a', finish: 'matte', grainType: 'flat' },
+          'shaker-dove': { name: 'Shaker Dove', color: '#d3d3d3', finish: 'painted', grainType: 'flat' },
+          'shaker-graphite': { name: 'Shaker Graphite', color: '#4a4a4a', finish: 'painted', grainType: 'flat' },
+          'charcoal': { name: 'Charcoal', color: '#36454f', finish: 'painted', grainType: 'flat' },
+          'midnight-black': { name: 'Midnight Black', color: '#121212', finish: 'gloss', grainType: 'flat' },
+          // Wood Grain Finishes - Oak
+          'natural-oak': { name: 'Natural Oak', color: '#d4a76a', finish: 'wood-grain', grainType: 'oak' },
+          'light-oak': { name: 'Light Oak', color: '#e0c8a0', finish: 'wood-grain', grainType: 'oak' },
+          'autumn-oak': { name: 'Autumn Oak', color: '#c78b4a', finish: 'wood-grain', grainType: 'oak' },
+          // Wood Grain Finishes - Hickory/Rustic
+          'driftwood': { name: 'Driftwood', color: '#9e8b7d', finish: 'wood-grain', grainType: 'hickory' },
+          'barnwood': { name: 'Barnwood', color: '#6b5344', finish: 'wood-grain', grainType: 'hickory' },
+          // Wood Grain Finishes - Walnut
+          'rustic-walnut': { name: 'Rustic Walnut', color: '#5d4037', finish: 'wood-grain', grainType: 'walnut' },
+          'java': { name: 'Java', color: '#3d2b1f', finish: 'wood-grain', grainType: 'walnut' },
+          'toffee': { name: 'Toffee', color: '#8b7355', finish: 'wood-grain', grainType: 'walnut' },
+          // Wood Grain Finishes - Cherry
+          'chestnut': { name: 'Chestnut', color: '#7b3f00', finish: 'wood-grain', grainType: 'cherry' }
         },
         cabinets: {
           base: [
@@ -13449,6 +13487,7 @@
       doorStyle: 'shaker',       // 'shaker', 'shaker-beaded', 'flat', 'raised', 'slab'
       doorOverlay: 'full',       // 'full', 'partial', 'inset'
       cabinetFinish: 'wood-grain', // 'wood-grain', 'painted', 'matte', 'gloss'
+      grainType: 'oak',          // 'oak', 'walnut', 'cherry', 'maple', 'hickory', 'flat'
       currentFloor: 1,
       floors: [{ id: 1, name: 'Floor 1', height: 0 }]
     };
@@ -13640,6 +13679,9 @@
       renderSidebar();
       renderFloorPlans();
       renderMaterials('granite');
+
+      // Initialize cabinet catalog with series dropdown
+      changeCatalog(currentCatalog);
       renderCabinetCatalog();
 
       // Load extended stone pricing from Excel import (async, non-blocking)
@@ -14369,12 +14411,22 @@
 
         // Determine background style - use image with color fallback
         // CSS background-image will fall back to color if image fails
-        const bgStyle = imageUrl
-          ? `url('${imageUrl}') center/cover no-repeat, linear-gradient(${mat.color || '#666'}, ${mat.color || '#666'})`
-          : mat.color || '#666';
+        let bgStyle;
+        if (imageUrl) {
+          bgStyle = `url('${imageUrl}') center/cover no-repeat, linear-gradient(${mat.color || '#666'}, ${mat.color || '#666'})`;
+        } else if (category === 'cabinets' && mat.color) {
+          // Generate CSS wood grain pattern for cabinet swatches
+          const baseColor = mat.color;
+          const darkColor = adjustColor(baseColor, -15);
+          const lightColor = adjustColor(baseColor, 10);
+          // Create subtle wood grain lines using CSS gradients
+          bgStyle = `repeating-linear-gradient(90deg, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 3px, transparent 3px, transparent 8px), repeating-linear-gradient(90deg, transparent 0px, transparent 12px, rgba(255,255,255,0.06) 12px, rgba(255,255,255,0.06) 14px, transparent 14px, transparent 25px), linear-gradient(180deg, ${lightColor} 0%, ${baseColor} 35%, ${darkColor} 65%, ${baseColor} 100%)`;
+        } else {
+          bgStyle = mat.color || '#666';
+        }
 
-        // Add indicator if no texture (color only)
-        const noTextureBadge = !imageUrl
+        // Add indicator if no texture (color only) - but not for cabinets with wood grain
+        const noTextureBadge = !imageUrl && category !== 'cabinets'
           ? '<div class="material-no-texture-badge" title="Color only - no texture image">●</div>'
           : '';
 
@@ -14794,10 +14846,62 @@
 
       if (catalog && Object.keys(catalog.series).length > 0) {
         seriesDiv.style.display = 'block';
-        seriesSelect.innerHTML = Object.entries(catalog.series).map(([id, s]) =>
-          `<option value="${id}">${s.name}</option>`
-        ).join('');
+
+        // Group series by finish type for better organization
+        const paintedFinishes = [];
+        const woodGrainFinishes = [];
+        const otherFinishes = [];
+
+        Object.entries(catalog.series).forEach(([id, s]) => {
+          const finish = s.finish || 'wood-grain';
+          if (finish === 'painted' || finish === 'matte' || finish === 'gloss') {
+            paintedFinishes.push([id, s]);
+          } else if (finish === 'wood-grain') {
+            woodGrainFinishes.push([id, s]);
+          } else {
+            otherFinishes.push([id, s]);
+          }
+        });
+
+        let optionsHtml = '';
+
+        // Add painted finishes group
+        if (paintedFinishes.length > 0) {
+          optionsHtml += '<optgroup label="Painted / Solid Colors">';
+          paintedFinishes.forEach(([id, s]) => {
+            optionsHtml += `<option value="${id}" style="background: linear-gradient(90deg, ${s.color} 20px, transparent 20px);">${s.name}</option>`;
+          });
+          optionsHtml += '</optgroup>';
+        }
+
+        // Add wood grain finishes group
+        if (woodGrainFinishes.length > 0) {
+          optionsHtml += '<optgroup label="Wood Grain Finishes">';
+          woodGrainFinishes.forEach(([id, s]) => {
+            optionsHtml += `<option value="${id}" style="background: linear-gradient(90deg, ${s.color} 20px, transparent 20px);">${s.name}</option>`;
+          });
+          optionsHtml += '</optgroup>';
+        }
+
+        // Add other finishes
+        if (otherFinishes.length > 0) {
+          otherFinishes.forEach(([id, s]) => {
+            optionsHtml += `<option value="${id}">${s.name}</option>`;
+          });
+        }
+
+        seriesSelect.innerHTML = optionsHtml;
         currentCabinetSeries = Object.keys(catalog.series)[0];
+
+        // Update finish dropdown to match
+        const series = catalog.series[currentCabinetSeries];
+        if (series?.finish) {
+          const finishSelect = document.getElementById('cabinetFinish');
+          if (finishSelect) {
+            finishSelect.value = series.finish;
+            cabinetSettings.cabinetFinish = series.finish;
+          }
+        }
       } else {
         seriesDiv.style.display = catalogId === 'custom' ? 'none' : 'block';
       }
@@ -14807,6 +14911,28 @@
 
     function changeSeries(seriesId) {
       currentCabinetSeries = seriesId;
+
+      // Update the finish dropdown to match the series finish type
+      const catalog = CABINET_CATALOGS[currentCatalog];
+      const series = catalog?.series[seriesId];
+      if (series?.finish) {
+        const finishSelect = document.getElementById('cabinetFinish');
+        if (finishSelect) {
+          finishSelect.value = series.finish;
+          cabinetSettings.cabinetFinish = series.finish;
+        }
+      }
+      // Also update grain type from series
+      if (series?.grainType) {
+        cabinetSettings.grainType = series.grainType;
+      } else if (series?.finish === 'painted' || series?.finish === 'matte' || series?.finish === 'gloss') {
+        // Default to flat for painted finishes
+        cabinetSettings.grainType = 'flat';
+      } else {
+        // Default to oak for wood grain finishes
+        cabinetSettings.grainType = 'oak';
+      }
+
       renderCabinetCatalog();
     }
 
@@ -14833,11 +14959,16 @@
       if (!cab) return;
 
       const catalog = CABINET_CATALOGS[currentCatalog];
-      const series = catalog.series[currentCabinetSeries] || { color: '#8B4513', name: 'Default' };
+      const series = catalog.series[currentCabinetSeries] || { color: '#8B4513', name: 'Default', finish: 'wood-grain', grainType: 'oak' };
 
       // Calculate position (center of visible area)
       const centerX = (canvas.width / 2 - panX) / pixelsPerFoot;
       const centerY = (canvas.height / 2 - panY) / pixelsPerFoot;
+
+      // Use series finish type if defined, otherwise use cabinetSettings
+      const finishType = series.finish || cabinetSettings.cabinetFinish || 'wood-grain';
+      // Use series grain type if defined, otherwise use cabinetSettings (flat for painted finishes)
+      const grainType = series.grainType || (finishType === 'painted' || finishType === 'matte' || finishType === 'gloss' ? 'flat' : cabinetSettings.grainType || 'oak');
 
       const element = {
         id: Date.now() + Math.random(),
@@ -14856,11 +14987,12 @@
         skuWidth: cab.width,  // Original box width (e.g., 3 for 36" cabinet)
         skuHeight: cab.height, // Original box depth
         skuName: cab.name,
-        // Cabinet settings
+        // Cabinet settings - use series finish type for wood grain colors
         construction: cabinetSettings.construction,
         doorStyle: cabinetSettings.doorStyle,
         doorOverlay: cabinetSettings.doorOverlay,
-        cabinetFinish: cabinetSettings.cabinetFinish,
+        cabinetFinish: finishType,
+        grainType: grainType,
         floorLevel: cabinetSettings.currentFloor
       };
 
@@ -21451,6 +21583,7 @@
         doorStyle: isCabinet ? cabinetSettings.doorStyle : undefined,
         doorOverlay: isCabinet ? cabinetSettings.doorOverlay : undefined,
         cabinetFinish: isCabinet ? cabinetSettings.cabinetFinish : undefined,
+        grainType: isCabinet ? cabinetSettings.grainType : undefined,
         // Sink-specific settings
         mountType: isSink ? (defaults.mountType || 'undermount') : undefined,
         sinkColor: isSink ? 'stainless' : undefined,
@@ -23352,6 +23485,7 @@
           doorStyle: base.doorStyle || cabinetSettings.doorStyle,
           doorOverlay: base.doorOverlay || cabinetSettings.doorOverlay,
           cabinetFinish: base.cabinetFinish || cabinetSettings.cabinetFinish,
+          grainType: base.grainType || cabinetSettings.grainType,
           floorLevel: base.floorLevel || cabinetSettings.currentFloor
         };
 
@@ -23411,6 +23545,7 @@
           doorStyle: 'flat',
           doorOverlay: base.doorOverlay || cabinetSettings.doorOverlay,
           cabinetFinish: base.cabinetFinish || cabinetSettings.cabinetFinish,
+          grainType: base.grainType || cabinetSettings.grainType,
           floorLevel: base.floorLevel || cabinetSettings.currentFloor
         };
 
@@ -23575,6 +23710,7 @@
             doorStyle: isCabinet ? cabinetSettings.doorStyle : undefined,
             doorOverlay: isCabinet ? cabinetSettings.doorOverlay : undefined,
             cabinetFinish: isCabinet ? cabinetSettings.cabinetFinish : undefined,
+            grainType: isCabinet ? cabinetSettings.grainType : undefined,
             floorLevel: cabinetSettings.currentFloor
           };
           elements.push(el);
@@ -23675,6 +23811,7 @@
               doorStyle: isFiller ? 'flat' : (isCabinet ? cabinetSettings.doorStyle : undefined),
               doorOverlay: isCabinet ? cabinetSettings.doorOverlay : undefined,
               cabinetFinish: isCabinet ? cabinetSettings.cabinetFinish : undefined,
+              grainType: isCabinet ? cabinetSettings.grainType : undefined,
               floorLevel: cabinetSettings.currentFloor
             };
 
@@ -23754,6 +23891,7 @@
             doorStyle: cabinetSettings.doorStyle,
             doorOverlay: cabinetSettings.doorOverlay,
             cabinetFinish: cabinetSettings.cabinetFinish,
+            grainType: cabinetSettings.grainType,
             floorLevel: cabinetSettings.currentFloor
           };
 
@@ -26798,7 +26936,8 @@
 
       // === WOOD GRAIN TEXTURE GENERATOR ===
       // Creates procedural wood grain texture for cabinet materials
-      function createWoodGrainTexture(baseColor, grainIntensity = 0.15) {
+      // grainType: 'oak', 'walnut', 'cherry', 'maple', 'hickory', 'flat' (no grain)
+      function createWoodGrainTexture(baseColor, grainIntensity = 0.15, grainType = 'oak') {
         const canvas = document.createElement('canvas');
         canvas.width = 1024;  // Higher resolution
         canvas.height = 1024;
@@ -26815,6 +26954,108 @@
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.fillRect(0, 0, size, size);
 
+        // FLAT/NO GRAIN - for painted finishes
+        if (grainType === 'flat' || grainType === 'none' || grainType === 'painted') {
+          // Just add subtle surface texture for painted look
+          ctx.globalAlpha = 0.015;
+          for (let i = 0; i < 3000; i++) {
+            const nx = Math.random() * size;
+            const ny = Math.random() * size;
+            const shade = Math.random() > 0.5 ? 255 : 0;
+            ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+            ctx.fillRect(nx, ny, 1, 1);
+          }
+          // Add very subtle gradient for depth
+          ctx.globalAlpha = 0.02;
+          const paintGrad = ctx.createLinearGradient(0, 0, size, size);
+          paintGrad.addColorStop(0, `rgba(255, 255, 255, 1)`);
+          paintGrad.addColorStop(0.5, 'transparent');
+          paintGrad.addColorStop(1, `rgba(0, 0, 0, 1)`);
+          ctx.fillStyle = paintGrad;
+          ctx.fillRect(0, 0, size, size);
+          ctx.globalAlpha = 1;
+
+          const texture = new THREE.CanvasTexture(canvas);
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          texture.anisotropy = 16;
+          texture.encoding = THREE.sRGBEncoding;
+          texture.needsUpdate = true;
+          return texture;
+        }
+
+        // Grain type configurations
+        const grainConfigs = {
+          oak: {
+            lineCount: 100,
+            lineThicknessMin: 1.0,
+            lineThicknessMax: 3.5,
+            waveFreqMin: 0.006,
+            waveFreqMax: 0.012,
+            waveAmpMin: 3,
+            waveAmpMax: 10,
+            secondaryLines: 50,
+            knots: 2,
+            colorVariation: 35,
+            spacing: 'medium'
+          },
+          walnut: {
+            lineCount: 150,
+            lineThicknessMin: 0.5,
+            lineThicknessMax: 2.0,
+            waveFreqMin: 0.002,
+            waveFreqMax: 0.005,
+            waveAmpMin: 1,
+            waveAmpMax: 3,
+            secondaryLines: 80,
+            knots: 1,
+            colorVariation: 45,
+            spacing: 'tight'
+          },
+          cherry: {
+            lineCount: 80,
+            lineThicknessMin: 0.3,
+            lineThicknessMax: 1.5,
+            waveFreqMin: 0.004,
+            waveFreqMax: 0.008,
+            waveAmpMin: 1,
+            waveAmpMax: 4,
+            secondaryLines: 40,
+            knots: 0,
+            colorVariation: 25,
+            spacing: 'fine'
+          },
+          maple: {
+            lineCount: 60,
+            lineThicknessMin: 0.2,
+            lineThicknessMax: 0.8,
+            waveFreqMin: 0.003,
+            waveFreqMax: 0.006,
+            waveAmpMin: 0.5,
+            waveAmpMax: 2,
+            secondaryLines: 30,
+            knots: 0,
+            colorVariation: 15,
+            spacing: 'very-fine'
+          },
+          hickory: {
+            lineCount: 120,
+            lineThicknessMin: 1.5,
+            lineThicknessMax: 4.5,
+            waveFreqMin: 0.008,
+            waveFreqMax: 0.018,
+            waveAmpMin: 5,
+            waveAmpMax: 15,
+            secondaryLines: 70,
+            knots: 4,
+            colorVariation: 55,
+            spacing: 'dramatic'
+          }
+        };
+
+        const config = grainConfigs[grainType] || grainConfigs.oak;
+
         // Add subtle base noise for texture
         ctx.globalAlpha = 0.03;
         for (let i = 0; i < 5000; i++) {
@@ -26825,12 +27066,12 @@
           ctx.fillRect(nx, ny, 1, 1);
         }
 
-        // Add primary wood grain lines (vertical)
+        // Add primary wood grain lines (horizontal)
         ctx.globalAlpha = grainIntensity;
-        for (let i = 0; i < 120; i++) {
-          const y = (i / 120) * size + (Math.random() - 0.5) * 20;
-          const thickness = 0.5 + Math.random() * 2.5;
-          const variation = (Math.random() - 0.5) * 35;
+        for (let i = 0; i < config.lineCount; i++) {
+          const y = (i / config.lineCount) * size + (Math.random() - 0.5) * 20;
+          const thickness = config.lineThicknessMin + Math.random() * (config.lineThicknessMax - config.lineThicknessMin);
+          const variation = (Math.random() - 0.5) * config.colorVariation;
 
           // Grain color - varied between lighter and darker
           const lightness = Math.random() > 0.6 ? 1 : -1;
@@ -26844,10 +27085,30 @@
 
           // Organic wavy grain line with more natural curvature
           ctx.moveTo(0, y);
-          const waveFreq = 0.008 + Math.random() * 0.01;
-          const waveAmp = 2 + Math.random() * 6;
+          const waveFreq = config.waveFreqMin + Math.random() * (config.waveFreqMax - config.waveFreqMin);
+          const waveAmp = config.waveAmpMin + Math.random() * (config.waveAmpMax - config.waveAmpMin);
+
+          // Different wave patterns per grain type
           for (let x = 0; x < size; x += 8) {
-            const waveY = y + Math.sin(x * waveFreq + i * 0.5) * waveAmp + Math.sin(x * 0.003) * 3;
+            let waveY;
+            if (grainType === 'walnut') {
+              // Walnut: straighter, tighter lines
+              waveY = y + Math.sin(x * waveFreq + i * 0.3) * waveAmp * 0.5;
+            } else if (grainType === 'hickory') {
+              // Hickory: dramatic, irregular waves
+              waveY = y + Math.sin(x * waveFreq + i * 0.7) * waveAmp +
+                      Math.sin(x * 0.005 + i) * 5 +
+                      (Math.random() - 0.5) * 3;
+            } else if (grainType === 'cherry') {
+              // Cherry: subtle, smooth waves
+              waveY = y + Math.sin(x * waveFreq + i * 0.4) * waveAmp * 0.7;
+            } else if (grainType === 'maple') {
+              // Maple: very subtle, almost straight
+              waveY = y + Math.sin(x * waveFreq + i * 0.2) * waveAmp * 0.3;
+            } else {
+              // Oak: classic wavy grain
+              waveY = y + Math.sin(x * waveFreq + i * 0.5) * waveAmp + Math.sin(x * 0.003) * 3;
+            }
             ctx.lineTo(x, waveY);
           }
           ctx.stroke();
@@ -26855,9 +27116,9 @@
 
         // Add secondary finer grain lines
         ctx.globalAlpha = grainIntensity * 0.4;
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < config.secondaryLines; i++) {
           const y = Math.random() * size;
-          ctx.strokeStyle = `rgba(${r - 30}, ${g - 25}, ${b - 20}, 0.5)`;
+          ctx.strokeStyle = `rgba(${Math.max(0, r - 30)}, ${Math.max(0, g - 25)}, ${Math.max(0, b - 20)}, 0.5)`;
           ctx.lineWidth = 0.5;
           ctx.beginPath();
           ctx.moveTo(0, y);
@@ -26868,40 +27129,42 @@
           ctx.stroke();
         }
 
-        // Add subtle knots (fewer, more realistic)
-        ctx.globalAlpha = grainIntensity * 0.6;
-        for (let i = 0; i < 2; i++) {
-          const kx = 100 + Math.random() * (size - 200);
-          const ky = 100 + Math.random() * (size - 200);
-          const kr = 12 + Math.random() * 20;
+        // Add knots based on grain type
+        if (config.knots > 0) {
+          ctx.globalAlpha = grainIntensity * 0.6;
+          for (let i = 0; i < config.knots; i++) {
+            const kx = 100 + Math.random() * (size - 200);
+            const ky = 100 + Math.random() * (size - 200);
+            const kr = (grainType === 'hickory' ? 18 : 12) + Math.random() * 20;
 
-          // Concentric rings for knot
-          for (let ring = 0; ring < 5; ring++) {
-            const ringR = kr - ring * 3;
-            if (ringR < 2) break;
-            ctx.strokeStyle = `rgba(${r - 45 + ring * 5}, ${g - 40 + ring * 5}, ${b - 35 + ring * 5}, ${0.4 - ring * 0.06})`;
-            ctx.lineWidth = 1.5;
+            // Concentric rings for knot
+            for (let ring = 0; ring < 5; ring++) {
+              const ringR = kr - ring * 3;
+              if (ringR < 2) break;
+              ctx.strokeStyle = `rgba(${Math.max(0, r - 45 + ring * 5)}, ${Math.max(0, g - 40 + ring * 5)}, ${Math.max(0, b - 35 + ring * 5)}, ${0.4 - ring * 0.06})`;
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.arc(kx, ky, ringR, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+
+            // Dark center
+            const gradient = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr * 0.3);
+            gradient.addColorStop(0, `rgba(${Math.max(0, r - 60)}, ${Math.max(0, g - 55)}, ${Math.max(0, b - 50)}, 0.7)`);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.arc(kx, ky, ringR, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.arc(kx, ky, kr * 0.3, 0, Math.PI * 2);
+            ctx.fill();
           }
-
-          // Dark center
-          const gradient = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr * 0.3);
-          gradient.addColorStop(0, `rgba(${r - 60}, ${g - 55}, ${b - 50}, 0.7)`);
-          gradient.addColorStop(1, 'transparent');
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(kx, ky, kr * 0.3, 0, Math.PI * 2);
-          ctx.fill();
         }
 
         // Add subtle color variation (slightly warmer/cooler areas)
         ctx.globalAlpha = 0.04;
         const colorGrad = ctx.createLinearGradient(0, 0, size, size);
-        colorGrad.addColorStop(0, `rgba(${r + 15}, ${g + 10}, ${b}, 1)`);
+        colorGrad.addColorStop(0, `rgba(${Math.min(255, r + 15)}, ${Math.min(255, g + 10)}, ${b}, 1)`);
         colorGrad.addColorStop(0.5, 'transparent');
-        colorGrad.addColorStop(1, `rgba(${r - 10}, ${g - 5}, ${b + 5}, 1)`);
+        colorGrad.addColorStop(1, `rgba(${Math.max(0, r - 10)}, ${Math.max(0, g - 5)}, ${Math.min(255, b + 5)}, 1)`);
         ctx.fillStyle = colorGrad;
         ctx.fillRect(0, 0, size, size);
 
@@ -26910,7 +27173,9 @@
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(1.5, 1.5);  // Adjusted for larger texture
+        // Adjust repeat based on grain type
+        const repeatVal = grainType === 'maple' ? 1.2 : (grainType === 'hickory' ? 1.8 : 1.5);
+        texture.repeat.set(repeatVal, repeatVal);
         texture.anisotropy = 16;  // Better quality at angles
         texture.encoding = THREE.sRGBEncoding;  // Correct color encoding for r128
         texture.needsUpdate = true;  // Ensure texture is uploaded to GPU
@@ -27001,7 +27266,7 @@
       }
 
       // Helper to create cabinet with doors
-      function createCabinet(width, height, depth, cabinetColor, isWallCab, doorStyle, construction, overlay, finish, elementId) {
+      function createCabinet(width, height, depth, cabinetColor, isWallCab, doorStyle, construction, overlay, finish, elementId, customTextureUrl, grainType) {
         const cabGroup = new THREE.Group();
         cabGroup.userData.doors = []; // Track door groups for animation
 
@@ -27011,6 +27276,7 @@
         const isFramed = construction === 'framed';
         const overlayType = overlay || 'full';
         const cabinetFinish = finish || 'wood-grain';
+        const woodGrainType = grainType || 'oak'; // Default to oak grain pattern
 
         // Gap based on overlay type
         let gap;
@@ -27036,23 +27302,55 @@
         let woodTexture = null;
         let baseRoughness, baseMetalness;
 
-        if (cabinetFinish === 'wood-grain') {
-          woodTexture = createWoodGrainTexture(cabinetColor, 0.12);
+        // Check for custom uploaded texture first
+        if (customTextureUrl) {
+          // Load custom texture image
+          const textureLoader = new THREE.TextureLoader();
+          try {
+            woodTexture = textureLoader.load(customTextureUrl, (texture) => {
+              texture.wrapS = THREE.RepeatWrapping;
+              texture.wrapT = THREE.RepeatWrapping;
+              texture.repeat.set(2, 2);
+              // Update all materials that use this texture
+              cabGroup.traverse(child => {
+                if (child.material && child.material.map === woodTexture) {
+                  child.material.needsUpdate = true;
+                }
+              });
+              if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+              }
+            });
+            woodTexture.wrapS = THREE.RepeatWrapping;
+            woodTexture.wrapT = THREE.RepeatWrapping;
+            woodTexture.repeat.set(2, 2);
+          } catch (e) {
+            console.warn('Failed to load custom cabinet texture:', e);
+            woodTexture = createWoodGrainTexture(cabinetColor, 0.12, woodGrainType);
+          }
+          baseRoughness = 0.3;
+          baseMetalness = 0.02;
+        } else if (cabinetFinish === 'wood-grain') {
+          woodTexture = createWoodGrainTexture(cabinetColor, 0.12, woodGrainType);
           baseRoughness = 0.3;
           baseMetalness = 0.02;
         } else if (cabinetFinish === 'painted') {
-          // Smooth painted finish - no texture
+          // Smooth painted finish - use flat texture for subtle surface variation
+          woodTexture = createWoodGrainTexture(cabinetColor, 0.05, 'flat');
           baseRoughness = 0.4;
           baseMetalness = 0.01;
         } else if (cabinetFinish === 'matte') {
-          // Matte laminate - very smooth, no sheen
+          // Matte laminate - use flat texture
+          woodTexture = createWoodGrainTexture(cabinetColor, 0.03, 'flat');
           baseRoughness = 0.7;
           baseMetalness = 0.0;
         } else if (cabinetFinish === 'gloss') {
-          // High gloss - reflective
+          // High gloss - use flat texture with minimal variation
+          woodTexture = createWoodGrainTexture(cabinetColor, 0.02, 'flat');
           baseRoughness = 0.1;
           baseMetalness = 0.05;
         } else {
+          woodTexture = createWoodGrainTexture(cabinetColor, 0.12, woodGrainType);
           baseRoughness = 0.3;
           baseMetalness = 0.02;
         }
@@ -27303,7 +27601,7 @@
           const bodyHeight = h - toeKickHeight;
 
           // Create cabinet body at reduced height for base cabinets
-          const cab = createCabinet(w, bodyHeight, d, color, !isBaseCab, el.doorStyle, el.construction, el.doorOverlay, el.cabinetFinish, el.id);
+          const cab = createCabinet(w, bodyHeight, d, color, !isBaseCab, el.doorStyle, el.construction, el.doorOverlay, el.cabinetFinish, el.id, textureUrl);
 
           // Position cabinet body above toe kick
           if (isBaseCab) {
@@ -27493,21 +27791,38 @@
 
           // Use wood grain texture like other cabinets for consistency
           const dbCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const dbGrainType = el.grainType || 'oak';
           let dbWoodTexture = null;
           let dbBaseRoughness = 0.35;
           let dbBaseMetalness = 0.02;
 
-          if (dbCabinetFinish === 'wood-grain') {
-            dbWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              dbWoodTexture = textureLoader.load(textureUrl);
+              dbWoodTexture.wrapS = THREE.RepeatWrapping;
+              dbWoodTexture.wrapT = THREE.RepeatWrapping;
+              dbWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              dbWoodTexture = createWoodGrainTexture(color, 0.12, dbGrainType);
+            }
+            dbBaseRoughness = 0.3;
+            dbBaseMetalness = 0.02;
+          } else if (dbCabinetFinish === 'wood-grain') {
+            dbWoodTexture = createWoodGrainTexture(color, 0.12, dbGrainType);
             dbBaseRoughness = 0.3;
             dbBaseMetalness = 0.02;
           } else if (dbCabinetFinish === 'painted') {
+            dbWoodTexture = createWoodGrainTexture(color, 0.05, 'flat');
             dbBaseRoughness = 0.4;
             dbBaseMetalness = 0.01;
           } else if (dbCabinetFinish === 'matte') {
+            dbWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
             dbBaseRoughness = 0.7;
             dbBaseMetalness = 0.0;
           } else if (dbCabinetFinish === 'gloss') {
+            dbWoodTexture = createWoodGrainTexture(color, 0.02, 'flat');
             dbBaseRoughness = 0.1;
             dbBaseMetalness = 0.05;
           }
@@ -27797,21 +28112,38 @@
 
           // Use wood grain texture like other cabinets for consistency
           const sbCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const sbGrainType = el.grainType || 'oak';
           let sbWoodTexture = null;
           let sbBaseRoughness = 0.35;
           let sbBaseMetalness = 0.02;
 
-          if (sbCabinetFinish === 'wood-grain') {
-            sbWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              sbWoodTexture = textureLoader.load(textureUrl);
+              sbWoodTexture.wrapS = THREE.RepeatWrapping;
+              sbWoodTexture.wrapT = THREE.RepeatWrapping;
+              sbWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              sbWoodTexture = createWoodGrainTexture(color, 0.12, sbGrainType);
+            }
+            sbBaseRoughness = 0.3;
+            sbBaseMetalness = 0.02;
+          } else if (sbCabinetFinish === 'wood-grain') {
+            sbWoodTexture = createWoodGrainTexture(color, 0.12, sbGrainType);
             sbBaseRoughness = 0.3;
             sbBaseMetalness = 0.02;
           } else if (sbCabinetFinish === 'painted') {
+            sbWoodTexture = createWoodGrainTexture(color, 0.05, 'flat');
             sbBaseRoughness = 0.4;
             sbBaseMetalness = 0.01;
           } else if (sbCabinetFinish === 'matte') {
+            sbWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
             sbBaseRoughness = 0.7;
             sbBaseMetalness = 0.0;
           } else if (sbCabinetFinish === 'gloss') {
+            sbWoodTexture = createWoodGrainTexture(color, 0.02, 'flat');
             sbBaseRoughness = 0.1;
             sbBaseMetalness = 0.05;
           }
@@ -27990,21 +28322,38 @@
 
           // Use wood grain texture like other cabinets for consistency
           const lsCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const lsGrainType = el.grainType || 'oak';
           let lsWoodTexture = null;
           let lsBaseRoughness = 0.35;
           let lsBaseMetalness = 0.02;
 
-          if (lsCabinetFinish === 'wood-grain') {
-            lsWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              lsWoodTexture = textureLoader.load(textureUrl);
+              lsWoodTexture.wrapS = THREE.RepeatWrapping;
+              lsWoodTexture.wrapT = THREE.RepeatWrapping;
+              lsWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              lsWoodTexture = createWoodGrainTexture(color, 0.12, lsGrainType);
+            }
+            lsBaseRoughness = 0.3;
+            lsBaseMetalness = 0.02;
+          } else if (lsCabinetFinish === 'wood-grain') {
+            lsWoodTexture = createWoodGrainTexture(color, 0.12, lsGrainType);
             lsBaseRoughness = 0.3;
             lsBaseMetalness = 0.02;
           } else if (lsCabinetFinish === 'painted') {
+            lsWoodTexture = createWoodGrainTexture(color, 0.05, 'flat');
             lsBaseRoughness = 0.4;
             lsBaseMetalness = 0.01;
           } else if (lsCabinetFinish === 'matte') {
+            lsWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
             lsBaseRoughness = 0.7;
             lsBaseMetalness = 0.0;
           } else if (lsCabinetFinish === 'gloss') {
+            lsWoodTexture = createWoodGrainTexture(color, 0.02, 'flat');
             lsBaseRoughness = 0.1;
             lsBaseMetalness = 0.05;
           }
@@ -28218,21 +28567,38 @@
 
           // Use wood grain texture like other cabinets for consistency
           const ccCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const ccGrainType = el.grainType || 'oak';
           let ccWoodTexture = null;
           let ccBaseRoughness = 0.35;
           let ccBaseMetalness = 0.02;
 
-          if (ccCabinetFinish === 'wood-grain') {
-            ccWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              ccWoodTexture = textureLoader.load(textureUrl);
+              ccWoodTexture.wrapS = THREE.RepeatWrapping;
+              ccWoodTexture.wrapT = THREE.RepeatWrapping;
+              ccWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              ccWoodTexture = createWoodGrainTexture(color, 0.12, ccGrainType);
+            }
+            ccBaseRoughness = 0.3;
+            ccBaseMetalness = 0.02;
+          } else if (ccCabinetFinish === 'wood-grain') {
+            ccWoodTexture = createWoodGrainTexture(color, 0.12, ccGrainType);
             ccBaseRoughness = 0.3;
             ccBaseMetalness = 0.02;
           } else if (ccCabinetFinish === 'painted') {
+            ccWoodTexture = createWoodGrainTexture(color, 0.05, 'flat');
             ccBaseRoughness = 0.4;
             ccBaseMetalness = 0.01;
           } else if (ccCabinetFinish === 'matte') {
+            ccWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
             ccBaseRoughness = 0.7;
             ccBaseMetalness = 0.0;
           } else if (ccCabinetFinish === 'gloss') {
+            ccWoodTexture = createWoodGrainTexture(color, 0.02, 'flat');
             ccBaseRoughness = 0.1;
             ccBaseMetalness = 0.05;
           }
@@ -28409,21 +28775,38 @@
           // Tall pantry cabinet with two door sections
           // Use wood grain texture like other cabinets for consistency
           const tallCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const tallGrainType = el.grainType || 'oak';
           let tallWoodTexture = null;
           let tallBaseRoughness = 0.35;
           let tallBaseMetalness = 0.02;
 
-          if (tallCabinetFinish === 'wood-grain') {
-            tallWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              tallWoodTexture = textureLoader.load(textureUrl);
+              tallWoodTexture.wrapS = THREE.RepeatWrapping;
+              tallWoodTexture.wrapT = THREE.RepeatWrapping;
+              tallWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              tallWoodTexture = createWoodGrainTexture(color, 0.12, tallGrainType);
+            }
+            tallBaseRoughness = 0.3;
+            tallBaseMetalness = 0.02;
+          } else if (tallCabinetFinish === 'wood-grain') {
+            tallWoodTexture = createWoodGrainTexture(color, 0.12, tallGrainType);
             tallBaseRoughness = 0.3;
             tallBaseMetalness = 0.02;
           } else if (tallCabinetFinish === 'painted') {
+            tallWoodTexture = createWoodGrainTexture(color, 0.05, 'flat');
             tallBaseRoughness = 0.4;
             tallBaseMetalness = 0.01;
           } else if (tallCabinetFinish === 'matte') {
+            tallWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
             tallBaseRoughness = 0.7;
             tallBaseMetalness = 0.0;
           } else if (tallCabinetFinish === 'gloss') {
+            tallWoodTexture = createWoodGrainTexture(color, 0.02, 'flat');
             tallBaseRoughness = 0.1;
             tallBaseMetalness = 0.05;
           }
@@ -28589,12 +28972,28 @@
 
           // Use wood grain texture for cabinet parts
           const fcCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const fcGrainType = el.grainType || 'oak';
           let fcWoodTexture = null;
           let fcBaseRoughness = 0.35;
 
-          if (fcCabinetFinish === 'wood-grain') {
-            fcWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              fcWoodTexture = textureLoader.load(textureUrl);
+              fcWoodTexture.wrapS = THREE.RepeatWrapping;
+              fcWoodTexture.wrapT = THREE.RepeatWrapping;
+              fcWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              fcWoodTexture = createWoodGrainTexture(color, 0.12, fcGrainType);
+            }
             fcBaseRoughness = 0.3;
+          } else if (fcCabinetFinish === 'wood-grain') {
+            fcWoodTexture = createWoodGrainTexture(color, 0.12, fcGrainType);
+            fcBaseRoughness = 0.3;
+          } else if (fcCabinetFinish === 'painted' || fcCabinetFinish === 'matte' || fcCabinetFinish === 'gloss') {
+            fcWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
+            fcBaseRoughness = fcCabinetFinish === 'gloss' ? 0.1 : (fcCabinetFinish === 'matte' ? 0.7 : 0.4);
           }
 
           const fridgeCabMat = new THREE.MeshStandardMaterial({
@@ -29310,12 +29709,12 @@
                 break;
 
               case 'waterfall':
-                // Mitered edge for waterfall effect
+                // Waterfall edge - clean square profile for seamless miter joint
+                // The waterfall vertical panel creates the visual interest, edge stays flat
                 shape.moveTo(0, 0);
                 shape.lineTo(t, 0);
                 shape.lineTo(t, t);
-                shape.lineTo(t * 0.05, t);
-                shape.lineTo(0, t * 0.95);
+                shape.lineTo(0, t);
                 shape.lineTo(0, 0);
                 break;
 
@@ -29342,14 +29741,47 @@
 
           // Main slab body (slightly inset from edges for profile geometry)
           const bodyInset = effectiveH * 0.1;
-          const mainBody = new THREE.Mesh(
-            new THREE.BoxGeometry(slabW - bodyInset * 2, effectiveH, slabD - bodyInset * 2),
-            ctopMat
-          );
-          // Apply offset to remove overhang on waterfall sides
-          mainBody.position.set(slabOffsetX, 0, slabOffsetZ);
-          group.add(mainBody);
 
+          // Find sinks that overlap with this countertop to create cutouts
+          const sinkCutouts = [];
+          const ctopLeftFt = el.x / pixelsPerFoot;
+          const ctopTopFt = el.y / pixelsPerFoot;
+          const ctopRightFt = ctopLeftFt + w;
+          const ctopBottomFt = ctopTopFt + d;
+
+          elements.forEach(other => {
+            if (other.id === el.id) return;
+            if (!['sink', 'sink-double', 'sink-farmhouse'].includes(other.type)) return;
+
+            // Get sink bounds - x/y are pixels, width/height are already in feet
+            const sinkLeftFt = other.x / pixelsPerFoot;
+            const sinkTopFt = other.y / pixelsPerFoot;
+            const sinkWFt = other.width;  // Already in feet
+            const sinkDFt = other.height; // Already in feet
+            const sinkRightFt = sinkLeftFt + sinkWFt;
+            const sinkBottomFt = sinkTopFt + sinkDFt;
+
+            // Check overlap
+            if (sinkRightFt > ctopLeftFt && sinkLeftFt < ctopRightFt &&
+                sinkBottomFt > ctopTopFt && sinkTopFt < ctopBottomFt) {
+              // Calculate sink position relative to countertop center
+              const relX = (sinkLeftFt + sinkWFt/2) - (ctopLeftFt + w/2);
+              const relZ = (sinkTopFt + sinkDFt/2) - (ctopTopFt + d/2);
+              sinkCutouts.push({ x: relX, z: relZ, w: sinkWFt, d: sinkDFt });
+            }
+          });
+
+          // Main slab body - skip when sinks present (topSurface + edges handle it)
+          if (sinkCutouts.length === 0) {
+            const mainBody = new THREE.Mesh(
+              new THREE.BoxGeometry(slabW - bodyInset * 2, effectiveH, slabD - bodyInset * 2),
+              ctopMat
+            );
+            mainBody.position.set(slabOffsetX, 0, slabOffsetZ);
+            group.add(mainBody);
+          }
+
+          // Edge rendering (always render edges)
           // Front edge with profile - slightly more polished than top
           const frontEdgeMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.15,
@@ -29453,18 +29885,60 @@
             group.add(backEdge);
           }
 
-          // Top surface - use same material as main body for consistent texture
-          // The top surface thin layer adds subtle depth but should match texture
+          // Top surface - create with holes if there are sink cutouts
           const topMat = createTexturedMaterial(color, textureUrl, {
-            roughness: 0.2,  // Smooth but not mirror-like
-            metalness: 0.01  // Minimal metalness for natural stone look
+            roughness: 0.2,
+            metalness: 0.01
           });
-          const topSurface = new THREE.Mesh(
-            new THREE.BoxGeometry(slabW - 0.02, 0.003, slabD - 0.02),
-            topMat
-          );
-          topSurface.position.set(slabOffsetX, effectiveH/2 + 0.002, slabOffsetZ);
-          group.add(topSurface);
+
+          if (sinkCutouts.length > 0) {
+            // Create full-thickness countertop with sink holes using ExtrudeGeometry
+            const topShape = new THREE.Shape();
+            const topHalfW = (slabW - bodyInset * 2) / 2;
+            const topHalfD = (slabD - bodyInset * 2) / 2;
+
+            // Outer rectangle (CCW when viewed from above)
+            topShape.moveTo(-topHalfW, -topHalfD);
+            topShape.lineTo(topHalfW, -topHalfD);
+            topShape.lineTo(topHalfW, topHalfD);
+            topShape.lineTo(-topHalfW, topHalfD);
+            topShape.lineTo(-topHalfW, -topHalfD);
+
+            // Add sink holes (CW for holes - clockwise when viewed from above)
+            sinkCutouts.forEach(sink => {
+              // Use basin size with small reveal for the hole
+              const holeW = sink.w * 0.85;
+              const holeD = sink.d * 0.85;
+
+              const hole = new THREE.Path();
+              // CW winding: start bottom-left, go left to top-left, then top-right, etc.
+              hole.moveTo(sink.x - holeW/2, sink.z - holeD/2);
+              hole.lineTo(sink.x - holeW/2, sink.z + holeD/2);
+              hole.lineTo(sink.x + holeW/2, sink.z + holeD/2);
+              hole.lineTo(sink.x + holeW/2, sink.z - holeD/2);
+              hole.lineTo(sink.x - holeW/2, sink.z - holeD/2);
+              topShape.holes.push(hole);
+            });
+
+            // Extrude with full countertop thickness
+            const extrudeSettings = {
+              depth: effectiveH,
+              bevelEnabled: false
+            };
+            const topGeo = new THREE.ExtrudeGeometry(topShape, extrudeSettings);
+            topGeo.rotateX(-Math.PI / 2);
+            const countertopWithHole = new THREE.Mesh(topGeo, ctopMat);
+            countertopWithHole.position.set(slabOffsetX, -effectiveH/2, slabOffsetZ);
+            group.add(countertopWithHole);
+          } else {
+            // Simple box for top surface when no sinks
+            const topSurface = new THREE.Mesh(
+              new THREE.BoxGeometry(slabW - 0.02, 0.003, slabD - 0.02),
+              topMat
+            );
+            topSurface.position.set(slabOffsetX, effectiveH/2 + 0.002, slabOffsetZ);
+            group.add(topSurface);
+          }
 
           // Render seams as subtle grooves in the countertop
           if (el.seams && el.seams.length > 0) {
@@ -30938,20 +31412,22 @@
               side: THREE.DoubleSide
             });
 
-            // Darker interior for depth perception
+            // Darker interior for depth perception - use DoubleSide to ensure visibility
             const interiorMat = new THREE.MeshStandardMaterial({
               color: new THREE.Color(finish.basinColor).multiplyScalar(0.7),
               roughness: 0.35,
               metalness: finish.basinMetal + 0.2,
               envMap: window.roomEnvMap || null,
-              envMapIntensity: 0.5
+              envMapIntensity: 0.5,
+              side: THREE.DoubleSide
             });
 
-            // Very dark bottom
+            // Very dark bottom - also use DoubleSide
             const bottomMat = new THREE.MeshStandardMaterial({
               color: new THREE.Color(finish.basinColor).multiplyScalar(0.4),
               roughness: 0.4,
-              metalness: finish.basinMetal + 0.3
+              metalness: finish.basinMetal + 0.3,
+              side: THREE.DoubleSide
             });
 
             // === TOP MOUNT (Drop-in) - Visible rim on countertop ===
@@ -30975,68 +31451,10 @@
               group.add(lip);
             }
 
-            // === UNDERMOUNT - Countertop edge visible around sink opening ===
-            // For undermount, the sink basin sits below the countertop
-            // We create a dark "void" to represent the opening and polished stone edge
-            if (isUndermount) {
-              const countertopThickness = 0.10; // ~1.2 inches thick
-              const edgeReveal = 0.015; // Small reveal/lip around opening
-
-              // Dark void representing the sink opening (visible from above)
-              const voidMat = new THREE.MeshBasicMaterial({
-                color: 0x1a1a1a,
-                side: THREE.DoubleSide
-              });
-
-              // The opening in the countertop - sits just below countertop surface
-              const opening = new THREE.Mesh(
-                new THREE.PlaneGeometry(basinW, basinD),
-                voidMat
-              );
-              opening.rotation.x = -Math.PI / 2;
-              opening.position.y = -0.01; // Just below countertop surface
-              group.add(opening);
-
-              // Stone edge material (matches typical countertop)
-              const stoneMat = new THREE.MeshStandardMaterial({
-                color: 0x4a4a4a, // Dark granite color
-                roughness: 0.3,
-                metalness: 0.1
-              });
-
-              // Inner vertical walls of the countertop cutout (the polished edge)
-              // Front edge
-              const frontEdge = new THREE.Mesh(
-                new THREE.BoxGeometry(basinW, countertopThickness, 0.015),
-                stoneMat
-              );
-              frontEdge.position.set(0, -countertopThickness/2, basinD/2);
-              group.add(frontEdge);
-
-              // Back edge
-              const backEdge = new THREE.Mesh(
-                new THREE.BoxGeometry(basinW, countertopThickness, 0.015),
-                stoneMat
-              );
-              backEdge.position.set(0, -countertopThickness/2, -basinD/2);
-              group.add(backEdge);
-
-              // Left edge
-              const leftEdge = new THREE.Mesh(
-                new THREE.BoxGeometry(0.015, countertopThickness, basinD),
-                stoneMat
-              );
-              leftEdge.position.set(-basinW/2, -countertopThickness/2, 0);
-              group.add(leftEdge);
-
-              // Right edge
-              const rightEdge = new THREE.Mesh(
-                new THREE.BoxGeometry(0.015, countertopThickness, basinD),
-                stoneMat
-              );
-              rightEdge.position.set(basinW/2, -countertopThickness/2, 0);
-              group.add(rightEdge);
-            }
+            // === UNDERMOUNT - Basin visible through countertop cutout ===
+            // For undermount sinks, the countertop has a hole cut out and the basin
+            // is attached underneath. The countertop ShapeGeometry with holes provides
+            // the visible edge - no additional geometry needed here.
 
             // === SINK BASIN (the actual stainless steel bowl) ===
             // Basin starts below countertop surface
@@ -31044,72 +31462,51 @@
             // For top mount: basin starts at rim level
             const basinTop = isUndermount ? -0.10 : 0; // Undermount: at countertop bottom (1.2" thick countertop)
 
-            // Create the 4 walls of the basin (with slight inward slope)
-            const slopeIn = 0.04; // Walls slope slightly inward at bottom
-            const btmW = basinW - slopeIn * 2;
-            const btmD = basinD - slopeIn * 2;
+            // Basin wall thickness (stainless steel gauge)
+            const wallThick = 0.025; // ~0.3 inches thick for visibility
             const btmY = basinTop - sinkDepth;
+            const basinHeight = sinkDepth; // Total depth of basin
 
-            // Front wall
-            const frontWall = new THREE.BufferGeometry();
-            const fwVerts = new Float32Array([
-              -basinW/2, basinTop, basinD/2,
-              basinW/2, basinTop, basinD/2,
-              btmW/2, btmY, btmD/2,
-              -btmW/2, btmY, btmD/2
-            ]);
-            frontWall.setAttribute('position', new THREE.BufferAttribute(fwVerts, 3));
-            frontWall.setIndex([0, 1, 2, 0, 2, 3]);
-            frontWall.computeVertexNormals();
-            group.add(new THREE.Mesh(frontWall, interiorMat));
+            // Use BoxGeometry for solid 3D walls that render from all angles
+            // Front wall (facing into room)
+            const frontWallMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(basinW, basinHeight, wallThick),
+              interiorMat
+            );
+            frontWallMesh.position.set(0, basinTop - basinHeight/2, basinD/2 - wallThick/2);
+            group.add(frontWallMesh);
 
             // Back wall
-            const backWall = new THREE.BufferGeometry();
-            const bwVerts = new Float32Array([
-              basinW/2, basinTop, -basinD/2,
-              -basinW/2, basinTop, -basinD/2,
-              -btmW/2, btmY, -btmD/2,
-              btmW/2, btmY, -btmD/2
-            ]);
-            backWall.setAttribute('position', new THREE.BufferAttribute(bwVerts, 3));
-            backWall.setIndex([0, 1, 2, 0, 2, 3]);
-            backWall.computeVertexNormals();
-            group.add(new THREE.Mesh(backWall, interiorMat));
+            const backWallMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(basinW, basinHeight, wallThick),
+              interiorMat
+            );
+            backWallMesh.position.set(0, basinTop - basinHeight/2, -basinD/2 + wallThick/2);
+            group.add(backWallMesh);
 
             // Left wall
-            const leftWall = new THREE.BufferGeometry();
-            const lwVerts = new Float32Array([
-              -basinW/2, basinTop, -basinD/2,
-              -basinW/2, basinTop, basinD/2,
-              -btmW/2, btmY, btmD/2,
-              -btmW/2, btmY, -btmD/2
-            ]);
-            leftWall.setAttribute('position', new THREE.BufferAttribute(lwVerts, 3));
-            leftWall.setIndex([0, 1, 2, 0, 2, 3]);
-            leftWall.computeVertexNormals();
-            group.add(new THREE.Mesh(leftWall, interiorMat));
+            const leftWallMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(wallThick, basinHeight, basinD - wallThick * 2),
+              interiorMat
+            );
+            leftWallMesh.position.set(-basinW/2 + wallThick/2, basinTop - basinHeight/2, 0);
+            group.add(leftWallMesh);
 
             // Right wall
-            const rightWall = new THREE.BufferGeometry();
-            const rwVerts = new Float32Array([
-              basinW/2, basinTop, basinD/2,
-              basinW/2, basinTop, -basinD/2,
-              btmW/2, btmY, -btmD/2,
-              btmW/2, btmY, btmD/2
-            ]);
-            rightWall.setAttribute('position', new THREE.BufferAttribute(rwVerts, 3));
-            rightWall.setIndex([0, 1, 2, 0, 2, 3]);
-            rightWall.computeVertexNormals();
-            group.add(new THREE.Mesh(rightWall, interiorMat));
+            const rightWallMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(wallThick, basinHeight, basinD - wallThick * 2),
+              interiorMat
+            );
+            rightWallMesh.position.set(basinW/2 - wallThick/2, basinTop - basinHeight/2, 0);
+            group.add(rightWallMesh);
 
-            // Basin bottom
-            const bottom = new THREE.Mesh(
-              new THREE.PlaneGeometry(btmW, btmD),
+            // Basin bottom - solid box for better visibility
+            const bottomMesh = new THREE.Mesh(
+              new THREE.BoxGeometry(basinW - wallThick * 2, wallThick, basinD - wallThick * 2),
               bottomMat
             );
-            bottom.rotation.x = -Math.PI / 2;
-            bottom.position.y = btmY + 0.005;
-            group.add(bottom);
+            bottomMesh.position.set(0, btmY + wallThick/2, 0);
+            group.add(bottomMesh);
 
             // === DRAIN ASSEMBLY (3.5" standard) ===
             const drainRadius = 0.145; // 3.5" diameter / 2
@@ -31567,12 +31964,28 @@
 
           const isDouble = el.type === 'double-oven-cabinet';
           const ovenCabinetFinish = el.cabinetFinish || 'wood-grain';
+          const ovenCabGrainType = el.grainType || 'oak';
           let ovenCabWoodTexture = null;
           let ovenCabBaseRoughness = 0.35;
 
-          if (ovenCabinetFinish === 'wood-grain') {
-            ovenCabWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              ovenCabWoodTexture = textureLoader.load(textureUrl);
+              ovenCabWoodTexture.wrapS = THREE.RepeatWrapping;
+              ovenCabWoodTexture.wrapT = THREE.RepeatWrapping;
+              ovenCabWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              ovenCabWoodTexture = createWoodGrainTexture(color, 0.12, ovenCabGrainType);
+            }
             ovenCabBaseRoughness = 0.3;
+          } else if (ovenCabinetFinish === 'wood-grain') {
+            ovenCabWoodTexture = createWoodGrainTexture(color, 0.12, ovenCabGrainType);
+            ovenCabBaseRoughness = 0.3;
+          } else if (ovenCabinetFinish === 'painted' || ovenCabinetFinish === 'matte' || ovenCabinetFinish === 'gloss') {
+            ovenCabWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
+            ovenCabBaseRoughness = ovenCabinetFinish === 'gloss' ? 0.1 : (ovenCabinetFinish === 'matte' ? 0.7 : 0.4);
           }
 
           // Cabinet wood material
@@ -31937,12 +32350,28 @@
         case 'above-microwave-cabinet': {
           // Combined unit: Short wall cabinet with microwave below
           const aboveMwFinish = el.cabinetFinish || 'wood-grain';
+          const aboveMwGrainType = el.grainType || 'oak';
           let aboveMwWoodTexture = null;
           let aboveMwBaseRoughness = 0.35;
 
-          if (aboveMwFinish === 'wood-grain') {
-            aboveMwWoodTexture = createWoodGrainTexture(color, 0.12);
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              aboveMwWoodTexture = textureLoader.load(textureUrl);
+              aboveMwWoodTexture.wrapS = THREE.RepeatWrapping;
+              aboveMwWoodTexture.wrapT = THREE.RepeatWrapping;
+              aboveMwWoodTexture.repeat.set(2, 2);
+            } catch (e) {
+              aboveMwWoodTexture = createWoodGrainTexture(color, 0.12, aboveMwGrainType);
+            }
             aboveMwBaseRoughness = 0.3;
+          } else if (aboveMwFinish === 'wood-grain') {
+            aboveMwWoodTexture = createWoodGrainTexture(color, 0.12, aboveMwGrainType);
+            aboveMwBaseRoughness = 0.3;
+          } else if (aboveMwFinish === 'painted' || aboveMwFinish === 'matte' || aboveMwFinish === 'gloss') {
+            aboveMwWoodTexture = createWoodGrainTexture(color, 0.03, 'flat');
+            aboveMwBaseRoughness = aboveMwFinish === 'gloss' ? 0.1 : (aboveMwFinish === 'matte' ? 0.7 : 0.4);
           }
 
           const aboveMwMat = new THREE.MeshStandardMaterial({
@@ -32248,11 +32677,28 @@
 
           // Get wood texture for cabinet box
           const mwCabFinish = el.cabinetFinish || 'wood-grain';
+          const mwCabGrainType = el.grainType || 'oak';
           let mwCabTexture = null;
           let mwCabRoughness = 0.35;
-          if (mwCabFinish === 'wood-grain') {
-            mwCabTexture = createWoodGrainTexture(color, 0.12);
+
+          // Check for custom texture first
+          if (textureUrl) {
+            const textureLoader = new THREE.TextureLoader();
+            try {
+              mwCabTexture = textureLoader.load(textureUrl);
+              mwCabTexture.wrapS = THREE.RepeatWrapping;
+              mwCabTexture.wrapT = THREE.RepeatWrapping;
+              mwCabTexture.repeat.set(2, 2);
+            } catch (e) {
+              mwCabTexture = createWoodGrainTexture(color, 0.12, mwCabGrainType);
+            }
             mwCabRoughness = 0.3;
+          } else if (mwCabFinish === 'wood-grain') {
+            mwCabTexture = createWoodGrainTexture(color, 0.12, mwCabGrainType);
+            mwCabRoughness = 0.3;
+          } else if (mwCabFinish === 'painted' || mwCabFinish === 'matte' || mwCabFinish === 'gloss') {
+            mwCabTexture = createWoodGrainTexture(color, 0.03, 'flat');
+            mwCabRoughness = mwCabFinish === 'gloss' ? 0.1 : (mwCabFinish === 'matte' ? 0.7 : 0.4);
           }
 
           const mwCabMat = new THREE.MeshStandardMaterial({
@@ -44460,58 +44906,34 @@
 
       // For waterfall, create special visualization
       if (profile === 'waterfall') {
-        // Horizontal slab
-        const slabGeo = new THREE.BoxGeometry(slabWidth, t, slabDepth * 0.7);
-        const slab = new THREE.Mesh(slabGeo, material);
-        slab.position.set(0, t / 2, -slabDepth * 0.15);
-        slab.castShadow = true;
-        group.add(slab);
+        // MITERED WATERFALL - like mitered drop edge but turns 90° vertical
+        // Pieces are JOINED together with 45° seam at corner
 
-        // Vertical waterfall panel (90° turn)
-        const waterfallHeight = 0.8; // Height of waterfall drop
-        const wfGeo = new THREE.BoxGeometry(slabWidth, waterfallHeight, t);
-        const wfPanel = new THREE.Mesh(wfGeo, material);
-        wfPanel.position.set(0, -waterfallHeight / 2 + t / 2, slabDepth * 0.35 - t / 2);
-        wfPanel.castShadow = true;
-        group.add(wfPanel);
+        const waterfallDrop = 0.7;
 
-        // Show the mitered corner joint (45° seam line)
-        const seamMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
-        const seamGeo = new THREE.BoxGeometry(slabWidth + 0.01, 0.003, t * 1.5);
-        const seam = new THREE.Mesh(seamGeo, seamMat);
-        seam.rotation.x = Math.PI / 4; // 45° angle
-        seam.position.set(0, t * 0.3, slabDepth * 0.35 - t * 0.3);
-        group.add(seam);
-
-        group.position.set(-slabWidth / 2, 0.3, -slabDepth / 2 + 0.1);
-        edgePreviewScene.add(group);
-        return;
-      }
-
-      // For mitered edge (2cm laminated), show the buildup
-      if (profile === 'mitered' || profile === '2cm-miter') {
-        // Main slab (2cm or 3cm depending on setting)
+        // HORIZONTAL SLAB (same as mitered edge)
         const slabGeo = new THREE.BoxGeometry(slabWidth, t, slabDepth);
         const slab = new THREE.Mesh(slabGeo, material);
         slab.position.y = t / 2;
         slab.castShadow = true;
         group.add(slab);
 
-        // Mitered drop edge (creates thicker appearance)
-        // This is a laminated strip at 45° that makes the edge look like 4cm+
-        const dropHeight = t * 0.8;
-        const dropGeo = new THREE.BoxGeometry(slabWidth, dropHeight, t * 0.8);
-        const dropEdge = new THREE.Mesh(dropGeo, material);
-        dropEdge.position.set(0, -dropHeight / 2, slabDepth / 2 - t * 0.4);
-        dropEdge.castShadow = true;
-        group.add(dropEdge);
+        // VERTICAL WATERFALL - back touches slab front, top at y=t
+        const wfGeo = new THREE.BoxGeometry(slabWidth, waterfallDrop, t);
+        const wfPanel = new THREE.Mesh(wfGeo, material);
+        wfPanel.position.set(0, t - waterfallDrop / 2, slabDepth / 2 + t / 2);
+        wfPanel.castShadow = true;
+        group.add(wfPanel);
 
-        // 45° miter seam (nearly invisible on real countertops)
-        const seamMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6, transparent: true, opacity: 0.5 });
-        const seamGeo = new THREE.BoxGeometry(slabWidth + 0.01, 0.002, t * 0.6);
+        // 45° MITER SEAM at corner
+        const seamMat = new THREE.MeshStandardMaterial({
+          color: 0x444444, roughness: 0.6, transparent: true, opacity: 0.5
+        });
+        const seamDiag = t * Math.SQRT2;
+        const seamGeo = new THREE.BoxGeometry(slabWidth + 0.01, 0.002, seamDiag);
         const seam = new THREE.Mesh(seamGeo, seamMat);
-        seam.rotation.x = Math.PI / 4;
-        seam.position.set(0, -t * 0.1, slabDepth / 2 - t * 0.2);
+        seam.rotation.x = -Math.PI / 4;
+        seam.position.set(0, t / 2, slabDepth / 2 + t / 2);
         group.add(seam);
 
         group.position.set(-slabWidth / 2, 0, -slabDepth / 2 + 0.15);
