@@ -770,6 +770,11 @@
             Leads
             <span class="nav-badge" id="leadsCount">0</span>
           </a>
+          <a href="/vendor/dashboard/customers/" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Customers
+            <span class="nav-badge" id="customersCount" style="background: var(--success);">0</span>
+          </a>
         </div>
 
         <div class="nav-section">
@@ -1111,6 +1116,11 @@
           .eq('vendor_id', vendorProfile.id)
           .order('created_at', { ascending: false })
           .limit(5);
+
+        // Update customers count in sidebar
+        const wonCount = leads?.filter(l => l.status === 'won').length || 0;
+        const totalWon = vendorProfile.total_jobs_won || wonCount;
+        document.getElementById('customersCount').textContent = totalWon;
 
         const container = document.getElementById('leadsContainer');
 
