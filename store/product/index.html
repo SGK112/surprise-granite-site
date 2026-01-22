@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Product | Surprise Granite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260122">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0f0f14;
+      --dark-surface: #16161f;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.8);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding-top: 80px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+      color: var(--gold-primary);
+    }
+
+    .breadcrumb span {
+      color: var(--text-muted);
+    }
+
+    .breadcrumb .current {
+      color: var(--text-secondary);
+    }
+
+    /* Product Layout */
+    .product-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+
+    @media (max-width: 900px) {
+      .product-layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    /* Product Gallery */
+    .product-gallery {
+      position: sticky;
+      top: 100px;
+    }
+
+    .main-image-container {
+      aspect-ratio: 1;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .main-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .thumbnail {
+      aspect-ratio: 1;
+      background: var(--dark-surface);
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .thumbnail:hover,
+    .thumbnail.active {
+      border-color: var(--gold-primary);
+    }
+
+    .thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Product Info */
+    .product-info {
+      padding: 0;
+    }
+
+    .product-vendor {
+      font-size: 14px;
+      color: var(--gold-primary);
+      font-weight: 600;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .product-title {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+
+    .product-type {
+      display: inline-block;
+      padding: 6px 14px;
+      background: var(--dark-surface);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .product-price {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .price-current {
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .price-compare {
+      font-size: 22px;
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .price-save {
+      padding: 6px 12px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .product-stock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .stock-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .stock-dot.in-stock {
+      background: var(--success);
+    }
+
+    .stock-dot.low-stock {
+      background: var(--gold-primary);
+    }
+
+    .stock-dot.out-of-stock {
+      background: var(--error);
+    }
+
+    .product-description {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.8;
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Quantity Selector */
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .quantity-label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .quantity-btn {
+      width: 44px;
+      height: 44px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .quantity-btn:hover {
+      background: var(--dark-elevated);
+    }
+
+    .quantity-input {
+      width: 60px;
+      height: 44px;
+      background: transparent;
+      border: none;
+      border-left: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 16px;
+      text-align: center;
+    }
+
+    /* Actions */
+    .product-actions {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .btn-add-cart {
+      flex: 1;
+      padding: 18px 32px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-add-cart:hover {
+      background: var(--gold-dark);
+      box-shadow: 0 0 30px var(--gold-glow);
+    }
+
+    .btn-add-cart:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-buy-now {
+      padding: 18px 32px;
+      background: transparent;
+      color: var(--text-primary);
+      border: 2px solid var(--border-subtle);
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-buy-now:hover {
+      border-color: var(--text-primary);
+      background: var(--dark-surface);
+    }
+
+    /* Product Meta */
+    .product-meta {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+
+    .meta-row:last-child {
+      border-bottom: none;
+    }
+
+    .meta-label {
+      color: var(--text-muted);
+    }
+
+    .meta-value {
+      font-weight: 600;
+    }
+
+    /* Tags */
+    .product-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .tag {
+      padding: 6px 12px;
+      background: var(--dark-elevated);
+      border-radius: 100px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      background: var(--dark-surface);
+      border: 1px solid var(--success);
+      border-radius: 12px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .toast.show {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Not Found */
+    .not-found {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .not-found h2 {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+
+    .not-found p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .not-found a {
+      display: inline-block;
+      padding: 14px 28px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    <span id="toastMessage">Added to cart!</span>
+  </div>
+
+  <script src="/js/cart.js"></script>
+  <script defer src="/js/unified-nav.js?v=20260122"></script>
+  <script>
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let product = null;
+    let quantity = 1;
+    let currentImageIndex = 0;
+
+    document.addEventListener('DOMContentLoaded', loadProduct);
+
+    async function loadProduct() {
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('id');
+      const productHandle = params.get('handle');
+
+      if (!productId && !productHandle) {
+        showNotFound();
+        return;
+      }
+
+      try {
+        let query = supabase
+          .from('shopify_products')
+          .select('*');
+
+        // Look up by ID or handle
+        if (productId) {
+          query = query.eq('id', productId);
+        } else {
+          query = query.eq('handle', productHandle);
+        }
+
+        const { data, error } = await query.single();
+
+        if (error || !data) {
+          showNotFound();
+          return;
+        }
+
+        product = data;
+        document.title = `${product.name} | Surprise Granite`;
+        renderProduct();
+
+      } catch (err) {
+        console.error('Error:', err);
+        showNotFound();
+      }
+    }
+
+    function renderProduct() {
+      const images = product.images || [];
+      if (product.image_url && !images.find(img => img.url === product.image_url)) {
+        images.unshift({ url: product.image_url, alt: product.name });
+      }
+
+      const stockStatus = getStockStatus();
+      const savings = product.compare_at_price && product.compare_at_price > product.price
+        ? Math.round((1 - product.price / product.compare_at_price) * 100)
+        : 0;
+
+      document.getElementById('content').innerHTML = `
+        <nav class="breadcrumb">
+          <a href="/">Home</a>
+          <span>/</span>
+          <a href="/store/">Shop</a>
+          <span>/</span>
+          <span class="current">${product.name}</span>
+        </nav>
+
+        <div class="product-layout">
+          <div class="product-gallery">
+            <div class="main-image-container">
+              <img src="${images[0]?.url || 'https://via.placeholder.com/600x600?text=No+Image'}"
+                   alt="${product.name}"
+                   class="main-image"
+                   id="mainImage"
+                   onerror="this.src='https://via.placeholder.com/600x600?text=No+Image'">
+            </div>
+            ${images.length > 1 ? `
+              <div class="thumbnail-grid">
+                ${images.slice(0, 5).map((img, i) => `
+                  <div class="thumbnail ${i === 0 ? 'active' : ''}" onclick="setImage(${i})">
+                    <img src="${img.url}" alt="${img.alt || product.name}"
+                         onerror="this.parentElement.style.display='none'">
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="product-info">
+            ${product.vendor ? `<div class="product-vendor">${product.vendor}</div>` : ''}
+            <h1 class="product-title">${product.name}</h1>
+            ${product.product_type ? `<span class="product-type">${product.product_type}</span>` : ''}
+
+            <div class="product-price">
+              <span class="price-current">$${parseFloat(product.price || 0).toFixed(2)}</span>
+              ${product.compare_at_price && product.compare_at_price > product.price ? `
+                <span class="price-compare">$${parseFloat(product.compare_at_price).toFixed(2)}</span>
+                <span class="price-save">Save ${savings}%</span>
+              ` : ''}
+            </div>
+
+            <div class="product-stock">
+              <span class="stock-dot ${stockStatus.class}"></span>
+              <span>${stockStatus.text}</span>
+            </div>
+
+            ${product.description ? `
+              <div class="product-description">${product.description}</div>
+            ` : ''}
+
+            <div class="quantity-selector">
+              <span class="quantity-label">Quantity:</span>
+              <div class="quantity-controls">
+                <button class="quantity-btn" onclick="updateQuantity(-1)">-</button>
+                <input type="number" class="quantity-input" id="quantityInput" value="1" min="1" onchange="setQuantity(this.value)">
+                <button class="quantity-btn" onclick="updateQuantity(1)">+</button>
+              </div>
+            </div>
+
+            <div class="product-actions">
+              <button class="btn-add-cart" onclick="addToCart()" ${stockStatus.class === 'out-of-stock' ? 'disabled' : ''}>
+                ${stockStatus.class === 'out-of-stock' ? 'Out of Stock' : 'Add to Cart'}
+              </button>
+              <button class="btn-buy-now" onclick="buyNow()" ${stockStatus.class === 'out-of-stock' ? 'disabled' : ''}>
+                Buy Now
+              </button>
+            </div>
+
+            <div class="product-meta">
+              <div class="meta-row">
+                <span class="meta-label">SKU</span>
+                <span class="meta-value">${product.sku || 'N/A'}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Vendor</span>
+                <span class="meta-value">${product.vendor || 'N/A'}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Category</span>
+                <span class="meta-value">${product.product_type || 'N/A'}</span>
+              </div>
+              ${product.barcode ? `
+                <div class="meta-row">
+                  <span class="meta-label">Barcode</span>
+                  <span class="meta-value">${product.barcode}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            ${product.tags && product.tags.length > 0 ? `
+              <div class="product-tags">
+                ${product.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function getStockStatus() {
+      const qty = product.inventory_quantity;
+      if (qty === null || qty === undefined) {
+        return { text: 'In Stock', class: 'in-stock' };
+      }
+      if (qty <= 0) {
+        return { text: 'Out of Stock', class: 'out-of-stock' };
+      }
+      if (qty <= 5) {
+        return { text: `Low Stock (${qty} left)`, class: 'low-stock' };
+      }
+      return { text: 'In Stock', class: 'in-stock' };
+    }
+
+    function setImage(index) {
+      const images = product.images || [];
+      if (product.image_url && !images.find(img => img.url === product.image_url)) {
+        images.unshift({ url: product.image_url, alt: product.name });
+      }
+
+      if (images[index]) {
+        document.getElementById('mainImage').src = images[index].url;
+        document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+          thumb.classList.toggle('active', i === index);
+        });
+        currentImageIndex = index;
+      }
+    }
+
+    function updateQuantity(delta) {
+      quantity = Math.max(1, quantity + delta);
+      document.getElementById('quantityInput').value = quantity;
+    }
+
+    function setQuantity(val) {
+      quantity = Math.max(1, parseInt(val) || 1);
+      document.getElementById('quantityInput').value = quantity;
+    }
+
+    function addToCart() {
+      if (!product) return;
+
+      const item = {
+        id: product.id, // Supabase UUID for price validation
+        handle: product.handle, // For fallback price lookup
+        shopify_id: product.shopify_id,
+        name: product.name,
+        price: parseFloat(product.price) || 0,
+        image: product.image_url,
+        variant: null,
+        quantity: quantity,
+        category: 'product',
+        href: window.location.href
+      };
+
+      // Use global cart function if available
+      if (typeof window.addToCart === 'function') {
+        for (let i = 0; i < quantity; i++) {
+          window.addToCart({ ...item, quantity: 1 });
+        }
+      } else {
+        const cart = JSON.parse(localStorage.getItem('sg_cart') || '[]');
+        const existingIndex = cart.findIndex(i => i.id === item.id || i.handle === item.handle);
+
+        if (existingIndex >= 0) {
+          cart[existingIndex].quantity += quantity;
+        } else {
+          cart.push(item);
+        }
+
+        localStorage.setItem('sg_cart', JSON.stringify(cart));
+      }
+
+      showToast(`${quantity} x ${product.name} added to cart!`);
+    }
+
+    function buyNow() {
+      addToCart();
+      window.location.href = '/checkout/';
+    }
+
+    function showNotFound() {
+      document.getElementById('content').innerHTML = `
+        <div class="not-found">
+          <h2>Product Not Found</h2>
+          <p>The product you're looking for doesn't exist or has been removed.</p>
+          <a href="/store/">Browse Products</a>
+        </div>
+      `;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

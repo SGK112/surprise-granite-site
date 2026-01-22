@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Product Management | Surprise Granite Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-dark);
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .btn-secondary {
+      background: var(--dark-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--dark-elevated);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.error { color: var(--error); }
+
+    /* Search & Filters */
+    .controls-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .filter-select {
+      padding: 14px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+      min-width: 150px;
+    }
+
+    /* Filters Bar */
+    .filters-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--dark-surface);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: var(--dark-elevated);
+    }
+
+    .filter-btn.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border-color: var(--gold-primary);
+    }
+
+    .filter-count {
+      background: rgba(0,0,0,0.2);
+      padding: 2px 8px;
+      border-radius: 100px;
+      margin-left: 6px;
+      font-size: 11px;
+    }
+
+    /* Bulk Actions */
+    .bulk-actions {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--dark-surface);
+      border: 1px solid var(--gold-primary);
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+
+    .bulk-actions.show {
+      display: flex;
+    }
+
+    .bulk-count {
+      font-weight: 600;
+      color: var(--gold-primary);
+    }
+
+    /* Products Table */
+    .products-table-container {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .products-table th,
+    .products-table td {
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .products-table th {
+      background: var(--dark-elevated);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .products-table tr:hover {
+      background: var(--dark-elevated);
+    }
+
+    .products-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Product Row */
+    .product-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--gold-primary);
+    }
+
+    .product-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--dark-elevated);
+    }
+
+    .product-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .product-vendor {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .product-sku {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .product-price {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .product-stock {
+      font-weight: 600;
+    }
+
+    .product-stock.low {
+      color: var(--error);
+    }
+
+    .product-stock.ok {
+      color: var(--success);
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-badge.active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+
+    .status-badge.draft {
+      background: rgba(156, 163, 175, 0.15);
+      color: #9ca3af;
+    }
+
+    .status-badge.discontinued {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .status-badge.archived {
+      background: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+    }
+
+    /* Dropship Badge */
+    .dropship-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Actions */
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--dark-elevated);
+      color: var(--text-primary);
+    }
+
+    .action-btn.danger:hover {
+      color: var(--error);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pagination-info {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .pagination-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pagination-btn {
+      padding: 10px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 20px 24px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 60px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      z-index: 300;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    .toast.success {
+      border-color: var(--success);
+    }
+
+    .toast.error {
+      border-color: var(--error);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .products-table-container {
+        overflow-x: auto;
+      }
+
+      .products-table {
+        min-width: 900px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 16px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .controls-bar {
+        flex-direction: column;
+      }
+
+      .search-box {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Product Management</h1>
+        <p class="page-subtitle">Manage your Shopify product catalog - 4,155 products imported</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="exportProducts()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export CSV
+        </button>
+        <button class="btn btn-primary" onclick="syncFromShopify()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+          </svg>
+          Sync from Shopify
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value" id="statTotal">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active</div>
+        <div class="stat-value success" id="statActive">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Discontinued</div>
+        <div class="stat-value error" id="statDiscontinued">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Low Stock</div>
+        <div class="stat-value warning" id="statLowStock">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dropship Items</div>
+        <div class="stat-value" id="statDropship">-</div>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search products by name, SKU, vendor...">
+      </div>
+      <select class="filter-select" id="vendorFilter" onchange="applyFilters()">
+        <option value="">All Vendors</option>
+      </select>
+      <select class="filter-select" id="typeFilter" onchange="applyFilters()">
+        <option value="">All Types</option>
+      </select>
+    </div>
+
+    <!-- Status Filters -->
+    <div class="filters-bar">
+      <button class="filter-btn active" data-filter="all" onclick="filterByStatus('all')">
+        All <span class="filter-count" id="countAll">0</span>
+      </button>
+      <button class="filter-btn" data-filter="active" onclick="filterByStatus('active')">
+        Active <span class="filter-count" id="countActive">0</span>
+      </button>
+      <button class="filter-btn" data-filter="draft" onclick="filterByStatus('draft')">
+        Draft <span class="filter-count" id="countDraft">0</span>
+      </button>
+      <button class="filter-btn" data-filter="discontinued" onclick="filterByStatus('discontinued')">
+        Discontinued <span class="filter-count" id="countDiscontinued">0</span>
+      </button>
+      <button class="filter-btn" data-filter="dropship" onclick="filterByStatus('dropship')">
+        Dropship <span class="filter-count" id="countDropship">0</span>
+      </button>
+      <button class="filter-btn" data-filter="lowstock" onclick="filterByStatus('lowstock')">
+        Low Stock <span class="filter-count" id="countLowStock">0</span>
+      </button>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" id="bulkActions">
+      <span><span class="bulk-count" id="selectedCount">0</span> selected</span>
+      <button class="btn btn-sm btn-success" onclick="bulkSetStatus('active')">Set Active</button>
+      <button class="btn btn-sm btn-secondary" onclick="bulkSetStatus('draft')">Set Draft</button>
+      <button class="btn btn-sm btn-danger" onclick="bulkSetStatus('discontinued')">Discontinue</button>
+      <button class="btn btn-sm btn-secondary" onclick="bulkToggleDropship(true)">Mark Dropship</button>
+      <button class="btn btn-sm btn-secondary" onclick="clearSelection()">Clear Selection</button>
+    </div>
+
+    <!-- Products Table -->
+    <div class="products-table-container">
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th width="40"><input type="checkbox" class="product-checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+            <th width="60">Image</th>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th width="100">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody">
+          <tr>
+            <td colspan="9">
+              <div class="loading">
+                <div class="spinner"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info" id="paginationInfo">Showing 0-0 of 0 products</div>
+        <div class="pagination-buttons">
+          <button class="pagination-btn" id="prevBtn" onclick="prevPage()" disabled>Previous</button>
+          <button class="pagination-btn" id="nextBtn" onclick="nextPage()" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Product</h3>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editProductId">
+        <div class="form-group">
+          <label class="form-label">Product Name</label>
+          <input type="text" class="form-input" id="editName">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price ($)</label>
+          <input type="number" class="form-input" id="editPrice" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock Quantity</label>
+          <input type="number" class="form-input" id="editStock">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="editStatus">
+            <option value="active">Active</option>
+            <option value="draft">Draft</option>
+            <option value="discontinued">Discontinued</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            <input type="checkbox" id="editDropship" style="margin-right: 8px;">
+            Dropship Item
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supplier Name (for dropship)</label>
+          <input type="text" class="form-input" id="editSupplier">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost Price ($)</label>
+          <input type="number" class="form-input" id="editCost" step="0.01">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // State
+    let allProducts = [];
+    let filteredProducts = [];
+    let selectedProducts = new Set();
+    let currentPage = 1;
+    const pageSize = 50;
+    let currentFilter = 'all';
+    let searchTerm = '';
+    let vendorFilter = '';
+    let typeFilter = '';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      await loadProducts();
+      setupSearch();
+    }
+
+    async function loadProducts() {
+      try {
+        const { data, error } = await db
+          .from('shopify_products')
+          .select('*')
+          .order('name');
+
+        if (error) throw error;
+
+        allProducts = data || [];
+        updateStats();
+        populateFilters();
+        applyFilters();
+
+      } catch (err) {
+        console.error('Error loading products:', err);
+        showToast('Error loading products', 'error');
+      }
+    }
+
+    function updateStats() {
+      const total = allProducts.length;
+      const active = allProducts.filter(p => p.status === 'active').length;
+      const discontinued = allProducts.filter(p => p.status === 'discontinued').length;
+      const lowStock = allProducts.filter(p => p.inventory_quantity !== null && p.inventory_quantity <= 5).length;
+      const dropship = allProducts.filter(p => p.is_dropship).length;
+
+      document.getElementById('statTotal').textContent = total.toLocaleString();
+      document.getElementById('statActive').textContent = active.toLocaleString();
+      document.getElementById('statDiscontinued').textContent = discontinued.toLocaleString();
+      document.getElementById('statLowStock').textContent = lowStock.toLocaleString();
+      document.getElementById('statDropship').textContent = dropship.toLocaleString();
+
+      // Update filter counts
+      document.getElementById('countAll').textContent = total;
+      document.getElementById('countActive').textContent = active;
+      document.getElementById('countDraft').textContent = allProducts.filter(p => p.status === 'draft').length;
+      document.getElementById('countDiscontinued').textContent = discontinued;
+      document.getElementById('countDropship').textContent = dropship;
+      document.getElementById('countLowStock').textContent = lowStock;
+    }
+
+    function populateFilters() {
+      // Vendors
+      const vendors = [...new Set(allProducts.map(p => p.vendor).filter(Boolean))].sort();
+      const vendorSelect = document.getElementById('vendorFilter');
+      vendorSelect.innerHTML = '<option value="">All Vendors</option>' +
+        vendors.map(v => `<option value="${v}">${v}</option>`).join('');
+
+      // Types
+      const types = [...new Set(allProducts.map(p => p.product_type).filter(Boolean))].sort();
+      const typeSelect = document.getElementById('typeFilter');
+      typeSelect.innerHTML = '<option value="">All Types</option>' +
+        types.map(t => `<option value="${t}">${t}</option>`).join('');
+    }
+
+    function setupSearch() {
+      const searchInput = document.getElementById('searchInput');
+      let timeout;
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          searchTerm = e.target.value.toLowerCase();
+          applyFilters();
+        }, 300);
+      });
+    }
+
+    function filterByStatus(status) {
+      currentFilter = status;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === status);
+      });
+      currentPage = 1;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      vendorFilter = document.getElementById('vendorFilter').value;
+      typeFilter = document.getElementById('typeFilter').value;
+
+      filteredProducts = allProducts.filter(p => {
+        // Status filter
+        if (currentFilter === 'active' && p.status !== 'active') return false;
+        if (currentFilter === 'draft' && p.status !== 'draft') return false;
+        if (currentFilter === 'discontinued' && p.status !== 'discontinued') return false;
+        if (currentFilter === 'dropship' && !p.is_dropship) return false;
+        if (currentFilter === 'lowstock' && (p.inventory_quantity === null || p.inventory_quantity > 5)) return false;
+
+        // Vendor filter
+        if (vendorFilter && p.vendor !== vendorFilter) return false;
+
+        // Type filter
+        if (typeFilter && p.product_type !== typeFilter) return false;
+
+        // Search
+        if (searchTerm) {
+          const searchable = `${p.name} ${p.sku || ''} ${p.vendor || ''} ${p.product_type || ''}`.toLowerCase();
+          if (!searchable.includes(searchTerm)) return false;
+        }
+
+        return true;
+      });
+
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageProducts = filteredProducts.slice(start, end);
+
+      const tbody = document.getElementById('productsTableBody');
+
+      if (pageProducts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 60px;">
+              <div style="color: var(--text-muted);">No products found</div>
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = pageProducts.map(p => `
+          <tr data-id="${p.id}">
+            <td>
+              <input type="checkbox" class="product-checkbox"
+                ${selectedProducts.has(p.id) ? 'checked' : ''}
+                onchange="toggleSelect('${p.id}')">
+            </td>
+            <td>
+              <img src="${p.image_url || 'https://via.placeholder.com/50x50?text=No+Image'}"
+                   alt="" class="product-image"
+                   onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'">
+            </td>
+            <td>
+              <div class="product-name" title="${p.name}">${p.name}</div>
+              <div class="product-vendor">${p.vendor || '-'}</div>
+            </td>
+            <td><span class="product-sku">${p.sku || '-'}</span></td>
+            <td><span class="product-price">$${parseFloat(p.price || 0).toFixed(2)}</span></td>
+            <td>
+              <span class="product-stock ${p.inventory_quantity !== null && p.inventory_quantity <= 5 ? 'low' : 'ok'}">
+                ${p.inventory_quantity !== null ? p.inventory_quantity : '-'}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge ${p.status}">${p.status}</span>
+              ${p.is_dropship ? '<span class="dropship-badge">Dropship</span>' : ''}
+            </td>
+            <td>${p.product_type || '-'}</td>
+            <td>
+              <div class="actions-cell">
+                <button class="action-btn" onclick="editProduct('${p.id}')" title="Edit">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="action-btn danger" onclick="confirmDelete('${p.id}')" title="Delete">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Update pagination
+      const totalPages = Math.ceil(filteredProducts.length / pageSize);
+      document.getElementById('paginationInfo').textContent =
+        `Showing ${start + 1}-${Math.min(end, filteredProducts.length)} of ${filteredProducts.length} products`;
+      document.getElementById('prevBtn').disabled = currentPage === 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+      // Update bulk actions visibility
+      updateBulkActions();
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderProducts();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(filteredProducts.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderProducts();
+      }
+    }
+
+    // Selection
+    function toggleSelect(id) {
+      if (selectedProducts.has(id)) {
+        selectedProducts.delete(id);
+      } else {
+        selectedProducts.add(id);
+      }
+      updateBulkActions();
+    }
+
+    function toggleSelectAll() {
+      const checkbox = document.getElementById('selectAll');
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageProducts = filteredProducts.slice(start, end);
+
+      if (checkbox.checked) {
+        pageProducts.forEach(p => selectedProducts.add(p.id));
+      } else {
+        pageProducts.forEach(p => selectedProducts.delete(p.id));
+      }
+      renderProducts();
+    }
+
+    function clearSelection() {
+      selectedProducts.clear();
+      document.getElementById('selectAll').checked = false;
+      renderProducts();
+    }
+
+    function updateBulkActions() {
+      const bulkActions = document.getElementById('bulkActions');
+      const count = selectedProducts.size;
+      document.getElementById('selectedCount').textContent = count;
+      bulkActions.classList.toggle('show', count > 0);
+    }
+
+    // Bulk Actions
+    async function bulkSetStatus(status) {
+      if (selectedProducts.size === 0) return;
+
+      try {
+        const ids = Array.from(selectedProducts);
+        const { error } = await db
+          .from('shopify_products')
+          .update({ status, updated_at: new Date().toISOString() })
+          .in('id', ids);
+
+        if (error) throw error;
+
+        showToast(`${ids.length} products updated to ${status}`, 'success');
+        clearSelection();
+        await loadProducts();
+      } catch (err) {
+        console.error('Bulk update error:', err);
+        showToast('Error updating products', 'error');
+      }
+    }
+
+    async function bulkToggleDropship(isDropship) {
+      if (selectedProducts.size === 0) return;
+
+      try {
+        const ids = Array.from(selectedProducts);
+        const { error } = await db
+          .from('shopify_products')
+          .update({ is_dropship: isDropship, updated_at: new Date().toISOString() })
+          .in('id', ids);
+
+        if (error) throw error;
+
+        showToast(`${ids.length} products marked as ${isDropship ? 'dropship' : 'non-dropship'}`, 'success');
+        clearSelection();
+        await loadProducts();
+      } catch (err) {
+        console.error('Bulk update error:', err);
+        showToast('Error updating products', 'error');
+      }
+    }
+
+    // Edit Product
+    function editProduct(id) {
+      const product = allProducts.find(p => p.id === id);
+      if (!product) return;
+
+      document.getElementById('editProductId').value = id;
+      document.getElementById('editName').value = product.name || '';
+      document.getElementById('editPrice').value = product.price || '';
+      document.getElementById('editStock').value = product.inventory_quantity || '';
+      document.getElementById('editStatus').value = product.status || 'active';
+      document.getElementById('editDropship').checked = product.is_dropship || false;
+      document.getElementById('editSupplier').value = product.supplier_name || '';
+      document.getElementById('editCost').value = product.cost_price || '';
+
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('open');
+    }
+
+    async function saveProduct() {
+      const id = document.getElementById('editProductId').value;
+      const updates = {
+        name: document.getElementById('editName').value,
+        price: parseFloat(document.getElementById('editPrice').value) || 0,
+        inventory_quantity: parseInt(document.getElementById('editStock').value) || 0,
+        status: document.getElementById('editStatus').value,
+        is_dropship: document.getElementById('editDropship').checked,
+        supplier_name: document.getElementById('editSupplier').value || null,
+        cost_price: parseFloat(document.getElementById('editCost').value) || null,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        const { error } = await db
+          .from('shopify_products')
+          .update(updates)
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Product updated successfully', 'success');
+        closeEditModal();
+        await loadProducts();
+      } catch (err) {
+        console.error('Save error:', err);
+        showToast('Error saving product', 'error');
+      }
+    }
+
+    // Delete
+    async function confirmDelete(id) {
+      if (!confirm('Are you sure you want to delete this product?')) return;
+
+      try {
+        const { error } = await db
+          .from('shopify_products')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Product deleted', 'success');
+        await loadProducts();
+      } catch (err) {
+        console.error('Delete error:', err);
+        showToast('Error deleting product', 'error');
+      }
+    }
+
+    // Export
+    function exportProducts() {
+      const csv = [
+        ['Name', 'SKU', 'Vendor', 'Type', 'Price', 'Stock', 'Status', 'Dropship', 'Shopify ID'].join(','),
+        ...filteredProducts.map(p => [
+          `"${(p.name || '').replace(/"/g, '""')}"`,
+          p.sku || '',
+          `"${(p.vendor || '').replace(/"/g, '""')}"`,
+          `"${(p.product_type || '').replace(/"/g, '""')}"`,
+          p.price || 0,
+          p.inventory_quantity || 0,
+          p.status,
+          p.is_dropship ? 'Yes' : 'No',
+          p.shopify_id
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast('Products exported', 'success');
+    }
+
+    // Sync placeholder
+    function syncFromShopify() {
+      showToast('Sync feature coming soon! Use the migration script for now.', 'info');
+    }
+
+    // Toast
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
