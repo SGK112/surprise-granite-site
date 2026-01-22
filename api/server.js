@@ -2129,6 +2129,108 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         const session = event.data.object;
         logger.info('Checkout session completed:', session.id);
 
+        // Generate order number
+        const orderNumber = `SG-${session.id.slice(-8).toUpperCase()}`;
+
+        // Create order record in database
+        if (supabase) {
+          try {
+            // Retrieve line items from Stripe session
+            let lineItems = [];
+            try {
+              const sessionWithItems = await stripe.checkout.sessions.retrieve(session.id, {
+                expand: ['line_items']
+              });
+              lineItems = sessionWithItems.line_items?.data || [];
+            } catch (lineItemErr) {
+              logger.error('Error fetching line items:', lineItemErr.message);
+            }
+
+            // Transform line items for storage
+            const orderItems = lineItems.map(item => ({
+              name: item.description || item.price?.product?.name || 'Product',
+              quantity: item.quantity || 1,
+              unit_price: (item.price?.unit_amount || item.amount_total) / 100,
+              total: (item.amount_total || 0) / 100
+            }));
+
+            // Calculate totals from session
+            const total = (session.amount_total || 0) / 100;
+            const subtotal = (session.amount_subtotal || session.amount_total || 0) / 100;
+            const shipping = session.shipping_cost?.amount_total ? session.shipping_cost.amount_total / 100 : 0;
+
+            // Extract addresses
+            const shippingAddress = session.shipping_details?.address || session.customer_details?.address || {};
+            const billingAddress = session.customer_details?.address || {};
+
+            // Insert order record
+            const { data: order, error: orderErr } = await supabase
+              .from('orders')
+              .insert({
+                order_number: orderNumber,
+                status: 'confirmed',
+                customer_email: session.customer_details?.email,
+                customer_name: session.customer_details?.name || session.shipping_details?.name,
+                customer_phone: session.customer_details?.phone,
+                shipping_address_line1: shippingAddress.line1,
+                shipping_address_line2: shippingAddress.line2,
+                shipping_city: shippingAddress.city,
+                shipping_state: shippingAddress.state,
+                shipping_zip: shippingAddress.postal_code,
+                shipping_country: shippingAddress.country || 'US',
+                billing_address_line1: billingAddress.line1,
+                billing_address_line2: billingAddress.line2,
+                billing_city: billingAddress.city,
+                billing_state: billingAddress.state,
+                billing_zip: billingAddress.postal_code,
+                billing_country: billingAddress.country || 'US',
+                subtotal: subtotal,
+                shipping_amount: shipping,
+                tax_amount: 0, // Tax included in line items for Stripe Checkout
+                total: total,
+                items: orderItems,
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent,
+                stripe_customer_id: session.customer,
+                payment_status: session.payment_status === 'paid' ? 'paid' : 'unpaid',
+                paid_at: session.payment_status === 'paid' ? new Date().toISOString() : null,
+                metadata: {
+                  mode: session.mode,
+                  currency: session.currency
+                }
+              })
+              .select()
+              .single();
+
+            if (orderErr) {
+              logger.error('Error creating order record:', orderErr.message);
+            } else {
+              logger.info('Order created:', order.order_number, 'ID:', order.id);
+
+              // Insert individual order items
+              if (orderItems.length > 0) {
+                const itemsToInsert = orderItems.map(item => ({
+                  order_id: order.id,
+                  product_name: item.name,
+                  unit_price: item.unit_price,
+                  quantity: item.quantity,
+                  line_total: item.total
+                }));
+
+                const { error: itemsErr } = await supabase
+                  .from('order_items')
+                  .insert(itemsToInsert);
+
+                if (itemsErr) {
+                  logger.error('Error inserting order items:', itemsErr.message);
+                }
+              }
+            }
+          } catch (dbErr) {
+            logger.error('Database error creating order:', dbErr.message);
+          }
+        }
+
         // Send order confirmation to customer
         if (session.customer_details?.email) {
           const orderEmail = {
@@ -3533,6 +3635,91 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
   } catch (error) {
     logger.error('Checkout session error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// ============ ORDER RETRIEVAL ============
+
+// Get order details by session ID, payment intent, or order number
+app.get('/api/orders/:identifier', async (req, res) => {
+  try {
+    const { identifier } = req.params;
+
+    if (!identifier) {
+      return res.status(400).json({ error: 'Order identifier required' });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    // Try to find order by session ID, payment intent, or order number
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*')
+      .or(`stripe_session_id.eq.${identifier},stripe_payment_intent_id.eq.${identifier},order_number.eq.${identifier}`)
+      .single();
+
+    if (error || !order) {
+      // If not found in database, try to get from Stripe
+      if (identifier.startsWith('cs_')) {
+        // It's a checkout session ID
+        try {
+          const session = await stripe.checkout.sessions.retrieve(identifier, {
+            expand: ['line_items']
+          });
+
+          // Return minimal order info from Stripe session
+          return res.json({
+            order: {
+              order_number: `SG-${session.id.slice(-8).toUpperCase()}`,
+              status: 'confirmed',
+              customer_email: session.customer_details?.email,
+              customer_name: session.customer_details?.name,
+              total: session.amount_total / 100,
+              payment_status: session.payment_status,
+              items: session.line_items?.data?.map(item => ({
+                name: item.description,
+                quantity: item.quantity,
+                total: item.amount_total / 100
+              })) || [],
+              created_at: new Date(session.created * 1000).toISOString(),
+              source: 'stripe'
+            }
+          });
+        } catch (stripeErr) {
+          logger.error('Error fetching from Stripe:', stripeErr.message);
+        }
+      }
+
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Return order from database (sanitize sensitive fields)
+    res.json({
+      order: {
+        order_number: order.order_number,
+        status: order.status,
+        customer_email: order.customer_email,
+        customer_name: order.customer_name,
+        shipping_city: order.shipping_city,
+        shipping_state: order.shipping_state,
+        subtotal: order.subtotal,
+        shipping_amount: order.shipping_amount,
+        tax_amount: order.tax_amount,
+        discount_amount: order.discount_amount,
+        total: order.total,
+        items: order.items,
+        payment_status: order.payment_status,
+        paid_at: order.paid_at,
+        created_at: order.created_at,
+        source: 'database'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get order error:', error);
     return handleApiError(res, error);
   }
 });

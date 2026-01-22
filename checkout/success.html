@@ -306,43 +306,86 @@
 
   <!-- Scripts -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+    document.addEventListener('DOMContentLoaded', async function() {
       // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const sessionId = urlParams.get('session_id');
       const paymentIntent = urlParams.get('payment_intent');
       const redirectStatus = urlParams.get('redirect_status');
 
-      // Display order info
-      const orderNumber = document.getElementById('orderNumber');
-      const orderDate = document.getElementById('orderDate');
+      // Display order info elements
+      const orderNumberEl = document.getElementById('orderNumber');
+      const orderDateEl = document.getElementById('orderDate');
 
       // Check if payment was successful (for Payment Element flow)
       if (redirectStatus && redirectStatus !== 'succeeded') {
-        // Payment wasn't successful, redirect back to checkout
         window.location.href = '/checkout/?error=payment_failed';
         return;
       }
 
-      // Generate order number from payment intent or session ID
+      // Determine identifier for API lookup
+      const identifier = sessionId || paymentIntent;
+
+      // Display initial order number while loading
       if (paymentIntent) {
-        // Payment Element flow
-        orderNumber.textContent = '#SG-' + paymentIntent.slice(-8).toUpperCase();
+        orderNumberEl.textContent = '#SG-' + paymentIntent.slice(-8).toUpperCase();
       } else if (sessionId) {
-        // Legacy Checkout Session flow
-        orderNumber.textContent = '#SG-' + sessionId.slice(-8).toUpperCase();
-      } else {
-        // Fallback
-        orderNumber.textContent = '#SG-' + Math.random().toString(36).slice(-8).toUpperCase();
+        orderNumberEl.textContent = '#SG-' + sessionId.slice(-8).toUpperCase();
       }
 
-      // Display current date
+      // Display current date as fallback
       const now = new Date();
-      orderDate.textContent = now.toLocaleDateString('en-US', {
+      orderDateEl.textContent = now.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
+
+      // Fetch actual order details from API
+      if (identifier) {
+        try {
+          const response = await fetch(`${API_BASE}/api/orders/${identifier}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.order) {
+              // Update with real order data
+              orderNumberEl.textContent = '#' + data.order.order_number;
+
+              // Update date if available
+              if (data.order.created_at) {
+                const orderDate = new Date(data.order.created_at);
+                orderDateEl.textContent = orderDate.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                });
+              }
+
+              // Add order total if available
+              if (data.order.total) {
+                const detailsContainer = document.querySelector('.order-details');
+                if (detailsContainer) {
+                  // Add total row
+                  const totalRow = document.createElement('div');
+                  totalRow.className = 'detail-row';
+                  totalRow.innerHTML = `
+                    <span class="label">Total</span>
+                    <span class="value">$${parseFloat(data.order.total).toFixed(2)}</span>
+                  `;
+                  detailsContainer.appendChild(totalRow);
+                }
+              }
+
+              console.log('Order loaded:', data.order.order_number);
+            }
+          }
+        } catch (err) {
+          console.log('Could not fetch order details:', err.message);
+          // Continue with default display - not critical
+        }
+      }
 
       // Clear the cart after successful checkout
       localStorage.removeItem('sg_cart');
@@ -355,7 +398,7 @@
         window.updateUnifiedNavCartBadge();
       }
 
-      // Also dispatch event for any cart listeners
+      // Dispatch event for any cart listeners
       window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: 0 } }));
     });
   </script>
