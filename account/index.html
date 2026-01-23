@@ -29363,43 +29363,61 @@
         return;
       }
 
-      const siteUrl = 'sc-domain:surprisegranite.com'; // Or 'https://www.surprisegranite.com/'
+      // Try different URL formats - Search Console can be verified different ways
+      const siteUrls = [
+        'https://www.surprisegranite.com/',
+        'https://surprisegranite.com/',
+        'sc-domain:surprisegranite.com'
+      ];
       const range = document.getElementById('god-analytics-range')?.value || 30;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - parseInt(range));
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = new Date().toISOString().split('T')[0];
 
-      try {
-        const response = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${gaAccessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            startDate: startDateStr,
-            endDate: endDateStr,
-            dimensions: ['query'],
-            rowLimit: 20
-          })
-        });
+      let data = null;
+      let successUrl = null;
 
-        if (!response.ok) {
-          if (response.status === 403) {
-            document.getElementById('god-gsc-queries').innerHTML = `
-              <div style="padding: 40px; text-align: center;">
-                <p style="color: var(--warning); margin-bottom: 16px;">Search Console access not configured</p>
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Add your site to Search Console and verify ownership</p>
-                <a href="https://search.google.com/search-console" target="_blank" class="btn-modern secondary">Open Search Console</a>
-              </div>
-            `;
-            return;
+      // Try each URL format until one works
+      for (const siteUrl of siteUrls) {
+        try {
+          const response = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${gaAccessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              startDate: startDateStr,
+              endDate: endDateStr,
+              dimensions: ['query'],
+              rowLimit: 20
+            })
+          });
+
+          if (response.ok) {
+            data = await response.json();
+            successUrl = siteUrl;
+            console.log('Search Console connected with:', siteUrl);
+            break;
           }
-          throw new Error('Failed to fetch Search Console data');
+        } catch (e) {
+          console.log('Search Console URL failed:', siteUrl);
         }
+      }
 
-        const data = await response.json();
+      if (!data) {
+        document.getElementById('god-gsc-queries').innerHTML = `
+          <div style="padding: 40px; text-align: center;">
+            <p style="color: var(--warning); margin-bottom: 16px;">Search Console access not configured</p>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Make sure your site is verified in Search Console with the same Google account</p>
+            <a href="https://search.google.com/search-console" target="_blank" class="btn-modern secondary">Open Search Console</a>
+          </div>
+        `;
+        return;
+      }
+
+      try {
 
         // Update summary stats
         let totalClicks = 0, totalImpressions = 0, totalCtr = 0, totalPosition = 0;
