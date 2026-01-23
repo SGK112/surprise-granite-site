@@ -10359,37 +10359,140 @@
           </div>
         </section>
 
-        <!-- GOD MODE - All Users Management -->
+        <!-- GOD MODE - Customer Hub (Unified User Management) -->
         <section id="page-god-users" class="page-section">
           <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
-            <div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> User Management</h1><p class="page-subtitle">Manage all users, roles, and subscriptions</p></div>
+            <div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">👥</span> Customer Hub</h1><p class="page-subtitle">Unified view of all users, customers, and leads across all platforms</p></div>
             <div style="display: flex; gap: 12px;"><button class="btn-modern secondary" onclick="godExportUsers()">Export CSV</button><button class="btn-modern primary" onclick="godRefreshUsers()">Refresh</button></div>
           </div>
+
+          <!-- Summary Stats -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0;">
-            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-total">-</div><div class="stat-card-label">Total Users</div></div>
-            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-admins" style="color: #a855f7;">-</div><div class="stat-card-label">Admins</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-total">-</div><div class="stat-card-label">SG Users</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-shopify" style="color: #96bf48;">-</div><div class="stat-card-label">Shopify Customers</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-leads" style="color: var(--warning);">-</div><div class="stat-card-label">Leads</div></div>
             <div class="stat-card-mini"><div class="stat-card-value" id="god-users-pro" style="color: var(--accent);">-</div><div class="stat-card-label">Pro Users</div></div>
             <div class="stat-card-mini"><div class="stat-card-value" id="god-users-contractors" style="color: var(--success);">-</div><div class="stat-card-label">Contractors</div></div>
-            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-vendors" style="color: var(--warning);">-</div><div class="stat-card-label">Vendors</div></div>
-            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-homeowners">-</div><div class="stat-card-label">Homeowners</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-admins" style="color: #a855f7;">-</div><div class="stat-card-label">Admins</div></div>
           </div>
-          <div class="card" style="margin-bottom: 24px;">
-            <div class="card-body">
-              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-users-search" placeholder="Search by email, name, or ID..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchUsers()"></div>
-                <select id="god-users-role-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Roles</option><option value="admin">Admin</option><option value="pro">Pro</option><option value="contractor">Contractor</option><option value="fabricator">Fabricator</option><option value="vendor">Vendor</option><option value="distributor">Distributor</option><option value="homeowner">Homeowner</option></select>
-                <select id="god-users-sub-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Subscriptions</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="cancelled">Cancelled</option></select>
+
+          <!-- Customer Hub Tabs -->
+          <div class="tabs-modern" style="margin-bottom: 24px;">
+            <button class="tab-modern active" onclick="godShowCustomerTab('all-users')">All Users</button>
+            <button class="tab-modern" onclick="godShowCustomerTab('shopify')">Shopify Customers</button>
+            <button class="tab-modern" onclick="godShowCustomerTab('leads')">Leads</button>
+            <button class="tab-modern" onclick="godShowCustomerTab('pro')">Pro Users</button>
+            <button class="tab-modern" onclick="godShowCustomerTab('contractors')">Contractors</button>
+          </div>
+
+          <!-- All Users Tab -->
+          <div id="god-customer-tab-all-users" class="god-customer-tab">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-users-search" placeholder="Search by email, name, or ID..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchUsers()"></div>
+                  <select id="god-users-role-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Roles</option><option value="admin">Admin</option><option value="pro">Pro</option><option value="contractor">Contractor</option><option value="fabricator">Fabricator</option><option value="vendor">Vendor</option><option value="distributor">Distributor</option><option value="homeowner">Homeowner</option></select>
+                  <select id="god-users-sub-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Subscriptions</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="cancelled">Cancelled</option></select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="card">
-            <div class="card-body" style="padding: 0; overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
-                <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">User</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Role</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Subscription</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Last Active</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
-                <tbody id="god-users-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading users...</td></tr></tbody>
-              </table>
+            <div class="card">
+              <div class="card-body" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                  <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">User</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Role</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Subscription</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Last Active</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                  <tbody id="god-users-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading users...</td></tr></tbody>
+                </table>
+              </div>
+              <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-users-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 users</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godUsersPagePrev()" id="god-users-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godUsersPageNext()" id="god-users-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
             </div>
-            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-users-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 users</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godUsersPagePrev()" id="god-users-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godUsersPageNext()" id="god-users-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+          </div>
+
+          <!-- Shopify Customers Tab -->
+          <div id="god-customer-tab-shopify" class="god-customer-tab" style="display: none;">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                  <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-shopify-search" placeholder="Search Shopify customers..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchShopifyCustomers()"></div>
+                  <select id="god-shopify-filter" onchange="godFilterShopifyCustomers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Customers</option><option value="with-orders">With Orders</option><option value="no-orders">No Orders</option><option value="marketing-opted">Marketing Opted-In</option></select>
+                  <span style="padding: 8px 16px; background: #96bf48; color: #000; border-radius: 6px; font-size: 13px; font-weight: 600;">Shopify</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                  <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Customer</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Phone</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Orders</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Total Spent</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                  <tbody id="god-shopify-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading Shopify customers...</td></tr></tbody>
+                </table>
+              </div>
+              <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-shopify-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 customers</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godShopifyPagePrev()" id="god-shopify-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godShopifyPageNext()" id="god-shopify-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+            </div>
+          </div>
+
+          <!-- Leads Tab -->
+          <div id="god-customer-tab-leads" class="god-customer-tab" style="display: none;">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                  <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-leads-search" placeholder="Search leads..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchLeads()"></div>
+                  <select id="god-leads-status" onchange="godFilterLeads()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Status</option><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="converted">Converted</option><option value="lost">Lost</option></select>
+                  <select id="god-leads-source" onchange="godFilterLeads()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Sources</option><option value="website">Website</option><option value="referral">Referral</option><option value="google">Google</option><option value="facebook">Facebook</option></select>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                  <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Lead</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Phone</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Status</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Source</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                  <tbody id="god-leads-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading leads...</td></tr></tbody>
+                </table>
+              </div>
+              <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-leads-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 leads</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godLeadsPagePrev()" id="god-leads-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godLeadsPageNext()" id="god-leads-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+            </div>
+          </div>
+
+          <!-- Pro Users Tab -->
+          <div id="god-customer-tab-pro" class="god-customer-tab" style="display: none;">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                  <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-pro-search" placeholder="Search pro users..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchProUsers()"></div>
+                  <select id="god-pro-filter" onchange="godFilterProUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Pro Users</option><option value="active">Active Subscription</option><option value="cancelled">Cancelled</option><option value="trial">Trial</option></select>
+                  <span style="padding: 8px 16px; background: var(--accent); color: #000; border-radius: 6px; font-size: 13px; font-weight: 600;">PRO</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                  <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Pro User</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Plan</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Status</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Started</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Next Billing</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                  <tbody id="god-pro-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading pro users...</td></tr></tbody>
+                </table>
+              </div>
+              <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-pro-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 pro users</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godProPagePrev()" id="god-pro-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godProPageNext()" id="god-pro-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+            </div>
+          </div>
+
+          <!-- Contractors Tab -->
+          <div id="god-customer-tab-contractors" class="god-customer-tab" style="display: none;">
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                  <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-contractors-search" placeholder="Search contractors..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchContractors()"></div>
+                  <select id="god-contractors-filter" onchange="godFilterContractors()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Contractors</option><option value="verified">Verified</option><option value="pending">Pending</option><option value="active">Active Jobs</option></select>
+                  <span style="padding: 8px 16px; background: var(--success); color: #000; border-radius: 6px; font-size: 13px; font-weight: 600;">Contractor</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                  <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Contractor</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Company</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Specialty</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Status</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Jobs</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                  <tbody id="god-contractors-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading contractors...</td></tr></tbody>
+                </table>
+              </div>
+              <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-contractors-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 contractors</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godContractorsPagePrev()" id="god-contractors-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godContractorsPageNext()" id="god-contractors-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+            </div>
           </div>
         </section>
 
@@ -27837,21 +27940,28 @@
         document.getElementById('god-users-total').textContent = count || 0;
 
         // Count by role
-        const { data: allUsers } = await supabaseClient.from('sg_users').select('account_type');
+        const { data: allUsers } = await supabaseClient.from('sg_users').select('account_type, subscription_status');
         const roleCounts = { admin: 0, pro: 0, contractor: 0, vendor: 0, homeowner: 0 };
         (allUsers || []).forEach(u => {
           const type = u.account_type || 'homeowner';
           if (type.includes('admin')) roleCounts.admin++;
-          else if (type.includes('pro')) roleCounts.pro++;
           else if (type.includes('contractor') || type.includes('fabricator')) roleCounts.contractor++;
           else if (type.includes('vendor')) roleCounts.vendor++;
           else roleCounts.homeowner++;
+          // Count pro separately by subscription status
+          if (u.subscription_status === 'active' || u.subscription_status === 'trialing') roleCounts.pro++;
         });
         document.getElementById('god-users-admins').textContent = roleCounts.admin;
         document.getElementById('god-users-pro').textContent = roleCounts.pro;
         document.getElementById('god-users-contractors').textContent = roleCounts.contractor;
-        document.getElementById('god-users-vendors').textContent = roleCounts.vendor;
-        document.getElementById('god-users-homeowners').textContent = roleCounts.homeowner;
+
+        // Also fetch Shopify and Leads counts for summary
+        const [shopifyCount, leadsCount] = await Promise.all([
+          supabaseClient.from('shopify_customers').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
+          supabaseClient.from('leads').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 }))
+        ]);
+        document.getElementById('god-users-shopify').textContent = shopifyCount.count || 0;
+        document.getElementById('god-users-leads').textContent = leadsCount.count || 0;
 
         renderGodUsersTable();
         document.getElementById('god-users-count').textContent = `Showing ${data.length} of ${count} users`;
@@ -27947,6 +28057,442 @@
 
     function godUsersPagePrev() { if (godModeUsersPage > 0) { godModeUsersPage--; godRefreshUsers(); } }
     function godUsersPageNext() { godModeUsersPage++; godRefreshUsers(); }
+
+    // GOD MODE Customer Hub Tabs
+    let godShopifyPage = 0;
+    let godLeadsPage = 0;
+    let godProPage = 0;
+    let godContractorsPage = 0;
+    const godTabPageSize = 25;
+
+    function godShowCustomerTab(tabName) {
+      // Hide all customer tabs
+      document.querySelectorAll('.god-customer-tab').forEach(el => el.style.display = 'none');
+      // Show selected tab
+      const selectedTab = document.getElementById('god-customer-tab-' + tabName);
+      if (selectedTab) selectedTab.style.display = 'block';
+      // Update active tab button
+      const tabsContainer = selectedTab?.closest('section')?.querySelector('.tabs-modern');
+      if (tabsContainer) {
+        tabsContainer.querySelectorAll('.tab-modern').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = Array.from(tabsContainer.querySelectorAll('.tab-modern')).find(btn =>
+          btn.textContent.toLowerCase().includes(tabName.replace('-', ' ').split(' ')[0])
+        );
+        if (activeBtn) activeBtn.classList.add('active');
+      }
+      // Load tab data
+      switch(tabName) {
+        case 'all-users': godRefreshUsers(); break;
+        case 'shopify': godLoadShopifyCustomers(); break;
+        case 'leads': godLoadLeads(); break;
+        case 'pro': godLoadProUsers(); break;
+        case 'contractors': godLoadContractors(); break;
+      }
+    }
+
+    // Shopify Customers
+    async function godLoadShopifyCustomers() {
+      if (!isGodMode()) return;
+      try {
+        const searchTerm = document.getElementById('god-shopify-search')?.value?.toLowerCase() || '';
+        const filter = document.getElementById('god-shopify-filter')?.value || 'all';
+
+        let query = supabaseClient.from('shopify_customers').select('*', { count: 'exact' });
+
+        if (searchTerm) {
+          query = query.or(`email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
+        }
+        if (filter === 'with-orders') query = query.gt('orders_count', 0);
+        if (filter === 'no-orders') query = query.eq('orders_count', 0);
+        if (filter === 'marketing-opted') query = query.eq('accepts_marketing', true);
+
+        const { data, error, count } = await query
+          .order('created_at', { ascending: false })
+          .range(godShopifyPage * godTabPageSize, (godShopifyPage + 1) * godTabPageSize - 1);
+
+        if (error) throw error;
+
+        document.getElementById('god-users-shopify').textContent = count || 0;
+        document.getElementById('god-shopify-count').textContent = `Showing ${data?.length || 0} of ${count || 0} customers`;
+
+        const tbody = document.getElementById('god-shopify-table-body');
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No Shopify customers found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(c => `
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 12px 16px;">
+              <div style="font-weight: 500;">${escapeHtml((c.first_name || '') + ' ' + (c.last_name || ''))}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(c.email || '')}</div>
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(c.phone || '-')}</td>
+            <td style="padding: 12px 16px;"><span style="font-weight: 600; color: var(--accent);">${c.orders_count || 0}</span></td>
+            <td style="padding: 12px 16px; font-weight: 500; color: var(--success);">$${parseFloat(c.total_spent || 0).toFixed(2)}</td>
+            <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${c.created_at ? new Date(c.created_at).toLocaleDateString() : '-'}</td>
+            <td style="padding: 12px 16px; text-align: center;">
+              <button class="btn-modern secondary" onclick="godViewUnifiedProfile('${escapeHtml(c.email)}')" style="padding: 6px 12px; font-size: 12px;">Profile</button>
+            </td>
+          </tr>
+        `).join('');
+
+        document.getElementById('god-shopify-prev').disabled = godShopifyPage === 0;
+        document.getElementById('god-shopify-next').disabled = (godShopifyPage + 1) * godTabPageSize >= count;
+
+      } catch (error) {
+        console.error('Error loading Shopify customers:', error);
+        document.getElementById('god-shopify-table-body').innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--error);">Error loading customers</td></tr>';
+      }
+    }
+
+    function godSearchShopifyCustomers() { godShopifyPage = 0; godLoadShopifyCustomers(); }
+    function godFilterShopifyCustomers() { godShopifyPage = 0; godLoadShopifyCustomers(); }
+    function godShopifyPagePrev() { if (godShopifyPage > 0) { godShopifyPage--; godLoadShopifyCustomers(); } }
+    function godShopifyPageNext() { godShopifyPage++; godLoadShopifyCustomers(); }
+
+    // Leads Management
+    async function godLoadLeads() {
+      if (!isGodMode()) return;
+      try {
+        const searchTerm = document.getElementById('god-leads-search')?.value?.toLowerCase() || '';
+        const statusFilter = document.getElementById('god-leads-status')?.value || 'all';
+        const sourceFilter = document.getElementById('god-leads-source')?.value || 'all';
+
+        let query = supabaseClient.from('leads').select('*', { count: 'exact' });
+
+        if (searchTerm) {
+          query = query.or(`email.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+        }
+        if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+        if (sourceFilter !== 'all') query = query.eq('source', sourceFilter);
+
+        const { data, error, count } = await query
+          .order('created_at', { ascending: false })
+          .range(godLeadsPage * godTabPageSize, (godLeadsPage + 1) * godTabPageSize - 1);
+
+        if (error) throw error;
+
+        document.getElementById('god-users-leads').textContent = count || 0;
+        document.getElementById('god-leads-count').textContent = `Showing ${data?.length || 0} of ${count || 0} leads`;
+
+        const tbody = document.getElementById('god-leads-table-body');
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No leads found</td></tr>';
+          return;
+        }
+
+        const statusColors = {
+          'new': { bg: 'rgba(59, 130, 246, 0.2)', color: 'var(--info)' },
+          'contacted': { bg: 'rgba(249, 203, 0, 0.2)', color: 'var(--accent)' },
+          'qualified': { bg: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)' },
+          'converted': { bg: 'rgba(168, 85, 247, 0.2)', color: '#a855f7' },
+          'lost': { bg: 'rgba(239, 68, 68, 0.2)', color: 'var(--error)' }
+        };
+
+        tbody.innerHTML = data.map(l => {
+          const sc = statusColors[l.status] || statusColors['new'];
+          return `
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 12px 16px;">
+                <div style="font-weight: 500;">${escapeHtml(l.name || 'Unknown')}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(l.email || '')}</div>
+              </td>
+              <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(l.phone || '-')}</td>
+              <td style="padding: 12px 16px;"><span style="background: ${sc.bg}; color: ${sc.color}; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase;">${l.status || 'new'}</span></td>
+              <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(l.source || '-')}</td>
+              <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${l.created_at ? new Date(l.created_at).toLocaleDateString() : '-'}</td>
+              <td style="padding: 12px 16px; text-align: center;">
+                <button class="btn-modern secondary" onclick="godEditLead('${l.id}')" style="padding: 6px 12px; font-size: 12px;">Edit</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('god-leads-prev').disabled = godLeadsPage === 0;
+        document.getElementById('god-leads-next').disabled = (godLeadsPage + 1) * godTabPageSize >= count;
+
+      } catch (error) {
+        console.error('Error loading leads:', error);
+        document.getElementById('god-leads-table-body').innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--error);">Error loading leads</td></tr>';
+      }
+    }
+
+    function godSearchLeads() { godLeadsPage = 0; godLoadLeads(); }
+    function godFilterLeads() { godLeadsPage = 0; godLoadLeads(); }
+    function godLeadsPagePrev() { if (godLeadsPage > 0) { godLeadsPage--; godLoadLeads(); } }
+    function godLeadsPageNext() { godLeadsPage++; godLoadLeads(); }
+
+    async function godEditLead(leadId) {
+      const newStatus = prompt('Enter new status (new, contacted, qualified, converted, lost):');
+      if (newStatus && ['new', 'contacted', 'qualified', 'converted', 'lost'].includes(newStatus)) {
+        const { error } = await supabaseClient.from('leads').update({ status: newStatus }).eq('id', leadId);
+        if (error) showToast('Failed to update lead', 'error');
+        else { showToast('Lead status updated', 'success'); godLoadLeads(); }
+      }
+    }
+
+    // Pro Users Management
+    async function godLoadProUsers() {
+      if (!isGodMode()) return;
+      try {
+        const searchTerm = document.getElementById('god-pro-search')?.value?.toLowerCase() || '';
+        const filter = document.getElementById('god-pro-filter')?.value || 'all';
+
+        // Query sg_users with pro/premium subscription
+        let query = supabaseClient.from('sg_users').select('*', { count: 'exact' }).in('subscription_status', ['active', 'trialing', 'cancelled']);
+
+        if (searchTerm) {
+          query = query.or(`email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`);
+        }
+        if (filter === 'active') query = query.eq('subscription_status', 'active');
+        if (filter === 'cancelled') query = query.eq('subscription_status', 'cancelled');
+        if (filter === 'trial') query = query.eq('subscription_status', 'trialing');
+
+        const { data, error, count } = await query
+          .order('created_at', { ascending: false })
+          .range(godProPage * godTabPageSize, (godProPage + 1) * godTabPageSize - 1);
+
+        if (error) throw error;
+
+        document.getElementById('god-users-pro').textContent = count || 0;
+        document.getElementById('god-pro-count').textContent = `Showing ${data?.length || 0} of ${count || 0} pro users`;
+
+        const tbody = document.getElementById('god-pro-table-body');
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No pro users found</td></tr>';
+          return;
+        }
+
+        const statusColors = {
+          'active': { bg: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)' },
+          'trialing': { bg: 'rgba(59, 130, 246, 0.2)', color: 'var(--info)' },
+          'cancelled': { bg: 'rgba(239, 68, 68, 0.2)', color: 'var(--error)' }
+        };
+
+        tbody.innerHTML = data.map(u => {
+          const sc = statusColors[u.subscription_status] || statusColors['active'];
+          return `
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 12px 16px;">
+                <div style="font-weight: 500;">${escapeHtml(u.full_name || u.email)}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(u.email || '')}</div>
+              </td>
+              <td style="padding: 12px 16px;"><span style="background: var(--accent); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">PRO</span></td>
+              <td style="padding: 12px 16px;"><span style="background: ${sc.bg}; color: ${sc.color}; padding: 4px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase;">${u.subscription_status || 'active'}</span></td>
+              <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+              <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${u.subscription_end_date ? new Date(u.subscription_end_date).toLocaleDateString() : '-'}</td>
+              <td style="padding: 12px 16px; text-align: center;">
+                <button class="btn-modern secondary" onclick="godViewUnifiedProfile('${escapeHtml(u.email)}')" style="padding: 6px 12px; font-size: 12px;">Profile</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('god-pro-prev').disabled = godProPage === 0;
+        document.getElementById('god-pro-next').disabled = (godProPage + 1) * godTabPageSize >= count;
+
+      } catch (error) {
+        console.error('Error loading pro users:', error);
+        document.getElementById('god-pro-table-body').innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--error);">Error loading pro users</td></tr>';
+      }
+    }
+
+    function godSearchProUsers() { godProPage = 0; godLoadProUsers(); }
+    function godFilterProUsers() { godProPage = 0; godLoadProUsers(); }
+    function godProPagePrev() { if (godProPage > 0) { godProPage--; godLoadProUsers(); } }
+    function godProPageNext() { godProPage++; godLoadProUsers(); }
+
+    // Contractors Management
+    async function godLoadContractors() {
+      if (!isGodMode()) return;
+      try {
+        const searchTerm = document.getElementById('god-contractors-search')?.value?.toLowerCase() || '';
+        const filter = document.getElementById('god-contractors-filter')?.value || 'all';
+
+        // Query sg_users with contractor role
+        let query = supabaseClient.from('sg_users').select('*', { count: 'exact' }).eq('account_type', 'contractor');
+
+        if (searchTerm) {
+          query = query.or(`email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`);
+        }
+
+        const { data, error, count } = await query
+          .order('created_at', { ascending: false })
+          .range(godContractorsPage * godTabPageSize, (godContractorsPage + 1) * godTabPageSize - 1);
+
+        if (error) throw error;
+
+        document.getElementById('god-users-contractors').textContent = count || 0;
+        document.getElementById('god-contractors-count').textContent = `Showing ${data?.length || 0} of ${count || 0} contractors`;
+
+        const tbody = document.getElementById('god-contractors-table-body');
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No contractors found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(c => `
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 12px 16px;">
+              <div style="font-weight: 500;">${escapeHtml(c.full_name || c.email)}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(c.email || '')}</div>
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(c.company_name || '-')}</td>
+            <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(c.specialty || 'General')}</td>
+            <td style="padding: 12px 16px;"><span style="background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 4px 8px; border-radius: 4px; font-size: 11px;">Active</span></td>
+            <td style="padding: 12px 16px; font-weight: 500; color: var(--accent);">-</td>
+            <td style="padding: 12px 16px; text-align: center;">
+              <button class="btn-modern secondary" onclick="godViewUnifiedProfile('${escapeHtml(c.email)}')" style="padding: 6px 12px; font-size: 12px;">Profile</button>
+            </td>
+          </tr>
+        `).join('');
+
+        document.getElementById('god-contractors-prev').disabled = godContractorsPage === 0;
+        document.getElementById('god-contractors-next').disabled = (godContractorsPage + 1) * godTabPageSize >= count;
+
+      } catch (error) {
+        console.error('Error loading contractors:', error);
+        document.getElementById('god-contractors-table-body').innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--error);">Error loading contractors</td></tr>';
+      }
+    }
+
+    function godSearchContractors() { godContractorsPage = 0; godLoadContractors(); }
+    function godFilterContractors() { godContractorsPage = 0; godLoadContractors(); }
+    function godContractorsPagePrev() { if (godContractorsPage > 0) { godContractorsPage--; godLoadContractors(); } }
+    function godContractorsPageNext() { godContractorsPage++; godLoadContractors(); }
+
+    // Unified Customer Profile Modal
+    async function godViewUnifiedProfile(email) {
+      if (!email) return;
+
+      showToast('Loading profile...', 'info');
+
+      try {
+        // Fetch from all sources in parallel
+        const [sgUser, shopifyCustomer, shopifyOrders, leads] = await Promise.all([
+          supabaseClient.from('sg_users').select('*').eq('email', email).single().catch(() => ({ data: null })),
+          supabaseClient.from('shopify_customers').select('*').eq('email', email).single().catch(() => ({ data: null })),
+          supabaseClient.from('shopify_orders').select('*').eq('email', email).order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
+          supabaseClient.from('leads').select('*').eq('email', email).catch(() => ({ data: [] }))
+        ]);
+
+        const profile = {
+          sgUser: sgUser.data,
+          shopifyCustomer: shopifyCustomer.data,
+          shopifyOrders: shopifyOrders.data || [],
+          leads: leads.data || []
+        };
+
+        // Build modal content
+        let modalHtml = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;" onclick="this.remove()">
+            <div style="background: var(--surface-primary); border-radius: 16px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+              <div style="padding: 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h2 style="margin: 0; font-size: 20px;">Unified Customer Profile</h2>
+                  <p style="margin: 4px 0 0; color: var(--text-muted);">${escapeHtml(email)}</p>
+                </div>
+                <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 24px;">&times;</button>
+              </div>
+              <div style="padding: 24px;">
+        `;
+
+        // SG User Section
+        if (profile.sgUser) {
+          modalHtml += `
+            <div style="margin-bottom: 24px;">
+              <h3 style="margin: 0 0 12px; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <span style="background: #a855f7; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">SG USER</span>
+                Account Details
+              </h3>
+              <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Name</span><div style="font-weight: 500;">${escapeHtml(profile.sgUser.full_name || '-')}</div></div>
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Role</span><div><span style="background: rgba(168, 85, 247, 0.2); color: #a855f7; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${profile.sgUser.account_type || 'homeowner'}</span></div></div>
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Subscription</span><div style="color: ${profile.sgUser.subscription_status === 'active' ? 'var(--success)' : 'var(--text-muted)'}">${profile.sgUser.subscription_status || 'none'}</div></div>
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Created</span><div>${profile.sgUser.created_at ? new Date(profile.sgUser.created_at).toLocaleDateString() : '-'}</div></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Shopify Section
+        if (profile.shopifyCustomer) {
+          modalHtml += `
+            <div style="margin-bottom: 24px;">
+              <h3 style="margin: 0 0 12px; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <span style="background: #96bf48; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px;">SHOPIFY</span>
+                Customer Data
+              </h3>
+              <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Orders</span><div style="font-weight: 600; color: var(--accent);">${profile.shopifyCustomer.orders_count || 0}</div></div>
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Total Spent</span><div style="font-weight: 600; color: var(--success);">$${parseFloat(profile.shopifyCustomer.total_spent || 0).toFixed(2)}</div></div>
+                  <div><span style="color: var(--text-muted); font-size: 12px;">Marketing</span><div>${profile.shopifyCustomer.accepts_marketing ? '✓ Opted-in' : 'Not opted-in'}</div></div>
+                </div>
+                ${profile.shopifyOrders.length > 0 ? `
+                  <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Recent Orders</div>
+                    ${profile.shopifyOrders.slice(0, 3).map(o => `
+                      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+                        <span style="font-size: 13px;">${o.name || o.id}</span>
+                        <span style="font-weight: 500; color: var(--success);">$${parseFloat(o.total_price || 0).toFixed(2)}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        // Leads Section
+        if (profile.leads.length > 0) {
+          modalHtml += `
+            <div style="margin-bottom: 24px;">
+              <h3 style="margin: 0 0 12px; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <span style="background: var(--warning); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px;">LEADS</span>
+                Lead History (${profile.leads.length})
+              </h3>
+              <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                ${profile.leads.map(l => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div>
+                      <div style="font-size: 13px;">${l.source || 'Direct'}</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">${l.created_at ? new Date(l.created_at).toLocaleDateString() : ''}</div>
+                    </div>
+                    <span style="background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 2px 8px; border-radius: 4px; font-size: 11px;">${l.status || 'new'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        // No data found
+        if (!profile.sgUser && !profile.shopifyCustomer && profile.leads.length === 0) {
+          modalHtml += `<div style="padding: 40px; text-align: center; color: var(--text-muted);">No data found for this email</div>`;
+        }
+
+        modalHtml += `
+              </div>
+              <div style="padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn-modern secondary" onclick="this.closest('[style*=\"position: fixed\"]').remove()">Close</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Insert modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      } catch (error) {
+        console.error('Error loading unified profile:', error);
+        showToast('Failed to load profile', 'error');
+      }
+    }
 
     // GOD MODE Marketplace
     async function godRefreshMarketplace() {
