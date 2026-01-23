@@ -10658,7 +10658,7 @@
                     <div style="text-align: center;">
                       <div style="font-size: 48px; margin-bottom: 12px;">📈</div>
                       <p>Connect Google Analytics to view traffic data</p>
-                      <button class="btn-modern secondary" onclick="godConnectGA()" style="margin-top: 12px;">Connect GA4</button>
+                      <button class="btn-modern secondary" onclick="godConnectGoogleAnalytics()" style="margin-top: 12px;">Connect GA4</button>
                     </div>
                   </div>
                 </div>
@@ -27997,12 +27997,18 @@
         document.getElementById('god-users-contractors').textContent = roleCounts.contractor;
 
         // Also fetch Shopify and Leads counts for summary
-        const [shopifyCount, leadsCount] = await Promise.all([
-          supabaseClient.from('shopify_customers').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 })),
-          supabaseClient.from('leads').select('*', { count: 'exact', head: true }).catch(() => ({ count: 0 }))
-        ]);
-        document.getElementById('god-users-shopify').textContent = shopifyCount.count || 0;
-        document.getElementById('god-users-leads').textContent = leadsCount.count || 0;
+        try {
+          const { count: shopifyCount } = await supabaseClient.from('shopify_customers').select('*', { count: 'exact', head: true });
+          document.getElementById('god-users-shopify').textContent = shopifyCount || 0;
+        } catch (e) {
+          document.getElementById('god-users-shopify').textContent = '0';
+        }
+        try {
+          const { count: leadsCount } = await supabaseClient.from('leads').select('*', { count: 'exact', head: true });
+          document.getElementById('god-users-leads').textContent = leadsCount || 0;
+        } catch (e) {
+          document.getElementById('god-users-leads').textContent = '0';
+        }
 
         renderGodUsersTable();
         document.getElementById('god-users-count').textContent = `Showing ${data.length} of ${count} users`;
@@ -28410,12 +28416,16 @@
       showToast('Loading profile...', 'info');
 
       try {
-        // Fetch from all sources in parallel
+        // Fetch from all sources - handle errors gracefully
+        const safeQuery = async (query) => {
+          try { return await query; } catch (e) { return { data: null }; }
+        };
+
         const [sgUser, shopifyCustomer, shopifyOrders, leads] = await Promise.all([
-          supabaseClient.from('sg_users').select('*').eq('email', email).single().catch(() => ({ data: null })),
-          supabaseClient.from('shopify_customers').select('*').eq('email', email).single().catch(() => ({ data: null })),
-          supabaseClient.from('shopify_orders').select('*').eq('email', email).order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [] })),
-          supabaseClient.from('leads').select('*').eq('email', email).catch(() => ({ data: [] }))
+          safeQuery(supabaseClient.from('sg_users').select('*').eq('email', email).single()),
+          safeQuery(supabaseClient.from('shopify_customers').select('*').eq('email', email).single()),
+          safeQuery(supabaseClient.from('shopify_orders').select('*').eq('email', email).order('created_at', { ascending: false }).limit(5)),
+          safeQuery(supabaseClient.from('leads').select('*').eq('email', email))
         ]);
 
         const profile = {
@@ -28867,7 +28877,7 @@
         }
 
         // Get sg_users stats
-        const { count: totalUsers } = await supabase.from('sg_users').select('*', { count: 'exact', head: true });
+        const { count: totalUsers } = await supabaseClient.from('sg_users').select('*', { count: 'exact', head: true });
         const { count: activeUsers } = await supabase
           .from('sg_users')
           .select('*', { count: 'exact', head: true })
@@ -29338,7 +29348,7 @@
     async function godCheckIntegrations() {
       // Supabase check
       try {
-        const { error } = await supabase.from('sg_users').select('id').limit(1);
+        const { error } = await supabaseClient.from('sg_users').select('id').limit(1);
         document.getElementById('god-int-supabase').style.background = error ? 'var(--error)' : 'var(--success)';
       } catch {
         document.getElementById('god-int-supabase').style.background = 'var(--error)';
@@ -29357,7 +29367,7 @@
 
       // Shopify - check if products exist
       try {
-        const { count } = await supabase.from('shopify_products').select('*', { count: 'exact', head: true });
+        const { count } = await supabaseClient.from('shopify_products').select('*', { count: 'exact', head: true });
         document.getElementById('god-int-shopify').style.background = count > 0 ? 'var(--success)' : 'var(--warning)';
       } catch {
         document.getElementById('god-int-shopify').style.background = 'var(--warning)';
