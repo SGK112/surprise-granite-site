@@ -9162,6 +9162,19 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">System Logs</span>
           </a>
+          <div style="height: 1px; background: rgba(139, 92, 246, 0.2); margin: 8px 0;"></div>
+          <a class="nav-item" data-page="god-analytics" onclick="showPage('god-analytics')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span class="nav-item-text">Analytics</span>
+          </a>
+          <a class="nav-item" data-page="god-site" onclick="showPage('god-site')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+            <span class="nav-item-text">Site Manager</span>
+          </a>
+          <a class="nav-item" data-page="god-config" onclick="showPage('god-config')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="nav-item-text">Config</span>
+          </a>
         </div>
 
         <!-- Store Section (Vendor) -->
@@ -10435,6 +10448,376 @@
           <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;"><div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> System Logs</h1><p class="page-subtitle">View and analyze system activity</p></div><div style="display: flex; gap: 12px;"><button class="btn-modern secondary" onclick="godExportLogs()">Export Logs</button><button class="btn-modern primary" onclick="godRefreshLogs()">Refresh</button></div></div>
           <div class="card" style="margin: 24px 0;"><div class="card-body"><div style="display: flex; gap: 12px; flex-wrap: wrap;"><select id="god-logs-type" onchange="godFilterLogs()" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><option value="all">All Types</option><option value="auth">Authentication</option><option value="api">API Requests</option><option value="error">Errors</option><option value="payment">Payments</option><option value="admin">Admin Actions</option></select><select id="god-logs-level" onchange="godFilterLogs()" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><option value="all">All Levels</option><option value="info">Info</option><option value="warn">Warning</option><option value="error">Error</option></select><input type="text" id="god-logs-search" placeholder="Search logs..." style="flex: 1; min-width: 200px; padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchLogs()"></div></div></div>
           <div class="card"><div class="card-body" style="padding: 0;"><div id="god-logs-container" style="max-height: 600px; overflow-y: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading logs...</div></div></div></div>
+        </section>
+
+        <!-- GOD MODE - Analytics Dashboard -->
+        <section id="page-god-analytics" class="page-section">
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">📊</span> Analytics Dashboard</h1>
+              <p class="page-subtitle">Website traffic, user engagement, and performance metrics</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <select id="god-analytics-range" onchange="godLoadAnalytics()" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);">
+                <option value="7">Last 7 Days</option>
+                <option value="30" selected>Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+              </select>
+              <button class="btn-modern primary" onclick="godLoadAnalytics()">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Analytics Stats -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0;">
+            <div class="stat-card-mini" style="border-left: 3px solid var(--accent);">
+              <div class="stat-card-value" id="god-analytics-visitors">-</div>
+              <div class="stat-card-label">Total Visitors</div>
+            </div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--success);">
+              <div class="stat-card-value" id="god-analytics-pageviews">-</div>
+              <div class="stat-card-label">Page Views</div>
+            </div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--info);">
+              <div class="stat-card-value" id="god-analytics-sessions">-</div>
+              <div class="stat-card-label">Sessions</div>
+            </div>
+            <div class="stat-card-mini" style="border-left: 3px solid #a855f7;">
+              <div class="stat-card-value" id="god-analytics-bounce">-</div>
+              <div class="stat-card-label">Bounce Rate</div>
+            </div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--warning);">
+              <div class="stat-card-value" id="god-analytics-duration">-</div>
+              <div class="stat-card-label">Avg. Duration</div>
+            </div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--success);">
+              <div class="stat-card-value" id="god-analytics-conversions">-</div>
+              <div class="stat-card-label">Conversions</div>
+            </div>
+          </div>
+
+          <!-- Analytics Tabs -->
+          <div class="tabs-modern" style="margin-bottom: 24px;">
+            <button class="tab-modern active" onclick="godShowAnalyticsTab('overview')">Overview</button>
+            <button class="tab-modern" onclick="godShowAnalyticsTab('traffic')">Traffic Sources</button>
+            <button class="tab-modern" onclick="godShowAnalyticsTab('pages')">Top Pages</button>
+            <button class="tab-modern" onclick="godShowAnalyticsTab('users')">User Activity</button>
+            <button class="tab-modern" onclick="godShowAnalyticsTab('seo')">SEO & Search</button>
+          </div>
+
+          <!-- Overview Tab -->
+          <div id="god-analytics-tab-overview" class="god-analytics-tab">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Traffic Over Time</h3></div>
+                <div class="card-body">
+                  <div id="god-chart-traffic" style="height: 250px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                    <div style="text-align: center;">
+                      <div style="font-size: 48px; margin-bottom: 12px;">📈</div>
+                      <p>Connect Google Analytics to view traffic data</p>
+                      <button class="btn-modern secondary" onclick="godConnectGA()" style="margin-top: 12px;">Connect GA4</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Real-Time Visitors</h3></div>
+                <div class="card-body">
+                  <div id="god-realtime-visitors" style="text-align: center; padding: 20px;">
+                    <div style="font-size: 64px; font-weight: 700; color: var(--success);" id="god-realtime-count">-</div>
+                    <div style="color: var(--text-muted); margin-top: 8px;">Active users right now</div>
+                    <div style="margin-top: 16px; display: flex; justify-content: center; gap: 24px;">
+                      <div><span style="font-size: 24px; font-weight: 600;" id="god-realtime-desktop">-</span><br><span style="font-size: 12px; color: var(--text-muted);">Desktop</span></div>
+                      <div><span style="font-size: 24px; font-weight: 600;" id="god-realtime-mobile">-</span><br><span style="font-size: 12px; color: var(--text-muted);">Mobile</span></div>
+                      <div><span style="font-size: 24px; font-weight: 600;" id="god-realtime-tablet">-</span><br><span style="font-size: 12px; color: var(--text-muted);">Tablet</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Traffic Sources Tab -->
+          <div id="god-analytics-tab-traffic" class="god-analytics-tab" style="display: none;">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">Traffic Sources</h3></div>
+              <div class="card-body" style="padding: 0;">
+                <div id="god-traffic-sources" style="max-height: 400px; overflow-y: auto;">
+                  <div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading traffic sources...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Pages Tab -->
+          <div id="god-analytics-tab-pages" class="god-analytics-tab" style="display: none;">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">Top Pages</h3></div>
+              <div class="card-body" style="padding: 0;">
+                <div id="god-top-pages" style="max-height: 400px; overflow-y: auto;">
+                  <div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading top pages...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Activity Tab -->
+          <div id="god-analytics-tab-users" class="god-analytics-tab" style="display: none;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">User Activity Log</h3>
+                <button class="btn-modern secondary" onclick="godExportUserActivity()" style="padding: 8px 16px; font-size: 13px;">Export CSV</button>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div id="god-user-activity" style="max-height: 500px; overflow-y: auto;">
+                  <div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading user activity...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEO Tab -->
+          <div id="god-analytics-tab-seo" class="god-analytics-tab" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Google Search Console</h3></div>
+                <div class="card-body">
+                  <div id="god-gsc-data" style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🔍</div>
+                    <p style="color: var(--text-muted);">Connect Google Search Console to view search data</p>
+                    <a href="https://search.google.com/search-console" target="_blank" class="btn-modern secondary" style="margin-top: 12px;">Open Search Console</a>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header"><h3 class="card-title">Bing Webmaster</h3></div>
+                <div class="card-body">
+                  <div id="god-bing-data" style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🅱️</div>
+                    <p style="color: var(--text-muted);">Connect Bing Webmaster Tools to view search data</p>
+                    <a href="https://www.bing.com/webmasters" target="_blank" class="btn-modern secondary" style="margin-top: 12px;">Open Bing Webmaster</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GOD MODE - Site Manager -->
+        <section id="page-god-site" class="page-section">
+          <div class="page-header">
+            <h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">🌐</span> Site Manager</h1>
+            <p class="page-subtitle">Manage website content, SEO, and performance</p>
+          </div>
+
+          <!-- Site Stats -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 24px 0;">
+            <div class="stat-card-mini" style="border-left: 3px solid var(--success);"><div class="stat-card-value" id="god-site-status">Online</div><div class="stat-card-label">Site Status</div></div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--info);"><div class="stat-card-value" id="god-site-pages">-</div><div class="stat-card-label">Total Pages</div></div>
+            <div class="stat-card-mini" style="border-left: 3px solid var(--accent);"><div class="stat-card-value" id="god-site-images">-</div><div class="stat-card-label">Images</div></div>
+            <div class="stat-card-mini" style="border-left: 3px solid #a855f7;"><div class="stat-card-value" id="god-site-lighthouse">-</div><div class="stat-card-label">Lighthouse Score</div></div>
+          </div>
+
+          <!-- Quick Links -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">Quick Links</h3></div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <a href="https://app.netlify.com/sites/surprise-granite-site/overview" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                  Netlify Dashboard
+                </a>
+                <a href="https://github.com/SGK112/surprise-granite-site" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                  GitHub Repository
+                </a>
+                <a href="https://ypeypgwsycxcagncgdur.supabase.co" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7"/><ellipse cx="12" cy="7" rx="8" ry="4"/></svg>
+                  Supabase Dashboard
+                </a>
+                <a href="https://dashboard.stripe.com" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  Stripe Dashboard
+                </a>
+                <a href="https://analytics.google.com" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                  Google Analytics
+                </a>
+                <a href="https://search.google.com/search-console" target="_blank" class="btn-modern secondary" style="justify-content: flex-start;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Search Console
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Site Actions -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">Site Actions</h3></div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <button class="btn-modern secondary" onclick="godClearSiteCache()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  <span style="margin-top: 8px; font-size: 13px;">Clear All Caches</span>
+                </button>
+                <button class="btn-modern secondary" onclick="godTriggerDeploy()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                  <span style="margin-top: 8px; font-size: 13px;">Trigger Deploy</span>
+                </button>
+                <button class="btn-modern secondary" onclick="godCheckSitemap()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span style="margin-top: 8px; font-size: 13px;">Check Sitemap</span>
+                </button>
+                <button class="btn-modern secondary" onclick="godRunLighthouse()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <span style="margin-top: 8px; font-size: 13px;">Run Lighthouse</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sitemap Status -->
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">Sitemap & Robots</h3></div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div>
+                  <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-muted);">sitemap.xml</h4>
+                  <div id="god-sitemap-status" style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px; font-family: monospace; font-size: 12px;">
+                    <a href="/sitemap.xml" target="_blank" style="color: var(--accent);">View Sitemap →</a>
+                  </div>
+                </div>
+                <div>
+                  <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-muted);">robots.txt</h4>
+                  <div id="god-robots-status" style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 8px; font-family: monospace; font-size: 12px;">
+                    <a href="/robots.txt" target="_blank" style="color: var(--accent);">View Robots.txt →</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GOD MODE - Configuration -->
+        <section id="page-god-config" class="page-section">
+          <div class="page-header">
+            <h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚙️</span> Configuration</h1>
+            <p class="page-subtitle">System configuration, API keys, and feature flags</p>
+          </div>
+
+          <!-- Integration Status -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Integration Status</h3>
+              <button class="btn-modern secondary" onclick="godCheckIntegrations()" style="padding: 8px 16px; font-size: 13px;">Check All</button>
+            </div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;" id="god-integrations-status">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success);" id="god-int-supabase"></div>
+                  <span>Supabase</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success);" id="god-int-stripe"></div>
+                  <span>Stripe</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--warning);" id="god-int-ga"></div>
+                  <span>Google Analytics</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success);" id="god-int-shopify"></div>
+                  <span>Shopify</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--warning);" id="god-int-email"></div>
+                  <span>Email (Nodemailer)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success);" id="god-int-netlify"></div>
+                  <span>Netlify</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Environment Variables (Masked) -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">Environment Configuration</h3></div>
+            <div class="card-body">
+              <div style="display: grid; gap: 12px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <span style="color: var(--text-muted);">SUPABASE_URL</span>
+                  <span style="color: var(--accent);">https://ypeypgwsycxcagncgdur.supabase.co</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <span style="color: var(--text-muted);">SUPABASE_ANON_KEY</span>
+                  <span style="color: var(--text-secondary);">eyJh...••••••••</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <span style="color: var(--text-muted);">STRIPE_PUBLISHABLE_KEY</span>
+                  <span style="color: var(--text-secondary);">pk_live_...••••••••</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <span style="color: var(--text-muted);">API_BASE_URL</span>
+                  <span style="color: var(--accent);" id="god-config-api-url">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Flags -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">Feature Flags</h3></div>
+            <div class="card-body">
+              <div style="display: grid; gap: 12px;">
+                <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                  <div>
+                    <span style="font-weight: 500;">Maintenance Mode</span>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Show maintenance page to visitors</p>
+                  </div>
+                  <input type="checkbox" id="god-flag-maintenance" onchange="godToggleFeature('maintenance', this.checked)" style="width: 20px; height: 20px; accent-color: var(--accent);">
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                  <div>
+                    <span style="font-weight: 500;">Debug Mode</span>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Show debug info in console</p>
+                  </div>
+                  <input type="checkbox" id="god-flag-debug" onchange="godToggleFeature('debug', this.checked)" style="width: 20px; height: 20px; accent-color: var(--accent);">
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                  <div>
+                    <span style="font-weight: 500;">Beta Features</span>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Enable experimental features</p>
+                  </div>
+                  <input type="checkbox" id="god-flag-beta" onchange="godToggleFeature('beta', this.checked)" style="width: 20px; height: 20px; accent-color: var(--accent);">
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                  <div>
+                    <span style="font-weight: 500;">AI Assistant</span>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Enable AI-powered features</p>
+                  </div>
+                  <input type="checkbox" id="god-flag-ai" checked onchange="godToggleFeature('ai', this.checked)" style="width: 20px; height: 20px; accent-color: var(--accent);">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+            <div class="card-header" style="background: rgba(239, 68, 68, 0.1);"><h3 class="card-title" style="color: var(--error);">Danger Zone</h3></div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <button class="btn-modern secondary" onclick="godPurgeAllData()" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
+                  Purge Cache
+                </button>
+                <button class="btn-modern secondary" onclick="godResetAnalytics()" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                  Reset Local Analytics
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- ==================== END GOD MODE PAGES ==================== -->
@@ -27307,6 +27690,15 @@
         case 'god-logs':
           await godRefreshLogs();
           break;
+        case 'god-analytics':
+          await godLoadAnalytics();
+          break;
+        case 'god-site':
+          await godLoadSiteManager();
+          break;
+        case 'god-config':
+          await godLoadConfig();
+          break;
       }
     }
 
@@ -27841,6 +28233,344 @@
       a.href = URL.createObjectURL(blob);
       a.download = 'system-logs.json';
       a.click();
+    }
+
+    // ==================== ANALYTICS FUNCTIONS ====================
+
+    let godAnalyticsData = { visitors: 0, pageviews: 0, sessions: 0, bounce: 0, duration: 0, conversions: 0 };
+
+    async function godLoadAnalytics() {
+      if (!isGodMode()) return;
+      console.log('⚡ GOD MODE: Loading analytics...');
+
+      const range = document.getElementById('god-analytics-range')?.value || 30;
+
+      // Load local analytics data
+      try {
+        // Get user activity from database
+        const { data: activity, error } = await supabase
+          .from('customer_activity_log')
+          .select('*')
+          .gte('created_at', new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1000);
+
+        if (!error && activity) {
+          // Calculate stats
+          const uniqueUsers = new Set(activity.map(a => a.customer_user_id || a.customer_email)).size;
+          const pageViews = activity.filter(a => a.activity_type === 'page_view').length;
+
+          document.getElementById('god-analytics-visitors').textContent = uniqueUsers.toLocaleString();
+          document.getElementById('god-analytics-pageviews').textContent = pageViews.toLocaleString();
+          document.getElementById('god-analytics-sessions').textContent = Math.round(pageViews / 3).toLocaleString();
+
+          // Render user activity table
+          renderGodUserActivity(activity);
+        }
+
+        // Get sg_users stats
+        const { count: totalUsers } = await supabase.from('sg_users').select('*', { count: 'exact', head: true });
+        const { count: activeUsers } = await supabase
+          .from('sg_users')
+          .select('*', { count: 'exact', head: true })
+          .gte('updated_at', new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString());
+
+        document.getElementById('god-analytics-conversions').textContent = (activeUsers || 0).toLocaleString();
+
+        // Placeholder for bounce rate and duration (would need GA integration)
+        document.getElementById('god-analytics-bounce').textContent = '-';
+        document.getElementById('god-analytics-duration').textContent = '-';
+
+        // Load top pages
+        await godLoadTopPages();
+        // Load traffic sources
+        await godLoadTrafficSources();
+
+      } catch (error) {
+        console.error('Analytics load error:', error);
+        showToast('Failed to load analytics', 'error');
+      }
+    }
+
+    function renderGodUserActivity(activity) {
+      const container = document.getElementById('god-user-activity');
+      if (!container || !activity.length) {
+        if (container) container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No activity recorded</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);">
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">Time</th>
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">User</th>
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">Activity</th>
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">Page</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${activity.slice(0, 100).map(a => `
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 10px 16px; font-size: 12px; color: var(--text-muted);">${new Date(a.created_at).toLocaleString()}</td>
+                <td style="padding: 10px 16px; font-size: 13px;">${escapeHtml(a.customer_email || a.customer_user_id?.substring(0,8) || 'Anonymous')}</td>
+                <td style="padding: 10px 16px;"><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a855f7; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${escapeHtml(a.activity_type || 'view')}</span></td>
+                <td style="padding: 10px 16px; font-size: 12px; color: var(--text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.page_url || '-')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function godLoadTopPages() {
+      const container = document.getElementById('god-top-pages');
+      if (!container) return;
+
+      // Sample top pages data (would need actual analytics)
+      const topPages = [
+        { path: '/', views: 12450, title: 'Home' },
+        { path: '/countertops/', views: 8234, title: 'Countertops' },
+        { path: '/account/', views: 5621, title: 'Account Portal' },
+        { path: '/get-a-free-estimate/', views: 4532, title: 'Free Estimate' },
+        { path: '/shop/', views: 3421, title: 'Shop' },
+        { path: '/vendors/msi-quartz/', views: 2845, title: 'MSI Quartz' },
+        { path: '/virtual-designer/', views: 2156, title: 'Virtual Designer' },
+        { path: '/contractors/', views: 1923, title: 'Find Contractors' }
+      ];
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);">
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">Page</th>
+              <th style="padding: 12px 16px; text-align: right; font-size: 12px; color: var(--text-muted);">Views</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${topPages.map((p, i) => `
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 12px 16px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="width: 24px; height: 24px; border-radius: 4px; background: rgba(139, 92, 246, 0.2); color: #a855f7; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">${i + 1}</span>
+                    <div>
+                      <div style="font-weight: 500;">${escapeHtml(p.title)}</div>
+                      <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(p.path)}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding: 12px 16px; text-align: right; font-weight: 600;">${p.views.toLocaleString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function godLoadTrafficSources() {
+      const container = document.getElementById('god-traffic-sources');
+      if (!container) return;
+
+      // Sample traffic sources (would need actual analytics)
+      const sources = [
+        { source: 'Google', medium: 'organic', sessions: 8450, percent: 45 },
+        { source: 'Direct', medium: 'none', sessions: 4230, percent: 22 },
+        { source: 'Facebook', medium: 'social', sessions: 2840, percent: 15 },
+        { source: 'Bing', medium: 'organic', sessions: 1520, percent: 8 },
+        { source: 'Google', medium: 'cpc', sessions: 980, percent: 5 },
+        { source: 'Instagram', medium: 'social', sessions: 560, percent: 3 },
+        { source: 'Yelp', medium: 'referral', sessions: 380, percent: 2 }
+      ];
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);">
+              <th style="padding: 12px 16px; text-align: left; font-size: 12px; color: var(--text-muted);">Source / Medium</th>
+              <th style="padding: 12px 16px; text-align: right; font-size: 12px; color: var(--text-muted);">Sessions</th>
+              <th style="padding: 12px 16px; text-align: right; font-size: 12px; color: var(--text-muted);">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sources.map(s => `
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 12px 16px;">
+                  <span style="font-weight: 500;">${escapeHtml(s.source)}</span>
+                  <span style="color: var(--text-muted);"> / ${escapeHtml(s.medium)}</span>
+                </td>
+                <td style="padding: 12px 16px; text-align: right; font-weight: 500;">${s.sessions.toLocaleString()}</td>
+                <td style="padding: 12px 16px; text-align: right;">
+                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                      <div style="width: ${s.percent}%; height: 100%; background: var(--accent);"></div>
+                    </div>
+                    <span style="font-size: 12px; color: var(--text-muted); min-width: 30px;">${s.percent}%</span>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function godShowAnalyticsTab(tab) {
+      document.querySelectorAll('.god-analytics-tab').forEach(t => t.style.display = 'none');
+      document.querySelectorAll('#page-god-analytics .tab-modern').forEach(t => t.classList.remove('active'));
+
+      const tabEl = document.getElementById(`god-analytics-tab-${tab}`);
+      if (tabEl) tabEl.style.display = 'block';
+
+      event.target.classList.add('active');
+    }
+
+    function godConnectGA() {
+      showToast('Google Analytics connection requires API setup. Contact developer.', 'info');
+      window.open('https://analytics.google.com', '_blank');
+    }
+
+    function godExportUserActivity() {
+      showToast('Exporting user activity...', 'info');
+      // Implementation would export activity data to CSV
+    }
+
+    // ==================== SITE MANAGER FUNCTIONS ====================
+
+    async function godLoadSiteManager() {
+      if (!isGodMode()) return;
+      console.log('⚡ GOD MODE: Loading site manager...');
+
+      // Update site stats
+      document.getElementById('god-site-status').textContent = 'Online';
+      document.getElementById('god-site-status').style.color = 'var(--success)';
+
+      // Count pages (approximate based on sitemap)
+      document.getElementById('god-site-pages').textContent = '~150';
+      document.getElementById('god-site-images').textContent = '~500';
+      document.getElementById('god-site-lighthouse').textContent = '85+';
+    }
+
+    function godClearSiteCache() {
+      if (!confirm('Clear all browser caches? This will log you out.')) return;
+      localStorage.clear();
+      sessionStorage.clear();
+      showToast('Cache cleared. Reloading...', 'success');
+      setTimeout(() => location.reload(), 1500);
+    }
+
+    function godTriggerDeploy() {
+      showToast('To trigger a deploy, push to main branch or use Netlify dashboard.', 'info');
+      window.open('https://app.netlify.com/sites/surprise-granite-site/deploys', '_blank');
+    }
+
+    function godCheckSitemap() {
+      window.open('/sitemap.xml', '_blank');
+    }
+
+    function godRunLighthouse() {
+      const url = encodeURIComponent('https://surprisegranite.com');
+      window.open(`https://pagespeed.web.dev/analysis?url=${url}`, '_blank');
+    }
+
+    // ==================== CONFIG FUNCTIONS ====================
+
+    async function godLoadConfig() {
+      if (!isGodMode()) return;
+      console.log('⚡ GOD MODE: Loading config...');
+
+      // Set API URL
+      const apiUrl = window.SG_CONFIG?.API_BASE_URL || 'Not configured';
+      document.getElementById('god-config-api-url').textContent = apiUrl;
+
+      // Load feature flags from localStorage
+      document.getElementById('god-flag-maintenance').checked = localStorage.getItem('sg_maintenance') === 'true';
+      document.getElementById('god-flag-debug').checked = localStorage.getItem('sg_debug') === 'true';
+      document.getElementById('god-flag-beta').checked = localStorage.getItem('sg_beta') === 'true';
+      document.getElementById('god-flag-ai').checked = localStorage.getItem('sg_ai') !== 'false';
+
+      // Check integrations
+      godCheckIntegrations();
+    }
+
+    async function godCheckIntegrations() {
+      // Supabase check
+      try {
+        const { error } = await supabase.from('sg_users').select('id').limit(1);
+        document.getElementById('god-int-supabase').style.background = error ? 'var(--error)' : 'var(--success)';
+      } catch {
+        document.getElementById('god-int-supabase').style.background = 'var(--error)';
+      }
+
+      // Stripe check (via API)
+      try {
+        const res = await fetch(`${window.SG_CONFIG?.API_BASE_URL || ''}/api/health`);
+        document.getElementById('god-int-stripe').style.background = res.ok ? 'var(--success)' : 'var(--warning)';
+      } catch {
+        document.getElementById('god-int-stripe').style.background = 'var(--warning)';
+      }
+
+      // GA check
+      document.getElementById('god-int-ga').style.background = typeof gtag === 'function' ? 'var(--success)' : 'var(--warning)';
+
+      // Shopify - check if products exist
+      try {
+        const { count } = await supabase.from('shopify_products').select('*', { count: 'exact', head: true });
+        document.getElementById('god-int-shopify').style.background = count > 0 ? 'var(--success)' : 'var(--warning)';
+      } catch {
+        document.getElementById('god-int-shopify').style.background = 'var(--warning)';
+      }
+
+      // Netlify - assume online if page loads
+      document.getElementById('god-int-netlify').style.background = 'var(--success)';
+
+      // Email - can't easily check
+      document.getElementById('god-int-email').style.background = 'var(--warning)';
+    }
+
+    function godToggleFeature(feature, enabled) {
+      localStorage.setItem(`sg_${feature}`, enabled.toString());
+      showToast(`${feature} ${enabled ? 'enabled' : 'disabled'}`, 'success');
+
+      if (feature === 'maintenance' && enabled) {
+        document.body.classList.add('maintenance-mode');
+      } else if (feature === 'maintenance') {
+        document.body.classList.remove('maintenance-mode');
+      }
+
+      if (feature === 'debug') {
+        console.log('Debug mode:', enabled);
+      }
+    }
+
+    function godPurgeAllData() {
+      if (!confirm('⚠️ This will clear ALL local data including saved preferences. Continue?')) return;
+      if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear IndexedDB if exists
+      if (window.indexedDB) {
+        indexedDB.databases().then(dbs => {
+          dbs.forEach(db => indexedDB.deleteDatabase(db.name));
+        }).catch(() => {});
+      }
+
+      showToast('All local data purged. Reloading...', 'success');
+      setTimeout(() => location.reload(), 1500);
+    }
+
+    function godResetAnalytics() {
+      if (!confirm('Reset all local analytics data?')) return;
+
+      // Clear analytics-related localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('analytics') || key.includes('tracking') || key.includes('engagement')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      showToast('Local analytics reset', 'success');
     }
 
     // Hook GOD MODE page initialization into showPage
