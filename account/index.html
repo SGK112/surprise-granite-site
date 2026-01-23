@@ -17563,12 +17563,13 @@
           .from('customer_messages')
           .insert({
             customer_id: selectedLead.id,
-            message: message,
-            author: 'Surprise Granite',
+            sender_id: user?.id || null,
             direction: 'outbound',
             channel: 'portal',
-            user_id: user?.id || null,
-            read: true
+            message: message,
+            sent_from: user?.email || 'Surprise Granite',
+            status: 'sent',
+            created_at: new Date().toISOString()
           });
 
         if (error) throw error;
