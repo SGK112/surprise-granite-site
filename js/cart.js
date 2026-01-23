@@ -6,24 +6,27 @@
 (function() {
   'use strict';
 
-  // Security: HTML escape helper to prevent XSS
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
-  }
+  // Security: Use centralized SecurityUtils if available
+  const escapeHtml = (window.SecurityUtils && window.SecurityUtils.escapeHtml)
+    ? window.SecurityUtils.escapeHtml.bind(window.SecurityUtils)
+    : function(str) {
+        if (str === null || str === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+      };
 
-  // Security: Escape attribute values
-  function escapeAttr(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
+  const escapeAttr = (window.SecurityUtils && window.SecurityUtils.escapeAttr)
+    ? window.SecurityUtils.escapeAttr.bind(window.SecurityUtils)
+    : function(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      };
 
   // Stripe Configuration
   const STRIPE_PUBLIC_KEY = 'pk_live_51Smr3E3qDbNyHFmdPLN9iXM3rMQv6hKNtXEP5yVpZVRHBFZ5xk0jKvPy4kQMQ6yHVzXSzVBBZlP8rMGKK9TyZ7qJ00q0Y3nKpN';
@@ -41,26 +44,53 @@
   const CART_KEY = 'sg_cart';
 
   /**
-   * Get cart from localStorage
+   * Get cart from localStorage with proper error handling
    */
   function getCart() {
     try {
       const cart = localStorage.getItem(CART_KEY);
-      return cart ? JSON.parse(cart) : [];
+      if (!cart) return [];
+      const parsed = JSON.parse(cart);
+      // Validate cart structure
+      if (!Array.isArray(parsed)) {
+        console.warn('Cart data is invalid, resetting');
+        localStorage.removeItem(CART_KEY);
+        return [];
+      }
+      return parsed;
     } catch (e) {
+      console.error('Error reading cart:', e.message);
+      // Try to recover by clearing corrupted data
+      try {
+        localStorage.removeItem(CART_KEY);
+      } catch (clearErr) {
+        // localStorage may be full or unavailable
+      }
       return [];
     }
   }
 
   /**
-   * Save cart to localStorage
+   * Save cart to localStorage with error handling
    */
   function saveCart(cart) {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    } catch (e) {
+      console.error('Error saving cart:', e.message);
+      // Show user-friendly error if storage is full
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        showNotification('Storage is full. Please clear some space.', 'error');
+      } else {
+        showNotification('Could not save cart. Please try again.', 'error');
+      }
+      return false;
+    }
     updateCartBadge();
     if (window.location.pathname.includes('/cart')) {
       renderCart();
     }
+    return true;
   }
 
   /**

@@ -4,8 +4,13 @@
   <meta charset="utf-8"/>
   <title>Product Management | Surprise Granite Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- Load centralized config and auth -->
+  <script src="/js/config.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
   <style>
     :root {
       --gold-primary: #f9cb00;
@@ -838,10 +843,16 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Supabase Configuration
-    const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Use centralized Supabase client
+    const db = window._sgSupabaseClient || (function() {
+      const config = window.SG_CONFIG || {};
+      const url = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const key = config.SUPABASE_ANON_KEY || '';
+      return window.supabase.createClient(url, key);
+    })();
+
+    // Admin roles that can access this page
+    const ADMIN_ROLES = ['admin', 'super_admin', 'staff', 'owner'];
 
     // State
     let allProducts = [];
@@ -853,13 +864,97 @@
     let searchTerm = '';
     let vendorFilter = '';
     let typeFilter = '';
+    let currentUser = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
+      // Check authentication first
+      const authResult = await checkAdminAuth();
+      if (!authResult.authorized) {
+        showAccessDenied(authResult.reason);
+        return;
+      }
+      currentUser = authResult.user;
       await loadProducts();
       setupSearch();
+    }
+
+    // Authentication check
+    async function checkAdminAuth() {
+      try {
+        // Wait for auth to initialize
+        if (window.SgAuth) {
+          await new Promise(resolve => {
+            if (window.SgAuth.isInitialized?.()) {
+              resolve();
+            } else {
+              window.SgAuth.onAuthChange?.((event) => {
+                if (event === 'INITIALIZED' || event === 'SIGNED_IN') resolve();
+              });
+              // Timeout after 3 seconds
+              setTimeout(resolve, 3000);
+            }
+          });
+        }
+
+        // Check if user is logged in
+        const user = window.SgAuth?.getUser?.();
+        if (!user) {
+          return { authorized: false, reason: 'not_logged_in' };
+        }
+
+        // Get user profile to check role
+        const profile = await window.SgAuth?.getProfile?.();
+        const userRole = profile?.role || profile?.user_role || 'user';
+
+        // Check if user has admin role
+        if (!ADMIN_ROLES.includes(userRole)) {
+          console.warn('Access denied - user role:', userRole);
+          return { authorized: false, reason: 'insufficient_permissions', role: userRole };
+        }
+
+        // Log admin access for audit trail
+        console.log('Admin access granted:', user.email, 'Role:', userRole);
+
+        return { authorized: true, user, profile, role: userRole };
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        return { authorized: false, reason: 'auth_error', error: err.message };
+      }
+    }
+
+    // Show access denied screen
+    function showAccessDenied(reason) {
+      const container = document.querySelector('.container');
+      if (!container) return;
+
+      let message = '';
+      let actionHtml = '';
+
+      switch (reason) {
+        case 'not_logged_in':
+          message = 'You must be logged in to access the admin panel.';
+          actionHtml = `<a href="/account/?redirect=${encodeURIComponent(window.location.pathname)}" class="btn btn-primary">Sign In</a>`;
+          break;
+        case 'insufficient_permissions':
+          message = 'You do not have permission to access this page. Admin access required.';
+          actionHtml = `<a href="/" class="btn btn-secondary">Return to Home</a>`;
+          break;
+        default:
+          message = 'Authentication error. Please try again.';
+          actionHtml = `<a href="/account/" class="btn btn-primary">Sign In</a>`;
+      }
+
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+          <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
+          <h1 style="font-size: 28px; margin-bottom: 16px; color: var(--error, #ef4444);">Access Denied</h1>
+          <p style="color: var(--text-muted); margin-bottom: 32px; max-width: 400px;">${message}</p>
+          ${actionHtml}
+        </div>
+      `;
     }
 
     async function loadProducts() {
@@ -1162,14 +1257,69 @@
 
     async function saveProduct() {
       const id = document.getElementById('editProductId').value;
+
+      // Input validation
+      const nameInput = document.getElementById('editName').value.trim();
+      const priceInput = document.getElementById('editPrice').value;
+      const stockInput = document.getElementById('editStock').value;
+      const statusInput = document.getElementById('editStatus').value;
+      const supplierInput = document.getElementById('editSupplier').value.trim();
+      const costInput = document.getElementById('editCost').value;
+
+      // Validate required fields
+      if (!nameInput) {
+        showToast('Product name is required', 'error');
+        document.getElementById('editName').focus();
+        return;
+      }
+
+      if (nameInput.length > 255) {
+        showToast('Product name must be 255 characters or less', 'error');
+        return;
+      }
+
+      // Validate price
+      const price = parseFloat(priceInput);
+      if (isNaN(price) || price < 0) {
+        showToast('Price must be a valid positive number', 'error');
+        document.getElementById('editPrice').focus();
+        return;
+      }
+
+      // Validate stock
+      const stock = parseInt(stockInput);
+      if (isNaN(stock) || stock < 0) {
+        showToast('Stock must be a valid non-negative integer', 'error');
+        document.getElementById('editStock').focus();
+        return;
+      }
+
+      // Validate status against allowed values
+      const allowedStatuses = ['active', 'draft', 'discontinued', 'archived'];
+      if (!allowedStatuses.includes(statusInput)) {
+        showToast('Invalid status value', 'error');
+        return;
+      }
+
+      // Validate cost price if provided
+      let costPrice = null;
+      if (costInput && costInput.trim() !== '') {
+        costPrice = parseFloat(costInput);
+        if (isNaN(costPrice) || costPrice < 0) {
+          showToast('Cost price must be a valid positive number', 'error');
+          document.getElementById('editCost').focus();
+          return;
+        }
+      }
+
       const updates = {
-        name: document.getElementById('editName').value,
-        price: parseFloat(document.getElementById('editPrice').value) || 0,
-        inventory_quantity: parseInt(document.getElementById('editStock').value) || 0,
-        status: document.getElementById('editStatus').value,
+        name: nameInput,
+        price: price,
+        inventory_quantity: stock,
+        status: statusInput,
         is_dropship: document.getElementById('editDropship').checked,
-        supplier_name: document.getElementById('editSupplier').value || null,
-        cost_price: parseFloat(document.getElementById('editCost').value) || null,
+        supplier_name: supplierInput || null,
+        cost_price: costPrice,
         updated_at: new Date().toISOString()
       };
 
@@ -1186,7 +1336,7 @@
         await loadProducts();
       } catch (err) {
         console.error('Save error:', err);
-        showToast('Error saving product', 'error');
+        showToast('Error saving product: ' + (err.message || 'Unknown error'), 'error');
       }
     }
 

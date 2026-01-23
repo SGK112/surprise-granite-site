@@ -5,11 +5,13 @@
 
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const logger = require('../utils/logger');
 const { handleApiError, isValidEmail, sanitizeString } = require('../utils/security');
 const { asyncHandler } = require('../middleware/errorHandler');
 const emailService = require('../services/emailService');
 const { publicRateLimiter } = require('../middleware/rateLimiter');
+const { authenticateJWT } = require('../lib/auth/middleware');
 
 // Rate limiter for public portal access
 const portalAccessLimiter = publicRateLimiter({
@@ -17,6 +19,70 @@ const portalAccessLimiter = publicRateLimiter({
   windowMs: 60000,
   message: 'Too many portal requests. Please wait a moment.'
 });
+
+// Stricter rate limiter for PIN attempts (prevent brute force)
+const pinAttemptLimiter = publicRateLimiter({
+  maxRequests: 5,
+  windowMs: 300000, // 5 minutes
+  message: 'Too many PIN attempts. Please wait 5 minutes before trying again.'
+});
+
+// In-memory PIN attempt tracking (for additional protection)
+const pinAttempts = new Map();
+
+/**
+ * Hash a PIN for secure storage/comparison
+ */
+function hashPin(pin, salt = null) {
+  if (!pin) return null;
+  const useSalt = salt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(pin.toString(), useSalt, 10000, 32, 'sha256').toString('hex');
+  return { hash, salt: useSalt };
+}
+
+/**
+ * Verify a PIN against a stored hash
+ */
+function verifyPin(pin, storedHash, salt) {
+  if (!pin || !storedHash || !salt) return false;
+  const { hash } = hashPin(pin, salt);
+  return hash === storedHash;
+}
+
+/**
+ * Check if token is locked due to too many PIN attempts
+ */
+function isTokenLocked(tokenId) {
+  const attempts = pinAttempts.get(tokenId);
+  if (!attempts) return false;
+  // Lock for 15 minutes after 5 failed attempts
+  if (attempts.count >= 5 && Date.now() - attempts.lastAttempt < 15 * 60 * 1000) {
+    return true;
+  }
+  // Reset if lockout period passed
+  if (Date.now() - attempts.lastAttempt >= 15 * 60 * 1000) {
+    pinAttempts.delete(tokenId);
+  }
+  return false;
+}
+
+/**
+ * Record a failed PIN attempt
+ */
+function recordFailedPinAttempt(tokenId) {
+  const attempts = pinAttempts.get(tokenId) || { count: 0, lastAttempt: 0 };
+  attempts.count++;
+  attempts.lastAttempt = Date.now();
+  pinAttempts.set(tokenId, attempts);
+  return attempts.count;
+}
+
+/**
+ * Clear PIN attempts on successful auth
+ */
+function clearPinAttempts(tokenId) {
+  pinAttempts.delete(tokenId);
+}
 
 /**
  * Validate portal token and get customer data
@@ -53,9 +119,36 @@ router.post('/access', portalAccessLimiter, asyncHandler(async (req, res) => {
     return res.status(410).json({ error: 'This portal link has expired' });
   }
 
+  // Check if token is locked due to too many failed PIN attempts
+  if (isTokenLocked(tokenRecord.id)) {
+    logger.warn('Portal access blocked - too many PIN attempts', { tokenId: tokenRecord.id });
+    return res.status(429).json({
+      error: 'Too many failed PIN attempts. Please wait 15 minutes.',
+      locked: true
+    });
+  }
+
   // Check PIN if required
-  if (tokenRecord.pin_code && tokenRecord.pin_code !== pin) {
-    return res.status(401).json({ error: 'Invalid PIN', requires_pin: true });
+  if (tokenRecord.pin_code) {
+    // Support both legacy plain text and new hashed PINs
+    const pinValid = tokenRecord.pin_salt
+      ? verifyPin(pin, tokenRecord.pin_code, tokenRecord.pin_salt)
+      : tokenRecord.pin_code === pin;
+
+    if (!pinValid) {
+      const attemptCount = recordFailedPinAttempt(tokenRecord.id);
+      const remainingAttempts = Math.max(0, 5 - attemptCount);
+      logger.warn('Invalid PIN attempt', { tokenId: tokenRecord.id, attemptCount });
+      return res.status(401).json({
+        error: remainingAttempts > 0
+          ? `Invalid PIN. ${remainingAttempts} attempts remaining.`
+          : 'Invalid PIN. Account locked for 15 minutes.',
+        requires_pin: true,
+        attempts_remaining: remainingAttempts
+      });
+    }
+    // Clear attempts on successful PIN entry
+    clearPinAttempts(tokenRecord.id);
   }
 
   // Update access tracking
@@ -576,16 +669,16 @@ router.post('/activity', portalAccessLimiter, asyncHandler(async (req, res) => {
 /**
  * Create portal token for a lead/customer
  * POST /api/portal/tokens
- * Requires authentication
+ * Requires JWT authentication
  */
-router.post('/tokens', asyncHandler(async (req, res) => {
+router.post('/tokens', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  // Get auth user from header (simplified - in production use JWT middleware)
-  const userId = req.headers['x-user-id'];
+  // User is authenticated via JWT middleware
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -596,6 +689,15 @@ router.post('/tokens', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Lead ID or customer ID required' });
   }
 
+  // Hash the PIN if provided for secure storage
+  let pinHash = null;
+  let pinSalt = null;
+  if (pin_code) {
+    const hashed = hashPin(pin_code);
+    pinHash = hashed.hash;
+    pinSalt = hashed.salt;
+  }
+
   // Build token data
   const tokenData = {
     lead_id: lead_id || null,
@@ -603,7 +705,8 @@ router.post('/tokens', asyncHandler(async (req, res) => {
     owner_id: userId,
     email,
     phone,
-    pin_code: pin_code || null,
+    pin_code: pinHash,
+    pin_salt: pinSalt,
     expires_at: expires_days ? new Date(Date.now() + expires_days * 24 * 60 * 60 * 1000).toISOString() : null,
     permissions: permissions || {
       view_project: true,
@@ -644,14 +747,15 @@ router.post('/tokens', asyncHandler(async (req, res) => {
 /**
  * Send portal invite email
  * POST /api/portal/tokens/:id/send
+ * Requires JWT authentication
  */
-router.post('/tokens/:id/send', asyncHandler(async (req, res) => {
+router.post('/tokens/:id/send', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const userId = req.headers['x-user-id'];
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -731,14 +835,15 @@ router.post('/tokens/:id/send', asyncHandler(async (req, res) => {
 /**
  * Get tokens for current user
  * GET /api/portal/tokens
+ * Requires JWT authentication
  */
-router.get('/tokens', asyncHandler(async (req, res) => {
+router.get('/tokens', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const userId = req.headers['x-user-id'];
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -763,14 +868,15 @@ router.get('/tokens', asyncHandler(async (req, res) => {
 /**
  * Deactivate a portal token
  * DELETE /api/portal/tokens/:id
+ * Requires JWT authentication
  */
-router.delete('/tokens/:id', asyncHandler(async (req, res) => {
+router.delete('/tokens/:id', authenticateJWT, asyncHandler(async (req, res) => {
   const supabase = req.app.get('supabase');
   if (!supabase) {
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  const userId = req.headers['x-user-id'];
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ error: 'Authentication required' });
   }

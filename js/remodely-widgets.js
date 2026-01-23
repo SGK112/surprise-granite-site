@@ -17,7 +17,7 @@
     address: 'Serving the Greater Phoenix Area - We come to you!',
     theme: 'dark',
     apiEndpoint: 'https://api.remodely.ai',
-    supabaseUrl: 'https://ypeypgwsycxcagncgdur.supabase.co',
+    supabaseUrl: (window.SG_CONFIG || {}).SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
 
     // Service areas
     serviceAreas: [

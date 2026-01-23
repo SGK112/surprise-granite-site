@@ -6,24 +6,27 @@
 (function() {
   'use strict';
 
-  // Security: HTML escape helper to prevent XSS
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
-  }
+  // Security: Use centralized SecurityUtils if available
+  const escapeHtml = (window.SecurityUtils && window.SecurityUtils.escapeHtml)
+    ? window.SecurityUtils.escapeHtml.bind(window.SecurityUtils)
+    : function(str) {
+        if (str === null || str === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+      };
 
-  // Security: Escape attribute values
-  function escapeAttr(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
+  const escapeAttr = (window.SecurityUtils && window.SecurityUtils.escapeAttr)
+    ? window.SecurityUtils.escapeAttr.bind(window.SecurityUtils)
+    : function(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      };
 
   // Configuration - use centralized config if available
   const STRIPE_PUBLIC_KEY = (typeof SG_CONFIG !== 'undefined' && SG_CONFIG.STRIPE_PUBLIC_KEY)
@@ -36,13 +39,20 @@
   let stripe;
 
   /**
-   * Get cart from localStorage
+   * Get cart from localStorage with error handling
    */
   function getCart() {
     try {
       const cart = localStorage.getItem(CART_KEY);
-      return cart ? JSON.parse(cart) : [];
+      if (!cart) return [];
+      const parsed = JSON.parse(cart);
+      if (!Array.isArray(parsed)) {
+        console.warn('Invalid cart data, returning empty');
+        return [];
+      }
+      return parsed;
     } catch (e) {
+      console.error('Error reading cart:', e.message);
       return [];
     }
   }
@@ -76,16 +86,20 @@
       shipping = 0; // Free shipping over $500
     }
 
-    // Check for promo
-    const promoData = localStorage.getItem('sg_promo');
+    // Check for promo with error handling
     let discount = 0;
-    if (promoData) {
-      const promo = JSON.parse(promoData);
-      if (promo.type === 'percent') {
-        discount = subtotal * promo.discount;
-      } else if (promo.type === 'shipping') {
-        shipping = 0;
+    try {
+      const promoData = localStorage.getItem('sg_promo');
+      if (promoData) {
+        const promo = JSON.parse(promoData);
+        if (promo && promo.type === 'percent' && typeof promo.discount === 'number') {
+          discount = subtotal * promo.discount;
+        } else if (promo && promo.type === 'shipping') {
+          shipping = 0;
+        }
       }
+    } catch (e) {
+      console.warn('Error parsing promo data:', e.message);
     }
 
     const total = subtotal + tax + shipping - discount;

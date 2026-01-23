@@ -257,13 +257,15 @@
   }
 
   /**
-   * Escape HTML to prevent XSS
+   * Escape HTML to prevent XSS - use centralized SecurityUtils if available
    */
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+  const escapeHtml = (window.SecurityUtils && window.SecurityUtils.escapeHtml)
+    ? window.SecurityUtils.escapeHtml.bind(window.SecurityUtils)
+    : function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      };
 
   /**
    * Get current referral data (for other scripts)

@@ -235,6 +235,29 @@
       if (SG_CONFIG.DEBUG) {
         console.log('[SG]', ...args);
       }
+    },
+
+    /**
+     * Log warning messages
+     */
+    warn: function(...args) {
+      console.warn('[SG]', ...args);
+    },
+
+    /**
+     * Log error messages (always logged)
+     */
+    error: function(...args) {
+      console.error('[SG]', ...args);
+    },
+
+    /**
+     * Log info messages (only in development)
+     */
+    info: function(...args) {
+      if (SG_CONFIG.DEBUG) {
+        console.info('[SG]', ...args);
+      }
     }
   };
 

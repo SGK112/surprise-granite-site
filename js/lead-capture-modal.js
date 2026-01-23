@@ -8,11 +8,12 @@
 (function() {
   'use strict';
 
-  // Configuration
+  // Configuration - use centralized config
+  const sgConfig = window.SG_CONFIG || {};
   const CONFIG = {
-    apiUrl: 'https://surprise-granite-email-api.onrender.com',
-    supabaseUrl: 'https://ypeypgwsycxcagncgdur.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+    apiUrl: sgConfig.API_URL || 'https://surprise-granite-email-api.onrender.com',
+    supabaseUrl: sgConfig.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
+    supabaseKey: sgConfig.SUPABASE_ANON_KEY || '',
     maxImages: 6,
     phone: '(602) 833-3189'
   };

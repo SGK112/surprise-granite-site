@@ -1080,15 +1080,15 @@
         }
 
         container.innerHTML = estimates.map(est => `
-          <div class="action-item" onclick="viewEstimate('${est.id}')">
+          <div class="action-item" onclick="viewEstimate('${escapeHtml(est.id)}')">
             <div class="action-icon gold">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
             <div class="action-details">
-              <div class="action-title">Estimate #${est.estimate_number || est.id.slice(0, 8)}</div>
+              <div class="action-title">Estimate #${escapeHtml(est.estimate_number || est.id.slice(0, 8))}</div>
               <div class="action-meta">$${(est.total || 0).toLocaleString()} - ${new Date(est.created_at).toLocaleDateString()}</div>
             </div>
-            <span class="action-badge badge-${est.status || 'pending'}">${est.status || 'Pending'}</span>
+            <span class="action-badge badge-${escapeHtml(est.status || 'pending')}">${escapeHtml(est.status || 'Pending')}</span>
           </div>
         `).join('');
       } catch (err) {
@@ -1115,12 +1115,12 @@
         }
 
         container.innerHTML = invoices.map(inv => `
-          <div class="action-item" onclick="viewInvoice('${inv.id}')">
+          <div class="action-item" onclick="viewInvoice('${escapeHtml(inv.id)}')">
             <div class="action-icon ${inv.status === 'paid' ? 'green' : 'orange'}">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div class="action-details">
-              <div class="action-title">Invoice #${inv.invoice_number || inv.id.slice(0, 8)}</div>
+              <div class="action-title">Invoice #${escapeHtml(inv.invoice_number || inv.id.slice(0, 8))}</div>
               <div class="action-meta">$${(inv.amount || 0).toLocaleString()}</div>
             </div>
             <span class="action-badge badge-${inv.status === 'paid' ? 'paid' : 'due'}">${inv.status === 'paid' ? 'Paid' : 'Pay Now'}</span>

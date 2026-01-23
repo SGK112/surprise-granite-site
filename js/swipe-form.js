@@ -6,10 +6,11 @@
 (function() {
   'use strict';
 
-  // Configuration
-  const API_URL = 'https://surprise-granite-email-api.onrender.com';
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Configuration - use centralized config
+  const config = window.SG_CONFIG || {};
+  const API_URL = config.API_URL || 'https://surprise-granite-email-api.onrender.com';
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_KEY = config.SUPABASE_ANON_KEY || '';
 
   // State
   let currentStep = 0;

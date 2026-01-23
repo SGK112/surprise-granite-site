@@ -2077,11 +2077,15 @@ function getInvoiceTemplate(templateName, invoice, items, customerName) {
   return template(invoice, items, customerName);
 }
 
-// CORS Middleware - allow all dev origins in both modes for flexibility
-const corsOrigins = [
+// CORS Middleware - environment-aware origins
+const productionOrigins = [
   'https://www.surprisegranite.com',
   'https://surprisegranite.com',
-  'https://surprise-granite-site.onrender.com',
+  'https://surprise-granite-site.onrender.com'
+];
+
+const developmentOrigins = [
+  ...productionOrigins,
   'http://localhost:3000',
   'http://localhost:3333',
   'http://localhost:8080',
@@ -2091,6 +2095,10 @@ const corsOrigins = [
   'http://127.0.0.1:5500',
   'http://127.0.0.1:8080'
 ];
+
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? productionOrigins
+  : developmentOrigins;
 
 app.use(cors({
   origin: corsOrigins,
@@ -11341,12 +11349,59 @@ app.get('/api/projects/:id/activities', async (req, res) => {
 // ============ DESIGN SHARE COMMENTS ============
 // Unified communication for design share comments
 
-app.post('/api/design-comments', async (req, res) => {
+// Rate limiter for comment posting (10 per minute)
+const commentRateLimiter = publicRateLimiter({
+  maxRequests: 10,
+  windowMs: 60000,
+  message: 'Too many comments. Please wait before posting again.'
+});
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Escape HTML for email content
+function escapeHtmlForEmail(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+app.post('/api/design-comments', commentRateLimiter, async (req, res) => {
   try {
     const { lead_id, share_id, design_id, message, author, direction = 'inbound' } = req.body;
 
+    // Input validation
     if (!lead_id || !message) {
       return res.status(400).json({ error: 'lead_id and message are required' });
+    }
+
+    if (!UUID_REGEX.test(lead_id)) {
+      return res.status(400).json({ error: 'Invalid lead_id format' });
+    }
+
+    if (share_id && !UUID_REGEX.test(share_id)) {
+      return res.status(400).json({ error: 'Invalid share_id format' });
+    }
+
+    // Sanitize message (max 5000 chars)
+    const sanitizedMessage = String(message).slice(0, 5000);
+    const sanitizedAuthor = author ? String(author).slice(0, 100) : 'Customer';
+
+    // For inbound comments, validate that share_id is linked to lead_id
+    if (direction === 'inbound' && share_id) {
+      const { data: share } = await supabase
+        .from('room_design_shares')
+        .select('lead_id')
+        .eq('id', share_id)
+        .single();
+
+      if (!share || share.lead_id !== lead_id) {
+        return res.status(403).json({ error: 'Invalid share access' });
+      }
     }
 
     // Save comment to customer_messages table
@@ -11356,13 +11411,13 @@ app.post('/api/design-comments', async (req, res) => {
         customer_id: lead_id,
         direction: direction,
         channel: 'design_share',
-        message: message,
-        sent_from: author || 'Customer',
+        message: sanitizedMessage,
+        sent_from: sanitizedAuthor,
         status: 'sent',
         metadata: {
-          share_id: share_id,
-          design_id: design_id,
-          author: author
+          share_id: share_id || null,
+          design_id: design_id || null,
+          author: sanitizedAuthor
         }
       })
       .select()
@@ -11420,25 +11475,26 @@ app.post('/api/design-comments', async (req, res) => {
           }
         });
 
-        const projectName = design?.project_name || 'Design Project';
-        const customerName = lead.full_name || 'A customer';
+        const projectName = escapeHtmlForEmail(design?.project_name || 'Design Project');
+        const customerName = escapeHtmlForEmail(lead.full_name || 'A customer');
+        const escapedMessage = escapeHtmlForEmail(sanitizedMessage);
 
         await transporter.sendMail({
           from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
           to: ownerEmail,
-          subject: `💬 New Comment from ${customerName} on ${projectName}`,
+          subject: `New Comment from ${customerName} on ${projectName}`,
           html: `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5;">
   <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
     <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px; text-align: center;">
-      <h1 style="color: #f9a825; margin: 0; font-size: 20px;">💬 New Comment</h1>
+      <h1 style="color: #f9a825; margin: 0; font-size: 20px;">New Comment</h1>
     </div>
     <div style="padding: 25px;">
       <p style="margin: 0 0 15px; color: #333;"><strong>${customerName}</strong> commented on <strong>${projectName}</strong>:</p>
       <div style="background: #f8f9fa; border-left: 4px solid #f9a825; padding: 15px; margin: 15px 0; border-radius: 4px;">
-        <p style="margin: 0; color: #333; font-style: italic;">"${message}"</p>
+        <p style="margin: 0; color: #333; font-style: italic;">"${escapedMessage}"</p>
       </div>
       <p style="margin: 15px 0 0; color: #666; font-size: 14px;">Reply directly in the account dashboard to respond.</p>
       <a href="https://www.surprisegranite.com/account/#/customers" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #f9a825; color: #1a1a2e; text-decoration: none; border-radius: 8px; font-weight: 600;">View in Dashboard</a>
@@ -11502,15 +11558,40 @@ app.get('/api/design-comments/:share_id', async (req, res) => {
   }
 });
 
-// Staff reply to design comment
-app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
+// Staff reply to design comment (requires authentication)
+app.post('/api/design-comments/:lead_id/reply', commentRateLimiter, async (req, res) => {
   try {
     const { lead_id } = req.params;
     const { message, share_id, design_id, author = 'Surprise Granite' } = req.body;
     const user_id = req.headers['x-user-id'];
 
+    // Require user ID for staff replies
+    if (!user_id) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Validate lead_id format
+    if (!UUID_REGEX.test(lead_id)) {
+      return res.status(400).json({ error: 'Invalid lead_id format' });
+    }
+
+    // Sanitize inputs
+    const sanitizedMessage = String(message).slice(0, 5000);
+    const sanitizedAuthor = String(author).slice(0, 100);
+
+    // Verify user has access to this lead (check ownership)
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('owner_id, full_name, email')
+      .eq('id', lead_id)
+      .single();
+
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
     }
 
     // Save staff reply to customer_messages
@@ -11521,13 +11602,13 @@ app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
         sender_id: user_id,
         direction: 'outbound',
         channel: 'design_share',
-        message: message,
-        sent_from: author,
+        message: sanitizedMessage,
+        sent_from: sanitizedAuthor,
         status: 'sent',
         metadata: {
-          share_id: share_id,
-          design_id: design_id,
-          author: author,
+          share_id: share_id || null,
+          design_id: design_id || null,
+          author: sanitizedAuthor,
           staff_id: user_id
         }
       })
@@ -11556,6 +11637,10 @@ app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
           }
         });
 
+        const escapedName = escapeHtmlForEmail(lead.full_name?.split(' ')[0] || 'there');
+        const escapedAuthor = escapeHtmlForEmail(sanitizedAuthor);
+        const escapedMessage = escapeHtmlForEmail(sanitizedMessage);
+
         await transporter.sendMail({
           from: `"Surprise Granite" <${process.env.SMTP_USER || 'notifications@surprisegranite.com'}>`,
           to: lead.email,
@@ -11569,10 +11654,10 @@ app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
       <h1 style="color: #f9a825; margin: 0; font-size: 20px;">New Reply on Your Project</h1>
     </div>
     <div style="padding: 25px;">
-      <p style="margin: 0 0 15px; color: #333;">Hi ${lead.full_name?.split(' ')[0] || 'there'},</p>
-      <p style="margin: 0 0 15px; color: #333;"><strong>${author}</strong> replied to your comment:</p>
+      <p style="margin: 0 0 15px; color: #333;">Hi ${escapedName},</p>
+      <p style="margin: 0 0 15px; color: #333;"><strong>${escapedAuthor}</strong> replied to your comment:</p>
       <div style="background: #f8f9fa; border-left: 4px solid #f9a825; padding: 15px; margin: 15px 0; border-radius: 4px;">
-        <p style="margin: 0; color: #333;">"${message}"</p>
+        <p style="margin: 0; color: #333;">"${escapedMessage}"</p>
       </div>
       <p style="margin: 15px 0; color: #666; font-size: 14px;">View the full conversation on your project page.</p>
     </div>
@@ -11594,8 +11679,15 @@ app.post('/api/design-comments/:lead_id/reply', async (req, res) => {
   }
 });
 
+// Rate limiter for token-based portal access (prevent brute force)
+const portalTokenLimiter = publicRateLimiter({
+  maxRequests: 5,
+  windowMs: 300000, // 5 minutes
+  message: 'Too many portal access attempts. Please wait 5 minutes.'
+});
+
 // Customer portal - get project by token
-app.get('/api/customer-portal/:token', async (req, res) => {
+app.get('/api/customer-portal/:token', portalTokenLimiter, async (req, res) => {
   try {
     const { token } = req.params;
 

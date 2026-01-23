@@ -7,9 +7,10 @@
 (function() {
   'use strict';
 
-  // Supabase configuration
-  const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+  // Use centralized config
+  const sgConfig = window.SG_CONFIG || {};
+  const SUPABASE_URL = sgConfig.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+  const SUPABASE_ANON_KEY = sgConfig.SUPABASE_ANON_KEY || '';
 
   // Arizona city coordinates for distance calculation
   const CITY_COORDINATES = {
@@ -885,12 +886,15 @@
     return placeholders[material?.toLowerCase()] || placeholders.default;
   }
 
-  function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+  // Use centralized SecurityUtils if available
+  const escapeHtml = (window.SecurityUtils && window.SecurityUtils.escapeHtml)
+    ? window.SecurityUtils.escapeHtml.bind(window.SecurityUtils)
+    : function(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      };
 
   function debounce(func, wait) {
     let timeout;

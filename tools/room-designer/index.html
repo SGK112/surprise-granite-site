@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Room Designer Pro | Powered by Remodely.ai | Surprise Granite</title>
+  <title>Room Designer Pro | Remodely.ai | Surprise Granite</title>
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -510,7 +510,7 @@
     }
 
     .sidebar-header {
-      padding: 14px 16px;
+      padding: 10px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -583,7 +583,7 @@
     }
 
     .sidebar-content {
-      padding: 0 12px 12px;
+      padding: 0 10px 10px;
       max-height: 1000px;
       overflow: hidden;
       transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
@@ -592,7 +592,7 @@
 
     .sidebar-content.collapsed {
       max-height: 0;
-      padding: 0 12px;
+      padding: 0 10px;
       opacity: 0;
     }
 
@@ -2181,16 +2181,39 @@
     }
 
     .panel-section {
-      padding: 12px 16px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border);
     }
 
+    .panel-section.collapsed .panel-content {
+      display: none;
+    }
+
+    .panel-section.collapsed .panel-title .toggle-icon {
+      transform: rotate(-90deg);
+    }
+
     .panel-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .panel-title .toggle-icon {
+      font-size: 8px;
+      transition: transform 0.2s;
+      opacity: 0.5;
+    }
+
+    .panel-title:hover .toggle-icon {
+      opacity: 1;
     }
 
     /* Element Selector Styles */
@@ -2634,7 +2657,7 @@
     .room-templates-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 4px;
     }
 
     .template-btn {
@@ -2642,19 +2665,19 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 10px 6px;
+      padding: 6px 4px;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       color: var(--text);
     }
 
     .template-btn:hover {
       background: var(--dark-surface);
       border-color: var(--accent);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .template-btn:active {
@@ -2662,12 +2685,12 @@
     }
 
     .template-icon {
-      font-size: 20px;
-      margin-bottom: 4px;
+      font-size: 16px;
+      margin-bottom: 2px;
     }
 
     .template-name {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 500;
       color: var(--text-secondary);
     }
@@ -2677,27 +2700,28 @@
     }
 
     .template-hint {
-      font-size: 10px;
+      font-size: 8px;
       color: var(--text-muted);
       text-align: center;
-      margin-top: 8px;
+      margin-top: 6px;
       margin-bottom: 0;
+      opacity: 0.7;
     }
 
     .room-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
 
     .input-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .input-label {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--text-muted);
     }
 
@@ -2705,9 +2729,9 @@
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 6px 8px;
+      padding: 5px 7px;
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .input-field:focus {
@@ -2722,9 +2746,9 @@
     /* Properties Panel */
     .properties-empty {
       text-align: center;
-      padding: 20px;
+      padding: 12px;
       color: var(--text-muted);
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .quick-actions {
@@ -6504,6 +6528,194 @@
       background: var(--dark-hover);
       color: var(--text-primary);
     }
+
+    /* Comment Notification Toast - appears when customer comments */
+    .comment-notification-toast {
+      position: fixed !important;
+      top: 80px !important;
+      right: 20px !important;
+      display: flex !important;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #2a2040;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.2));
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(139, 92, 246, 0.6);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4), 0 0 0 1px rgba(255,255,255,0.1);
+      z-index: 999999 !important;
+      cursor: pointer;
+      max-width: 380px;
+      min-width: 280px;
+      animation: commentSlideIn 0.4s ease-out;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      color: white;
+    }
+
+    .comment-notification-toast:hover {
+      transform: translateX(-4px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+
+    .comment-notification-toast.fade-out {
+      animation: commentSlideOut 0.3s ease-in forwards;
+    }
+
+    @keyframes commentSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes commentSlideOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+    }
+
+    .comment-notification-icon {
+      font-size: 24px;
+      animation: commentBounce 0.6s ease-out;
+    }
+
+    @keyframes commentBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .comment-notification-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .comment-notification-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--primary-color);
+      margin-bottom: 4px;
+    }
+
+    .comment-notification-message {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .comment-notification-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-color);
+      padding: 4px 8px;
+      background: rgba(249, 203, 0, 0.15);
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    /* Messages Section Styles */
+    #messagesSection {
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      margin: 8px;
+    }
+
+    #messagesSection .panel-title {
+      color: #a78bfa;
+      margin-bottom: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .messages-panel-content {
+      padding: 10px 12px;
+    }
+
+    .message-badge.has-messages {
+      display: inline-block !important;
+      animation: badgePulse 2s infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .customer-message {
+      padding: 8px 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .customer-message.inbound {
+      background: rgba(139, 92, 246, 0.15);
+      border-left: 3px solid #8b5cf6;
+      margin-right: 15px;
+    }
+
+    .customer-message.outbound {
+      background: rgba(16, 185, 129, 0.15);
+      border-left: 3px solid #10b981;
+      margin-left: 15px;
+    }
+
+    .customer-message-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .customer-message-author {
+      font-weight: 600;
+      color: #a78bfa;
+    }
+
+    .customer-message-text {
+      color: var(--text-primary);
+    }
+
+    .customer-message-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .customer-message-input input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 6px;
+      background: var(--dark-elevated);
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .customer-message-input input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+    }
+
+    .customer-message-input .btn {
+      padding: 8px 14px;
+      font-size: 9px;
+    }
   </style>
 </head>
 <body>
@@ -7491,9 +7703,33 @@
           </div>
         </div>
 
-        <!-- Room Templates -->
-        <div class="panel-section">
-          <div class="panel-title">Room Templates</div>
+        <!-- Customer Messages Section -->
+        <div class="panel-section" id="messagesSection">
+          <div class="panel-title" onclick="toggleMessagesPanel()" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+            <span>💬 Messages</span>
+            <span class="message-badge" id="messageBadge" style="background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; display: none;">0</span>
+          </div>
+          <div class="messages-panel-content" id="messagesContent">
+            <div class="customer-messages-list" id="customerMessagesList" style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 8px; max-height: 120px; overflow-y: auto;">
+              <div class="no-messages" id="noCustomerMessage" style="color: #a78bfa; font-size: 11px; text-align: center; padding: 10px;">
+                No customer linked<br>
+                <span style="font-size: 9px; opacity: 0.7;">Share design to enable messaging</span>
+              </div>
+            </div>
+            <div class="customer-message-input" id="messageInputArea" style="display: none; gap: 6px;">
+              <input type="text" id="designerReplyInput" placeholder="Type a reply..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--dark-elevated); color: var(--text); font-size: 11px;">
+              <button class="btn btn-primary btn-sm" onclick="sendDesignerReply()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Templates (collapsed by default) -->
+        <div class="panel-section collapsed" id="roomTemplatesSection">
+          <div class="panel-title" onclick="togglePanelSection('roomTemplatesSection')">
+            <span>Room Templates</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="panel-content">
           <div class="room-templates-grid">
             <button class="template-btn" onclick="loadRoomTemplate('kitchen-l')" title="L-shaped kitchen with island">
               <span class="template-icon">🍳</span>
@@ -7533,6 +7769,7 @@
           <button onclick="exportAsTemplate()" style="display:none;width:100%;margin-top:8px;padding:8px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);border-radius:6px;color:#a5b4fc;font-size:11px;cursor:pointer;" title="Export your current design as reusable template code">
             📋 Export Current Design as Template
           </button>
+          </div><!-- /panel-content -->
         </div>
 
         <!-- Cabinet Settings -->
@@ -7590,18 +7827,23 @@
           </div>
         </div>
 
-        <!-- Scene Settings -->
-        <div class="panel-section">
-          <div class="panel-title">Scene Settings</div>
-          <div class="room-grid">
-            <div class="input-group">
-              <label class="input-label">Time of Day</label>
-              <select class="input-field" id="timeOfDay" onchange="updateTimeOfDay()">
-                <option value="morning">Morning (Sunrise)</option>
-                <option value="noon" selected>Noon (Daylight)</option>
-                <option value="evening">Evening (Sunset)</option>
-                <option value="night">Night</option>
-              </select>
+        <!-- Scene Settings (collapsed by default) -->
+        <div class="panel-section collapsed" id="sceneSettingsSection">
+          <div class="panel-title" onclick="togglePanelSection('sceneSettingsSection')">
+            <span>Scene Settings</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="panel-content">
+            <div class="room-grid">
+              <div class="input-group">
+                <label class="input-label">Time of Day</label>
+                <select class="input-field" id="timeOfDay" onchange="updateTimeOfDay()">
+                  <option value="morning">Morning (Sunrise)</option>
+                  <option value="noon" selected>Noon (Daylight)</option>
+                  <option value="evening">Evening (Sunset)</option>
+                  <option value="night">Night</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -8155,6 +8397,10 @@
                 </button>
                 <button class="texture-clear-btn" onclick="clearTexture()" title="Clear texture">✕</button>
               </div>
+            </div>
+            <div class="property-row" id="materialNameRow" style="display: none;">
+              <span class="property-label">Material</span>
+              <span class="property-value" id="propMaterialName" style="font-size: 12px; color: var(--primary-color);">-</span>
             </div>
             <div class="property-row">
               <span class="property-label">Rotation</span>
@@ -9758,8 +10004,11 @@
       isSharedView: false,        // Whether viewing a shared design
       allowedActions: null,       // Actions permitted by current permission
       realtimeChannel: null,      // Supabase realtime subscription channel
+      commentsChannel: null,      // Supabase realtime subscription for comments
       isLiveConnected: false,     // Whether realtime is connected
-      lastSyncTime: null          // Last time design was synced
+      lastSyncTime: null,         // Last time design was synced
+      leadId: null,               // Associated lead/customer ID
+      customerName: null          // Customer name for notifications
     };
 
     // ===== REALTIME SYNC FOR SHARED DESIGNS =====
@@ -9825,6 +10074,191 @@
       }
     }
 
+    // ===== REALTIME COMMENT NOTIFICATIONS FOR DESIGNERS =====
+    // When a customer comments, the designer sees a toast notification
+
+    function subscribeToCustomerComments(leadId) {
+      // Only subscribe if we're a designer (not shared view) and have a lead
+      if (SHARE_STATE.isSharedView || !leadId) return;
+
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
+      // Unsubscribe from any existing comments channel
+      if (SHARE_STATE.commentsChannel) {
+        supabase.removeChannel(SHARE_STATE.commentsChannel);
+      }
+
+      try {
+        const channel = supabase.channel(`comments-${leadId}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'customer_messages',
+            filter: `customer_id=eq.${leadId}`
+          }, (payload) => {
+            console.log('💬 New comment received:', payload);
+            handleNewComment(payload.new);
+          })
+          .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('Subscribed to customer comments for lead:', leadId);
+            } else if (err) {
+              console.warn('Comment subscription error:', err);
+            }
+          });
+
+        SHARE_STATE.commentsChannel = channel;
+      } catch (err) {
+        console.error('Failed to subscribe to comments:', err);
+      }
+    }
+
+    function handleNewComment(comment) {
+      // Only notify for inbound (customer) messages
+      if (comment.direction !== 'inbound') return;
+
+      // Don't notify if viewing shared view (customer's own messages)
+      if (SHARE_STATE.isSharedView) return;
+
+      const customerName = SHARE_STATE.customerName || 'Customer';
+      const messagePreview = comment.message?.length > 50
+        ? comment.message.substring(0, 50) + '...'
+        : comment.message;
+
+      // Show clickable toast notification
+      window.showCommentNotification(customerName, messagePreview);
+
+      // Update the comments list if visible (fire and forget with error handling)
+      if (typeof loadCommentsFromMessages === 'function' && SHARE_STATE.leadId) {
+        loadCommentsFromMessages(SHARE_STATE.leadId, SHARE_STATE.shareId)
+          .catch(err => console.warn('Error updating comments list:', err));
+      }
+
+      // Update the designer messages panel if visible (fire and forget with error handling)
+      if (typeof loadDesignerMessages === 'function' && SHARE_STATE.leadId) {
+        loadDesignerMessages(SHARE_STATE.leadId)
+          .catch(err => console.warn('Error updating messages panel:', err));
+      }
+    }
+
+    window.showCommentNotification = function(customerName, message) {
+      // Create notification toast
+      const toast = document.createElement('div');
+      toast.className = 'comment-notification-toast';
+      toast.innerHTML = `
+        <div class="comment-notification-icon">💬</div>
+        <div class="comment-notification-content">
+          <div class="comment-notification-title">${customerName} commented:</div>
+          <div class="comment-notification-message">${message}</div>
+        </div>
+        <div class="comment-notification-action">View →</div>
+      `;
+
+      // Make it clickable - scrolls to comments section
+      toast.onclick = () => {
+        toast.remove();
+        openCommentsPanel();
+      };
+
+      document.body.appendChild(toast);
+
+      // Auto-dismiss after 8 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.classList.add('fade-out');
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 8000);
+
+      // Play notification sound if available
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleAA+ipq9q3kMJl2Kvqp1FyxYf7epbhszU3u4p2clOFF0tqRnKjxPc7ShZC0+TnKznmEwQE1xsZxfMkJNcK+aXTRETPGtmFo3Rkr0q5ZYOEhJ+qqUVjpJR/2okFM7TEb/p45RPlBF/6WNUD9RRP+li04/UkT/pYtNPlRD/6WKSz5VQv+liko+VkH/pYlJPlc//6WISD5YPv+lh0Y+Wj7/pYZFPls9/6WFRD5cPP+lhEM+XTv/pYNBPl46/6WCQD5fOf+lgD8+YDj/pX8+PmE3/6V+PT5iNv+lfDw+YzX/pXs7PmQ0/6V6Oj5lM/+leTs+ZjP/pXg6Pmcy/6V3OT5oMf+ldDg+aTH/pXM3Pmow/6VyNj5rL/+lcTU+bC7/pXA0Pm0u/6VvMz5uLf+lbjI+byz/pW0xPnAr/6VsMP5xK/+lazD+cSr/pWov/nIq/6VpLv5zKf+laC3+dCn/pWcs/nUp/6VmLP51Kf+lZSv+dij/pWQr/nYo/6VkKv52KP+lYyr+dyf/pWIp/ngo/6VhKP54J/+lYCj+eSf/pV8n/nkn/6VeJ/56Jv+lXSb+eyb/pVwm/nwm/6VbJf58Jf+lWiX+fSX/pVkk/n4l/6VYJP5+JP+lVyT+fyT/pVYj/oAk/6VVJP6AJP+lVCP+gSP/pVMj/oEj/6VSIP6CI/+lUSH+giL/pVAh/oIi/w==');
+        audio.volume = 0.3;
+        audio.play().catch(() => {}); // Ignore if blocked
+      } catch (e) {}
+    };
+
+    function openCommentsPanel() {
+      // Check if we're in designer mode (messages section visible)
+      const messagesSection = document.getElementById('messagesSection');
+      if (messagesSection) {
+        // Ensure content is visible
+        const content = document.getElementById('messagesContent');
+        if (content) content.style.display = 'block';
+
+        // Scroll to messages section in designer view
+        messagesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        messagesSection.style.boxShadow = '0 0 20px rgba(139, 92, 246, 0.5)';
+        setTimeout(() => {
+          messagesSection.style.boxShadow = '';
+        }, 2000);
+
+        // Focus the reply input
+        const replyInput = document.getElementById('designerReplyInput');
+        if (replyInput) {
+          replyInput.focus();
+        }
+        return;
+      }
+
+      // Otherwise find and click the review/share tab (customer view)
+      const reviewTab = document.querySelector('[onclick*="showTab"][onclick*="review"]') ||
+                        document.querySelector('[data-tab="review"]') ||
+                        document.querySelector('.tab-btn:last-child');
+
+      if (reviewTab) {
+        reviewTab.click();
+      }
+
+      // Scroll to comments section after a short delay
+      setTimeout(() => {
+        const commentsSection = document.getElementById('reviewComments') ||
+                               document.querySelector('.review-comments-section');
+        if (commentsSection) {
+          commentsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the section briefly
+          commentsSection.style.boxShadow = '0 0 20px rgba(139, 92, 246, 0.5)';
+          setTimeout(() => {
+            commentsSection.style.boxShadow = '';
+          }, 2000);
+        }
+
+        // Focus the comment input
+        const commentInput = document.getElementById('newCommentInput');
+        if (commentInput) {
+          commentInput.focus();
+        }
+      }, 300);
+    }
+
+    // Fetch customer name from leads table for notifications
+    async function fetchCustomerName(leadId) {
+      if (!leadId) return;
+
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+
+        const { data, error } = await supabase
+          .from('leads')
+          .select('name, first_name, last_name, email')
+          .eq('id', leadId)
+          .single();
+
+        if (data && !error) {
+          SHARE_STATE.customerName = data.name ||
+            (data.first_name && data.last_name ? `${data.first_name} ${data.last_name}` : null) ||
+            data.first_name ||
+            data.email?.split('@')[0] ||
+            'Customer';
+          console.log('Fetched customer name:', SHARE_STATE.customerName);
+        }
+      } catch (err) {
+        console.warn('Could not fetch customer name:', err);
+      }
+    }
+
     // Polling fallback when Realtime isn't available
     function startPollingFallback(designId) {
       if (SHARE_STATE.pollingInterval) return; // Already polling
@@ -9836,8 +10270,7 @@
         if (!designId) return;
 
         try {
-          const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+          const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
 
           const response = await fetch(
             `${SUPABASE_URL}/rest/v1/room_designs?id=eq.${designId}&select=updated_at,elements,rooms,room_width,room_depth,settings`,
@@ -9946,6 +10379,9 @@
         populateReviewElements();
       }
 
+      // Update properties panel to show current material info
+      updateProperties();
+
       // Flash the live indicator
       flashLiveIndicator();
     }
@@ -10035,6 +10471,35 @@
         room_depth: roomDepth
       });
       console.log('Simulated update applied - elements should have random colors');
+    };
+
+    // Test comment notification (for debugging)
+    window.testCommentNotification = function(message = 'This is a test comment from the customer!') {
+      console.log('=== TESTING COMMENT NOTIFICATION ===');
+      console.log('showCommentNotification exists:', typeof window.showCommentNotification);
+      const customerName = SHARE_STATE.customerName || 'Test Customer';
+      window.showCommentNotification(customerName, message);
+      console.log('Notification should appear. Click it to go to comments section.');
+    };
+
+    // Debug notification status
+    window.debugNotifications = function() {
+      console.log('=== NOTIFICATION DEBUG ===');
+      console.log('Design ID:', SHARE_STATE.designId);
+      console.log('Lead ID:', SHARE_STATE.leadId);
+      console.log('Customer Name:', SHARE_STATE.customerName);
+      console.log('Is Shared View:', SHARE_STATE.isSharedView);
+      console.log('Comments Channel:', SHARE_STATE.commentsChannel ? 'Active' : 'Not subscribed');
+      console.log('Realtime Channel:', SHARE_STATE.realtimeChannel ? 'Active' : 'Not subscribed');
+      console.log('showCommentNotification:', typeof window.showCommentNotification);
+      return {
+        designId: SHARE_STATE.designId,
+        leadId: SHARE_STATE.leadId,
+        customerName: SHARE_STATE.customerName,
+        isSharedView: SHARE_STATE.isSharedView,
+        commentsSubscribed: !!SHARE_STATE.commentsChannel,
+        realtimeSubscribed: !!SHARE_STATE.realtimeChannel
+      };
     };
 
     // Pricing access control - only paid subscribers see pricing
@@ -14212,6 +14677,15 @@
 
       // Hide preloader - workspace is ready
       hidePreloader();
+
+      // Ensure messages section is visible (for signed-in designers)
+      const messagesSection = document.getElementById('messagesSection');
+      if (messagesSection) {
+        messagesSection.style.display = 'block';
+        const content = document.getElementById('messagesContent');
+        if (content) content.style.display = 'block';
+        console.log('Messages section visibility ensured');
+      }
 
       // Show auto-save indicator
       console.log('Room Designer initialized. Auto-save enabled.');
@@ -25087,8 +25561,8 @@
       }
     }
 
-    function togglePanelSection(header) {
-      // Toggle collapsible panel sections in the right panel
+    function togglePanelSectionOld(header) {
+      // Toggle collapsible panel sections in the right panel (legacy)
       const section = header.parentElement;
       const content = section.querySelector('.panel-content');
       const toggle = header.querySelector('.panel-toggle');
@@ -30260,8 +30734,8 @@
             return new THREE.ExtrudeGeometry(shape, extrudeSettings);
           }
 
-          // Main slab body (slightly inset from edges for profile geometry)
-          const bodyInset = effectiveH * 0.1;
+          // Main slab body - full size, no inset to avoid visible seams
+          // Edge profiles are rendered as decorative overlays on the front face
 
           // Find sinks that overlap with this countertop to create cutouts
           const sinkCutouts = [];
@@ -30292,10 +30766,11 @@
             }
           });
 
-          // Main slab body - skip when sinks present (topSurface + edges handle it)
+          // Main slab body - full size solid block
+          // Skip when sinks present (use topSurface with cutouts instead)
           if (sinkCutouts.length === 0) {
             const mainBody = new THREE.Mesh(
-              new THREE.BoxGeometry(slabW - bodyInset * 2, effectiveH, slabD - bodyInset * 2),
+              new THREE.BoxGeometry(slabW, effectiveH, slabD),
               ctopMat
             );
             mainBody.position.set(slabOffsetX, 0, slabOffsetZ);
@@ -30331,15 +30806,17 @@
               const frontEdge = new THREE.Mesh(frontEdgeGeo, frontEdgeMat);
               frontEdge.rotation.y = Math.PI / 2;
               frontEdge.rotation.x = -Math.PI / 2;
+              // Position edge profile flush with front of counter
               frontEdge.position.set(-frontEdgeLen/2 + frontEdgePosX, effectiveH/2, slabD/2 + slabOffsetZ);
               group.add(frontEdge);
             } catch(e) {
-              // Fallback to simple box if edge geometry fails
+              // Edge profile is decorative - fallback just adds visual polish strip
+              const edgeDepth = 0.02; // Small decorative edge strip
               const frontEdge = new THREE.Mesh(
-                new THREE.BoxGeometry(frontEdgeLen, effectiveH, bodyInset),
+                new THREE.BoxGeometry(frontEdgeLen, effectiveH * 0.9, edgeDepth),
                 frontEdgeMat
               );
-              frontEdge.position.set(frontEdgePosX, 0, slabD/2 - bodyInset/2 + slabOffsetZ);
+              frontEdge.position.set(frontEdgePosX, 0, slabD/2 + edgeDepth/2 + slabOffsetZ);
               group.add(frontEdge);
             }
           }
@@ -30347,6 +30824,7 @@
           // Side edges for finished ends
           // IMPORTANT: Do NOT render edge profiles on waterfall sides - the waterfall IS the edge
           if (el.finishedEnds) {
+            const sideEdgeDepth = 0.02; // Small decorative edge strip
             // Left edge - skip if there's a left waterfall (waterfall replaces the edge)
             if (el.finishedEnds.includes('left') && !hasLeftWaterfall) {
               try {
@@ -30357,11 +30835,12 @@
                 leftEdge.position.set(-slabW/2 + slabOffsetX, -effectiveH/2, slabD/2 + slabOffsetZ);
                 group.add(leftEdge);
               } catch(e) {
+                // Decorative side edge strip
                 const leftEdge = new THREE.Mesh(
-                  new THREE.BoxGeometry(bodyInset, effectiveH, slabD),
+                  new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.9, slabD),
                   frontEdgeMat
                 );
-                leftEdge.position.set(-slabW/2 + bodyInset/2 + slabOffsetX, 0, slabOffsetZ);
+                leftEdge.position.set(-slabW/2 - sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
                 group.add(leftEdge);
               }
             }
@@ -30374,37 +30853,19 @@
                 rightEdge.position.set(slabW/2 + slabOffsetX, effectiveH/2, -slabD/2 + slabOffsetZ);
                 group.add(rightEdge);
               } catch(e) {
+                // Decorative side edge strip
                 const rightEdge = new THREE.Mesh(
-                  new THREE.BoxGeometry(bodyInset, effectiveH, slabD),
+                  new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.9, slabD),
                   frontEdgeMat
                 );
-                rightEdge.position.set(slabW/2 - bodyInset/2 + slabOffsetX, 0, slabOffsetZ);
+                rightEdge.position.set(slabW/2 + sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
                 group.add(rightEdge);
               }
             }
           }
 
-          // Back edge (usually against wall, simple) - SKIP if back has waterfall
-          // Also shorten for left/right waterfalls (they handle the corners)
-          if (!hasBackWaterfall) {
-            const wfThicknessBack = is2cm ? 0.065 : 0.1;
-            let backEdgeLen = slabW;
-            let backEdgePosX = slabOffsetX;
-            if (hasLeftWaterfall) {
-              backEdgeLen -= wfThicknessBack;
-              backEdgePosX += wfThicknessBack / 2;
-            }
-            if (hasRightWaterfall) {
-              backEdgeLen -= wfThicknessBack;
-              backEdgePosX -= wfThicknessBack / 2;
-            }
-            const backEdge = new THREE.Mesh(
-              new THREE.BoxGeometry(backEdgeLen, effectiveH, bodyInset),
-              ctopMat
-            );
-            backEdge.position.set(backEdgePosX, 0, -slabD/2 + bodyInset/2 + slabOffsetZ);
-            group.add(backEdge);
-          }
+          // Back edge removed - it's against the wall and not visible
+          // The main body is now full-size so no separate back edge needed
 
           // Top surface - create with holes if there are sink cutouts
           const topMat = createTexturedMaterial(color, textureUrl, {
@@ -30415,8 +30876,8 @@
           if (sinkCutouts.length > 0) {
             // Create full-thickness countertop with sink holes using ExtrudeGeometry
             const topShape = new THREE.Shape();
-            const topHalfW = (slabW - bodyInset * 2) / 2;
-            const topHalfD = (slabD - bodyInset * 2) / 2;
+            const topHalfW = slabW / 2;
+            const topHalfD = slabD / 2;
 
             // Outer rectangle (CCW when viewed from above)
             topShape.moveTo(-topHalfW, -topHalfD);
@@ -41235,6 +41696,19 @@
           texturePreview.style.background = selectedElement.color;
         }
 
+        // Show material name if assigned
+        const materialNameRow = document.getElementById('materialNameRow');
+        const materialNameEl = document.getElementById('propMaterialName');
+        if (materialNameRow && materialNameEl) {
+          if (selectedElement.materialName) {
+            materialNameRow.style.display = 'flex';
+            materialNameEl.textContent = selectedElement.materialName;
+          } else {
+            materialNameRow.style.display = 'none';
+            materialNameEl.textContent = '-';
+          }
+        }
+
         // Populate standard sizes dropdown
         const standardSizeRow = document.getElementById('standardSizeRow');
         const standardSizeSelect = document.getElementById('propStandardSize');
@@ -45219,13 +45693,11 @@
 
     // Update share status in Supabase
     async function updateShareStatus(shareId, status) {
-      if (!window.supabase || !shareId) return;
+      if (!shareId) return;
 
       try {
-        const { createClient } = window.supabase;
-        const supabaseClient = window._sgSupabaseClient || createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: { persistSession: true, autoRefreshToken: true }
-        });
+        const supabaseClient = getSupabaseClient();
+        if (!supabaseClient) return;
 
         await supabaseClient
           .from('room_designer_shares')
@@ -47302,8 +47774,7 @@
       btn.disabled = true;
 
       try {
-        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
 
         const session = await window.SgAuth?.getSession?.();
         const authToken = session?.access_token || SUPABASE_ANON_KEY;
@@ -47620,47 +48091,20 @@
       }
     }
 
-    // Get or create Supabase client - use global client for consistent auth
+    // Get Supabase client - use global client only
     function getSupabaseClient() {
-      // First priority: use the global client from sg-auth.js
-      if (window._sgSupabaseClient) {
-        window._roomDesignerSupabase = window._sgSupabaseClient;
-        return window._sgSupabaseClient;
-      }
+      // Use the global client from supabase-init.js
+      return window._sgSupabaseClient || null;
+    }
 
-      // Second priority: use already cached room designer client
-      if (window._roomDesignerSupabase) return window._roomDesignerSupabase;
-
-      // Use centralized config or fallback to defaults
-      const config = window.SG_CONFIG || {};
-      const SUPABASE_URL = config.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
-      const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
-      const STORAGE_KEY = config.SUPABASE_STORAGE_KEY || 'sg-auth-token';
-
-      // Create new client with persistent session storage and explicit headers
-      if (window.supabase && window.supabase.createClient) {
-        window._roomDesignerSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storage: window.localStorage,
-            storageKey: STORAGE_KEY
-          },
-          global: {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          }
-        });
-        // Also set as global so other components can use it
-        if (!window._sgSupabaseClient) {
-          window._sgSupabaseClient = window._roomDesignerSupabase;
-        }
-        return window._roomDesignerSupabase;
-      }
-      return null;
+    // Get Supabase credentials from centralized config
+    function getSupabaseConfig() {
+      const config = window.SG_CONFIG || window._sgSupabaseConfig || {};
+      return {
+        url: config.SUPABASE_URL || config.url || 'https://ypeypgwsycxcagncgdur.supabase.co',
+        anonKey: config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
+        storageKey: config.SUPABASE_STORAGE_KEY || config.storageKey || 'sg-auth-token'
+      };
     }
 
     // Get current authenticated user
@@ -48226,9 +48670,8 @@
       };
 
       try {
-        // Use direct fetch to avoid Supabase client issues
-        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        // Use centralized config
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
 
         // Get auth token if logged in
         const session = await window.SgAuth?.getSession?.();
@@ -48449,10 +48892,12 @@
           companyEl.textContent = companyName;
         }
 
-        // Set share state
-        SHARE_STATE.isSharedView = true;
-        SHARE_STATE.permission = permission;
-        SHARE_STATE.allowedActions = PERMISSION_LEVELS[permission] || PERMISSION_LEVELS.presentation;
+        // Set share state - only mark as shared view if permission was explicitly provided
+        // (When designer loads their own design, no permission is passed)
+        const isActuallySharedView = permission !== undefined && permission !== null;
+        SHARE_STATE.isSharedView = isActuallySharedView;
+        SHARE_STATE.permission = permission || 'full_collab';
+        SHARE_STATE.allowedActions = PERMISSION_LEVELS[permission] || PERMISSION_LEVELS.full_collab;
         SHARE_STATE.designId = design.id;
         SHARE_STATE.designToken = design.share_token;
 
@@ -48460,16 +48905,27 @@
           SHARE_STATE.shareId = shareData.id;
           SHARE_STATE.shareToken = shareData.share_token;
           SHARE_STATE.leadId = shareData.lead_id;
+          SHARE_STATE.customerName = shareData.customer_name || null;
           SHARE_STATE.comments = shareData.comments || [];
 
           // Load comments from customer_messages if lead_id exists
           if (shareData.lead_id) {
             loadCommentsFromMessages(shareData.lead_id, shareData.id);
+
+            // Subscribe to realtime comment notifications (for designers only)
+            if (!SHARE_STATE.isSharedView) {
+              subscribeToCustomerComments(shareData.lead_id);
+
+              // Fetch customer name if not already set
+              if (!SHARE_STATE.customerName) {
+                fetchCustomerName(shareData.lead_id);
+              }
+            }
           }
         }
 
-        // Load design data into form fields
-        document.getElementById('projectName').value = design.project_name || 'Shared Design';
+        // Load design data into form fields (name field, with project_name fallback for legacy)
+        document.getElementById('projectName').value = design.name || design.project_name || 'Untitled Design';
         document.getElementById('roomType').value = design.room_type || 'kitchen';
         roomWidth = parseFloat(design.room_width) || 12;
         roomDepth = parseFloat(design.room_depth) || 10;
@@ -48647,9 +49103,8 @@
           return;
         }
 
-        // Use direct fetch to avoid Supabase client issues
-        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        // Use centralized config
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
         const headers = {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
@@ -49086,22 +49541,31 @@
       // Save to customer_messages for unified communication
       if (SHARE_STATE.leadId) {
         try {
-          const API_BASE = window.location.hostname === 'localhost'
-            ? 'http://localhost:3001'
-            : 'https://surprise-granite-connections-api.onrender.com';
+          // Direct Supabase insert for reliability
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const { data, error } = await supabase
+              .from('customer_messages')
+              .insert({
+                customer_id: SHARE_STATE.leadId,
+                message: text,
+                direction: 'inbound',
+                channel: 'design_share',
+                metadata: {
+                  share_id: SHARE_STATE.shareId,
+                  design_id: SHARE_STATE.designId,
+                  author: 'Customer'
+                }
+              })
+              .select()
+              .single();
 
-          await fetch(`${API_BASE}/api/design-comments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lead_id: SHARE_STATE.leadId,
-              share_id: SHARE_STATE.shareId,
-              design_id: SHARE_STATE.designId,
-              message: text,
-              author: 'Customer',
-              direction: 'inbound'
-            })
-          });
+            if (error) {
+              console.warn('Supabase insert error:', error);
+            } else {
+              console.log('Comment saved to customer_messages:', data);
+            }
+          }
         } catch (err) {
           console.warn('Could not save comment to messages:', err);
         }
@@ -50099,6 +50563,7 @@
 
     // Save design to cloud (Supabase) or locally
     async function saveDesignToCloud() {
+      console.log('saveDesignToCloud called');
       const saveBtn = document.getElementById('saveDesignBtn');
       const saveText = document.getElementById('saveDesignText');
 
@@ -50109,6 +50574,7 @@
       try {
         // Check if user is logged in
         const user = window.SgAuth?.getUser();
+        console.log('Save - user:', user?.id);
 
         if (!user) {
           // Save locally if not logged in
@@ -50176,8 +50642,7 @@
           quote_total: quoteTotal
         };
 
-        const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
 
         const session = await window.SgAuth?.getSession?.();
         const authToken = session?.access_token || SUPABASE_ANON_KEY;
@@ -50222,6 +50687,9 @@
           SHARE_STATE.designId = designId;
           SHARE_STATE.designToken = designToken;
 
+          // Check for customer shares to enable messaging
+          await setupDesignerCommentNotifications(designId);
+
           showToast('Design saved to cloud!', 'success');
         } else {
           // Update existing design
@@ -50240,6 +50708,9 @@
             const errorText = await response.text();
             throw new Error(`Update failed: ${response.status} - ${errorText}`);
           }
+
+          // Check for customer shares to enable messaging (in case it wasn't set up yet)
+          await setupDesignerCommentNotifications(designId);
 
           showToast('Design updated!', 'success');
         }
@@ -50269,21 +50740,28 @@
     async function loadMyDesigns() {
       const grid = document.getElementById('designsGrid');
       const empty = document.getElementById('designsEmpty');
+      if (!grid) {
+        console.warn('designsGrid not found');
+        return;
+      }
       grid.innerHTML = '<div class="designs-loading">Loading designs...</div>';
-      empty.style.display = 'none';
+      if (empty) empty.style.display = 'none';
 
       try {
         const supabase = getSupabaseClient();
         let user = getCurrentUser();
 
+        console.log('loadMyDesigns: supabase=', !!supabase, 'user=', user?.id);
+
         // If no user but supabase exists, wait a moment for auth to restore
-        // This handles the case where auth state is still being restored after login
         if (!user && supabase) {
-          // Try to get session directly from Supabase
           try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
+            const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+            if (sessionErr) {
+              console.warn('Session error:', sessionErr);
+            } else if (session?.user) {
               user = session.user;
+              console.log('Got user from session:', user.id);
             }
           } catch (authErr) {
             console.warn('Auth check in loadMyDesigns failed:', authErr);
@@ -50319,12 +50797,23 @@
 
         if (myError) throw myError;
 
-        // Load designs shared with user
-        const { data: sharedDesigns, error: sharedError } = await supabase
-          .from('room_design_shares')
-          .select('*, room_designs(*)')
-          .neq('user_id', user.id)
-          .order('share_date', { ascending: false });
+        // Load designs shared with user (try multiple possible column names)
+        let sharedDesigns = [];
+        try {
+          // Try to get shares where user is the recipient
+          const { data, error } = await supabase
+            .from('room_design_shares')
+            .select('*, room_designs(*)')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          if (!error && data) {
+            // Filter to only show designs not owned by current user
+            sharedDesigns = data.filter(s => s.room_designs?.user_id !== user.id);
+          }
+        } catch (shareErr) {
+          console.warn('Could not load shared designs:', shareErr);
+        }
 
         // Process designs
         allDesigns.my = (myDesigns || []).map(d => ({
@@ -50358,9 +50847,148 @@
 
       } catch (err) {
         console.error('Error loading designs:', err);
-        grid.innerHTML = '<div class="designs-loading">Error loading designs</div>';
+        // Show local designs as fallback
+        const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
+        if (localDesigns.length > 0) {
+          allDesigns.my = localDesigns.map((d, i) => ({
+            id: d.id || `local-${i}`,
+            name: d.name || 'Untitled Design',
+            room_type: d.room_type || 'kitchen',
+            created_at: d.created_at || new Date().toISOString(),
+            elements_count: d.elements?.length || 0,
+            comments_count: 0,
+            preview: d.preview || null,
+            isLocal: true
+          }));
+          renderDesignsGrid();
+          showToast('Showing local designs. Cloud sync failed.', 'warning');
+        } else {
+          grid.innerHTML = '<div class="designs-loading">Error loading designs. Try refreshing.</div>';
+        }
       }
     }
+
+    // Debug: manually trigger My Designs - call from console: testMyDesigns()
+    window.testMyDesigns = function() {
+      console.log('Testing My Designs modal...');
+      openMyDesignsModal();
+    };
+
+    // Debug: test save functionality - call from console: testSave()
+    window.testSave = async function() {
+      console.log('=== TESTING SAVE ===');
+      const user = window.SgAuth?.getUser();
+      console.log('User:', user);
+
+      if (!user) {
+        console.log('Not logged in - will save locally');
+      }
+
+      await saveDesignToCloud();
+      console.log('Save complete. SHARE_STATE:', SHARE_STATE);
+    };
+
+    // Debug: manually add a test message - call from console: addTestMessage()
+    window.addTestMessage = async function(message = 'Test message from console') {
+      console.log('=== ADDING TEST MESSAGE ===');
+
+      if (!SHARE_STATE.leadId) {
+        console.log('No leadId. Looking for one...');
+        // Try to find a lead from any share
+        if (SHARE_STATE.designId) {
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const { data: shares } = await supabase
+              .from('room_design_shares')
+              .select('lead_id')
+              .eq('design_id', SHARE_STATE.designId)
+              .not('lead_id', 'is', null)
+              .limit(1);
+            if (shares && shares[0]) {
+              SHARE_STATE.leadId = shares[0].lead_id;
+              console.log('Found leadId:', SHARE_STATE.leadId);
+            }
+          }
+        }
+      }
+
+      if (!SHARE_STATE.leadId) {
+        console.log('Still no leadId. Cannot add message.');
+        console.log('You need to share this design with a customer first.');
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.log('No Supabase client');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('customer_messages')
+        .insert({
+          customer_id: SHARE_STATE.leadId,
+          message: message,
+          direction: 'inbound',
+          channel: 'design_share',
+          metadata: {
+            share_id: SHARE_STATE.shareId,
+            design_id: SHARE_STATE.designId,
+            author: 'Test Customer'
+          }
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding message:', error);
+      } else {
+        console.log('Message added:', data);
+        // Reload messages
+        await loadDesignerMessages(SHARE_STATE.leadId);
+      }
+    };
+
+    // Debug: check all tables - call from console: debugTables()
+    window.debugTables = async function() {
+      console.log('=== DEBUG TABLES ===');
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.log('No Supabase client');
+        return;
+      }
+
+      const user = window.SgAuth?.getUser();
+      console.log('Current user:', user?.id);
+
+      // Check room_designs
+      const { data: designs, error: designErr } = await supabase
+        .from('room_designs')
+        .select('id, name, share_token, created_at')
+        .eq('user_id', user?.id)
+        .limit(5);
+      console.log('Your designs:', designs);
+      if (designErr) console.error('Design error:', designErr);
+
+      // Check room_design_shares
+      if (designs && designs[0]) {
+        const { data: shares, error: shareErr } = await supabase
+          .from('room_design_shares')
+          .select('*')
+          .eq('design_id', designs[0].id);
+        console.log('Shares for first design:', shares);
+        if (shareErr) console.error('Share error:', shareErr);
+      }
+
+      // Check customer_messages
+      const { data: messages, error: msgErr } = await supabase
+        .from('customer_messages')
+        .select('*')
+        .eq('channel', 'design_share')
+        .limit(10);
+      console.log('Recent design_share messages:', messages);
+      if (msgErr) console.error('Message error:', msgErr);
+    };
 
     function renderDesignsGrid() {
       const grid = document.getElementById('designsGrid');
@@ -50559,16 +51187,8 @@
         return;
       }
 
-      if (shareToken) {
-        // Save current state to history before loading shared design
-        saveCurrentDesignToHistory();
-        // Load shared design without full page reload
-        await loadSharedDesign(shareToken);
-        // Update URL with share token (pushState instead of reload)
-        history.pushState({ shareToken: shareToken }, '', `?share=${shareToken}`);
-        return;
-      }
-
+      // Designer loading their own design - always load in full designer mode
+      // (shareToken is only used for customers accessing via URL parameter)
       // Load directly from database
       try {
         const supabase = getSupabaseClient();
@@ -50580,12 +51200,321 @@
 
         if (error) throw error;
         if (data?.design_data) {
-          loadDesignData(data.design_data);
+          // Designer loading their own design - NOT a shared view
+          SHARE_STATE.isSharedView = false;
           SHARE_STATE.designId = id;
+
+          loadDesignData(data.design_data);
+
+          // Set up realtime sync for this design
+          subscribeToDesignUpdates(id);
+
+          // Check for any shares with leads and subscribe to comment notifications
+          setupDesignerCommentNotifications(id);
         }
       } catch (err) {
         console.error('Error loading design:', err);
         showSnapFeedback('Error loading design');
+      }
+    }
+
+    // Set up comment notifications for designers when they load their own design
+    async function setupDesignerCommentNotifications(designId) {
+      if (!designId) return;
+
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+
+        // Find any shares for this design that have an associated lead
+        const { data: shares, error } = await supabase
+          .from('room_design_shares')
+          .select('id, lead_id, customer_name')
+          .eq('design_id', designId)
+          .not('lead_id', 'is', null)
+          .limit(1);
+
+        if (error || !shares || shares.length === 0) {
+          console.log('No customer shares found for this design');
+          return;
+        }
+
+        const share = shares[0];
+        SHARE_STATE.leadId = share.lead_id;
+        SHARE_STATE.customerName = share.customer_name || null;
+        SHARE_STATE.shareId = share.id;
+
+        // Fetch customer name if not set
+        if (!SHARE_STATE.customerName) {
+          await fetchCustomerName(share.lead_id);
+        }
+
+        // Subscribe to realtime comment notifications
+        subscribeToCustomerComments(share.lead_id);
+
+        // Show the messages panel and load messages
+        showDesignerMessagesPanel();
+        await loadDesignerMessages(share.lead_id);
+
+        console.log('Designer comment notifications set up for lead:', share.lead_id);
+      } catch (err) {
+        console.warn('Could not set up comment notifications:', err);
+      }
+    }
+
+    // Toggle any panel section collapse/expand
+    function togglePanelSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.classList.toggle('collapsed');
+      }
+    }
+
+    // Toggle messages panel collapse/expand
+    function toggleMessagesPanel() {
+      const content = document.getElementById('messagesContent');
+      if (content) {
+        if (content.style.display === 'none') {
+          content.style.display = 'block';
+        } else {
+          content.style.display = 'none';
+        }
+      }
+    }
+
+    // Show the designer messages panel with customer linked
+    function showDesignerMessagesPanel() {
+      const content = document.getElementById('messagesContent');
+      const inputArea = document.getElementById('messageInputArea');
+      const noCustomerMsg = document.getElementById('noCustomerMessage');
+      const section = document.getElementById('messagesSection');
+
+      // Make sure panel is expanded when customer is linked
+      if (content) {
+        content.style.display = 'block';
+      }
+      if (section) {
+        section.style.display = 'block';
+      }
+
+      // Show the reply input and hide the "no customer" message
+      if (inputArea) {
+        inputArea.style.display = 'flex';
+      }
+      if (noCustomerMsg) {
+        noCustomerMsg.style.display = 'none';
+      }
+
+      // Update panel header to show customer name if available
+      const panelTitle = document.querySelector('#messagesSection .panel-title span:first-child');
+      if (panelTitle && SHARE_STATE.customerName) {
+        panelTitle.textContent = `💬 ${SHARE_STATE.customerName}`;
+      }
+    }
+
+    // Load messages for designer view
+    async function loadDesignerMessages(leadId) {
+      console.log('loadDesignerMessages called with leadId:', leadId);
+      if (!leadId) {
+        console.log('No leadId provided');
+        return;
+      }
+
+      const container = document.getElementById('customerMessagesList');
+      if (!container) {
+        console.log('customerMessagesList container not found');
+        return;
+      }
+
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          console.log('No Supabase client');
+          return;
+        }
+
+        console.log('Querying customer_messages for customer_id:', leadId);
+        const { data: messages, error } = await supabase
+          .from('customer_messages')
+          .select('*')
+          .eq('customer_id', leadId)
+          .eq('channel', 'design_share')
+          .order('created_at', { ascending: true });
+
+        console.log('Messages query result:', { messages, error });
+
+        if (error) {
+          console.warn('Error loading messages:', error);
+          return;
+        }
+
+        if (!messages || messages.length === 0) {
+          container.innerHTML = '<div class="no-messages">No messages yet.<br><span style="font-size: 10px; color: var(--text-muted);">Customer comments will appear here</span></div>';
+          updateMessageBadge(0);
+          return;
+        }
+
+        // Hide the "no customer" message since we have messages
+        const noCustomerMsg = document.getElementById('noCustomerMessage');
+        if (noCustomerMsg) noCustomerMsg.style.display = 'none';
+
+        // Render messages
+        container.innerHTML = messages.map(msg => `
+          <div class="customer-message ${msg.direction}">
+            <div class="customer-message-header">
+              <span class="customer-message-author">${msg.direction === 'inbound' ? (SHARE_STATE.customerName || 'Customer') : 'You'}</span>
+              <span class="customer-message-time">${formatMessageTime(msg.created_at)}</span>
+            </div>
+            <div class="customer-message-text">${escapeHtml(msg.message)}</div>
+          </div>
+        `).join('');
+
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+
+        // Update badge with unread count (inbound messages)
+        const unreadCount = messages.filter(m => m.direction === 'inbound' && !m.read_at).length;
+        updateMessageBadge(unreadCount);
+
+      } catch (err) {
+        console.warn('Error loading designer messages:', err);
+      }
+    }
+
+    function formatMessageTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Debug function - call from console: debugMessages()
+    window.debugMessages = async function() {
+      console.log('=== MESSAGE DEBUG ===');
+      console.log('SHARE_STATE:', SHARE_STATE);
+      console.log('leadId:', SHARE_STATE.leadId);
+      console.log('designId:', SHARE_STATE.designId);
+
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.log('No Supabase client');
+        return;
+      }
+
+      // Check shares for this design
+      if (SHARE_STATE.designId) {
+        console.log('--- Checking shares for design ---');
+        const { data: shares, error: shareErr } = await supabase
+          .from('room_design_shares')
+          .select('*')
+          .eq('design_id', SHARE_STATE.designId);
+        console.log('Shares for this design:', shares);
+        console.log('Share error:', shareErr);
+
+        // If we found a share with lead_id, use it
+        if (shares && shares.length > 0) {
+          const shareWithLead = shares.find(s => s.lead_id);
+          if (shareWithLead) {
+            console.log('Found share with lead_id:', shareWithLead.lead_id);
+            SHARE_STATE.leadId = shareWithLead.lead_id;
+            SHARE_STATE.shareId = shareWithLead.id;
+          }
+        }
+      }
+
+      if (SHARE_STATE.leadId) {
+        console.log('--- Checking messages for lead ---');
+        const { data, error } = await supabase
+          .from('customer_messages')
+          .select('*')
+          .eq('customer_id', SHARE_STATE.leadId);
+        console.log('All messages for this customer:', data);
+        console.log('Error:', error);
+
+        // Try loading with the function
+        await loadDesignerMessages(SHARE_STATE.leadId);
+      } else {
+        console.log('No leadId found in any shares for this design.');
+        console.log('To link a customer: share the design with a customer from the Connections page.');
+      }
+    };
+
+    // Force refresh messages - call from console: refreshMessages()
+    window.refreshMessages = function() {
+      if (SHARE_STATE.leadId) {
+        loadDesignerMessages(SHARE_STATE.leadId);
+      } else {
+        console.log('No leadId - load a shared design first');
+      }
+    };
+
+    function updateMessageBadge(count) {
+      const badge = document.getElementById('messageBadge');
+      if (badge) {
+        badge.textContent = count;
+        if (count > 0) {
+          badge.classList.add('has-messages');
+        } else {
+          badge.classList.remove('has-messages');
+        }
+      }
+    }
+
+    // Send designer reply
+    async function sendDesignerReply() {
+      const input = document.getElementById('designerReplyInput');
+      const message = input?.value?.trim();
+      if (!message || !SHARE_STATE.leadId) return;
+
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          showToast('Unable to send message', 'error');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('customer_messages')
+          .insert({
+            customer_id: SHARE_STATE.leadId,
+            message: message,
+            direction: 'outbound',
+            channel: 'design_share',
+            metadata: {
+              share_id: SHARE_STATE.shareId,
+              design_id: SHARE_STATE.designId,
+              author: 'Designer'
+            }
+          });
+
+        if (error) {
+          console.error('Error sending reply:', error);
+          showToast('Failed to send message', 'error');
+          return;
+        }
+
+        // Clear input and reload messages
+        input.value = '';
+        showToast('Message sent', 'success');
+        await loadDesignerMessages(SHARE_STATE.leadId);
+
+      } catch (err) {
+        console.error('Error sending designer reply:', err);
+        showToast('Failed to send message', 'error');
       }
     }
 

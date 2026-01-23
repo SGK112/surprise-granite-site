@@ -13,9 +13,10 @@ class LeadImageUpload {
     this.images = [];
     this.onImagesChange = options.onImagesChange || (() => {});
 
-    // Supabase config
-    this.supabaseUrl = options.supabaseUrl || 'https://ypeypgwsycxcagncgdur.supabase.co';
-    this.supabaseKey = options.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+    // Supabase config - use centralized config
+    const sgConfig = window.SG_CONFIG || {};
+    this.supabaseUrl = options.supabaseUrl || sgConfig.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+    this.supabaseKey = options.supabaseKey || sgConfig.SUPABASE_ANON_KEY || '';
     this.storageBucket = options.storageBucket || 'lead-images';
 
     this.init();

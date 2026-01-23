@@ -81,9 +81,9 @@
       supabase: true,
       renderApi: true
     },
-    supabaseUrl: 'https://ypeypgwsycxcagncgdur.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
-    renderApiUrl: 'https://surprise-granite-email-api.onrender.com/api/leads',
+    supabaseUrl: (window.SG_CONFIG || {}).SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co',
+    supabaseKey: (window.SG_CONFIG || {}).SUPABASE_ANON_KEY || '',
+    renderApiUrl: (window.SG_CONFIG || {}).API_URL ? (window.SG_CONFIG.API_URL + '/api/leads') : 'https://surprise-granite-email-api.onrender.com/api/leads',
     source: 'unified-lead-form',
     formName: 'unified',
     onSubmit: null,

@@ -165,13 +165,15 @@
     });
   }
 
-  // HTML escape helper to prevent XSS
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
-  }
+  // Use centralized SecurityUtils if available
+  const escapeHtml = (window.SecurityUtils && window.SecurityUtils.escapeHtml)
+    ? window.SecurityUtils.escapeHtml.bind(window.SecurityUtils)
+    : function(str) {
+        if (str === null || str === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+      };
 
   function getUserDisplayInfo(user) {
     if (!user) return { displayName: 'Guest', initial: 'G' };
