@@ -26,7 +26,7 @@
     // Google Configuration
     GOOGLE_CLIENT_ID: '46783393854-3bclu7oh0l6t6fem91mj9jj681aep4cs.apps.googleusercontent.com',
     GOOGLE_ANALYTICS_ID: 'G-9HJRRMG310',
-    GOOGLE_ANALYTICS_PROPERTY: '', // Add your GA4 property ID for API access (e.g., 'properties/123456789')
+    GOOGLE_ANALYTICS_PROPERTY: 'properties/495413683',
 
     // Supabase Configuration
     SUPABASE_URL: 'https://ypeypgwsycxcagncgdur.supabase.co',
