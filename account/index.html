@@ -28878,7 +28878,7 @@
 
         // Get sg_users stats
         const { count: totalUsers } = await supabaseClient.from('sg_users').select('*', { count: 'exact', head: true });
-        const { count: activeUsers } = await supabase
+        const { count: activeUsers } = await supabaseClient
           .from('sg_users')
           .select('*', { count: 'exact', head: true })
           .gte('updated_at', new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString());
