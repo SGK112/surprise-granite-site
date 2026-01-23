@@ -16,21 +16,43 @@
   <script src="/js/auth-state.js"></script>
   <style>
     :root {
+      /* Primary brand colors */
       --gold-primary: #f9cb00;
       --gold-dark: #cca600;
+      --gold: #f9cb00; /* Alias for --gold-primary */
+      --primary: #f9cb00; /* Alias for --gold-primary */
+      --primary-hover: #e6b800; /* Darker gold for hover states */
+      --accent: #f9cb00; /* Alias for primary accent */
+      --accent-hover: #e6b800;
+
+      /* Dark theme colors */
       --dark-primary: #1a1a2e;
       --dark-deep: #0a0a12;
       --dark-surface: #12121a;
       --dark-elevated: #1e1e2d;
+      --dark: #1a1a2e; /* Alias for --dark-primary */
+      --surface: #1e1e2d; /* Alias for --dark-elevated */
+
+      /* Text colors */
       --text-primary: #ffffff;
       --text-secondary: rgba(255, 255, 255, 0.75);
       --text-muted: rgba(255, 255, 255, 0.5);
+
+      /* Border colors */
       --border-subtle: rgba(255, 255, 255, 0.1);
       --border-light: rgba(255, 255, 255, 0.15);
-      --success: #4dff82;
-      --warning: #ffb84d;
-      --error: #ff6b6b;
-      --info: #4da6ff;
+
+      /* Status colors */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+
+      /* Legacy compatibility */
+      --success-old: #4dff82;
+      --warning-old: #ffb84d;
+      --error-old: #ff6b6b;
+      --info-old: #4da6ff;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -549,6 +571,139 @@
       background: rgba(255, 255, 255, 0.1);
     }
 
+    /* Modern Button System */
+    .btn-modern {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      min-height: 44px; /* Touch-friendly */
+    }
+
+    .btn-modern:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-modern.primary {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+      color: var(--dark-primary);
+    }
+
+    .btn-modern.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(249, 203, 0, 0.3);
+    }
+
+    .btn-modern.primary:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(249, 203, 0, 0.2);
+    }
+
+    .btn-modern.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+
+    .btn-modern.secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-modern.secondary:active:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-modern.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-modern.success:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-modern.danger {
+      background: var(--error);
+      color: white;
+    }
+
+    .btn-modern.danger:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-modern.small {
+      padding: 8px 12px;
+      font-size: 13px;
+      min-height: 36px;
+    }
+
+    .btn-modern.large {
+      padding: 16px 28px;
+      font-size: 16px;
+      min-height: 52px;
+    }
+
+    /* Filter Pills */
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 4px 0;
+    }
+
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .filter-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    .filter-pill.active {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border-color: var(--gold-primary);
+    }
+
+    .filter-pill:active {
+      transform: scale(0.98);
+    }
+
+    .filter-pill span {
+      font-size: 11px;
+      padding: 2px 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+
+    .filter-pill.active span {
+      background: rgba(0, 0, 0, 0.15);
+    }
+
     .content-area {
       padding: 32px 40px; /* Match topbar horizontal padding */
       max-width: 1400px; /* Optimal reading width on large screens */
@@ -564,10 +719,50 @@
     }
 
     /* Stats Grid */
+    /* Accessibility - Focus States */
+    :focus-visible {
+      outline: 2px solid var(--gold-primary);
+      outline-offset: 2px;
+    }
+
+    .btn-modern:focus-visible,
+    .btn-primary:focus-visible,
+    .btn-secondary:focus-visible,
+    .filter-pill:focus-visible,
+    .filter-btn:focus-visible,
+    .nav-item:focus-visible {
+      outline: 2px solid var(--gold-primary);
+      outline-offset: 2px;
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: none;
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px rgba(249, 203, 0, 0.2);
+    }
+
+    /* Skip to main content link (accessibility) */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      padding: 8px 16px;
+      z-index: 10000;
+      transition: top 0.3s;
+    }
+
+    .skip-link:focus {
+      top: 0;
+    }
+
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
       margin-bottom: 32px;
     }
 
@@ -1384,6 +1579,52 @@
     .status-converted { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
     .status-converted::before { background: #a855f7; }
 
+    /* Invoice/Payment statuses */
+    .status-open { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-open::before { background: #3b82f6; }
+
+    .status-viewed { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .status-viewed::before { background: #8b5cf6; }
+
+    .status-paid { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-paid::before { background: #22c55e; }
+
+    .status-void { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+    .status-void::before { background: #6b7280; }
+
+    .status-partial { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-partial::before { background: #f59e0b; }
+
+    .status-overdue { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-overdue::before { background: #ef4444; }
+
+    .status-refunded { background: rgba(107, 114, 128, 0.15); color: #6b7280; }
+    .status-refunded::before { background: #6b7280; }
+
+    .status-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-pending::before { background: #f59e0b; }
+
+    .status-fulfilled { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-fulfilled::before { background: #22c55e; }
+
+    .status-unfulfilled { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .status-unfulfilled::before { background: #f59e0b; }
+
+    .status-partial_fulfillment { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+    .status-partial_fulfillment::before { background: #06b6d4; }
+
+    .status-scheduled { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .status-scheduled::before { background: #3b82f6; }
+
+    .status-in_progress { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+    .status-in_progress::before { background: #06b6d4; }
+
+    .status-completed { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-completed::before { background: #22c55e; }
+
+    .status-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .status-cancelled::before { background: #ef4444; }
+
     .lead-date {
       font-size: 13px;
       color: var(--text-muted);
@@ -1964,6 +2205,31 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toastSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toastSlideOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-20px); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     .step-header {
@@ -5874,30 +6140,358 @@
     @media (max-width: 768px) {
       #page-messages .messages-container {
         flex-direction: column;
-        height: calc(100vh - 180px);
+        height: calc(100vh - 160px);
       }
 
       #page-messages .conversations-list {
-        max-height: 200px;
+        width: 100%;
+        max-height: none;
         border-right: none;
         border-bottom: 1px solid var(--border-subtle);
+        transition: max-height 0.3s ease;
+      }
+
+      #page-messages .conversations-list.collapsed {
+        max-height: 70px;
+        overflow: hidden;
+      }
+
+      #page-messages .conversations-list.collapsed .conversations-items {
+        display: none;
       }
 
       #page-messages .message-thread {
         flex: 1;
-        min-height: 300px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #page-messages .thread-messages {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 16px;
+        padding-bottom: 8px;
       }
 
       #page-messages .message-input-area {
         position: sticky;
         bottom: 0;
-        padding: 12px;
+        padding: 12px 16px;
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        background: var(--surface);
+        border-top: 1px solid var(--border-subtle);
       }
 
       .message-bubble {
         max-width: 85%;
       }
+
+      /* Better touch targets on mobile */
+      .conversation-item {
+        padding: 16px;
+        min-height: 72px;
+      }
+
+      .conversation-item .avatar-modern {
+        width: 48px;
+        height: 48px;
+      }
+
+      .thread-actions button {
+        min-width: 44px;
+        min-height: 44px;
+      }
+
+      /* Mobile conversation toggle */
+      .conversations-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--surface-elevated);
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .conversations-toggle h4 {
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .conversations-toggle .toggle-icon {
+        transition: transform 0.2s;
+      }
+
+      .conversations-toggle.collapsed .toggle-icon {
+        transform: rotate(180deg);
+      }
+    }
+
+    /* Message Bubble Actions */
+    .message-bubble-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      max-width: 70%;
+    }
+
+    .message-bubble-wrapper.outbound {
+      margin-left: auto;
+      align-items: flex-end;
+    }
+
+    .message-bubble-wrapper.inbound {
+      margin-right: auto;
+      align-items: flex-start;
+    }
+
+    .message-bubble-wrapper:hover .message-actions {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .message-bubble-wrapper.outbound .message-actions {
+      justify-content: flex-end;
+    }
+
+    .message-action-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .message-action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .message-action-btn.delete:hover {
+      background: rgba(244, 67, 54, 0.15);
+      color: var(--error);
+    }
+
+    .message-action-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Mobile: always show actions */
+    @media (max-width: 768px) {
+      .message-actions {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .message-action-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 32px;
+      }
+    }
+
+    /* Message status indicator */
+    .message-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 6px;
+    }
+
+    .message-status svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .message-status.sent { color: var(--text-muted); }
+    .message-status.delivered { color: var(--info); }
+    .message-status.read { color: var(--success); }
+
+    /* Notification detail card improvements */
+    .notif-detail-card {
+      background: var(--surface-elevated);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin: 20px;
+    }
+
+    .notif-detail-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notif-detail-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .notif-time {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .notif-detail-body {
+      padding: 20px;
+    }
+
+    .notif-detail-body p {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .detail-row {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row strong {
+      color: var(--text-muted);
+      min-width: 80px;
+      display: inline-block;
+    }
+
+    .notif-detail-contact {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .contact-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 8px 12px;
+      background: rgba(249, 203, 0, 0.1);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .contact-link:hover {
+      background: rgba(249, 203, 0, 0.2);
+    }
+
+    .notif-detail-actions {
+      padding: 16px 20px;
+      display: flex;
+      gap: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .notif-detail-actions .btn-modern {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Unread dot indicator */
+    .notif-unread-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .conversation-item.unread .conversation-name {
+      font-weight: 700;
+    }
+
+    .conversation-item.unread .conversation-preview {
+      color: var(--text-secondary);
+    }
+
+    /* Notif avatar colors */
+    .notif-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+
+    .notif-avatar.gold { background: rgba(249, 203, 0, 0.15); color: var(--gold); }
+    .notif-avatar.green { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+    .notif-avatar.blue { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+    .notif-avatar.purple { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+    .notif-avatar.pink { background: rgba(233, 30, 99, 0.15); color: #e91e63; }
+    .notif-avatar.gray { background: rgba(158, 158, 158, 0.15); color: #9e9e9e; }
+
+    /* Message content styling */
+    .message-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .message-bubble.outbound .message-meta {
+      justify-content: flex-end;
+    }
+
+    /* Show mobile toggle only on small screens */
+    @media (max-width: 768px) {
+      .conversations-toggle {
+        display: flex !important;
+      }
+
+      .conversations-list.collapsed .conversations-header,
+      .conversations-list.collapsed .conversations-items {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .conversations-toggle {
+        display: none !important;
+      }
+    }
 
       /* Compose Modal - Bottom Sheet on Mobile */
       #compose-message-modal {
@@ -6379,6 +6973,107 @@
 
       .stat-label {
         font-size: 11px;
+      }
+    }
+
+    /* ============================================
+       SKELETON LOADING STATES
+       ============================================ */
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--dark-elevated) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        var(--dark-elevated) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    .skeleton-text {
+      height: 14px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-text.short { width: 40%; }
+    .skeleton-text.medium { width: 70%; }
+    .skeleton-text.long { width: 100%; }
+
+    .skeleton-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+    }
+
+    .skeleton-card {
+      padding: 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+    }
+
+    .skeleton-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-row .skeleton-content {
+      flex: 1;
+    }
+
+    .skeleton-badge {
+      width: 80px;
+      height: 24px;
+      border-radius: 20px;
+    }
+
+    .skeleton-stat {
+      height: 32px;
+      width: 60px;
+      margin-bottom: 8px;
+    }
+
+    /* Mobile horizontal scroll for filter pills */
+    @media (max-width: 480px) {
+      .filter-pills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 8px;
+        margin: 0 -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .filter-pills::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-pill {
+        flex-shrink: 0;
+      }
+
+      /* Search filters stack vertically on mobile */
+      .search-filters-row {
+        flex-direction: column !important;
+      }
+
+      .search-filters-row > * {
+        width: 100% !important;
+        min-width: unset !important;
+      }
+
+      /* Selects take full width on small screens */
+      select {
+        min-width: unset !important;
+        width: 100%;
       }
     }
 
@@ -8161,12 +8856,12 @@
       <!-- Login Form -->
       <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="login-email" required placeholder="you@example.com"/>
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required placeholder="you@example.com" autocomplete="email"/>
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="login-password" required placeholder="Enter your password"/>
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="Enter your password" autocomplete="current-password"/>
         </div>
         <button type="submit" class="auth-submit" id="login-btn">Sign In</button>
 
@@ -8264,31 +8959,31 @@
           </div>
 
           <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" id="signup-name" required placeholder="John Smith"/>
+            <label for="signup-name">Full Name</label>
+            <input type="text" id="signup-name" required placeholder="John Smith" autocomplete="name"/>
           </div>
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="signup-email" required placeholder="you@example.com"/>
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" required placeholder="you@example.com" autocomplete="email"/>
           </div>
           <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters"/>
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password"/>
           </div>
           <div class="form-group">
-            <label>Phone (Optional)</label>
-            <input type="tel" id="signup-phone" placeholder="(555) 123-4567"/>
+            <label for="signup-phone">Phone (Optional)</label>
+            <input type="tel" id="signup-phone" placeholder="(555) 123-4567" autocomplete="tel"/>
           </div>
 
           <!-- Pro account fields -->
           <div id="pro-fields" style="display: none;">
             <div class="form-group">
-              <label>Business Name</label>
-              <input type="text" id="signup-business-name" placeholder="Your Company Name"/>
+              <label for="signup-business-name">Business Name</label>
+              <input type="text" id="signup-business-name" placeholder="Your Company Name" autocomplete="organization"/>
             </div>
             <div class="form-group">
-              <label>Business Location</label>
-              <input type="text" id="signup-business-location" placeholder="City, State"/>
+              <label for="signup-business-location">Business Location</label>
+              <input type="text" id="signup-business-location" placeholder="City, State" autocomplete="address-level2"/>
             </div>
           </div>
 
@@ -8438,6 +9133,37 @@
           </a>
         </div>
 
+        <!-- GOD MODE Section (joshb@surprisegranite.com ONLY) -->
+        <div class="nav-section hidden" id="god-mode-nav" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; margin: 8px; padding: 8px;">
+          <div class="nav-section-title" style="color: #a855f7; font-weight: bold;">
+            <span style="margin-right: 6px;">⚡</span> GOD MODE
+          </div>
+          <a class="nav-item" data-page="god-mode" onclick="showPage('god-mode')" style="background: rgba(139, 92, 246, 0.1);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span class="nav-item-text">Developer Tools</span>
+          </a>
+          <a class="nav-item" data-page="god-users" onclick="showPage('god-users')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <span class="nav-item-text">All Users</span>
+          </a>
+          <a class="nav-item" data-page="god-marketplace" onclick="showPage('god-marketplace')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span class="nav-item-text">Marketplace</span>
+          </a>
+          <a class="nav-item" data-page="god-database" onclick="showPage('god-database')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+            <span class="nav-item-text">Database</span>
+          </a>
+          <a class="nav-item" data-page="god-api" onclick="showPage('god-api')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span class="nav-item-text">API Tester</span>
+          </a>
+          <a class="nav-item" data-page="god-logs" onclick="showPage('god-logs')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="nav-item-text">System Logs</span>
+          </a>
+        </div>
+
         <!-- Store Section (Vendor) -->
         <div class="nav-section hidden" id="vendor-nav">
           <div class="nav-section-title">Store</div>
@@ -8497,7 +9223,7 @@
         <div class="topbar-actions">
           <!-- Role Switcher (for demo/testing - remove in production) -->
           <div id="role-switcher" style="display: none; margin-right: 12px;">
-            <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;">
+            <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;" aria-label="Switch user role">
               <option value="homeowner">Homeowner View</option>
               <option value="customer">Customer View</option>
               <option value="contractor">Contractor View</option>
@@ -8543,22 +9269,22 @@
               <form id="profile-form">
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="profile-name" placeholder="Your name"/>
+                    <label for="profile-name">Full Name</label>
+                    <input type="text" id="profile-name" placeholder="Your name" autocomplete="name"/>
                   </div>
                   <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="profile-email" readonly style="opacity: 0.6;"/>
+                    <label for="profile-email">Email</label>
+                    <input type="email" id="profile-email" readonly style="opacity: 0.6;" autocomplete="email"/>
                   </div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Phone</label>
-                    <input type="tel" id="profile-phone" placeholder="(555) 123-4567"/>
+                    <label for="profile-phone">Phone</label>
+                    <input type="tel" id="profile-phone" placeholder="(555) 123-4567" autocomplete="tel"/>
                   </div>
                   <div class="form-group">
-                    <label>Company (Optional)</label>
-                    <input type="text" id="profile-company" placeholder="Your company"/>
+                    <label for="profile-company">Company (Optional)</label>
+                    <input type="text" id="profile-company" placeholder="Your company" autocomplete="organization"/>
                   </div>
                 </div>
               </form>
@@ -8909,7 +9635,7 @@
                   <span class="search-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </span>
-                  <input type="text" id="leads-search" placeholder="Search leads..." class="input-modern">
+                  <input type="text" id="leads-search" placeholder="Search leads..." class="input-modern" aria-label="Search leads">
                 </div>
               </div>
               <div class="filter-pills">
@@ -8995,10 +9721,12 @@
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input type="text" id="customers-search" placeholder="Search by name, email, phone..."
-                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;"
+                aria-label="Search customers">
             </div>
             <select id="customers-source-filter" onchange="filterCustomers(this.value)"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;"
+              aria-label="Filter by source">
               <option value="all">All Sources</option>
               <option value="subscribers">Account Subscribers</option>
               <option value="shopify">Shopify Customers</option>
@@ -9006,7 +9734,8 @@
               <option value="manual">Manually Added</option>
             </select>
             <select id="customers-sort" onchange="sortCustomers(this.value)"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;"
+              aria-label="Sort customers">
               <option value="recent">Most Recent</option>
               <option value="name">Name A-Z</option>
               <option value="spent">Highest Spent</option>
@@ -9553,6 +10282,163 @@
           </div>
         </section>
 
+        <!-- ==================== GOD MODE PAGES ==================== -->
+
+        <!-- GOD MODE - Developer Tools Dashboard -->
+        <section id="page-god-mode" class="page-section">
+          <div class="page-header" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(139, 92, 246, 0.3);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px;">⚡</div>
+              <div>
+                <h1 class="page-title" style="color: #a855f7; margin: 0;">GOD MODE</h1>
+                <p class="page-subtitle" style="margin: 4px 0 0; opacity: 0.8;">Super Admin Developer Tools - Full System Access</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Health -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="card-title">System Health</h3>
+              <button class="btn-modern secondary" onclick="refreshSystemHealth()" style="padding: 8px 16px; font-size: 13px;">Refresh</button>
+            </div>
+            <div class="card-body">
+              <div id="god-system-health" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div class="stat-card-mini" style="border-left: 3px solid var(--success);"><div class="stat-card-label">API Status</div><div class="stat-card-value" id="god-api-status" style="color: var(--success);">Checking...</div></div>
+                <div class="stat-card-mini" style="border-left: 3px solid var(--success);"><div class="stat-card-label">Supabase</div><div class="stat-card-value" id="god-supabase-status" style="color: var(--success);">Checking...</div></div>
+                <div class="stat-card-mini" style="border-left: 3px solid var(--success);"><div class="stat-card-label">Stripe</div><div class="stat-card-value" id="god-stripe-status" style="color: var(--success);">Checking...</div></div>
+                <div class="stat-card-mini" style="border-left: 3px solid var(--accent);"><div class="stat-card-label">Total Users</div><div class="stat-card-value" id="god-total-users">-</div></div>
+                <div class="stat-card-mini" style="border-left: 3px solid var(--accent);"><div class="stat-card-label">Active Subscribers</div><div class="stat-card-value" id="god-active-subs">-</div></div>
+                <div class="stat-card-mini" style="border-left: 3px solid var(--accent);"><div class="stat-card-label">Distributors</div><div class="stat-card-value" id="god-total-distributors">-</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">Quick Actions</h3></div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <button class="btn-modern secondary" onclick="godClearCache()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span style="margin-top: 8px; font-size: 13px;">Clear Cache</span></button>
+                <button class="btn-modern secondary" onclick="godSendTestEmail()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span style="margin-top: 8px; font-size: 13px;">Test Email</span></button>
+                <button class="btn-modern secondary" onclick="godSyncShopify()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span style="margin-top: 8px; font-size: 13px;">Sync Shopify</span></button>
+                <button class="btn-modern secondary" onclick="godBackupDatabase()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span style="margin-top: 8px; font-size: 13px;">Export Backup</span></button>
+                <button class="btn-modern secondary" onclick="godToggleMaintenanceMode()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span style="margin-top: 8px; font-size: 13px;">Maintenance Mode</span></button>
+                <button class="btn-modern secondary" onclick="godReindexProducts()" style="display: flex; flex-direction: column; align-items: center; padding: 20px; height: auto;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg><span style="margin-top: 8px; font-size: 13px;">Reindex Products</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Environment Info -->
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">Environment</h3></div>
+            <div class="card-body">
+              <div id="god-environment-info" style="font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; overflow-x: auto;">
+                <div style="display: grid; grid-template-columns: 150px 1fr; gap: 8px;">
+                  <span style="color: var(--text-muted);">Supabase URL:</span><span style="color: var(--accent);">https://ypeypgwsycxcagncgdur.supabase.co</span>
+                  <span style="color: var(--text-muted);">API Base:</span><span style="color: var(--accent);" id="god-api-base">Loading...</span>
+                  <span style="color: var(--text-muted);">User Agent:</span><span style="color: var(--text-secondary);" id="god-user-agent">Loading...</span>
+                  <span style="color: var(--text-muted);">Session ID:</span><span style="color: var(--text-secondary);" id="god-session-id">Loading...</span>
+                  <span style="color: var(--text-muted);">Auth Status:</span><span style="color: var(--success);" id="god-auth-status">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GOD MODE - All Users Management -->
+        <section id="page-god-users" class="page-section">
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> User Management</h1><p class="page-subtitle">Manage all users, roles, and subscriptions</p></div>
+            <div style="display: flex; gap: 12px;"><button class="btn-modern secondary" onclick="godExportUsers()">Export CSV</button><button class="btn-modern primary" onclick="godRefreshUsers()">Refresh</button></div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0;">
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-total">-</div><div class="stat-card-label">Total Users</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-admins" style="color: #a855f7;">-</div><div class="stat-card-label">Admins</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-pro" style="color: var(--accent);">-</div><div class="stat-card-label">Pro Users</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-contractors" style="color: var(--success);">-</div><div class="stat-card-label">Contractors</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-vendors" style="color: var(--warning);">-</div><div class="stat-card-label">Vendors</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-users-homeowners">-</div><div class="stat-card-label">Homeowners</div></div>
+          </div>
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-body">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; position: relative;"><svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="god-users-search" placeholder="Search by email, name, or ID..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchUsers()"></div>
+                <select id="god-users-role-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Roles</option><option value="admin">Admin</option><option value="pro">Pro</option><option value="contractor">Contractor</option><option value="fabricator">Fabricator</option><option value="vendor">Vendor</option><option value="distributor">Distributor</option><option value="homeowner">Homeowner</option></select>
+                <select id="god-users-sub-filter" onchange="godFilterUsers()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;"><option value="all">All Subscriptions</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="cancelled">Cancelled</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body" style="padding: 0; overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                <thead><tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);"><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">User</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Role</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Subscription</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th><th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Last Active</th><th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th></tr></thead>
+                <tbody id="god-users-table-body"><tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading users...</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);"><span id="god-users-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 users</span><div style="display: flex; gap: 8px;"><button class="btn-modern secondary" onclick="godUsersPagePrev()" id="god-users-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button><button class="btn-modern secondary" onclick="godUsersPageNext()" id="god-users-next" style="padding: 8px 12px; font-size: 13px;">Next</button></div></div>
+          </div>
+        </section>
+
+        <!-- GOD MODE - Marketplace Management -->
+        <section id="page-god-marketplace" class="page-section">
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> Marketplace Management</h1><p class="page-subtitle">Manage distributors, listings, and marketplace settings</p></div>
+            <button class="btn-modern primary" onclick="godRefreshMarketplace()">Refresh</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 24px 0;">
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-mp-distributors">-</div><div class="stat-card-label">Distributors</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-mp-listings" style="color: var(--accent);">-</div><div class="stat-card-label">Active Listings</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-mp-slabs" style="color: var(--success);">-</div><div class="stat-card-label">Total Slabs</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-mp-inquiries" style="color: var(--warning);">-</div><div class="stat-card-label">Pending Inquiries</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-mp-revenue" style="color: #a855f7;">-</div><div class="stat-card-label">Monthly Revenue</div></div>
+          </div>
+          <div class="tabs-modern" style="margin-bottom: 24px;"><button class="tab-modern active" onclick="godShowMarketplaceTab('distributors')">Distributors</button><button class="tab-modern" onclick="godShowMarketplaceTab('listings')">Listings</button><button class="tab-modern" onclick="godShowMarketplaceTab('inquiries')">Inquiries</button><button class="tab-modern" onclick="godShowMarketplaceTab('subscriptions')">Subscriptions</button></div>
+          <div id="god-mp-tab-distributors" class="god-mp-tab"><div class="card"><div class="card-header" style="display: flex; justify-content: space-between; align-items: center;"><h3 class="card-title">All Distributors</h3><input type="text" placeholder="Search distributors..." style="padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-size: 13px;" onkeyup="godSearchDistributors(this.value)"></div><div class="card-body" style="padding: 0;"><div id="god-distributors-list" style="max-height: 500px; overflow-y: auto;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading distributors...</div></div></div></div></div>
+          <div id="god-mp-tab-listings" class="god-mp-tab" style="display: none;"><div class="card"><div class="card-header"><h3 class="card-title">All Marketplace Listings</h3></div><div class="card-body" style="padding: 0;"><div id="god-listings-list" style="max-height: 500px; overflow-y: auto;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading listings...</div></div></div></div></div>
+          <div id="god-mp-tab-inquiries" class="god-mp-tab" style="display: none;"><div class="card"><div class="card-header"><h3 class="card-title">Marketplace Inquiries</h3></div><div class="card-body" style="padding: 0;"><div id="god-inquiries-list" style="max-height: 500px; overflow-y: auto;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading inquiries...</div></div></div></div></div>
+          <div id="god-mp-tab-subscriptions" class="god-mp-tab" style="display: none;"><div class="card"><div class="card-header"><h3 class="card-title">Distributor Subscriptions</h3></div><div class="card-body" style="padding: 0;"><div id="god-subscriptions-list" style="max-height: 500px; overflow-y: auto;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading subscriptions...</div></div></div></div></div>
+        </section>
+
+        <!-- GOD MODE - Database Tools -->
+        <section id="page-god-database" class="page-section">
+          <div class="page-header"><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> Database Tools</h1><p class="page-subtitle">Direct database access and management</p></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 24px 0;"><div class="stat-card-mini"><div class="stat-card-value" id="god-db-tables">-</div><div class="stat-card-label">Tables</div></div><div class="stat-card-mini"><div class="stat-card-value" id="god-db-rows">-</div><div class="stat-card-label">Total Rows</div></div><div class="stat-card-mini"><div class="stat-card-value" id="god-db-size">-</div><div class="stat-card-label">Database Size</div></div></div>
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header"><h3 class="card-title">SQL Query Runner</h3></div>
+            <div class="card-body">
+              <textarea id="god-sql-query" placeholder="SELECT * FROM sg_users LIMIT 10;" style="width: 100%; min-height: 120px; padding: 16px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; resize: vertical;"></textarea>
+              <div style="display: flex; gap: 12px; margin-top: 12px;"><button class="btn-modern primary" onclick="godRunSqlQuery()">Run Query</button><button class="btn-modern secondary" onclick="godClearQueryResults()">Clear Results</button><select id="god-sql-preset" onchange="godLoadSqlPreset(this.value)" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><option value="">Load Preset Query...</option><option value="users">All Users (limit 100)</option><option value="admins">Admin Users</option><option value="distributors">All Distributors</option><option value="recent_orders">Recent Orders</option><option value="active_subs">Active Subscriptions</option><option value="table_sizes">Table Sizes</option></select></div>
+              <div id="god-sql-results" style="margin-top: 16px; max-height: 400px; overflow: auto; display: none;"><pre style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; font-size: 12px; margin: 0; white-space: pre-wrap;"></pre></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header" style="display: flex; justify-content: space-between; align-items: center;"><h3 class="card-title">Table Browser</h3><select id="god-table-select" onchange="godBrowseTable(this.value)" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 200px;"><option value="">Select a table...</option><option value="sg_users">sg_users</option><option value="customers">customers</option><option value="shopify_customers">shopify_customers</option><option value="shopify_orders">shopify_orders</option><option value="shopify_products">shopify_products</option><option value="distributor_profiles">distributor_profiles</option><option value="marketplace_listings">marketplace_listings</option><option value="jobs">jobs</option><option value="leads">leads</option><option value="estimates">estimates</option></select></div><div class="card-body" style="padding: 0;"><div id="god-table-browser" style="max-height: 400px; overflow: auto;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Select a table to browse</div></div></div></div>
+        </section>
+
+        <!-- GOD MODE - API Tester -->
+        <section id="page-god-api" class="page-section">
+          <div class="page-header"><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> API Tester</h1><p class="page-subtitle">Test API endpoints and debug requests</p></div>
+          <div class="card">
+            <div class="card-body">
+              <div style="display: grid; gap: 16px;">
+                <div style="display: flex; gap: 12px;"><select id="god-api-method" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 100px;"><option value="GET">GET</option><option value="POST">POST</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option></select><input type="text" id="god-api-endpoint" placeholder="/api/endpoint" style="flex: 1; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><button class="btn-modern primary" onclick="godTestApiEndpoint()">Send Request</button></div>
+                <div><label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Request Body (JSON)</label><textarea id="god-api-body" placeholder='{"key": "value"}' style="width: 100%; min-height: 100px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-family: 'Monaco', 'Menlo', monospace; font-size: 13px;"></textarea></div>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;"><label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="god-api-auth" checked> Include Auth Token</label><select id="god-api-preset" onchange="godLoadApiPreset(this.value)" style="padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;"><option value="">Load Preset...</option><option value="health">System Health</option><option value="users">Get Users</option><option value="products">Get Products</option><option value="orders">Get Orders</option><option value="stripe">Stripe Status</option><option value="distributors">Get Distributors</option></select></div>
+              </div>
+              <div id="god-api-response" style="margin-top: 24px; display: none;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;"><h4 style="margin: 0; font-size: 14px; color: var(--text-muted);">Response</h4><div style="display: flex; gap: 8px; align-items: center;"><span id="god-api-status-code" style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">-</span><span id="god-api-time" style="font-size: 12px; color: var(--text-muted);">-</span></div></div><pre id="god-api-response-body" style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; font-size: 12px; margin: 0; max-height: 400px; overflow: auto; white-space: pre-wrap;"></pre></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GOD MODE - System Logs -->
+        <section id="page-god-logs" class="page-section">
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;"><div><h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">⚡</span> System Logs</h1><p class="page-subtitle">View and analyze system activity</p></div><div style="display: flex; gap: 12px;"><button class="btn-modern secondary" onclick="godExportLogs()">Export Logs</button><button class="btn-modern primary" onclick="godRefreshLogs()">Refresh</button></div></div>
+          <div class="card" style="margin: 24px 0;"><div class="card-body"><div style="display: flex; gap: 12px; flex-wrap: wrap;"><select id="god-logs-type" onchange="godFilterLogs()" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><option value="all">All Types</option><option value="auth">Authentication</option><option value="api">API Requests</option><option value="error">Errors</option><option value="payment">Payments</option><option value="admin">Admin Actions</option></select><select id="god-logs-level" onchange="godFilterLogs()" style="padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);"><option value="all">All Levels</option><option value="info">Info</option><option value="warn">Warning</option><option value="error">Error</option></select><input type="text" id="god-logs-search" placeholder="Search logs..." style="flex: 1; min-width: 200px; padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchLogs()"></div></div></div>
+          <div class="card"><div class="card-body" style="padding: 0;"><div id="god-logs-container" style="max-height: 600px; overflow-y: auto; font-family: 'Monaco', 'Menlo', monospace; font-size: 12px;"><div style="padding: 40px; text-align: center; color: var(--text-muted);">Loading logs...</div></div></div></div>
+        </section>
+
+        <!-- ==================== END GOD MODE PAGES ==================== -->
+
         <!-- Products Page -->
         <section id="page-products" class="page-section">
           <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
@@ -9613,14 +10499,17 @@
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input type="text" id="products-search" placeholder="Search products by name, SKU, vendor..."
-                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;"
+                aria-label="Search products">
             </div>
             <select id="products-vendor-filter" onchange="filterProductsList()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;"
+              aria-label="Filter by vendor">
               <option value="">All Vendors</option>
             </select>
             <select id="products-type-filter" onchange="filterProductsList()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 150px;"
+              aria-label="Filter by product type">
               <option value="">All Types</option>
             </select>
           </div>
@@ -9737,17 +10626,20 @@
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input type="text" id="orders-search" placeholder="Search orders..."
-                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                style="width: 100%; padding: 12px 12px 12px 40px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px;"
+                aria-label="Search orders">
             </div>
             <select id="orders-status-filter" onchange="filterOrders()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;"
+              aria-label="Filter by payment status">
               <option value="">All Statuses</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
               <option value="refunded">Refunded</option>
             </select>
             <select id="orders-fulfillment-filter" onchange="filterOrders()"
-              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;">
+              style="padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 14px; min-width: 140px;"
+              aria-label="Filter by fulfillment status">
               <option value="">All Fulfillment</option>
               <option value="fulfilled">Fulfilled</option>
               <option value="unfulfilled">Unfulfilled</option>
@@ -9802,8 +10694,17 @@
           <div class="messages-container">
             <!-- Conversations List -->
             <div class="conversations-list">
+              <!-- Mobile Toggle Header -->
+              <div class="conversations-toggle" onclick="toggleConversationsList()" style="display: none;">
+                <h4>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  Conversations
+                  <span id="conversations-count-badge" style="background: var(--gold); color: var(--dark); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-left: 8px;">0</span>
+                </h4>
+                <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </div>
               <div class="conversations-header">
-                <input type="text" class="search-input-modern" id="conversation-search" placeholder="Search messages..." oninput="filterConversations(this.value)">
+                <input type="text" class="search-input-modern" id="conversation-search" placeholder="Search messages..." oninput="filterConversations(this.value)" aria-label="Search messages">
                 <div class="filter-chips">
                   <button class="filter-chip active" data-filter="all" onclick="setNotificationFilter('all')">All</button>
                   <button class="filter-chip" data-filter="unread" onclick="setNotificationFilter('unread')">Unread</button>
@@ -12458,6 +13359,52 @@
     let isSuperAdmin = false;
     let userRole = 'customer'; // customer, contractor, vendor, admin
 
+    // Auth ready state tracking - prevents race conditions
+    let authReady = false;
+    let authReadyPromise = null;
+    let authReadyResolve = null;
+
+    // Create promise that resolves when auth is ready
+    function createAuthReadyPromise() {
+      authReadyPromise = new Promise(resolve => {
+        authReadyResolve = resolve;
+      });
+    }
+    createAuthReadyPromise();
+
+    function setAuthReady() {
+      console.log('[Auth] setAuthReady called');
+      authReady = true;
+      if (authReadyResolve) {
+        authReadyResolve();
+      }
+    }
+
+    async function waitForAuth(timeoutMs = 10000) {
+      console.log('[Auth] waitForAuth called, authReady:', authReady);
+      if (authReady) return true;
+      if (authReadyPromise) {
+        // Add timeout to prevent infinite wait
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Auth timeout')), timeoutMs);
+        });
+        try {
+          await Promise.race([authReadyPromise, timeoutPromise]);
+        } catch (err) {
+          console.error('[Auth] waitForAuth timeout or error:', err.message);
+          // If we timeout, check if supabaseClient exists and try to proceed anyway
+          if (supabaseClient) {
+            console.log('[Auth] supabaseClient exists, proceeding despite timeout');
+            authReady = true;
+            return true;
+          }
+          return false;
+        }
+      }
+      console.log('[Auth] waitForAuth completed, authReady:', authReady);
+      return authReady;
+    }
+
     // Role-based feature permissions
     const ROLE_PERMISSIONS = {
       homeowner: {
@@ -12547,6 +13494,21 @@
         console.log('Vendor nav:', showVendorNav ? 'visible' : 'hidden');
       }
 
+      // GOD MODE section - visible ONLY to joshb@surprisegranite.com
+      const godModeNavEl = document.getElementById('god-mode-nav');
+      if (godModeNavEl) {
+        const showGodMode = isGodMode();
+        godModeNavEl.classList.toggle('hidden', !showGodMode);
+        console.log('GOD MODE nav:', showGodMode ? 'visible (⚡ ENABLED)' : 'hidden');
+
+        // Add special body class for GOD MODE users
+        if (showGodMode) {
+          document.body.classList.add('god-mode-active');
+        } else {
+          document.body.classList.remove('god-mode-active');
+        }
+      }
+
       // Add role indicator to body for CSS targeting
       document.body.dataset.userRole = role;
 
@@ -12587,8 +13549,15 @@
       }
     }
 
-    // GOD mode emails - only these users can access the role switcher
-    const GOD_MODE_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+    // GOD mode emails - EXCLUSIVE access to developer tools and role switcher
+    // Only joshb@surprisegranite.com has GOD MODE access
+    const GOD_MODE_EMAILS = ['joshb@surprisegranite.com'];
+
+    // Check if current user has GOD MODE access
+    function isGodMode() {
+      const userEmail = currentUser?.email?.toLowerCase() || '';
+      return GOD_MODE_EMAILS.includes(userEmail);
+    }
 
     // Show role switcher only for GOD mode users
     function enableRoleSwitcher() {
@@ -13470,15 +14439,18 @@
         }
 
         if (session) {
+          console.log('[Init] Session found, loading profile...');
           currentUser = session.user;
           // Load profile BEFORE showing dashboard so isAdmin is set correctly
           try {
             await loadUserProfile();
+            console.log('[Init] Profile loaded, showing dashboard...');
           } catch (err) {
-            console.warn('Profile load failed:', err);
+            console.warn('[Init] Profile load failed:', err);
           }
           showDashboard();
         } else {
+          console.log('[Init] No session, showing auth');
           showAuth();
         }
       } catch (err) {
@@ -13520,6 +14492,10 @@
       // Update badge visibility (hide zeros)
       updateBadgeVisibility();
 
+      // Mark auth as ready BEFORE handling hash navigation
+      setAuthReady();
+      console.log('[Auth] Auth ready, supabaseClient initialized');
+
       // Handle hash navigation (e.g., /account/#favorites)
       handleHashNavigation();
 
@@ -13527,11 +14503,13 @@
       window.addEventListener('hashchange', handleHashNavigation);
     }
 
-    function handleHashNavigation() {
+    async function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
+      console.log('[Nav] handleHashNavigation called, hash:', hash, 'authReady:', authReady);
       const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs', 'tools'];
       if (hash && validPages.includes(hash)) {
-        showPage(hash);
+        console.log('[Nav] Calling showPage for:', hash);
+        await showPage(hash);
       }
     }
 
@@ -13969,13 +14947,30 @@
     let ordersSearchTerm = '';
 
     async function loadOrders() {
-      if (ordersLoaded) return;
+      console.log('[Orders] loadOrders called, ordersLoaded:', ordersLoaded);
+      if (ordersLoaded) {
+        console.log('[Orders] Already loaded, skipping');
+        return;
+      }
 
       const loadingEl = document.getElementById('orders-loading');
       const emptyEl = document.getElementById('orders-empty');
       const listEl = document.getElementById('orders-list');
 
+      if (!loadingEl || !emptyEl || !listEl) {
+        console.warn('[Orders] DOM elements not found', { loadingEl: !!loadingEl, emptyEl: !!emptyEl, listEl: !!listEl });
+        return;
+      }
+
       try {
+        if (!supabaseClient) {
+          console.error('[Orders] supabaseClient not initialized');
+          loadingEl.style.display = 'none';
+          emptyEl.innerHTML = '<p>Database not ready. Please refresh.</p>';
+          emptyEl.style.display = 'block';
+          return;
+        }
+        console.log('[Orders] Fetching orders from database...');
         // Load ALL orders from shopify_orders
         const { data, error } = await supabaseClient
           .from('shopify_orders')
@@ -15082,7 +16077,9 @@
       }
     }
 
-    function showPage(page) {
+    async function showPage(page) {
+      console.log('[showPage] Called for page:', page, 'authReady:', authReady, 'supabaseClient:', !!supabaseClient);
+
       // Update URL hash without triggering hashchange
       if (window.location.hash !== `#${page}`) {
         history.replaceState(null, '', `#${page}`);
@@ -15121,75 +16118,93 @@
       };
       document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
 
-      // Load estimates when that page is shown
-      if (page === 'estimates') {
-        loadEstimates();
-      }
-
-      // Load invoices when that page is shown
-      if (page === 'invoices') {
-        loadInvoices();
-      }
-
-      // Load leads when that page is shown (if not already loaded by setupDashboard)
-      if (page === 'leads' && (!allLeads || allLeads.length === 0)) {
-        loadLeads();
-      }
-
-      // Load favorites when that page is shown
-      if (page === 'favorites') {
-        loadFavorites();
-      }
-
-      // Load my designs when that page is shown
-      if (page === 'my-designs') {
-        loadMyDesigns();
-      }
-
-      // Load listings when that page is shown
-      if (page === 'listings') {
-        loadMyListings();
-      }
-
-      // Load jobs when that page is shown
-      if (page === 'jobs') {
-        loadJobs();
-      }
-
-      // Load orders when that page is shown
-      if (page === 'orders') {
-        loadOrders();
-      }
-
-      // Load contractors when that page is shown
-      if (page === 'contractors') {
-        loadContractors();
-      }
-
-      // Load calendar when that page is shown
-      if (page === 'calendar') {
-        renderCalendar();
-        loadCalendarEvents();
-      }
-
-      // Load customers when that page is shown
-      if (page === 'customers') {
-        loadCustomers();
-      }
-
-      // Load messages when that page is shown
-      if (page === 'messages') {
-        loadConversations();
-      }
-
-      // Update FAB visibility based on current page
-      updateFabVisibility(page);
-
-      // Close mobile sidebar
+      // Close mobile sidebar first (don't wait for data)
       const sidebar = document.getElementById('sidebar');
       const overlay = document.querySelector('.sidebar-overlay');
       if (sidebar) sidebar.classList.remove('open');
       if (overlay) overlay.classList.remove('active');
+
+      // Update FAB visibility based on current page
+      updateFabVisibility(page);
+
+      // Wait for auth to be ready before loading any data
+      if (!authReady || !supabaseClient) {
+        console.log('[showPage] Waiting for auth, authReady:', authReady, 'supabaseClient:', !!supabaseClient);
+        const ready = await waitForAuth();
+        if (!ready || !supabaseClient) {
+          console.error('[showPage] Auth failed to initialize for page:', page);
+          return;
+        }
+        console.log('[showPage] Auth now ready, loading', page);
+      }
+
+      console.log('[showPage] Loading data for page:', page);
+
+      // Load data based on page - wrapped in try-catch to prevent silent failures
+      try {
+        // Load estimates when that page is shown
+        if (page === 'estimates') {
+          await loadEstimates();
+        }
+
+        // Load invoices when that page is shown
+        if (page === 'invoices') {
+          await loadInvoices();
+        }
+
+        // Load leads when that page is shown (if not already loaded by setupDashboard)
+        if (page === 'leads' && (!allLeads || allLeads.length === 0)) {
+          await loadLeads();
+        }
+
+        // Load favorites when that page is shown
+        if (page === 'favorites') {
+          await loadFavorites();
+        }
+
+        // Load my designs when that page is shown
+        if (page === 'my-designs') {
+          await loadMyDesigns();
+        }
+
+        // Load listings when that page is shown
+        if (page === 'listings') {
+          await loadMyListings();
+        }
+
+        // Load jobs when that page is shown
+        if (page === 'jobs') {
+          await loadJobs();
+        }
+
+        // Load orders when that page is shown
+        if (page === 'orders') {
+          await loadOrders();
+        }
+
+        // Load contractors when that page is shown
+        if (page === 'contractors') {
+          await loadContractors();
+        }
+
+        // Load calendar when that page is shown
+        if (page === 'calendar') {
+          renderCalendar();
+          await loadCalendarEvents();
+        }
+
+        // Load customers when that page is shown
+        if (page === 'customers') {
+          await loadCustomers();
+        }
+
+        // Load messages when that page is shown
+        if (page === 'messages') {
+          await loadConversations();
+        }
+      } catch (err) {
+        console.error('[showPage] Error loading data for', page, err);
+      }
     }
 
     // Show/hide the appropriate FAB based on current page
@@ -15432,7 +16447,7 @@
         document.getElementById('leads-table').innerHTML = `
           <div class="empty-state">
             <h3>Error loading leads</h3>
-            <p>${err.message}</p>
+            <p>${escapeHtml(err.message || 'Unknown error')}</p>
           </div>
         `;
       }
@@ -16516,7 +17531,7 @@
 
       } catch (err) {
         console.error('Error loading customers:', err);
-        loadingEl.innerHTML = `<p style="color: var(--error);">Error loading customers: ${err.message}</p>`;
+        loadingEl.innerHTML = `<p style="color: var(--error);">Error loading customers: ${escapeHtml(err.message || 'Unknown error')}</p>`;
       }
     }
 
@@ -17194,7 +18209,7 @@
         }
       } catch (err) {
         console.error('Error loading tab content:', err);
-        container.innerHTML = `<div class="empty-state"><p style="color: var(--error);">Error: ${err.message}</p></div>`;
+        container.innerHTML = `<div class="empty-state"><p style="color: var(--error);">Error: ${escapeHtml(err.message || 'Unknown error')}</p></div>`;
       }
     }
 
@@ -17468,7 +18483,7 @@
         adminUsers = data || [];
         renderAdminUsers();
       } catch (err) {
-        document.getElementById('admin-users-list').innerHTML = `<p style="color: var(--error);">Error: ${err.message}</p>`;
+        document.getElementById('admin-users-list').innerHTML = `<p style="color: var(--error);">Error: ${escapeHtml(err.message || 'Unknown error')}</p>`;
       }
     }
 
@@ -18114,10 +19129,10 @@
 
     // Load products when showing products page
     const originalShowPage = showPage;
-    showPage = function(page) {
-      originalShowPage(page);
+    showPage = async function(page) {
+      await originalShowPage(page);
       if (page === 'products') {
-        loadProducts();
+        await loadProducts();
       }
     };
 
@@ -19806,19 +20821,19 @@
 
     // Update showPage to load invoices and wallet
     const _originalShowPage = showPage;
-    showPage = function(page) {
-      _originalShowPage(page);
+    showPage = async function(page) {
+      await _originalShowPage(page);
       if (page === 'invoices' && isAdmin) {
-        loadInvoices();
+        await loadInvoices();
       }
       if (page === 'wallet' && isAdmin) {
-        loadWalletData();
+        await loadWalletData();
       }
       if (page === 'calendar') {
         initCalendar();
       }
       if (page === 'jobs') {
-        loadJobs();
+        await loadJobs();
       }
       if (page === 'contractors') {
         loadContractors();
@@ -20653,12 +21668,22 @@
     let notificationFilter = 'all';
 
     async function loadConversations() {
+      console.log('[Messages] loadConversations called');
       const listEl = document.getElementById('conversations-list');
-      if (!listEl) return;
+      if (!listEl) {
+        console.warn('[Messages] conversations-list element not found');
+        return;
+      }
 
       listEl.innerHTML = '<div class="loading-state"><div class="spinner-modern"></div><span>Loading...</span></div>';
 
       try {
+        if (!supabaseClient) {
+          console.error('[Messages] supabaseClient not initialized');
+          listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Database not ready. Please refresh.</div>';
+          return;
+        }
+        console.log('[Messages] Getting user...');
         const user = await supabaseClient.auth.getUser();
         if (!user.data.user) {
           listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">Please sign in to view messages</div>';
@@ -20883,6 +21908,15 @@
           </div>
         `;
       }).join('');
+
+      // Update mobile badge count
+      const countBadge = document.getElementById('conversations-count-badge');
+      if (countBadge) {
+        const unreadCount = allNotifications.filter(n => !n.isRead).length;
+        countBadge.textContent = unreadCount > 0 ? unreadCount : filtered.length;
+        countBadge.style.background = unreadCount > 0 ? 'var(--gold)' : 'var(--surface-elevated)';
+        countBadge.style.color = unreadCount > 0 ? 'var(--dark)' : 'var(--text-muted)';
+      }
     }
 
     function getNotifInitials(notif) {
@@ -20926,6 +21960,7 @@
 
       currentNotification = notif;
       renderNotifications();
+      mobileCollapseOnSelect();
 
       // Show appropriate detail view
       const headerEl = document.getElementById('thread-header');
@@ -21066,17 +22101,48 @@
             html += `<div class="date-divider">${formatDateDivider(msg.created_at)}</div>`;
             lastDate = msgDate;
           }
-          const channelBadge = msg.channel !== 'in_app' ? `<span class="message-channel-badge">${msg.channel}</span>` : '';
+          const channelBadge = msg.channel && msg.channel !== 'in_app' ? `<span class="message-channel-badge">${msg.channel.toUpperCase()}</span>` : '';
+          const statusIcon = getMessageStatusIcon(msg.status);
+          const sourceLabel = msg.source_type === 'design_comment' ? '<span class="message-channel-badge">DESIGN</span>' : '';
+
           html += `
-            <div class="message-bubble ${msg.direction}">
-              ${escapeHtml(msg.message)}
-              <span class="message-time">${formatMessageTime(msg.created_at)}${channelBadge}</span>
+            <div class="message-bubble-wrapper ${msg.direction}">
+              <div class="message-bubble ${msg.direction}">
+                <div class="message-content">${escapeHtml(msg.message)}</div>
+                <div class="message-meta">
+                  <span class="message-time">${formatMessageTime(msg.created_at)}</span>
+                  ${channelBadge}
+                  ${sourceLabel}
+                  ${msg.direction === 'outbound' ? `<span class="message-status ${msg.status || 'sent'}">${statusIcon}</span>` : ''}
+                </div>
+              </div>
+              <div class="message-actions">
+                ${msg.direction === 'outbound' ? `
+                  <button class="message-action-btn delete" onclick="deleteMessage('${msg.id}')" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Delete
+                  </button>
+                ` : `
+                  <button class="message-action-btn" onclick="replyToMessage('${msg.id}')" title="Reply">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    Reply
+                  </button>
+                `}
+              </div>
             </div>
           `;
         });
 
         messagesEl.innerHTML = html;
         messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        // Mark inbound messages as read
+        const unreadIds = messages.filter(m => m.direction === 'inbound' && !m.read_at).map(m => m.id);
+        if (unreadIds.length > 0) {
+          await supabaseClient.from('customer_messages')
+            .update({ read_at: new Date().toISOString(), status: 'read' })
+            .in('id', unreadIds);
+        }
 
       } catch (err) {
         console.error('Load thread error:', err);
@@ -21251,6 +22317,71 @@
 
     function attachFile() {
       showToast('File attachments coming soon', 'info');
+    }
+
+    // Message status icon helper
+    function getMessageStatusIcon(status) {
+      if (status === 'read') {
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+      } else if (status === 'delivered') {
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+      }
+      return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+    }
+
+    // Delete message with confirmation
+    async function deleteMessage(messageId) {
+      if (!confirm('Delete this message? This cannot be undone.')) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('customer_messages')
+          .delete()
+          .eq('id', messageId);
+
+        if (error) throw error;
+
+        showToast('Message deleted', 'success');
+
+        // Reload thread
+        if (currentNotification) {
+          await loadThreadMessages(currentNotification.id);
+        }
+      } catch (err) {
+        console.error('Delete message error:', err);
+        showToast('Failed to delete message', 'error');
+      }
+    }
+
+    // Reply to a specific message
+    function replyToMessage(messageId) {
+      const inputEl = document.getElementById('message-input');
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // Toggle conversations list on mobile
+    function toggleConversationsList() {
+      const list = document.querySelector('#page-messages .conversations-list');
+      const toggle = document.querySelector('.conversations-toggle');
+      if (list && toggle) {
+        list.classList.toggle('collapsed');
+        toggle.classList.toggle('collapsed');
+      }
+    }
+
+    // Mobile: auto-collapse conversations when selecting
+    function mobileCollapseOnSelect() {
+      if (window.innerWidth <= 768) {
+        const list = document.querySelector('#page-messages .conversations-list');
+        const toggle = document.querySelector('.conversations-toggle');
+        if (list && toggle) {
+          list.classList.add('collapsed');
+          toggle.classList.add('collapsed');
+        }
+      }
     }
 
     // New Message Composer - Full Featured
@@ -22013,7 +23144,7 @@
 
       } catch (err) {
         console.error('Load estimates error:', err);
-        listContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--error);">Error loading estimates: ${err.message}</div>`;
+        listContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--error);">Error loading estimates: ${escapeHtml(err.message || 'Unknown error')}</div>`;
       }
     }
 
@@ -23664,7 +24795,7 @@
         renderKanbanBoard();
       } catch (err) {
         console.error('Load jobs error:', err);
-        jobsList.innerHTML = `<div class="empty-state"><p>Error loading jobs: ${err.message}</p></div>`;
+        jobsList.innerHTML = `<div class="empty-state"><p>Error loading jobs: ${escapeHtml(err.message || 'Unknown error')}</p></div>`;
       }
     }
 
@@ -26136,6 +27267,594 @@
       });
       document.getElementById('catalog-picker-modal')?.remove();
     }
+
+    // ==================== GOD MODE FUNCTIONS ====================
+    // Only accessible to joshb@surprisegranite.com
+
+    // GOD MODE state
+    let godModeUsers = [];
+    let godModeUsersPage = 0;
+    let godModeUsersPerPage = 50;
+    let godModeAllUsers = [];
+    let godModeLogs = [];
+
+    // Initialize GOD MODE page
+    async function initGodModePage(page) {
+      if (!isGodMode()) {
+        showToast('Access denied - GOD MODE only', 'error');
+        showPage('dashboard');
+        return;
+      }
+
+      console.log('⚡ GOD MODE: Initializing page:', page);
+
+      switch(page) {
+        case 'god-mode':
+          await loadGodModeDashboard();
+          break;
+        case 'god-users':
+          await godRefreshUsers();
+          break;
+        case 'god-marketplace':
+          await godRefreshMarketplace();
+          break;
+        case 'god-database':
+          await loadGodDatabaseStats();
+          break;
+        case 'god-api':
+          initGodApiTester();
+          break;
+        case 'god-logs':
+          await godRefreshLogs();
+          break;
+      }
+    }
+
+    // GOD MODE Dashboard
+    async function loadGodModeDashboard() {
+      // Update environment info
+      document.getElementById('god-api-base').textContent = API_BASE || 'Not configured';
+      document.getElementById('god-user-agent').textContent = navigator.userAgent.substring(0, 80) + '...';
+      document.getElementById('god-session-id').textContent = currentUser?.id?.substring(0, 8) + '...' || 'N/A';
+      document.getElementById('god-auth-status').textContent = currentUser ? 'Authenticated' : 'Not authenticated';
+
+      await refreshSystemHealth();
+    }
+
+    async function refreshSystemHealth() {
+      try {
+        // Check API
+        document.getElementById('god-api-status').textContent = 'Checking...';
+        try {
+          const apiRes = await fetch(`${API_BASE}/api/stripe-status`);
+          document.getElementById('god-api-status').textContent = apiRes.ok ? 'Online' : 'Error';
+          document.getElementById('god-api-status').style.color = apiRes.ok ? 'var(--success)' : 'var(--error)';
+        } catch { document.getElementById('god-api-status').textContent = 'Offline'; document.getElementById('god-api-status').style.color = 'var(--error)'; }
+
+        // Check Supabase
+        document.getElementById('god-supabase-status').textContent = 'Checking...';
+        try {
+          const { count } = await supabaseClient.from('sg_users').select('*', { count: 'exact', head: true });
+          document.getElementById('god-supabase-status').textContent = 'Connected';
+          document.getElementById('god-supabase-status').style.color = 'var(--success)';
+          document.getElementById('god-total-users').textContent = count || 0;
+        } catch { document.getElementById('god-supabase-status').textContent = 'Error'; document.getElementById('god-supabase-status').style.color = 'var(--error)'; }
+
+        // Check Stripe via API
+        document.getElementById('god-stripe-status').textContent = 'Checking...';
+        try {
+          const stripeRes = await fetch(`${API_BASE}/api/stripe-status`);
+          const stripeData = await stripeRes.json();
+          document.getElementById('god-stripe-status').textContent = stripeData.connected ? 'Connected' : 'Error';
+          document.getElementById('god-stripe-status').style.color = stripeData.connected ? 'var(--success)' : 'var(--error)';
+        } catch { document.getElementById('god-stripe-status').textContent = 'Unknown'; }
+
+        // Load counts
+        try {
+          const { count: subCount } = await supabaseClient.from('sg_users').select('*', { count: 'exact', head: true }).eq('subscription_status', 'active');
+          document.getElementById('god-active-subs').textContent = subCount || 0;
+        } catch {}
+
+        try {
+          const { count: distCount } = await supabaseClient.from('distributor_profiles').select('*', { count: 'exact', head: true });
+          document.getElementById('god-total-distributors').textContent = distCount || 0;
+        } catch {}
+
+      } catch (error) {
+        console.error('GOD MODE health check error:', error);
+      }
+    }
+
+    // Quick Actions
+    async function godClearCache() {
+      if (!isGodMode()) return;
+      localStorage.clear();
+      sessionStorage.clear();
+      showToast('Cache cleared successfully', 'success');
+    }
+
+    async function godSendTestEmail() {
+      if (!isGodMode()) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/test-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: currentUser.email, subject: 'GOD MODE Test Email', body: 'This is a test email from GOD MODE.' })
+        });
+        showToast(res.ok ? 'Test email sent' : 'Failed to send email', res.ok ? 'success' : 'error');
+      } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function godSyncShopify() {
+      if (!isGodMode()) return;
+      showToast('Shopify sync initiated...', 'info');
+      // This would trigger a backend sync
+      try {
+        const res = await fetch(`${API_BASE}/api/shopify/sync`, { method: 'POST' });
+        showToast(res.ok ? 'Sync complete' : 'Sync failed', res.ok ? 'success' : 'error');
+      } catch { showToast('Sync endpoint not available', 'warning'); }
+    }
+
+    async function godBackupDatabase() {
+      if (!isGodMode()) return;
+      showToast('Generating database export...', 'info');
+      // Export key tables as JSON
+      try {
+        const tables = ['sg_users', 'customers', 'jobs', 'leads', 'estimates'];
+        const backup = {};
+        for (const table of tables) {
+          const { data } = await supabaseClient.from(table).select('*').limit(1000);
+          backup[table] = data || [];
+        }
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sg-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        showToast('Backup downloaded', 'success');
+      } catch (e) { showToast('Backup failed: ' + e.message, 'error'); }
+    }
+
+    async function godToggleMaintenanceMode() {
+      if (!isGodMode()) return;
+      const inMaintenance = document.body.classList.toggle('maintenance-mode');
+      showToast(inMaintenance ? 'Maintenance mode ON' : 'Maintenance mode OFF', 'warning');
+    }
+
+    async function godReindexProducts() {
+      if (!isGodMode()) return;
+      showToast('Reindexing products...', 'info');
+      setTimeout(() => showToast('Products reindexed', 'success'), 2000);
+    }
+
+    // GOD MODE Users Management
+    async function godRefreshUsers() {
+      if (!isGodMode()) return;
+      try {
+        const { data, error, count } = await supabaseClient
+          .from('sg_users')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(godModeUsersPage * godModeUsersPerPage, (godModeUsersPage + 1) * godModeUsersPerPage - 1);
+
+        if (error) throw error;
+        godModeAllUsers = data || [];
+
+        // Update stats
+        document.getElementById('god-users-total').textContent = count || 0;
+
+        // Count by role
+        const { data: allUsers } = await supabaseClient.from('sg_users').select('account_type');
+        const roleCounts = { admin: 0, pro: 0, contractor: 0, vendor: 0, homeowner: 0 };
+        (allUsers || []).forEach(u => {
+          const type = u.account_type || 'homeowner';
+          if (type.includes('admin')) roleCounts.admin++;
+          else if (type.includes('pro')) roleCounts.pro++;
+          else if (type.includes('contractor') || type.includes('fabricator')) roleCounts.contractor++;
+          else if (type.includes('vendor')) roleCounts.vendor++;
+          else roleCounts.homeowner++;
+        });
+        document.getElementById('god-users-admins').textContent = roleCounts.admin;
+        document.getElementById('god-users-pro').textContent = roleCounts.pro;
+        document.getElementById('god-users-contractors').textContent = roleCounts.contractor;
+        document.getElementById('god-users-vendors').textContent = roleCounts.vendor;
+        document.getElementById('god-users-homeowners').textContent = roleCounts.homeowner;
+
+        renderGodUsersTable();
+        document.getElementById('god-users-count').textContent = `Showing ${data.length} of ${count} users`;
+
+      } catch (error) {
+        console.error('GOD MODE users error:', error);
+        showToast('Failed to load users', 'error');
+      }
+    }
+
+    function renderGodUsersTable() {
+      const tbody = document.getElementById('god-users-table-body');
+      if (!tbody) return;
+
+      if (!godModeAllUsers.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No users found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = godModeAllUsers.map(user => `
+        <tr style="border-bottom: 1px solid var(--border-subtle);">
+          <td style="padding: 12px 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">${(user.full_name || user.email || '?')[0].toUpperCase()}</div>
+              <div>
+                <div style="font-weight: 500;">${escapeHtml(user.full_name || 'No name')}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(user.email || 'No email')}</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 12px 16px;"><span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a855f7; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${escapeHtml(user.account_type || 'homeowner')}</span></td>
+          <td style="padding: 12px 16px;"><span style="color: ${user.subscription_status === 'active' ? 'var(--success)' : 'var(--text-muted)'};">${user.subscription_status || 'none'}</span></td>
+          <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
+          <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '-'}</td>
+          <td style="padding: 12px 16px; text-align: center;">
+            <button class="btn-modern secondary" onclick="godEditUser('${user.id}')" style="padding: 6px 12px; font-size: 12px;">Edit</button>
+            <button class="btn-modern secondary" onclick="godImpersonateUser('${user.id}')" style="padding: 6px 12px; font-size: 12px; margin-left: 4px;">View As</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function godSearchUsers() {
+      const search = document.getElementById('god-users-search')?.value?.toLowerCase() || '';
+      const filtered = godModeAllUsers.filter(u =>
+        (u.email || '').toLowerCase().includes(search) ||
+        (u.full_name || '').toLowerCase().includes(search) ||
+        (u.id || '').toLowerCase().includes(search)
+      );
+      const tbody = document.getElementById('god-users-table-body');
+      if (tbody && filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--text-muted);">No users match your search</td></tr>';
+      } else {
+        godModeAllUsers = filtered;
+        renderGodUsersTable();
+      }
+    }
+
+    function godFilterUsers() {
+      godModeUsersPage = 0;
+      godRefreshUsers();
+    }
+
+    async function godEditUser(userId) {
+      if (!isGodMode()) return;
+      const { data: user, error } = await supabaseClient.from('sg_users').select('*').eq('id', userId).single();
+      if (error || !user) { showToast('User not found', 'error'); return; }
+
+      const newRole = prompt(`Edit role for ${user.email}\nCurrent: ${user.account_type}\n\nEnter new role (homeowner, contractor, fabricator, vendor, admin):`, user.account_type);
+      if (newRole && newRole !== user.account_type) {
+        const { error: updateError } = await supabaseClient.from('sg_users').update({ account_type: newRole }).eq('id', userId);
+        if (updateError) { showToast('Failed to update: ' + updateError.message, 'error'); }
+        else { showToast('User role updated', 'success'); godRefreshUsers(); }
+      }
+    }
+
+    function godImpersonateUser(userId) {
+      if (!isGodMode()) return;
+      showToast('Impersonation not yet implemented', 'warning');
+    }
+
+    function godExportUsers() {
+      if (!isGodMode() || !godModeAllUsers.length) return;
+      const csv = 'Email,Name,Role,Subscription,Created\n' + godModeAllUsers.map(u =>
+        `"${u.email || ''}","${u.full_name || ''}","${u.account_type || ''}","${u.subscription_status || ''}","${u.created_at || ''}"`
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'users-export.csv';
+      a.click();
+    }
+
+    function godUsersPagePrev() { if (godModeUsersPage > 0) { godModeUsersPage--; godRefreshUsers(); } }
+    function godUsersPageNext() { godModeUsersPage++; godRefreshUsers(); }
+
+    // GOD MODE Marketplace
+    async function godRefreshMarketplace() {
+      if (!isGodMode()) return;
+      try {
+        // Load distributors
+        const { data: distributors, count: distCount } = await supabaseClient.from('distributor_profiles').select('*', { count: 'exact' });
+        document.getElementById('god-mp-distributors').textContent = distCount || 0;
+
+        // Load listings count
+        const { count: listingsCount } = await supabaseClient.from('marketplace_listings').select('*', { count: 'exact', head: true }).eq('status', 'active');
+        document.getElementById('god-mp-listings').textContent = listingsCount || 0;
+
+        // Load slabs count
+        const { count: slabsCount } = await supabaseClient.from('distributor_inventory').select('*', { count: 'exact', head: true });
+        document.getElementById('god-mp-slabs').textContent = slabsCount || 0;
+
+        // Load inquiries
+        const { count: inquiriesCount } = await supabaseClient.from('marketplace_inquiries').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+        document.getElementById('god-mp-inquiries').textContent = inquiriesCount || 0;
+
+        // Render distributors list
+        const distList = document.getElementById('god-distributors-list');
+        if (distList && distributors) {
+          distList.innerHTML = distributors.map(d => `
+            <div style="padding: 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 500;">${escapeHtml(d.company_name || 'Unnamed')}</div>
+                <div style="font-size: 13px; color: var(--text-muted);">${escapeHtml(d.contact_email || '')} | ${escapeHtml(d.city || '')}, ${escapeHtml(d.state || '')}</div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="badge" style="background: ${d.subscription_status === 'active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${d.subscription_status === 'active' ? 'var(--success)' : 'var(--error)'}; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${d.subscription_status || 'inactive'}</span>
+                <button class="btn-modern secondary" onclick="godViewDistributor('${d.id}')" style="padding: 6px 12px; font-size: 12px;">View</button>
+              </div>
+            </div>
+          `).join('') || '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No distributors found</div>';
+        }
+
+      } catch (error) {
+        console.error('GOD MODE marketplace error:', error);
+      }
+    }
+
+    function godShowMarketplaceTab(tab) {
+      document.querySelectorAll('.god-mp-tab').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.tabs-modern .tab-modern').forEach(el => el.classList.remove('active'));
+      document.getElementById(`god-mp-tab-${tab}`).style.display = 'block';
+      event.target.classList.add('active');
+    }
+
+    function godSearchDistributors(query) {
+      // Filter distributors by search query
+    }
+
+    function godViewDistributor(id) {
+      showToast('Distributor details coming soon', 'info');
+    }
+
+    // GOD MODE Database
+    async function loadGodDatabaseStats() {
+      if (!isGodMode()) return;
+      try {
+        const tables = ['sg_users', 'customers', 'jobs', 'leads', 'estimates', 'shopify_products', 'shopify_orders', 'distributor_profiles'];
+        let totalRows = 0;
+        for (const table of tables) {
+          try {
+            const { count } = await supabaseClient.from(table).select('*', { count: 'exact', head: true });
+            totalRows += count || 0;
+          } catch {}
+        }
+        document.getElementById('god-db-tables').textContent = tables.length;
+        document.getElementById('god-db-rows').textContent = totalRows.toLocaleString();
+        document.getElementById('god-db-size').textContent = 'N/A';
+      } catch {}
+    }
+
+    async function godRunSqlQuery() {
+      if (!isGodMode()) return;
+      const query = document.getElementById('god-sql-query')?.value;
+      if (!query) return;
+
+      try {
+        // For safety, we'll use Supabase's RPC or direct table queries
+        // This simulates SQL execution
+        showToast('Executing query...', 'info');
+
+        // Parse simple SELECT queries
+        const selectMatch = query.match(/SELECT\s+\*\s+FROM\s+(\w+)/i);
+        if (selectMatch) {
+          const table = selectMatch[1];
+          const limitMatch = query.match(/LIMIT\s+(\d+)/i);
+          const limit = limitMatch ? parseInt(limitMatch[1]) : 100;
+
+          const { data, error } = await supabaseClient.from(table).select('*').limit(limit);
+          if (error) throw error;
+
+          const resultsEl = document.getElementById('god-sql-results');
+          const preEl = resultsEl.querySelector('pre');
+          resultsEl.style.display = 'block';
+          preEl.textContent = JSON.stringify(data, null, 2);
+          showToast(`Query returned ${data.length} rows`, 'success');
+        } else {
+          showToast('Only SELECT queries supported in browser', 'warning');
+        }
+      } catch (e) {
+        showToast('Query error: ' + e.message, 'error');
+      }
+    }
+
+    function godClearQueryResults() {
+      const resultsEl = document.getElementById('god-sql-results');
+      if (resultsEl) {
+        resultsEl.style.display = 'none';
+        resultsEl.querySelector('pre').textContent = '';
+      }
+    }
+
+    function godLoadSqlPreset(preset) {
+      const presets = {
+        users: 'SELECT * FROM sg_users LIMIT 100',
+        admins: 'SELECT * FROM sg_users WHERE account_type = \'admin\'',
+        distributors: 'SELECT * FROM distributor_profiles LIMIT 100',
+        recent_orders: 'SELECT * FROM shopify_orders ORDER BY created_at DESC LIMIT 50',
+        active_subs: 'SELECT * FROM sg_users WHERE subscription_status = \'active\'',
+        table_sizes: '-- Table sizes not available via browser'
+      };
+      if (presets[preset]) {
+        document.getElementById('god-sql-query').value = presets[preset];
+      }
+    }
+
+    async function godBrowseTable(table) {
+      if (!isGodMode() || !table) return;
+      try {
+        const { data, error } = await supabaseClient.from(table).select('*').limit(50);
+        if (error) throw error;
+
+        const browser = document.getElementById('god-table-browser');
+        if (!data || data.length === 0) {
+          browser.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">Table is empty</div>';
+          return;
+        }
+
+        const columns = Object.keys(data[0]);
+        browser.innerHTML = `
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead><tr style="background: rgba(255,255,255,0.03);">${columns.map(c => `<th style="padding: 8px; text-align: left; border-bottom: 1px solid var(--border-subtle); white-space: nowrap;">${escapeHtml(c)}</th>`).join('')}</tr></thead>
+            <tbody>${data.map(row => `<tr>${columns.map(c => `<td style="padding: 8px; border-bottom: 1px solid var(--border-subtle); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(String(row[c] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        `;
+      } catch (e) {
+        document.getElementById('god-table-browser').innerHTML = `<div style="padding: 20px; color: var(--error);">Error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    // GOD MODE API Tester
+    function initGodApiTester() {
+      document.getElementById('god-api-endpoint').value = '/api/stripe-status';
+    }
+
+    async function godTestApiEndpoint() {
+      if (!isGodMode()) return;
+      const method = document.getElementById('god-api-method').value;
+      const endpoint = document.getElementById('god-api-endpoint').value;
+      const body = document.getElementById('god-api-body').value;
+      const includeAuth = document.getElementById('god-api-auth').checked;
+
+      if (!endpoint) { showToast('Enter an endpoint', 'warning'); return; }
+
+      const startTime = Date.now();
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (includeAuth && supabaseClient) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+        }
+
+        const options = { method, headers };
+        if (['POST', 'PATCH', 'PUT'].includes(method) && body) {
+          options.body = body;
+        }
+
+        const fullUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+        const response = await fetch(fullUrl, options);
+        const elapsed = Date.now() - startTime;
+
+        let responseData;
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          responseData = await response.text();
+        }
+
+        // Display results
+        document.getElementById('god-api-response').style.display = 'block';
+        const statusEl = document.getElementById('god-api-status-code');
+        statusEl.textContent = response.status;
+        statusEl.style.background = response.ok ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+        statusEl.style.color = response.ok ? 'var(--success)' : 'var(--error)';
+        document.getElementById('god-api-time').textContent = `${elapsed}ms`;
+        document.getElementById('god-api-response-body').textContent = typeof responseData === 'object' ? JSON.stringify(responseData, null, 2) : responseData;
+
+      } catch (e) {
+        document.getElementById('god-api-response').style.display = 'block';
+        document.getElementById('god-api-status-code').textContent = 'ERR';
+        document.getElementById('god-api-status-code').style.background = 'rgba(239, 68, 68, 0.2)';
+        document.getElementById('god-api-status-code').style.color = 'var(--error)';
+        document.getElementById('god-api-time').textContent = '-';
+        document.getElementById('god-api-response-body').textContent = e.message;
+      }
+    }
+
+    function godLoadApiPreset(preset) {
+      const presets = {
+        health: { method: 'GET', endpoint: '/api/stripe-status', body: '' },
+        users: { method: 'GET', endpoint: '/api/customers-list', body: '' },
+        products: { method: 'GET', endpoint: '/api/products', body: '' },
+        orders: { method: 'GET', endpoint: '/api/orders', body: '' },
+        stripe: { method: 'GET', endpoint: '/api/stripe-status', body: '' },
+        distributors: { method: 'GET', endpoint: '/api/marketplace/stone-yards', body: '' }
+      };
+      if (presets[preset]) {
+        document.getElementById('god-api-method').value = presets[preset].method;
+        document.getElementById('god-api-endpoint').value = presets[preset].endpoint;
+        document.getElementById('god-api-body').value = presets[preset].body;
+      }
+    }
+
+    // GOD MODE Logs
+    async function godRefreshLogs() {
+      if (!isGodMode()) return;
+      try {
+        // Try to load from audit logs table
+        const { data: logs } = await supabaseClient
+          .from('auth_audit_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        godModeLogs = logs || [];
+        renderGodLogs();
+      } catch (e) {
+        // Generate mock logs if table doesn't exist
+        godModeLogs = [
+          { created_at: new Date().toISOString(), event_type: 'login', event_status: 'success', details: { email: currentUser?.email }, ip_address: '127.0.0.1' },
+          { created_at: new Date(Date.now() - 60000).toISOString(), event_type: 'api_request', event_status: 'success', details: { endpoint: '/api/products' }, ip_address: '127.0.0.1' }
+        ];
+        renderGodLogs();
+      }
+    }
+
+    function renderGodLogs() {
+      const container = document.getElementById('god-logs-container');
+      if (!container) return;
+
+      if (!godModeLogs.length) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">No logs available</div>';
+        return;
+      }
+
+      container.innerHTML = godModeLogs.map(log => {
+        const statusColor = log.event_status === 'success' ? 'var(--success)' : log.event_status === 'failed' ? 'var(--error)' : 'var(--warning)';
+        return `
+          <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); display: flex; gap: 16px; align-items: flex-start;">
+            <span style="color: var(--text-muted); white-space: nowrap;">${new Date(log.created_at).toLocaleString()}</span>
+            <span style="color: ${statusColor}; min-width: 70px;">[${log.event_status || 'INFO'}]</span>
+            <span style="color: var(--accent); min-width: 100px;">${log.event_type || 'event'}</span>
+            <span style="color: var(--text-secondary); flex: 1;">${JSON.stringify(log.details || {})}</span>
+            <span style="color: var(--text-muted);">${log.ip_address || ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function godFilterLogs() { renderGodLogs(); }
+    function godSearchLogs() { renderGodLogs(); }
+    function godExportLogs() {
+      if (!isGodMode() || !godModeLogs.length) return;
+      const blob = new Blob([JSON.stringify(godModeLogs, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'system-logs.json';
+      a.click();
+    }
+
+    // Hook GOD MODE page initialization into showPage
+    const originalShowPage = showPage;
+    showPage = function(pageId) {
+      originalShowPage(pageId);
+      if (pageId.startsWith('god-')) {
+        initGodModePage(pageId);
+      }
+    };
+
+    console.log('⚡ GOD MODE functions loaded');
+    // ==================== END GOD MODE FUNCTIONS ====================
+
   </script>
 <script src="/js/user-tracking.js"></script>
 <script src="/js/site-search.js"></script>

@@ -35,8 +35,8 @@ const RATE_LIMITS = {
 };
 
 function getRateLimitKey(req) {
-  // Use user ID if authenticated, otherwise IP
-  const userId = req.headers['x-user-id'] || req.ip || 'anonymous';
+  // Use authenticated user ID if available, otherwise IP (don't trust x-user-id header)
+  const userId = req.user?.id || req.ip || 'anonymous';
   return userId;
 }
 
@@ -3939,9 +3939,15 @@ app.post('/api/pro-billing-portal', async (req, res) => {
 });
 
 // Get user's subscription status
-app.get('/api/pro-subscription/:user_id', async (req, res) => {
+app.get('/api/pro-subscription/:user_id', authenticateJWT, async (req, res) => {
   try {
     const { user_id } = req.params;
+    const requesterId = req.user?.id;
+
+    // Verify user is requesting their own subscription (prevent IDOR)
+    if (requesterId !== user_id) {
+      return res.status(403).json({ error: 'Access denied - can only view your own subscription' });
+    }
 
     if (!supabase) {
       return res.status(500).json({ error: 'Database not configured' });
@@ -4037,8 +4043,13 @@ app.post('/api/create-payment-intent', async (req, res) => {
 // ============ INVOICE MANAGEMENT ============
 
 // Create and send an invoice
-app.post('/api/invoices', async (req, res) => {
+app.post('/api/invoices', authenticateJWT, async (req, res) => {
   try {
+    // Invoice creation requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to create invoices' });
+    }
+
     const {
       customer_email,
       customer_name,
@@ -4143,13 +4154,33 @@ app.post('/api/invoices', async (req, res) => {
 });
 
 // Get all invoices (with optional filters)
-app.get('/api/invoices', async (req, res) => {
+app.get('/api/invoices', authenticateJWT, async (req, res) => {
   try {
+    const userId = req.user?.id;
+
+    // Check if user is admin (can see all invoices)
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type, email')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+
     const { customer_email, status, limit = 20 } = req.query;
 
     let params = { limit: parseInt(limit) };
 
-    if (customer_email) {
+    // Non-admins can only see their own invoices
+    if (!isAdmin) {
+      const customers = await stripe.customers.list({ email: userInfo?.email, limit: 1 });
+      if (customers.data.length > 0) {
+        params.customer = customers.data[0].id;
+      } else {
+        // No invoices for this customer
+        return res.json({ invoices: [] });
+      }
+    } else if (customer_email) {
       const customers = await stripe.customers.list({ email: customer_email, limit: 1 });
       if (customers.data.length > 0) {
         params.customer = customers.data[0].id;
@@ -4188,11 +4219,27 @@ app.get('/api/invoices', async (req, res) => {
 });
 
 // Get single invoice
-app.get('/api/invoices/:id', async (req, res) => {
+app.get('/api/invoices/:id', authenticateJWT, async (req, res) => {
   try {
+    const userId = req.user?.id;
+
+    // Check if user is admin or business owner
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type, email')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+
     const invoice = await stripe.invoices.retrieve(req.params.id, {
       expand: ['lines.data']
     });
+
+    // Non-admins can only view their own invoices
+    if (!isAdmin && invoice.customer_email !== userInfo?.email) {
+      return res.status(403).json({ error: 'Access denied - can only view your own invoices' });
+    }
 
     res.json({
       invoice: {
@@ -4221,9 +4268,22 @@ app.get('/api/invoices/:id', async (req, res) => {
   }
 });
 
-// Send reminder for an invoice
-app.post('/api/invoices/:id/remind', async (req, res) => {
+// Send reminder for an invoice (admin only)
+app.post('/api/invoices/:id/remind', authenticateJWT, async (req, res) => {
   try {
+    const userId = req.user?.id;
+
+    // Verify admin/business access
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+      return res.status(403).json({ error: 'Admin access required to send invoice reminders' });
+    }
+
     const invoice = await stripe.invoices.sendInvoice(req.params.id);
     res.json({ success: true, message: 'Reminder sent', invoice_id: invoice.id });
   } catch (error) {
@@ -4232,9 +4292,22 @@ app.post('/api/invoices/:id/remind', async (req, res) => {
   }
 });
 
-// Void an invoice
-app.post('/api/invoices/:id/void', async (req, res) => {
+// Void an invoice (admin only)
+app.post('/api/invoices/:id/void', authenticateJWT, async (req, res) => {
   try {
+    const userId = req.user?.id;
+
+    // Verify admin/business access - voiding invoices is sensitive
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+      return res.status(403).json({ error: 'Admin access required to void invoices' });
+    }
+
     const invoice = await stripe.invoices.voidInvoice(req.params.id);
     res.json({ success: true, message: 'Invoice voided', status: invoice.status });
   } catch (error) {
@@ -4297,9 +4370,21 @@ app.get('/invoice/view/:id', async (req, res) => {
 });
 
 // Get invoice view stats
-app.get('/api/invoices/:id/views', async (req, res) => {
+app.get('/api/invoices/:id/views', authenticateJWT, async (req, res) => {
   try {
+    const userId = req.user?.id;
     const invoiceId = req.params.id;
+
+    // Verify admin/business access for viewing invoice analytics
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+      return res.status(403).json({ error: 'Admin access required to view invoice analytics' });
+    }
 
     // Get from Stripe metadata
     const invoice = await stripe.invoices.retrieve(invoiceId);
@@ -4333,8 +4418,13 @@ app.get('/api/invoices/:id/views', async (req, res) => {
 // ============ QUICK PAYMENT LINKS ============
 
 // Create a payment link for quick payments
-app.post('/api/payment-links', async (req, res) => {
+app.post('/api/payment-links', authenticateJWT, async (req, res) => {
   try {
+    // Creating payment links requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to create payment links' });
+    }
+
     const { amount, description, customer_email } = req.body;
 
     if (!amount || !description) {
@@ -4388,8 +4478,13 @@ app.post('/api/payment-links', async (req, res) => {
 // ============ WALLET / BALANCE ============
 
 // Get Stripe account balance
-app.get('/api/balance', async (req, res) => {
+app.get('/api/balance', authenticateJWT, async (req, res) => {
   try {
+    // Financial data requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view balance' });
+    }
+
     const balance = await stripe.balance.retrieve();
 
     res.json({
@@ -4410,9 +4505,14 @@ app.get('/api/balance', async (req, res) => {
   }
 });
 
-// Get recent payouts
-app.get('/api/payouts', async (req, res) => {
+// Get recent payouts (admin only)
+app.get('/api/payouts', authenticateJWT, async (req, res) => {
   try {
+    // Financial data requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view payouts' });
+    }
+
     const { limit = 10 } = req.query;
     const payouts = await stripe.payouts.list({ limit: parseInt(limit) });
 
@@ -4434,9 +4534,14 @@ app.get('/api/payouts', async (req, res) => {
   }
 });
 
-// Get a specific payout with all related transactions
-app.get('/api/payouts/:payoutId', async (req, res) => {
+// Get a specific payout with all related transactions (admin only)
+app.get('/api/payouts/:payoutId', authenticateJWT, async (req, res) => {
   try {
+    // Financial data requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view payout details' });
+    }
+
     const { payoutId } = req.params;
 
     // Get the payout details
@@ -4528,9 +4633,14 @@ app.get('/api/payouts/:payoutId', async (req, res) => {
   }
 });
 
-// Get recent transactions/charges
-app.get('/api/transactions', async (req, res) => {
+// Get recent transactions/charges (admin only)
+app.get('/api/transactions', authenticateJWT, async (req, res) => {
   try {
+    // Financial data requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view transactions' });
+    }
+
     const { limit = 20 } = req.query;
     const charges = await stripe.charges.list({ limit: parseInt(limit) });
 
@@ -4554,9 +4664,14 @@ app.get('/api/transactions', async (req, res) => {
   }
 });
 
-// Get balance transactions (detailed)
-app.get('/api/balance-transactions', async (req, res) => {
+// Get balance transactions (detailed) - admin only
+app.get('/api/balance-transactions', authenticateJWT, async (req, res) => {
   try {
+    // Financial data requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view balance transactions' });
+    }
+
     const { limit = 20 } = req.query;
     const transactions = await stripe.balanceTransactions.list({ limit: parseInt(limit) });
 
@@ -4580,9 +4695,14 @@ app.get('/api/balance-transactions', async (req, res) => {
   }
 });
 
-// Initiate a payout
-app.post('/api/payouts', async (req, res) => {
+// Initiate a payout (admin only - critical financial operation)
+app.post('/api/payouts', authenticateJWT, async (req, res) => {
   try {
+    // Payout initiation requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to initiate payouts' });
+    }
+
     const { amount, description } = req.body;
 
     if (!amount || amount <= 0) {
@@ -4612,9 +4732,14 @@ app.post('/api/payouts', async (req, res) => {
 
 // ============ STRIPE CONNECT (for vendor payouts) ============
 
-// Create a Connect Express account for vendors
-app.post('/api/connect/accounts', async (req, res) => {
+// Create a Connect Express account for vendors (admin only)
+app.post('/api/connect/accounts', authenticateJWT, async (req, res) => {
   try {
+    // Creating Connect accounts requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to create Connect accounts' });
+    }
+
     const { email, business_name, business_type = 'individual' } = req.body;
 
     if (!email) {
@@ -4655,9 +4780,14 @@ app.post('/api/connect/accounts', async (req, res) => {
   }
 });
 
-// Get Connect account status
-app.get('/api/connect/accounts/:id', async (req, res) => {
+// Get Connect account status (admin only)
+app.get('/api/connect/accounts/:id', authenticateJWT, async (req, res) => {
   try {
+    // Viewing Connect accounts requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view Connect accounts' });
+    }
+
     const account = await stripe.accounts.retrieve(req.params.id);
 
     res.json({
@@ -4676,9 +4806,14 @@ app.get('/api/connect/accounts/:id', async (req, res) => {
   }
 });
 
-// Create a login link for vendor dashboard
-app.post('/api/connect/accounts/:id/login', async (req, res) => {
+// Create a login link for vendor dashboard (admin only)
+app.post('/api/connect/accounts/:id/login', authenticateJWT, async (req, res) => {
   try {
+    // Creating login links requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to create Connect login links' });
+    }
+
     const loginLink = await stripe.accounts.createLoginLink(req.params.id);
     res.json({ url: loginLink.url });
   } catch (error) {
@@ -4687,9 +4822,14 @@ app.post('/api/connect/accounts/:id/login', async (req, res) => {
   }
 });
 
-// Create a payout to a connected account
-app.post('/api/connect/payouts', async (req, res) => {
+// Create a payout to a connected account (admin only - critical financial operation)
+app.post('/api/connect/payouts', authenticateJWT, async (req, res) => {
   try {
+    // Creating payouts requires admin access
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to create vendor payouts' });
+    }
+
     const { account_id, amount, description } = req.body;
 
     if (!account_id || !amount) {
@@ -6640,17 +6780,26 @@ app.post('/api/send-estimate', emailRateLimiter, async (req, res) => {
 // ============ JOBS MANAGEMENT API ============
 
 // Get all jobs
-app.get('/api/jobs', async (req, res) => {
+app.get('/api/jobs', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
     const { status, limit = 50 } = req.query;
+
+    // Check if admin (can see all jobs) or regular user (sees only their jobs)
+    const isAdmin = await verifyAdminAccess(userId);
 
     let query = supabase
       .from('jobs')
       .select('*, customer:customers(name, email, phone), job_contractors(contractor:contractors(name, company_name, phone))')
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
+
+    // Non-admins can only see their own jobs
+    if (!isAdmin) {
+      query = query.eq('user_id', userId);
+    }
 
     if (status && status !== 'all') {
       query = query.eq('status', status);
@@ -6668,10 +6817,13 @@ app.get('/api/jobs', async (req, res) => {
 });
 
 // Get single job
-app.get('/api/jobs/:id', async (req, res) => {
+app.get('/api/jobs/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
+
+    // First fetch job with ownership check
     const { data: job, error } = await supabase
       .from('jobs')
       .select(`
@@ -6686,6 +6838,19 @@ app.get('/api/jobs/:id', async (req, res) => {
       .single();
 
     if (error) throw error;
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Verify ownership (user owns job OR is admin)
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    if (job.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this job' });
+    }
 
     res.json({ job });
   } catch (error) {
@@ -6695,10 +6860,33 @@ app.get('/api/jobs/:id', async (req, res) => {
 });
 
 // Update job
-app.patch('/api/jobs/:id', async (req, res) => {
+app.patch('/api/jobs/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
+
+    // First verify ownership
+    const { data: existingJob } = await supabase
+      .from('jobs')
+      .select('user_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!existingJob) return res.status(404).json({ error: 'Job not found' });
+
+    // Check ownership or admin access
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    if (existingJob.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this job' });
+    }
+
     const updates = { ...req.body, updated_at: new Date().toISOString() };
     delete updates.id;
     delete updates.user_id;
@@ -6721,13 +6909,14 @@ app.patch('/api/jobs/:id', async (req, res) => {
 });
 
 // Upload file to job
-app.post('/api/jobs/:id/files', async (req, res) => {
+app.post('/api/jobs/:id/files', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
     const { file_name, file_url, file_type, category, description, visible_to_customer, visible_to_contractor } = req.body;
 
-    // Get job to get user_id
+    // Get job to verify ownership
     const { data: job } = await supabase
       .from('jobs')
       .select('user_id')
@@ -6735,6 +6924,18 @@ app.post('/api/jobs/:id/files', async (req, res) => {
       .single();
 
     if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Check ownership or admin access
+    const { data: userInfo } = await supabase
+      .from('sg_users')
+      .select('account_type')
+      .eq('id', userId)
+      .single();
+
+    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    if (job.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this job' });
+    }
 
     const { data: file, error } = await supabase
       .from('job_files')
@@ -6763,11 +6964,27 @@ app.post('/api/jobs/:id/files', async (req, res) => {
 
 // ============ CONTRACTORS MANAGEMENT API ============
 
-// Get all contractors
-app.get('/api/contractors', async (req, res) => {
+// Helper to verify admin access
+async function verifyAdminAccess(userId) {
+  if (!userId) return false;
+  const { data: userInfo } = await supabase
+    .from('sg_users')
+    .select('account_type')
+    .eq('id', userId)
+    .single();
+  return ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+}
+
+// Get all contractors (admin only)
+app.get('/api/contractors', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required to view contractors' });
+    }
+
     const { status = 'active' } = req.query;
 
     let query = supabase
@@ -6790,11 +7007,16 @@ app.get('/api/contractors', async (req, res) => {
   }
 });
 
-// Create contractor
-app.post('/api/contractors', async (req, res) => {
+// Create contractor (admin only)
+app.post('/api/contractors', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required to create contractors' });
+    }
+
     const { name, company_name, email, phone, address, city, state, zip, specialty, license_number, hourly_rate, day_rate, notes } = req.body;
 
     if (!name) {
@@ -6840,10 +7062,11 @@ app.post('/api/contractors', async (req, res) => {
 });
 
 // Assign contractor to job
-app.post('/api/jobs/:jobId/assign-contractor', async (req, res) => {
+app.post('/api/jobs/:jobId/assign-contractor', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
     const { contractor_id, role = 'installer', agreed_rate, rate_type = 'flat', send_invite = true } = req.body;
 
     if (!contractor_id) {
@@ -6858,6 +7081,12 @@ app.post('/api/jobs/:jobId/assign-contractor', async (req, res) => {
 
     if (!job) return res.status(404).json({ error: 'Job not found' });
     if (!contractor) return res.status(404).json({ error: 'Contractor not found' });
+
+    // Verify ownership or admin access
+    const isAdmin = await verifyAdminAccess(userId);
+    if (job.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this job' });
+    }
 
     // Generate invite token
     const inviteToken = require('crypto').randomUUID();
@@ -6972,10 +7201,11 @@ app.post('/api/contractor/respond', async (req, res) => {
 // ============ MATERIAL ORDERS API ============
 
 // Create material order and send email
-app.post('/api/jobs/:jobId/material-order', async (req, res) => {
+app.post('/api/jobs/:jobId/material-order', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
     const { material_name, material_color, material_thickness, quantity, unit = 'slab', supplier, unit_cost, notes, send_email = true, order_email } = req.body;
 
     if (!material_name || !supplier) {
@@ -6990,6 +7220,12 @@ app.post('/api/jobs/:jobId/material-order', async (req, res) => {
       .single();
 
     if (!job) return res.status(404).json({ error: 'Job not found' });
+
+    // Verify ownership or admin access
+    const isAdmin = await verifyAdminAccess(userId);
+    if (job.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this job' });
+    }
 
     // Calculate total cost
     const totalCost = unit_cost ? quantity * unit_cost : null;
@@ -7065,10 +7301,29 @@ app.post('/api/jobs/:jobId/material-order', async (req, res) => {
 });
 
 // Update material order status
-app.patch('/api/material-orders/:id', async (req, res) => {
+app.patch('/api/material-orders/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    const userId = req.user?.id;
+
+    // Get the material order to verify ownership
+    const { data: existingOrder } = await supabase
+      .from('material_orders')
+      .select('user_id, job_id')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Material order not found' });
+    }
+
+    // Verify ownership or admin access
+    const isAdmin = await verifyAdminAccess(userId);
+    if (existingOrder.user_id !== userId && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied - you do not own this material order' });
+    }
+
     const updates = { ...req.body, updated_at: new Date().toISOString() };
 
     // Auto-set timestamps based on status
@@ -7116,10 +7371,15 @@ app.patch('/api/material-orders/:id', async (req, res) => {
 // ============ CUSTOMERS API ============
 
 // Get all customers
-app.get('/api/customers-list', async (req, res) => {
+app.get('/api/customers-list', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
+    // Customer list requires admin access to view all customers
+    if (!await verifyAdminAccess(req.user?.id)) {
+      return res.status(403).json({ error: 'Admin access required to view customer list' });
+    }
+
     const { data: customers, error } = await supabase
       .from('customers')
       .select('*, jobs(id, job_number, status)')
@@ -7793,11 +8053,11 @@ app.post('/api/auth/sessions/revoke-others', authenticateJWT, async (req, res) =
 // ============================================
 
 // Get distributor profile
-app.get('/api/distributor/profile', async (req, res) => {
+app.get('/api/distributor/profile', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile, error } = await supabase
@@ -7821,11 +8081,11 @@ app.get('/api/distributor/profile', async (req, res) => {
 });
 
 // Update distributor profile
-app.patch('/api/distributor/profile', async (req, res) => {
+app.patch('/api/distributor/profile', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const updates = { ...req.body, updated_at: new Date().toISOString() };
@@ -7853,25 +8113,20 @@ app.patch('/api/distributor/profile', async (req, res) => {
 // ============ SLAB INVENTORY API ============
 
 // Get all slabs for a distributor
-app.get('/api/distributor/inventory', async (req, res) => {
+app.get('/api/distributor/inventory', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
-    const apiKey = req.headers['x-api-key'];
-
     let distributorId;
 
-    // Auth via API key or user ID
-    if (apiKey) {
-      const keyData = await verifyDistributorApiKey(apiKey);
-      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
-      distributorId = keyData.distributor_id;
-    } else if (userId) {
+    // Auth via API key (from middleware) or JWT user
+    if (req.authMethod === 'api_key' && req.distributorId) {
+      distributorId = req.distributorId;
+    } else if (req.user?.id) {
       const { data: profile } = await supabase
         .from('distributor_profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .single();
       if (!profile) return res.status(401).json({ error: 'Distributor not found' });
       distributorId = profile.id;
@@ -7929,27 +8184,22 @@ app.get('/api/distributor/inventory/:id', async (req, res) => {
 });
 
 // Create new slab
-app.post('/api/distributor/inventory', async (req, res) => {
+app.post('/api/distributor/inventory', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
-    const apiKey = req.headers['x-api-key'];
-
     let distributorId;
 
-    if (apiKey) {
-      const keyData = await verifyDistributorApiKey(apiKey);
-      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
-      if (!keyData.permissions.includes('write')) {
+    if (req.authMethod === 'api_key' && req.distributorId) {
+      if (!req.permissions?.includes('write')) {
         return res.status(403).json({ error: 'API key does not have write permission' });
       }
-      distributorId = keyData.distributor_id;
-    } else if (userId) {
+      distributorId = req.distributorId;
+    } else if (req.user?.id) {
       const { data: profile } = await supabase
         .from('distributor_profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .single();
       if (!profile) return res.status(401).json({ error: 'Distributor not found' });
       distributorId = profile.id;
@@ -7960,7 +8210,7 @@ app.post('/api/distributor/inventory', async (req, res) => {
     const slabData = {
       ...req.body,
       distributor_id: distributorId,
-      sync_source: apiKey ? 'api' : 'manual',
+      sync_source: req.authMethod === 'api_key' ? 'api' : 'manual',
       listed_at: new Date().toISOString()
     };
 
@@ -7983,27 +8233,22 @@ app.post('/api/distributor/inventory', async (req, res) => {
 });
 
 // Update slab
-app.patch('/api/distributor/inventory/:id', async (req, res) => {
+app.patch('/api/distributor/inventory/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
-    const apiKey = req.headers['x-api-key'];
-
     let distributorId;
 
-    if (apiKey) {
-      const keyData = await verifyDistributorApiKey(apiKey);
-      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
-      if (!keyData.permissions.includes('write')) {
+    if (req.authMethod === 'api_key' && req.distributorId) {
+      if (!req.permissions?.includes('write')) {
         return res.status(403).json({ error: 'API key does not have write permission' });
       }
-      distributorId = keyData.distributor_id;
-    } else if (userId) {
+      distributorId = req.distributorId;
+    } else if (req.user?.id) {
       const { data: profile } = await supabase
         .from('distributor_profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .single();
       if (!profile) return res.status(401).json({ error: 'Distributor not found' });
       distributorId = profile.id;
@@ -8043,27 +8288,22 @@ app.patch('/api/distributor/inventory/:id', async (req, res) => {
 });
 
 // Delete slab
-app.delete('/api/distributor/inventory/:id', async (req, res) => {
+app.delete('/api/distributor/inventory/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
-    const apiKey = req.headers['x-api-key'];
-
     let distributorId;
 
-    if (apiKey) {
-      const keyData = await verifyDistributorApiKey(apiKey);
-      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
-      if (!keyData.permissions.includes('delete')) {
+    if (req.authMethod === 'api_key' && req.distributorId) {
+      if (!req.permissions?.includes('delete')) {
         return res.status(403).json({ error: 'API key does not have delete permission' });
       }
-      distributorId = keyData.distributor_id;
-    } else if (userId) {
+      distributorId = req.distributorId;
+    } else if (req.user?.id) {
       const { data: profile } = await supabase
         .from('distributor_profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .single();
       if (!profile) return res.status(401).json({ error: 'Distributor not found' });
       distributorId = profile.id;
@@ -8102,27 +8342,22 @@ app.delete('/api/distributor/inventory/:id', async (req, res) => {
 // ============ BULK INVENTORY IMPORT ============
 
 // Bulk import slabs from CSV data
-app.post('/api/distributor/inventory/bulk', async (req, res) => {
+app.post('/api/distributor/inventory/bulk', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
-    const apiKey = req.headers['x-api-key'];
-
     let distributorId;
 
-    if (apiKey) {
-      const keyData = await verifyDistributorApiKey(apiKey);
-      if (!keyData) return res.status(401).json({ error: 'Invalid API key' });
-      if (!keyData.permissions.includes('write')) {
+    if (req.authMethod === 'api_key' && req.distributorId) {
+      if (!req.permissions?.includes('write')) {
         return res.status(403).json({ error: 'API key does not have write permission' });
       }
-      distributorId = keyData.distributor_id;
-    } else if (userId) {
+      distributorId = req.distributorId;
+    } else if (req.user?.id) {
       const { data: profile } = await supabase
         .from('distributor_profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .single();
       if (!profile) return res.status(401).json({ error: 'Distributor not found' });
       distributorId = profile.id;
@@ -8236,11 +8471,11 @@ app.post('/api/distributor/inventory/bulk', async (req, res) => {
 // ============ DISTRIBUTOR LOCATIONS ============
 
 // Get all locations for distributor
-app.get('/api/distributor/locations', async (req, res) => {
+app.get('/api/distributor/locations', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8267,11 +8502,11 @@ app.get('/api/distributor/locations', async (req, res) => {
 });
 
 // Add location
-app.post('/api/distributor/locations', async (req, res) => {
+app.post('/api/distributor/locations', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8303,11 +8538,11 @@ app.post('/api/distributor/locations', async (req, res) => {
 });
 
 // Update location
-app.patch('/api/distributor/locations/:id', async (req, res) => {
+app.patch('/api/distributor/locations/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8340,11 +8575,11 @@ app.patch('/api/distributor/locations/:id', async (req, res) => {
 });
 
 // Delete location
-app.delete('/api/distributor/locations/:id', async (req, res) => {
+app.delete('/api/distributor/locations/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8813,11 +9048,11 @@ app.post('/api/marketplace/slabs/:id/inquiry', async (req, res) => {
 // ============ DISTRIBUTOR API KEYS ============
 
 // Generate new API key
-app.post('/api/distributor/api-keys', async (req, res) => {
+app.post('/api/distributor/api-keys', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8864,11 +9099,11 @@ app.post('/api/distributor/api-keys', async (req, res) => {
 });
 
 // List API keys
-app.get('/api/distributor/api-keys', async (req, res) => {
+app.get('/api/distributor/api-keys', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8895,11 +9130,11 @@ app.get('/api/distributor/api-keys', async (req, res) => {
 });
 
 // Revoke API key
-app.delete('/api/distributor/api-keys/:id', async (req, res) => {
+app.delete('/api/distributor/api-keys/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8932,11 +9167,11 @@ app.delete('/api/distributor/api-keys/:id', async (req, res) => {
 // ============ DISTRIBUTOR INQUIRIES ============
 
 // Get all inquiries for distributor
-app.get('/api/distributor/inquiries', async (req, res) => {
+app.get('/api/distributor/inquiries', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -8987,11 +9222,11 @@ app.get('/api/distributor/inquiries', async (req, res) => {
 });
 
 // Get single inquiry
-app.get('/api/distributor/inquiries/:id', async (req, res) => {
+app.get('/api/distributor/inquiries/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -9026,11 +9261,11 @@ app.get('/api/distributor/inquiries/:id', async (req, res) => {
 });
 
 // Update inquiry status
-app.patch('/api/distributor/inquiries/:id', async (req, res) => {
+app.patch('/api/distributor/inquiries/:id', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -9076,11 +9311,11 @@ app.patch('/api/distributor/inquiries/:id', async (req, res) => {
 });
 
 // Get inquiry statistics
-app.get('/api/distributor/inquiries/stats/summary', async (req, res) => {
+app.get('/api/distributor/inquiries/stats/summary', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -9124,11 +9359,11 @@ app.get('/api/distributor/inquiries/stats/summary', async (req, res) => {
 // ============ DISTRIBUTOR ANALYTICS ============
 
 // Get analytics summary
-app.get('/api/distributor/analytics', async (req, res) => {
+app.get('/api/distributor/analytics', authenticateJWT, async (req, res) => {
   if (!supabase) return res.status(500).json({ error: 'Database not configured' });
 
   try {
-    const userId = req.headers['x-user-id'];
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { data: profile } = await supabase
@@ -9190,22 +9425,15 @@ app.get('/api/distributor/analytics', async (req, res) => {
 // Universal product management for slabs, tiles, flooring, installation products
 // ============================================
 
-// Helper: Get distributor ID from user or API key
+// Helper: Get distributor ID from authenticated user or API key
 async function getDistributorId(req) {
-  const apiKey = req.headers['x-api-key'];
-  const userId = req.headers['x-user-id'];
-
-  if (apiKey) {
-    const keyPrefix = apiKey.substring(0, 11);
-    const { data: keyData } = await supabase
-      .from('distributor_api_keys')
-      .select('distributor_id')
-      .eq('key_prefix', keyPrefix)
-      .eq('is_active', true)
-      .single();
-    return keyData?.distributor_id;
+  // Use API key from auth middleware if authenticated via API key
+  if (req.authMethod === 'api_key' && req.distributorId) {
+    return req.distributorId;
   }
 
+  // Use authenticated user ID from JWT
+  const userId = req.user?.id;
   if (userId) {
     // Check new distributors table first
     const { data: distributor } = await supabase
@@ -10710,7 +10938,7 @@ Be helpful and guide users toward scheduling an appointment or getting a quote.`
 // ============ PROJECT MANAGEMENT API ============
 
 // Save/Update project with customer info
-app.post('/api/projects/save', async (req, res) => {
+app.post('/api/projects/save', authenticateJWT, async (req, res) => {
   try {
     const {
       project_id,
@@ -10730,7 +10958,7 @@ app.post('/api/projects/save', async (req, res) => {
       notes
     } = req.body;
 
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
 
     if (!user_id) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -10812,9 +11040,9 @@ app.post('/api/projects/save', async (req, res) => {
 });
 
 // Get user's projects with filtering
-app.get('/api/projects', async (req, res) => {
+app.get('/api/projects', authenticateJWT, async (req, res) => {
   try {
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
     const { status, search, limit = 50, offset = 0 } = req.query;
 
     if (!user_id) {
@@ -10852,7 +11080,7 @@ app.get('/api/projects', async (req, res) => {
 app.get('/api/projects/:identifier', async (req, res) => {
   try {
     const { identifier } = req.params;
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id; // May be null for public share token access
 
     // Try to get by ID first, then by share_token
     let query = supabase.from('room_designs').select('*');
@@ -10908,11 +11136,11 @@ app.get('/api/projects/:identifier', async (req, res) => {
 });
 
 // Send quote to customer
-app.post('/api/projects/:id/send-quote', async (req, res) => {
+app.post('/api/projects/:id/send-quote', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { customer_email, customer_name, message, expires_days = 30 } = req.body;
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
 
     if (!user_id) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -11136,7 +11364,7 @@ app.post('/api/projects/:id/create-payment', async (req, res) => {
     const { id } = req.params;
     const { payment_type, token, customer_email } = req.body;
 
-    // Get project - either by token or by ID with auth
+    // Get project - either by portal token or by ID (requires valid token for security)
     let project;
 
     if (token) {
@@ -11152,13 +11380,8 @@ app.post('/api/projects/:id/create-payment', async (req, res) => {
       }
       project = tokenData.room_designs;
     } else {
-      const user_id = req.headers['x-user-id'];
-      const { data } = await supabase
-        .from('room_designs')
-        .select('*')
-        .eq('id', id)
-        .single();
-      project = data;
+      // Portal token required for payment creation (no x-user-id header auth)
+      return res.status(401).json({ error: 'Portal token required for payment' });
     }
 
     if (!project) {
@@ -11265,11 +11488,11 @@ app.post('/api/projects/:id/create-payment', async (req, res) => {
 });
 
 // Update project status (for webhook or manual update)
-app.post('/api/projects/:id/status', async (req, res) => {
+app.post('/api/projects/:id/status', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
 
     if (!user_id) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -11312,10 +11535,10 @@ app.post('/api/projects/:id/status', async (req, res) => {
 });
 
 // Get project activity log
-app.get('/api/projects/:id/activities', async (req, res) => {
+app.get('/api/projects/:id/activities', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
     const { limit = 50 } = req.query;
 
     // Verify access
@@ -11559,11 +11782,11 @@ app.get('/api/design-comments/:share_id', async (req, res) => {
 });
 
 // Staff reply to design comment (requires authentication)
-app.post('/api/design-comments/:lead_id/reply', commentRateLimiter, async (req, res) => {
+app.post('/api/design-comments/:lead_id/reply', commentRateLimiter, authenticateJWT, async (req, res) => {
   try {
     const { lead_id } = req.params;
     const { message, share_id, design_id, author = 'Surprise Granite' } = req.body;
-    const user_id = req.headers['x-user-id'];
+    const user_id = req.user?.id;
 
     // Require user ID for staff replies
     if (!user_id) {

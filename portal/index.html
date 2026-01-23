@@ -546,43 +546,263 @@
       flex: 1;
     }
 
-    /* Contact Bar */
-    .contact-bar {
+    /* Bottom Navigation - Mobile First */
+    .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
       background: var(--dark);
       border-top: 1px solid var(--border);
-      padding: 12px 20px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding: 8px 12px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
       display: flex;
-      gap: 12px;
+      justify-content: space-around;
       z-index: 100;
     }
 
-    .contact-bar a {
-      flex: 1;
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .bottom-nav-item:hover,
+    .bottom-nav-item.active {
+      color: var(--gold);
+      background: rgba(249, 168, 37, 0.1);
+    }
+
+    .bottom-nav-item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Tools Section */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .tool-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px 16px;
+      background: linear-gradient(135deg, rgba(249, 168, 37, 0.1) 0%, rgba(249, 168, 37, 0.05) 100%);
+      border: 1px solid rgba(249, 168, 37, 0.2);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .tool-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+      box-shadow: 0 8px 24px rgba(249, 168, 37, 0.15);
+    }
+
+    .tool-card svg {
+      width: 36px;
+      height: 36px;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .tool-card h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .tool-card p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Schedule Calendar */
+    .schedule-section {
+      margin-bottom: 16px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .calendar-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .calendar-nav button {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
+      margin-top: 16px;
+    }
+
+    .time-slot {
       padding: 12px;
-      background: rgba(255,255,255,0.05);
+      text-align: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
       border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+    }
+
+    .time-slot:hover {
+      border-color: var(--gold);
+      background: rgba(249, 168, 37, 0.1);
+    }
+
+    .time-slot.selected {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+      font-weight: 600;
+    }
+
+    .time-slot.unavailable {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Website Links Section */
+    .explore-links {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .explore-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       color: var(--text);
       text-decoration: none;
-      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .explore-link:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: var(--gold);
+    }
+
+    .explore-link svg {
+      width: 24px;
+      height: 24px;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .explore-link span {
+      font-size: 13px;
       font-weight: 500;
     }
 
-    .contact-bar a:hover {
-      background: rgba(255,255,255,0.1);
+    /* Progress Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
     }
 
-    .contact-bar a svg {
-      width: 20px;
-      height: 20px;
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--dark-card);
+      border: 2px solid var(--border);
+    }
+
+    .timeline-dot.completed {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .timeline-dot.current {
+      background: var(--gold);
+      border-color: var(--gold);
+      animation: pulse 2s infinite;
+    }
+
+    .timeline-content h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .timeline-content p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Contact Bar - replaced with bottom nav */
+    .contact-bar {
+      display: none; /* Hidden, using bottom-nav instead */
     }
 
     /* Toast */
@@ -918,7 +1138,7 @@
         <!-- Upcoming Appointment -->
         ${renderAppointment(info)}
 
-        <!-- Quick Actions -->
+        <!-- Quick Actions - Expanded -->
         <div class="card">
           <div class="card-header">
             <h2>
@@ -927,23 +1147,152 @@
             </h2>
           </div>
           <div class="card-body">
-            <div class="quick-actions">
+            <div class="quick-actions" style="grid-template-columns: repeat(3, 1fr);">
               <div class="quick-action" onclick="showSection('photos')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>Upload Photos</span>
+                <span>Photos</span>
               </div>
               <div class="quick-action" onclick="showSection('estimates')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span>View Estimate</span>
+                <span>Estimate</span>
               </div>
               <div class="quick-action" onclick="showSection('invoices')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Pay Invoice</span>
+                <span>Invoice</span>
               </div>
               <div class="quick-action" onclick="showSection('messages')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                <span>Send Message</span>
+                <span>Messages</span>
               </div>
+              <div class="quick-action" onclick="showSection('schedule')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Schedule</span>
+              </div>
+              <div class="quick-action" onclick="showSection('tools')">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                <span>Design Tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Progress Timeline -->
+        <div class="card" id="timeline-section">
+          <div class="card-header">
+            <h2>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              Project Progress
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="timeline" id="project-timeline">
+              ${renderTimeline(info)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="card" id="schedule-section" style="display: none;">
+          <div class="card-header">
+            <h2>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Schedule Appointment
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="calendar-header">
+              <h3 id="calendar-month">January 2026</h3>
+              <div class="calendar-nav">
+                <button onclick="prevMonth()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <button onclick="nextMonth()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; margin-bottom: 16px;"></div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Select a time slot:</p>
+            <div class="time-slots" id="time-slots">
+              <div class="time-slot" onclick="selectTime('9:00 AM')">9:00 AM</div>
+              <div class="time-slot" onclick="selectTime('10:00 AM')">10:00 AM</div>
+              <div class="time-slot" onclick="selectTime('11:00 AM')">11:00 AM</div>
+              <div class="time-slot" onclick="selectTime('1:00 PM')">1:00 PM</div>
+              <div class="time-slot" onclick="selectTime('2:00 PM')">2:00 PM</div>
+              <div class="time-slot" onclick="selectTime('3:00 PM')">3:00 PM</div>
+            </div>
+            <button class="btn btn-primary btn-block" style="margin-top: 20px;" onclick="requestAppointment()">Request Appointment</button>
+          </div>
+        </div>
+
+        <!-- Design Tools Section -->
+        <div class="card" id="tools-section" style="display: none;">
+          <div class="card-header">
+            <h2>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+              Design Tools
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="tools-grid">
+              <a href="https://www.surprisegranite.com/tools/room-designer/" target="_blank" class="tool-card">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                <h4>Room Designer</h4>
+                <p>Design your space in 3D</p>
+              </a>
+              <a href="https://www.surprisegranite.com/tools/visualizer/" target="_blank" class="tool-card">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <h4>Visualizer</h4>
+                <p>See materials in your space</p>
+              </a>
+              <a href="https://www.surprisegranite.com/tools/countertop-edge-visualizer/" target="_blank" class="tool-card">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+                <h4>Edge Profiles</h4>
+                <p>Explore countertop edges</p>
+              </a>
+              <a href="https://www.surprisegranite.com/ai-visualizer" target="_blank" class="tool-card">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <h4>AI Visualizer</h4>
+                <p>AI-powered design preview</p>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explore Website Section -->
+        <div class="card" id="explore-section">
+          <div class="card-header">
+            <h2>
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+              Explore
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="explore-links">
+              <a href="https://www.surprisegranite.com/materials/all-countertops/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Countertops</span>
+              </a>
+              <a href="https://www.surprisegranite.com/materials/all-cabinets/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                <span>Cabinets</span>
+              </a>
+              <a href="https://www.surprisegranite.com/company/project-gallery/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Gallery</span>
+              </a>
+              <a href="https://www.surprisegranite.com/products/kitchen-sinks/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Sinks</span>
+              </a>
+              <a href="https://www.surprisegranite.com/financing/same-as-cash-financing/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                <span>Financing</span>
+              </a>
+              <a href="https://www.surprisegranite.com/" target="_blank" class="explore-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Homepage</span>
+              </a>
             </div>
           </div>
         </div>
@@ -1305,6 +1654,243 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    // Timeline rendering
+    function renderTimeline(info) {
+      const status = info.status || info.lead_status || 'new';
+      const stages = [
+        { key: 'inquiry', label: 'Inquiry Received', desc: 'Your project request submitted' },
+        { key: 'consultation', label: 'Consultation', desc: 'Meeting to discuss your project' },
+        { key: 'estimate', label: 'Estimate Provided', desc: 'Review your detailed quote' },
+        { key: 'approved', label: 'Approved', desc: 'Ready to schedule installation' },
+        { key: 'scheduled', label: 'Installation Scheduled', desc: 'Your install date is set' },
+        { key: 'completed', label: 'Project Complete', desc: 'Enjoy your new countertops!' }
+      ];
+
+      // Map status to stage index
+      const statusMap = {
+        'new': 0, 'inquiry': 0,
+        'contacted': 1, 'consultation': 1, 'follow_up': 1,
+        'quoted': 2, 'estimate': 2, 'estimate_sent': 2,
+        'approved': 3, 'won': 3, 'deposit_paid': 3,
+        'scheduled': 4, 'in_progress': 4, 'installation': 4,
+        'completed': 5, 'installed': 5
+      };
+
+      const currentIndex = statusMap[status.toLowerCase()] ?? 0;
+
+      return stages.map((stage, i) => {
+        let dotClass = '';
+        if (i < currentIndex) dotClass = 'completed';
+        else if (i === currentIndex) dotClass = 'current';
+
+        return `
+          <div class="timeline-item">
+            <div class="timeline-dot ${dotClass}"></div>
+            <div class="timeline-content">
+              <h4>${stage.label}</h4>
+              <p>${stage.desc}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Calendar state and functions
+    let calendarDate = new Date();
+    let selectedDate = null;
+    let selectedTime = null;
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const monthLabel = document.getElementById('calendar-month');
+      if (!grid || !monthLabel) return;
+
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+
+      monthLabel.textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      // Day headers
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      let html = days.map(d => `<div style="font-size: 11px; color: var(--text-muted); padding: 8px 0;">${d}</div>`).join('');
+
+      // First day of month
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Empty cells before first day
+      for (let i = 0; i < firstDay; i++) {
+        html += '<div></div>';
+      }
+
+      // Day cells
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const isPast = date < today;
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        const isToday = date.toDateString() === today.toDateString();
+
+        let classes = 'padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;';
+        if (isPast || isWeekend) {
+          classes += ' opacity: 0.3; cursor: not-allowed;';
+        } else if (isSelected) {
+          classes += ' background: var(--gold); color: var(--dark); font-weight: 600;';
+        } else if (isToday) {
+          classes += ' border: 1px solid var(--gold);';
+        } else {
+          classes += ' background: rgba(255,255,255,0.03);';
+        }
+
+        const onclick = (!isPast && !isWeekend) ? `onclick="selectDate(${year}, ${month}, ${day})"` : '';
+        html += `<div style="${classes}" ${onclick}>${day}</div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function selectDate(year, month, day) {
+      selectedDate = new Date(year, month, day);
+      renderCalendar();
+      showToast(`Selected: ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`);
+    }
+
+    function prevMonth() {
+      calendarDate.setMonth(calendarDate.getMonth() - 1);
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      calendarDate.setMonth(calendarDate.getMonth() + 1);
+      renderCalendar();
+    }
+
+    function selectTime(time) {
+      selectedTime = time;
+      // Update UI
+      document.querySelectorAll('.time-slot').forEach(slot => {
+        slot.classList.remove('selected');
+        if (slot.textContent === time) {
+          slot.classList.add('selected');
+        }
+      });
+    }
+
+    async function requestAppointment() {
+      if (!selectedDate) {
+        showToast('Please select a date');
+        return;
+      }
+      if (!selectedTime) {
+        showToast('Please select a time');
+        return;
+      }
+
+      try {
+        const leadId = portalData.lead_id;
+        if (!leadId) {
+          showToast('Unable to request appointment');
+          return;
+        }
+
+        // Save appointment request as a message
+        const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const message = `Appointment Request: ${dateStr} at ${selectedTime}`;
+
+        await db.from('customer_messages').insert({
+          customer_id: leadId,
+          direction: 'inbound',
+          channel: 'in_app',
+          message: message,
+          sent_from: 'portal',
+          status: 'sent'
+        });
+
+        await logActivity('appointment_requested', {
+          date: selectedDate.toISOString(),
+          time: selectedTime
+        });
+
+        showToast('Appointment requested! We\'ll confirm shortly.');
+
+        // Reset selection
+        selectedDate = null;
+        selectedTime = null;
+        renderCalendar();
+        document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
+
+        // Hide schedule section
+        showSection('messages');
+      } catch (err) {
+        console.error('Request appointment error:', err);
+        showToast('Failed to request appointment');
+      }
+    }
+
+    // Updated showSection to handle all sections
+    function showSection(section) {
+      // Sections that toggle visibility
+      const toggleSections = ['schedule', 'tools'];
+
+      if (toggleSections.includes(section)) {
+        const el = document.getElementById(section + '-section');
+        if (el) {
+          const isHidden = el.style.display === 'none';
+          el.style.display = isHidden ? 'block' : 'none';
+          if (isHidden) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Initialize calendar when showing schedule
+            if (section === 'schedule') {
+              setTimeout(renderCalendar, 100);
+            }
+          }
+        }
+        return;
+      }
+
+      // Regular scroll to section
+      const el = document.getElementById(section + '-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Bottom navigation active state
+    function setNavActive(section) {
+      document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.section === section) {
+          item.classList.add('active');
+        }
+      });
+    }
   </script>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-item active" data-section="home" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); setNavActive('home');">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="bottom-nav-item" data-section="messages" onclick="showSection('messages'); setNavActive('messages');">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      <span>Messages</span>
+    </button>
+    <button class="bottom-nav-item" data-section="tools" onclick="showSection('tools'); setNavActive('tools');">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+      <span>Tools</span>
+    </button>
+    <a class="bottom-nav-item" href="tel:+16235128866">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      <span>Call</span>
+    </a>
+    <a class="bottom-nav-item" href="https://www.surprisegranite.com" target="_blank">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+      <span>Website</span>
+    </a>
+  </nav>
 </body>
 </html>

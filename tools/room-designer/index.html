@@ -10143,14 +10143,25 @@
     }
 
     window.showCommentNotification = function(customerName, message) {
+      // Validate inputs
+      if (!customerName || !message) return;
+
+      // Escape to prevent XSS
+      const safeCustomerName = String(customerName).replace(/[<>&"']/g, c => ({
+        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+      })[c]);
+      const safeMessage = String(message).replace(/[<>&"']/g, c => ({
+        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+      })[c]);
+
       // Create notification toast
       const toast = document.createElement('div');
       toast.className = 'comment-notification-toast';
       toast.innerHTML = `
         <div class="comment-notification-icon">💬</div>
         <div class="comment-notification-content">
-          <div class="comment-notification-title">${customerName} commented:</div>
-          <div class="comment-notification-message">${message}</div>
+          <div class="comment-notification-title">${safeCustomerName} commented:</div>
+          <div class="comment-notification-message">${safeMessage}</div>
         </div>
         <div class="comment-notification-action">View →</div>
       `;
@@ -10304,6 +10315,16 @@
       // Poll every 5 seconds
       SHARE_STATE.pollingInterval = setInterval(pollForUpdates, 5000);
       pollForUpdates(); // Initial poll
+
+      // Stop polling after 30 minutes to prevent resource drain
+      SHARE_STATE.pollingTimeout = setTimeout(() => {
+        if (SHARE_STATE.pollingInterval) {
+          clearInterval(SHARE_STATE.pollingInterval);
+          SHARE_STATE.pollingInterval = null;
+          console.log('Polling stopped after 30 minutes - refresh page to resume');
+          showToast('Live updates paused. Refresh to resume.', 'info', 5000);
+        }
+      }, 30 * 60 * 1000);
     }
 
     function handleRealtimeUpdate(newData) {
@@ -44628,8 +44649,9 @@
 
       // For shared views, check share permissions
       if (!SHARE_STATE.isSharedView) return true;
-      if (!SHARE_STATE.allowedActions) return true;
-      return SHARE_STATE.allowedActions[action] !== false;
+      // Deny by default if allowedActions not set (secure default)
+      if (!SHARE_STATE.allowedActions) return false;
+      return SHARE_STATE.allowedActions[action] === true;
     }
 
     // Toggle between cost and retail view
@@ -49415,7 +49437,7 @@
         return;
       }
 
-      const canApprove = SHARE_STATE.permission === 'full_collab' || SHARE_STATE.permission === 'quote_view' || SHARE_STATE.permission === 'quote_approval';
+      const canApprove = PERMISSION_LEVELS[SHARE_STATE.permission]?.canApprove || false;
       const canViewPrices = checkPermission('canViewPrices');
       console.log('canApprove:', canApprove, 'canViewPrices:', canViewPrices);
 
@@ -49632,11 +49654,13 @@
 
       container.innerHTML = comments.map(c => {
         const isStaff = c.direction === 'outbound' || (c.author && c.author !== 'Customer' && c.author !== 'Reviewer');
+        const safeAuthor = escapeHtml(c.author || 'Customer');
+        const safeElementLabel = c.elementLabel ? escapeHtml(c.elementLabel) : null;
         return `
           <div class="review-comment ${isStaff ? 'staff-comment' : 'customer-comment'}" style="${isStaff ? 'background: rgba(249, 168, 37, 0.1); border-left: 3px solid var(--gold);' : ''}">
             <div class="comment-header">
-              <span class="comment-author" style="${isStaff ? 'color: var(--gold);' : ''}">${c.author || 'Customer'}</span>
-              ${c.elementLabel ? `<span class="comment-element">on ${c.elementLabel}</span>` : ''}
+              <span class="comment-author" style="${isStaff ? 'color: var(--gold);' : ''}">${safeAuthor}</span>
+              ${safeElementLabel ? `<span class="comment-element">on ${safeElementLabel}</span>` : ''}
               <span class="comment-time">${new Date(c.timestamp).toLocaleString()}</span>
             </div>
             <div class="comment-text">${escapeHtml(c.text)}</div>
@@ -51396,11 +51420,7 @@
       return date.toLocaleDateString();
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // Note: escapeHtml is defined earlier (around line 49675)
 
     // Debug function - call from console: debugMessages()
     window.debugMessages = async function() {
@@ -51476,6 +51496,19 @@
 
     // Send designer reply
     async function sendDesignerReply() {
+      // Only designers (non-shared view) can send replies
+      if (SHARE_STATE.isSharedView) {
+        showToast('Only designers can send replies', 'error');
+        return;
+      }
+
+      // Verify user is authenticated
+      const user = window.SgAuth?.getUser();
+      if (!user) {
+        showToast('Please log in to send messages', 'error');
+        return;
+      }
+
       const input = document.getElementById('designerReplyInput');
       const message = input?.value?.trim();
       if (!message || !SHARE_STATE.leadId) return;
@@ -51676,11 +51709,7 @@
       return `hsl(${hue}, 65%, 45%)`;
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // Note: escapeHtml is defined earlier (around line 49675)
 
     // ===== LOADING OVERLAY =====
     function showLoading(message = 'Loading...') {

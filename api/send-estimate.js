@@ -10,8 +10,18 @@ const transporter = nodemailer.createTransport({
 });
 
 module.exports = async (req, res) => {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS headers - restrict to trusted origins
+    const allowedOrigins = [
+        'https://surprisegranite.com',
+        'https://www.surprisegranite.com',
+        'https://surprise-granite-site.netlify.app',
+        'http://localhost:3333',
+        'http://localhost:3000'
+    ];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
