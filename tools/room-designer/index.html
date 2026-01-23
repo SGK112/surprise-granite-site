@@ -30787,23 +30787,33 @@
             }
           });
 
-          // Main slab body - full size solid block
+          // Determine if edge profile needs separate geometry
+          // Skip flat/square/eased edges - main body geometry handles these
+          const skipEdgeProfile = ['flat-polish', 'square', 'eased'].includes(edgeProfile);
+
+          // For decorative edges, inset the main body to make room for the profile
+          const edgeInset = skipEdgeProfile ? 0 : effectiveH * 0.15; // 15% of thickness for profile
+
+          // Main slab body - full size solid block (or inset for decorative edges)
           // Skip when sinks present (use topSurface with cutouts instead)
           if (sinkCutouts.length === 0) {
+            const bodyDepth = slabD - (hasFrontWaterfall ? 0 : edgeInset);
+            const bodyOffsetZ = (hasFrontWaterfall ? 0 : -edgeInset / 2);
             const mainBody = new THREE.Mesh(
-              new THREE.BoxGeometry(slabW, effectiveH, slabD),
+              new THREE.BoxGeometry(slabW, effectiveH, bodyDepth),
               ctopMat
             );
-            mainBody.position.set(slabOffsetX, 0, slabOffsetZ);
+            mainBody.position.set(slabOffsetX, 0, slabOffsetZ + bodyOffsetZ);
             group.add(mainBody);
           }
 
-          // Edge rendering - only for non-flat profiles to avoid visual seams
-          // Use same material as main body for consistent appearance
-          const frontEdgeMat = ctopMat; // Match main body to avoid visible seams
+          // Edge rendering - only for decorative profiles that need visible geometry
 
-          // Skip edge profile rendering for flat/square/eased edges - main body handles it
-          const skipEdgeProfile = ['flat-polish', 'square', 'eased'].includes(edgeProfile);
+          // For decorative edges (bevel, ogee, bullnose, etc.), use polished material to highlight profile
+          const frontEdgeMat = skipEdgeProfile ? ctopMat : createTexturedMaterial(color, textureUrl, {
+            roughness: 0.18,  // Slightly more polished than body to highlight edge profile
+            metalness: 0.02
+          });
 
           // waterfallSides already declared above - use those variables
 
