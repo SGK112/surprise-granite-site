@@ -44232,7 +44232,9 @@
     function applyMaterial(urlOrColor, fallbackColor) {
       if (!selectedElement) return;
 
-      if (urlOrColor.startsWith('http') || urlOrColor.startsWith('data:')) {
+      // Check if it's a URL (http, data:, or relative path like /images/)
+      const isUrl = urlOrColor.startsWith('http') || urlOrColor.startsWith('data:') || urlOrColor.startsWith('/');
+      if (isUrl) {
         selectedElement.texture = urlOrColor;
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -44243,6 +44245,7 @@
         img.onload = () => {
           selectedElement.textureImg = img;
           draw();
+          render3D(); // Update 3D view as well
           updateProperties();
         };
         img.onerror = () => {
@@ -44251,6 +44254,7 @@
           selectedElement.texture = null;
           selectedElement.color = fallbackColor || '#888';
           draw();
+          render3D(); // Update 3D view as well
         };
         img.src = finalUrl;
       } else {
@@ -44258,6 +44262,7 @@
         selectedElement.textureImg = null;
         selectedElement.color = urlOrColor;
         draw();
+        render3D(); // Update 3D view as well
         updateProperties();
       }
 
