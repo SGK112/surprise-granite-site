@@ -28856,7 +28856,7 @@
       // Load local analytics data
       try {
         // Get user activity from database
-        const { data: activity, error } = await supabase
+        const { data: activity, error } = await supabaseClient
           .from('customer_activity_log')
           .select('*')
           .gte('created_at', new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString())
