@@ -23,6 +23,10 @@
     // API Configuration
     API_BASE: 'https://surprise-granite-email-api.onrender.com',
 
+    // Google Configuration
+    GOOGLE_CLIENT_ID: '46783393854-3bclu7oh0l6t6fem91mj9jj681aep4cs.apps.googleusercontent.com',
+    GOOGLE_ANALYTICS_PROPERTY: '', // Add your GA4 property ID (e.g., 'properties/123456789')
+
     // Supabase Configuration
     SUPABASE_URL: 'https://ypeypgwsycxcagncgdur.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME',
