@@ -30798,18 +30798,19 @@
             group.add(mainBody);
           }
 
-          // Edge rendering (always render edges)
-          // Front edge with profile - slightly more polished than top
-          const frontEdgeMat = createTexturedMaterial(color, textureUrl, {
-            roughness: 0.15,
-            metalness: 0.03
-          });
+          // Edge rendering - only for non-flat profiles to avoid visual seams
+          // Use same material as main body for consistent appearance
+          const frontEdgeMat = ctopMat; // Match main body to avoid visible seams
+
+          // Skip edge profile rendering for flat/square/eased edges - main body handles it
+          const skipEdgeProfile = ['flat-polish', 'square', 'eased'].includes(edgeProfile);
 
           // waterfallSides already declared above - use those variables
 
           // Front edge - SKIP if front has waterfall (waterfall replaces the edge)
+          // Also skip for flat/square/eased edges (main body handles these)
           // Also shorten front edge if left/right waterfalls exist (they handle the corners)
-          if (!hasFrontWaterfall) {
+          if (!hasFrontWaterfall && !skipEdgeProfile) {
             const wfThicknessForEdge = is2cm ? 0.065 : 0.1;
             // Calculate front edge length - shorten for waterfall corners
             let frontEdgeLen = slabW;
@@ -30844,7 +30845,8 @@
 
           // Side edges for finished ends
           // IMPORTANT: Do NOT render edge profiles on waterfall sides - the waterfall IS the edge
-          if (el.finishedEnds) {
+          // Also skip for flat/square/eased edges (main body handles these)
+          if (el.finishedEnds && !skipEdgeProfile) {
             const sideEdgeDepth = 0.02; // Small decorative edge strip
             // Left edge - skip if there's a left waterfall (waterfall replaces the edge)
             if (el.finishedEnds.includes('left') && !hasLeftWaterfall) {
