@@ -86,10 +86,76 @@
       this.container = null;
       this.mediaRecorder = null;
       this.audioChunks = [];
+      this.voices = []; // Cached voices
+      this.voicesLoaded = false;
 
       // Check browser support
       this.hasRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
       this.hasSynthesis = 'speechSynthesis' in window;
+
+      // Pre-load voices (they load asynchronously in most browsers)
+      if (this.hasSynthesis) {
+        this.loadVoices();
+        // Listen for voice list changes (Chrome loads voices async)
+        if (this.synthesis.onvoiceschanged !== undefined) {
+          this.synthesis.onvoiceschanged = () => this.loadVoices();
+        }
+      }
+    }
+
+    // Load available voices
+    loadVoices() {
+      this.voices = this.synthesis.getVoices();
+      if (this.voices.length > 0) {
+        this.voicesLoaded = true;
+        console.log('[Aria] Loaded', this.voices.length, 'voices');
+        // Find and cache preferred voice
+        this.preferredVoice = this.findPreferredVoice();
+        if (this.preferredVoice) {
+          console.log('[Aria] Selected voice:', this.preferredVoice.name, this.preferredVoice.lang);
+        }
+      }
+    }
+
+    // Find the best American English voice
+    findPreferredVoice() {
+      const americanVoiceNames = ['Samantha', 'Ava', 'Allison', 'Susan', 'Zira', 'Aria', 'Jenny', 'Siri'];
+      const britishIndicators = ['Daniel', 'Kate', 'British', 'UK', 'en-GB', 'en_GB'];
+
+      // Filter to only American English voices (en-US)
+      const americanVoices = this.voices.filter(v =>
+        (v.lang === 'en-US' || v.lang === 'en_US') &&
+        !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
+      );
+
+      // Try to find a preferred American voice
+      let preferredVoice = americanVoices.find(v =>
+        americanVoiceNames.some(name => v.name.includes(name))
+      );
+
+      // Fallback to any American female voice
+      if (!preferredVoice) {
+        preferredVoice = americanVoices.find(v =>
+          v.name.toLowerCase().includes('female') ||
+          v.name.includes('Samantha') ||
+          v.name.includes('Ava')
+        );
+      }
+
+      // Fallback to any American voice
+      if (!preferredVoice && americanVoices.length > 0) {
+        preferredVoice = americanVoices[0];
+      }
+
+      // Last resort: any en voice that's NOT British
+      if (!preferredVoice) {
+        preferredVoice = this.voices.find(v =>
+          v.lang.startsWith('en') &&
+          !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
+        );
+      }
+
+      return preferredVoice;
     }
 
     // Initialize the widget
@@ -659,7 +725,7 @@
     }
 
     // Speak text
-    speak(text) {
+    speak(text, retryCount = 0) {
       if (!this.hasSynthesis) {
         this.addMessage('assistant', text);
         return;
@@ -668,53 +734,38 @@
       // Cancel any ongoing speech first
       this.stopSpeaking();
 
+      // If voices haven't loaded yet, wait for them (max 10 retries = 1 second)
+      if (!this.voicesLoaded && this.voices.length === 0) {
+        console.log('[Aria] Voices not loaded yet, waiting... (attempt', retryCount + 1, ')');
+        // Try to load voices again
+        this.loadVoices();
+
+        // If still no voices, wait a bit and try again (max 10 retries)
+        if (!this.voicesLoaded && retryCount < 10) {
+          setTimeout(() => this.speak(text, retryCount + 1), 100);
+          return;
+        } else if (!this.voicesLoaded) {
+          console.warn('[Aria] Could not load voices after 10 attempts, proceeding with default');
+        }
+      }
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = this.config.speed;
       utterance.lang = this.config.language;
 
-      // Try to find an American English voice (avoid British)
-      const voices = this.synthesis.getVoices();
-
-      // Priority order for American English female voices
-      const americanVoiceNames = ['Samantha', 'Ava', 'Allison', 'Susan', 'Zira', 'Aria', 'Jenny', 'Siri'];
-      const britishIndicators = ['Daniel', 'Kate', 'British', 'UK', 'en-GB', 'en_GB'];
-
-      // Filter to only American English voices (en-US)
-      const americanVoices = voices.filter(v =>
-        (v.lang === 'en-US' || v.lang === 'en_US') &&
-        !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
-      );
-
-      // Try to find a preferred American voice
-      let preferredVoice = americanVoices.find(v =>
-        americanVoiceNames.some(name => v.name.includes(name))
-      );
-
-      // Fallback to any American female voice
-      if (!preferredVoice) {
-        preferredVoice = americanVoices.find(v =>
-          v.name.toLowerCase().includes('female') ||
-          v.name.includes('Samantha') ||
-          v.name.includes('Ava')
-        );
-      }
-
-      // Fallback to any American voice
-      if (!preferredVoice && americanVoices.length > 0) {
-        preferredVoice = americanVoices[0];
-      }
-
-      // Last resort: any en voice that's NOT British
-      if (!preferredVoice) {
-        preferredVoice = voices.find(v =>
-          v.lang.startsWith('en') &&
-          !britishIndicators.some(b => v.name.includes(b) || v.lang.includes(b))
-        );
-      }
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-        console.log('Using voice:', preferredVoice.name, preferredVoice.lang);
+      // Use the cached preferred voice
+      if (this.preferredVoice) {
+        utterance.voice = this.preferredVoice;
+        console.log('[Aria] Speaking with voice:', this.preferredVoice.name);
+      } else {
+        // Fallback: try to find a voice now
+        const voice = this.findPreferredVoice();
+        if (voice) {
+          utterance.voice = voice;
+          console.log('[Aria] Speaking with fallback voice:', voice.name);
+        } else {
+          console.warn('[Aria] No suitable voice found, using browser default');
+        }
       }
 
       utterance.onstart = () => {
@@ -723,6 +774,12 @@
       };
 
       utterance.onend = () => {
+        this.state.isSpeaking = false;
+        this.updateUI();
+      };
+
+      utterance.onerror = (event) => {
+        console.error('[Aria] Speech error:', event.error);
         this.state.isSpeaking = false;
         this.updateUI();
       };

@@ -17557,30 +17557,28 @@
 
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        const API_BASE = window.location.hostname === 'localhost'
-          ? 'http://localhost:3001'
-          : 'https://surprise-granite-connections-api.onrender.com';
 
-        const response = await fetch(`${API_BASE}/api/design-comments/${selectedLead.id}/reply`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': user?.id || ''
-          },
-          body: JSON.stringify({
+        // Insert reply directly into Supabase customer_messages table
+        const { data, error } = await supabaseClient
+          .from('customer_messages')
+          .insert({
+            customer_id: selectedLead.id,
             message: message,
-            author: 'Surprise Granite'
-          })
-        });
+            author: 'Surprise Granite',
+            direction: 'outbound',
+            channel: 'portal',
+            user_id: user?.id || null,
+            read: true
+          });
 
-        if (!response.ok) throw new Error('Failed to send reply');
+        if (error) throw error;
 
         input.value = '';
-        showNotification('Reply sent!', 'success');
+        showToast('Reply sent!', 'success');
         loadLeadMessages(selectedLead.id);
       } catch (err) {
         console.error('Send reply error:', err);
-        showNotification('Failed to send reply', 'error');
+        showToast('Failed to send reply', 'error');
       }
     }
 
