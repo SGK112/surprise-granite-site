@@ -28160,24 +28160,22 @@
           material.color.setHex(0xFFFFFF); // Pure white base for accurate texture colors
 
           // Normal map from texture for realistic surface depth
+          // Use bumpMap instead of normalMap to avoid shader issues
           if (options.enableBumpMap !== false) {
-            material.normalMap = texture;
-            material.normalScale = new THREE.Vector2(0.15, 0.15); // Subtle but visible depth
+            material.bumpMap = texture;
+            material.bumpScale = 0.02; // Subtle depth effect
           }
 
           // In HD mode, also add roughness variation
-          if (hdMode) {
+          if (hdMode && material.roughnessMap !== undefined) {
             material.roughnessMap = texture;
-            // Invert roughness map effect - darker areas slightly smoother
             material.roughness = Math.max(0.05, material.roughness);
           }
 
           material.needsUpdate = true;
 
-          // Re-render to show texture
-          if (renderer && scene && camera) {
-            renderer.render(scene, camera);
-          }
+          // Re-render will happen in animation loop, don't call directly here
+          // to avoid WebGL context issues
         };
 
         if (cachedTexture) {
@@ -28240,23 +28238,21 @@
 
         // Use MeshPhysicalMaterial for countertops - supports clearcoat for sealed stone look
         if (isCountertop) {
-          const physicalMatOptions = {
-            color: textureUrl ? 0xFFFFFF : baseColor,
-            roughness: options.roughness !== undefined ? options.roughness : adjustedRoughness,
-            metalness: 0.0, // Stone is not metallic
-            clearcoat: settings.clearcoat,
-            clearcoatRoughness: settings.clearcoatRoughness,
-            sheen: settings.sheen,
-            sheenRoughness: 0.5,
-            sheenColor: new THREE.Color(isLightColored ? 0xFFFFFF : 0x888888),
-            side: options.side || THREE.FrontSide,
-            flatShading: false
-          };
+          try {
+            const physicalMatOptions = {
+              color: textureUrl ? 0xFFFFFF : baseColor,
+              roughness: options.roughness !== undefined ? options.roughness : adjustedRoughness,
+              metalness: 0.0, // Stone is not metallic
+              clearcoat: settings.clearcoat,
+              clearcoatRoughness: settings.clearcoatRoughness,
+              side: options.side || THREE.FrontSide,
+              flatShading: false
+            };
 
-          if (options.transparent) physicalMatOptions.transparent = options.transparent;
-          if (options.opacity !== undefined) physicalMatOptions.opacity = options.opacity;
+            if (options.transparent) physicalMatOptions.transparent = options.transparent;
+            if (options.opacity !== undefined) physicalMatOptions.opacity = options.opacity;
 
-          const material = new THREE.MeshPhysicalMaterial(physicalMatOptions);
+            const material = new THREE.MeshPhysicalMaterial(physicalMatOptions);
 
           // Environment map for reflections
           if (window.roomEnvMap) {
@@ -28279,9 +28275,13 @@
           }
 
           return material;
+          } catch (physicalMatError) {
+            console.warn('MeshPhysicalMaterial failed, falling back to standard:', physicalMatError);
+            // Fall through to standard material below
+          }
         }
 
-        // Standard material for non-countertop elements
+        // Standard material for non-countertop elements (also used as fallback)
         const matOptions = {
           color: textureUrl ? 0xFFFFFF : baseColor,
           roughness: options.roughness !== undefined ? options.roughness : 0.45,
