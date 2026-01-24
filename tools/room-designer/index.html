@@ -1976,6 +1976,20 @@
       accent-color: var(--primary);
     }
 
+    .hd-badge {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .hd-toggle label {
+      justify-content: space-between;
+    }
+
     .three-hint.walkthrough-hint strong {
       display: block;
       margin-bottom: 6px;
@@ -6038,6 +6052,70 @@
       display: none;
     }
 
+    /* View-Only Mode - hide all editing UI */
+    body.view-only-mode .sidebar {
+      display: none !important;
+    }
+
+    body.view-only-mode .main-content {
+      margin-left: 0 !important;
+    }
+
+    body.view-only-mode .toolbar-btn:not([data-tool="pan"]):not([data-tool="zoom-in"]):not([data-tool="zoom-out"]) {
+      display: none !important;
+    }
+
+    body.view-only-mode .element-selector,
+    body.view-only-mode .item-picker,
+    body.view-only-mode #saveDesignBtn,
+    body.view-only-mode #shareDesignBtn,
+    body.view-only-mode .add-room-btn,
+    body.view-only-mode .edit-actions {
+      display: none !important;
+    }
+
+    body.view-only-mode .right-panel .panel-section:not(#quotePanel) {
+      display: none !important;
+    }
+
+    /* Viewer Mode Badge */
+    .viewer-mode-badge {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    .viewer-mode-badge .badge-icon {
+      font-size: 16px;
+    }
+
+    .viewer-mode-badge .badge-text {
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .viewer-mode-badge .badge-action {
+      background: var(--accent);
+      color: #000;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
     /* Keyboard Shortcuts - auto-hide after delay */
     .shortcuts-hint {
       position: fixed;
@@ -6429,6 +6507,86 @@
       display: flex;
       align-items: center;
       gap: 4px;
+    }
+
+    .design-card-delete {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.9);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 10;
+    }
+
+    .design-card-delete svg {
+      stroke: white;
+    }
+
+    .design-card:hover .design-card-delete {
+      opacity: 1;
+    }
+
+    .design-card-delete:hover {
+      background: rgba(220, 38, 38, 1);
+      transform: scale(1.1);
+    }
+
+    .design-card-badge.local {
+      background: #6B7280;
+    }
+
+    .design-card-badge.cloud {
+      background: #3B82F6;
+    }
+
+    .design-card-badge.shared {
+      background: #10B981;
+    }
+
+    .design-card-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .design-card-details span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .design-card-room-type svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .design-card-dims {
+      background: var(--panel-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .design-card-elements {
+      color: var(--accent-gold);
+    }
+
+    .design-card-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .designs-loading, .designs-empty {
@@ -7571,6 +7729,12 @@
                 <label>
                   <input type="checkbox" id="shadowsEnabled" checked onchange="toggleShadows(this.checked)">
                   Enable Shadows
+                </label>
+              </div>
+              <div class="lighting-toggle hd-toggle">
+                <label>
+                  <input type="checkbox" id="hdModeEnabled" onchange="toggleHDMode(this.checked)">
+                  HD Mode <span class="hd-badge">✨ Enhanced</span>
                 </label>
               </div>
             </div>
@@ -10994,12 +11158,21 @@
     // ===== MATERIAL TYPE RESTRICTIONS =====
     // Controls which material categories can be applied to which element types
     const MATERIAL_TYPE_MAP = {
-      // Stone materials (granite, quartz, marble, quartzite) -> countertops only
+      // Stone materials (granite, quartz, marble, quartzite, dekton, etc.) -> countertops only
       granite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
       quartz: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
       marble: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
       quartzite: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
       stone: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      // Sintered stone / ultra-compact surfaces (Dekton, Neolith, etc.)
+      dekton: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      sintered: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      neolith: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      porcelain: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash', 'tile', 'flooring'],
+      soapstone: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island'],
+      onyx: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash'],
+      travertine: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash', 'flooring'],
+      limestone: ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island', 'backsplash', 'flooring'],
       // Cabinet finishes -> cabinets only
       cabinets: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'sink-base',
                  'drawer-base', 'lazy-susan', 'fridge-cabinet', 'pantry', 'blind-corner',
@@ -11078,6 +11251,22 @@
         sqftPerSlab: 55.1,
         wastePercent: 15,  // Lowest waste
         label: 'Porcelain Slab'
+      },
+      dekton: {
+        width: 126,       // Dekton / sintered stone (Cosentino)
+        height: 56,
+        thickness: ['8mm', '12mm', '20mm', '30mm'],
+        sqftPerSlab: 49,
+        wastePercent: 18,
+        label: 'Dekton Slab'
+      },
+      sintered: {
+        width: 126,       // Generic sintered stone (Neolith, etc.)
+        height: 60,
+        thickness: ['6mm', '12mm', '20mm'],
+        sqftPerSlab: 52.5,
+        wastePercent: 18,
+        label: 'Sintered Stone Slab'
       },
       soapstone: {
         width: 84,
@@ -14614,13 +14803,29 @@
       setupDragDrop();
       fitToScreen();
 
-      // Initialize multi-room system
+      // Try to load auto-saved design FIRST (before initializing rooms)
+      // This ensures we restore the saved room structure
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareToken = urlParams.get('share') || urlParams.get('p');
+      let autoSaveLoaded = false;
+      if (!shareToken) {
+        autoSaveLoaded = loadAutoSavedDesign();
+        if (autoSaveLoaded) {
+          console.log('Restored auto-saved design with', elements.length, 'elements and', rooms.length, 'rooms');
+        }
+      }
+
+      // Initialize multi-room system (only creates new room if no rooms exist from autosave)
       initializeRooms();
-      // Sync elements with first room
-      const firstRoom = getCurrentRoom();
-      if (firstRoom) {
-        firstRoom.elements = elements;
-        firstRoom.walls = walls;
+
+      // Only sync elements with first room if we DIDN'T load from autosave
+      // (autosave already has proper room-element associations)
+      if (!autoSaveLoaded) {
+        const firstRoom = getCurrentRoom();
+        if (firstRoom) {
+          firstRoom.elements = elements;
+          firstRoom.walls = walls;
+        }
       }
       updateRoomList();
 
@@ -14677,16 +14882,11 @@
         });
       }
 
-      // Try to load auto-saved design (if not loading a shared design)
-      const urlParams = new URLSearchParams(window.location.search);
-      const shareToken = urlParams.get('share') || urlParams.get('p');
-      if (!shareToken) {
-        const loaded = loadAutoSavedDesign();
-        if (loaded) {
-          showToast(`Restored your design (${elements.length} elements)`, 'success');
-          draw();
-          render3D();
-        }
+      // Show restore notification if autosave was loaded earlier
+      if (autoSaveLoaded) {
+        showToast(`Restored your design (${elements.length} elements)`, 'success');
+        draw();
+        render3D();
       }
 
       // Save initial undo state AFTER loading any saved design
@@ -14726,6 +14926,11 @@
 
       const doSave = async () => {
         try {
+          // Save current room state before saving
+          if (typeof saveCurrentRoomState === 'function') {
+            saveCurrentRoomState();
+          }
+
           const saveData = {
             elements: elements.map(el => ({
               ...el,
@@ -14738,8 +14943,19 @@
             roomType: document.getElementById('roomType')?.value || 'kitchen',
             projectName: document.getElementById('projectName')?.value || 'Untitled',
             timestamp: Date.now(),
-            version: 2, // Track save format version
-            pixelsPerFoot: pixelsPerFoot // Store scale for proper position restoration
+            version: 3, // Track save format version - added rooms support
+            pixelsPerFoot: pixelsPerFoot, // Store scale for proper position restoration
+            // Save multi-room data
+            rooms: rooms.map(room => ({
+              ...room,
+              elements: (room.elements || []).map(el => ({
+                ...el,
+                textureImg: undefined
+              }))
+            })),
+            currentRoomId: currentRoomId,
+            currentRoom: currentRoom,
+            projectRooms: projectRooms
           };
           localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saveData));
           lastSaveTime = Date.now();
@@ -14816,9 +15032,20 @@
       }, 2000); // 2 second debounce for cloud sync
     }
 
+    // Helper to check if there's any design data to save
+    function hasDesignData() {
+      if (elements.length > 0) return true;
+      if (rooms.some(r => r.elements && r.elements.length > 0)) return true;
+      return false;
+    }
+
     // Save before page unload
     window.addEventListener('beforeunload', (e) => {
-      if (elements.length > 0) {
+      if (hasDesignData()) {
+        // Save current room state first
+        if (typeof saveCurrentRoomState === 'function') {
+          saveCurrentRoomState();
+        }
         // Force immediate save
         autoSaveDesign(true);
 
@@ -14833,14 +15060,17 @@
 
     // Also save on visibility change (tab switch, minimize)
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden' && elements.length > 0) {
+      if (document.visibilityState === 'hidden' && hasDesignData()) {
+        if (typeof saveCurrentRoomState === 'function') {
+          saveCurrentRoomState();
+        }
         autoSaveDesign(true);
       }
     });
 
     // Periodic auto-save every 30 seconds if there are changes
     setInterval(() => {
-      if (hasUnsavedChanges && elements.length > 0) {
+      if (hasUnsavedChanges && hasDesignData()) {
         autoSaveDesign(true);
       }
     }, 30000);
@@ -15094,6 +15324,39 @@
           if (projectNameEl) projectNameEl.value = data.projectName;
         }
 
+        // Restore multi-room data if present
+        if (data.rooms && Array.isArray(data.rooms) && data.rooms.length > 0) {
+          rooms.length = 0;
+          data.rooms.forEach(room => {
+            // Restore texture images in room elements
+            if (room.elements) {
+              room.elements.forEach(el => {
+                if (el.texture && !el.textureImg) {
+                  const img = new Image();
+                  img.crossOrigin = 'anonymous';
+                  img.onload = () => {
+                    el.textureImg = img;
+                    draw();
+                  };
+                  img.src = el.texture;
+                }
+              });
+            }
+            rooms.push(room);
+          });
+          console.log('Restored', rooms.length, 'rooms');
+        }
+        if (data.currentRoomId) {
+          currentRoomId = data.currentRoomId;
+        }
+        if (data.currentRoom) {
+          currentRoom = data.currentRoom;
+        }
+        if (data.projectRooms && Array.isArray(data.projectRooms)) {
+          projectRooms.length = 0;
+          data.projectRooms.forEach(r => projectRooms.push(r));
+        }
+
         // Normalize element positions if saved scale differs from current
         // This ensures 3D rendering is accurate regardless of viewport size
         updateCanvasSize(); // Calculate current pixelsPerFoot first
@@ -15111,6 +15374,51 @@
             if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
             if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
           });
+          // Also normalize room elements
+          rooms.forEach(room => {
+            if (room.elements) {
+              room.elements.forEach(el => {
+                el.x = (el.x || 0) * scaleRatio;
+                el.y = (el.y || 0) * scaleRatio;
+              });
+            }
+          });
+        }
+
+        // If rooms were restored, sync global elements with current room
+        if (rooms.length > 0) {
+          // Find the current room (by saved currentRoomId or first room)
+          let activeRoom = rooms.find(r => r.id === currentRoomId);
+          if (!activeRoom) {
+            activeRoom = rooms[0];
+            currentRoomId = activeRoom.id;
+          }
+
+          // If the room has elements, use those instead of the global elements
+          // (they should be the same, but room.elements is the authoritative source)
+          if (activeRoom.elements && activeRoom.elements.length > 0) {
+            elements.length = 0;
+            activeRoom.elements.forEach(el => elements.push(el));
+          } else {
+            // Otherwise, save current elements to the room
+            activeRoom.elements = [...elements];
+          }
+
+          if (activeRoom.walls && activeRoom.walls.length > 0) {
+            walls.length = 0;
+            activeRoom.walls.forEach(w => walls.push(w));
+          } else {
+            activeRoom.walls = [...walls];
+          }
+
+          // Update room dimensions from active room
+          if (activeRoom.width) roomWidth = activeRoom.width;
+          if (activeRoom.depth) roomDepth = activeRoom.depth;
+        }
+
+        // Update room list UI if available
+        if (typeof updateRoomList === 'function') {
+          updateRoomList();
         }
 
         // Update UI components
@@ -15118,7 +15426,7 @@
         updateItemPicker();
         calculateQuote();
 
-        console.log('Loaded auto-saved design:', elements.length, 'elements');
+        console.log('Loaded auto-saved design:', elements.length, 'elements from', rooms.length, 'rooms');
         hasUnsavedChanges = false;
         return true;
       } catch (e) {
@@ -15978,6 +16286,7 @@
         sku: cab.sku,
         catalog: currentCatalog,
         series: currentCabinetSeries,
+        roomId: currentRoom,
         // Store original SKU dimensions for linear fill calculation
         skuWidth: cab.width,  // Original box width (e.g., 3 for 36" cabinet)
         skuHeight: cab.height, // Original box depth
@@ -20659,9 +20968,12 @@
         'niche-surround': 55
       };
 
-      // Filter out hidden elements based on visibility settings
+      // Filter out hidden elements based on visibility settings AND by current room
       const visibleElements = elements.filter(el => {
         if (el.hidden) return false;
+        // Only show elements belonging to current room (check both room tracking systems)
+        const activeRoomId = currentRoomId || currentRoom || 'default';
+        if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) return false;
         const category = getElementCategory(el.type);
         return !hiddenCategories[category];
       });
@@ -21938,7 +22250,8 @@
           color: '#708090',
           label: 'Countertop',
           rotation: 0,
-          locked: false
+          locked: false,
+          roomId: currentRoom
         };
 
         elements.push(countertop);
@@ -22428,7 +22741,12 @@
         elementType = 'base-cabinet';
         width = 3;
         height = 2;
-      } else if (productType.includes('countertop') || productType.includes('granite') || productType.includes('quartz')) {
+      } else if (productType.includes('countertop') || productType.includes('granite') ||
+                 productType.includes('quartz') || productType.includes('dekton') ||
+                 productType.includes('marble') || productType.includes('quartzite') ||
+                 productType.includes('soapstone') || productType.includes('porcelain') ||
+                 productType.includes('sintered') || productType.includes('onyx') ||
+                 productType.includes('travertine') || productType.includes('limestone')) {
         elementType = 'countertop';
         width = 4;
         height = 2;
@@ -22460,6 +22778,7 @@
         label: product.name || 'Store Product',
         rotation: 0,
         locked: false,
+        roomId: currentRoom,
         storeProduct: {
           name: product.name,
           slug: product.slug,
@@ -22576,6 +22895,7 @@
         label: defaults.label,
         rotation: snappedToCabinet ? (snappedToCabinet.rotation || 0) : 0,
         locked: false,
+        roomId: currentRoom,
         texture: elementTextures[type] || null,
         textureImg: null,
         floorLevel: cabinetSettings.currentFloor,
@@ -24454,6 +24774,7 @@
           color: '#D2691E',      // Lighter brown for wall cabs
           label: `Wall ${widthInches}"`,
           id: generateId(),
+          roomId: currentRoom,
           // Copy cabinet settings from base cabinet
           construction: base.construction || cabinetSettings.construction,
           doorStyle: base.doorStyle || cabinetSettings.doorStyle,
@@ -24515,6 +24836,7 @@
           label: `Wall Filler ${widthInches}"`,
           id: generateId(),
           isFiller: true,
+          roomId: currentRoom,
           construction: base.construction || cabinetSettings.construction,
           doorStyle: 'flat',
           doorOverlay: base.doorOverlay || cabinetSettings.doorOverlay,
@@ -24679,6 +25001,7 @@
             rotation: 0,
             color: style.color,
             label: style.label,
+            roomId: currentRoom,
             // Cabinet settings from global settings
             construction: isCabinet ? cabinetSettings.construction : undefined,
             doorStyle: isCabinet ? cabinetSettings.doorStyle : undefined,
@@ -24780,6 +25103,7 @@
               color: style.color,
               label: style.label,
               isFiller: isFiller,
+              roomId: currentRoom,
               // Cabinet settings from global settings
               construction: isCabinet ? cabinetSettings.construction : undefined,
               doorStyle: isFiller ? 'flat' : (isCabinet ? cabinetSettings.doorStyle : undefined),
@@ -24860,6 +25184,7 @@
             color: cornerColor,
             label: cornerLabel,
             isCorner: true,
+            roomId: currentRoom,
             // Cabinet settings from global settings
             construction: cabinetSettings.construction,
             doorStyle: cabinetSettings.doorStyle,
@@ -24911,6 +25236,7 @@
         color: '#2F4F4F',
         label: 'Countertop',
         material: 'granite',
+        roomId: currentRoom,
         edgeProfile: 'eased'
       };
     }
@@ -25113,6 +25439,7 @@
         label: 'Room Flooring',
         rotation: 0,
         locked: false,
+        roomId: currentRoom,
         grainDirection: 0, // 0 = horizontal, 90 = vertical
         floorLevel: cabinetSettings.currentFloor || 1,
         zIndexOffset: -100 // Keep flooring behind other elements
@@ -25234,6 +25561,7 @@
               height: counterDepth,
               color: '#708090',
               rotation: 0,
+              roomId: currentRoom,
               edgeProfile: 'eased',
               finishedEnds: ['left', 'right']
             };
@@ -25305,6 +25633,7 @@
             height: wallD + overhang * 2,
             color: capColor,
             rotation: rotation,
+            roomId: currentRoom,
             edgeProfile: 'eased',
             finishedEnds: ['left', 'right', 'front', 'back'],
             capHeight: wallHeight,          // Height where cap sits
@@ -26373,6 +26702,15 @@
           sun: { color: 0xB0C4DE, intensity: 0.15, pos: [-15, 20, 10] },
           fill: { color: 0xFFF8E0, intensity: 0.35 }, // Interior lights
           exposure: 0.75
+        },
+        // SHOWROOM: Optimized for showcasing countertop colors accurately
+        // Bright, neutral white lighting with minimal color cast
+        showroom: {
+          ambient: { color: 0xFFFFFF, intensity: 0.55 },
+          hemisphere: { sky: 0xFFFFFF, ground: 0xF0F0F0, intensity: 0.35 },
+          sun: { color: 0xFFFFFF, intensity: 0.85, pos: [10, 20, 10] },
+          fill: { color: 0xFFFFFF, intensity: 0.4 },
+          exposure: 1.1
         }
       };
 
@@ -27751,15 +28089,97 @@
         return shape;
       }
 
+      // Load and apply texture to countertop material with enhanced quality settings
+      function loadCountertopTexture(material, textureUrl, options, hdMode = false) {
+        // Resolve relative URLs to absolute
+        let fullUrl = textureUrl;
+        if (textureUrl.startsWith('/') && !textureUrl.startsWith('//')) {
+          fullUrl = window.location.origin + textureUrl;
+        } else if (!textureUrl.startsWith('http') && !textureUrl.startsWith('data:')) {
+          fullUrl = window.location.origin + '/' + textureUrl;
+        }
+
+        // Standard granite/quartz slab: 120" x 60" = 10ft x 5ft
+        const slabWidthFt = 10;
+        const slabDepthFt = 5;
+
+        // Calculate texture repeat based on countertop dimensions
+        let repeatX = 1, repeatY = 1;
+        if (options.width && options.depth) {
+          repeatX = options.width / slabWidthFt;
+          repeatY = options.depth / slabDepthFt;
+          repeatX = Math.max(0.3, repeatX);
+          repeatY = Math.max(0.3, repeatY);
+        }
+
+        // Check texture cache
+        const cachedTexture = textureCache3D[fullUrl] || textureCache3D[textureUrl];
+
+        const applyTexture = (texture) => {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(repeatX, repeatY);
+          texture.colorSpace = THREE.SRGBColorSpace; // Updated for Three.js r152+
+          // Maximum anisotropy for sharp textures at viewing angles
+          texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.generateMipmaps = true;
+
+          material.map = texture;
+          material.color.setHex(0xFFFFFF); // Pure white base for accurate texture colors
+
+          // Normal map from texture for realistic surface depth
+          if (options.enableBumpMap !== false) {
+            material.normalMap = texture;
+            material.normalScale = new THREE.Vector2(0.15, 0.15); // Subtle but visible depth
+          }
+
+          // In HD mode, also add roughness variation
+          if (hdMode) {
+            material.roughnessMap = texture;
+            // Invert roughness map effect - darker areas slightly smoother
+            material.roughness = Math.max(0.05, material.roughness);
+          }
+
+          material.needsUpdate = true;
+
+          // Re-render to show texture
+          if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+          }
+        };
+
+        if (cachedTexture) {
+          const clonedTexture = cachedTexture.clone();
+          clonedTexture.needsUpdate = true;
+          applyTexture(clonedTexture);
+        } else {
+          textureLoader.load(fullUrl, (texture) => {
+            // Cache texture
+            textureCache3D[fullUrl] = texture;
+            textureCache3D[textureUrl] = texture;
+            applyTexture(texture);
+          },
+          undefined,
+          (err) => {
+            console.warn('Countertop texture load failed:', textureUrl);
+            material.color.setHex(options.baseColor || 0x808080);
+            material.needsUpdate = true;
+          });
+        }
+      }
+
       // Helper to create material with optional texture
       function createTexturedMaterial(baseColor, textureUrl, options = {}) {
         // Material settings optimized for accurate color reproduction
-        // Optimized for stone/countertop surfaces to showcase colors clearly
+        // Uses MeshPhysicalMaterial for countertops (clearcoat, sheen) for realistic stone
 
         // Determine material type for optimal settings
         const isStone = options.isStone || options.materialType === 'stone';
         const isPolished = options.finish === 'polished' || options.roughness < 0.3;
         const isCountertop = options.isCountertop || false;
+        const hdMode = window.hdRenderMode || false; // High-definition mode toggle
 
         // Detect if this is a light/white colored surface for enhanced definition
         const colorHex = typeof baseColor === 'number' ? baseColor : parseInt(baseColor.replace('#', ''), 16);
@@ -27767,68 +28187,95 @@
         const g = (colorHex >> 8) & 255;
         const b = colorHex & 255;
         const brightness = (r + g + b) / 3;
-        const isLightColored = brightness > 180; // White/light surfaces need special handling
+        const isLightColored = brightness > 180;
+        const isDarkColored = brightness < 80;
 
-        // Default roughness values optimized for different stone types
-        let defaultRoughness = 0.45; // Balanced for color visibility
-        if (isPolished) defaultRoughness = 0.25;
-        if (options.finish === 'honed') defaultRoughness = 0.55;
-        if (options.finish === 'leathered') defaultRoughness = 0.65;
-
-        // Slightly increase roughness for white surfaces to show subtle shadows better
-        if (isLightColored && isCountertop) {
-          defaultRoughness = Math.min(defaultRoughness + 0.08, 0.6);
-        }
-
-        const matOptions = {
-          color: textureUrl ? 0xFFFFFF : baseColor, // Pure white when textured for accurate colors
-          roughness: options.roughness !== undefined ? options.roughness : defaultRoughness,
-          metalness: options.metalness !== undefined ? options.metalness : 0.02, // Very low for stone
-          side: options.side || THREE.FrontSide,
-          flatShading: false // Smooth shading for natural look
+        // Finish-specific settings for realistic stone appearance
+        const finishSettings = {
+          polished: { roughness: 0.08, clearcoat: 0.6, clearcoatRoughness: 0.15, sheen: 0.3 },
+          honed: { roughness: 0.45, clearcoat: 0.1, clearcoatRoughness: 0.6, sheen: 0.1 },
+          leathered: { roughness: 0.7, clearcoat: 0.05, clearcoatRoughness: 0.8, sheen: 0.5 },
+          brushed: { roughness: 0.55, clearcoat: 0.08, clearcoatRoughness: 0.7, sheen: 0.2 },
+          flamed: { roughness: 0.8, clearcoat: 0, clearcoatRoughness: 1, sheen: 0 },
+          natural: { roughness: 0.6, clearcoat: 0.05, clearcoatRoughness: 0.9, sheen: 0.1 }
         };
 
-        // Don't spread options directly as it may override our texture color
+        const finish = options.finish || 'polished';
+        const settings = finishSettings[finish] || finishSettings.polished;
+
+        // Adjust for light/dark colors
+        let adjustedRoughness = settings.roughness;
+        if (isLightColored) adjustedRoughness = Math.min(settings.roughness + 0.05, 0.5);
+        if (isDarkColored) adjustedRoughness = Math.max(settings.roughness - 0.02, 0.05);
+
+        // Use MeshPhysicalMaterial for countertops - supports clearcoat for sealed stone look
+        if (isCountertop) {
+          const physicalMatOptions = {
+            color: textureUrl ? 0xFFFFFF : baseColor,
+            roughness: options.roughness !== undefined ? options.roughness : adjustedRoughness,
+            metalness: 0.0, // Stone is not metallic
+            clearcoat: settings.clearcoat,
+            clearcoatRoughness: settings.clearcoatRoughness,
+            sheen: settings.sheen,
+            sheenRoughness: 0.5,
+            sheenColor: new THREE.Color(isLightColored ? 0xFFFFFF : 0x888888),
+            side: options.side || THREE.FrontSide,
+            flatShading: false
+          };
+
+          if (options.transparent) physicalMatOptions.transparent = options.transparent;
+          if (options.opacity !== undefined) physicalMatOptions.opacity = options.opacity;
+
+          const material = new THREE.MeshPhysicalMaterial(physicalMatOptions);
+
+          // Environment map for reflections
+          if (window.roomEnvMap) {
+            material.envMap = window.roomEnvMap;
+            // Adjust reflection based on finish and color
+            if (finish === 'polished') {
+              material.envMapIntensity = isLightColored ? 0.35 : 0.55;
+            } else if (finish === 'honed') {
+              material.envMapIntensity = 0.15;
+            } else if (finish === 'leathered') {
+              material.envMapIntensity = 0.08;
+            } else {
+              material.envMapIntensity = 0.25;
+            }
+          }
+
+          // Texture loading for countertops
+          if (textureUrl) {
+            loadCountertopTexture(material, textureUrl, options, hdMode);
+          }
+
+          return material;
+        }
+
+        // Standard material for non-countertop elements
+        const matOptions = {
+          color: textureUrl ? 0xFFFFFF : baseColor,
+          roughness: options.roughness !== undefined ? options.roughness : 0.45,
+          metalness: options.metalness !== undefined ? options.metalness : 0.02,
+          side: options.side || THREE.FrontSide,
+          flatShading: false
+        };
+
         if (options.transparent) matOptions.transparent = options.transparent;
         if (options.opacity !== undefined) matOptions.opacity = options.opacity;
 
         const material = new THREE.MeshStandardMaterial(matOptions);
 
-        // Apply environment reflection for countertops and polished surfaces
-        // Enhanced intensities for the improved HDR-like environment map
+        // Apply environment reflection for polished surfaces
         if (window.roomEnvMap) {
-          if (isCountertop) {
-            // Countertops get realistic reflections based on finish
-            material.envMap = window.roomEnvMap;
-            if (options.finish === 'polished' || isPolished) {
-              // Polished granite/quartz has noticeable reflections
-              // Reduce reflection intensity for white/light surfaces to maintain definition
-              material.envMapIntensity = isLightColored ? 0.25 : 0.45;
-              material.roughness = Math.min(material.roughness, isLightColored ? 0.2 : 0.15);
-            } else if (options.finish === 'honed') {
-              // Honed has subtle matte reflections
-              material.envMapIntensity = isLightColored ? 0.1 : 0.15;
-              material.roughness = Math.max(material.roughness, 0.4);
-            } else if (options.finish === 'leathered') {
-              // Leathered has minimal, diffuse reflections
-              material.envMapIntensity = 0.08;
-              material.roughness = Math.max(material.roughness, 0.6);
-            } else {
-              // Default to semi-polished look
-              // White surfaces get reduced reflection to maintain edge visibility
-              material.envMapIntensity = isLightColored ? 0.2 : 0.3;
-            }
-          } else if (isPolished) {
+          if (isPolished) {
             material.envMap = window.roomEnvMap;
             material.envMapIntensity = 0.35;
           }
         }
 
-        // Apply environment map for metallic surfaces (handles, faucets, appliances)
-        // Enhanced for more realistic metal reflections
+        // Apply environment map for metallic surfaces
         if (window.roomEnvMap && matOptions.metalness > 0.3) {
           material.envMap = window.roomEnvMap;
-          // Higher intensity for more metallic surfaces
           material.envMapIntensity = Math.min(0.8, matOptions.metalness * 1.0);
         }
 
@@ -39701,9 +40148,12 @@
         scene.add(frontWall);
       }
 
-      // Elements - filter out hidden ones
+      // Elements - filter out hidden ones AND filter by current room
       const visibleElements3D = elements.filter(el => {
         if (el.hidden) return false;
+        // Only show elements belonging to current room (check both room tracking systems)
+        const activeRoomId = currentRoomId || currentRoom || 'default';
+        if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) return false;
         const category = getElementCategory(el.type);
         return !hiddenCategories[category];
       });
@@ -40538,6 +40988,50 @@
         });
       }
       showToast(enabled ? 'Shadows enabled' : 'Shadows disabled', 'info');
+    };
+
+    // HD Mode - Enhanced rendering quality for countertop colors
+    window.hdRenderMode = false;
+
+    window.toggleHDMode = function(enabled) {
+      window.hdRenderMode = enabled;
+
+      if (renderer) {
+        // Higher pixel ratio for sharper textures (careful with performance)
+        renderer.setPixelRatio(enabled ? Math.min(window.devicePixelRatio * 1.5, 3) : window.devicePixelRatio);
+
+        // Enhanced tone mapping for better color reproduction
+        renderer.toneMapping = enabled ? THREE.ACESFilmicToneMapping : THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = enabled ? 1.2 : 1.0;
+
+        // Better shadow quality in HD mode
+        if (enabled) {
+          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
+      }
+
+      // Update countertop materials with enhanced settings
+      if (scene) {
+        scene.traverse(obj => {
+          if (obj.isMesh && obj.material && obj.material.isMeshPhysicalMaterial) {
+            // Enhance clearcoat for HD mode
+            if (enabled) {
+              obj.material.clearcoat = Math.min(obj.material.clearcoat * 1.3, 1);
+              obj.material.envMapIntensity = Math.min(obj.material.envMapIntensity * 1.2, 1.5);
+            }
+            obj.material.needsUpdate = true;
+          }
+        });
+      }
+
+      // Re-render to apply changes
+      if (typeof render3D === 'function') {
+        render3D();
+      } else if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+
+      showToast(enabled ? 'HD Mode enabled - Enhanced countertop colors' : 'HD Mode disabled', 'info');
     };
 
     // ===== INTERACTIVE CABINET DOORS =====
@@ -41410,7 +41904,8 @@
           y: elDef.y * pixelsPerFoot,
           rotation: elDef.rotation || 0,
           color: elDef.color || getDefaultColor(elDef.type),
-          category: getElementCategory(elDef.type)
+          category: getElementCategory(elDef.type),
+          roomId: currentRoom
         };
         elements.push(el);
       });
@@ -41620,6 +42115,14 @@
           sun: { color: 0xB0C4DE, intensity: 0.15, pos: [-15, 20, 10] },
           fill: { intensity: 0.35 }, // Interior lights
           exposure: 0.75
+        },
+        showroom: {
+          bg: 0xFCFCFC,
+          ambient: { color: 0xFFFFFF, intensity: 0.55 },
+          hemisphere: { sky: 0xFFFFFF, ground: 0xF0F0F0, intensity: 0.35 },
+          sun: { color: 0xFFFFFF, intensity: 0.85, pos: [10, 20, 10] },
+          fill: { intensity: 0.4 },
+          exposure: 1.1
         }
       };
 
@@ -43515,6 +44018,7 @@
         height: countertopDepth, // 2" front + cabinet depth (+ 2" back for islands)
         rotation: cabinet.rotation || 0,
         color: '#a0a0a0',
+        roomId: currentRoom,
         edgeProfile: 'eased',
         thickness: '3cm',
         overhangFront: frontOverhang,
@@ -49814,28 +50318,107 @@
       const perms = SHARE_STATE.allowedActions;
       if (!perms) return;
 
-      // Hide/disable editing controls
+      console.log('Applying permission restrictions:', SHARE_STATE.permission, perms);
+
+      // Hide/disable editing controls for non-edit permissions
       if (!perms.canEdit) {
         document.body.classList.add('review-readonly');
+        document.body.classList.add('view-only-mode');
 
+        // Hide the entire left sidebar (tools, cabinets, floor plans, etc.)
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+          sidebar.style.display = 'none';
+        }
+
+        // Hide the top toolbar action buttons (save, export, etc.) except view controls
+        const topToolbar = document.querySelector('.top-toolbar');
+        if (topToolbar) {
+          // Hide editing buttons but keep view/zoom controls
+          topToolbar.querySelectorAll('button, .btn').forEach(btn => {
+            const id = btn.id || '';
+            const text = btn.textContent?.toLowerCase() || '';
+            // Keep: 2D/3D toggle, zoom, view controls
+            const keepVisible = id.includes('view') || id.includes('zoom') ||
+                               id.includes('2d') || id.includes('3d') ||
+                               text.includes('2d') || text.includes('3d') ||
+                               btn.classList.contains('view-btn');
+            if (!keepVisible) {
+              btn.style.display = 'none';
+            }
+          });
+        }
+
+        // Hide the save button
+        const saveBtn = document.getElementById('saveDesignBtn');
+        if (saveBtn) saveBtn.style.display = 'none';
+
+        // Hide the share button (viewers shouldn't reshare)
+        const shareBtn = document.getElementById('shareDesignBtn');
+        if (shareBtn) shareBtn.style.display = 'none';
+
+        // Hide item picker / element picker
+        const itemPicker = document.getElementById('itemPicker');
+        if (itemPicker) itemPicker.style.display = 'none';
+
+        // Hide element selector dropdown
+        const elementSelector = document.getElementById('elementSelector');
+        if (elementSelector) elementSelector.style.display = 'none';
+
+        // Disable all tool buttons
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          btn.style.pointerEvents = 'none';
+        });
+
+        // Disable element buttons
         document.querySelectorAll('.element-btn, .toolbar-btn').forEach(btn => {
           btn.disabled = true;
           btn.style.opacity = '0.5';
           btn.style.pointerEvents = 'none';
         });
 
+        // Disable properties panel inputs
         const propsContent = document.getElementById('propertiesContent');
         if (propsContent) {
           propsContent.querySelectorAll('input, select, button').forEach(el => {
             el.disabled = true;
           });
         }
+
+        // Hide the floating action buttons
+        const floatingActions = document.querySelector('.floating-actions');
+        if (floatingActions) floatingActions.style.display = 'none';
+
+        // Hide quick actions
+        const quickActions = document.querySelector('.quick-actions');
+        if (quickActions) quickActions.style.display = 'none';
+
+        // Hide the delete/duplicate buttons in context
+        document.querySelectorAll('[onclick*="delete"], [onclick*="duplicate"], [onclick*="Delete"], [onclick*="Duplicate"]').forEach(el => {
+          el.style.display = 'none';
+        });
+
+        // Expand the canvas area since sidebar is hidden
+        const workspace = document.querySelector('.workspace');
+        if (workspace) {
+          workspace.style.gridTemplateColumns = '1fr';
+        }
+
+        // Show a viewer badge
+        showViewerModeBadge(perms);
       }
 
       // Hide pricing elements in main panel (shown in review panel instead)
       if (!perms.canViewPrices) {
         const quotePanel = document.getElementById('quotePanel');
         if (quotePanel) quotePanel.style.display = 'none';
+
+        // Hide price-related elements
+        document.querySelectorAll('.price-display, .quote-total, .element-price').forEach(el => {
+          el.style.display = 'none';
+        });
       }
 
       // Hide cost view toggle
@@ -49859,6 +50442,28 @@
         const panel = document.getElementById('reviewPanel');
         if (panel) panel.classList.add('open');
       }, 1000);
+    }
+
+    // Show a badge indicating viewer mode
+    function showViewerModeBadge(perms) {
+      // Remove any existing badge
+      const existing = document.getElementById('viewerModeBadge');
+      if (existing) existing.remove();
+
+      const badge = document.createElement('div');
+      badge.id = 'viewerModeBadge';
+      badge.className = 'viewer-mode-badge';
+
+      const permName = PERMISSION_LEVELS[SHARE_STATE.permission]?.name || 'View Only';
+      const icon = perms.canApprove ? '✓' : '👁';
+
+      badge.innerHTML = `
+        <span class="badge-icon">${icon}</span>
+        <span class="badge-text">${permName}</span>
+        ${perms.canApprove ? '<span class="badge-action">Review & Approve</span>' : ''}
+      `;
+
+      document.body.appendChild(badge);
     }
 
     function showPermissionNotice(permission) {
@@ -50827,7 +51432,10 @@
             id: d.id || `local-${i}`,  // Preserve original design ID
             name: d.name || 'Untitled Design',
             room_type: d.room_type || 'kitchen',
+            room_width: d.room_width || 12,
+            room_depth: d.room_depth || 10,
             created_at: d.created_at || new Date().toISOString(),
+            updated_at: d.updated_at || d.created_at,
             elements_count: d.elements?.length || 0,
             comments_count: 0,
             preview: d.preview || null,
@@ -50867,29 +51475,36 @@
           console.warn('Could not load shared designs:', shareErr);
         }
 
-        // Process designs
+        // Process designs with all available data
         allDesigns.my = (myDesigns || []).map(d => ({
           id: d.id,
-          name: d.name || 'Untitled Design',
-          room_type: d.room_type || 'kitchen',
+          name: d.name || d.design_data?.name || 'Untitled Design',
+          room_type: d.room_type || d.design_data?.room_type || 'kitchen',
+          room_width: d.room_width || d.design_data?.room_width || 12,
+          room_depth: d.room_depth || d.design_data?.room_depth || 10,
           created_at: d.created_at,
           updated_at: d.updated_at,
-          elements_count: d.elements?.length || 0,
+          elements_count: d.design_data?.elements?.length || d.elements?.length || 0,
           comments_count: d.comments_count || 0,
           preview: d.thumbnail_url || d.preview_url,
-          share_token: d.share_token
+          share_token: d.share_token,
+          isLocal: false,
+          design_data: d.design_data // Keep for loading
         }));
 
         allDesigns.shared = (sharedDesigns || []).filter(s => s.room_designs).map(s => ({
           id: s.design_id,
           name: s.room_designs?.name || 'Shared Design',
           room_type: s.room_designs?.room_type || 'kitchen',
-          created_at: s.share_date,
+          room_width: s.room_designs?.room_width || 12,
+          room_depth: s.room_designs?.room_depth || 10,
+          created_at: s.share_date || s.created_at,
           shared_by: s.shared_by_name || 'Someone',
           permission: s.permission_level,
           share_token: s.share_token,
-          elements_count: 0,
-          comments_count: s.comments_count || 0
+          elements_count: s.room_designs?.design_data?.elements?.length || 0,
+          comments_count: s.comments_count || 0,
+          isLocal: false
         }));
 
         // Load recent from localStorage
@@ -50906,11 +51521,15 @@
             id: d.id || `local-${i}`,
             name: d.name || 'Untitled Design',
             room_type: d.room_type || 'kitchen',
+            room_width: d.room_width || 12,
+            room_depth: d.room_depth || 10,
             created_at: d.created_at || new Date().toISOString(),
+            updated_at: d.updated_at || d.created_at,
             elements_count: d.elements?.length || 0,
             comments_count: 0,
             preview: d.preview || null,
-            isLocal: true
+            isLocal: true,
+            originalIndex: i
           }));
           renderDesignsGrid();
           showToast('Showing local designs. Cloud sync failed.', 'warning');
@@ -51066,31 +51685,63 @@
         return d.toLocaleDateString();
       };
 
-      grid.innerHTML = designs.map((design, idx) => `
+      // Room type icons
+      const roomTypeIcons = {
+        kitchen: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+        bathroom: '<path d="M4 12h16M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M4 12V6a2 2 0 0 1 2-2h2"/><circle cx="8" cy="5" r="1"/>',
+        laundry: '<rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+        outdoor: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>',
+        default: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'
+      };
+
+      grid.innerHTML = designs.map((design, idx) => {
+        const roomType = design.room_type || 'kitchen';
+        const roomIcon = roomTypeIcons[roomType] || roomTypeIcons.default;
+        const elemCount = design.elements_count || design.design_data?.elements?.length || 0;
+        const roomW = design.room_width || design.design_data?.room_width || 12;
+        const roomD = design.room_depth || design.design_data?.room_depth || 10;
+        const isCloud = !design.isLocal;
+
+        return `
         <div class="design-card" onclick="loadDesignFromList('${design.id}', '${design.share_token || ''}', ${design.isLocal || false}, ${design.originalIndex !== undefined ? design.originalIndex : idx})">
           <div class="design-card-preview">
             ${design.preview
               ? `<img src="${design.preview}" alt="${design.name}">`
               : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <path d="M3 9h18M9 21V9"/>
+                  ${roomIcon}
                 </svg>`
             }
             ${currentDesignsTab === 'shared'
               ? `<span class="design-card-badge">${design.permission || 'View'}</span>`
               : design.share_token
-                ? '<span class="design-card-badge">Shared</span>'
-                : ''
+                ? '<span class="design-card-badge shared">Shared</span>'
+                : design.isLocal
+                  ? '<span class="design-card-badge local">Local</span>'
+                  : '<span class="design-card-badge cloud">Cloud</span>'
             }
+            <button class="design-card-delete" onclick="event.stopPropagation(); deleteDesign('${design.id}', ${design.isLocal || false}, ${design.originalIndex !== undefined ? design.originalIndex : idx})" title="Delete design">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </button>
           </div>
           <div class="design-card-info">
-            <div class="design-card-name">${design.name}</div>
+            <div class="design-card-name" title="${design.name || 'Untitled'}">${design.name || 'Untitled Design'}</div>
+            <div class="design-card-details">
+              <span class="design-card-room-type" title="${roomType}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${roomIcon}</svg>
+                ${roomType.charAt(0).toUpperCase() + roomType.slice(1)}
+              </span>
+              <span class="design-card-dims">${roomW}'×${roomD}'</span>
+              ${elemCount > 0 ? `<span class="design-card-elements">${elemCount} items</span>` : ''}
+            </div>
             <div class="design-card-meta">
               <span class="design-card-date">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                 </svg>
-                ${formatDate(design.created_at)}
+                ${formatDate(design.created_at || design.updated_at)}
               </span>
               ${design.comments_count > 0 ? `
                 <span class="design-card-comments">
@@ -51103,7 +51754,59 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
+    }
+
+    // Delete a design from local storage or cloud
+    async function deleteDesign(designId, isLocal, originalIndex) {
+      const design = (allDesigns[currentDesignsTab] || []).find(d => d.id === designId);
+      const designName = design?.name || 'this design';
+
+      if (!confirm(`Are you sure you want to delete "${designName}"?\n\nThis action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        if (isLocal) {
+          // Delete from localStorage (key is 'room_designs')
+          const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
+          const updatedDesigns = localDesigns.filter((d, idx) => {
+            // Match by index if originalIndex provided, otherwise by id
+            if (originalIndex !== undefined) {
+              return idx !== originalIndex;
+            }
+            return d.id !== designId;
+          });
+          localStorage.setItem('room_designs', JSON.stringify(updatedDesigns));
+          showToast('Design deleted', 'success');
+        } else {
+          // Delete from Supabase
+          const supabase = getSupabaseClient();
+          if (!supabase) {
+            showToast('Cannot connect to cloud', 'error');
+            return;
+          }
+
+          const { error } = await supabase
+            .from('room_designs')
+            .delete()
+            .eq('id', designId);
+
+          if (error) {
+            console.error('Delete error:', error);
+            showToast('Failed to delete design: ' + error.message, 'error');
+            return;
+          }
+
+          showToast('Design deleted from cloud', 'success');
+        }
+
+        // Refresh the designs list
+        await loadMyDesigns();
+      } catch (err) {
+        console.error('Delete design error:', err);
+        showToast('Failed to delete design', 'error');
+      }
     }
 
     function filterDesigns(query) {
@@ -51217,56 +51920,131 @@
     });
 
     async function loadDesignFromList(id, shareToken, isLocal, originalIndex) {
+      console.log('loadDesignFromList called:', { id, shareToken, isLocal, originalIndex });
       closeModal('myDesignsModal');
 
+      // Show loading indicator
+      showToast('Loading design...', 'info');
+
       if (isLocal) {
-        const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
-        // Find design by ID first, then by index as fallback
-        let design = localDesigns.find(d => d.id === id);
-        if (!design && originalIndex !== undefined && localDesigns[originalIndex]) {
-          design = localDesigns[originalIndex];
-        }
-        if (design) {
-          // Save current state to history before loading new design
-          saveCurrentDesignToHistory();
-          loadLocalDesign(design);
-          // Update URL without reload
-          history.pushState({ designId: id, isLocal: true }, '', window.location.pathname);
-          showSnapFeedback(`Loaded: ${design.name || 'Untitled Design'}`);
-        } else {
-          showSnapFeedback('Design not found');
+        try {
+          const localDesigns = JSON.parse(localStorage.getItem('room_designs') || '[]');
+          console.log('Local designs found:', localDesigns.length);
+
+          // Find design by ID first, then by index as fallback
+          let design = localDesigns.find(d => d.id === id);
+          if (!design && originalIndex !== undefined && localDesigns[originalIndex]) {
+            design = localDesigns[originalIndex];
+            console.log('Found design by index:', originalIndex);
+          }
+
+          if (design) {
+            console.log('Loading local design:', design.name, 'with', design.elements?.length, 'elements');
+            // Save current state to history before loading new design
+            saveCurrentDesignToHistory();
+            loadLocalDesign(design);
+            // Update URL without reload
+            history.pushState({ designId: id, isLocal: true }, '', window.location.pathname);
+            showToast(`Loaded: ${design.name || 'Untitled Design'}`, 'success');
+          } else {
+            console.error('Design not found in localStorage. ID:', id, 'Index:', originalIndex);
+            showToast('Design not found in local storage', 'error');
+          }
+        } catch (err) {
+          console.error('Error loading local design:', err);
+          showToast('Error loading local design: ' + err.message, 'error');
         }
         return;
       }
 
-      // Designer loading their own design - always load in full designer mode
-      // (shareToken is only used for customers accessing via URL parameter)
-      // Load directly from database
+      // Designer loading their own design from cloud
       try {
         const supabase = getSupabaseClient();
+        if (!supabase) {
+          showToast('Cannot connect to cloud. Try again later.', 'error');
+          return;
+        }
+
+        console.log('Fetching design from cloud:', id);
         const { data, error } = await supabase
           .from('room_designs')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) throw error;
-        if (data?.design_data) {
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        console.log('Cloud design data:', data);
+        console.log('Record fields:', Object.keys(data || {}));
+
+        // Check if we have design data - it might be in design_data field OR directly on the record
+        // Note: elements might be an empty array, so check for existence not truthiness
+        const hasDesignData = data?.design_data ||
+                              data?.elements !== undefined ||
+                              data?.room_width !== undefined;
+
+        if (data && hasDesignData) {
           // Designer loading their own design - NOT a shared view
           SHARE_STATE.isSharedView = false;
           SHARE_STATE.designId = id;
+          SHARE_STATE.designToken = data.share_token;
 
-          loadDesignData(data.design_data);
+          // Save current state before loading
+          saveCurrentDesignToHistory();
+
+          // Determine where the design data is stored
+          if (data.design_data) {
+            // Design data is in nested object
+            loadDesignData(data.design_data);
+          } else {
+            // Design data is directly on the record (elements, settings, etc.)
+            // Build the design object that loadDesignData expects
+            const designObj = {
+              id: data.id,
+              name: data.name || 'Untitled',
+              room_type: data.room_type || 'kitchen',
+              room_width: data.room_width || 12,
+              room_depth: data.room_depth || 10,
+              elements: data.elements || [],
+              walls: data.settings?.walls || data.walls || [],
+              rooms: data.rooms || [],
+              settings: data.settings || { pixelsPerFoot: 40 },
+              share_token: data.share_token
+            };
+            console.log('Built design object from record:', {
+              name: designObj.name,
+              room_width: designObj.room_width,
+              room_depth: designObj.room_depth,
+              elements_count: designObj.elements.length,
+              walls_count: designObj.walls.length,
+              rooms_count: designObj.rooms.length
+            });
+            loadDesignData(designObj);
+          }
+
+          // Update project name from design record
+          if (data.name) {
+            document.getElementById('projectName').value = data.name;
+          }
 
           // Set up realtime sync for this design
           subscribeToDesignUpdates(id);
 
           // Check for any shares with leads and subscribe to comment notifications
           setupDesignerCommentNotifications(id);
+
+          showToast(`Loaded: ${data.name || 'Design'}`, 'success');
+        } else {
+          console.error('No design data found in record:', data);
+          console.log('Record keys:', Object.keys(data || {}));
+          showToast('Design data is empty or corrupted', 'error');
         }
       } catch (err) {
-        console.error('Error loading design:', err);
-        showSnapFeedback('Error loading design');
+        console.error('Error loading cloud design:', err);
+        showToast('Error loading design: ' + (err.message || 'Unknown error'), 'error');
       }
     }
 
@@ -51581,16 +52359,21 @@
 
     // Load a locally saved design
     function loadLocalDesign(design) {
-      // Restore room dimensions
-      if (design.room_width) roomWidth = design.room_width;
-      if (design.room_depth) roomDepth = design.room_depth;
+      console.log('loadLocalDesign called with:', design.name, design.elements?.length, 'elements');
 
-      // Restore elements
-      if (design.elements) {
-        elements = design.elements.map(el => ({
-          ...el,
-          textureImg: null
-        }));
+      // Restore room dimensions
+      roomWidth = design.room_width || 12;
+      roomDepth = design.room_depth || 10;
+
+      // Clear and restore elements
+      elements.length = 0;
+      if (design.elements && design.elements.length > 0) {
+        design.elements.forEach(el => {
+          elements.push({
+            ...el,
+            textureImg: null
+          });
+        });
 
         // Reload textures
         elements.forEach(el => {
@@ -51600,36 +52383,68 @@
             img.onload = () => {
               el.textureImg = img;
               draw();
+              if (currentView === '3d') update3DScene();
             };
+            img.onerror = () => console.warn('Failed to load texture:', el.texture);
             img.src = el.texture;
           }
         });
       }
 
-      // Restore walls
-      if (design.walls) {
-        walls = design.walls;
+      // Clear and restore walls
+      walls.length = 0;
+      if (design.walls && design.walls.length > 0) {
+        design.walls.forEach(w => walls.push(w));
+      }
+
+      // Restore multi-room data if present
+      if (design.rooms && design.rooms.length > 0) {
+        rooms.length = 0;
+        design.rooms.forEach(room => {
+          rooms.push({
+            ...room,
+            elements: room.elements || [],
+            walls: room.walls || []
+          });
+        });
+        currentRoomId = design.currentRoomId || rooms[0]?.id;
+        updateRoomList();
+      } else {
+        // Single room - sync with room system
+        initializeRooms();
+        const currentRoomObj = getCurrentRoom();
+        if (currentRoomObj) {
+          currentRoomObj.elements = [...elements];
+          currentRoomObj.walls = [...walls];
+          currentRoomObj.width = roomWidth;
+          currentRoomObj.depth = roomDepth;
+        }
       }
 
       // Update project name
-      if (design.name) {
-        document.getElementById('projectName').value = design.name;
+      const projectNameEl = document.getElementById('projectName');
+      if (projectNameEl) {
+        projectNameEl.value = design.name || 'Untitled Design';
       }
 
       // Update room type
-      if (design.room_type) {
-        document.getElementById('roomType').value = design.room_type;
+      const roomTypeEl = document.getElementById('roomType');
+      if (roomTypeEl && design.room_type) {
+        roomTypeEl.value = design.room_type;
       }
 
-      // Update UI
-      document.getElementById('roomWidth').value = roomWidth;
-      document.getElementById('roomDepth').value = roomDepth;
+      // Update UI dimensions
+      const roomWidthEl = document.getElementById('roomWidth');
+      const roomDepthEl = document.getElementById('roomDepth');
+      if (roomWidthEl) roomWidthEl.value = roomWidth;
+      if (roomDepthEl) roomDepthEl.value = roomDepth;
 
-      // Set local design ID for chat
+      // Set local design ID
       SHARE_STATE.designId = design.id;
+      SHARE_STATE.isSharedView = false;
 
-      // Normalize element positions if saved scale differs from current
-      updateCanvasSize(); // Calculate current pixelsPerFoot first
+      // Fit to screen and normalize positions
+      fitToScreen();
       const savedScale = design.settings?.pixelsPerFoot || 40;
       if (savedScale !== pixelsPerFoot && savedScale > 0) {
         const scaleRatio = pixelsPerFoot / savedScale;
@@ -51638,23 +52453,24 @@
           el.x = (el.x || 0) * scaleRatio;
           el.y = (el.y || 0) * scaleRatio;
         });
-        if (walls) {
-          walls.forEach(wall => {
-            if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
-            if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
-            if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
-            if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
-          });
-        }
+        walls.forEach(wall => {
+          if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
+          if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
+          if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
+          if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
+        });
       }
 
-      // Redraw
+      // Redraw everything
       draw();
-      update3DScene();
+      if (currentView === '3d') {
+        update3DScene();
+      }
       calculateQuote();
       updateProperties();
+      updateElementSelector();
 
-      showSnapFeedback(`Loaded: ${design.name || 'Design'}`);
+      console.log('Local design loaded successfully with', elements.length, 'elements');
     }
 
     // Add recent design tracking
