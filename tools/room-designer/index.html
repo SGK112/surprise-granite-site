@@ -25940,18 +25940,25 @@
       if (view === '3d') {
         canvasWrapper.style.display = 'none';
         threeContainer.classList.add('active');
-        init3D();
 
-        // Update renderer size in case container size changed
-        if (renderer) {
-          const w = threeContainer.clientWidth;
-          const h = threeContainer.clientHeight;
-          renderer.setSize(w, h);
-          camera.aspect = w / h;
-          camera.updateProjectionMatrix();
-        }
+        // Wait for layout to compute before initializing 3D
+        // This ensures container has proper dimensions
+        requestAnimationFrame(() => {
+          init3D();
 
-        render3D();
+          // Update renderer size in case container size changed
+          if (renderer) {
+            const w = threeContainer.clientWidth || window.innerWidth * 0.6;
+            const h = threeContainer.clientHeight || window.innerHeight - 150;
+            if (w > 0 && h > 0) {
+              renderer.setSize(w, h);
+              camera.aspect = w / h;
+              camera.updateProjectionMatrix();
+            }
+          }
+
+          render3D();
+        });
       } else {
         // Cleanup 3D resources when switching to 2D
         cleanup3D();
@@ -26063,6 +26070,8 @@
     }
 
     function init3D() {
+      console.log('=== init3D called ===');
+
       // Clean up existing 3D resources first
       cleanup3D();
 
@@ -26070,8 +26079,29 @@
       preload3DTextures();
 
       const container = document.getElementById('three-container');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+      if (!container) {
+        console.error('init3D: three-container not found!');
+        return;
+      }
+
+      let width = container.clientWidth;
+      let height = container.clientHeight;
+
+      console.log('init3D: container dimensions:', width, 'x', height);
+
+      // If container has no size, try to get size from parent or use fallback
+      if (width === 0 || height === 0) {
+        const parent = container.parentElement;
+        if (parent) {
+          width = parent.clientWidth || window.innerWidth * 0.6;
+          height = parent.clientHeight || window.innerHeight - 150;
+          console.log('init3D: using parent/fallback dimensions:', width, 'x', height);
+        }
+      }
+
+      // Final fallback
+      if (width === 0) width = 800;
+      if (height === 0) height = 600;
 
       // Get current theme for background
       const timeOfDay = sceneSettings?.timeOfDay || 'noon';
@@ -40149,14 +40179,22 @@
       }
 
       // Elements - filter out hidden ones AND filter by current room
+      const activeRoomId = currentRoomId || currentRoom || 'default';
+      console.log('render3D: elements count:', elements.length, 'activeRoomId:', activeRoomId, 'currentRoomId:', currentRoomId, 'currentRoom:', currentRoom);
+
       const visibleElements3D = elements.filter(el => {
         if (el.hidden) return false;
         // Only show elements belonging to current room (check both room tracking systems)
-        const activeRoomId = currentRoomId || currentRoom || 'default';
-        if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) return false;
+        // If element has no roomId, show it (legacy element or shared design)
+        if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) {
+          console.log('Filtering out element:', el.type, el.label, 'roomId:', el.roomId, 'activeRoomId:', activeRoomId);
+          return false;
+        }
         const category = getElementCategory(el.type);
         return !hiddenCategories[category];
       });
+
+      console.log('render3D: visible elements after filter:', visibleElements3D.length);
 
       visibleElements3D.forEach(el => {
         let group, height;
@@ -49498,21 +49536,24 @@
             walls: room.walls || []
           }));
           currentRoomId = design.settings?.current_room_id || design.current_room_id || rooms[0].id;
+          // Also sync the other room tracking variable
+          currentRoom = currentRoomId;
 
           // Load current room data
-          const currentRoom = getCurrentRoom();
-          if (currentRoom) {
-            elements = currentRoom.elements || [];
-            walls = currentRoom.walls || [];
-            roomWidth = currentRoom.width || roomWidth;
-            roomDepth = currentRoom.depth || roomDepth;
+          const activeRoom = getCurrentRoom();
+          if (activeRoom) {
+            elements = activeRoom.elements || [];
+            walls = activeRoom.walls || [];
+            roomWidth = activeRoom.width || roomWidth;
+            roomDepth = activeRoom.depth || roomDepth;
           }
 
-          console.log('Loaded multi-room layout with', rooms.length, 'rooms');
+          console.log('Loaded multi-room layout with', rooms.length, 'rooms, currentRoomId:', currentRoomId);
           updateRoomList();
         } else {
           // Single room - initialize rooms array
           initializeRooms();
+          currentRoom = currentRoomId || 'default';
           const firstRoom = getCurrentRoom();
           if (firstRoom) {
             firstRoom.elements = elements;
@@ -49597,13 +49638,17 @@
         // Wait for textures to load, then initialize 3D view
         setTimeout(() => {
           console.log('Initializing 3D view with', elements.length, 'elements');
+          console.log('Room dimensions:', roomWidth, 'x', roomDepth, ', currentRoomId:', currentRoomId, ', currentRoom:', currentRoom);
+          console.log('Elements sample:', elements.slice(0, 3).map(e => ({ type: e.type, roomId: e.roomId, x: e.x, y: e.y })));
+
           // Switch to 3D view first
           setView('3d');
           // Force re-init 3D scene after a short delay
           setTimeout(() => {
+            console.log('Forcing 3D re-init...');
             init3D();
             render3D();
-            console.log('3D scene initialized');
+            console.log('3D scene initialized, scene children:', scene?.children?.length || 0);
             // Hide preloader after 3D is ready
             hidePreloader();
             console.log('=== loadDesignData COMPLETE ===');
