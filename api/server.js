@@ -11840,14 +11840,8 @@ app.post('/api/design-comments/:lead_id/reply', commentRateLimiter, authenticate
 
     if (insertError) throw insertError;
 
-    // Get lead info to notify customer
-    const { data: lead } = await supabase
-      .from('leads')
-      .select('full_name, email')
-      .eq('id', lead_id)
-      .single();
-
     // Optionally send email to customer about the reply
+    // Note: lead was already fetched above with full_name and email
     if (lead?.email) {
       try {
         const transporter = nodemailer.createTransport({
