@@ -10777,27 +10777,40 @@
       // Show sync notification
       showToast('Design updated by designer', 'info', 2000);
 
+      // Update room dimensions first (needed for fitToScreen before deserialization)
+      if (newData.room_width) roomWidth = newData.room_width;
+      if (newData.room_depth) roomDepth = newData.room_depth;
+
+      const savedScale = newData.settings?.pixelsPerFoot || pixelsPerFoot;
+
       // Update elements — only if new data has actual content
       if (newData.elements && Array.isArray(newData.elements) && newData.elements.length > 0) {
         elements.length = 0;
         newData.elements.forEach(el => {
-          el.textureImg = null; // Clear texture references
+          el.textureImg = null;
+          deserializeElement(el, savedScale);
           elements.push(el);
         });
       } else if (newData.elements && Array.isArray(newData.elements) && newData.elements.length === 0) {
         console.warn('Realtime update has empty elements — skipping to prevent data loss');
       }
 
-      // Update room dimensions
-      if (newData.room_width) roomWidth = newData.room_width;
-      if (newData.room_depth) roomDepth = newData.room_depth;
-
       // Update rooms array if present and non-empty
-      if (newData.rooms && Array.isArray(newData.rooms) && newData.rooms.length > 0) {
+      const realtimeRooms = (newData.rooms && newData.rooms.length > 0) ? newData.rooms
+        : (newData.settings?.rooms && newData.settings.rooms.length > 0) ? newData.settings.rooms
+        : null;
+      if (realtimeRooms) {
         rooms.length = 0;
-        newData.rooms.forEach(room => {
+        realtimeRooms.forEach(room => {
           room.elements = room.elements || [];
-          room.elements.forEach(el => el.textureImg = null);
+          room.elements.forEach(el => {
+            el.textureImg = null;
+            deserializeElement(el, savedScale);
+          });
+          if (room.walls) {
+            room.walls.forEach(w => deserializeWall(w, savedScale));
+          }
+          room.pixelsPerFoot = pixelsPerFoot;
           rooms.push(room);
         });
       }
@@ -15460,6 +15473,58 @@
       }
     }
 
+    // ===== POSITION SERIALIZATION (feet-based) =====
+    // Store positions in feet so they're stable across viewport sizes and rooms
+    function serializeElement(el) {
+      return {
+        ...el,
+        textureImg: null,
+        xFt: (el.x || 0) / (pixelsPerFoot || 40),
+        yFt: (el.y || 0) / (pixelsPerFoot || 40)
+      };
+    }
+
+    function serializeWall(wall) {
+      const ppf = pixelsPerFoot || 40;
+      return {
+        ...wall,
+        x1Ft: wall.x1 !== undefined ? wall.x1 / ppf : undefined,
+        y1Ft: wall.y1 !== undefined ? wall.y1 / ppf : undefined,
+        x2Ft: wall.x2 !== undefined ? wall.x2 / ppf : undefined,
+        y2Ft: wall.y2 !== undefined ? wall.y2 / ppf : undefined
+      };
+    }
+
+    function deserializeElement(el, savedPixelsPerFoot) {
+      if (el.xFt !== undefined && el.yFt !== undefined) {
+        // New format: feet-based — multiply by current scale
+        el.x = el.xFt * pixelsPerFoot;
+        el.y = el.yFt * pixelsPerFoot;
+      } else if (savedPixelsPerFoot && savedPixelsPerFoot !== pixelsPerFoot && savedPixelsPerFoot > 0) {
+        // Legacy format: pixel-based — scale ratio conversion
+        const ratio = pixelsPerFoot / savedPixelsPerFoot;
+        el.x = (el.x || 0) * ratio;
+        el.y = (el.y || 0) * ratio;
+      }
+      return el;
+    }
+
+    function deserializeWall(wall, savedPixelsPerFoot) {
+      if (wall.x1Ft !== undefined) {
+        wall.x1 = wall.x1Ft * pixelsPerFoot;
+        wall.y1 = wall.y1Ft * pixelsPerFoot;
+        wall.x2 = wall.x2Ft * pixelsPerFoot;
+        wall.y2 = wall.y2Ft * pixelsPerFoot;
+      } else if (savedPixelsPerFoot && savedPixelsPerFoot !== pixelsPerFoot && savedPixelsPerFoot > 0) {
+        const ratio = pixelsPerFoot / savedPixelsPerFoot;
+        if (wall.x1 !== undefined) wall.x1 *= ratio;
+        if (wall.y1 !== undefined) wall.y1 *= ratio;
+        if (wall.x2 !== undefined) wall.x2 *= ratio;
+        if (wall.y2 !== undefined) wall.y2 *= ratio;
+      }
+      return wall;
+    }
+
     // Get current room object
     function getCurrentRoom() {
       return rooms.find(r => r.id === currentRoomId) || rooms[0];
@@ -15471,14 +15536,11 @@
       if (room) {
         room.width = roomWidth;
         room.depth = roomDepth;
-        // Deep copy elements to prevent shared references between rooms
-        room.elements = elements.map(el => ({
-          ...el,
-          textureImg: el.textureImg || null // preserve texture ref
-        }));
-        room.walls = walls.map(w => ({ ...w }));
+        // Deep copy with feet-based positions for stable storage
+        room.elements = elements.map(el => serializeElement(el));
+        room.walls = walls.map(w => serializeWall(w));
         room.floorPlan = currentFloorPlan;
-        room.pixelsPerFoot = pixelsPerFoot; // Track scale for position normalization
+        room.pixelsPerFoot = pixelsPerFoot;
       }
     }
 
@@ -15492,13 +15554,6 @@
       currentRoomId = roomId;
       roomWidth = room.width;
       roomDepth = room.depth;
-
-      // Deep copy elements to prevent shared references
-      elements = (room.elements || []).map(el => ({
-        ...el,
-        textureImg: el.textureImg || null
-      }));
-      walls = (room.walls || []).map(w => ({ ...w }));
       currentFloorPlan = room.floorPlan || 'empty';
 
       // Update UI
@@ -15506,25 +15561,19 @@
       document.getElementById('roomDepth').value = roomDepth;
       document.getElementById('roomType').value = room.type || 'kitchen';
 
-      // Recalculate scale for new room dimensions
+      // Recalculate scale for new room dimensions BEFORE deserializing
       const savedScale = room.pixelsPerFoot || pixelsPerFoot;
       fitToScreen();
 
-      // Normalize element positions if scale changed
-      if (savedScale !== pixelsPerFoot && savedScale > 0) {
-        const scaleRatio = pixelsPerFoot / savedScale;
-        console.log('Room switch: normalizing positions with ratio:', scaleRatio);
-        elements.forEach(el => {
-          el.x = (el.x || 0) * scaleRatio;
-          el.y = (el.y || 0) * scaleRatio;
-        });
-        walls.forEach(wall => {
-          if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
-          if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
-          if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
-          if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
-        });
-      }
+      // Deep copy + deserialize from feet-based positions
+      elements = (room.elements || []).map(el => {
+        const copy = { ...el, textureImg: el.textureImg || null };
+        return deserializeElement(copy, savedScale);
+      });
+      walls = (room.walls || []).map(w => {
+        const copy = { ...w };
+        return deserializeWall(copy, savedScale);
+      });
 
       // Redraw
       draw();
@@ -16392,26 +16441,25 @@
           }
 
           const saveData = {
-            elements: elements.map(el => ({
-              ...el,
-              textureImg: undefined // Don't save image objects
-            })),
-            walls: walls,
+            elements: elements.map(el => serializeElement(el)),
+            walls: walls.map(w => serializeWall(w)),
             roomWidth: roomWidth,
             roomDepth: roomDepth,
             roomHeight: roomHeight,
             roomType: document.getElementById('roomType')?.value || 'kitchen',
             projectName: document.getElementById('projectName')?.value || 'Untitled',
             timestamp: Date.now(),
-            version: 3, // Track save format version - added rooms support
-            pixelsPerFoot: pixelsPerFoot, // Store scale for proper position restoration
-            // Save multi-room data
+            version: 4, // v4: feet-based positions (xFt/yFt)
+            pixelsPerFoot: pixelsPerFoot,
+            // Save multi-room data (already serialized by saveCurrentRoomState)
             rooms: rooms.map(room => ({
               ...room,
-              elements: (room.elements || []).map(el => ({
-                ...el,
-                textureImg: undefined
-              }))
+              elements: (room.elements || []).map(el =>
+                el.xFt !== undefined ? { ...el, textureImg: null } : serializeElement(el)
+              ),
+              walls: (room.walls || []).map(w =>
+                w.x1Ft !== undefined ? { ...w } : serializeWall(w)
+              )
             })),
             currentRoomId: currentRoomId,
             currentRoom: currentRoom,
@@ -16494,11 +16542,11 @@
 
         try {
           const updateData = {
-            elements: elements.map(el => ({ ...el, textureImg: null })),
+            elements: elements.map(el => serializeElement(el)),
             room_width: roomWidth,
             room_depth: roomDepth,
             settings: {
-              walls: walls,
+              walls: walls.map(w => serializeWall(w)),
               pricing_config: {
                 globalMargin: PRICING_STATE.globalMargin,
                 categoryMargins: PRICING_STATE.categoryMargins,
@@ -16507,7 +16555,12 @@
               pixelsPerFoot: pixelsPerFoot,
               rooms: rooms.map(room => ({
                 ...room,
-                elements: room.elements?.map(el => ({ ...el, textureImg: null })) || []
+                elements: (room.elements || []).map(el =>
+                  el.xFt !== undefined ? { ...el, textureImg: null } : serializeElement(el)
+                ),
+                walls: (room.walls || []).map(w =>
+                  w.x1Ft !== undefined ? { ...w } : serializeWall(w)
+                )
               }))
             },
             updated_at: new Date().toISOString()
@@ -16854,33 +16907,25 @@
           data.projectRooms.forEach(r => projectRooms.push(r));
         }
 
-        // Normalize element positions if saved scale differs from current
-        // This ensures 3D rendering is accurate regardless of viewport size
+        // Deserialize positions from feet-based format (or legacy pixel-based with scale conversion)
         updateCanvasSize(); // Calculate current pixelsPerFoot first
         const savedScale = data.pixelsPerFoot || 40;
-        if (savedScale !== pixelsPerFoot && savedScale > 0) {
-          const scaleRatio = pixelsPerFoot / savedScale;
-          console.log('Normalizing auto-saved positions with ratio:', scaleRatio);
-          elements.forEach(el => {
-            el.x = (el.x || 0) * scaleRatio;
-            el.y = (el.y || 0) * scaleRatio;
-          });
-          walls.forEach(wall => {
-            if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
-            if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
-            if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
-            if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
-          });
-          // Also normalize room elements
-          rooms.forEach(room => {
-            if (room.elements) {
-              room.elements.forEach(el => {
-                el.x = (el.x || 0) * scaleRatio;
-                el.y = (el.y || 0) * scaleRatio;
-              });
-            }
-          });
-        }
+        console.log('Auto-save scale:', savedScale, 'Current scale:', pixelsPerFoot);
+
+        // Deserialize element and wall positions
+        elements.forEach(el => deserializeElement(el, savedScale));
+        walls.forEach(w => deserializeWall(w, savedScale));
+
+        // Deserialize room element and wall positions
+        rooms.forEach(room => {
+          if (room.elements) {
+            room.elements.forEach(el => deserializeElement(el, savedScale));
+          }
+          if (room.walls) {
+            room.walls.forEach(w => deserializeWall(w, savedScale));
+          }
+          room.pixelsPerFoot = pixelsPerFoot; // Update to current scale
+        });
 
         // If rooms were restored, sync global elements with current room
         if (rooms.length > 0) {
@@ -51682,12 +51727,9 @@
         room_type: roomType,
         room_width: roomWidth,
         room_depth: roomDepth,
-        elements: elements.map(el => ({
-          ...el,
-          textureImg: null
-        })),
+        elements: elements.map(el => serializeElement(el)),
         settings: {
-          walls: walls,
+          walls: walls.map(w => serializeWall(w)),
           pricing_config: {
             globalMargin: PRICING_STATE.globalMargin,
             categoryMargins: PRICING_STATE.categoryMargins,
@@ -51699,7 +51741,12 @@
           // Multi-room support (stored in settings to avoid column mismatch)
           rooms: rooms.map(room => ({
             ...room,
-            elements: (room.elements || []).map(el => ({ ...el, textureImg: null }))
+            elements: (room.elements || []).map(el =>
+              el.xFt !== undefined ? { ...el, textureImg: null } : serializeElement(el)
+            ),
+            walls: (room.walls || []).map(w =>
+              w.x1Ft !== undefined ? { ...w } : serializeWall(w)
+            )
           })),
           share_mode: permission === 'full_collab' ? 'edit' : 'view',
           is_public: document.getElementById('shareToGallery')?.checked || false
@@ -52033,48 +52080,20 @@
 
         console.log('Saved scale:', savedScale, 'Current scale:', pixelsPerFoot);
 
-        if (savedScale !== pixelsPerFoot && savedScale > 0) {
-          const scaleRatio = pixelsPerFoot / savedScale;
-          console.log('Normalizing element positions with ratio:', scaleRatio);
+        // Deserialize positions from feet-based format (or legacy pixel-based with scale conversion)
+        elements = elements.map(el => deserializeElement({ ...el }, savedScale));
+        walls = walls.map(w => deserializeWall({ ...w }, savedScale));
 
-          // Scale element positions from saved scale to current scale
-          elements = elements.map(el => ({
-            ...el,
-            x: (el.x || 0) * scaleRatio,
-            y: (el.y || 0) * scaleRatio
-          }));
-
-          // Also scale walls if they have pixel positions
-          walls = walls.map(wall => ({
-            ...wall,
-            x1: wall.x1 !== undefined ? wall.x1 * scaleRatio : undefined,
-            y1: wall.y1 !== undefined ? wall.y1 * scaleRatio : undefined,
-            x2: wall.x2 !== undefined ? wall.x2 * scaleRatio : undefined,
-            y2: wall.y2 !== undefined ? wall.y2 * scaleRatio : undefined
-          }));
-
-          // Scale positions in multi-room data too
-          rooms.forEach(room => {
-            if (room.elements) {
-              room.elements = room.elements.map(el => ({
-                ...el,
-                x: (el.x || 0) * scaleRatio,
-                y: (el.y || 0) * scaleRatio
-              }));
-            }
-            if (room.walls) {
-              room.walls = room.walls.map(wall => ({
-                ...wall,
-                x1: wall.x1 !== undefined ? wall.x1 * scaleRatio : undefined,
-                y1: wall.y1 !== undefined ? wall.y1 * scaleRatio : undefined,
-                x2: wall.x2 !== undefined ? wall.x2 * scaleRatio : undefined,
-                y2: wall.y2 !== undefined ? wall.y2 * scaleRatio : undefined
-              }));
-            }
-            // Store current scale for room switching normalization
-            room.pixelsPerFoot = pixelsPerFoot;
-          });
-        }
+        // Deserialize room element and wall positions
+        rooms.forEach(room => {
+          if (room.elements) {
+            room.elements = room.elements.map(el => deserializeElement({ ...el }, savedScale));
+          }
+          if (room.walls) {
+            room.walls = room.walls.map(w => deserializeWall({ ...w }, savedScale));
+          }
+          room.pixelsPerFoot = pixelsPerFoot;
+        });
 
         // Ensure elements have required properties
         elements = elements.map(el => ({
@@ -53702,14 +53721,16 @@
         updated_at: new Date().toISOString(),
         room_width: roomWidth,
         room_depth: roomDepth,
-        elements: elements.map(el => ({
-          ...el,
-          textureImg: null
-        })),
-        walls: walls,
+        elements: elements.map(el => serializeElement(el)),
+        walls: walls.map(w => serializeWall(w)),
         rooms: rooms.map(r => ({
           ...r,
-          elements: r.elements?.map(el => ({ ...el, textureImg: null })) || []
+          elements: (r.elements || []).map(el =>
+            el.xFt !== undefined ? { ...el, textureImg: null } : serializeElement(el)
+          ),
+          walls: (r.walls || []).map(w =>
+            w.x1Ft !== undefined ? { ...w } : serializeWall(w)
+          )
         })),
         settings: {
           pixelsPerFoot: pixelsPerFoot
@@ -53810,12 +53831,9 @@
           room_type: roomType,
           room_width: roomWidth,
           room_depth: roomDepth,
-          elements: elements.map(el => ({
-            ...el,
-            textureImg: null
-          })),
+          elements: elements.map(el => serializeElement(el)),
           settings: {
-            walls: walls,
+            walls: walls.map(w => serializeWall(w)),
             pricing_config: {
               globalMargin: PRICING_STATE.globalMargin,
               categoryMargins: PRICING_STATE.categoryMargins,
@@ -53827,7 +53845,12 @@
             // Multi-room support (stored in settings to avoid column mismatch)
             rooms: rooms.map(room => ({
               ...room,
-              elements: (room.elements || []).map(el => ({ ...el, textureImg: null }))
+              elements: (room.elements || []).map(el =>
+                el.xFt !== undefined ? { ...el, textureImg: null } : serializeElement(el)
+              ),
+              walls: (room.walls || []).map(w =>
+                w.x1Ft !== undefined ? { ...w } : serializeWall(w)
+              )
             }))
           },
           quote_total: quoteTotal
