@@ -4308,6 +4308,109 @@
     .invite-send-status .status-item.failed { color: #ef4444; }
     .invite-send-status .status-item.sending { color: var(--text-muted); }
 
+    /* Quote Customer Search */
+    .quote-customer-search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+      grid-column: span 2;
+    }
+    .quote-customer-search-wrap input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      background: var(--dark-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .quote-customer-search-wrap input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+    }
+    .quote-customer-search-wrap .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    #quoteCustomerResults {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      margin-top: 4px;
+    }
+    .quote-cust-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.15s;
+    }
+    .quote-cust-item:last-child { border-bottom: none; }
+    .quote-cust-item:hover { background: var(--dark-hover); }
+    .quote-cust-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.15);
+      color: #a5b4fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .quote-cust-info { flex: 1; min-width: 0; }
+    .quote-cust-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .quote-cust-email { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .quote-cust-jobs-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(99,102,241,0.12);
+      color: #a5b4fc;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .quote-customer-selected-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      grid-column: span 2;
+    }
+    .quote-customer-selected-banner .name { font-weight: 600; color: var(--text); font-size: 13px; }
+    .quote-customer-selected-banner .meta { font-size: 11px; color: var(--text-muted); }
+    .quote-customer-selected-banner .clear-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .quote-customer-selected-banner .clear-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+
     .share-item {
       display: flex;
       justify-content: space-between;
@@ -10111,6 +10214,24 @@
       <!-- Customer Info Section -->
       <div class="quote-customer-section" style="padding: 16px; background: var(--dark-elevated); border-bottom: 1px solid var(--border);">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <!-- Customer Search -->
+          <div class="quote-customer-search-wrap">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="quoteCustomerSearch"
+                   placeholder="Search existing customers by name or email..."
+                   oninput="searchQuoteCustomers(this.value)"
+                   autocomplete="off">
+            <div id="quoteCustomerResults" style="display:none;"></div>
+          </div>
+          <!-- Selected customer banner -->
+          <div id="quoteCustomerSelectedBanner" class="quote-customer-selected-banner" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div>
+              <div class="name" id="quoteSelectedName"></div>
+              <div class="meta" id="quoteSelectedMeta"></div>
+            </div>
+            <button class="clear-btn" onclick="clearQuoteCustomerSelection()" title="Clear selection">&times;</button>
+          </div>
           <div>
             <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Customer Name *</label>
             <input type="text" id="quoteCustomerName" class="property-input" placeholder="Enter customer name" style="width: 100%;">
@@ -10228,6 +10349,13 @@
               <input type="text" id="estimateViewLink" class="property-input" readonly style="flex: 1; font-size: 12px;">
               <button class="btn btn-secondary" onclick="copyEstimateLink()" style="padding: 8px 12px;">Copy</button>
             </div>
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button id="convertToJobBtn" class="btn btn-primary" onclick="convertEstimateToJob()" style="display:none; padding: 8px 16px; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              Create Job
+            </button>
+            <span id="jobCreatedBadge" style="display:none; font-size: 12px; color: #6366f1; font-weight: 600; padding: 8px 0; align-self: center;"></span>
           </div>
         </div>
       </div>
@@ -51705,10 +51833,14 @@
         const stateZip = addressParts[2] || '';
         const [state, zip] = stateZip.split(' ').filter(Boolean);
 
-        // Create or find customer record
-        let customerId = null;
+        // Create or find customer record — use pre-selected customer if available
+        let customerId = window._selectedQuoteCustomerId || null;
         try {
-          // First check if customer exists by email
+          if (customerId) {
+            console.log('Using pre-selected customer:', customerId);
+          }
+          // If not pre-selected, check if customer exists by email
+          if (!customerId) {
           const customerLookup = await fetch(
             `${SUPABASE_URL}/rest/v1/customers?email=eq.${encodeURIComponent(customerEmail)}&select=id`,
             { method: 'GET', headers }
@@ -51748,6 +51880,7 @@
               console.log('Created new customer:', customerId);
             }
           }
+          } // end if (!customerId) — skip lookup/create when pre-selected
         } catch (e) {
           console.log('Customer creation optional, continuing:', e);
         }
@@ -51755,6 +51888,7 @@
         // Create estimate record
         const estimateData = {
           user_id: user.id,
+          customer_id: customerId || null,
           estimate_number: estimateNumber,
           customer_name: customerName,
           customer_email: customerEmail,
@@ -51849,6 +51983,31 @@
         document.getElementById('estimateViewLink').value = viewUrl;
         document.getElementById('estimateShareUrl').style.display = 'block';
 
+        // Show Convert to Job button
+        const jobBtn = document.getElementById('convertToJobBtn');
+        if (jobBtn) {
+          jobBtn.style.display = 'inline-flex';
+          jobBtn.disabled = false;
+          jobBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Create Job';
+        }
+        const jobBadge = document.getElementById('jobCreatedBadge');
+        if (jobBadge) jobBadge.style.display = 'none';
+
+        // Store estimate context for job conversion
+        window._lastEstimateContext = {
+          estimateId: estimateId,
+          estimateNumber: estimateNumber,
+          customerId: customerId,
+          customerName: customerName,
+          customerEmail: customerEmail,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          projectName: projectName,
+          total: total,
+          depositAmount: total * 0.5,
+          roomType: document.getElementById('roomType')?.value || 'kitchen'
+        };
+
         // Save to localStorage for persistence
         localStorage.setItem('sg_last_estimate', JSON.stringify({
           id: estimateId,
@@ -51875,6 +52034,289 @@
       linkInput.select();
       document.execCommand('copy');
       showNotification('Estimate link copied!', 'success');
+    }
+
+    // ===== CUSTOMER SEARCH IN QUOTE MODAL =====
+    let _quoteSearchTimeout = null;
+    window._selectedQuoteCustomerId = null;
+
+    async function searchQuoteCustomers(query) {
+      clearTimeout(_quoteSearchTimeout);
+      const resultsDiv = document.getElementById('quoteCustomerResults');
+      if (!resultsDiv) return;
+
+      if (!query || query.trim().length < 2) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      _quoteSearchTimeout = setTimeout(async () => {
+        try {
+          const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
+          const session = await window.SgAuth?.getSession?.();
+          const authToken = session?.access_token || SUPABASE_ANON_KEY;
+          const headers = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + authToken,
+            'Accept': 'application/json'
+          };
+
+          const q = encodeURIComponent(query.trim());
+          const [byName, byEmail] = await Promise.all([
+            fetch(SUPABASE_URL + '/rest/v1/customers?name=ilike.*' + q + '*&select=id,name,email,phone,address,total_jobs&limit=8', { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(SUPABASE_URL + '/rest/v1/customers?email=ilike.*' + q + '*&select=id,name,email,phone,address,total_jobs&limit=8', { headers }).then(r => r.ok ? r.json() : []).catch(() => [])
+          ]);
+
+          // Deduplicate by id
+          const seen = new Set();
+          const customers = [];
+          [...byName, ...byEmail].forEach(c => {
+            if (c && c.id && !seen.has(c.id)) {
+              seen.add(c.id);
+              customers.push(c);
+            }
+          });
+
+          if (customers.length === 0) {
+            resultsDiv.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:13px;">No customers found</div>';
+            resultsDiv.style.display = 'block';
+            return;
+          }
+
+          resultsDiv.innerHTML = customers.map(c => {
+            const initials = (c.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            const jobsBadge = c.total_jobs ? '<span class="quote-cust-jobs-badge">' + c.total_jobs + ' job' + (c.total_jobs !== 1 ? 's' : '') + '</span>' : '';
+            return '<div class="quote-cust-item" onclick=\'selectQuoteCustomer(' + JSON.stringify(c).replace(/'/g, "\\'") + ')\'>'
+              + '<div class="quote-cust-avatar">' + initials + '</div>'
+              + '<div class="quote-cust-info">'
+              + '<div class="quote-cust-name">' + (c.name || 'Unknown') + ' ' + jobsBadge + '</div>'
+              + '<div class="quote-cust-email">' + (c.email || '') + (c.phone ? ' &bull; ' + c.phone : '') + '</div>'
+              + '</div></div>';
+          }).join('');
+          resultsDiv.style.display = 'block';
+        } catch (err) {
+          console.error('Customer search error:', err);
+          resultsDiv.innerHTML = '<div style="padding:10px 12px;color:#f87171;font-size:13px;">Search error</div>';
+          resultsDiv.style.display = 'block';
+        }
+      }, 300);
+    }
+
+    function selectQuoteCustomer(customer) {
+      window._selectedQuoteCustomerId = customer.id;
+
+      // Fill form fields
+      const nameEl = document.getElementById('quoteCustomerName');
+      const emailEl = document.getElementById('quoteCustomerEmail');
+      const phoneEl = document.getElementById('quoteCustomerPhone');
+      const addressEl = document.getElementById('quoteCustomerAddress');
+      if (nameEl) nameEl.value = customer.name || '';
+      if (emailEl) emailEl.value = customer.email || '';
+      if (phoneEl) phoneEl.value = customer.phone || '';
+      if (addressEl) addressEl.value = customer.address || '';
+
+      // Show selected banner
+      const banner = document.getElementById('quoteCustomerSelectedBanner');
+      const selectedName = document.getElementById('quoteSelectedName');
+      const selectedMeta = document.getElementById('quoteSelectedMeta');
+      if (banner) {
+        if (selectedName) selectedName.textContent = customer.name || 'Customer';
+        if (selectedMeta) selectedMeta.textContent = (customer.email || '') + (customer.phone ? ' \u2022 ' + customer.phone : '');
+        banner.style.display = 'flex';
+      }
+
+      // Hide search results and clear search input
+      const resultsDiv = document.getElementById('quoteCustomerResults');
+      if (resultsDiv) { resultsDiv.style.display = 'none'; resultsDiv.innerHTML = ''; }
+      const searchInput = document.getElementById('quoteCustomerSearch');
+      if (searchInput) searchInput.value = '';
+
+      // Load existing jobs for this customer
+      loadCustomerJobsCount(customer.id);
+    }
+
+    function clearQuoteCustomerSelection() {
+      window._selectedQuoteCustomerId = null;
+      const banner = document.getElementById('quoteCustomerSelectedBanner');
+      if (banner) banner.style.display = 'none';
+
+      // Clear form fields
+      ['quoteCustomerName', 'quoteCustomerEmail', 'quoteCustomerPhone', 'quoteCustomerAddress'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      // Remove jobs badge if present
+      const jobsInfo = document.getElementById('quoteCustomerJobsInfo');
+      if (jobsInfo) jobsInfo.remove();
+    }
+
+    async function loadCustomerJobsCount(customerId) {
+      try {
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
+        const session = await window.SgAuth?.getSession?.();
+        const authToken = session?.access_token || SUPABASE_ANON_KEY;
+        const headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + authToken,
+          'Accept': 'application/json'
+        };
+
+        const res = await fetch(
+          SUPABASE_URL + '/rest/v1/jobs?customer_id=eq.' + customerId + '&select=id,job_number,status,contract_amount&order=created_at.desc&limit=5',
+          { headers }
+        );
+        if (!res.ok) return;
+        const jobs = await res.json();
+        if (!Array.isArray(jobs) || jobs.length === 0) return;
+
+        // Remove any existing jobs info
+        const existing = document.getElementById('quoteCustomerJobsInfo');
+        if (existing) existing.remove();
+
+        // Insert jobs info after the selected banner
+        const banner = document.getElementById('quoteCustomerSelectedBanner');
+        if (!banner) return;
+
+        const jobsList = jobs.map(j => {
+          const statusColors = { new: '#3b82f6', in_progress: '#f59e0b', completed: '#10b981', cancelled: '#ef4444' };
+          const color = statusColors[j.status] || '#94a3b8';
+          const amount = j.contract_amount ? ' \u2022 $' + Number(j.contract_amount).toLocaleString() : '';
+          return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;">'
+            + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
+            + '<span style="color:#e2e8f0;">' + (j.job_number || 'Job') + '</span>'
+            + '<span style="color:#94a3b8;">' + (j.status || '').replace(/_/g, ' ') + amount + '</span>'
+            + '</div>';
+        }).join('');
+
+        const infoDiv = document.createElement('div');
+        infoDiv.id = 'quoteCustomerJobsInfo';
+        infoDiv.style.cssText = 'background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:8px 12px;margin-top:6px;margin-bottom:8px;';
+        infoDiv.innerHTML = '<div style="font-size:12px;font-weight:600;color:#60a5fa;margin-bottom:4px;">'
+          + jobs.length + ' existing job' + (jobs.length !== 1 ? 's' : '') + '</div>' + jobsList;
+        banner.insertAdjacentElement('afterend', infoDiv);
+      } catch (err) {
+        console.error('Load customer jobs error:', err);
+      }
+    }
+
+    // ===== CONVERT ESTIMATE TO JOB =====
+    async function convertEstimateToJob() {
+      const ctx = window._lastEstimateContext;
+      if (!ctx || !ctx.estimateId) {
+        showNotification('No estimate to convert. Please save an estimate first.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('convertToJobBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 1s linear infinite;display:inline-block;margin-right:6px;"></span> Creating...';
+      }
+
+      try {
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
+        const user = window.SgAuth?.getUser();
+        if (!user) {
+          showNotification('Please log in to create jobs.', 'error');
+          return;
+        }
+        const session = await window.SgAuth?.getSession?.();
+        const authToken = session?.access_token || SUPABASE_ANON_KEY;
+        const headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + authToken,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        };
+
+        // Get next job number via RPC
+        let jobNumber = 'JOB-' + Date.now();
+        try {
+          const rpcRes = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_next_job_number', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({})
+          });
+          if (rpcRes.ok) {
+            const rpcData = await rpcRes.json();
+            if (rpcData) jobNumber = typeof rpcData === 'string' ? rpcData : rpcData.job_number || jobNumber;
+          }
+        } catch (e) {
+          console.warn('Could not get job number via RPC, using fallback:', e);
+        }
+
+        // Build job record
+        const jobData = {
+          user_id: user.id,
+          customer_id: ctx.customerId || null,
+          estimate_id: ctx.estimateId,
+          job_number: jobNumber,
+          customer_name: ctx.customerName || '',
+          customer_email: ctx.customerEmail || '',
+          customer_phone: ctx.customerPhone || '',
+          customer_address: ctx.customerAddress || '',
+          project_type: ctx.roomType || 'kitchen',
+          project_description: ctx.projectName || 'Room Design Project',
+          contract_amount: ctx.total || 0,
+          deposit_amount: ctx.depositAmount || 0,
+          status: 'new'
+        };
+
+        const res = await fetch(SUPABASE_URL + '/rest/v1/jobs', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(jobData)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error('Failed to create job: ' + errText);
+        }
+
+        const created = await res.json();
+        const createdJob = Array.isArray(created) ? created[0] : created;
+
+        showNotification('Job ' + jobNumber + ' created successfully!', 'success');
+
+        // Update button to show success
+        if (btn) {
+          btn.style.display = 'none';
+        }
+        const badge = document.getElementById('jobCreatedBadge');
+        if (badge) {
+          badge.textContent = '\u2705 Job Created: ' + jobNumber;
+          badge.style.display = 'inline-flex';
+        }
+
+        // Update customer total_jobs count
+        if (ctx.customerId) {
+          try {
+            const custRes = await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + ctx.customerId + '&select=total_jobs', { headers });
+            if (custRes.ok) {
+              const custData = await custRes.json();
+              const currentCount = (custData[0]?.total_jobs || 0) + 1;
+              await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + ctx.customerId, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify({ total_jobs: currentCount })
+              });
+            }
+          } catch (e) {
+            console.warn('Could not update customer job count:', e);
+          }
+        }
+
+      } catch (err) {
+        console.error('Convert to job error:', err);
+        showNotification('Failed to create job: ' + err.message, 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg> Create Job';
+        }
+      }
     }
 
     // Initialize rooms on load
