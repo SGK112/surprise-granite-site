@@ -35894,18 +35894,20 @@
 
         case 'door': {
           // Standard interior/exterior door with full frame
+          // Construction-standard dimensions
           const doorColor = el.color ? parseInt(el.color.replace('#', ''), 16) : 0xDEB887;
           const doorMat2 = new THREE.MeshStandardMaterial({ color: doorColor, roughness: 0.6 });
-          const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.5 });
-          const frameWidth = 0.08;
-          const frameDepth = 0.18;
+          const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F0, roughness: 0.45 });
+          const dFrameW = 0.17;  // ~2" casing face width
+          const dFrameD = 0.33;  // ~4" frame depth (wall depth)
+          const dPanelD = 0.15;  // ~1.75" door slab thickness
 
-          // Door panel (slightly recessed from frame)
+          // Door panel (slab)
           const doorPanel = new THREE.Mesh(
-            new THREE.BoxGeometry(w - frameWidth * 2, h - frameWidth, 0.08),
+            new THREE.BoxGeometry(w - dFrameW * 2, h - dFrameW, dPanelD),
             doorMat2
           );
-          doorPanel.position.set(0, -frameWidth / 2, 0);
+          doorPanel.position.set(0, -dFrameW / 2, 0);
           doorPanel.castShadow = true;
           group.add(doorPanel);
 
@@ -35915,42 +35917,54 @@
             roughness: 0.5
           });
           const panelInset = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.6, h * 0.35, 0.02),
+            new THREE.BoxGeometry(w * 0.55, h * 0.33, 0.02),
             panelDetailMat
           );
-          panelInset.position.set(0, h * 0.15, 0.05);
+          panelInset.position.set(0, h * 0.15, dPanelD / 2 + 0.01);
           group.add(panelInset);
 
           const panelInset2 = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.6, h * 0.35, 0.02),
+            new THREE.BoxGeometry(w * 0.55, h * 0.33, 0.02),
             panelDetailMat
           );
-          panelInset2.position.set(0, -h * 0.25, 0.05);
+          panelInset2.position.set(0, -h * 0.25, dPanelD / 2 + 0.01);
           group.add(panelInset2);
 
-          // Frame - top
+          // Frame - head (top casing)
           const frameTop = new THREE.Mesh(
-            new THREE.BoxGeometry(w + frameWidth * 2, frameWidth, frameDepth),
+            new THREE.BoxGeometry(w + dFrameW * 2, dFrameW, dFrameD),
             doorFrameMat
           );
           frameTop.position.set(0, h / 2, 0);
+          frameTop.castShadow = true;
           group.add(frameTop);
 
-          // Frame - left
+          // Frame - left jamb
           const frameLeft = new THREE.Mesh(
-            new THREE.BoxGeometry(frameWidth, h, frameDepth),
+            new THREE.BoxGeometry(dFrameW, h, dFrameD),
             doorFrameMat
           );
-          frameLeft.position.set(-w / 2 - frameWidth / 2, 0, 0);
+          frameLeft.position.set(-w / 2 - dFrameW / 2, 0, 0);
+          frameLeft.castShadow = true;
           group.add(frameLeft);
 
-          // Frame - right
+          // Frame - right jamb
           const frameRight = new THREE.Mesh(
-            new THREE.BoxGeometry(frameWidth, h, frameDepth),
+            new THREE.BoxGeometry(dFrameW, h, dFrameD),
             doorFrameMat
           );
-          frameRight.position.set(w / 2 + frameWidth / 2, 0, 0);
+          frameRight.position.set(w / 2 + dFrameW / 2, 0, 0);
+          frameRight.castShadow = true;
           group.add(frameRight);
+
+          // Threshold
+          const thresholdMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.6 });
+          const threshold = new THREE.Mesh(
+            new THREE.BoxGeometry(w, 0.06, dFrameD + 0.05),
+            thresholdMat
+          );
+          threshold.position.set(0, -h / 2 + 0.03, 0.025);
+          group.add(threshold);
 
           // Door handle (lever style)
           const handleMat = new THREE.MeshStandardMaterial({
@@ -35959,20 +35973,20 @@
             roughness: 0.2
           });
 
-          // Handle plate
+          // Handle plate (escutcheon)
           const handlePlate = new THREE.Mesh(
-            new THREE.BoxGeometry(0.06, 0.15, 0.02),
+            new THREE.BoxGeometry(0.06, 0.18, 0.02),
             handleMat
           );
-          handlePlate.position.set(w / 2 - 0.15, 0, 0.06);
+          handlePlate.position.set(w / 2 - 0.2, 0, dPanelD / 2 + 0.02);
           group.add(handlePlate);
 
           // Handle lever
           const handleLever = new THREE.Mesh(
-            new THREE.BoxGeometry(0.12, 0.03, 0.03),
+            new THREE.BoxGeometry(0.14, 0.035, 0.035),
             handleMat
           );
-          handleLever.position.set(w / 2 - 0.12, 0, 0.08);
+          handleLever.position.set(w / 2 - 0.15, 0, dPanelD / 2 + 0.04);
           group.add(handleLever);
 
           break;
@@ -35989,11 +36003,11 @@
           const mullionPattern = el.mullionPattern || 'standard'; // standard, colonial, prairie, none
           const frameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
 
-          // Standard window dimensions (based on architectural standards)
-          const frameThickness = 0.1; // ~1.25" frame depth
-          const frameWidth = 0.125; // ~1.5" frame profile
-          const sashWidth = 0.08; // ~1" sash profile
-          const muntinWidth = 0.025; // 5/8" muntin (grille) bars
+          // Standard window dimensions (IRC / AAMA construction standards)
+          const frameThickness = 0.25; // ~3" frame depth (proper wall depth)
+          const frameWidth = 0.2; // ~2.4" frame face width
+          const sashWidth = 0.10; // ~1.2" sash profile
+          const muntinWidth = 0.04; // ~0.5" muntin (grille) bars
 
           // Materials
           const frameMat = new THREE.MeshStandardMaterial({
@@ -38788,98 +38802,139 @@
         }
 
         case 'window-bay': {
-          // Bay window with angled side panes projecting from wall
-          // Proper construction: center panel + two 30-degree angled side panels
+          // Bay window — clean 3-panel architectural window with square frame
+          // No angled fins — proper rectangular frame with mullions, glass, bay shelf
           const bayFrameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
           const bayFrameMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.35, metalness: 0.1 });
+          const bayGlassColor = sceneSettings.timeOfDay === 'night' ? 0x2a3a5a : 0xADD8E6;
           const bayGlassMat = new THREE.MeshStandardMaterial({
-            color: sceneSettings.timeOfDay === 'night' ? 0x2a3a5a : 0xADD8E6,
-            transparent: true, opacity: 0.15, roughness: 0.02, metalness: 0.35
+            color: bayGlassColor, transparent: true, opacity: 0.15,
+            roughness: 0.02, metalness: 0.35, side: THREE.DoubleSide
           });
           const outdoorPaletteBay = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
-          const bayMuntinMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.45, metalness: 0.05 });
 
-          const centerW = w * 0.5;
-          const sideW = w * 0.3;
-          const bayAngle = Math.PI / 6; // 30 degrees
-          const frameProf = 0.12; // Frame profile width (~1.5")
-          const frameDepthBay = 0.1; // Frame depth (~1.25")
+          // Construction-standard frame dimensions (in feet)
+          const bfw = 0.25;   // 3" frame face width
+          const bfd = 0.25;   // 3" frame depth
+          const bmw = 0.20;   // 2.4" mullion width
+          const bmun = 0.04;  // ~0.5" muntin bar
 
-          // --- Center panel ---
-          // Frame (head, sill, sides)
-          const cHead = new THREE.Mesh(new THREE.BoxGeometry(centerW, frameProf, frameDepthBay), bayFrameMat);
-          cHead.position.set(0, h/2 - frameProf/2, 0);
-          group.add(cHead);
-          const cSill2 = new THREE.Mesh(new THREE.BoxGeometry(centerW, frameProf, frameDepthBay), bayFrameMat);
-          cSill2.position.set(0, -h/2 + frameProf/2, 0);
-          group.add(cSill2);
+          // 3-panel layout: center 50%, each side 25%
+          const bCenterW = w * 0.5;
+          const bGlassH = h - bfw * 2;
+
+          // Glass panel dimensions (computed from frame geometry)
+          const bCGlassW = bCenterW - bmw;
+          const bSGlassW = w / 2 - bfw - bCenterW / 2 - bmw / 2;
+          const bSGlassX = (w / 2 - bfw + bCenterW / 2 + bmw / 2) / 2;
+          const bGlassZ = -bfd / 2 + 0.02;
+
+          // === OUTER FRAME (head, sill, jambs) ===
+          const bHead = new THREE.Mesh(new THREE.BoxGeometry(w, bfw, bfd), bayFrameMat);
+          bHead.position.set(0, h / 2 - bfw / 2, 0);
+          bHead.castShadow = true;
+          group.add(bHead);
+
+          const bSillD = bfd + 0.15;
+          const bSill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.12, bfw * 1.1, bSillD), bayFrameMat);
+          bSill.position.set(0, -h / 2 + bfw * 0.55, (bSillD - bfd) / 2);
+          bSill.castShadow = true;
+          group.add(bSill);
+
           [-1, 1].forEach(side => {
-            const cSide = new THREE.Mesh(new THREE.BoxGeometry(frameProf, h - frameProf * 2, frameDepthBay), bayFrameMat);
-            cSide.position.set(side * (centerW/2 - frameProf/2), 0, 0);
-            group.add(cSide);
-          });
-          // Center mullion cross
-          const cVMuntin = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - frameProf * 2 - 0.02, 0.03), bayMuntinMat);
-          cVMuntin.position.set(0, 0, 0.02);
-          group.add(cVMuntin);
-          const cHMuntin = new THREE.Mesh(new THREE.BoxGeometry(centerW - frameProf * 2 - 0.02, 0.03, 0.03), bayMuntinMat);
-          cHMuntin.position.set(0, 0, 0.02);
-          group.add(cHMuntin);
-          // Center glass
-          const cGlass = new THREE.Mesh(new THREE.PlaneGeometry(centerW - frameProf * 2, h - frameProf * 2), bayGlassMat);
-          cGlass.position.z = 0.01;
-          group.add(cGlass);
-          // Sky behind center
-          const cSky = new THREE.Mesh(new THREE.PlaneGeometry(centerW - frameProf * 2, h - frameProf * 2), new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.sky }));
-          cSky.position.z = -0.04;
-          group.add(cSky);
-
-          // --- Side panels (angled outward) ---
-          [-1, 1].forEach(side => {
-            const sideGrp = new THREE.Group();
-            // Side frame
-            const sHead = new THREE.Mesh(new THREE.BoxGeometry(sideW, frameProf, frameDepthBay), bayFrameMat);
-            sHead.position.set(0, h/2 - frameProf/2, 0);
-            sideGrp.add(sHead);
-            const sSill = new THREE.Mesh(new THREE.BoxGeometry(sideW, frameProf, frameDepthBay), bayFrameMat);
-            sSill.position.set(0, -h/2 + frameProf/2, 0);
-            sideGrp.add(sSill);
-            [-1, 1].forEach(s2 => {
-              const sSide = new THREE.Mesh(new THREE.BoxGeometry(frameProf, h - frameProf * 2, frameDepthBay), bayFrameMat);
-              sSide.position.set(s2 * (sideW/2 - frameProf/2), 0, 0);
-              sideGrp.add(sSide);
-            });
-            // Side glass
-            const sGlass = new THREE.Mesh(new THREE.PlaneGeometry(sideW - frameProf * 2, h - frameProf * 2), bayGlassMat);
-            sGlass.position.z = 0.01;
-            sideGrp.add(sGlass);
-            // Sky behind side
-            const sSky = new THREE.Mesh(new THREE.PlaneGeometry(sideW - frameProf * 2, h - frameProf * 2), new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.sky }));
-            sSky.position.z = -0.04;
-            sideGrp.add(sSky);
-            // Side muntin
-            const sMuntin = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - frameProf * 2 - 0.02, 0.03), bayMuntinMat);
-            sMuntin.position.z = 0.02;
-            sideGrp.add(sMuntin);
-
-            // Position and angle outward from wall
-            sideGrp.position.set(side * (centerW/2 + sideW/2 * Math.cos(bayAngle)), 0, -sideW/2 * Math.sin(bayAngle));
-            sideGrp.rotation.y = side * bayAngle;
-            group.add(sideGrp);
+            const bJamb = new THREE.Mesh(new THREE.BoxGeometry(bfw, bGlassH, bfd), bayFrameMat);
+            bJamb.position.set(side * (w / 2 - bfw / 2), 0, 0);
+            bJamb.castShadow = true;
+            group.add(bJamb);
           });
 
-          // --- Bay sill shelf (spans full width, projects outward) ---
-          const baySillMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.4, metalness: 0.05 });
-          const projection = sideW * Math.sin(bayAngle) + 0.15;
-          const baySill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.08, projection), baySillMat);
-          baySill.position.set(0, -h/2 - 0.04, -projection/2 + 0.05);
-          baySill.castShadow = true;
-          group.add(baySill);
+          // === MULLIONS (vertical dividers between 3 panels) ===
+          [-1, 1].forEach(side => {
+            const bMull = new THREE.Mesh(new THREE.BoxGeometry(bmw, bGlassH, bfd), bayFrameMat);
+            bMull.position.set(side * bCenterW / 2, 0, 0);
+            group.add(bMull);
+          });
 
-          // Head trim
-          const bayHead = new THREE.Mesh(new THREE.BoxGeometry(w + 0.15, 0.06, projection * 0.6), baySillMat);
-          bayHead.position.set(0, h/2 + 0.03, -projection * 0.3 + 0.05);
-          group.add(bayHead);
+          // === MUNTINS (subdivide panes) ===
+          // Center panel: cross pattern → 4 panes
+          const bCHMunt = new THREE.Mesh(new THREE.BoxGeometry(bCGlassW, bmun, bmun), bayFrameMat);
+          bCHMunt.position.set(0, 0, bfd / 4);
+          group.add(bCHMunt);
+          const bCVMunt = new THREE.Mesh(new THREE.BoxGeometry(bmun, bGlassH, bmun), bayFrameMat);
+          bCVMunt.position.set(0, 0, bfd / 4);
+          group.add(bCVMunt);
+
+          // Side panels: horizontal muntin → 2 panes each
+          [-1, 1].forEach(side => {
+            const bSHMunt = new THREE.Mesh(new THREE.BoxGeometry(bSGlassW, bmun, bmun), bayFrameMat);
+            bSHMunt.position.set(side * bSGlassX, 0, bfd / 4);
+            group.add(bSHMunt);
+          });
+
+          // === GLASS PANELS ===
+          const bCGlass = new THREE.Mesh(new THREE.PlaneGeometry(bCGlassW, bGlassH), bayGlassMat);
+          bCGlass.position.set(0, 0, bGlassZ);
+          group.add(bCGlass);
+
+          [-1, 1].forEach(side => {
+            const bSGlass = new THREE.Mesh(new THREE.PlaneGeometry(bSGlassW, bGlassH), bayGlassMat);
+            bSGlass.position.set(side * bSGlassX, 0, bGlassZ);
+            group.add(bSGlass);
+          });
+
+          // === OUTDOOR VIEW (sky + horizon behind glass) ===
+          const bSkyMat = new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.sky, side: THREE.DoubleSide });
+          const bHorizMat = new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.horizon || 0x87CEEB, side: THREE.DoubleSide });
+          const bSkyH = bGlassH * 0.65;
+          const bHorizH = bGlassH * 0.35;
+          const bSkyZ = bGlassZ - 0.03;
+
+          // Center sky + horizon
+          const bCSky = new THREE.Mesh(new THREE.PlaneGeometry(bCGlassW, bSkyH), bSkyMat);
+          bCSky.position.set(0, bGlassH * 0.175, bSkyZ);
+          group.add(bCSky);
+          const bCHoriz = new THREE.Mesh(new THREE.PlaneGeometry(bCGlassW, bHorizH), bHorizMat);
+          bCHoriz.position.set(0, -bGlassH * 0.325, bSkyZ);
+          group.add(bCHoriz);
+
+          // Side sky + horizon
+          [-1, 1].forEach(side => {
+            const bSSky = new THREE.Mesh(new THREE.PlaneGeometry(bSGlassW, bSkyH), bSkyMat);
+            bSSky.position.set(side * bSGlassX, bGlassH * 0.175, bSkyZ);
+            group.add(bSSky);
+            const bSHoriz = new THREE.Mesh(new THREE.PlaneGeometry(bSGlassW, bHorizH), bHorizMat);
+            bSHoriz.position.set(side * bSGlassX, -bGlassH * 0.325, bSkyZ);
+            group.add(bSHoriz);
+          });
+
+          // Trees
+          if (sceneSettings.timeOfDay !== 'night') {
+            const bTreeMat = new THREE.MeshBasicMaterial({ color: 0x228B22 });
+            for (let t = 0; t < 3; t++) {
+              const treeSize = 0.15 + Math.random() * 0.15;
+              const bTree = new THREE.Mesh(new THREE.ConeGeometry(treeSize, treeSize * 2, 6), bTreeMat);
+              bTree.position.set((t - 1) * bCGlassW * 0.3, -bGlassH * 0.15, bSkyZ - 0.01);
+              group.add(bTree);
+            }
+          }
+
+          // === BAY SHELF (projects into room as window seat) ===
+          const bShelfDepth = 0.8;
+          const bShelfMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.4, metalness: 0.05 });
+          const bBayShelf = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, bShelfDepth), bShelfMat);
+          bBayShelf.position.set(0, -h / 2 + bfw * 1.1 + 0.03, bfd / 2 + bShelfDepth / 2);
+          bBayShelf.castShadow = true;
+          group.add(bBayShelf);
+
+          // === HEADER CROWN (trim above window) ===
+          const bHeaderCap = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.05, bfd + 0.06), bShelfMat);
+          bHeaderCap.position.set(0, h / 2 + 0.025, 0.03);
+          group.add(bHeaderCap);
+
+          // === APRON (trim below sill, interior side) ===
+          const bApron = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.08, 0.04), bShelfMat);
+          bApron.position.set(0, -h / 2 - 0.04, bfd / 2 + 0.02);
+          group.add(bApron);
 
           break;
         }
