@@ -14912,9 +14912,7 @@
           offset: '0'
         });
 
-        const response = await fetch(`${endpoint}?${params.toString()}`, {
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(`${endpoint}?${params.toString()}`);
 
         if (!response.ok) throw new Error(`API returned ${response.status}`);
 
@@ -16387,6 +16385,33 @@
       // Save initial undo state AFTER loading any saved design
       saveUndoState();
 
+      // Warn before closing/navigating away with unsaved work
+      window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges && elements.length > 0) {
+          // Force a final auto-save before leaving
+          try {
+            if (!SHARE_STATE.isSharedView) {
+              const emergencySave = {
+                elements: elements.map(el => serializeElement(el)),
+                walls: walls.map(w => serializeWall(w)),
+                roomWidth, roomDepth, roomHeight,
+                roomType: document.getElementById('roomType')?.value || 'kitchen',
+                projectName: document.getElementById('projectName')?.value || 'Untitled',
+                timestamp: Date.now(),
+                version: 4,
+                pixelsPerFoot,
+                rooms: rooms.map(r => ({...r, elements: (r.elements||[]).map(el => el.xFt !== undefined ? {...el, textureImg:null} : serializeElement(el)), walls: (r.walls||[]).map(w => w.x1Ft !== undefined ? {...w} : serializeWall(w))})),
+                currentRoomId, currentRoom, projectRooms
+              };
+              localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(emergencySave));
+              console.log('Emergency save before page unload:', elements.length, 'elements');
+            }
+          } catch (e) { /* best effort */ }
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
       // Initialize element selector dropdown and item picker
       updateElementSelector();
       updateItemPicker();
@@ -16415,6 +16440,13 @@
 
     function autoSaveDesign(immediate = false) {
       hasUnsavedChanges = true;
+
+      // CRITICAL: Never auto-save when viewing someone else's shared design
+      // This prevents overwriting the designer's own saved work
+      if (SHARE_STATE.isSharedView) {
+        console.log('Auto-save skipped: viewing shared design (read-only for save purposes)');
+        return;
+      }
 
       // Debounce auto-save to avoid excessive writes
       if (autosaveTimeout) clearTimeout(autosaveTimeout);
@@ -16467,21 +16499,30 @@
           };
           const saveJson = JSON.stringify(saveData);
 
-          // Create backup of previous save before overwriting
+          // Create backup of previous save before overwriting (rotate 2 generations)
           try {
             const prevSave = localStorage.getItem(AUTOSAVE_KEY);
             if (prevSave) {
-              localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
+              // Only backup if previous save has meaningful content
+              try {
+                const prevData = JSON.parse(prevSave);
+                if (prevData.elements && prevData.elements.length > 0) {
+                  // Rotate: backup → backup2, current → backup
+                  const existingBackup = localStorage.getItem(AUTOSAVE_KEY + '_backup');
+                  if (existingBackup) {
+                    try { localStorage.setItem(AUTOSAVE_KEY + '_backup2', existingBackup); } catch(e) {}
+                  }
+                  localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
+                }
+              } catch (e) { /* corrupted — don't back up corrupted data */ }
             }
           } catch (backupErr) {
-            // Quota exceeded — free space by trimming old local designs
             console.warn('Backup save failed, freeing space:', backupErr.message);
             try {
               const designs = JSON.parse(localStorage.getItem('room_designs') || '[]');
               if (designs.length > 5) {
                 localStorage.setItem('room_designs', JSON.stringify(designs.slice(0, 5)));
                 console.log('Trimmed local designs from', designs.length, 'to 5 to free quota');
-                // Retry backup
                 const prevSave = localStorage.getItem(AUTOSAVE_KEY);
                 if (prevSave) localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
               }
@@ -16990,29 +17031,88 @@
     }
 
     // Recovery function — accessible from browser console as recoverDesignFromBackup()
+    // Checks ALL backup sources: _backup, _protected, room_designs
     window.recoverDesignFromBackup = function() {
+      console.log('=== DESIGN RECOVERY ===');
+      const sources = [];
+
+      // Check all possible backup sources
+      const keys = [AUTOSAVE_KEY + '_protected', AUTOSAVE_KEY + '_backup', AUTOSAVE_KEY + '_backup2', AUTOSAVE_KEY];
+      keys.forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (data.elements && data.elements.length > 0) {
+              sources.push({
+                key: key,
+                elements: data.elements.length,
+                rooms: data.rooms?.length || 0,
+                timestamp: data.timestamp,
+                date: new Date(data.timestamp).toLocaleString(),
+                data: raw
+              });
+            }
+          }
+        } catch (e) { /* skip corrupted */ }
+      });
+
+      // Check local designs
       try {
-        const backup = localStorage.getItem(AUTOSAVE_KEY + '_backup');
-        if (!backup) {
-          console.log('No backup save found.');
-          return false;
-        }
-        const data = JSON.parse(backup);
-        console.log('Backup save found:', data.elements?.length, 'elements,', data.rooms?.length, 'rooms, saved at', new Date(data.timestamp).toLocaleString());
-        localStorage.setItem(AUTOSAVE_KEY, backup);
-        console.log('Backup restored to main save. Reload the page to see your design.');
-        return true;
-      } catch (e) {
-        console.error('Recovery failed:', e);
+        const designs = JSON.parse(localStorage.getItem('room_designs') || '[]');
+        designs.forEach((d, i) => {
+          if (d.elements && d.elements.length > 0) {
+            sources.push({
+              key: 'room_designs[' + i + ']',
+              elements: d.elements.length,
+              rooms: d.rooms?.length || 0,
+              timestamp: d.timestamp || d.updated_at,
+              date: d.timestamp ? new Date(d.timestamp).toLocaleString() : (d.updated_at || 'unknown'),
+              name: d.name || d.projectName,
+              data: JSON.stringify(d)
+            });
+          }
+        });
+      } catch (e) { /* skip */ }
+
+      if (sources.length === 0) {
+        console.log('No recoverable designs found in localStorage.');
+        console.log('Try checking cloud saves: open the Load Design dialog in the app.');
         return false;
       }
+
+      // Sort by most elements (best candidate)
+      sources.sort((a, b) => b.elements - a.elements);
+
+      console.log('Found', sources.length, 'recoverable sources:');
+      sources.forEach((s, i) => {
+        console.log('  [' + i + ']', s.key, '—', s.elements, 'elements,', s.rooms, 'rooms,', s.name || '', 'saved:', s.date);
+      });
+
+      // Restore the best candidate
+      const best = sources[0];
+      console.log('\nRestoring best candidate:', best.key, '(' + best.elements + ' elements)');
+      localStorage.setItem(AUTOSAVE_KEY, best.data);
+      console.log('Restored! Reload the page (Ctrl+Shift+R) to see your design.');
+      return true;
     };
 
     function clearAutoSave() {
       try {
+        // Before clearing, save current auto-save as protected backup (if it has content)
+        const current = localStorage.getItem(AUTOSAVE_KEY);
+        if (current) {
+          try {
+            const data = JSON.parse(current);
+            if (data.elements && data.elements.length > 0) {
+              localStorage.setItem(AUTOSAVE_KEY + '_protected', current);
+              console.log('Protected', data.elements.length, 'elements before clearing auto-save');
+            }
+          } catch (e) { /* corrupted, skip */ }
+        }
         localStorage.removeItem(AUTOSAVE_KEY);
         hasUnsavedChanges = false;
-        console.log('Auto-save cleared');
+        console.log('Auto-save cleared (backups preserved)');
       } catch (e) {
         console.warn('Failed to clear auto-save:', e);
       }
@@ -52142,6 +52242,19 @@
     async function loadSharedDesign(shareToken) {
       console.log('=== loadSharedDesign START ===');
       console.log('Token:', shareToken);
+
+      // PROTECT user's own auto-saved design before loading shared content
+      // Save to a protected key that auto-save will NEVER overwrite
+      try {
+        const ownSave = localStorage.getItem(AUTOSAVE_KEY);
+        if (ownSave) {
+          const ownData = JSON.parse(ownSave);
+          if (ownData.elements && ownData.elements.length > 0) {
+            localStorage.setItem(AUTOSAVE_KEY + '_protected', ownSave);
+            console.log('Protected user design before shared load:', ownData.elements.length, 'elements');
+          }
+        }
+      } catch (e) { /* ignore — protection is best-effort */ }
 
       // Show cloud preloader with Remodely AI branding
       showPreloader('Initializing 3D workspace');
