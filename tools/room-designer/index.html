@@ -15471,9 +15471,14 @@
       if (room) {
         room.width = roomWidth;
         room.depth = roomDepth;
-        room.elements = [...elements];
-        room.walls = [...walls];
+        // Deep copy elements to prevent shared references between rooms
+        room.elements = elements.map(el => ({
+          ...el,
+          textureImg: el.textureImg || null // preserve texture ref
+        }));
+        room.walls = walls.map(w => ({ ...w }));
         room.floorPlan = currentFloorPlan;
+        room.pixelsPerFoot = pixelsPerFoot; // Track scale for position normalization
       }
     }
 
@@ -15487,8 +15492,13 @@
       currentRoomId = roomId;
       roomWidth = room.width;
       roomDepth = room.depth;
-      elements = room.elements || [];
-      walls = room.walls || [];
+
+      // Deep copy elements to prevent shared references
+      elements = (room.elements || []).map(el => ({
+        ...el,
+        textureImg: el.textureImg || null
+      }));
+      walls = (room.walls || []).map(w => ({ ...w }));
       currentFloorPlan = room.floorPlan || 'empty';
 
       // Update UI
@@ -15496,11 +15506,36 @@
       document.getElementById('roomDepth').value = roomDepth;
       document.getElementById('roomType').value = room.type || 'kitchen';
 
-      // Redraw
+      // Recalculate scale for new room dimensions
+      const savedScale = room.pixelsPerFoot || pixelsPerFoot;
       fitToScreen();
+
+      // Normalize element positions if scale changed
+      if (savedScale !== pixelsPerFoot && savedScale > 0) {
+        const scaleRatio = pixelsPerFoot / savedScale;
+        console.log('Room switch: normalizing positions with ratio:', scaleRatio);
+        elements.forEach(el => {
+          el.x = (el.x || 0) * scaleRatio;
+          el.y = (el.y || 0) * scaleRatio;
+        });
+        walls.forEach(wall => {
+          if (wall.x1 !== undefined) wall.x1 *= scaleRatio;
+          if (wall.y1 !== undefined) wall.y1 *= scaleRatio;
+          if (wall.x2 !== undefined) wall.x2 *= scaleRatio;
+          if (wall.y2 !== undefined) wall.y2 *= scaleRatio;
+        });
+      }
+
+      // Redraw
       draw();
       updateRoomList();
       calculateQuote();
+
+      // Rebuild 3D if in 3D view
+      if (currentView === '3d') {
+        init3D();
+        render3D();
+      }
 
       showToast(`Switched to ${room.name}`, 'info');
     }
@@ -52027,6 +52062,17 @@
                 y: (el.y || 0) * scaleRatio
               }));
             }
+            if (room.walls) {
+              room.walls = room.walls.map(wall => ({
+                ...wall,
+                x1: wall.x1 !== undefined ? wall.x1 * scaleRatio : undefined,
+                y1: wall.y1 !== undefined ? wall.y1 * scaleRatio : undefined,
+                x2: wall.x2 !== undefined ? wall.x2 * scaleRatio : undefined,
+                y2: wall.y2 !== undefined ? wall.y2 * scaleRatio : undefined
+              }));
+            }
+            // Store current scale for room switching normalization
+            room.pixelsPerFoot = pixelsPerFoot;
           });
         }
 
@@ -53658,7 +53704,7 @@
         room_depth: roomDepth,
         elements: elements.map(el => ({
           ...el,
-          textureImg: null // Don't save image objects
+          textureImg: null
         })),
         walls: walls,
         rooms: rooms.map(r => ({
@@ -53666,7 +53712,7 @@
           elements: r.elements?.map(el => ({ ...el, textureImg: null })) || []
         })),
         settings: {
-          pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
+          pixelsPerFoot: pixelsPerFoot
         }
       };
 
@@ -53682,7 +53728,25 @@
       // Keep only last 10 designs to avoid quota issues
       designs = designs.slice(0, 10);
 
-      localStorage.setItem('room_designs', JSON.stringify(designs));
+      try {
+        localStorage.setItem('room_designs', JSON.stringify(designs));
+      } catch (quotaErr) {
+        // Quota exceeded — aggressively trim and retry
+        console.warn('Local save quota exceeded, trimming designs...');
+        try {
+          designs = designs.slice(0, 3);
+          localStorage.removeItem(AUTOSAVE_KEY + '_backup');
+          localStorage.setItem('room_designs', JSON.stringify(designs));
+        } catch (retryErr) {
+          // Last resort: clear old designs, keep only current
+          try {
+            localStorage.setItem('room_designs', JSON.stringify([design]));
+          } catch (finalErr) {
+            console.error('Cannot save locally — storage completely full');
+            return design;
+          }
+        }
+      }
       showSnapFeedback('Design saved locally');
       return design;
     }
@@ -54527,12 +54591,21 @@
         if (!supabase) return;
 
         // Find any shares for this design that have an associated lead
-        const { data: shares, error } = await supabase
-          .from('room_design_shares')
-          .select('id, lead_id, customer_name')
-          .eq('design_id', designId)
-          .not('lead_id', 'is', null)
-          .limit(1);
+        let shares, error;
+        try {
+          const result = await supabase
+            .from('room_design_shares')
+            .select('id, lead_id, customer_name')
+            .eq('design_id', designId)
+            .not('lead_id', 'is', null)
+            .limit(1);
+          shares = result.data;
+          error = result.error;
+        } catch (queryErr) {
+          // Table may not exist yet — non-critical feature
+          console.log('room_design_shares query failed (table may not exist):', queryErr.message);
+          return;
+        }
 
         if (error || !shares || shares.length === 0) {
           console.log('No customer shares found for this design');
