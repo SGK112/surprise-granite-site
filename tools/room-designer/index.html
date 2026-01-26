@@ -28447,7 +28447,7 @@
         'glass-door': 6.8,        // 82 inches
         'entry-archway': 7,       // 84 inches (arched opening)
         'garage-door': 7,         // 84 inches
-        'window': 3,              // 36 inches
+        'window': 4.5,            // 54 inches - standard double-hung (IRC)
         'window-large': 5,        // 60 inches (picture)
         'window-bay': 4,          // 48 inches (bay)
         'bay-window': 4,          // 48 inches
@@ -35980,14 +35980,14 @@
 
         case 'window':
         case 'window-large':
-        case 'window-bay':
         case 'bay-window':
         case 'picture-window': {
           // Professional Window with proper architectural details
+          // Note: window-bay handled separately below with angled bay projection geometry
           // Supports: double-hung, single-hung, casement, sliding, fixed, picture
           const windowStyle = el.windowStyle || 'double-hung';
           const mullionPattern = el.mullionPattern || 'standard'; // standard, colonial, prairie, none
-          const frameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0xFFFFFF;
+          const frameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
 
           // Standard window dimensions (based on architectural standards)
           const frameThickness = 0.1; // ~1.25" frame depth
@@ -38787,94 +38787,119 @@
           break;
         }
 
-        case 'window-large':
         case 'window-bay': {
-          // Large picture window or bay window with scenic view
-          const isBay = el.type === 'window-bay';
-          const windowFrameMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.5 });
-          const outdoorPalette = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
+          // Bay window with angled side panes projecting from wall
+          // Proper construction: center panel + two 30-degree angled side panels
+          const bayFrameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
+          const bayFrameMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.35, metalness: 0.1 });
+          const bayGlassMat = new THREE.MeshStandardMaterial({
+            color: sceneSettings.timeOfDay === 'night' ? 0x2a3a5a : 0xADD8E6,
+            transparent: true, opacity: 0.15, roughness: 0.02, metalness: 0.35
+          });
+          const outdoorPaletteBay = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
+          const bayMuntinMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.45, metalness: 0.05 });
 
-          if (isBay) {
-            // Bay window - three angled panes
-            const centerW = w * 0.5;
-            const sideW = w * 0.3;
-            const angle = Math.PI / 6; // 30 degrees
+          const centerW = w * 0.5;
+          const sideW = w * 0.3;
+          const bayAngle = Math.PI / 6; // 30 degrees
+          const frameProf = 0.12; // Frame profile width (~1.5")
+          const frameDepthBay = 0.1; // Frame depth (~1.25")
 
-            // Center pane
-            const centerFrame = new THREE.Mesh(new THREE.BoxGeometry(centerW, h, 0.1), windowFrameMat);
-            group.add(centerFrame);
+          // --- Center panel ---
+          // Frame (head, sill, sides)
+          const cHead = new THREE.Mesh(new THREE.BoxGeometry(centerW, frameProf, frameDepthBay), bayFrameMat);
+          cHead.position.set(0, h/2 - frameProf/2, 0);
+          group.add(cHead);
+          const cSill2 = new THREE.Mesh(new THREE.BoxGeometry(centerW, frameProf, frameDepthBay), bayFrameMat);
+          cSill2.position.set(0, -h/2 + frameProf/2, 0);
+          group.add(cSill2);
+          [-1, 1].forEach(side => {
+            const cSide = new THREE.Mesh(new THREE.BoxGeometry(frameProf, h - frameProf * 2, frameDepthBay), bayFrameMat);
+            cSide.position.set(side * (centerW/2 - frameProf/2), 0, 0);
+            group.add(cSide);
+          });
+          // Center mullion cross
+          const cVMuntin = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - frameProf * 2 - 0.02, 0.03), bayMuntinMat);
+          cVMuntin.position.set(0, 0, 0.02);
+          group.add(cVMuntin);
+          const cHMuntin = new THREE.Mesh(new THREE.BoxGeometry(centerW - frameProf * 2 - 0.02, 0.03, 0.03), bayMuntinMat);
+          cHMuntin.position.set(0, 0, 0.02);
+          group.add(cHMuntin);
+          // Center glass
+          const cGlass = new THREE.Mesh(new THREE.PlaneGeometry(centerW - frameProf * 2, h - frameProf * 2), bayGlassMat);
+          cGlass.position.z = 0.01;
+          group.add(cGlass);
+          // Sky behind center
+          const cSky = new THREE.Mesh(new THREE.PlaneGeometry(centerW - frameProf * 2, h - frameProf * 2), new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.sky }));
+          cSky.position.z = -0.04;
+          group.add(cSky);
 
-            // Sky behind center
-            const centerSky = new THREE.Mesh(new THREE.BoxGeometry(centerW - 0.15, h - 0.15, 0.01), new THREE.MeshBasicMaterial({ color: outdoorPalette.sky }));
-            centerSky.position.z = -0.05;
-            group.add(centerSky);
-
-            // Left angled pane
-            const leftGroup = new THREE.Group();
-            const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(sideW, h, 0.1), windowFrameMat);
-            const leftSky = new THREE.Mesh(new THREE.BoxGeometry(sideW - 0.1, h - 0.15, 0.01), new THREE.MeshBasicMaterial({ color: outdoorPalette.sky }));
-            leftSky.position.z = -0.05;
-            leftGroup.add(leftFrame);
-            leftGroup.add(leftSky);
-            leftGroup.position.set(-centerW/2 - sideW/2 * Math.cos(angle), 0, -sideW/2 * Math.sin(angle));
-            leftGroup.rotation.y = angle;
-            group.add(leftGroup);
-
-            // Right angled pane
-            const rightGroup = new THREE.Group();
-            const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(sideW, h, 0.1), windowFrameMat);
-            const rightSky = new THREE.Mesh(new THREE.BoxGeometry(sideW - 0.1, h - 0.15, 0.01), new THREE.MeshBasicMaterial({ color: outdoorPalette.sky }));
-            rightSky.position.z = -0.05;
-            rightGroup.add(rightFrame);
-            rightGroup.add(rightSky);
-            rightGroup.position.set(centerW/2 + sideW/2 * Math.cos(angle), 0, -sideW/2 * Math.sin(angle));
-            rightGroup.rotation.y = -angle;
-            group.add(rightGroup);
-
-            // Sill
-            const sillMat = new THREE.MeshStandardMaterial({ color: 0xDEB887, roughness: 0.6 });
-            const sill = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d + 0.5), sillMat);
-            sill.position.set(0, -h/2 - 0.05, 0.2);
-            group.add(sill);
-          } else {
-            // Large picture window
-            const windowFrame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.15), windowFrameMat);
-            group.add(windowFrame);
-
-            // Sky background
-            const skyMat = new THREE.MeshBasicMaterial({ color: outdoorPalette.sky });
-            const skyPane = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, h - 0.2, 0.01), skyMat);
-            skyPane.position.z = -0.05;
-            group.add(skyPane);
-
-            // Horizon
-            const horizonMat = new THREE.MeshBasicMaterial({ color: outdoorPalette.horizon });
-            const horizonPane = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, h * 0.35, 0.01), horizonMat);
-            horizonPane.position.set(0, -h * 0.3, -0.04);
-            group.add(horizonPane);
-
-            // Multiple trees for large window
-            if (sceneSettings.timeOfDay !== 'night') {
-              const treeMat = new THREE.MeshBasicMaterial({ color: 0x228B22 });
-              for (let i = 0; i < 5; i++) {
-                const tree = new THREE.Mesh(new THREE.ConeGeometry(0.15 + Math.random() * 0.1, 0.4 + Math.random() * 0.2, 4), treeMat);
-                tree.position.set((i - 2) * w * 0.2, -h * 0.12, -0.03);
-                group.add(tree);
-              }
-            }
-
-            // Glass
-            const glassColor = sceneSettings.timeOfDay === 'night' ? 0x1a1a3a : 0x87CEEB;
-            const glassMat = new THREE.MeshStandardMaterial({
-              color: glassColor,
-              transparent: true,
-              opacity: 0.2,
-              roughness: 0.05
+          // --- Side panels (angled outward) ---
+          [-1, 1].forEach(side => {
+            const sideGrp = new THREE.Group();
+            // Side frame
+            const sHead = new THREE.Mesh(new THREE.BoxGeometry(sideW, frameProf, frameDepthBay), bayFrameMat);
+            sHead.position.set(0, h/2 - frameProf/2, 0);
+            sideGrp.add(sHead);
+            const sSill = new THREE.Mesh(new THREE.BoxGeometry(sideW, frameProf, frameDepthBay), bayFrameMat);
+            sSill.position.set(0, -h/2 + frameProf/2, 0);
+            sideGrp.add(sSill);
+            [-1, 1].forEach(s2 => {
+              const sSide = new THREE.Mesh(new THREE.BoxGeometry(frameProf, h - frameProf * 2, frameDepthBay), bayFrameMat);
+              sSide.position.set(s2 * (sideW/2 - frameProf/2), 0, 0);
+              sideGrp.add(sSide);
             });
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, h - 0.15, 0.02), glassMat);
-            glass.position.z = 0.05;
-            group.add(glass);
-          }
+            // Side glass
+            const sGlass = new THREE.Mesh(new THREE.PlaneGeometry(sideW - frameProf * 2, h - frameProf * 2), bayGlassMat);
+            sGlass.position.z = 0.01;
+            sideGrp.add(sGlass);
+            // Sky behind side
+            const sSky = new THREE.Mesh(new THREE.PlaneGeometry(sideW - frameProf * 2, h - frameProf * 2), new THREE.MeshBasicMaterial({ color: outdoorPaletteBay.sky }));
+            sSky.position.z = -0.04;
+            sideGrp.add(sSky);
+            // Side muntin
+            const sMuntin = new THREE.Mesh(new THREE.BoxGeometry(0.03, h - frameProf * 2 - 0.02, 0.03), bayMuntinMat);
+            sMuntin.position.z = 0.02;
+            sideGrp.add(sMuntin);
+
+            // Position and angle outward from wall
+            sideGrp.position.set(side * (centerW/2 + sideW/2 * Math.cos(bayAngle)), 0, -sideW/2 * Math.sin(bayAngle));
+            sideGrp.rotation.y = side * bayAngle;
+            group.add(sideGrp);
+          });
+
+          // --- Bay sill shelf (spans full width, projects outward) ---
+          const baySillMat = new THREE.MeshStandardMaterial({ color: bayFrameColor, roughness: 0.4, metalness: 0.05 });
+          const projection = sideW * Math.sin(bayAngle) + 0.15;
+          const baySill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.08, projection), baySillMat);
+          baySill.position.set(0, -h/2 - 0.04, -projection/2 + 0.05);
+          baySill.castShadow = true;
+          group.add(baySill);
+
+          // Head trim
+          const bayHead = new THREE.Mesh(new THREE.BoxGeometry(w + 0.15, 0.06, projection * 0.6), baySillMat);
+          bayHead.position.set(0, h/2 + 0.03, -projection * 0.3 + 0.05);
+          group.add(bayHead);
+
+          break;
+        }
+
+        case 'window-large': {
+          // Dead code — window-large is caught by the professional window case above.
+          // Kept for fallback safety only.
+          const wlFrameMat = new THREE.MeshStandardMaterial({ color: 0x3D2B1F, roughness: 0.35 });
+          const wlOutdoor = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
+
+          const wlFrame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.15), wlFrameMat);
+          group.add(wlFrame);
+          const wlSky = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, h - 0.2, 0.01), new THREE.MeshBasicMaterial({ color: wlOutdoor.sky }));
+          wlSky.position.z = -0.05;
+          group.add(wlSky);
+          const wlGlass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, h - 0.15, 0.02), new THREE.MeshStandardMaterial({
+            color: 0xADD8E6, transparent: true, opacity: 0.15, roughness: 0.05
+          }));
+          wlGlass.position.z = 0.05;
+          group.add(wlGlass);
           break;
         }
 
@@ -41871,7 +41896,7 @@
 
         // Windows and doors snap to wall surface
         const windowDoorTypes = [
-          'window', 'window-large', 'bay-window', 'picture-window',
+          'window', 'window-large', 'window-bay', 'bay-window', 'picture-window',
           'door', 'double-door', 'sliding-door', 'french-door', 'glass-door',
           'entry-archway', 'garage-door'
         ];
