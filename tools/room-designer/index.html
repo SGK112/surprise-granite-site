@@ -10128,7 +10128,7 @@
 
       <div style="padding: 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px;">
         <button class="btn btn-secondary" onclick="closeModal('shareQuoteModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="generateShareLink()" id="generateLinkBtn">Generate Link</button>
+        <button class="btn btn-primary" onclick="generateQuoteShareLink()" id="generateLinkBtn">Generate Link</button>
       </div>
     </div>
   </div>
@@ -10777,21 +10777,23 @@
       // Show sync notification
       showToast('Design updated by designer', 'info', 2000);
 
-      // Update elements
-      if (newData.elements && Array.isArray(newData.elements)) {
+      // Update elements — only if new data has actual content
+      if (newData.elements && Array.isArray(newData.elements) && newData.elements.length > 0) {
         elements.length = 0;
         newData.elements.forEach(el => {
           el.textureImg = null; // Clear texture references
           elements.push(el);
         });
+      } else if (newData.elements && Array.isArray(newData.elements) && newData.elements.length === 0) {
+        console.warn('Realtime update has empty elements — skipping to prevent data loss');
       }
 
       // Update room dimensions
       if (newData.room_width) roomWidth = newData.room_width;
       if (newData.room_depth) roomDepth = newData.room_depth;
 
-      // Update rooms array if present
-      if (newData.rooms && Array.isArray(newData.rooms)) {
+      // Update rooms array if present and non-empty
+      if (newData.rooms && Array.isArray(newData.rooms) && newData.rooms.length > 0) {
         rooms.length = 0;
         newData.rooms.forEach(room => {
           room.elements = room.elements || [];
@@ -10806,6 +10808,15 @@
         if (newData.settings.pricing_config) {
           PRICING_STATE.globalMargin = newData.settings.pricing_config.globalMargin || 30;
           PRICING_STATE.categoryMargins = newData.settings.pricing_config.categoryMargins || {};
+        }
+        // Also check for rooms inside settings (new format)
+        if (newData.settings.rooms && Array.isArray(newData.settings.rooms) && newData.settings.rooms.length > 0 && !(newData.rooms && newData.rooms.length > 0)) {
+          rooms.length = 0;
+          newData.settings.rooms.forEach(room => {
+            room.elements = room.elements || [];
+            room.elements.forEach(el => el.textureImg = null);
+            rooms.push(room);
+          });
         }
       }
 
@@ -16326,6 +16337,20 @@
 
       const doSave = async () => {
         try {
+          // SAFETY: Don't overwrite existing non-empty save with empty state
+          if (elements.length === 0) {
+            try {
+              const existingSave = localStorage.getItem(AUTOSAVE_KEY);
+              if (existingSave) {
+                const existing = JSON.parse(existingSave);
+                if (existing.elements && existing.elements.length > 0) {
+                  console.log('Auto-save skipped: would overwrite', existing.elements.length, 'elements with empty state');
+                  return;
+                }
+              }
+            } catch (e) { /* parse error — safe to overwrite */ }
+          }
+
           // Save current room state before saving
           if (typeof saveCurrentRoomState === 'function') {
             saveCurrentRoomState();
@@ -16357,7 +16382,19 @@
             currentRoom: currentRoom,
             projectRooms: projectRooms
           };
-          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saveData));
+          const saveJson = JSON.stringify(saveData);
+
+          // Create backup of previous save before overwriting
+          try {
+            const prevSave = localStorage.getItem(AUTOSAVE_KEY);
+            if (prevSave) {
+              localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
+            }
+          } catch (backupErr) {
+            console.warn('Backup save failed:', backupErr);
+          }
+
+          localStorage.setItem(AUTOSAVE_KEY, saveJson);
           lastSaveTime = Date.now();
           hasUnsavedChanges = false;
           console.log('Auto-saved design:', elements.length, 'elements');
@@ -16397,13 +16434,8 @@
         try {
           const updateData = {
             elements: elements.map(el => ({ ...el, textureImg: null })),
-            walls: walls,
             room_width: roomWidth,
             room_depth: roomDepth,
-            rooms: rooms.map(room => ({
-              ...room,
-              elements: room.elements?.map(el => ({ ...el, textureImg: null })) || []
-            })),
             settings: {
               walls: walls,
               pricing_config: {
@@ -16411,7 +16443,11 @@
                 categoryMargins: PRICING_STATE.categoryMargins,
                 customPrices: PRICING_STATE.customPrices
               },
-              pixelsPerFoot: pixelsPerFoot
+              pixelsPerFoot: pixelsPerFoot,
+              rooms: rooms.map(room => ({
+                ...room,
+                elements: room.elements?.map(el => ({ ...el, textureImg: null })) || []
+              }))
             },
             updated_at: new Date().toISOString()
           };
@@ -16831,11 +16867,40 @@
         return true;
       } catch (e) {
         console.warn('Failed to load auto-save:', e);
-        // Clear corrupted save data
+        // Try backup before clearing
+        try {
+          const backup = localStorage.getItem(AUTOSAVE_KEY + '_backup');
+          if (backup) {
+            console.log('Attempting to restore from backup auto-save...');
+            localStorage.setItem(AUTOSAVE_KEY, backup);
+            return loadAutoSavedDesign(); // Retry with backup
+          }
+        } catch (backupErr) {
+          console.warn('Backup restore also failed:', backupErr);
+        }
         clearAutoSave();
         return false;
       }
     }
+
+    // Recovery function — accessible from browser console as recoverDesignFromBackup()
+    window.recoverDesignFromBackup = function() {
+      try {
+        const backup = localStorage.getItem(AUTOSAVE_KEY + '_backup');
+        if (!backup) {
+          console.log('No backup save found.');
+          return false;
+        }
+        const data = JSON.parse(backup);
+        console.log('Backup save found:', data.elements?.length, 'elements,', data.rooms?.length, 'rooms, saved at', new Date(data.timestamp).toLocaleString());
+        localStorage.setItem(AUTOSAVE_KEY, backup);
+        console.log('Backup restored to main save. Reload the page to see your design.');
+        return true;
+      } catch (e) {
+        console.error('Recovery failed:', e);
+        return false;
+      }
+    };
 
     function clearAutoSave() {
       try {
@@ -50503,7 +50568,7 @@
       document.getElementById('shareQuoteModal').classList.add('active');
     }
 
-    async function generateShareLink() {
+    async function generateQuoteShareLink() {
       const btn = document.getElementById('generateLinkBtn');
       btn.textContent = 'Generating...';
       btn.disabled = true;
@@ -50625,7 +50690,7 @@
       }));
 
       // For now, generate link and show email instructions
-      await generateShareLink();
+      await generateQuoteShareLink();
 
       const shareUrl = document.getElementById('generatedShareLink').value;
       const total = document.getElementById('quotePreviewTotal').textContent;
@@ -51568,17 +51633,17 @@
             customPrices: PRICING_STATE.customPrices
           },
           company_name: companyName,
-          current_room_id: currentRoomId,  // Store in settings, not as top-level column
-          pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
+          current_room_id: currentRoomId,
+          pixelsPerFoot: pixelsPerFoot,
+          // Multi-room support (stored in settings to avoid column mismatch)
+          rooms: rooms.map(room => ({
+            ...room,
+            elements: (room.elements || []).map(el => ({ ...el, textureImg: null }))
+          })),
+          share_mode: permission === 'full_collab' ? 'edit' : 'view',
+          is_public: document.getElementById('shareToGallery')?.checked || false
         },
-        // Multi-room support
-        rooms: rooms.map(room => ({
-          ...room,
-          elements: room.elements.map(el => ({ ...el, textureImg: null }))
-        })),
-        quote_total: quoteTotal,
-        share_mode: permission === 'full_collab' ? 'edit' : 'view',
-        is_public: document.getElementById('shareToGallery')?.checked || false
+        quote_total: quoteTotal
       };
 
       try {
@@ -51844,13 +51909,26 @@
         document.getElementById('roomWidth').value = roomWidth;
         document.getElementById('roomDepth').value = roomDepth;
 
-        // Load elements and walls
-        elements = design.elements || [];
-        walls = design.walls || [];
+        // Validate design has actual content before overwriting
+        const designElements = design.elements || [];
+        const designWalls = design.settings?.walls || design.walls || [];
+        if (designElements.length === 0 && elements.length > 0) {
+          console.warn('loadDesignData: design has no elements but current canvas has', elements.length, '— preserving current state');
+          // Still load share state above, but don't clear canvas
+          return;
+        }
 
-        // Load multi-room data if available
-        if (design.rooms && design.rooms.length > 0) {
-          rooms = design.rooms.map(room => ({
+        // Load elements and walls
+        elements = designElements;
+        walls = designWalls;
+
+        // Load multi-room data if available (check both top-level and settings)
+        const designRooms = (design.rooms && design.rooms.length > 0) ? design.rooms
+          : (design.settings?.rooms && design.settings.rooms.length > 0) ? design.settings.rooms
+          : null;
+
+        if (designRooms && designRooms.length > 0) {
+          rooms = designRooms.map(room => ({
             ...room,
             elements: room.elements || [],
             walls: room.walls || []
@@ -53655,12 +53733,13 @@
             },
             company_name: companyName,
             current_room_id: currentRoomId,
-            pixelsPerFoot: pixelsPerFoot  // Store scale for proper position restoration
+            pixelsPerFoot: pixelsPerFoot,
+            // Multi-room support (stored in settings to avoid column mismatch)
+            rooms: rooms.map(room => ({
+              ...room,
+              elements: (room.elements || []).map(el => ({ ...el, textureImg: null }))
+            }))
           },
-          rooms: rooms.map(room => ({
-            ...room,
-            elements: room.elements.map(el => ({ ...el, textureImg: null }))
-          })),
           quote_total: quoteTotal
         };
 
