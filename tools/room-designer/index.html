@@ -1191,6 +1191,40 @@
       font-weight: 600;
     }
 
+    .material-distributor-badge img {
+      height: 12px;
+      margin-right: 3px;
+      vertical-align: middle;
+    }
+
+    .finish-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px 0;
+    }
+    .finish-option {
+      padding: 3px 8px;
+      font-size: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: capitalize;
+    }
+    .finish-option:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .finish-option.active {
+      background: var(--gold);
+      color: #1a1a2e;
+      border-color: var(--gold);
+      font-weight: 600;
+    }
+
     #distributor-loading-indicator {
       grid-column: 1 / -1;
       text-align: center;
@@ -8757,6 +8791,37 @@
               </select>
             </div>
 
+            <!-- Surface Finish Picker -->
+            <div class="property-row" id="finishRow" style="display:none">
+              <span class="property-label">Finish</span>
+              <div id="finishPicker" class="finish-picker"></div>
+            </div>
+            <!-- Generic 3D Height Override -->
+            <div class="property-row" id="generic3DHeightRow" style="display:none">
+              <span class="property-label">3D Height</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select class="property-select" id="propGeneric3DHeight" onchange="updateGeneric3DHeight()" style="flex: 1;">
+                  <option value="default">Default</option>
+                  <option value="0.5">6" (0.5')</option>
+                  <option value="1">12" (1')</option>
+                  <option value="1.5">18" (1.5')</option>
+                  <option value="2">24" (2')</option>
+                  <option value="2.5">30" (2.5')</option>
+                  <option value="3">36" (3')</option>
+                  <option value="3.5">42" (3.5')</option>
+                  <option value="4">48" (4')</option>
+                  <option value="5">60" (5')</option>
+                  <option value="6">72" (6')</option>
+                  <option value="7">84" (7')</option>
+                  <option value="8">96" (8')</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+            </div>
+            <div class="property-row" id="customGeneric3DHeightRow" style="display:none">
+              <span class="property-label">Height (ft)</span>
+              <input type="number" class="property-input" id="propCustomGeneric3DHeight" step="0.0833" min="0.1" max="20" onchange="applyCustomGeneric3DHeight()">
+            </div>
             <!-- Pricing Section -->
             <div class="pricing-section" id="pricingSection">
               <div class="property-section-title">Pricing</div>
@@ -14581,6 +14646,19 @@
       slabInquiry: (id) => `${MARKETPLACE_API_BASE}/api/marketplace/slabs/${id}/inquiry`
     };
 
+    // Surface finish options by material group
+    const FINISH_OPTIONS = {
+      stone: ['Polished', 'Honed', 'Leathered', 'Matte', 'Brushed', 'Flamed', 'Natural'],
+      tile:  ['Polished', 'Matte', 'Natural'],
+      cabinet: []
+    };
+    const CATEGORY_FINISH_GROUP = {
+      granite: 'stone', quartz: 'stone', marble: 'stone', quartzite: 'stone',
+      porcelain: 'tile', tile: 'tile', flooring: 'tile', hardscape: 'stone',
+      showerPanels: 'tile', cabinets: 'cabinet', vanities: 'cabinet',
+      flooringTrims: 'cabinet', cabinetAccessories: 'cabinet'
+    };
+
     // Map Room Designer categories → API material_type filter values
     const CATEGORY_TO_API_MATERIAL = {
       'granite': 'granite',
@@ -14591,11 +14669,11 @@
       'tile': 'tile',
       'flooring': 'flooring',
       'hardscape': 'hardscape',
-      'cabinets': null,
-      'vanities': null,
-      'showerPanels': null,
-      'flooringTrims': null,
-      'cabinetAccessories': null
+      'cabinets': 'cabinets',
+      'vanities': 'vanities',
+      'showerPanels': 'shower_panels',
+      'flooringTrims': 'flooring_trims',
+      'cabinetAccessories': 'cabinet_accessories'
     };
 
     // Cache for distributor products per category
@@ -14671,7 +14749,10 @@
 
     async function fetchDistributorProducts(category) {
       const apiMaterialType = CATEGORY_TO_API_MATERIAL[category];
-      if (!apiMaterialType) return [];
+      if (!apiMaterialType) {
+        console.log(`No API mapping for category "${category}", skipping fetch`);
+        return [];
+      }
 
       // Return cached if fresh
       if (distributorCache[category]?.loaded && !isStale(distributorCache[category])) {
@@ -14763,7 +14844,10 @@
 
     async function loadDistributorDataForCategory(category) {
       const apiMaterialType = CATEGORY_TO_API_MATERIAL[category];
-      if (!apiMaterialType) return;
+      if (!apiMaterialType) {
+        console.log(`No API mapping for category "${category}", skipping load`);
+        return;
+      }
 
       if (distributorCache[category]?.loaded && !isStale(distributorCache[category])) return;
 
@@ -17053,7 +17137,7 @@
 
         // Distributor "In Stock" badge for live inventory items
         const distributorBadge = (mat.source === 'distributor' && mat.distributorName)
-          ? `<div class="material-distributor-badge">In Stock</div>`
+          ? `<div class="material-distributor-badge">${mat.distributorLogo ? `<img src="${mat.distributorLogo}" alt="">` : ''}${mat.distributorName}</div>`
           : '';
 
         // Use image URL directly
@@ -17377,6 +17461,16 @@
       setTimeout(loadStoreProducts, 500);
     });
 
+    function applyFinishToElement(finishId) {
+      if (!selectedElement) return;
+      selectedElement.finish = finishId;
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      updateProperties();
+    }
+
     function selectMaterial(materialId) {
       // Find material in all categories
       for (const [cat, materials] of Object.entries(MATERIALS)) {
@@ -17416,6 +17510,7 @@
       const matDisplayPrice = (typeof getDisplayPrice === 'function') ? getDisplayPrice(selectedMaterial) : null;
       element.materialPrice = matDisplayPrice ? matDisplayPrice.amount : (selectedMaterial.price || null);
       element.materialBrand = selectedMaterial.brand || null;
+      element.materialCategory = selectedMaterial.category || null;
 
       // Mark element as needing 3D update
       markElement3DDirty(element.id);
@@ -29753,7 +29848,8 @@
           leathered: { roughness: 0.7, clearcoat: 0.05, clearcoatRoughness: 0.8, sheen: 0.5 },
           brushed: { roughness: 0.55, clearcoat: 0.08, clearcoatRoughness: 0.7, sheen: 0.2 },
           flamed: { roughness: 0.8, clearcoat: 0, clearcoatRoughness: 1, sheen: 0 },
-          natural: { roughness: 0.6, clearcoat: 0.05, clearcoatRoughness: 0.9, sheen: 0.1 }
+          natural: { roughness: 0.6, clearcoat: 0.05, clearcoatRoughness: 0.9, sheen: 0.1 },
+          matte: { roughness: 0.5, clearcoat: 0.02, clearcoatRoughness: 0.9, sheen: 0.05 }
         };
 
         const finish = options.finish || 'polished';
@@ -29810,9 +29906,11 @@
         }
 
         // Standard material for non-countertop elements (also used as fallback)
+        // Apply finish-based roughness if a finish is specified and no explicit roughness given
+        const finishRoughness = (options.finish && options.roughness === undefined) ? adjustedRoughness : undefined;
         const matOptions = {
           color: textureUrl ? 0xFFFFFF : baseColor,
-          roughness: options.roughness !== undefined ? options.roughness : 0.45,
+          roughness: options.roughness !== undefined ? options.roughness : (finishRoughness !== undefined ? finishRoughness : 0.45),
           metalness: options.metalness !== undefined ? options.metalness : 0.02,
           side: options.side || THREE.FrontSide,
           flatShading: false
@@ -29823,9 +29921,12 @@
 
         const material = new THREE.MeshStandardMaterial(matOptions);
 
-        // Apply environment reflection for polished surfaces
+        // Apply environment reflection based on finish
         if (window.roomEnvMap) {
-          if (isPolished) {
+          if (options.finish) {
+            material.envMap = window.roomEnvMap;
+            material.envMapIntensity = finish === 'polished' ? 0.35 : (finish === 'honed' ? 0.12 : 0.08);
+          } else if (isPolished) {
             material.envMap = window.roomEnvMap;
             material.envMapIntensity = 0.35;
           }
@@ -32984,7 +33085,8 @@
             // Use same texture as countertop or a different material
             const bsMat = createTexturedMaterial(color, textureUrl, {
               roughness: 0.15,
-              metalness: 0.05
+              metalness: 0.05,
+              finish: el.finish || 'polished'
             });
 
             // Main backsplash panel - sits behind countertop, on top of counter surface
@@ -33030,7 +33132,8 @@
           if (el.waterfallSides && el.waterfallSides.length > 0) {
             const waterfallMat = createTexturedMaterial(color, textureUrl, {
               roughness: 0.1,
-              metalness: 0.08
+              metalness: 0.08,
+              finish: el.finish || 'polished'
             });
 
             // Waterfall drop height (default to floor = counter height)
@@ -33153,7 +33256,8 @@
           // Like real fabrication: horizontal run along X, perpendicular run along Z
           const lMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.1,
-            metalness: 0.08
+            metalness: 0.08,
+            finish: el.finish || 'polished'
           });
           const thickness = 0.1; // 3cm thickness (1.2")
 
@@ -33228,7 +33332,8 @@
           // Corner countertop - simple square slab for corner transitions
           const cornerMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.1,
-            metalness: 0.08
+            metalness: 0.08,
+            finish: el.finish || 'polished'
           });
           const thickness = 0.1; // 3cm thickness
 
@@ -33253,7 +33358,8 @@
           // U-shaped countertop
           const uMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.1,
-            metalness: 0.08
+            metalness: 0.08,
+            finish: el.finish || 'polished'
           });
           const thickness = 0.1; // 3cm thickness
 
@@ -33539,7 +33645,8 @@
           const tileDir = el.grainDirection || 0;
           const tileMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.3,
-            metalness: 0.05
+            metalness: 0.05,
+            finish: el.finish || 'polished'
           });
 
           // Apply texture rotation based on tile direction
@@ -33610,7 +33717,8 @@
           // Shower pan/base with slope and drain
           const panMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.6,
-            metalness: 0.1
+            metalness: 0.1,
+            finish: el.finish || 'polished'
           });
 
           // Main pan surface (slightly recessed in center for slope)
@@ -33685,7 +33793,8 @@
 
           const panelMat = createTexturedMaterial(color, textureUrl, {
             roughness: isShower ? 0.15 : 0.3,
-            metalness: isShower ? 0.1 : 0.05
+            metalness: isShower ? 0.1 : 0.05,
+            finish: el.finish || 'polished'
           });
 
           // Main panel (vertical orientation)
@@ -33762,7 +33871,8 @@
           // Material with accurate color/texture display
           const capMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.35,
-            metalness: 0.03
+            metalness: 0.03,
+            finish: el.finish || 'polished'
           });
 
           // Main cap surface with overhang on all visible sides
@@ -33941,7 +34051,8 @@
 
           const slabMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.35,
-            metalness: 0.05
+            metalness: 0.05,
+            finish: el.finish || 'polished'
           });
 
           // Main slab with overhang for visibility
@@ -34019,7 +34130,8 @@
           const mantelThickness = el.stoneThickness || 0.1;
           const mantelMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.5,
-            metalness: 0
+            metalness: 0,
+            finish: el.finish || 'polished'
           });
 
           // Main mantel shelf
@@ -34063,7 +34175,8 @@
           // Stone material with texture
           const surroundMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.35,
-            metalness: 0.08
+            metalness: 0.08,
+            finish: el.finish || 'polished'
           });
 
           // Darker interior material for the void
@@ -34222,7 +34335,8 @@
           const hearthThickness = el.stoneThickness || 0.08;
           const hearthMat = createTexturedMaterial(color, textureUrl, {
             roughness: 0.35,
-            metalness: 0.05
+            metalness: 0.05,
+            finish: el.finish || 'polished'
           });
 
           // Main hearth slab
@@ -37635,7 +37749,8 @@
             const capOverhang = 0.08; // 1" overhang on each side
             const capMat = createTexturedMaterial(color, textureUrl, {
               roughness: 0.35,
-              metalness: 0.02
+              metalness: 0.02,
+              finish: el.finish || 'polished'
             });
 
             // Main cap surface
@@ -44022,6 +44137,27 @@
           }
         }
 
+        // Surface finish picker
+        const finishRow = document.getElementById('finishRow');
+        const finishPicker = document.getElementById('finishPicker');
+        if (finishRow && finishPicker) {
+          const matCat = selectedElement.materialCategory;
+          const finishGroup = matCat ? CATEGORY_FINISH_GROUP[matCat] : null;
+          const finishOpts = finishGroup ? (FINISH_OPTIONS[finishGroup] || []) : [];
+          if (finishOpts.length > 0) {
+            finishRow.style.display = 'flex';
+            const currentFinish = (selectedElement.finish || 'polished').toLowerCase();
+            finishPicker.innerHTML = finishOpts.map(f => {
+              const fId = f.toLowerCase();
+              const isActive = fId === currentFinish;
+              return `<button class="finish-option${isActive ? ' active' : ''}" onclick="applyFinishToElement('${fId}')">${f}</button>`;
+            }).join('');
+          } else {
+            finishRow.style.display = 'none';
+            finishPicker.innerHTML = '';
+          }
+        }
+
         // Populate standard sizes dropdown
         const standardSizeRow = document.getElementById('standardSizeRow');
         const standardSizeSelect = document.getElementById('propStandardSize');
@@ -44666,6 +44802,45 @@
         }
         if (customWallThicknessRow && !isFullWall) customWallThicknessRow.style.display = 'none';
 
+        // Generic 3D height override for elements without specialized height controls
+        const generic3DHeightRow = document.getElementById('generic3DHeightRow');
+        const customGeneric3DHeightRow = document.getElementById('customGeneric3DHeightRow');
+        const typesWithSpecializedHeight = new Set([
+          'window', 'window-large', 'picture-window', 'window-bay', 'window-arch', 'window-circle',
+          'door', 'door-double', 'door-sliding', 'door-french', 'door-bifold', 'door-pocket', 'glass-door',
+          'wall', 'full-wall', 'pony-wall', 'half-wall', 'knee-wall',
+          'beam', 'header', 'beam-decorative', 'column', 'column-round',
+          'countertop', 'countertop-l', 'countertop-u', 'countertop-corner', 'island',
+          'flooring', 'tile', 'floor-tile', 'hardwood', 'laminate',
+          'wall-cap', 'bar-top', 'niche', 'niche-arched', 'niche-shelf'
+        ]);
+        const showGenericHeight = !typesWithSpecializedHeight.has(selectedElement.type);
+        if (generic3DHeightRow) {
+          generic3DHeightRow.style.display = showGenericHeight ? 'flex' : 'none';
+          if (showGenericHeight) {
+            const h3d = selectedElement.height3D;
+            const select = document.getElementById('propGeneric3DHeight');
+            if (h3d !== undefined && h3d !== null) {
+              const presets = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8];
+              const matchPreset = presets.find(p => Math.abs(h3d - p) < 0.02);
+              if (matchPreset !== undefined) {
+                select.value = matchPreset.toString();
+                if (customGeneric3DHeightRow) customGeneric3DHeightRow.style.display = 'none';
+              } else {
+                select.value = 'custom';
+                if (customGeneric3DHeightRow) {
+                  customGeneric3DHeightRow.style.display = 'flex';
+                  document.getElementById('propCustomGeneric3DHeight').value = h3d.toFixed(2);
+                }
+              }
+            } else {
+              select.value = 'default';
+              if (customGeneric3DHeightRow) customGeneric3DHeightRow.style.display = 'none';
+            }
+          }
+        }
+        if (customGeneric3DHeightRow && !showGenericHeight) customGeneric3DHeightRow.style.display = 'none';
+
         // Update pricing section
         const pricingSection = document.getElementById('pricingSection');
         if (pricingSection && checkPermission('canViewPrices')) {
@@ -44912,6 +45087,52 @@
       draw();
       update3DScene();
       showSnapFeedback(`Column size: ${Math.round(size * 12)}"×${Math.round(size * 12)}"`);
+    }
+
+    // Generic 3D height override for elements without specialized height controls
+    function updateGeneric3DHeight() {
+      if (!selectedElement || selectedElement.locked) return;
+
+      const select = document.getElementById('propGeneric3DHeight');
+      const value = select.value;
+      const customRow = document.getElementById('customGeneric3DHeightRow');
+
+      if (value === 'custom') {
+        customRow.style.display = 'flex';
+        const current = selectedElement.height3D || 3;
+        document.getElementById('propCustomGeneric3DHeight').value = current.toFixed(2);
+        return;
+      }
+
+      customRow.style.display = 'none';
+
+      if (value === 'default') {
+        delete selectedElement.height3D;
+      } else {
+        selectedElement.height3D = parseFloat(value);
+      }
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      const label = value === 'default' ? 'Default' : formatDimension(parseFloat(value));
+      showSnapFeedback(`3D Height: ${label}`);
+    }
+
+    function applyCustomGeneric3DHeight() {
+      if (!selectedElement || selectedElement.locked) return;
+
+      const input = document.getElementById('propCustomGeneric3DHeight');
+      const height = parseFloat(input.value);
+      if (height && height >= 0.1 && height <= 20) {
+        selectedElement.height3D = height;
+        markElement3DDirty(selectedElement.id);
+        saveUndoState();
+        draw();
+        update3DScene();
+        showSnapFeedback(`3D Height: ${formatDimension(height)}`);
+      }
     }
 
     // Update full wall height from dropdown
