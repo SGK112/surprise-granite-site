@@ -17286,6 +17286,9 @@
         <div class="material-swatch ${selectedMaterial?.id === mat.id ? 'selected' : ''}"
              style="background-color: ${mat.color || '#666'};"
              onclick="selectMaterial('${mat.id}')"
+             draggable="true"
+             ondragstart="dragMaterialSwatch(event, '${mat.id}')"
+             data-material-id="${mat.id}"
              data-url="${imageUrl || ''}"
              data-color="${mat.color || '#666'}"
              title="${tooltip}">
@@ -17587,6 +17590,14 @@
       updateProperties();
     }
 
+    // Drag-and-drop material swatch onto canvas
+    function dragMaterialSwatch(event, materialId) {
+      event.dataTransfer.setData('material-id', materialId);
+      event.dataTransfer.effectAllowed = 'copy';
+      // Also select it so the hint updates
+      selectMaterial(materialId);
+    }
+
     function selectMaterial(materialId) {
       // Find material in all categories
       for (const [cat, materials] of Object.entries(MATERIALS)) {
@@ -17681,6 +17692,8 @@
       // Clear selection after applying
       const prevMaterial = selectedMaterial.name;
       selectedMaterial = null;
+      materialHoverElement = null;
+      materialDropHighlight = null;
       renderMaterials(currentMaterialCategory);
 
       // Reset hint
@@ -18221,9 +18234,27 @@
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
         isHtmlDragging = true;
+
+        // Highlight element under cursor during material drag
+        if (selectedMaterial) {
+          const rect = canvas.getBoundingClientRect();
+          const screenX = e.clientX - rect.left;
+          const screenY = e.clientY - rect.top;
+          const { x, y } = screenToWorld(screenX, screenY);
+          const hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
+          const newHighlight = hit ? hit.id : null;
+          if (newHighlight !== materialDropHighlight) {
+            materialDropHighlight = newHighlight;
+            draw();
+          }
+        }
       });
       canvas.addEventListener('dragleave', () => {
         isHtmlDragging = false;
+        if (materialDropHighlight) {
+          materialDropHighlight = null;
+          draw();
+        }
       });
       canvas.addEventListener('drop', (e) => {
         isHtmlDragging = false;
@@ -22679,7 +22710,32 @@
       const isLOrUShape = el.type === 'countertop-l' || el.type === 'countertop-u';
       if (!isLOrUShape) {
         if (el.textureImg) {
-          ctx.drawImage(el.textureImg, x, y, w, h);
+          // Scale texture proportionally to slab dimensions for realistic stone/tile look
+          // Standard stone slab: 10ft × 5ft; tile: repeating at natural size
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, w, h);
+          ctx.clip();
+          // Create repeating pattern at proper scale
+          const imgW = el.textureImg.naturalWidth || el.textureImg.width;
+          const imgH = el.textureImg.naturalHeight || el.textureImg.height;
+          if (imgW > 0 && imgH > 0) {
+            // For stone: map the slab image across element proportionally
+            // For small elements, show full texture; for large, tile it
+            const slabWidthPx = 10 * pixelsPerFoot; // 10ft slab width
+            const slabHeightPx = 5 * pixelsPerFoot; // 5ft slab height
+            const drawW = Math.max(w, slabWidthPx);
+            const drawH = drawW * (imgH / imgW);
+            // Tile the texture across the element
+            for (let tx = x; tx < x + w; tx += drawW) {
+              for (let ty = y; ty < y + h; ty += drawH) {
+                ctx.drawImage(el.textureImg, tx, ty, drawW, drawH);
+              }
+            }
+          } else {
+            ctx.drawImage(el.textureImg, x, y, w, h);
+          }
+          ctx.restore();
         } else {
           ctx.fillStyle = el.color;
           ctx.fillRect(x, y, w, h);
@@ -22764,6 +22820,26 @@
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         ctx.textAlign = 'center';
         ctx.fillText(dimText, x + w/2, y + dimFontSize + 1);
+      }
+
+      // Material hover/drop highlight overlay
+      const isMaterialHover = (materialHoverElement === el.id || materialDropHighlight === el.id);
+      if (isMaterialHover) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#f9cb00';
+        if (!isLOrUShape) {
+          ctx.fillRect(x, y, w, h);
+        }
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#f9cb00';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        if (!isLOrUShape) {
+          ctx.strokeRect(x, y, w, h);
+        }
+        ctx.setLineDash([]);
+        ctx.restore();
       }
 
       // Lock icon (drawn in rotated context)
@@ -23360,6 +23436,18 @@
 
         ctx.restore();
         return;
+      }
+
+      // Material hover preview — highlight element under cursor when a material is selected
+      if (selectedMaterial && currentTool === 'select' && !isDragging) {
+        const hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
+        const newHover = hit ? hit.id : null;
+        if (newHover !== materialHoverElement) {
+          materialHoverElement = newHover;
+          draw();
+        }
+        canvas.style.cursor = hit ? 'copy' : 'crosshair';
+        if (!isDragging && !isResizing) return;
       }
 
       // Update cursor when hovering over room resize handles
@@ -24032,6 +24120,19 @@
           if (lockMode) {
             cancelLockMode();
           }
+          // Cancel material selection
+          if (selectedMaterial) {
+            selectedMaterial = null;
+            materialHoverElement = null;
+            materialDropHighlight = null;
+            renderMaterials(currentMaterialCategory);
+            const hint = document.querySelector('.material-hint');
+            if (hint) {
+              hint.innerHTML = 'Click material, then click element to apply';
+              hint.style.borderColor = 'var(--border)';
+            }
+            canvas.style.cursor = 'default';
+          }
           selectedElement = null;
           hideContextMenu();
           updateProperties();
@@ -24076,6 +24177,8 @@
 
     // Track if HTML5 drag is in progress
     let isHtmlDragging = false;
+    let materialDropHighlight = null; // Element ID highlighted during material drag
+    let materialHoverElement = null; // Element highlighted during material select+hover
 
     // Mouse wheel zoom with throttling for smooth trackpad support
     let lastWheelTime = 0;
@@ -24188,6 +24291,25 @@
       const { x, y } = screenToWorld(screenX, screenY);
 
       console.log('onDrop called at', x, y);
+
+      // Check for material swatch drag-and-drop
+      const materialId = e.dataTransfer.getData('material-id');
+      if (materialId) {
+        const hitElement = [...elements].reverse().find(el => isPointInElement(x, y, el));
+        if (hitElement) {
+          // Select the material first (if not already)
+          selectMaterial(materialId);
+          const applied = applyMaterialToElement(hitElement);
+          if (applied) {
+            selectedElement = hitElement;
+            updateProperties();
+            draw();
+          }
+        }
+        materialDropHighlight = null;
+        draw();
+        return;
+      }
 
       // Check for element-type (sidebar elements)
       const type = e.dataTransfer.getData('element-type');
