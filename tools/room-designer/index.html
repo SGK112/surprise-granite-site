@@ -32996,10 +32996,9 @@
           const edgeProfile = el.edgeProfile || 'eased';
 
           // Create countertop material with proper texture scaling based on dimensions
-          // Pass width and depth for realistic stone pattern sizing
+          // Roughness is controlled by finish settings (polished=0.08, honed=0.45, etc.)
+          // Do NOT pass explicit roughness — it overrides finish-based values
           const ctopMat = createTexturedMaterial(color, textureUrl, {
-            roughness: 0.35,   // Slightly lower roughness for better texture visibility
-            metalness: 0.02,   // Minimal metalness to reduce wash-out
             isCountertop: true,
             width: w,
             depth: d,
@@ -33053,8 +33052,6 @@
             }
 
             const dropEdgeMat = createTexturedMaterial(color, textureUrl, {
-              roughness: 0.3,
-              metalness: 0.02,
               isCountertop: true,
               width: dropEdgeW,
               depth: 0.06,
@@ -33338,12 +33335,9 @@
           }
 
           // Edge rendering - only for decorative profiles that need visible geometry
-
-          // For decorative edges (bevel, ogee, bullnose, etc.), use polished material to highlight profile
-          const frontEdgeMat = skipEdgeProfile ? ctopMat : createTexturedMaterial(color, textureUrl, {
-            roughness: 0.18,  // Slightly more polished than body to highlight edge profile
-            metalness: 0.02
-          });
+          // Use the same material as the body for seamless appearance
+          // The edge profile SHAPE provides visual differentiation, not a different material
+          const frontEdgeMat = ctopMat;
 
           // waterfallSides already declared above - use those variables
 
