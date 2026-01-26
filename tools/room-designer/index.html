@@ -1090,10 +1090,13 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 8px;
+      max-height: 500px;
+      overflow-y: auto;
     }
 
     .material-swatch {
       aspect-ratio: 1;
+      min-height: 80px;
       border-radius: 8px;
       cursor: pointer;
       border: 2px solid transparent;
@@ -1102,6 +1105,16 @@
       background-position: center;
       position: relative;
       overflow: hidden;
+    }
+
+    .material-swatch img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
     }
 
     .material-swatch:hover {
@@ -1119,39 +1132,90 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.85));
-      padding: 20px 6px 6px;
-      font-size: 9px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9));
+      padding: 22px 5px 5px;
+      font-size: 11px;
+      line-height: 1.2;
       text-align: center;
-      font-weight: 500;
+      font-weight: 600;
+      z-index: 2;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
 
     .material-price-badge {
       position: absolute;
-      top: 4px;
+      bottom: 24px;
       right: 4px;
       background: var(--gold);
       color: #000;
       padding: 2px 5px;
       border-radius: 4px;
-      font-size: 8px;
-      font-weight: 600;
-      z-index: 2;
+      font-size: 9px;
+      font-weight: 700;
+      z-index: 3;
     }
 
     .material-brand-badge {
       position: absolute;
       top: 4px;
       left: 4px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       color: #fff;
-      padding: 2px 5px;
+      padding: 2px 6px;
       border-radius: 4px;
-      font-size: 7px;
-      font-weight: 500;
-      z-index: 2;
+      font-size: 8px;
+      font-weight: 600;
+      z-index: 3;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+    }
+
+    .material-distributor-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(16, 185, 129, 0.9);
+      color: #fff;
+      font-size: 7px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      z-index: 3;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .material-trade-label {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    #distributor-loading-indicator {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 16px 8px;
+      color: var(--gold);
+      font-style: italic;
+      opacity: 0.7;
+      font-size: 12px;
+    }
+
+    .material-brand-header {
+      grid-column: 1 / -1;
+      background: var(--primary);
+      color: #fff;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .material-brand-header:first-child {
+      margin-top: 0;
     }
 
     .material-no-texture-badge {
@@ -7430,6 +7494,7 @@
               <button class="material-tab" onclick="showMaterialCategory('quartz', this)">Quartz</button>
               <button class="material-tab" onclick="showMaterialCategory('marble', this)">Marble</button>
               <button class="material-tab" onclick="showMaterialCategory('quartzite', this)">Quartzite</button>
+              <button class="material-tab" onclick="showMaterialCategory('porcelain', this)">Porcelain</button>
               <!-- Flooring -->
               <button class="material-tab" onclick="showMaterialCategory('tile', this)">Tile</button>
               <button class="material-tab" onclick="showMaterialCategory('flooring', this)">LVT</button>
@@ -7440,6 +7505,26 @@
               <!-- Specialty -->
               <button class="material-tab" onclick="showMaterialCategory('showerPanels', this)">Shower</button>
               <button class="material-tab" onclick="showMaterialCategory('flooringTrims', this)">Trims</button>
+            </div>
+            <!-- Material Filters -->
+            <div class="material-filter" style="padding: 6px 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+              <select id="brandFilter" onchange="applyMaterialFilters()" style="flex: 1; min-width: 80px; padding: 4px 6px; border-radius: 4px; border: 1px solid #333; background: #1a1a2e; color: #fff; font-size: 10px;">
+                <option value="">All Vendors</option>
+              </select>
+              <select id="priceFilter" onchange="applyMaterialFilters()" style="flex: 1; min-width: 80px; padding: 4px 6px; border-radius: 4px; border: 1px solid #333; background: #1a1a2e; color: #fff; font-size: 10px;">
+                <option value="">All Prices</option>
+                <option value="has">Has Price</option>
+                <option value="0-5">Under $5/sf</option>
+                <option value="5-15">$5–$15/sf</option>
+                <option value="15-30">$15–$30/sf</option>
+                <option value="30-50">$30–$50/sf</option>
+                <option value="50-100">$50–$100/sf</option>
+                <option value="100+">$100+/sf</option>
+              </select>
+              <select id="finishFilter" onchange="applyMaterialFilters()" style="flex: 1; min-width: 80px; padding: 4px 6px; border-radius: 4px; border: 1px solid #333; background: #1a1a2e; color: #fff; font-size: 10px;">
+                <option value="">All Finishes</option>
+              </select>
+              <button onclick="clearAllMaterialFilters()" style="padding: 4px 6px; border-radius: 4px; border: none; background: #333; color: #fff; font-size: 9px; cursor: pointer;" title="Clear all filters">✕</button>
             </div>
             <div class="material-grid" id="materialGrid">
               <!-- Materials rendered by JS -->
@@ -8323,7 +8408,7 @@
             </div>
             <div class="property-row" id="edgeProfileRow" style="display: none;">
               <span class="property-label">Edge Profile</span>
-              <select class="property-select" id="propEdgeProfile" onchange="updateEdgeProfile()">
+              <select class="property-select" id="propEdgeProfile" onchange="updateSelectedEdgeProfile()">
                 <optgroup label="★★★★★ Most Durable">
                   <option value="full-bullnose">Full Bullnose - Fully rounded, nearly indestructible</option>
                   <option value="half-bullnose">Half Bullnose - Rounded top, flat bottom</option>
@@ -13529,11 +13614,6 @@
     // Materials library using actual Surprise Granite product images + Daltile CTF Price List
     const MATERIALS = {
       granite: [
-        // Surprise Granite Collection
-        { id: 'granite-blackwood', name: 'Blackwood', color: '#2a2a2a', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb28c02fbc1f8_cambria-surprise-granite-blackwood-quartz-close-up.webp', brand: 'Cambria' },
-        { id: 'granite-hermitage', name: 'Hermitage', color: '#8b7355', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb20e81fbb85f_cambria-surprise-granite-hermitage-close-up.webp', brand: 'Cambria' },
-        { id: 'granite-winterbourne', name: 'Winterbourne', color: '#e8e4dc', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2082efbb815_cambria-surprise-granite-winterbourne-close-up.webp', brand: 'Cambria' },
-        { id: 'granite-clovelly', name: 'Clovelly', color: '#c9bfb0', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb2275dfbb824_cambria-surprise-granite-clovelly-moment2.webp', brand: 'Cambria' },
         // Daltile Natural Stone - Granite (CTF Price List Jan 2026)
         { id: 'daltile-absolute-black', name: 'Absolute Black', color: '#0a0a0a', sku: 'L75712121L', price: 10.45, brand: 'Daltile' },
         { id: 'daltile-alaska-white', name: 'Alaska White', color: '#E8E4E0', sku: 'L77612121L', price: 23.40, brand: 'Daltile' },
@@ -13618,6 +13698,7 @@
         { id: 'daltile-sea-pearl', name: 'Sea Pearl', color: '#D8E0E8', sku: 'L02312121L', price: 39.85, brand: 'Daltile' },
         { id: 'daltile-madre-perla', name: 'Madre Perla', color: '#F0E8E0', sku: 'L02812121L', price: 31.20, brand: 'Daltile' }
       ],
+      porcelain: [],
       cabinets: [
         { id: 'cabinet-white', name: 'Shaker White', color: '#f5f5f5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb22994fbb0d6_Liberty%20Shaker%20White%20Cabinet.webp' },
         { id: 'cabinet-grey', name: 'Shaker Grey', color: '#7a7a7a', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb22121fbb0d7_Liberty%20Shaker%20Grey%20Cabinet.webp' },
@@ -13861,23 +13942,34 @@
         const stonePricing = await response.json();
         let addedCount = 0;
 
-        // Merge each category
+        // Merge each category — deduplicate by BOTH id AND name
         for (const category of ['granite', 'quartz', 'quartzite', 'marble', 'porcelain']) {
-          if (stonePricing[category] && MATERIALS[category]) {
-            // Get existing IDs to avoid duplicates
-            const existingIds = new Set(MATERIALS[category].map(m => m.id));
+          if (stonePricing[category]) {
+            if (!MATERIALS[category]) MATERIALS[category] = [];
 
-            // Add new materials that don't already exist
+            const existingIds = new Set(MATERIALS[category].map(m => m.id));
+            const existingNames = new Set(MATERIALS[category].map(m => (m.name || '').toLowerCase().trim()));
+
             for (const material of stonePricing[category]) {
-              if (!existingIds.has(material.id)) {
-                MATERIALS[category].push(material);
-                addedCount++;
+              if (existingIds.has(material.id)) continue;
+
+              const nameKey = (material.name || '').toLowerCase().trim();
+              if (existingNames.has(nameKey)) {
+                // Same name already exists (possibly different distributor)
+                // Merge price into existing if it lacks one
+                const existing = MATERIALS[category].find(m => (m.name || '').toLowerCase().trim() === nameKey);
+                if (existing && !existing.price && material.price) {
+                  existing.price = material.price;
+                  existing.tier = material.tier;
+                }
+                continue;
               }
+
+              MATERIALS[category].push(material);
+              existingIds.add(material.id);
+              existingNames.add(nameKey);
+              addedCount++;
             }
-          } else if (stonePricing[category]) {
-            // Category doesn't exist in MATERIALS, create it
-            MATERIALS[category] = stonePricing[category];
-            addedCount += stonePricing[category].length;
           }
         }
 
@@ -13885,15 +13977,884 @@
         console.log(`Loaded ${addedCount} stone materials from pricing file`);
 
         // Refresh the materials panel if it's currently showing a stone category
-        const activeCategory = document.querySelector('.material-tab.active')?.dataset?.category;
-        if (['granite', 'quartz', 'quartzite', 'marble'].includes(activeCategory)) {
-          renderMaterials(activeCategory);
+        if (['granite', 'quartz', 'quartzite', 'marble', 'porcelain'].includes(currentMaterialCategory)) {
+          renderMaterials(currentMaterialCategory);
         }
 
         return addedCount;
       } catch (error) {
         console.warn('Could not load stone pricing:', error);
         return 0;
+      }
+    }
+
+    // ===== LOAD COUNTERTOPS.JSON (874 products with images) =====
+    let countertopsJsonLoaded = false;
+
+    // Brand slug → display name mapping
+    const BRAND_SLUG_MAP = {
+      'msi-surfaces': 'MSI Surfaces',
+      'cambria': 'Cambria',
+      'pentalquartz': 'Pentalquartz',
+      'radianz-quartz': 'Radianz',
+      'silestone': 'Silestone',
+      'bolder-image-stone': 'Bolder Image Stone',
+      'cosentino': 'Cosentino',
+      'sensa': 'Sensa',
+      'arizona-tile': 'Arizona Tile',
+      'lx-hausys': 'LX Hausys',
+      'daltile': 'Daltile'
+    };
+
+    // Color name → hex mapping for primaryColor field
+    const COLOR_NAME_MAP = {
+      'White': '#F5F5F5',
+      'Gray': '#888888',
+      'Cream': '#F5F0E0',
+      'Black': '#1a1a1a',
+      'Beige': '#D4C4A8',
+      'Brown': '#6B4226',
+      'Gold': '#C8A84E',
+      'Green': '#4A6B4A',
+      'Blue': '#4A6B8C',
+      'Red': '#8B4A4A',
+      'Tan': '#C8B08A',
+      'Silver': '#A8A8A8',
+      'Multi': '#B0A090',
+      'Yellow': '#D4C878',
+      'Pink': '#C8A0A0',
+      'Orange': '#C88A4A',
+      'Purple': '#6B4A8B',
+      'Taupe': '#9B8878'
+    };
+
+    // Type → category mapping
+    const TYPE_CATEGORY_MAP = {
+      'Quartz': 'quartz',
+      'Granite': 'granite',
+      'Marble': 'marble',
+      'Quartzite': 'quartzite',
+      'Porcelain': 'porcelain',
+      'Dekton': 'porcelain'
+    };
+
+    async function loadCountertopsJson() {
+      if (countertopsJsonLoaded) return 0;
+
+      try {
+        // Determine the path relative to the room designer
+        const basePath = window.location.pathname.includes('/tools/room-designer')
+          ? '../../data/countertops.json'
+          : '/data/countertops.json';
+
+        const response = await fetch(basePath);
+        if (!response.ok) {
+          console.warn('countertops.json not found at', basePath);
+          return 0;
+        }
+
+        const data = await response.json();
+        const countertops = data.countertops || [];
+        console.log(`Loaded countertops.json: ${countertops.length} products`);
+
+        // Build existing name sets per category to avoid duplicates
+        const existingNames = {};
+        for (const cat of Object.keys(MATERIALS)) {
+          if (Array.isArray(MATERIALS[cat])) {
+            existingNames[cat] = new Set(
+              MATERIALS[cat].map(m => (m.name || '').toLowerCase().trim())
+            );
+          }
+        }
+
+        let added = 0;
+        const brandCounts = {};
+
+        for (const product of countertops) {
+          if (!product.name || !product.primaryImage) continue;
+          if (!product.primaryImage.startsWith('http')) continue;
+
+          // Map type to category
+          const category = TYPE_CATEGORY_MAP[product.type];
+          if (!category) continue;
+
+          // Ensure category exists
+          if (!MATERIALS[category]) MATERIALS[category] = [];
+          if (!existingNames[category]) existingNames[category] = new Set();
+
+          // Deduplicate by name (case-insensitive)
+          const nameKey = product.name.toLowerCase().trim();
+          if (existingNames[category].has(nameKey)) {
+            // If existing material has no image, update it with the image from countertops.json
+            const existing = MATERIALS[category].find(m => (m.name || '').toLowerCase().trim() === nameKey);
+            if (existing && (!existing.url || !existing.url.startsWith('http')) && product.primaryImage) {
+              existing.url = product.primaryImage;
+              existing.source = existing.source ? existing.source + '+countertops.json' : 'countertops.json';
+            }
+            continue;
+          }
+
+          // Map brand slug to display name
+          const brandDisplay = BRAND_SLUG_MAP[product.brand] ||
+            (product.brand || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+          // Map color name to hex
+          const colorHex = COLOR_NAME_MAP[product.primaryColor] || '#888888';
+
+          const material = {
+            id: `ctjson-${product.slug || product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            name: product.name,
+            brand: brandDisplay,
+            url: product.primaryImage,
+            color: colorHex,
+            price: null, // Price comes from stone-pricing.json
+            primaryColor: product.primaryColor || '',
+            style: product.style || '',
+            source: 'countertops.json'
+          };
+
+          MATERIALS[category].push(material);
+          existingNames[category].add(nameKey);
+          added++;
+
+          // Track brand counts
+          brandCounts[brandDisplay] = (brandCounts[brandDisplay] || 0) + 1;
+        }
+
+        countertopsJsonLoaded = true;
+        console.log(`Added ${added} countertops from countertops.json`);
+        console.log('By brand:', brandCounts);
+
+        // Merge pricing from stone-pricing into newly added materials
+        mergePricingIntoMaterials();
+
+        // Refresh materials panel
+        renderMaterials(currentMaterialCategory);
+
+        return added;
+      } catch (error) {
+        console.warn('Could not load countertops.json:', error);
+        return 0;
+      }
+    }
+
+    /**
+     * Merge pricing data from stone-pricing materials into countertops.json materials
+     * that were added without prices
+     */
+    function mergePricingIntoMaterials() {
+      for (const category of Object.keys(MATERIALS)) {
+        if (!Array.isArray(MATERIALS[category])) continue;
+
+        // Build a price lookup from materials that have prices
+        const priceLookup = {};
+        MATERIALS[category].forEach(m => {
+          if (m.price && m.name) {
+            priceLookup[m.name.toLowerCase().trim()] = m.price;
+          }
+        });
+
+        // Apply prices to materials that are missing them
+        MATERIALS[category].forEach(m => {
+          if (!m.price && m.name) {
+            const key = m.name.toLowerCase().trim();
+            if (priceLookup[key]) {
+              m.price = priceLookup[key];
+            }
+          }
+        });
+      }
+    }
+
+    // ===== HELPER: Detect valid image URL (HTTP or relative path) =====
+    function hasValidImageUrl(url) {
+      if (!url) return false;
+      return url.startsWith('http') || url.startsWith('/');
+    }
+
+    // ===== LOAD TILE.JSON (466 tiles with images) =====
+    let tileJsonLoaded = false;
+
+    async function loadTileJson() {
+      if (tileJsonLoaded) return 0;
+
+      try {
+        const basePath = window.location.pathname.includes('/tools/room-designer')
+          ? '../../data/tile.json'
+          : '/data/tile.json';
+
+        const response = await fetch(basePath);
+        if (!response.ok) {
+          console.warn('tile.json not found at', basePath);
+          return 0;
+        }
+
+        const data = await response.json();
+        const tiles = data.tiles || [];
+        console.log(`Loaded tile.json: ${tiles.length} products`);
+
+        // Build existing name set for tile category to avoid duplicates
+        if (!MATERIALS.tile) MATERIALS.tile = [];
+        const existingNames = new Set(
+          MATERIALS.tile.map(m => (m.name || '').toLowerCase().trim())
+        );
+
+        let added = 0;
+        const brandCounts = {};
+
+        const TILE_BRAND_MAP = {
+          'msi': 'MSI',
+          'bravo-tile': 'Bravo Tile'
+        };
+
+        for (const product of tiles) {
+          if (!product.name) continue;
+          if (!product.primaryImage && !product.image) continue;
+
+          const imageUrl = product.primaryImage || product.image;
+          if (!hasValidImageUrl(imageUrl)) continue;
+
+          const nameKey = product.name.toLowerCase().trim();
+          if (existingNames.has(nameKey)) {
+            // Backfill image if existing entry lacks one
+            const existing = MATERIALS.tile.find(m => (m.name || '').toLowerCase().trim() === nameKey);
+            if (existing && !hasValidImageUrl(existing.url) && imageUrl) {
+              existing.url = imageUrl;
+            }
+            continue;
+          }
+
+          const brandDisplay = TILE_BRAND_MAP[product.brand] ||
+            (product.brand || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+          const COLOR_HEX = {
+            'White': '#F5F5F5', 'Gray': '#888888', 'Beige': '#D4C5A9',
+            'Brown': '#8B6914', 'Black': '#2C2C2C', 'Cream': '#FFFDD0',
+            'Gold': '#D4AF37', 'Blue': '#4169E1', 'Green': '#2E8B57',
+            'Silver': '#C0C0C0', 'Ivory': '#FFFFF0', 'Multi': '#C0C0C0'
+          };
+
+          const material = {
+            id: `tile-${product.slug || product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            name: product.name,
+            brand: brandDisplay,
+            url: imageUrl,
+            color: COLOR_HEX[product.primaryColor] || '#888888',
+            price: null,
+            material: product.material || '',
+            tileType: product.type || '',
+            subcategory: product.subcategory || '',
+            source: 'tile.json'
+          };
+
+          MATERIALS.tile.push(material);
+          existingNames.add(nameKey);
+          added++;
+          brandCounts[brandDisplay] = (brandCounts[brandDisplay] || 0) + 1;
+        }
+
+        tileJsonLoaded = true;
+        console.log(`Added ${added} tiles from tile.json`);
+        console.log('Tile brands:', brandCounts);
+
+        return added;
+      } catch (error) {
+        console.warn('Could not load tile.json:', error);
+        return 0;
+      }
+    }
+
+    // ===== LOAD BRAVO-TILE.JSON (82 products with wholesale pricing) =====
+    let bravoTileJsonLoaded = false;
+
+    async function loadBravoTileJson() {
+      if (bravoTileJsonLoaded) return 0;
+
+      try {
+        const basePath = window.location.pathname.includes('/tools/room-designer')
+          ? '../../data/bravo-tile.json'
+          : '/data/bravo-tile.json';
+
+        const response = await fetch(basePath);
+        if (!response.ok) {
+          console.warn('bravo-tile.json not found at', basePath);
+          return 0;
+        }
+
+        const data = await response.json();
+        const products = data.products || [];
+        console.log(`Loaded bravo-tile.json: ${products.length} products`);
+
+        if (!MATERIALS.tile) MATERIALS.tile = [];
+
+        // Build lookup of existing tile materials by name for price merging
+        const existingByName = {};
+        MATERIALS.tile.forEach(m => {
+          if (m.name) existingByName[m.name.toLowerCase().trim()] = m;
+        });
+
+        let pricesMerged = 0;
+        let added = 0;
+
+        for (const product of products) {
+          if (!product.name) continue;
+
+          const nameKey = product.name.toLowerCase().trim();
+          const existing = existingByName[nameKey];
+
+          if (existing) {
+            // Merge wholesale pricing into existing material
+            if (product.wholesalePrice && !existing.price) {
+              existing.price = product.wholesalePrice;
+              existing.unit = product.unit || 'SF';
+              pricesMerged++;
+            }
+            // Merge additional data
+            if (product.size && !existing.size) existing.size = product.size;
+            if (product.finish && !existing.finish) existing.finish = product.finish;
+            if (product.origin && !existing.origin) existing.origin = product.origin;
+            // Backfill image if missing
+            if (!hasValidImageUrl(existing.url) && hasValidImageUrl(product.primaryImage)) {
+              existing.url = product.primaryImage;
+            }
+          } else {
+            // New product not in tile.json — add it
+            const imageUrl = product.primaryImage || '';
+            const COLOR_HEX = {
+              'White': '#F5F5F5', 'Gray': '#888888', 'Beige': '#D4C5A9',
+              'Brown': '#8B6914', 'Black': '#2C2C2C', 'Cream': '#FFFDD0',
+              'Gold': '#D4AF37', 'Blue': '#4169E1', 'Green': '#2E8B57',
+              'Silver': '#C0C0C0', 'Ivory': '#FFFFF0', 'Multi': '#C0C0C0'
+            };
+
+            const material = {
+              id: `bravo-${product.slug || product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+              name: product.name,
+              brand: 'Bravo Tile',
+              url: imageUrl,
+              color: COLOR_HEX[product.primaryColor] || '#888888',
+              price: product.wholesalePrice || null,
+              unit: product.unit || 'SF',
+              size: product.size || '',
+              finish: product.finish || '',
+              origin: product.origin || '',
+              material: product.category || '',
+              subcategory: product.subcategory || '',
+              source: 'bravo-tile.json'
+            };
+
+            MATERIALS.tile.push(material);
+            existingByName[nameKey] = material;
+            added++;
+          }
+        }
+
+        bravoTileJsonLoaded = true;
+        console.log(`Bravo Tile: merged ${pricesMerged} prices, added ${added} new products`);
+
+        // Refresh panel if showing tile
+        if (currentMaterialCategory === 'tile') {
+          renderMaterials('tile');
+        }
+
+        return pricesMerged + added;
+      } catch (error) {
+        console.warn('Could not load bravo-tile.json:', error);
+        return 0;
+      }
+    }
+
+    // Load products from Supabase and add to materials
+    let supabaseProductsLoaded = false;
+    async function loadSupabaseProducts() {
+      if (supabaseProductsLoaded) return;
+
+      // Inline config since getSupabaseConfig may not be defined yet
+      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+      try {
+        // Fetch ALL products (paginate)
+        let allProducts = [];
+        let offset = 0;
+        const limit = 1000;
+
+        while (true) {
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/shopify_products?select=id,name,handle,vendor,product_type,image_url,price,tags&limit=${limit}&offset=${offset}`,
+            {
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+              }
+            }
+          );
+
+          if (!response.ok) {
+            console.warn('Failed to fetch products:', response.status);
+            break;
+          }
+
+          const products = await response.json();
+          allProducts = allProducts.concat(products);
+
+          if (products.length < limit) break;
+          offset += limit;
+        }
+
+        const withImages = allProducts.filter(p => p.image_url).length;
+        console.log(`Fetched ${allProducts.length} products from Supabase (${withImages} with images)`);
+
+        // Categorize and add products
+        let countertops = 0, tiles = 0, floors = 0, skippedDupes = 0;
+
+        // Track existing IDs AND NAMES to avoid duplicates across all sources
+        const existingIds = {};
+        const existingNames = {};
+        for (const cat of Object.keys(MATERIALS)) {
+          if (Array.isArray(MATERIALS[cat])) {
+            existingIds[cat] = new Set(MATERIALS[cat].map(m => m.id));
+            existingNames[cat] = new Set(MATERIALS[cat].map(m => (m.name || '').toLowerCase().trim()));
+          }
+        }
+
+        // Helper: detect tile-like product names
+        const isTileName = (n) => /\btile\b|\btiles\b|\bpaver\b|\bpavers\b|\bmosaic\b|\bbacksplash\b|\bsubway\b|\bledger\b|\bmolding\b|\btrim\b|\b\d+x\d+\b/.test(n);
+
+        // Only import Supabase products that are surface materials for the Room Designer
+        const allowedTypes = new Set([
+          'tile', 'ceramic', 'glass', 'quartz', 'granite', 'marble',
+          'travertine', 'quartzite', 'porcelain', 'dekton', 'natural stone',
+          'luxury vinyl', 'slate', 'paver', 'limestone', 'trim'
+        ]);
+
+        for (const product of allProducts) {
+          // Skip products without name or valid image
+          if (!product.name || !product.image_url) continue;
+          if (product.image_url.includes('placeholder') || !product.image_url.startsWith('http')) continue;
+
+          const type = (product.product_type || '').toLowerCase();
+          const name = (product.name || '').toLowerCase();
+          const vendor = (product.vendor || '').toLowerCase();
+
+          // Skip non-surface products entirely (sinks, faucets, furniture, etc.)
+          if (type && !allowedTypes.has(type) && !type.includes('tile') && !type.includes('floor') && !type.includes('slab') && !type.includes('countertop') && !type.includes('quartz') && !type.includes('granite') && !type.includes('marble')) {
+            continue;
+          }
+
+          // Determine category based on product_type and vendor
+          let category = null;
+
+          // Check vendor first - Bravo Tile products are always tile
+          if (vendor.includes('bravo') && vendor.includes('tile')) {
+            category = 'tile';
+            tiles++;
+          }
+          // Direct tile types
+          else if (type === 'tile' || type === 'ceramic' || type === 'glass' || type === 'slate' || type === 'paver' || type === 'limestone' || type === 'trim') {
+            category = 'tile';
+            tiles++;
+          }
+          // Travertine: check if it's a tile or a slab
+          else if (type === 'travertine') {
+            if (isTileName(name)) { category = 'tile'; tiles++; }
+            else { category = 'marble'; countertops++; }
+          }
+          // Natural stone: check for tile-like names FIRST, then stone categories
+          else if (type === 'natural stone') {
+            if (isTileName(name)) { category = 'tile'; tiles++; }
+            else if (name.includes('marble')) { category = 'marble'; countertops++; }
+            else if (name.includes('quartzite')) { category = 'quartzite'; countertops++; }
+            else { category = 'granite'; countertops++; }
+          }
+          // Direct stone types
+          else if (type === 'quartz') { category = 'quartz'; countertops++; }
+          else if (type === 'granite') { category = 'granite'; countertops++; }
+          else if (type === 'marble') { category = 'marble'; countertops++; }
+          else if (type === 'quartzite') { category = 'quartzite'; countertops++; }
+          else if (type === 'porcelain' || type === 'dekton') { category = 'porcelain'; countertops++; }
+          // Flooring: LVP/LVT/Luxury Vinyl
+          else if (type === 'luxury vinyl' || type.includes('floor') || name.includes('lvp') || name.includes('lvt') || name.includes('flooring')) {
+            category = 'flooring';
+            floors++;
+          }
+          // Fallback tile detection
+          else if (type.includes('tile') || isTileName(name)) {
+            category = 'tile';
+            tiles++;
+          }
+          // Fallback stone detection
+          else if (type.includes('quartz') || type.includes('granite') || type.includes('marble') || type.includes('slab') || type.includes('countertop')) {
+            if (name.includes('quartzite')) { category = 'quartzite'; }
+            else if (name.includes('marble')) { category = 'marble'; }
+            else if (name.includes('granite')) { category = 'granite'; }
+            else { category = 'quartz'; }
+            countertops++;
+          }
+          // Skip everything else (sinks, faucets, furniture, etc.)
+
+          if (!category) continue;
+
+          // Create material object
+          const matId = `supabase-${product.id}`;
+          if (existingIds[category]?.has(matId)) continue;
+
+          // Skip if a material with the same name already exists in this category
+          const nameKey = (product.name || '').toLowerCase().trim();
+          if (existingNames[category]?.has(nameKey)) {
+            // Backfill image if existing entry lacks one
+            const existing = MATERIALS[category].find(m => (m.name || '').toLowerCase().trim() === nameKey);
+            if (existing && !hasValidImageUrl(existing.url) && product.image_url) {
+              existing.url = product.image_url;
+            }
+            skippedDupes++;
+            continue;
+          }
+
+          // Don't import Supabase prices for stone categories (they're full-slab prices, not per-sqft)
+          const stoneCategories = ['granite', 'quartz', 'quartzite', 'marble', 'porcelain'];
+          const skipPrice = stoneCategories.includes(category);
+
+          const material = {
+            id: matId,
+            name: product.name,
+            brand: product.vendor || '',
+            url: product.image_url || '',
+            price: skipPrice ? null : (product.price || null),
+            handle: product.handle || '',
+            color: '#888888',
+            source: 'supabase'
+          };
+
+          if (!MATERIALS[category]) MATERIALS[category] = [];
+          if (!existingNames[category]) existingNames[category] = new Set();
+          MATERIALS[category].push(material);
+          existingIds[category]?.add(matId);
+          existingNames[category].add(nameKey);
+        }
+
+        supabaseProductsLoaded = true;
+        console.log(`Added from Supabase: ${countertops} countertops, ${tiles} tiles, ${floors} flooring (${skippedDupes} name-dupes skipped)`);
+
+        // Refresh materials panel
+        renderMaterials(currentMaterialCategory);
+
+        return { countertops, tiles, floors };
+      } catch (error) {
+        console.warn('Could not load Supabase product images:', error);
+        return 0;
+      }
+    }
+
+    // ===== DISTRIBUTOR MARKETPLACE INTEGRATION =====
+    const MARKETPLACE_API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE)
+      ? window.SG_CONFIG.API_BASE
+      : 'https://surprise-granite-email-api.onrender.com';
+
+    const MARKETPLACE_ENDPOINTS = {
+      products: `${MARKETPLACE_API_BASE}/api/marketplace/products`,
+      slabs: `${MARKETPLACE_API_BASE}/api/marketplace/slabs`,
+      slabDetail: (id) => `${MARKETPLACE_API_BASE}/api/marketplace/slabs/${id}`,
+      slabInquiry: (id) => `${MARKETPLACE_API_BASE}/api/marketplace/slabs/${id}/inquiry`
+    };
+
+    // Map Room Designer categories → API material_type filter values
+    const CATEGORY_TO_API_MATERIAL = {
+      'granite': 'granite',
+      'quartz': 'quartz',
+      'marble': 'marble',
+      'quartzite': 'quartzite',
+      'porcelain': 'porcelain',
+      'tile': 'tile',
+      'flooring': 'flooring',
+      'hardscape': 'hardscape',
+      'cabinets': null,
+      'vanities': null,
+      'showerPanels': null,
+      'flooringTrims': null,
+      'cabinetAccessories': null
+    };
+
+    // Cache for distributor products per category
+    const distributorCache = {};
+    let distributorApiAvailable = null; // null = untested
+
+    function isStale(cacheEntry) {
+      if (!cacheEntry?.lastFetched) return true;
+      return (Date.now() - cacheEntry.lastFetched) > 5 * 60 * 1000; // 5 minutes
+    }
+
+    function getDisplayPrice(material) {
+      if (!PRICING_ACCESS.canViewPricing) return null;
+      const accountType = PRICING_ACCESS.accountType;
+      const isTradeAccount = ['fabricator', 'vendor', 'distributor'].includes(accountType);
+
+      if (material.source?.includes('distributor')) {
+        if (isTradeAccount && material.tradePrice) {
+          return { amount: material.tradePrice, label: 'Trade' };
+        }
+        if (material.retailPrice) {
+          return { amount: material.retailPrice, label: '' };
+        }
+      }
+      if (material.price) {
+        return { amount: material.price, label: '' };
+      }
+      return null;
+    }
+
+    function transformDistributorProduct(product, category, isSlab) {
+      const name = isSlab ? (product.product_name || product.name) : product.name;
+
+      // Resolve image URL from images array or primary_image_url
+      let resolvedImage = '';
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        const first = product.images[0];
+        resolvedImage = typeof first === 'string' ? first : (first.url || first.src || '');
+      }
+      if (!resolvedImage) {
+        resolvedImage = product.primary_image_url || '';
+      }
+
+      const colorHex = (typeof COLOR_NAME_MAP !== 'undefined' && (COLOR_NAME_MAP[product.color_family] || COLOR_NAME_MAP[product.primary_color]))
+        || product.color || '#888888';
+
+      const wholesalePrice = isSlab ? product.price_per_sqft : product.wholesale_price;
+      const retailPrice = product.retail_price || product.msrp_per_sqft || wholesalePrice;
+      const tradePrice = product.trade_price_per_sqft || wholesalePrice;
+
+      return {
+        id: `dist-${product.id}`,
+        name: name || 'Unknown Product',
+        brand: product.brand || (product.distributor?.company_name) || '',
+        url: resolvedImage,
+        color: colorHex,
+        price: wholesalePrice || null,
+        retailPrice: retailPrice || null,
+        tradePrice: tradePrice || null,
+        unit: isSlab ? 'sf' : (product.unit_type || 'sf'),
+        sku: product.sku || product.product_sku || '',
+        finish: product.finish || '',
+        material: product.material_type || '',
+        source: 'distributor',
+        distributorId: product.distributor_id,
+        distributorName: product.distributor?.company_name || '',
+        distributorLogo: product.distributor?.logo_url || '',
+        productUUID: product.id,
+        status: product.status || 'available',
+        isFeatured: product.is_featured || false
+      };
+    }
+
+    async function fetchDistributorProducts(category) {
+      const apiMaterialType = CATEGORY_TO_API_MATERIAL[category];
+      if (!apiMaterialType) return [];
+
+      // Return cached if fresh
+      if (distributorCache[category]?.loaded && !isStale(distributorCache[category])) {
+        return distributorCache[category].products;
+      }
+
+      // Prevent duplicate concurrent fetches
+      if (distributorCache[category]?.loading) {
+        return new Promise((resolve) => {
+          const check = setInterval(() => {
+            if (!distributorCache[category]?.loading) {
+              clearInterval(check);
+              resolve(distributorCache[category]?.products || []);
+            }
+          }, 100);
+          setTimeout(() => { clearInterval(check); resolve([]); }, 10000);
+        });
+      }
+
+      distributorCache[category] = { products: [], loaded: false, loading: true, error: null, lastFetched: null };
+
+      try {
+        const isSlabCategory = ['granite', 'quartz', 'marble', 'quartzite', 'porcelain'].includes(category);
+        const endpoint = isSlabCategory ? MARKETPLACE_ENDPOINTS.slabs : MARKETPLACE_ENDPOINTS.products;
+
+        const params = new URLSearchParams({
+          material_type: apiMaterialType,
+          limit: '100',
+          offset: '0'
+        });
+
+        const response = await fetch(`${endpoint}?${params.toString()}`, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+        const data = await response.json();
+        const rawProducts = isSlabCategory ? (data.slabs || []) : (data.products || []);
+        const materials = rawProducts.map(p => transformDistributorProduct(p, category, isSlabCategory));
+
+        distributorCache[category] = { products: materials, loaded: true, loading: false, error: null, lastFetched: Date.now() };
+        distributorApiAvailable = true;
+        console.log(`Loaded ${materials.length} distributor products for ${category}`);
+        return materials;
+      } catch (error) {
+        console.warn(`Could not load distributor products for ${category}:`, error.message);
+        distributorCache[category] = { products: [], loaded: false, loading: false, error: error.message, lastFetched: null };
+        if (distributorApiAvailable === null) distributorApiAvailable = false;
+        return [];
+      }
+    }
+
+    function mergeDistributorMaterials(category, newMaterials) {
+      if (!MATERIALS[category]) MATERIALS[category] = [];
+
+      const existingNames = new Set(MATERIALS[category].map(m => (m.name || '').toLowerCase().trim()));
+      const existingIds = new Set(MATERIALS[category].map(m => m.id));
+      let added = 0;
+
+      for (const mat of newMaterials) {
+        if (existingIds.has(mat.id)) continue;
+
+        const nameKey = (mat.name || '').toLowerCase().trim();
+        if (existingNames.has(nameKey)) {
+          // Backfill onto existing entry
+          const existing = MATERIALS[category].find(m => (m.name || '').toLowerCase().trim() === nameKey);
+          if (existing) {
+            if (!hasValidImageUrl(existing.url) && hasValidImageUrl(mat.url)) existing.url = mat.url;
+            if (!existing.price && mat.price) existing.price = mat.price;
+            if (mat.tradePrice) existing.tradePrice = mat.tradePrice;
+            if (mat.retailPrice) existing.retailPrice = mat.retailPrice;
+            existing.productUUID = mat.productUUID;
+            existing.distributorId = mat.distributorId;
+            existing.distributorName = mat.distributorName;
+            existing.distributorLogo = mat.distributorLogo;
+            existing.source = (existing.source || 'static') + '+distributor';
+          }
+          continue;
+        }
+
+        MATERIALS[category].push(mat);
+        existingIds.add(mat.id);
+        existingNames.add(nameKey);
+        added++;
+      }
+      if (added > 0) console.log(`Added ${added} new distributor materials to ${category}`);
+    }
+
+    async function loadDistributorDataForCategory(category) {
+      const apiMaterialType = CATEGORY_TO_API_MATERIAL[category];
+      if (!apiMaterialType) return;
+
+      if (distributorCache[category]?.loaded && !isStale(distributorCache[category])) return;
+
+      // Show loading indicator
+      const grid = document.getElementById('materialGrid');
+      if (grid && !distributorCache[category]?.loaded) {
+        const el = document.createElement('div');
+        el.id = 'distributor-loading-indicator';
+        el.textContent = 'Loading distributor inventory...';
+        grid.appendChild(el);
+      }
+
+      try {
+        const distributorMaterials = await fetchDistributorProducts(category);
+        if (distributorMaterials.length > 0) {
+          mergeDistributorMaterials(category, distributorMaterials);
+          if (currentMaterialCategory === category) {
+            renderMaterials(category);
+          }
+        }
+      } catch (err) {
+        console.warn('Distributor load failed for', category, err);
+      }
+
+      const loadingEl = document.getElementById('distributor-loading-indicator');
+      if (loadingEl) loadingEl.remove();
+    }
+
+    // Inquiry modal for distributor products
+    function showProductInquiryModal(materialId) {
+      let material = null;
+      for (const cat of Object.keys(MATERIALS)) {
+        if (Array.isArray(MATERIALS[cat])) {
+          material = MATERIALS[cat].find(m => m.id === materialId);
+          if (material) break;
+        }
+      }
+      if (!material || !material.productUUID) {
+        showToast('Product inquiry not available for this material', 'info');
+        return;
+      }
+
+      const user = window.SgAuth?.getUser?.();
+      const profile = window.SgAuth?.getProfile?.();
+      const displayPrice = getDisplayPrice(material);
+
+      const modalHtml = `
+        <div id="inquiryModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.remove()">
+          <div style="background:#1a1a2e;border:1px solid var(--gold);border-radius:12px;padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;">
+            <h3 style="color:var(--gold);margin:0 0 12px;">Inquire About ${material.name}</h3>
+            ${material.distributorName ? `<p style="font-size:13px;opacity:0.7;margin:0 0 4px;">Available from: ${material.distributorName}</p>` : ''}
+            ${displayPrice ? `<p style="font-size:14px;margin:0 0 16px;">Price: $${displayPrice.amount.toFixed(2)}/${material.unit || 'sf'}${displayPrice.label ? ' <span class="material-trade-label">(' + displayPrice.label + ')</span>' : ''}</p>` : '<div style="margin-bottom:16px;"></div>'}
+            <form id="inquiryForm" style="display:flex;flex-direction:column;gap:10px;">
+              <input type="text" name="name" placeholder="Your Name *" required value="${user?.user_metadata?.full_name || profile?.full_name || ''}" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;">
+              <input type="email" name="email" placeholder="Email *" required value="${user?.email || ''}" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;">
+              <input type="tel" name="phone" placeholder="Phone" value="${profile?.phone || ''}" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;">
+              <input type="text" name="company_name" placeholder="Company Name" value="${profile?.company_name || ''}" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;">
+              <textarea name="message" placeholder="Tell us about your project..." rows="3" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;resize:vertical;"></textarea>
+              <select name="timeline" style="padding:8px;border-radius:6px;border:1px solid #444;background:#0f0f23;color:#fff;font-size:14px;">
+                <option value="">When do you need this?</option>
+                <option value="asap">ASAP</option>
+                <option value="1_month">Within 1 month</option>
+                <option value="1_3_months">1-3 months</option>
+                <option value="3_plus_months">3+ months</option>
+                <option value="just_browsing">Just browsing</option>
+              </select>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                <button type="button" onclick="document.getElementById('inquiryModal').remove();" style="padding:8px 16px;border-radius:6px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;font-size:14px;">Cancel</button>
+                <button type="submit" style="padding:8px 16px;border-radius:6px;border:none;background:var(--gold);color:#000;cursor:pointer;font-weight:bold;font-size:14px;">Send Inquiry</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.getElementById('inquiryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await submitProductInquiry(material, e.target);
+      });
+    }
+
+    async function submitProductInquiry(material, form) {
+      const formData = new FormData(form);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+
+      try {
+        const response = await fetch(MARKETPLACE_ENDPOINTS.slabInquiry(material.productUUID), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.get('name'),
+            email: formData.get('email'),
+            phone: formData.get('phone') || undefined,
+            company_name: formData.get('company_name') || undefined,
+            inquirer_type: PRICING_ACCESS.accountType || 'homeowner',
+            message: formData.get('message') || undefined,
+            timeline: formData.get('timeline') || undefined,
+            project_type: 'room_designer'
+          })
+        });
+
+        if (response.ok) {
+          showToast('Inquiry sent! The distributor will contact you soon.', 'success');
+          document.getElementById('inquiryModal')?.remove();
+        } else {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to submit inquiry');
+        }
+      } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Inquiry';
       }
     }
 
@@ -13911,14 +14872,118 @@
       return 'premium';
     }
 
-    // Helper to proxy external CDN URLs for CORS (using images.weserv.nl)
+    // ===== CENTRALIZED CORS HANDLING =====
+    // Configuration for CORS-friendly domains
+    const CORS_CONFIG = {
+      // Domains that support CORS natively
+      corsFriendly: [
+        'cdn.shopify.com',
+        'supabase.co',
+        'images.weserv.nl',
+        'localhost',
+        window.location.hostname
+      ],
+      // Domains that need proxying
+      needsProxy: [
+        'cdn.msisurfaces.com',
+        'cdn.prod.website-files.com',
+        'uploads-ssl.webflow.com'
+      ],
+      // Proxy URL template
+      proxyUrl: 'https://images.weserv.nl/?url='
+    };
+
+    /**
+     * Check if URL needs CORS handling
+     */
+    function needsCorsHandling(url) {
+      if (!url) return false;
+      return CORS_CONFIG.corsFriendly.some(domain => url.includes(domain));
+    }
+
+    /**
+     * Check if URL needs to be proxied for CORS
+     */
+    function needsProxying(url) {
+      if (!url) return false;
+      return CORS_CONFIG.needsProxy.some(domain => url.includes(domain));
+    }
+
+    /**
+     * Get proxied URL for CORS (using images.weserv.nl)
+     */
     function getProxiedUrl(url) {
       if (!url) return url;
-      if (url.includes('cdn.msisurfaces.com')) {
-        // Use images.weserv.nl as image proxy - it adds CORS headers
-        return `https://images.weserv.nl/?url=${url.replace('https://', '')}`;
+      if (needsProxying(url)) {
+        return `${CORS_CONFIG.proxyUrl}${url.replace('https://', '').replace('http://', '')}`;
       }
       return url;
+    }
+
+    /**
+     * Centralized image loading with proper CORS handling
+     * @param {string} url - Image URL to load
+     * @param {function} onLoad - Callback when image loads
+     * @param {function} onError - Callback on error
+     * @returns {Image} - The image element
+     */
+    function loadImageWithCors(url, onLoad, onError) {
+      const img = new Image();
+
+      // Apply proxy if needed
+      const finalUrl = getProxiedUrl(url);
+
+      // Only set crossOrigin for CORS-friendly domains (including proxied ones)
+      if (needsCorsHandling(finalUrl) || needsProxying(url)) {
+        img.crossOrigin = 'anonymous';
+      }
+
+      img.onload = () => {
+        if (onLoad) onLoad(img);
+      };
+
+      img.onerror = (err) => {
+        console.warn('Image load failed:', url, err);
+        if (onError) onError(err);
+      };
+
+      img.src = finalUrl;
+      return img;
+    }
+
+    /**
+     * Load Three.js texture with proper CORS handling
+     * @param {string} url - Texture URL
+     * @param {function} onLoad - Callback with texture
+     * @param {function} onError - Callback on error
+     */
+    function loadTextureWithCors(url, onLoad, onError) {
+      // Apply proxy if needed
+      const finalUrl = getProxiedUrl(url);
+
+      // Check LRU cache first
+      const cached = getTextureFromCache(finalUrl);
+      if (cached) {
+        if (onLoad) onLoad(cached.clone());
+        return;
+      }
+
+      textureLoader.load(
+        finalUrl,
+        (texture) => {
+          // Cache the loaded texture
+          addTextureToCache(finalUrl, texture);
+          if (url !== finalUrl) {
+            addTextureToCache(url, texture);
+          }
+          if (onLoad) onLoad(texture);
+        },
+        undefined,
+        (err) => {
+          console.warn('Texture load failed:', url, err);
+          if (onError) onError(err);
+        }
+      );
     }
 
     // Cabinet Catalogs from Manufacturers
@@ -14248,8 +15313,8 @@
       return newRoom;
     }
 
-    // Delete a room
-    function deleteRoom(roomId) {
+    // Delete a room (legacy multi-room system)
+    function deleteRoomLegacy(roomId) {
       if (rooms.length <= 1) {
         showToast('Cannot delete the only room', 'error');
         return;
@@ -14281,7 +15346,7 @@
           <span class="room-name" ondblclick="event.stopPropagation(); renameRoom('${room.id}')" title="Double-click to rename">${room.name}</span>
           <span class="room-size">${room.width}'×${room.depth}'</span>
           <button class="room-edit-btn" onclick="event.stopPropagation(); renameRoom('${room.id}')" title="Rename room">✎</button>
-          ${rooms.length > 1 ? `<button class="room-delete-btn" onclick="event.stopPropagation(); deleteRoom('${room.id}')" title="Delete room">×</button>` : ''}
+          ${rooms.length > 1 ? `<button class="room-delete-btn" onclick="event.stopPropagation(); deleteRoomLegacy('${room.id}')" title="Delete room">×</button>` : ''}
         </div>
       `).join('');
     }
@@ -14321,7 +15386,7 @@
     // Make functions globally accessible
     window.switchToRoom = switchToRoom;
     window.addNewRoom = addNewRoom;
-    window.deleteRoom = deleteRoom;
+    window.deleteRoomLegacy = deleteRoomLegacy;
     window.showAddRoomModal = showAddRoomModal;
     window.updateRoomList = updateRoomList;
 
@@ -14622,6 +15687,93 @@
     let animationId = null; // Track animation frame to prevent duplicates
     let postProcessingEnabled = true; // Toggle for post-processing effects
 
+    // ===== INCREMENTAL 3D SCENE UPDATE SYSTEM =====
+    // Mesh cache: element ID -> { group: THREE.Group, version: number }
+    const meshCache3D = new Map();
+    // Element versions: element ID -> version number (incremented on change)
+    const elementVersions = new Map();
+    // Dirty elements that need 3D update
+    const dirtyElements3D = new Set();
+    // Flag to force full scene rebuild
+    let forceFullRebuild3D = true;
+    // Cached room structure
+    let cachedRoomStructure = null;
+    let cachedRoomDimensions = { width: 0, depth: 0, height: 0 };
+
+    /**
+     * Mark an element as needing 3D update
+     */
+    function markElement3DDirty(elementId) {
+      if (elementId) {
+        dirtyElements3D.add(elementId);
+        // Increment version
+        const currentVersion = elementVersions.get(elementId) || 0;
+        elementVersions.set(elementId, currentVersion + 1);
+      }
+    }
+
+    /**
+     * Mark all elements as dirty (for full rebuild scenarios)
+     */
+    function markAllElements3DDirty() {
+      elements.forEach(el => markElement3DDirty(el.id));
+      forceFullRebuild3D = true;
+    }
+
+    /**
+     * Remove element from 3D cache and scene
+     */
+    function removeElement3D(elementId) {
+      const cached = meshCache3D.get(elementId);
+      if (cached && cached.group) {
+        // Dispose geometry and materials
+        cached.group.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach(m => {
+                if (m.map) m.map.dispose();
+                m.dispose();
+              });
+            } else {
+              if (obj.material.map) obj.material.map.dispose();
+              obj.material.dispose();
+            }
+          }
+        });
+        // Remove from scene
+        if (scene) scene.remove(cached.group);
+      }
+      meshCache3D.delete(elementId);
+      elementVersions.delete(elementId);
+      dirtyElements3D.delete(elementId);
+    }
+
+    /**
+     * Clear all 3D caches (for full cleanup)
+     */
+    function clearAll3DCaches() {
+      meshCache3D.forEach((cached, id) => {
+        if (cached && cached.group) {
+          cached.group.traverse(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => m.dispose());
+              } else {
+                obj.material.dispose();
+              }
+            }
+          });
+        }
+      });
+      meshCache3D.clear();
+      elementVersions.clear();
+      dirtyElements3D.clear();
+      cachedRoomStructure = null;
+      forceFullRebuild3D = true;
+    }
+
     // ===== INITIALIZATION =====
     document.addEventListener('DOMContentLoaded', init);
 
@@ -14797,6 +15949,31 @@
         if (count > 0) {
           showToast(`Loaded ${count} stone materials with pricing`, 'success');
         }
+        // Load countertops.json (874 products with images) after stone pricing
+        return loadCountertopsJson();
+      }).then(ctCount => {
+        if (ctCount > 0) {
+          showToast(`Loaded ${ctCount} countertop colors with images`, 'success');
+        }
+        // Load tile.json (466 tiles) then bravo-tile.json (pricing)
+        return loadTileJson();
+      }).then(tileCount => {
+        if (tileCount > 0) {
+          showToast(`Loaded ${tileCount} tile products`, 'success');
+        }
+        return loadBravoTileJson();
+      }).then(bravoCount => {
+        if (bravoCount > 0) {
+          showToast(`Loaded Bravo Tile pricing for ${bravoCount} products`, 'success');
+        }
+        // Load products from Supabase last
+        loadSupabaseProducts();
+        // Pre-fetch distributor data for the default tab after static data loads
+        setTimeout(() => {
+          if (typeof loadDistributorDataForCategory === 'function') {
+            loadDistributorDataForCategory(currentMaterialCategory || 'granite');
+          }
+        }, 1000);
       });
 
       setupEventListeners();
@@ -15672,49 +16849,203 @@
     let selectedMaterial = null;
     let currentMaterialCategory = 'granite';
 
+    // Current brand filter
+    let currentBrandFilter = '';
+
+    let currentPriceFilter = '';
+    let currentFinishFilter = '';
+
+    function applyMaterialFilters() {
+      currentBrandFilter = document.getElementById('brandFilter')?.value || '';
+      currentPriceFilter = document.getElementById('priceFilter')?.value || '';
+      currentFinishFilter = document.getElementById('finishFilter')?.value || '';
+      renderMaterials(currentMaterialCategory);
+    }
+
+    function clearAllMaterialFilters() {
+      currentBrandFilter = '';
+      currentPriceFilter = '';
+      currentFinishFilter = '';
+      const bf = document.getElementById('brandFilter');
+      const pf = document.getElementById('priceFilter');
+      const ff = document.getElementById('finishFilter');
+      if (bf) bf.value = '';
+      if (pf) pf.value = '';
+      if (ff) ff.value = '';
+      renderMaterials(currentMaterialCategory);
+    }
+
+    // Legacy compat
+    function filterMaterialsByBrand(brand) {
+      currentBrandFilter = brand;
+      renderMaterials(currentMaterialCategory);
+    }
+    function clearBrandFilter() { clearAllMaterialFilters(); }
+
     function renderMaterials(category = 'granite') {
       currentMaterialCategory = category;
       const grid = document.getElementById('materialGrid');
-      const materials = MATERIALS[category] || [];
+      let materials = MATERIALS[category] || [];
+
+      // DEDUPLICATE: Remove duplicates by NAME only (case-insensitive)
+      // Same stone/product from different distributors = same product
+      // Score picks the best version: image + price + sku
+      const seenKeys = new Map();
+      for (const m of materials) {
+        const key = (m.name || '').toLowerCase().trim();
+        if (!key) continue;
+
+        if (seenKeys.has(key)) {
+          const existing = seenKeys.get(key);
+          // Score: higher is better (image=10, price=5, sku=3, brand=1)
+          const existingScore = (hasValidImageUrl(existing.url) ? 10 : 0) +
+                               (existing.price ? 5 : 0) +
+                               (existing.sku ? 3 : 0) +
+                               (existing.brand ? 1 : 0);
+          const newScore = (hasValidImageUrl(m.url) ? 10 : 0) +
+                          (m.price ? 5 : 0) +
+                          (m.sku ? 3 : 0) +
+                          (m.brand ? 1 : 0);
+          if (newScore > existingScore) {
+            // Carry forward data from existing if new is missing it
+            if (!m.price && existing.price) m.price = existing.price;
+            if (!m.unit && existing.unit) m.unit = existing.unit;
+            if (!hasValidImageUrl(m.url) && hasValidImageUrl(existing.url)) m.url = existing.url;
+            if (!m.brand && existing.brand) m.brand = existing.brand;
+            seenKeys.set(key, m);
+          } else {
+            // Carry forward data from new entry if existing is missing it
+            if (!existing.price && m.price) existing.price = m.price;
+            if (!existing.unit && m.unit) existing.unit = m.unit;
+            if (!hasValidImageUrl(existing.url) && hasValidImageUrl(m.url)) existing.url = m.url;
+            if (!existing.brand && m.brand) existing.brand = m.brand;
+          }
+        } else {
+          seenKeys.set(key, m);
+        }
+      }
+      // Get the deduplicated list
+      materials = Array.from(seenKeys.values());
+
+      // Sanitize prices: anything over $200/unit is likely a full-slab or product price, not per-sqft
+      for (const m of materials) {
+        if (m.price && m.price > 200) {
+          m.price = null;
+        }
+      }
+
+      // Filter: only show materials with images (http URLs or relative paths) or valid colors
+      materials = materials.filter(m => {
+        const hasImage = hasValidImageUrl(m.url);
+        const hasColor = m.color && m.color !== '#888888';
+        return hasImage || hasColor;
+      });
+
+      // --- Populate filter dropdowns from ALL materials (before filtering) ---
+      const allBrands = [...new Set(materials.map(m => m.brand).filter(Boolean))].sort();
+      const allFinishes = [...new Set(materials.map(m => m.finish).filter(Boolean))].sort();
+
+      const brandFilterEl = document.getElementById('brandFilter');
+      if (brandFilterEl) {
+        brandFilterEl.innerHTML = '<option value="">All Vendors (' + materials.length + ')</option>' +
+          allBrands.map(b => {
+            const count = materials.filter(m => m.brand === b).length;
+            return `<option value="${b}" ${currentBrandFilter === b ? 'selected' : ''}>${b} (${count})</option>`;
+          }).join('');
+      }
+
+      const finishFilterEl = document.getElementById('finishFilter');
+      if (finishFilterEl) {
+        finishFilterEl.innerHTML = '<option value="">All Finishes</option>' +
+          allFinishes.map(f => {
+            const count = materials.filter(m => m.finish === f).length;
+            return `<option value="${f}" ${currentFinishFilter === f ? 'selected' : ''}>${f} (${count})</option>`;
+          }).join('');
+      }
+
+      const priceFilterEl = document.getElementById('priceFilter');
+      if (priceFilterEl && currentPriceFilter) {
+        priceFilterEl.value = currentPriceFilter;
+      }
+
+      // --- Apply all active filters ---
+      if (currentBrandFilter) {
+        materials = materials.filter(m => m.brand === currentBrandFilter);
+      }
+      if (currentFinishFilter) {
+        materials = materials.filter(m => m.finish === currentFinishFilter);
+      }
+      if (currentPriceFilter) {
+        materials = materials.filter(m => {
+          const p = m.price || (m.tradePrice) || (m.retailPrice) || null;
+          if (currentPriceFilter === 'has') return p != null;
+          if (!p) return false;
+          const ranges = { '0-5': [0,5], '5-15': [5,15], '15-30': [15,30], '30-50': [30,50], '50-100': [50,100] };
+          if (ranges[currentPriceFilter]) {
+            const [lo, hi] = ranges[currentPriceFilter];
+            return p >= lo && p < hi;
+          }
+          if (currentPriceFilter === '100+') return p >= 100;
+          return true;
+        });
+      }
+
+      // Sort: image+real color first, then image+grey fallback last, then by name
+      materials.sort((a, b) => {
+        const aImg = hasValidImageUrl(a.url);
+        const bImg = hasValidImageUrl(b.url);
+        const aRealColor = a.color && a.color !== '#888888' && a.color !== '#C0C0C0';
+        const bRealColor = b.color && b.color !== '#888888' && b.color !== '#C0C0C0';
+        // Tier: 0 = has image + real color, 1 = has image only, 2 = color only, 3 = neither
+        const aTier = aImg && aRealColor ? 0 : aImg ? 1 : aRealColor ? 2 : 3;
+        const bTier = bImg && bRealColor ? 0 : bImg ? 1 : bRealColor ? 2 : 3;
+        if (aTier !== bTier) return aTier - bTier;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
       const canShowPrice = PRICING_ACCESS.canViewPricing;
+
+      // Render all materials as a flat alphabetical grid (no brand separators)
       grid.innerHTML = materials.map(mat => {
+        // Get account-aware display price (trade vs retail)
+        const displayPrice = (typeof getDisplayPrice === 'function') ? getDisplayPrice(mat) : (canShowPrice && mat.price ? { amount: mat.price, label: '' } : null);
+
         // Build tooltip with details
         let tooltip = mat.name;
         if (mat.brand) tooltip += ` | ${mat.brand}`;
-        if (canShowPrice && mat.price) tooltip += ` | $${mat.price}/sqft`;
+        if (displayPrice) tooltip += ` | $${Number(displayPrice.amount).toFixed(2)}/${mat.unit || 'sf'}${displayPrice.label ? ' (' + displayPrice.label + ')' : ''}`;
         if (mat.sku) tooltip += ` | SKU: ${mat.sku}`;
+        if (mat.material) tooltip += ` | ${mat.material}`;
+        if (mat.size) tooltip += ` | ${mat.size}`;
+        if (mat.finish) tooltip += ` | ${mat.finish}`;
+        if (mat.origin) tooltip += ` | ${mat.origin}`;
         if (mat.series) tooltip += ` | ${mat.series}`;
         if (mat.warranty) tooltip += ` | ${mat.warranty}`;
         if (mat.features) tooltip += ` | ${mat.features}`;
-
-        // Price badge (only for paid subscribers)
-        const priceBadge = canShowPrice && mat.price
-          ? `<div class="material-price-badge">$${mat.price}${mat.unit ? '/' + mat.unit : '/sf'}</div>`
-          : '';
 
         // Brand badge
         const brandBadge = mat.brand
           ? `<div class="material-brand-badge">${mat.brand.replace('MSI ', '').replace('Daltile ', '').substring(0, 10)}</div>`
           : '';
 
-        // Resolve image URL using helper
-        const imageUrl = resolveAssetUrl(mat.url);
+        // Distributor "In Stock" badge for live inventory items
+        const distributorBadge = (mat.source === 'distributor' && mat.distributorName)
+          ? `<div class="material-distributor-badge">In Stock</div>`
+          : '';
 
-        // Determine background style - use image with color fallback
-        // CSS background-image will fall back to color if image fails
-        let bgStyle;
-        if (imageUrl) {
-          bgStyle = `url('${imageUrl}') center/cover no-repeat, linear-gradient(${mat.color || '#666'}, ${mat.color || '#666'})`;
-        } else if (category === 'cabinets' && mat.color) {
-          // Generate CSS wood grain pattern for cabinet swatches
+        // Use image URL directly
+        const imageUrl = mat.url || '';
+
+        // Determine background style
+        let bgStyle = mat.color || '#666';
+        let bgImage = imageUrl ? `background-image: url(${imageUrl});` : '';
+
+        // Special handling for cabinets - wood grain pattern
+        if (!imageUrl && category === 'cabinets' && mat.color) {
           const baseColor = mat.color;
           const darkColor = adjustColor(baseColor, -15);
           const lightColor = adjustColor(baseColor, 10);
-          // Create subtle wood grain lines using CSS gradients
           bgStyle = `repeating-linear-gradient(90deg, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 3px, transparent 3px, transparent 8px), repeating-linear-gradient(90deg, transparent 0px, transparent 12px, rgba(255,255,255,0.06) 12px, rgba(255,255,255,0.06) 14px, transparent 14px, transparent 25px), linear-gradient(180deg, ${lightColor} 0%, ${baseColor} 35%, ${darkColor} 65%, ${baseColor} 100%)`;
-        } else {
-          bgStyle = mat.color || '#666';
         }
 
         // Add indicator if no texture (color only) - but not for cabinets with wood grain
@@ -15722,17 +17053,23 @@
           ? '<div class="material-no-texture-badge" title="Color only - no texture image">●</div>'
           : '';
 
+        // Use img tag for materials with images
+        // On error: hide the broken image. If the fallback color is just default grey, hide the whole swatch.
+        const imgTag = imageUrl
+          ? `<img src="${imageUrl}" onerror="this.style.display='none'; if(this.parentElement.style.backgroundColor==='rgb(136, 136, 136)')this.parentElement.style.display='none';">`
+          : '';
+
         return `
         <div class="material-swatch ${selectedMaterial?.id === mat.id ? 'selected' : ''}"
-             style="background: ${bgStyle};"
+             style="background-color: ${mat.color || '#666'};"
              onclick="selectMaterial('${mat.id}')"
              data-url="${imageUrl || ''}"
              data-color="${mat.color || '#666'}"
              title="${tooltip}">
-          ${priceBadge}
-          ${brandBadge}
+          ${imgTag}
           ${noTextureBadge}
-          <div class="material-swatch-label">${mat.name}</div>
+          ${distributorBadge}
+          <div class="material-swatch-label">${mat.name}${displayPrice ? `<br><span style="font-size:10px;opacity:0.85${displayPrice.label ? ';color:#10b981' : ''}">$${Number(displayPrice.amount).toFixed(2)}/${mat.unit || 'sf'}${displayPrice.label ? ' ' + displayPrice.label : ''}</span>` : ''}</div>
         </div>
       `;
       }).join('');
@@ -15743,8 +17080,24 @@
       document.querySelectorAll('.material-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
 
+      // Reset all filters when switching tabs
+      currentBrandFilter = '';
+      currentPriceFilter = '';
+      currentFinishFilter = '';
+      const bf = document.getElementById('brandFilter');
+      const pf = document.getElementById('priceFilter');
+      const ff = document.getElementById('finishFilter');
+      if (bf) bf.value = '';
+      if (pf) pf.value = '';
+      if (ff) ff.value = '';
+
       // Render materials for category
       renderMaterials(category);
+
+      // Lazy-load distributor data for this category (async, non-blocking)
+      if (typeof loadDistributorDataForCategory === 'function') {
+        loadDistributorDataForCategory(category);
+      }
     }
 
     // ==========================================
@@ -16017,7 +17370,10 @@
       // Update hint
       const hint = document.querySelector('.material-hint');
       if (hint && selectedMaterial) {
-        hint.innerHTML = `<strong>${selectedMaterial.name}</strong> selected. Click an element to apply.`;
+        const inquireLink = selectedMaterial.productUUID
+          ? ` <a href="#" onclick="event.preventDefault(); showProductInquiryModal('${selectedMaterial.id}')" style="color: var(--gold); text-decoration: underline; margin-left: 8px; font-size: 12px;">Inquire</a>`
+          : '';
+        hint.innerHTML = `<strong>${selectedMaterial.name}</strong> selected. Click an element to apply.${inquireLink}`;
         hint.style.borderColor = 'var(--gold)';
       }
     }
@@ -16034,8 +17390,12 @@
       element.color = selectedMaterial.color;
       element.materialId = selectedMaterial.id;
       element.materialName = selectedMaterial.name;
-      element.materialPrice = selectedMaterial.price || null;
+      const matDisplayPrice = (typeof getDisplayPrice === 'function') ? getDisplayPrice(selectedMaterial) : null;
+      element.materialPrice = matDisplayPrice ? matDisplayPrice.amount : (selectedMaterial.price || null);
       element.materialBrand = selectedMaterial.brand || null;
+
+      // Mark element as needing 3D update
+      markElement3DDirty(element.id);
 
       // Recalculate quote with new material pricing
       calculateQuote();
@@ -16046,27 +17406,30 @@
       // Store resolved texture URL
       element.texture = textureUrl || null;
 
-      // Load texture image if URL exists
+      // Load texture image if URL exists (using centralized CORS handling)
       if (textureUrl) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          console.log('Texture loaded successfully:', textureUrl);
-          element.textureImg = img;
-          draw();
-          update3DScene();
-        };
-        img.onerror = (err) => {
-          console.warn('Failed to load texture:', textureUrl, err);
-          // Clear texture reference on error
-          element.texture = null;
-          element.textureImg = null;
-          // Fallback: use solid color
-          draw();
-          showToast(`Could not load texture image, using solid color`, 'error');
-        };
+        let loadTimeout;
+        const img = loadImageWithCors(
+          textureUrl,
+          () => {
+            clearTimeout(loadTimeout);
+            console.log('Texture loaded successfully:', textureUrl);
+            element.textureImg = img;
+            draw();
+            update3DScene();
+          },
+          (err) => {
+            clearTimeout(loadTimeout);
+            // Clear texture reference on error
+            element.texture = null;
+            element.textureImg = null;
+            // Fallback: use solid color
+            draw();
+            showToast(`Could not load texture image, using solid color`, 'error');
+          }
+        );
         // Set a timeout to handle hung requests
-        const loadTimeout = setTimeout(() => {
+        loadTimeout = setTimeout(() => {
           if (!img.complete) {
             console.warn('Texture load timeout:', textureUrl);
             element.texture = null;
@@ -16074,14 +17437,6 @@
             draw();
           }
         }, 10000);
-        img.onload = () => {
-          clearTimeout(loadTimeout);
-          console.log('Texture loaded successfully:', textureUrl);
-          element.textureImg = img;
-          draw();
-          update3DScene();
-        };
-        img.src = textureUrl;
       } else {
         // No texture URL - material only has color (this is normal for some materials)
         element.textureImg = null;
@@ -21797,6 +23152,9 @@
         selectedElement.x = newX;
         selectedElement.y = newY;
 
+        // Mark element as needing 3D update
+        markElement3DDirty(selectedElement.id);
+
         // Move locked elements too
         if (selectedElement.groupId) {
           moveGroupedElements(selectedElement, dx, dy);
@@ -22152,6 +23510,9 @@
 
       selectedElement.x = snapX;
       selectedElement.y = snapY;
+
+      // Mark element as needing 3D update
+      markElement3DDirty(selectedElement.id);
 
       // Move all locked elements together
       if (selectedElement.groupId) {
@@ -23344,29 +24705,7 @@
       listContainer.innerHTML = html;
     }
 
-    function getElementCategory(type) {
-      const categories = {
-        cabinets: ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet', 'island', 'drawer-base', 'sink-base', 'lazy-susan', 'blind-corner', 'microwave-cabinet', 'above-microwave-cabinet', 'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'fridge-cabinet'],
-        countertops: ['countertop', 'backsplash', 'bar-top', 'wall-cap'],
-        appliances: ['stove', 'range', 'slide-in-range', 'cooktop', 'refrigerator', 'dishwasher', 'microwave', 'oven', 'wall-oven-double', 'range-hood'],
-        sinks: ['sink', 'sink-double', 'sink-farmhouse'],
-        flooring: ['flooring', 'tile', 'shower-pan'],
-        fixtures: ['toilet', 'toilet-round', 'toilet-wall', 'bidet', 'bathtub', 'bathtub-freestanding', 'bathtub-corner', 'bathtub-walk-in', 'shower', 'shower-base-36', 'shower-base-48', 'shower-base-60', 'vanity', 'faucet', 'grab-bar', 'grab-bar-24', 'grab-bar-36', 'grab-bar-42', 'shower-bench', 'towel-warmer'],
-        bathroom: ['vanity-24', 'vanity-30', 'vanity-36', 'vanity-48', 'vanity-60', 'vanity-72'],
-        laundry: ['washer', 'dryer', 'washer-dryer-stack', 'laundry-cabinet', 'ironing-board', 'utility-sink', 'laundry-sink', 'drying-rack'],
-        closet: ['closet-rod', 'closet-shelf', 'drawer-unit', 'closet-drawers', 'shoe-rack', 'closet-island', 'jewelry-cabinet', 'jewelry-drawer', 'tie-rack', 'full-mirror'],
-        windows: ['window', 'window-large', 'window-bay', 'bay-window', 'picture-window'],
-        doors: ['door', 'double-door', 'sliding-door', 'french-door', 'glass-door'],
-        walls: ['wall', 'pony-wall', 'pony-wall-bar', 'knee-wall', 'accent-wall', 'wall-tile', 'shower-wall'],
-        niches: ['wall-niche', 'shower-niche', 'fireplace-niche', 'tv-niche', 'niche-surround', 'fireplace-surround'],
-        structural: ['steel-beam', 'wood-beam', 'concrete-beam', 'header', 'lvl-beam', 'steel-column', 'wood-post', 'concrete-column']
-      };
-
-      for (const [cat, types] of Object.entries(categories)) {
-        if (types.includes(type)) return cat;
-      }
-      return 'other';
-    }
+    // getElementCategory is defined earlier at line ~21225 (visibility toggles)
 
     function getElementIcon(type) {
       const icons = {
@@ -26034,15 +27373,18 @@
         scene = null;
       }
 
-      // Clear texture cache to free memory
-      if (typeof textureCache3D !== 'undefined') {
-        Object.keys(textureCache3D).forEach(key => {
-          if (textureCache3D[key] && textureCache3D[key].dispose) {
-            textureCache3D[key].dispose();
-          }
-          delete textureCache3D[key];
-        });
+      // Clear texture cache to free memory (uses LRU cache cleanup)
+      if (typeof clearTextureCache === 'function') {
+        clearTextureCache();
       }
+
+      // Clear geometry pool
+      if (typeof clearGeometryPool === 'function') {
+        clearGeometryPool();
+      }
+
+      // Clear incremental update caches
+      clearAll3DCaches();
 
       if (renderer) {
         renderer.dispose();
@@ -27693,8 +29035,170 @@
       }
     }
 
-    // Cache for loaded 3D textures
+    // ===== LRU TEXTURE CACHE WITH GARBAGE COLLECTION =====
+    // Configuration
+    const TEXTURE_CACHE_MAX_SIZE = 100; // Maximum textures to keep
+    const TEXTURE_CACHE_CLEANUP_SIZE = 20; // Remove this many when full
+
+    // LRU Cache for loaded 3D textures
     const textureCache3D = {};
+    const textureCacheOrder = []; // Track access order for LRU
+    let textureCacheStats = { hits: 0, misses: 0, evictions: 0 };
+
+    /**
+     * Get texture from cache (updates LRU order)
+     */
+    function getTextureFromCache(url) {
+      if (textureCache3D[url]) {
+        textureCacheStats.hits++;
+        // Move to end of LRU order (most recently used)
+        const idx = textureCacheOrder.indexOf(url);
+        if (idx > -1) {
+          textureCacheOrder.splice(idx, 1);
+          textureCacheOrder.push(url);
+        }
+        return textureCache3D[url];
+      }
+      textureCacheStats.misses++;
+      return null;
+    }
+
+    /**
+     * Add texture to cache with LRU eviction
+     */
+    function addTextureToCache(url, texture) {
+      // Check if we need to evict old textures
+      if (textureCacheOrder.length >= TEXTURE_CACHE_MAX_SIZE) {
+        evictOldTextures();
+      }
+
+      // Add to cache
+      textureCache3D[url] = texture;
+      textureCacheOrder.push(url);
+    }
+
+    /**
+     * Evict least recently used textures
+     */
+    function evictOldTextures() {
+      const toRemove = Math.min(TEXTURE_CACHE_CLEANUP_SIZE, textureCacheOrder.length);
+
+      for (let i = 0; i < toRemove; i++) {
+        const url = textureCacheOrder.shift();
+        if (url && textureCache3D[url]) {
+          // Dispose the texture to free GPU memory
+          if (textureCache3D[url].dispose) {
+            textureCache3D[url].dispose();
+          }
+          delete textureCache3D[url];
+          textureCacheStats.evictions++;
+        }
+      }
+
+      console.log(`Texture cache GC: evicted ${toRemove} textures. Stats:`, textureCacheStats);
+    }
+
+    /**
+     * Clear entire texture cache
+     */
+    function clearTextureCache() {
+      textureCacheOrder.forEach(url => {
+        if (textureCache3D[url] && textureCache3D[url].dispose) {
+          textureCache3D[url].dispose();
+        }
+        delete textureCache3D[url];
+      });
+      textureCacheOrder.length = 0;
+      textureCacheStats = { hits: 0, misses: 0, evictions: 0 };
+    }
+
+    /**
+     * Get cache statistics
+     */
+    function getTextureCacheStats() {
+      return {
+        ...textureCacheStats,
+        size: textureCacheOrder.length,
+        maxSize: TEXTURE_CACHE_MAX_SIZE,
+        hitRate: textureCacheStats.hits / (textureCacheStats.hits + textureCacheStats.misses) || 0
+      };
+    }
+
+    // ===== GEOMETRY POOLING FOR PERFORMANCE =====
+    // Reuses geometries for elements with same dimensions
+    const geometryPool = new Map();
+    let geometryPoolStats = { hits: 0, misses: 0, poolSize: 0 };
+
+    /**
+     * Get or create a BoxGeometry from the pool
+     * @param {number} width - Box width
+     * @param {number} height - Box height
+     * @param {number} depth - Box depth
+     * @returns {THREE.BoxGeometry} Cached or new geometry
+     */
+    function getPooledBoxGeometry(width, height, depth) {
+      // Round to 2 decimal places for consistent keys
+      const w = Math.round(width * 100) / 100;
+      const h = Math.round(height * 100) / 100;
+      const d = Math.round(depth * 100) / 100;
+      const key = `box_${w}_${h}_${d}`;
+
+      if (geometryPool.has(key)) {
+        geometryPoolStats.hits++;
+        return geometryPool.get(key);
+      }
+
+      // Create new geometry and cache it
+      const geometry = new THREE.BoxGeometry(w, h, d);
+      geometryPool.set(key, geometry);
+      geometryPoolStats.misses++;
+      geometryPoolStats.poolSize = geometryPool.size;
+
+      return geometry;
+    }
+
+    /**
+     * Get or create a PlaneGeometry from the pool
+     */
+    function getPooledPlaneGeometry(width, height) {
+      const w = Math.round(width * 100) / 100;
+      const h = Math.round(height * 100) / 100;
+      const key = `plane_${w}_${h}`;
+
+      if (geometryPool.has(key)) {
+        geometryPoolStats.hits++;
+        return geometryPool.get(key);
+      }
+
+      const geometry = new THREE.PlaneGeometry(w, h);
+      geometryPool.set(key, geometry);
+      geometryPoolStats.misses++;
+      geometryPoolStats.poolSize = geometryPool.size;
+
+      return geometry;
+    }
+
+    /**
+     * Get geometry pool statistics
+     */
+    function getGeometryPoolStats() {
+      return {
+        ...geometryPoolStats,
+        hitRate: geometryPoolStats.hits / (geometryPoolStats.hits + geometryPoolStats.misses) || 0
+      };
+    }
+
+    /**
+     * Clear geometry pool (call on cleanup)
+     */
+    function clearGeometryPool() {
+      geometryPool.forEach(geometry => {
+        if (geometry.dispose) geometry.dispose();
+      });
+      geometryPool.clear();
+      geometryPoolStats = { hits: 0, misses: 0, poolSize: 0 };
+    }
+
     const textureLoader = new THREE.TextureLoader();
     textureLoader.setCrossOrigin('anonymous');
 
@@ -27989,13 +29493,13 @@
       });
 
       textureUrls.forEach(url => {
-        if (!textureCache3D[url]) {
+        if (!getTextureFromCache(url)) {
           console.log('Preloading texture:', url.substring(0, 50) + '...');
           textureLoader.load(url, (texture) => {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
             texture.encoding = THREE.sRGBEncoding;
-            textureCache3D[url] = texture;
+            addTextureToCache(url, texture);
             console.log('Preloaded texture successfully:', url.substring(0, 50) + '...');
           }, undefined, (err) => {
             console.warn('Failed to preload texture:', url, err);
@@ -28142,8 +29646,8 @@
           repeatY = Math.max(0.3, repeatY);
         }
 
-        // Check texture cache
-        const cachedTexture = textureCache3D[fullUrl] || textureCache3D[textureUrl];
+        // Check texture cache (uses LRU cache)
+        const cachedTexture = getTextureFromCache(fullUrl) || getTextureFromCache(textureUrl);
 
         const applyTexture = (texture) => {
           texture.wrapS = THREE.RepeatWrapping;
@@ -28184,9 +29688,11 @@
           applyTexture(clonedTexture);
         } else {
           textureLoader.load(fullUrl, (texture) => {
-            // Cache texture
-            textureCache3D[fullUrl] = texture;
-            textureCache3D[textureUrl] = texture;
+            // Cache texture using LRU cache
+            addTextureToCache(fullUrl, texture);
+            if (textureUrl !== fullUrl) {
+              addTextureToCache(textureUrl, texture);
+            }
             applyTexture(texture);
           },
           undefined,
@@ -28335,8 +29841,8 @@
             repeatY = Math.max(0.3, repeatY);
           }
 
-          // Also check cache with original URL (in case it was cached with different resolution)
-          const cachedTexture = textureCache3D[fullUrl] || textureCache3D[textureUrl];
+          // Check LRU cache with both URL variants
+          const cachedTexture = getTextureFromCache(fullUrl) || getTextureFromCache(textureUrl);
 
           if (cachedTexture) {
             material.map = cachedTexture.clone();
@@ -28366,9 +29872,11 @@
               texture.magFilter = THREE.LinearFilter;
               texture.generateMipmaps = true;
 
-              // Cache with both URLs
-              textureCache3D[fullUrl] = texture;
-              textureCache3D[textureUrl] = texture;
+              // Cache using LRU cache
+              addTextureToCache(fullUrl, texture);
+              if (textureUrl !== fullUrl) {
+                addTextureToCache(textureUrl, texture);
+              }
 
               material.map = texture;
               material.color.setHex(0xFFFFFF);
@@ -28779,13 +30287,14 @@
           gap = overlayType === 'inset' ? 0.06 : 0.02; // Frameless has smaller gaps
         }
 
-        // Cabinet body - interior with darker finish
+        // Cabinet body - interior with darker finish (using pooled geometry)
         const bodyMat = new THREE.MeshStandardMaterial({
           color: 0x1a1a1a,
           roughness: 0.9,
           metalness: 0.0
         });
-        const body = new THREE.Mesh(new THREE.BoxGeometry(width - 0.1, height - 0.1, depth - 0.1), bodyMat);
+        const bodyGeometry = getPooledBoxGeometry(width - 0.1, height - 0.1, depth - 0.1);
+        const body = new THREE.Mesh(bodyGeometry, bodyMat);
         body.position.z = -0.02;
         body.castShadow = true;
         body.receiveShadow = true;
@@ -40101,16 +41610,38 @@
       return { group, height: h };
     }
 
-    function render3D() {
-      if (!scene || currentView !== '3d') return;
+    /**
+     * Build room structure (floor + walls) - cached for performance
+     * Only rebuilds when room dimensions change
+     */
+    function buildRoomStructure() {
+      const wallHeight = roomHeight || 8;
 
-      try {
-      // Clear non-lights
-      scene.children = scene.children.filter(c => c.type.includes('Light'));
+      // Check if we need to rebuild
+      const dimensionsChanged =
+        cachedRoomDimensions.width !== roomWidth ||
+        cachedRoomDimensions.depth !== roomDepth ||
+        cachedRoomDimensions.height !== wallHeight;
+
+      if (cachedRoomStructure && !dimensionsChanged && !forceFullRebuild3D) {
+        // Return cached structure
+        return cachedRoomStructure;
+      }
+
+      // Remove old structure if it exists
+      if (cachedRoomStructure) {
+        cachedRoomStructure.forEach(mesh => {
+          if (mesh.geometry) mesh.geometry.dispose();
+          if (mesh.material) mesh.material.dispose();
+          scene.remove(mesh);
+        });
+      }
+
+      const structure = [];
 
       // Floor
       const floorMat = new THREE.MeshStandardMaterial({
-        color: 0xD2B48C, // Tan floor color
+        color: 0xD2B48C,
         roughness: 0.8
       });
       const floor = new THREE.Mesh(
@@ -40120,12 +41651,12 @@
       floor.rotation.x = -Math.PI / 2;
       floor.position.set(roomWidth / 2, 0, roomDepth / 2);
       floor.receiveShadow = true;
-      scene.add(floor);
+      floor.userData.isRoomStructure = true;
+      structure.push(floor);
 
-      // Room walls (3 walls, open front)
-      const wallHeight = roomHeight || 8; // Use room ceiling height setting
+      // Wall material
       const wallMat = new THREE.MeshStandardMaterial({
-        color: 0xFFFAF0, // Ivory walls
+        color: 0xFFFAF0,
         roughness: 0.9,
         side: THREE.DoubleSide
       });
@@ -40133,33 +41664,36 @@
       // Back wall
       const backWall = new THREE.Mesh(
         new THREE.PlaneGeometry(roomWidth, wallHeight),
-        wallMat
+        wallMat.clone()
       );
       backWall.position.set(roomWidth / 2, wallHeight / 2, 0);
       backWall.receiveShadow = true;
-      scene.add(backWall);
+      backWall.userData.isRoomStructure = true;
+      structure.push(backWall);
 
       // Left wall
       const leftWall = new THREE.Mesh(
         new THREE.PlaneGeometry(roomDepth, wallHeight),
-        wallMat
+        wallMat.clone()
       );
       leftWall.rotation.y = Math.PI / 2;
       leftWall.position.set(0, wallHeight / 2, roomDepth / 2);
       leftWall.receiveShadow = true;
-      scene.add(leftWall);
+      leftWall.userData.isRoomStructure = true;
+      structure.push(leftWall);
 
       // Right wall
       const rightWall = new THREE.Mesh(
         new THREE.PlaneGeometry(roomDepth, wallHeight),
-        wallMat
+        wallMat.clone()
       );
       rightWall.rotation.y = -Math.PI / 2;
       rightWall.position.set(roomWidth, wallHeight / 2, roomDepth / 2);
       rightWall.receiveShadow = true;
-      scene.add(rightWall);
+      rightWall.userData.isRoomStructure = true;
+      structure.push(rightWall);
 
-      // Front wall (optional 4th wall)
+      // Front wall (optional)
       if (sceneSettings.showFrontWall) {
         const frontWallMat = new THREE.MeshStandardMaterial({
           color: 0xFFFAF0,
@@ -40175,28 +41709,112 @@
         frontWall.rotation.y = Math.PI;
         frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth);
         frontWall.receiveShadow = true;
-        scene.add(frontWall);
+        frontWall.userData.isRoomStructure = true;
+        structure.push(frontWall);
       }
+
+      // Add all to scene
+      structure.forEach(mesh => scene.add(mesh));
+
+      // Cache
+      cachedRoomStructure = structure;
+      cachedRoomDimensions = { width: roomWidth, depth: roomDepth, height: wallHeight };
+
+      return structure;
+    }
+
+    function render3D() {
+      if (!scene || currentView !== '3d') return;
+
+      try {
+      // Check if we need full rebuild or incremental update
+      const needsFullRebuild = forceFullRebuild3D || dirtyElements3D.size === 0;
+
+      if (needsFullRebuild) {
+        // Clear non-lights and non-room-structure elements
+        scene.children = scene.children.filter(c =>
+          c.type.includes('Light') || c.userData?.isRoomStructure
+        );
+
+        // Clear mesh cache for full rebuild
+        meshCache3D.forEach((cached, id) => {
+          if (cached && cached.group && scene) {
+            scene.remove(cached.group);
+          }
+        });
+        meshCache3D.clear();
+      }
+
+      // Build/get room structure (cached)
+      buildRoomStructure();
+
+      // Reset full rebuild flag
+      forceFullRebuild3D = false;
 
       // Elements - filter out hidden ones AND filter by current room
       const activeRoomId = currentRoomId || currentRoom || 'default';
-      console.log('render3D: elements count:', elements.length, 'activeRoomId:', activeRoomId, 'currentRoomId:', currentRoomId, 'currentRoom:', currentRoom);
 
       const visibleElements3D = elements.filter(el => {
         if (el.hidden) return false;
         // Only show elements belonging to current room (check both room tracking systems)
         // If element has no roomId, show it (legacy element or shared design)
         if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) {
-          console.log('Filtering out element:', el.type, el.label, 'roomId:', el.roomId, 'activeRoomId:', activeRoomId);
           return false;
         }
         const category = getElementCategory(el.type);
         return !hiddenCategories[category];
       });
 
-      console.log('render3D: visible elements after filter:', visibleElements3D.length);
+      // Track which elements are currently visible (for cleanup)
+      const visibleElementIds = new Set(visibleElements3D.map(el => el.id));
+
+      // Remove meshes for elements that are no longer visible
+      meshCache3D.forEach((cached, elementId) => {
+        if (!visibleElementIds.has(elementId)) {
+          if (cached && cached.group) {
+            scene.remove(cached.group);
+            // Dispose resources
+            cached.group.traverse(obj => {
+              if (obj.geometry) obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                  obj.material.forEach(m => m.dispose());
+                } else {
+                  obj.material.dispose();
+                }
+              }
+            });
+          }
+          meshCache3D.delete(elementId);
+        }
+      });
 
       visibleElements3D.forEach(el => {
+        // Check if we can skip this element (cached and not dirty)
+        const cached = meshCache3D.get(el.id);
+        const currentVersion = elementVersions.get(el.id) || 0;
+        const isDirty = dirtyElements3D.has(el.id);
+
+        // Skip if cached, not dirty, and version matches
+        if (cached && !isDirty && !needsFullRebuild && cached.version === currentVersion) {
+          return; // Skip - already rendered and unchanged
+        }
+
+        // Remove old mesh if it exists
+        if (cached && cached.group) {
+          scene.remove(cached.group);
+          cached.group.traverse(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => m.dispose());
+              } else {
+                obj.material.dispose();
+              }
+            }
+          });
+        }
+
         let group, height;
         try {
           const result = create3DElement(el);
@@ -40415,8 +42033,21 @@
         // Store element data for tooltips
         group.userData.elementData = el;
 
+        // Add to scene
         scene.add(group);
+
+        // Cache the mesh for incremental updates
+        meshCache3D.set(el.id, {
+          group: group,
+          version: currentVersion
+        });
+
+        // Clear dirty flag for this element
+        dirtyElements3D.delete(el.id);
       });
+
+      // Clear any remaining dirty flags (for elements that weren't visible)
+      dirtyElements3D.clear();
 
       // Render custom walls from wall tool
       if (walls && walls.length > 0) {
@@ -42932,6 +44563,9 @@
       selectedElement.height = roundToSixteenth(parseDimension(heightInput)) || 1;
       selectedElement.color = document.getElementById('propColor').value;
 
+      // Mark element as needing 3D update
+      markElement3DDirty(selectedElement.id);
+
       // Update display with formatted dimensions
       updateProperties();
       draw();
@@ -42945,6 +44579,9 @@
       if (!isFlooringType) return;
 
       selectedElement.grainDirection = angle;
+
+      // Mark element as needing 3D update
+      markElement3DDirty(selectedElement.id);
 
       // Update button states
       document.querySelectorAll('.grain-btn').forEach(btn => {
@@ -43598,8 +45235,8 @@
       showSnapFeedback(`Cap height: ${formatDimension(selectedElement.capHeight)} (${Math.round(selectedElement.capHeight * 12)}")`);
     }
 
-    // Update edge profile for countertops
-    function updateEdgeProfile() {
+    // Update edge profile for selected countertop (from properties panel)
+    function updateSelectedEdgeProfile() {
       const countertopTypes = ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island'];
       if (!selectedElement || !countertopTypes.includes(selectedElement.type)) return;
 
@@ -44701,24 +46338,24 @@
       modal.style.display = ''; // Reset any inline display style
       modal.classList.add('active');
       renderMaterialCategories();
-      renderMaterials('granite');
+      renderModalMaterials('granite');
     }
 
     function renderMaterialCategories() {
       const container = document.getElementById('materialCategories');
       container.innerHTML = Object.keys(MATERIALS).map(cat => `
         <button class="material-category-btn ${cat === 'granite' ? 'active' : ''}"
-                onclick="renderMaterials('${cat}', this)">
+                onclick="renderModalMaterials('${cat}', this)">
           ${cat.charAt(0).toUpperCase() + cat.slice(1)}
         </button>
       `).join('') + `
-        <button class="material-category-btn" onclick="renderMaterials('custom', this)">
+        <button class="material-category-btn" onclick="renderModalMaterials('custom', this)">
           My Uploads
         </button>
       `;
     }
 
-    function renderMaterials(category, btn) {
+    function renderModalMaterials(category, btn) {
       document.querySelectorAll('.material-category-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
@@ -45123,8 +46760,8 @@
       return { price: CONFIG.PRICING[element.type] || 0, source: 'default' };
     }
 
-    // Get element category for margin lookup
-    function getElementCategory(type) {
+    // Get element category for margin lookup (pricing-specific categories)
+    function getElementMarginCategory(type) {
       if (type.includes('cabinet') || type === 'island') return 'cabinet';
       if (['countertop', 'backsplash'].includes(type)) return 'countertop';
       if (['flooring', 'tile'].includes(type)) return 'flooring';
@@ -45140,7 +46777,7 @@
       }
 
       // 2) Category-specific margin
-      const category = getElementCategory(element.type);
+      const category = getElementMarginCategory(element.type);
       if (PRICING_STATE.categoryMargins && PRICING_STATE.categoryMargins[category] !== undefined) {
         return PRICING_STATE.categoryMargins[category];
       }
@@ -47183,11 +48820,7 @@
     // ===== PRICE LIST MODAL FUNCTIONS =====
     let pendingPriceData = null;
 
-    function openPriceListModal() {
-      document.getElementById('priceListModal').classList.add('active');
-      showPriceTab('upload');
-      renderCurrentPrices();
-    }
+    // openPriceListModal is defined later (shows labor tab by default)
 
     function showPriceTab(tab) {
       document.querySelectorAll('.price-tab').forEach(t => t.style.display = 'none');
