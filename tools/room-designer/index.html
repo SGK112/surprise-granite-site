@@ -42476,27 +42476,16 @@
       // Elements - filter out hidden ones AND filter by current room
       const activeRoomId = currentRoomId || currentRoom || 'default';
 
-      console.log('[render3D] elements.length:', elements.length, 'activeRoomId:', activeRoomId, 'currentRoom:', currentRoom);
-
       const visibleElements3D = elements.filter(el => {
-        if (el.hidden) {
-          console.log('[render3D] Filtered out (hidden):', el.type, el.label);
-          return false;
-        }
+        if (el.hidden) return false;
         // Only show elements belonging to current room (check both room tracking systems)
         // If element has no roomId, show it (legacy element or shared design)
         if (el.roomId && el.roomId !== activeRoomId && el.roomId !== currentRoom) {
-          console.log('[render3D] Filtered out (roomId mismatch):', el.type, el.label, 'el.roomId:', el.roomId, 'vs activeRoomId:', activeRoomId);
           return false;
         }
         const category = getElementCategory(el.type);
-        if (hiddenCategories[category]) {
-          console.log('[render3D] Filtered out (hidden category):', el.type, category);
-          return false;
-        }
-        return true;
+        return !hiddenCategories[category];
       });
-      console.log('[render3D] visibleElements3D:', visibleElements3D.length, visibleElements3D.map(el => ({ type: el.type, label: el.label, x: el.x, y: el.y, w: el.width, h: el.height, roomId: el.roomId })));
 
       // Track which elements are currently visible (for cleanup)
       const visibleElementIds = new Set(visibleElements3D.map(el => el.id));
@@ -42762,7 +42751,6 @@
         }
 
         group.position.set(xPos, yPos, zPos);
-        console.log('[render3D] Placed element:', el.type, el.label, 'at 3D pos:', xPos.toFixed(2), yPos.toFixed(2), zPos.toFixed(2), 'el.x:', el.x, 'el.y:', el.y, 'w:', el.width, 'h:', el.height, 'children:', group.children.length);
 
         // Store element data for tooltips
         group.userData.elementData = el;
@@ -52132,7 +52120,7 @@
         if (designRooms && designRooms.length > 0) {
           rooms = designRooms.map(room => ({
             ...room,
-            elements: room.elements || [],
+            elements: (room.elements || []).map(el => ({ ...el, roomId: room.id })),
             walls: room.walls || []
           }));
           currentRoomId = design.settings?.current_room_id || design.current_room_id || rooms[0].id;
