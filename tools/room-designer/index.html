@@ -4122,6 +4122,192 @@
       margin-top: 2px;
     }
 
+    /* Invite Recipients Picker */
+    .invite-recipients-section {
+      margin: 20px 0;
+      padding: 16px;
+      background: rgba(99, 102, 241, 0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .invite-chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+      min-height: 0;
+    }
+
+    .invite-chips-container:empty {
+      margin-bottom: 0;
+    }
+
+    .invite-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px 4px 10px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 16px;
+      font-size: 12px;
+      color: var(--text);
+      max-width: 220px;
+    }
+
+    .invite-chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .invite-chip-remove {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .invite-chip-remove:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .invite-search-wrapper {
+      position: relative;
+    }
+
+    .invite-search-wrapper input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--dark-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+
+    .invite-search-wrapper input:focus {
+      border-color: var(--primary);
+    }
+
+    .invite-search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .invite-search-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 0.15s;
+    }
+
+    .invite-search-item:last-child {
+      border-bottom: none;
+    }
+
+    .invite-search-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .invite-search-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .invite-search-item-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .invite-search-item-email {
+      font-size: 11px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .invite-source-badge {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .invite-source-badge.lead {
+      background: rgba(249, 168, 37, 0.15);
+      color: #f9a825;
+    }
+
+    .invite-source-badge.customer {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .invite-source-badge.manual {
+      background: rgba(99, 102, 241, 0.15);
+      color: #6366f1;
+    }
+
+    .invite-search-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .invite-send-status {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .invite-send-status .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+
+    .invite-send-status .status-item.success { color: #10b981; }
+    .invite-send-status .status-item.failed { color: #ef4444; }
+    .invite-send-status .status-item.sending { color: var(--text-muted); }
+
     .share-item {
       display: flex;
       justify-content: space-between;
@@ -9448,20 +9634,30 @@
         </div>
       </div>
 
-      <!-- Customer Email for Comment Notifications -->
-      <div class="customer-email-section" style="margin: 20px 0; padding: 16px; background: rgba(249, 168, 37, 0.05); border-radius: 12px; border: 1px solid rgba(249, 168, 37, 0.2);">
-        <div style="font-weight: 600; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f9a825" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
+      <!-- Invite Recipients -->
+      <div class="invite-recipients-section" id="inviteSection">
+        <div style="font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
           </svg>
-          Link to Customer (Optional)
+          Invite Recipients
         </div>
-        <input type="email" id="shareCustomerEmail" placeholder="customer@email.com"
-               style="width: 100%; padding: 10px 14px; background: var(--dark-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px;">
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-          Enter customer email to enable comment notifications. They'll be notified when you reply to their comments.
+        <div class="invite-chips-container" id="inviteChips"></div>
+        <div class="invite-search-wrapper">
+          <input type="text" id="inviteSearchInput"
+                 placeholder="Search leads, customers, or type an email..."
+                 autocomplete="off"
+                 oninput="searchInviteRecipients(this.value)"
+                 onkeydown="handleInviteKeydown(event)">
+          <div class="invite-search-results" id="inviteSearchResults" style="display:none;"></div>
         </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+          Search your CRM or type an email and press Enter
+        </div>
+        <div class="invite-send-status" id="inviteSendStatus"></div>
       </div>
 
       <!-- Share to Gallery Option -->
@@ -9484,8 +9680,17 @@
         </label>
       </div>
 
-      <div class="share-actions">
-        <button class="btn btn-primary" onclick="generateShareLink()">Generate Share Link</button>
+      <div class="share-actions" style="display: flex; gap: 8px;">
+        <button class="btn btn-primary" id="shareInviteBtn" onclick="generateAndInvite()" style="flex: 1;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Send Invitations
+        </button>
+        <button class="btn btn-secondary" onclick="generateShareLink()" title="Generate link without sending emails">
+          Link Only
+        </button>
       </div>
 
       <div class="active-shares" id="activeShares" style="display:none;">
@@ -49753,6 +49958,377 @@
       btn.classList.add('active');
     }
 
+    // ===== INVITE RECIPIENTS SYSTEM =====
+
+    const INVITE_STATE = {
+      recipients: [],
+      searchTimeout: null,
+      lastQuery: ''
+    };
+
+    function addInviteRecipient(email, name, source) {
+      if (!email) return;
+      email = email.trim().toLowerCase();
+      if (INVITE_STATE.recipients.some(r => r.email === email)) return;
+      INVITE_STATE.recipients.push({ email, name: name || email.split('@')[0], source: source || 'manual' });
+      renderInviteChips();
+      const input = document.getElementById('inviteSearchInput');
+      if (input) { input.value = ''; }
+      const results = document.getElementById('inviteSearchResults');
+      if (results) results.style.display = 'none';
+      document.getElementById('inviteSendStatus').innerHTML = '';
+    }
+
+    function removeInviteRecipient(email) {
+      INVITE_STATE.recipients = INVITE_STATE.recipients.filter(r => r.email !== email);
+      renderInviteChips();
+    }
+
+    function renderInviteChips() {
+      const container = document.getElementById('inviteChips');
+      if (!container) return;
+      container.innerHTML = INVITE_STATE.recipients.map(r => `
+        <div class="invite-chip">
+          <span class="invite-chip-name" title="${r.email}">${r.name}</span>
+          <span class="invite-source-badge ${r.source}">${r.source}</span>
+          <button class="invite-chip-remove" onclick="removeInviteRecipient('${r.email}')" title="Remove">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function handleInviteKeydown(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const input = e.target;
+        const val = input.value.trim();
+        if (val && val.includes('@') && val.includes('.')) {
+          addInviteRecipient(val, null, 'manual');
+        }
+      }
+      if (e.key === 'Escape') {
+        document.getElementById('inviteSearchResults').style.display = 'none';
+      }
+    }
+
+    async function searchInviteRecipients(query) {
+      query = (query || '').trim();
+      if (INVITE_STATE.searchTimeout) clearTimeout(INVITE_STATE.searchTimeout);
+
+      const resultsEl = document.getElementById('inviteSearchResults');
+      if (!resultsEl) return;
+
+      if (query.length < 2) {
+        resultsEl.style.display = 'none';
+        return;
+      }
+
+      INVITE_STATE.searchTimeout = setTimeout(async () => {
+        try {
+          const user = window.SgAuth?.getUser();
+          if (!user) {
+            renderSearchResults([], query);
+            return;
+          }
+
+          const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
+          const session = await window.SgAuth?.getSession?.();
+          const authToken = session?.access_token || SUPABASE_ANON_KEY;
+          const headers = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'application/json'
+          };
+
+          const encodedQuery = encodeURIComponent(`%${query}%`);
+          const results = [];
+
+          // Query leads
+          try {
+            const leadsRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/leads?or=(homeowner_name.ilike.${encodedQuery},homeowner_email.ilike.${encodedQuery},full_name.ilike.${encodedQuery},email.ilike.${encodedQuery})&user_id=eq.${user.id}&select=id,homeowner_name,homeowner_email,full_name,email,status&limit=10`,
+              { headers }
+            );
+            if (leadsRes.ok) {
+              const leads = await leadsRes.json();
+              if (Array.isArray(leads)) {
+                leads.forEach(l => {
+                  const email = l.homeowner_email || l.email;
+                  const name = l.homeowner_name || l.full_name || (email ? email.split('@')[0] : '');
+                  if (email) {
+                    results.push({ email, name, source: 'lead', status: l.status });
+                  }
+                });
+              }
+            }
+          } catch (e) { console.warn('Lead search error:', e); }
+
+          // Query customers
+          try {
+            const custRes = await fetch(
+              `${SUPABASE_URL}/rest/v1/customers?or=(name.ilike.${encodedQuery},email.ilike.${encodedQuery})&user_id=eq.${user.id}&select=id,name,email,phone&limit=10`,
+              { headers }
+            );
+            if (custRes.ok) {
+              const custs = await custRes.json();
+              if (Array.isArray(custs)) {
+                custs.forEach(c => {
+                  if (c.email && !results.some(r => r.email === c.email)) {
+                    results.push({ email: c.email, name: c.name || c.email.split('@')[0], source: 'customer' });
+                  }
+                });
+              }
+            }
+          } catch (e) { console.warn('Customer search error:', e); }
+
+          // Filter out already-added recipients
+          const filtered = results.filter(r => !INVITE_STATE.recipients.some(ir => ir.email === r.email));
+          renderSearchResults(filtered, query);
+
+        } catch (err) {
+          console.error('Invite search error:', err);
+          renderSearchResults([], query);
+        }
+      }, 300);
+    }
+
+    function renderSearchResults(results, query) {
+      const container = document.getElementById('inviteSearchResults');
+      if (!container) return;
+
+      let html = '';
+      const isEmail = query && query.includes('@') && query.includes('.');
+      const alreadyAdded = INVITE_STATE.recipients.some(r => r.email === query.toLowerCase());
+
+      // Manual email add option
+      if (isEmail && !alreadyAdded && !results.some(r => r.email === query.toLowerCase())) {
+        html += `
+          <div class="invite-search-item" onclick="addInviteRecipient('${query}', null, 'manual')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <div class="invite-search-item-info">
+              <div class="invite-search-item-name">Add "${query}"</div>
+              <div class="invite-search-item-email">Send invitation to this email</div>
+            </div>
+            <span class="invite-source-badge manual">New</span>
+          </div>`;
+      }
+
+      if (results.length > 0) {
+        results.forEach(r => {
+          const escapedEmail = r.email.replace(/'/g, "\\'");
+          const escapedName = (r.name || '').replace(/'/g, "\\'");
+          html += `
+            <div class="invite-search-item" onclick="addInviteRecipient('${escapedEmail}', '${escapedName}', '${r.source}')">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--dark-hover); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0;">
+                ${(r.name || '?')[0].toUpperCase()}
+              </div>
+              <div class="invite-search-item-info">
+                <div class="invite-search-item-name">${r.name || r.email}</div>
+                <div class="invite-search-item-email">${r.email}${r.status ? ' &middot; ' + r.status : ''}</div>
+              </div>
+              <span class="invite-source-badge ${r.source}">${r.source}</span>
+            </div>`;
+        });
+      } else if (!isEmail && query.length >= 2) {
+        html += `<div class="invite-search-empty">No matches found. Type a full email to add manually.</div>`;
+      }
+
+      container.innerHTML = html;
+      container.style.display = html ? 'block' : 'none';
+    }
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+      const wrapper = document.querySelector('.invite-search-wrapper');
+      const results = document.getElementById('inviteSearchResults');
+      if (results && wrapper && !wrapper.contains(e.target)) {
+        results.style.display = 'none';
+      }
+    });
+
+    function buildInvitationEmailHTML(recipientName, shareUrl, projectName, permissionLevel, companyName) {
+      const permInfo = PERMISSION_LEVELS[permissionLevel] || PERMISSION_LEVELS.quote_approval;
+      const actionText = permInfo.canApprove ? 'review and approve' :
+                         permInfo.canEdit ? 'collaborate on' :
+                         permInfo.canViewPrices ? 'view the quote for' : 'view';
+
+      return `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; background: #1a1a2e; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 32px 24px; text-align: center;">
+            <h1 style="margin: 0; font-size: 22px; color: #fff; font-weight: 600;">${companyName}</h1>
+            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">has shared a design with you</p>
+          </div>
+          <div style="padding: 32px 24px;">
+            <p style="margin: 0 0 16px; font-size: 15px; color: #e0e0e0;">Hi ${recipientName},</p>
+            <p style="margin: 0 0 24px; font-size: 14px; color: #b0b0b0; line-height: 1.6;">
+              You've been invited to ${actionText} a design project: <strong style="color: #e0e0e0;">${projectName}</strong>
+            </p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${shareUrl}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                View Design
+              </a>
+            </div>
+            <p style="margin: 24px 0 0; font-size: 12px; color: #707070; text-align: center;">
+              This link gives you <strong>${permInfo.name}</strong> access.
+            </p>
+          </div>
+          <div style="padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #606060;">
+            <p style="margin: 0;">${companyName} &middot; (602) 833-3189</p>
+            <p style="margin: 4px 0 0;">15464 W Aster Dr, Surprise, AZ 85379</p>
+          </div>
+        </div>`;
+    }
+
+    async function sendDesignInvitation(recipient, shareUrl, projectName, permissionLevel, companyName) {
+      try {
+        const emailHTML = buildInvitationEmailHTML(
+          recipient.name, shareUrl, projectName, permissionLevel, companyName
+        );
+        const response = await fetch('https://surprise-granite-email-api.onrender.com/api/email/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: recipient.email,
+            subject: `${companyName} shared a design with you: ${projectName}`,
+            message: emailHTML,
+            type: 'info'
+          })
+        });
+        return response.ok;
+      } catch (err) {
+        console.error('Failed to send invitation to', recipient.email, err);
+        return false;
+      }
+    }
+
+    async function generateAndInvite() {
+      const recipients = INVITE_STATE.recipients;
+      if (recipients.length === 0) {
+        showToast('Add at least one recipient to send invitations', 'warning');
+        return;
+      }
+
+      // Generate the share link first
+      const shareUrl = await generateShareLink();
+      if (!shareUrl) {
+        showToast('Failed to generate share link', 'error');
+        return;
+      }
+
+      const projectName = document.getElementById('projectName').value || 'Untitled Design';
+      const permissionBtn = document.querySelector('#shareModal .permission-btn.active');
+      const permission = permissionBtn ? permissionBtn.dataset.permission : 'quote_approval';
+
+      // Get company name
+      let companyName = 'Surprise Granite Marble & Quartz';
+      try {
+        const profile = await window.SgAuth?.getProfile();
+        if (profile?.company_name) companyName = profile.company_name;
+        else if (profile?.full_name) companyName = profile.full_name;
+      } catch (e) {}
+
+      // Show sending status
+      const statusEl = document.getElementById('inviteSendStatus');
+      statusEl.innerHTML = recipients.map(r =>
+        `<div class="status-item sending" id="invite-status-${r.email.replace(/[^a-z0-9]/gi, '_')}">
+          &#8987; Sending to ${r.name}...
+        </div>`
+      ).join('');
+
+      const btn = document.getElementById('shareInviteBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+      // Send invitations in parallel
+      const results = await Promise.all(recipients.map(async (r) => {
+        const success = await sendDesignInvitation(r, shareUrl, projectName, permission, companyName);
+        const statusItem = document.getElementById(`invite-status-${r.email.replace(/[^a-z0-9]/gi, '_')}`);
+        if (statusItem) {
+          statusItem.className = `status-item ${success ? 'success' : 'failed'}`;
+          statusItem.innerHTML = success
+            ? `&#10003; Sent to ${r.name} (${r.email})`
+            : `&#10007; Failed to send to ${r.name}`;
+        }
+
+        // Create/link lead for each recipient
+        if (success) {
+          await findOrCreateLeadForRecipient(r.email, projectName);
+        }
+
+        return { ...r, success };
+      }));
+
+      const sentCount = results.filter(r => r.success).length;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Send Invitations`;
+      }
+      showToast(`Sent ${sentCount}/${recipients.length} invitation${recipients.length > 1 ? 's' : ''}`, sentCount === recipients.length ? 'success' : 'warning');
+    }
+
+    async function findOrCreateLeadForRecipient(email, projectName) {
+      try {
+        const user = window.SgAuth?.getUser();
+        if (!user) return null;
+
+        const { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY } = getSupabaseConfig();
+        const session = await window.SgAuth?.getSession?.();
+        const authToken = session?.access_token || SUPABASE_ANON_KEY;
+        const headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${authToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        };
+
+        // Check existing lead
+        const checkRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/leads?email=eq.${encodeURIComponent(email)}&select=id&order=created_at.desc&limit=1`,
+          { headers }
+        );
+        if (checkRes.ok) {
+          const existing = await checkRes.json();
+          if (Array.isArray(existing) && existing.length > 0) return existing[0].id;
+        }
+
+        // Also check homeowner_email
+        const checkRes2 = await fetch(
+          `${SUPABASE_URL}/rest/v1/leads?homeowner_email=eq.${encodeURIComponent(email)}&select=id&order=created_at.desc&limit=1`,
+          { headers }
+        );
+        if (checkRes2.ok) {
+          const existing2 = await checkRes2.json();
+          if (Array.isArray(existing2) && existing2.length > 0) return existing2[0].id;
+        }
+
+        // Create new lead
+        const roomType = document.getElementById('roomType')?.value || 'kitchen';
+        const newRes = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            email: email,
+            full_name: email.split('@')[0],
+            source: 'Design Share',
+            project_type: roomType,
+            owner_id: user.id,
+            user_id: user.id,
+            status: 'new',
+            message: `Design project: ${projectName}`
+          })
+        });
+        if (newRes.ok) {
+          const newLeads = await newRes.json();
+          if (Array.isArray(newLeads) && newLeads.length > 0) return newLeads[0].id;
+        }
+        return null;
+      } catch (e) {
+        console.warn('Could not create lead for', email, e);
+        return null;
+      }
+    }
+
     // ===== PRICE LIST MODAL FUNCTIONS =====
     let pendingPriceData = null;
 
@@ -51908,7 +52484,9 @@
         }
 
         // Check if customer email provided to link to a lead
-        const customerEmail = document.getElementById('shareCustomerEmail')?.value?.trim();
+        // Use first invite recipient, or fall back to legacy input
+        const customerEmail = (INVITE_STATE.recipients.length > 0 ? INVITE_STATE.recipients[0].email : null)
+          || document.getElementById('shareCustomerEmail')?.value?.trim();
         let leadId = null;
 
         if (customerEmail) {
@@ -51989,6 +52567,7 @@
         loadActiveShares();
         hideLoading();
         showToast('Share link created successfully', 'success');
+        return shareUrl;
 
       } catch (err) {
         console.error('Share error:', err);
@@ -52035,6 +52614,7 @@
 
         hideLoading();
         showToast('Share link created (local storage mode)', 'info');
+        return shareUrl;
       }
     }
 
