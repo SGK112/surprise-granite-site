@@ -30264,7 +30264,7 @@
 
         // Finish-specific settings for realistic stone appearance
         const finishSettings = {
-          polished: { roughness: 0.08, clearcoat: 0.6, clearcoatRoughness: 0.15, sheen: 0.3 },
+          polished: { roughness: 0.08, clearcoat: 0.2, clearcoatRoughness: 0.2, sheen: 0.3 },
           honed: { roughness: 0.45, clearcoat: 0.1, clearcoatRoughness: 0.6, sheen: 0.1 },
           leathered: { roughness: 0.7, clearcoat: 0.05, clearcoatRoughness: 0.8, sheen: 0.5 },
           brushed: { roughness: 0.55, clearcoat: 0.08, clearcoatRoughness: 0.7, sheen: 0.2 },
@@ -33318,11 +33318,12 @@
           // Skip flat/square/eased edges - main body geometry handles these
           const skipEdgeProfile = ['flat-polish', 'square', 'eased'].includes(edgeProfile);
 
-          // For decorative edges, inset the main body to make room for the profile
-          const edgeInset = skipEdgeProfile ? 0 : effectiveH * 0.15; // 15% of thickness for profile
+          // For decorative edges, inset the main body front by the full slab thickness
+          // so the edge profile geometry fills the gap exactly (no overlap)
+          const edgeInset = skipEdgeProfile ? 0 : effectiveH;
 
-          // Main slab body - full size solid block (or inset for decorative edges)
-          // Skip when sinks present (use topSurface with cutouts instead)
+          // Main slab body - full size for flat/square/eased, or front-inset for decorative edges
+          // Skip when sinks present (use ExtrudeGeometry with cutouts instead)
           if (sinkCutouts.length === 0) {
             const bodyDepth = slabD - (hasFrontWaterfall ? 0 : edgeInset);
             const bodyOffsetZ = (hasFrontWaterfall ? 0 : -edgeInset / 2);
@@ -33331,22 +33332,21 @@
               ctopMat
             );
             mainBody.position.set(slabOffsetX, 0, slabOffsetZ + bodyOffsetZ);
+            mainBody.castShadow = true;
+            mainBody.receiveShadow = true;
             group.add(mainBody);
           }
 
-          // Edge rendering - only for decorative profiles that need visible geometry
-          // Use the same material as the body for seamless appearance
-          // The edge profile SHAPE provides visual differentiation, not a different material
-          const frontEdgeMat = ctopMat;
-
-          // waterfallSides already declared above - use those variables
+          // Edge rendering - decorative profile geometry fills the front face gap
+          // Same material as body, DoubleSide for correct visibility after rotation
+          const frontEdgeMat = ctopMat.clone();
+          frontEdgeMat.side = THREE.DoubleSide;
 
           // Front edge - SKIP if front has waterfall (waterfall replaces the edge)
           // Also skip for flat/square/eased edges (main body handles these)
           // Also shorten front edge if left/right waterfalls exist (they handle the corners)
           if (!hasFrontWaterfall && !skipEdgeProfile) {
             const wfThicknessForEdge = is2cm ? 0.065 : 0.1;
-            // Calculate front edge length - shorten for waterfall corners
             let frontEdgeLen = slabW;
             let frontEdgePosX = slabOffsetX;
             if (hasLeftWaterfall) {
@@ -33360,14 +33360,20 @@
             try {
               const frontEdgeGeo = createEdgeGeometry(edgeProfile, frontEdgeLen);
               const frontEdge = new THREE.Mesh(frontEdgeGeo, frontEdgeMat);
-              frontEdge.rotation.y = Math.PI / 2;
-              frontEdge.rotation.x = -Math.PI / 2;
-              // Position edge profile flush with front of counter
-              frontEdge.position.set(-frontEdgeLen/2 + frontEdgePosX, effectiveH/2, slabD/2 + slabOffsetZ);
+              // Single rotation: extrusion (Z) → runs along X (counter width)
+              // Shape X (profile depth) → Z (toward viewer), Y (height) → Y (vertical)
+              frontEdge.rotation.y = -Math.PI / 2;
+              // Position: edge back (shape x=0) at body front, edge front (shape x=t) at slab front
+              frontEdge.position.set(
+                frontEdgeLen / 2 + frontEdgePosX,
+                -effectiveH / 2,
+                slabD / 2 - effectiveH + slabOffsetZ
+              );
+              frontEdge.castShadow = true;
               group.add(frontEdge);
             } catch(e) {
-              // Edge profile is decorative - fallback just adds visual polish strip
-              const edgeDepth = 0.02; // Small decorative edge strip
+              // Fallback: thin decorative strip on front face
+              const edgeDepth = 0.02;
               const frontEdge = new THREE.Mesh(
                 new THREE.BoxGeometry(frontEdgeLen, effectiveH * 0.9, edgeDepth),
                 frontEdgeMat
@@ -33377,59 +33383,35 @@
             }
           }
 
-          // Side edges for finished ends
-          // IMPORTANT: Do NOT render edge profiles on waterfall sides - the waterfall IS the edge
-          // Also skip for flat/square/eased edges (main body handles these)
+          // Side edges for finished ends — thin decorative strips
+          // IMPORTANT: Do NOT render on waterfall sides - the waterfall IS the edge
+          // Skip for flat/square/eased edges (main body handles these)
           if (el.finishedEnds && !skipEdgeProfile) {
-            const sideEdgeDepth = 0.02; // Small decorative edge strip
-            // Left edge - skip if there's a left waterfall (waterfall replaces the edge)
+            const sideEdgeDepth = 0.015;
+            // Left finished end
             if (el.finishedEnds.includes('left') && !hasLeftWaterfall) {
-              try {
-                const leftEdgeGeo = createEdgeGeometry(edgeProfile, slabD);
-                const leftEdge = new THREE.Mesh(leftEdgeGeo, frontEdgeMat);
-                leftEdge.rotation.z = Math.PI / 2;
-                leftEdge.rotation.y = Math.PI;
-                leftEdge.position.set(-slabW/2 + slabOffsetX, -effectiveH/2, slabD/2 + slabOffsetZ);
-                group.add(leftEdge);
-              } catch(e) {
-                // Decorative side edge strip
-                const leftEdge = new THREE.Mesh(
-                  new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.9, slabD),
-                  frontEdgeMat
-                );
-                leftEdge.position.set(-slabW/2 - sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
-                group.add(leftEdge);
-              }
+              const leftEdge = new THREE.Mesh(
+                new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.95, slabD),
+                frontEdgeMat
+              );
+              leftEdge.position.set(-slabW/2 - sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
+              group.add(leftEdge);
             }
-            // Right edge - skip if there's a right waterfall (waterfall replaces the edge)
+            // Right finished end
             if (el.finishedEnds.includes('right') && !hasRightWaterfall) {
-              try {
-                const rightEdgeGeo = createEdgeGeometry(edgeProfile, slabD);
-                const rightEdge = new THREE.Mesh(rightEdgeGeo, frontEdgeMat);
-                rightEdge.rotation.z = -Math.PI / 2;
-                rightEdge.position.set(slabW/2 + slabOffsetX, effectiveH/2, -slabD/2 + slabOffsetZ);
-                group.add(rightEdge);
-              } catch(e) {
-                // Decorative side edge strip
-                const rightEdge = new THREE.Mesh(
-                  new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.9, slabD),
-                  frontEdgeMat
-                );
-                rightEdge.position.set(slabW/2 + sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
-                group.add(rightEdge);
-              }
+              const rightEdge = new THREE.Mesh(
+                new THREE.BoxGeometry(sideEdgeDepth, effectiveH * 0.95, slabD),
+                frontEdgeMat
+              );
+              rightEdge.position.set(slabW/2 + sideEdgeDepth/2 + slabOffsetX, 0, slabOffsetZ);
+              group.add(rightEdge);
             }
           }
 
           // Back edge removed - it's against the wall and not visible
           // The main body is now full-size so no separate back edge needed
 
-          // Top surface - create with holes if there are sink cutouts
-          const topMat = createTexturedMaterial(color, textureUrl, {
-            roughness: 0.2,
-            metalness: 0.01
-          });
-
+          // Countertop with sink cutouts — uses ExtrudeGeometry with holes
           if (sinkCutouts.length > 0) {
             // Create full-thickness countertop with sink holes using ExtrudeGeometry
             const topShape = new THREE.Shape();
@@ -33499,8 +33481,9 @@
 
             // Use same texture as countertop or a different material
             const bsMat = createTexturedMaterial(color, textureUrl, {
-              roughness: 0.15,
-              metalness: 0.05,
+              isCountertop: true,
+              width: slabW,
+              depth: bsThickness,
               finish: el.finish || 'polished'
             });
 
@@ -33516,7 +33499,7 @@
             // Top edge detail (eased edge on backsplash)
             const bsTopEdge = new THREE.Mesh(
               new THREE.BoxGeometry(slabW + 0.01, 0.015, bsThickness + 0.02),
-              createTexturedMaterial(color, textureUrl, { roughness: 0.1, metalness: 0.1 })
+              createTexturedMaterial(color, textureUrl, { isCountertop: true, finish: el.finish || 'polished' })
             );
             bsTopEdge.position.set(slabOffsetX, h/2 + bsHeight - 0.0075, -slabD/2 + bsThickness/2 + slabOffsetZ);
             group.add(bsTopEdge);
@@ -33546,8 +33529,9 @@
           // Waterfalls render regardless of edge profile - user can add to any countertop
           if (el.waterfallSides && el.waterfallSides.length > 0) {
             const waterfallMat = createTexturedMaterial(color, textureUrl, {
-              roughness: 0.1,
-              metalness: 0.08,
+              isCountertop: true,
+              width: w,
+              depth: d,
               finish: el.finish || 'polished'
             });
 
