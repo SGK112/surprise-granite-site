@@ -51950,10 +51950,10 @@
         }
 
         // Create share record with specific permission
-        const shareToken = generateToken(12);
+        // Use designToken for the share URL so the fallback lookup on room_designs always works
         const shareData = {
           design_id: designId,
-          share_token: shareToken,
+          share_token: designToken,
           permission_level: permission
         };
 
@@ -51961,19 +51961,23 @@
           shareData.lead_id = leadId;
         }
 
-        const shareResponse = await fetch(`${SUPABASE_URL}/rest/v1/room_design_shares`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(shareData)
-        });
+        // Non-fatal: room_design_shares table may not exist yet
+        try {
+          const shareResponse = await fetch(`${SUPABASE_URL}/rest/v1/room_design_shares`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(shareData)
+          });
 
-        if (!shareResponse.ok) {
-          const errorText = await shareResponse.text();
-          throw new Error(`Share insert failed: ${shareResponse.status} - ${errorText}`);
+          if (!shareResponse.ok) {
+            console.warn('room_design_shares insert failed (table may not exist):', shareResponse.status);
+          }
+        } catch (shareInsertErr) {
+          console.warn('Could not create share record:', shareInsertErr);
         }
 
-        // Display share URL
-        const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareToken}`;
+        // Display share URL — uses designToken which is always on room_designs.share_token
+        const shareUrl = `${window.location.origin}${window.location.pathname}?share=${designToken}`;
         document.getElementById('shareLink').value = shareUrl;
         document.getElementById('copyShareBtn').disabled = false;
         document.getElementById('shareStatusText').textContent = 'Design shared!';
@@ -52301,8 +52305,12 @@
             `${SUPABASE_URL}/rest/v1/room_design_shares?share_token=eq.${shareToken}&select=*`,
             { headers }
           );
-          const shareResults = await shareRes.json();
-          shareData = shareResults.length > 0 ? shareResults[0] : null;
+          if (shareRes.ok) {
+            const shareResults = await shareRes.json();
+            shareData = Array.isArray(shareResults) && shareResults.length > 0 ? shareResults[0] : null;
+          } else {
+            console.warn('room_design_shares query returned', shareRes.status, '(table may not exist)');
+          }
           console.log('Share query result:', shareData);
         } catch (e) {
           shareError = e;
@@ -52318,15 +52326,19 @@
               `${SUPABASE_URL}/rest/v1/room_designs?share_token=eq.${shareToken}&select=*`,
               { headers }
             );
-            const designResults = await designRes.json();
-            const directDesign = designResults.length > 0 ? designResults[0] : null;
+            if (designRes.ok) {
+              const designResults = await designRes.json();
+              const directDesign = Array.isArray(designResults) && designResults.length > 0 ? designResults[0] : null;
 
-            console.log('Direct design query result:', directDesign);
+              console.log('Direct design query result:', directDesign);
 
-            if (directDesign) {
-              // Found as a direct design link - load it directly
-              loadDesignData(directDesign, 'full_collab');
-              return;
+              if (directDesign) {
+                // Found as a direct design link - load it directly
+                loadDesignData(directDesign, directDesign.settings?.share_mode === 'edit' ? 'full_collab' : 'quote_view');
+                return;
+              }
+            } else {
+              console.error('Design query failed:', designRes.status);
             }
           } catch (e) {
             console.error('Design query error:', e);
