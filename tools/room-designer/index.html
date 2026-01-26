@@ -9648,14 +9648,15 @@
         <div class="invite-chips-container" id="inviteChips"></div>
         <div class="invite-search-wrapper">
           <input type="text" id="inviteSearchInput"
-                 placeholder="Search leads, customers, or type an email..."
+                 placeholder="Search contacts or type emails (comma-separated)..."
                  autocomplete="off"
                  oninput="searchInviteRecipients(this.value)"
-                 onkeydown="handleInviteKeydown(event)">
+                 onkeydown="handleInviteKeydown(event)"
+                 onpaste="handleInvitePaste(event)">
           <div class="invite-search-results" id="inviteSearchResults" style="display:none;"></div>
         </div>
         <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
-          Search your CRM or type an email and press Enter
+          Search your CRM or type emails separated by commas
         </div>
         <div class="invite-send-status" id="inviteSendStatus"></div>
       </div>
@@ -49997,17 +49998,52 @@
     }
 
     function handleInviteKeydown(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
+      if (e.key === 'Enter' || e.key === ',') {
         const input = e.target;
-        const val = input.value.trim();
-        if (val && val.includes('@') && val.includes('.')) {
-          addInviteRecipient(val, null, 'manual');
+        const rawVal = input.value;
+        // Split by comma to support multiple emails
+        const parts = rawVal.split(',').map(s => s.trim()).filter(Boolean);
+        let added = false;
+        parts.forEach(part => {
+          if (part && part.includes('@') && part.includes('.')) {
+            addInviteRecipient(part, null, 'manual');
+            added = true;
+          }
+        });
+        if (added) {
+          e.preventDefault();
+          input.value = '';
+          document.getElementById('inviteSearchResults').style.display = 'none';
+        } else if (e.key === ',') {
+          // Let the comma go through if no valid emails yet
         }
       }
       if (e.key === 'Escape') {
         document.getElementById('inviteSearchResults').style.display = 'none';
       }
+    }
+
+    function handleInvitePaste(e) {
+      setTimeout(() => {
+        const input = e.target;
+        const val = input.value;
+        if (val.includes(',')) {
+          const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+          let added = false;
+          parts.forEach(part => {
+            if (part && part.includes('@') && part.includes('.')) {
+              addInviteRecipient(part, null, 'manual');
+              added = true;
+            }
+          });
+          if (added) {
+            // Keep any remaining non-email text in the input
+            const remaining = parts.filter(p => !(p.includes('@') && p.includes('.'))).join(', ');
+            input.value = remaining;
+            document.getElementById('inviteSearchResults').style.display = 'none';
+          }
+        }
+      }, 0);
     }
 
     async function searchInviteRecipients(query) {
@@ -50039,35 +50075,51 @@
             'Accept': 'application/json'
           };
 
-          const encodedQuery = encodeURIComponent(`%${query}%`);
+          const safeQuery = encodeURIComponent(query);
           const results = [];
 
-          // Query leads
+          // Query leads — try with homeowner_* columns first, then fall back to generic columns
+          // Use PostgREST * wildcard (converts to SQL %) instead of encoding %
           try {
-            const leadsRes = await fetch(
-              `${SUPABASE_URL}/rest/v1/leads?or=(homeowner_name.ilike.${encodedQuery},homeowner_email.ilike.${encodedQuery},full_name.ilike.${encodedQuery},email.ilike.${encodedQuery})&user_id=eq.${user.id}&select=id,homeowner_name,homeowner_email,full_name,email,status&limit=10`,
-              { headers }
-            );
-            if (leadsRes.ok) {
-              const leads = await leadsRes.json();
-              if (Array.isArray(leads)) {
-                leads.forEach(l => {
-                  const email = l.homeowner_email || l.email;
-                  const name = l.homeowner_name || l.full_name || (email ? email.split('@')[0] : '');
-                  if (email) {
+            // Try homeowner_name/homeowner_email columns with owner_id
+            const leadsUrl1 = `${SUPABASE_URL}/rest/v1/leads?or=(homeowner_name.ilike.*${safeQuery}*,homeowner_email.ilike.*${safeQuery}*)&owner_id=eq.${user.id}&select=id,homeowner_name,homeowner_email,status&limit=10`;
+            const leadsRes1 = await fetch(leadsUrl1, { headers });
+            if (leadsRes1.ok) {
+              const leads1 = await leadsRes1.json();
+              if (Array.isArray(leads1)) {
+                leads1.forEach(l => {
+                  const email = l.homeowner_email;
+                  const name = l.homeowner_name || (email ? email.split('@')[0] : '');
+                  if (email && !results.some(r => r.email === email)) {
                     results.push({ email, name, source: 'lead', status: l.status });
                   }
                 });
               }
             }
-          } catch (e) { console.warn('Lead search error:', e); }
+          } catch (e) { console.warn('Lead search (homeowner) error:', e); }
+
+          try {
+            // Also try full_name/email columns (newer schema) with user_id
+            const leadsUrl2 = `${SUPABASE_URL}/rest/v1/leads?or=(full_name.ilike.*${safeQuery}*,email.ilike.*${safeQuery}*)&user_id=eq.${user.id}&select=id,full_name,email,status&limit=10`;
+            const leadsRes2 = await fetch(leadsUrl2, { headers });
+            if (leadsRes2.ok) {
+              const leads2 = await leadsRes2.json();
+              if (Array.isArray(leads2)) {
+                leads2.forEach(l => {
+                  const email = l.email;
+                  const name = l.full_name || (email ? email.split('@')[0] : '');
+                  if (email && !results.some(r => r.email === email)) {
+                    results.push({ email, name, source: 'lead', status: l.status });
+                  }
+                });
+              }
+            }
+          } catch (e) { /* full_name/email columns may not exist — that's fine */ }
 
           // Query customers
           try {
-            const custRes = await fetch(
-              `${SUPABASE_URL}/rest/v1/customers?or=(name.ilike.${encodedQuery},email.ilike.${encodedQuery})&user_id=eq.${user.id}&select=id,name,email,phone&limit=10`,
-              { headers }
-            );
+            const custUrl = `${SUPABASE_URL}/rest/v1/customers?or=(name.ilike.*${safeQuery}*,email.ilike.*${safeQuery}*)&user_id=eq.${user.id}&select=id,name,email,phone&limit=10`;
+            const custRes = await fetch(custUrl, { headers });
             if (custRes.ok) {
               const custs = await custRes.json();
               if (Array.isArray(custs)) {
@@ -50076,6 +50128,20 @@
                     results.push({ email: c.email, name: c.name || c.email.split('@')[0], source: 'customer' });
                   }
                 });
+              }
+            } else {
+              // Try with owner_id if user_id didn't work
+              const custUrl2 = `${SUPABASE_URL}/rest/v1/customers?or=(name.ilike.*${safeQuery}*,email.ilike.*${safeQuery}*)&owner_id=eq.${user.id}&select=id,name,email,phone&limit=10`;
+              const custRes2 = await fetch(custUrl2, { headers });
+              if (custRes2.ok) {
+                const custs2 = await custRes2.json();
+                if (Array.isArray(custs2)) {
+                  custs2.forEach(c => {
+                    if (c.email && !results.some(r => r.email === c.email)) {
+                      results.push({ email: c.email, name: c.name || c.email.split('@')[0], source: 'customer' });
+                    }
+                  });
+                }
               }
             }
           } catch (e) { console.warn('Customer search error:', e); }
