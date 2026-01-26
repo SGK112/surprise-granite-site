@@ -8223,10 +8223,12 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <select class="property-select" id="propSillHeight" onchange="updateSillHeight()" style="flex: 1;">
                   <option value="0">0" - Floor Level (Doors)</option>
-                  <option value="2">24" - Standard Window</option>
-                  <option value="3">36" - At Counter Level</option>
-                  <option value="3.5">42" - Above Counter</option>
+                  <option value="1.5">18" - Low / Picture Window</option>
+                  <option value="2">24" - Bedroom Window</option>
+                  <option value="3">36" - Standard (IRC)</option>
+                  <option value="3.5">42" - Above Counter (Kitchen)</option>
                   <option value="4">48" - High Window</option>
+                  <option value="5">60" - Clerestory</option>
                   <option value="custom">Custom...</option>
                 </select>
               </div>
@@ -8234,6 +8236,27 @@
             <div class="property-row" id="customSillRow" style="display: none;">
               <span class="property-label">Custom (ft)</span>
               <input type="number" class="property-input" id="propCustomSill" step="0.0833" min="0" max="8" onchange="applyCustomSillHeight()">
+            </div>
+            <!-- Window Opening Height controls -->
+            <div class="property-row" id="windowHeightRow" style="display: none;">
+              <span class="property-label">Window Height</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select class="property-select" id="propWindowHeight" onchange="updateWindowOpeningHeight()" style="flex: 1;">
+                  <option value="2">24" - Small</option>
+                  <option value="2.5">30" - Standard</option>
+                  <option value="3">36" - Standard+</option>
+                  <option value="3.5">42" - Large</option>
+                  <option value="4">48" - Bay / Large</option>
+                  <option value="5">60" - Picture</option>
+                  <option value="6">72" - Floor-to-Ceil</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+            </div>
+            <div class="property-row" id="customWindowHeightRow" style="display: none;">
+              <span class="property-label">Height (ft)</span>
+              <input type="number" class="property-input" id="propCustomWindowHeight" step="0.0833" min="1" max="10" onchange="applyCustomWindowOpeningHeight()">
+              <span class="dimension-display" id="propWindowHeightDisplay"></span>
             </div>
             <!-- Door/Archway height controls -->
             <div class="property-row" id="doorHeightRow" style="display: none;">
@@ -28833,19 +28856,18 @@
           return wallCabinetBottomHeight + height / 2;
         }
 
-        // Windows - use sillHeight property if available
+        // Windows - use sillHeight property, fall back to construction standard
         case 'window':
         case 'window-large':
         case 'window-bay':
         case 'bay-window':
         case 'picture-window': {
           // sillHeight is the bottom edge from floor (in feet)
-          // Default: 2ft (24") for standard window
-          const sillHeight = el.sillHeight !== undefined ? el.sillHeight : 2;
+          const sillHeight = el.sillHeight !== undefined ? el.sillHeight : getDefaultSillHeight(type);
           return sillHeight + height / 2; // Position center based on sill
         }
 
-        // Doors and archways - use sillHeight (should be 0 for doors on floor)
+        // Doors and archways - sill at floor level
         case 'door':
         case 'double-door':
         case 'sliding-door':
@@ -28853,7 +28875,7 @@
         case 'glass-door':
         case 'entry-archway':
         case 'garage-door': {
-          const doorSillHeight = el.sillHeight !== undefined ? el.sillHeight : 0;
+          const doorSillHeight = el.sillHeight !== undefined ? el.sillHeight : getDefaultSillHeight(type);
           return doorSillHeight + height / 2;
         }
 
@@ -44115,7 +44137,8 @@
         }
 
         // Window/Door sill height (height from floor)
-        const windowDoorTypes = ['window', 'sliding-door', 'french-door', 'glass-door', 'bay-window', 'picture-window'];
+        const windowDoorTypes = ['window', 'window-large', 'window-bay', 'bay-window', 'picture-window',
+          'door', 'double-door', 'sliding-door', 'french-door', 'glass-door', 'entry-archway', 'garage-door'];
         const isWindowOrDoor = windowDoorTypes.includes(selectedElement.type);
         const sillHeightRow = document.getElementById('sillHeightRow');
         const customSillRow = document.getElementById('customSillRow');
@@ -44127,7 +44150,7 @@
             const select = document.getElementById('propSillHeight');
 
             // Check if it matches a preset
-            const presets = [0, 2, 3, 3.5, 4];
+            const presets = [0, 1.5, 2, 3, 3.5, 4, 5];
             const matchesPreset = presets.some(p => Math.abs(sillHeight - p) < 0.05);
 
             if (matchesPreset) {
@@ -44207,6 +44230,40 @@
           if (isWindow) {
             document.getElementById('propMullionPattern').value = selectedElement.mullionPattern || 'standard';
           }
+        }
+
+        // Window opening height (3D height of the window)
+        const windowHeightRow = document.getElementById('windowHeightRow');
+        const customWindowHeightRow = document.getElementById('customWindowHeightRow');
+
+        if (windowHeightRow) {
+          windowHeightRow.style.display = isWindow ? 'flex' : 'none';
+          if (isWindow) {
+            const winHeight = selectedElement.windowHeight !== undefined
+              ? selectedElement.windowHeight
+              : get3DHeight(selectedElement);
+            const select = document.getElementById('propWindowHeight');
+
+            // Check if it matches a preset
+            const winPresets = [2, 2.5, 3, 3.5, 4, 5, 6];
+            const matchesWinPreset = winPresets.some(p => Math.abs(winHeight - p) < 0.05);
+
+            if (matchesWinPreset) {
+              select.value = winPresets.find(p => Math.abs(winHeight - p) < 0.05).toString();
+              if (customWindowHeightRow) customWindowHeightRow.style.display = 'none';
+            } else {
+              select.value = 'custom';
+              if (customWindowHeightRow) {
+                customWindowHeightRow.style.display = 'flex';
+                document.getElementById('propCustomWindowHeight').value = winHeight.toFixed(2);
+                const display = document.getElementById('propWindowHeightDisplay');
+                if (display) display.textContent = formatDimension(winHeight);
+              }
+            }
+          }
+        }
+        if (customWindowHeightRow && !isWindow) {
+          customWindowHeightRow.style.display = 'none';
         }
 
         // Pony wall / half wall height controls
@@ -44884,20 +44941,27 @@
 
     // Get default sill height based on element type (building code compliant)
     function getDefaultSillHeight(type) {
+      // Proper construction sill heights per IRC / industry standards
       switch(type) {
         case 'window':
+          return 3;       // 36" - IRC standard residential window sill
         case 'window-large':
+          return 2;       // 24" - picture windows sit lower for views
         case 'window-bay':
         case 'bay-window':
+          return 3.5;     // 42" - above counter height (kitchen bay windows)
         case 'picture-window':
-          return 2; // 24" - standard window sill height
+          return 1.5;     // 18" - near floor for panoramic views
+        case 'door':
+        case 'double-door':
         case 'sliding-door':
         case 'french-door':
         case 'glass-door':
-        case 'door':
-          return 0; // Floor level for doors
+        case 'entry-archway':
+        case 'garage-door':
+          return 0;       // Floor level for all doors
         default:
-          return 2;
+          return 3;       // 36" IRC default
       }
     }
 
@@ -44927,8 +44991,10 @@
         codeInfo = ' (Warning: May exceed egress max 44")';
       }
 
+      markElement3DDirty(selectedElement.id);
       saveUndoState();
       draw();
+      update3DScene();
       showSnapFeedback(`Sill height: ${Math.round(sillHeight * 12)}"${codeInfo}`);
     }
 
@@ -44950,9 +45016,57 @@
         warning = ' - Above 44" egress maximum';
       }
 
+      markElement3DDirty(selectedElement.id);
       saveUndoState();
       draw();
+      update3DScene();
       showSnapFeedback(`Custom sill: ${Math.round(sillHeight * 12)}"${warning}`);
+    }
+
+    // Update window opening height (3D height of the window)
+    function updateWindowOpeningHeight() {
+      if (!selectedElement) return;
+
+      const select = document.getElementById('propWindowHeight');
+      const value = select.value;
+      const customRow = document.getElementById('customWindowHeightRow');
+
+      if (value === 'custom') {
+        if (customRow) {
+          customRow.style.display = 'flex';
+          document.getElementById('propCustomWindowHeight').value =
+            selectedElement.windowHeight || get3DHeight(selectedElement);
+        }
+        return;
+      }
+
+      if (customRow) customRow.style.display = 'none';
+      const windowHeight = parseFloat(value);
+      selectedElement.windowHeight = windowHeight;
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Window height: ${Math.round(windowHeight * 12)}"`);
+    }
+
+    // Apply custom window opening height
+    function applyCustomWindowOpeningHeight() {
+      if (!selectedElement) return;
+
+      const input = document.getElementById('propCustomWindowHeight');
+      const windowHeight = Math.max(1, Math.min(10, parseFloat(input.value) || 3));
+      selectedElement.windowHeight = windowHeight;
+
+      const display = document.getElementById('propWindowHeightDisplay');
+      if (display) display.textContent = formatDimension(windowHeight);
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Window height: ${Math.round(windowHeight * 12)}"`);
     }
 
     // Update door/archway height
