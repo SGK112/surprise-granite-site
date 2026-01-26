@@ -8006,8 +8006,8 @@
           </div>
         </div>
 
-        <!-- Room Templates (collapsed by default) -->
-        <div class="panel-section collapsed" id="roomTemplatesSection">
+        <!-- Room Templates (expanded by default for discoverability) -->
+        <div class="panel-section" id="roomTemplatesSection">
           <div class="panel-title" onclick="togglePanelSection('roomTemplatesSection')">
             <span>Room Templates</span>
             <span class="toggle-icon">▼</span>
@@ -8025,6 +8025,14 @@
             <button class="template-btn" onclick="loadRoomTemplate('kitchen-u')" title="U-shaped kitchen">
               <span class="template-icon">🔲</span>
               <span class="template-name">U-Kitchen</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-single')" title="Single wall kitchen layout">
+              <span class="template-icon">📏</span>
+              <span class="template-name">Single Wall</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('kitchen-peninsula')" title="Peninsula kitchen with breakfast bar">
+              <span class="template-icon">🍽</span>
+              <span class="template-name">Peninsula</span>
             </button>
             <button class="template-btn" onclick="loadRoomTemplate('bathroom-master')" title="Master bathroom with tub and shower">
               <span class="template-icon">🛁</span>
@@ -8712,6 +8720,14 @@
               <span class="property-label">Rotation</span>
               <span class="property-value" id="propRotation">0°</span>
             </div>
+            <div class="property-row" id="areaMeasureRow">
+              <span class="property-label">Area</span>
+              <span class="property-value" id="propArea" style="font-size: 11px; color: rgba(255,255,255,0.7);">-</span>
+            </div>
+            <div class="property-row" id="perimeterMeasureRow">
+              <span class="property-label">Perimeter</span>
+              <span class="property-value" id="propPerimeter" style="font-size: 11px; color: rgba(255,255,255,0.7);">-</span>
+            </div>
             <div class="property-row" id="grainDirectionRow" style="display: none;">
               <span class="property-label">Grain/Tile Dir</span>
               <div class="grain-direction-controls">
@@ -9112,6 +9128,94 @@
         <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
       </svg>
       Delete
+    </div>
+  </div>
+
+  <!-- Add Room Modal -->
+  <div class="modal-overlay" id="addRoomModal" style="display: none;">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Add New Room</h3>
+        <button class="close-btn" onclick="closeModal('addRoomModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="input-group">
+            <label class="input-label" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Room Name</label>
+            <input type="text" class="input-field" id="addRoomName" placeholder="e.g. Master Bathroom" style="width: 100%;">
+          </div>
+          <div class="input-group">
+            <label class="input-label" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Room Type</label>
+            <select class="input-field" id="addRoomType" style="width: 100%;">
+              <option value="kitchen">Kitchen</option>
+              <option value="bathroom">Bathroom</option>
+              <option value="shower">Shower Room</option>
+              <option value="closet">Walk-in Closet</option>
+              <option value="laundry">Laundry</option>
+              <option value="bedroom">Bedroom</option>
+              <option value="living">Living Room</option>
+              <option value="office">Office</option>
+              <option value="commercial">Commercial</option>
+            </select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="input-group">
+              <label class="input-label" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Width (ft)</label>
+              <input type="number" class="input-field" id="addRoomWidth" value="12" min="4" max="100" style="width: 100%;">
+            </div>
+            <div class="input-group">
+              <label class="input-label" style="color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 4px;">Depth (ft)</label>
+              <input type="number" class="input-field" id="addRoomDepth" value="10" min="4" max="100" style="width: 100%;">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="submitAddRoom()" style="width: 100%; padding: 10px; margin-top: 8px;">Create Room</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template Selection Modal (used by mobile menu) -->
+  <div class="modal-overlay" id="templateModal" style="display: none;">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Room Templates</h3>
+        <button class="close-btn" onclick="closeModal('templateModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 16px;">Select a template to load a preset room layout</p>
+        <div class="room-templates-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-l'); closeModal('templateModal');" title="L-shaped kitchen">
+            <span class="template-icon">🍳</span><span class="template-name">L-Kitchen</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-galley'); closeModal('templateModal');" title="Galley kitchen">
+            <span class="template-icon">🏠</span><span class="template-name">Galley</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-u'); closeModal('templateModal');" title="U-shaped kitchen">
+            <span class="template-icon">🔲</span><span class="template-name">U-Kitchen</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-single'); closeModal('templateModal');" title="Single wall kitchen">
+            <span class="template-icon">📏</span><span class="template-name">Single Wall</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('kitchen-peninsula'); closeModal('templateModal');" title="Peninsula kitchen">
+            <span class="template-icon">🍽</span><span class="template-name">Peninsula</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-master'); closeModal('templateModal');" title="Master bathroom">
+            <span class="template-icon">🛁</span><span class="template-name">Master Bath</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-half'); closeModal('templateModal');" title="Half bathroom">
+            <span class="template-icon">🚽</span><span class="template-name">Half Bath</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('shower-walkin'); closeModal('templateModal');" title="Walk-in shower">
+            <span class="template-icon">🚿</span><span class="template-name">Walk-in Shower</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('closet-walkin'); closeModal('templateModal');" title="Walk-in closet">
+            <span class="template-icon">👔</span><span class="template-name">Walk-in Closet</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('laundry-room'); closeModal('templateModal');" title="Laundry room">
+            <span class="template-icon">🧺</span><span class="template-name">Laundry</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -15477,7 +15581,10 @@
     function showAddRoomModal() {
       const modal = document.getElementById('addRoomModal');
       if (modal) {
-        modal.classList.add('active');
+        // Prefill defaults
+        const nameInput = document.getElementById('addRoomName');
+        if (nameInput) nameInput.value = `Room ${rooms.length + 1}`;
+        openModal('addRoomModal');
       } else {
         // Simple prompt fallback
         const name = prompt('Room name:', `Room ${rooms.length + 1}`);
@@ -15488,6 +15595,15 @@
           addNewRoom(name, type, width, depth);
         }
       }
+    }
+
+    function submitAddRoom() {
+      const name = document.getElementById('addRoomName').value.trim() || `Room ${rooms.length + 1}`;
+      const type = document.getElementById('addRoomType').value || 'kitchen';
+      const width = parseInt(document.getElementById('addRoomWidth').value) || 12;
+      const depth = parseInt(document.getElementById('addRoomDepth').value) || 10;
+      closeModal('addRoomModal');
+      addNewRoom(name, type, width, depth);
     }
 
     // Make functions globally accessible
@@ -22631,11 +22747,23 @@
         ctx.fillText(displayLabel, x + w/2, y + h - 6);
       }
 
-      // Dimensions (only when selected)
+      // Dimensions — always show on elements large enough, highlighted when selected
+      const dimFontSize = Math.max(9, Math.min(12, pixelsPerFoot / 4));
       if (isSelected) {
         ctx.fillStyle = '#6366f1';
-        ctx.font = `bold ${Math.max(10, pixelsPerFoot / 4)}px Inter`;
+        ctx.font = `bold ${dimFontSize + 2}px Inter`;
+        ctx.textAlign = 'center';
         ctx.fillText(formatSize(el.width, el.height), x + w/2, y - 8);
+      } else if (w > 50 && h > 30) {
+        // Compact inline dimension on non-selected elements
+        const dimText = formatSize(el.width, el.height);
+        ctx.font = `${dimFontSize}px Inter`;
+        const dimW = ctx.measureText(dimText).width + 6;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(x + w/2 - dimW/2, y + 2, dimW, dimFontSize + 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.textAlign = 'center';
+        ctx.fillText(dimText, x + w/2, y + dimFontSize + 1);
       }
 
       // Lock icon (drawn in rotated context)
@@ -44116,6 +44244,22 @@
 
         document.getElementById('propColor').value = selectedElement.color;
         document.getElementById('propRotation').textContent = (selectedElement.rotation || 0) + '°';
+
+        // Area & perimeter calculations
+        const elArea = selectedElement.width * selectedElement.height;
+        const elPerimeter = 2 * (selectedElement.width + selectedElement.height);
+        const areaEl = document.getElementById('propArea');
+        const perimEl = document.getElementById('propPerimeter');
+        if (areaEl) {
+          const areaSqFt = elArea.toFixed(2);
+          const areaSqIn = (elArea * 144).toFixed(0);
+          areaEl.textContent = `${areaSqFt} sq ft (${areaSqIn} sq in)`;
+        }
+        if (perimEl) {
+          const perimFt = elPerimeter.toFixed(2);
+          const perimIn = (elPerimeter * 12).toFixed(0);
+          perimEl.textContent = `${perimFt} ft (${perimIn}")`;
+        }
 
         const texturePreview = document.getElementById('propTexture');
         if (selectedElement.texture) {
