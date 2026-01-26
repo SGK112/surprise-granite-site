@@ -33559,22 +33559,26 @@
           const tileGroutMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 });
           const tileSz = 0.5;
 
+          // Grout line dimensions: thin strips sitting ON the tile surface
+          const groutH = 0.008; // Thin grout strip
+          const groutY = h / 2;  // Position at tile top surface
+
           if (tileDir === 45 || tileDir === 135) {
             // Diagonal tiles - rotate grout lines
             const diagonal = Math.sqrt(w * w + d * d);
             for (let t = -diagonal/2 + tileSz; t < diagonal/2; t += tileSz) {
               const line1 = new THREE.Mesh(
-                new THREE.BoxGeometry(0.015, h + 0.005, diagonal + 0.5),
+                new THREE.BoxGeometry(0.015, groutH, diagonal + 0.5),
                 tileGroutMat
               );
-              line1.position.set(t, 0.003, 0);
+              line1.position.set(t, groutY, 0);
               groutGroup.add(line1);
 
               const line2 = new THREE.Mesh(
-                new THREE.BoxGeometry(diagonal + 0.5, h + 0.005, 0.015),
+                new THREE.BoxGeometry(diagonal + 0.5, groutH, 0.015),
                 tileGroutMat
               );
-              line2.position.set(0, 0.003, t);
+              line2.position.set(0, groutY, t);
               groutGroup.add(line2);
             }
             groutGroup.rotation.y = tileDir * Math.PI / 180;
@@ -33582,18 +33586,18 @@
             // Standard grid pattern
             for (let tx = -w/2 + tileSz; tx < w/2; tx += tileSz) {
               const vLine = new THREE.Mesh(
-                new THREE.BoxGeometry(0.015, h + 0.005, d + 0.005),
+                new THREE.BoxGeometry(0.015, groutH, d + 0.005),
                 tileGroutMat
               );
-              vLine.position.set(tx, 0.003, 0);
+              vLine.position.set(tx, groutY, 0);
               groutGroup.add(vLine);
             }
             for (let tz = -d/2 + tileSz; tz < d/2; tz += tileSz) {
               const hLine = new THREE.Mesh(
-                new THREE.BoxGeometry(w + 0.005, h + 0.005, 0.015),
+                new THREE.BoxGeometry(w + 0.005, groutH, 0.015),
                 tileGroutMat
               );
-              hLine.position.set(0, 0.003, tz);
+              hLine.position.set(0, groutY, tz);
               groutGroup.add(hLine);
             }
           }
@@ -35999,8 +36003,10 @@
           // Professional Window with proper architectural details
           // Note: window-bay handled separately below with angled bay projection geometry
           // Supports: double-hung, single-hung, casement, sliding, fixed, picture
-          const windowStyle = el.windowStyle || 'double-hung';
-          const mullionPattern = el.mullionPattern || 'standard'; // standard, colonial, prairie, none
+          // Picture windows and window-large default to fixed (single pane, no sashes)
+          const isPictureType = el.type === 'picture-window' || el.type === 'window-large';
+          const windowStyle = el.windowStyle || (isPictureType ? 'fixed' : 'double-hung');
+          const mullionPattern = el.mullionPattern || (isPictureType ? 'none' : 'standard');
           const frameColor = el.frameColor ? parseInt(el.frameColor.replace('#', ''), 16) : 0x3D2B1F;
 
           // Standard window dimensions (IRC / AAMA construction standards)
@@ -38261,9 +38267,9 @@
             roughness: 0.9
           });
 
-          // Frame dimensions
-          const frameDepth = 0.15; // 3.5" frame depth
-          const frameWidth = isSliding ? 0.08 : 0.12; // Frame profile width
+          // Frame dimensions (construction standard)
+          const frameDepth = 0.30; // ~3.6" frame depth (wall thickness)
+          const frameWidth = isSliding ? 0.12 : 0.17; // Frame profile: sliding 1.5", french/glass 2"
 
           // Outdoor palette
           const outdoorPalette = OUTDOOR_COLORS[sceneSettings.timeOfDay] || OUTDOOR_COLORS.noon;
