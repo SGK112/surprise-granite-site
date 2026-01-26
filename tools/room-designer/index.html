@@ -16391,10 +16391,36 @@
               localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
             }
           } catch (backupErr) {
-            console.warn('Backup save failed:', backupErr);
+            // Quota exceeded — free space by trimming old local designs
+            console.warn('Backup save failed, freeing space:', backupErr.message);
+            try {
+              const designs = JSON.parse(localStorage.getItem('room_designs') || '[]');
+              if (designs.length > 5) {
+                localStorage.setItem('room_designs', JSON.stringify(designs.slice(0, 5)));
+                console.log('Trimmed local designs from', designs.length, 'to 5 to free quota');
+                // Retry backup
+                const prevSave = localStorage.getItem(AUTOSAVE_KEY);
+                if (prevSave) localStorage.setItem(AUTOSAVE_KEY + '_backup', prevSave);
+              }
+            } catch (trimErr) { /* give up on backup */ }
           }
 
-          localStorage.setItem(AUTOSAVE_KEY, saveJson);
+          try {
+            localStorage.setItem(AUTOSAVE_KEY, saveJson);
+          } catch (quotaErr) {
+            // Main save quota exceeded — trim designs and retry
+            console.warn('Auto-save quota exceeded, freeing space...');
+            try {
+              const designs = JSON.parse(localStorage.getItem('room_designs') || '[]');
+              if (designs.length > 3) {
+                localStorage.setItem('room_designs', JSON.stringify(designs.slice(0, 3)));
+              }
+              localStorage.removeItem(AUTOSAVE_KEY + '_backup');
+              localStorage.setItem(AUTOSAVE_KEY, saveJson);
+            } catch (retryErr) {
+              console.error('Auto-save failed even after freeing space:', retryErr);
+            }
+          }
           lastSaveTime = Date.now();
           hasUnsavedChanges = false;
           console.log('Auto-saved design:', elements.length, 'elements');
@@ -53653,8 +53679,8 @@
       // Add new design at the beginning
       designs.unshift(design);
 
-      // Keep only last 20 designs
-      designs = designs.slice(0, 20);
+      // Keep only last 10 designs to avoid quota issues
+      designs = designs.slice(0, 10);
 
       localStorage.setItem('room_designs', JSON.stringify(designs));
       showSnapFeedback('Design saved locally');
