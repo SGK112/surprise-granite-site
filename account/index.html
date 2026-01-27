@@ -21847,8 +21847,12 @@
           }
         }
 
-        // Generate job number
-        const { data: jobNumber } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
+        // Generate job number (fallback if RPC not available)
+        let jobNumber = null;
+        try {
+          const { data } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
+          jobNumber = data;
+        } catch { /* RPC may not exist yet */ }
 
         // Create job from paid invoice with full traceability
         const { data: newJob } = await supabaseClient.from('jobs').insert({
@@ -26198,8 +26202,12 @@
         if (!customerId) throw new Error('Please select or create a customer');
         if (!customerName) throw new Error('Customer name is required');
 
-        // Get next job number
-        const { data: jobNumber } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
+        // Get next job number (fallback if RPC not available)
+        let jobNumber = null;
+        try {
+          const { data } = await supabaseClient.rpc('get_next_job_number', { p_user_id: user.id });
+          jobNumber = data;
+        } catch { /* RPC may not exist yet */ }
 
         const scheduledDate = document.getElementById('job-scheduled-date').value || null;
         const depositAmount = parseFloat(document.getElementById('job-deposit').value) || 0;
@@ -26467,7 +26475,7 @@
           .from('job_files')
           .select('*')
           .eq('job_id', jobId)
-          .order('created_at', { ascending: false });
+          .order('uploaded_at', { ascending: false });
 
         if (error) throw error;
 
@@ -26666,7 +26674,7 @@
         // Get or create contractor portal token
         const { data: contractor, error: fetchError } = await supabaseClient
           .from('contractors')
-          .select('id, name, company, email, phone, invite_token')
+          .select('id, name, company_name, email, phone, invite_token')
           .eq('id', contractorId)
           .single();
 
@@ -26688,7 +26696,7 @@
         const portalUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
 
         const action = prompt(
-          `Contractor Portal Link for ${contractor.company || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
+          `Contractor Portal Link for ${contractor.company_name || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
           'copy'
         );
 
@@ -26801,7 +26809,7 @@
                     <span style="font-weight: 600; font-size: 15px;">${c.name}</span>
                     ${isClaimed ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--gold-primary)" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>' : ''}
                   </div>
-                  <div style="font-size: 12px; color: var(--text-muted);">${c.company || ''}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${c.company_name || ''}</div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                   <span class="status-badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; font-size: 10px; padding: 4px 10px;">${c.type || 'other'}</span>
@@ -26907,7 +26915,7 @@
           type: document.getElementById('contractor-type').value,
           email: document.getElementById('contractor-email').value.trim() || null,
           phone: document.getElementById('contractor-phone').value.trim() || null,
-          company: document.getElementById('contractor-company').value.trim() || null,
+          company_name: document.getElementById('contractor-company').value.trim() || null,
           hourly_rate: parseFloat(document.getElementById('contractor-rate').value) || null,
           license_number: document.getElementById('contractor-license').value.trim() || null,
           notes: document.getElementById('contractor-notes').value.trim() || null
@@ -26988,14 +26996,14 @@
 
         const { data: contractors } = await supabaseClient
           .from('contractors')
-          .select('id, name, type, company')
+          .select('id, name, type, company_name')
           .eq('user_id', user.id)
           .order('name');
 
         if (contractors && contractors.length > 0) {
           select.innerHTML += '<option disabled>──────────────</option>';
           (contractors || []).forEach(c => {
-            const displayName = c.company ? `${c.name} - ${c.company}` : c.name;
+            const displayName = c.company_name ? `${c.name} - ${c.company_name}` : c.name;
             select.innerHTML += `<option value="${c.id}">${displayName} (${c.type})</option>`;
           });
         }
@@ -27025,7 +27033,7 @@
             user_id: user.id,
             name: newName,
             type: role, // Use the selected role as the contractor type
-            company: document.getElementById('inline-contractor-company').value.trim() || null,
+            company_name: document.getElementById('inline-contractor-company').value.trim() || null,
             email: document.getElementById('inline-contractor-email').value.trim() || null,
             phone: document.getElementById('inline-contractor-phone').value.trim() || null
           };
@@ -27819,7 +27827,7 @@
 
       // Populate profile
       document.getElementById('contractor-profile-name').textContent = contractor.name || 'Unknown';
-      document.getElementById('contractor-profile-company').textContent = contractor.company || '';
+      document.getElementById('contractor-profile-company').textContent = contractor.company_name || '';
       document.getElementById('contractor-profile-email').textContent = contractor.email || '-';
       document.getElementById('contractor-profile-phone').textContent = contractor.phone || '-';
       document.getElementById('contractor-profile-type').textContent = (contractor.type || '-').replace('_', ' ');
@@ -27931,7 +27939,7 @@
       const checklistItems = [
         { key: 'email', label: 'Email Address', subtitle: 'Contact information', points: 5, completed: !!contractor.email },
         { key: 'phone', label: 'Phone Number', subtitle: 'Contact information', points: 5, completed: !!contractor.phone },
-        { key: 'company', label: 'Business Name', subtitle: 'Company details', points: 5, completed: !!contractor.company },
+        { key: 'company_name', label: 'Business Name', subtitle: 'Company details', points: 5, completed: !!contractor.company_name },
         { key: 'license', label: 'License Number', subtitle: 'Trade license', points: 10, completed: !!contractor.license_number },
         { key: 'claimed', label: 'Profile Claimed', subtitle: 'Account linked', points: 10, completed: !!contractor.claimed_by },
         { key: 'insurance', label: 'Insurance Certificate', subtitle: 'General liability', points: 25, completed: false }, // Check docs
