@@ -4165,7 +4165,7 @@ app.get('/api/invoices', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    const isAdmin = ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
 
     const { customer_email, status, limit = 20 } = req.query;
 
@@ -4199,13 +4199,14 @@ app.get('/api/invoices', authenticateJWT, async (req, res) => {
         number: inv.number,
         customer_email: inv.customer_email,
         customer_name: inv.customer_name,
-        amount_due: inv.amount_due / 100,
-        amount_paid: inv.amount_paid / 100,
+        total: (inv.total || 0) / 100,
+        amount_due: (inv.amount_due || 0) / 100,
+        amount_paid: (inv.amount_paid || 0) / 100,
         status: inv.status,
         created: new Date(inv.created * 1000).toISOString(),
         due_date: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
         hosted_invoice_url: inv.hosted_invoice_url,
-        pdf: inv.invoice_pdf,
+        invoice_pdf: inv.invoice_pdf,
         // View tracking metadata
         view_count: parseInt(inv.metadata?.view_count || '0'),
         first_viewed_at: inv.metadata?.first_viewed_at || null,
@@ -4230,7 +4231,7 @@ app.get('/api/invoices/:id', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    const isAdmin = ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
 
     const invoice = await stripe.invoices.retrieve(req.params.id, {
       expand: ['lines.data']
@@ -4280,7 +4281,7 @@ app.post('/api/invoices/:id/remind', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+    if (!['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type)) {
       return res.status(403).json({ error: 'Admin access required to send invoice reminders' });
     }
 
@@ -4304,7 +4305,7 @@ app.post('/api/invoices/:id/void', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+    if (!['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type)) {
       return res.status(403).json({ error: 'Admin access required to void invoices' });
     }
 
@@ -4382,7 +4383,7 @@ app.get('/api/invoices/:id/views', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    if (!['admin', 'business', 'enterprise'].includes(userInfo?.account_type)) {
+    if (!['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type)) {
       return res.status(403).json({ error: 'Admin access required to view invoice analytics' });
     }
 
@@ -6847,7 +6848,7 @@ app.get('/api/jobs/:id', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    const isAdmin = ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
     if (job.user_id !== userId && !isAdmin) {
       return res.status(403).json({ error: 'Access denied - you do not own this job' });
     }
@@ -6882,7 +6883,7 @@ app.patch('/api/jobs/:id', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    const isAdmin = ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
     if (existingJob.user_id !== userId && !isAdmin) {
       return res.status(403).json({ error: 'Access denied - you do not own this job' });
     }
@@ -6932,7 +6933,7 @@ app.post('/api/jobs/:id/files', authenticateJWT, async (req, res) => {
       .eq('id', userId)
       .single();
 
-    const isAdmin = ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+    const isAdmin = ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
     if (job.user_id !== userId && !isAdmin) {
       return res.status(403).json({ error: 'Access denied - you do not own this job' });
     }
@@ -6972,7 +6973,7 @@ async function verifyAdminAccess(userId) {
     .select('account_type')
     .eq('id', userId)
     .single();
-  return ['admin', 'business', 'enterprise'].includes(userInfo?.account_type);
+  return ['admin', 'business', 'enterprise', 'super_admin'].includes(userInfo?.account_type);
 }
 
 // Get all contractors (admin only)

@@ -20626,7 +20626,7 @@
           } catch { return null; }
         }
 
-        // Map Stripe-only invoices (not already in Supabase)
+        // Map Stripe-only invoices (server already returns dollars and ISO dates)
         const stripeInvoices = (stripeResult.invoices || [])
           .filter(inv => inv.id && !knownStripeIds.has(inv.id))
           .map(inv => ({
@@ -20636,23 +20636,18 @@
             customer_email: inv.customer_email || '',
             customer_name: inv.customer_name || '',
             status: inv.status || 'unknown',
-            total: (inv.total || 0) / 100,
-            amount_due: (inv.amount_due || 0) / 100,
-            amount_paid: (inv.amount_paid || 0) / 100,
-            due_date: safeISODate(inv.due_date),
-            created: inv.created,
-            created_at: safeISODate(inv.created),
+            total: inv.total || 0,
+            amount_due: inv.amount_due || 0,
+            amount_paid: inv.amount_paid || 0,
+            due_date: inv.due_date || null,
+            created: inv.created ? new Date(inv.created).getTime() / 1000 : null,
+            created_at: inv.created || null,
             source: 'stripe',
             stripe_invoice_id: inv.id,
             stripe_hosted_url: inv.hosted_invoice_url || null,
             stripe_pdf_url: inv.invoice_pdf || null,
-            invoice_items: (inv.lines?.data || []).map(line => ({
-              description: line.description || 'Item',
-              quantity: line.quantity || 1,
-              unit_price: (line.unit_amount || line.amount || 0) / 100,
-              amount: (line.amount || 0) / 100
-            })),
-            view_count: 0
+            invoice_items: [],
+            view_count: inv.view_count || 0
           }));
 
         // Merge: Supabase first (source of truth), then Stripe-only records
