@@ -29677,11 +29677,11 @@
       const type = el.type;
 
       switch(type) {
-        // Ground level surfaces (below everything)
+        // Ground level surfaces (slightly above floor to prevent Z-fighting)
         case 'flooring':
         case 'tile':
         case 'shower-pan':
-          return 0.025; // Just above floor plane
+          return height / 2 + 0.02; // Bottom edge at 0.02ft above floor plane
 
         case 'shower-curb':
           return height / 2; // Sits on floor
@@ -30218,7 +30218,7 @@
         case 'shower-base-36':
         case 'shower-base-48':
         case 'shower-base-60':
-          return 0.025; // Just above floor plane
+          return height / 2 + 0.02; // Bottom edge at 0.02ft above floor plane
 
         // Trim & Molding
         case 'crown-molding': {
@@ -43676,6 +43676,10 @@
         // Range hood mounts on wall above stove
         const isRangeHood = el.type === 'range-hood';
 
+        // Wall panels (vertical tile/wall surfaces that snap to walls)
+        const wallPanelTypes = ['wall-tile', 'accent-wall', 'shower-wall'];
+        const isWallPanel = wallPanelTypes.includes(el.type);
+
         // Cabinets and appliances that should auto-rotate when against side/front walls
         const cabinetApplianceTypes = [
           'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
@@ -43738,7 +43742,7 @@
           // Back wall elements keep default rotation (facing into room)
         }
 
-        if (isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood) {
+        if (isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel) {
           // Determine which wall based on 2D position and rotation
           const rotation = (el.rotation || 0) % 360;
           const normalizedRotation = rotation < 0 ? rotation + 360 : rotation;
@@ -43795,11 +43799,15 @@
           // Niches embed into wall, backsplash sits thin against wall, shelves protrude from wall
           let wallOffset;
           if (isNiche) {
-            wallOffset = 0; // Embedded in wall
+            // Position niche forward so the recess is visible in front of the wall plane
+            // Back wall of niche ends up at room wall surface, opening extends into room
+            wallOffset = el.nicheDepth || 0.5;
           } else if (isBacksplash) {
             wallOffset = 0.04; // Thin, just off wall
           } else if (isWallAccessory) {
             wallOffset = 0.05; // Thin accessories (mirrors, towel bars) sit very close to wall
+          } else if (isWallPanel) {
+            wallOffset = 0.03; // Thin panel sits flush against wall
           } else if (isRangeHood) {
             wallOffset = el.height / 2; // Range hood protrudes from wall by its depth
           } else if (isWallMountedShelf) {
@@ -43835,16 +43843,19 @@
         }
 
         // Clamp positions to room boundaries (prevent elements protruding through walls)
-        // Account for element dimensions so edges stay inside the room
-        const halfW = el.width / 2;
-        const halfD = el.height / 2;
-        // For rotated elements, width/depth swap in 3D space
-        const rot = (el.rotation || 0) % 360;
-        const isRotated90 = (rot === 90 || rot === 270 || rot === -90 || rot === -270) || autoRotated;
-        const xHalf = isRotated90 ? halfD : halfW;
-        const zHalf = isRotated90 ? halfW : halfD;
-        xPos = Math.max(xHalf, Math.min(xPos, roomWidth - xHalf));
-        zPos = Math.max(zHalf, Math.min(zPos, roomDepth - zHalf));
+        // Skip clamping for wall-positioned elements — their position is set by wall snap logic above
+        const isWallPositioned = isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel;
+        if (!isWallPositioned) {
+          const halfW = el.width / 2;
+          const halfD = el.height / 2;
+          // For rotated elements, width/depth swap in 3D space
+          const rot = (el.rotation || 0) % 360;
+          const isRotated90 = (rot === 90 || rot === 270 || rot === -90 || rot === -270) || autoRotated;
+          const xHalf = isRotated90 ? halfD : halfW;
+          const zHalf = isRotated90 ? halfW : halfD;
+          xPos = Math.max(xHalf, Math.min(xPos, roomWidth - xHalf));
+          zPos = Math.max(zHalf, Math.min(zPos, roomDepth - zHalf));
+        }
         yPos = Math.max(0, yPos);
 
         group.position.set(xPos, yPos, zPos);
