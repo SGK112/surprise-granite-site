@@ -14184,12 +14184,11 @@
       ],
       quartz: [
         // Surprise Granite Collection
-        { id: 'quartz-stellar-white', name: 'Stellar White', color: '#f5f5f5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb21af6fbc914_msi-surfaces-quartz-surprise-granite-stellar-white-moment.webp', brand: 'MSI' },
-        { id: 'quartz-shell-white', name: 'Shell White', color: '#faf8f5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb28a6bfbc8cb_msi-surfaces-quartz-surprise-granite-shell-white-close-up.webp', brand: 'MSI' },
-        { id: 'quartz-perla-white', name: 'Perla White', color: '#f0ece5', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb20436fbc89c_msi-surfaces-quartz-surprise-granite-perla-white-moment.webp', brand: 'MSI' },
-        { id: 'quartz-stellar-gray', name: 'Stellar Gray', color: '#8a8a8a', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb2590afbc90f_msi-surfaces-quartz-surprise-granite-sstellar-gray-moment.webp', brand: 'MSI' },
-        { id: 'quartz-midnight', name: 'Midnight Majesty', color: '#1a1a2e', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb2eaa9fbc85a_msi-surfaces-quartz-surprise-granite-midnight-majesty-close-up.webp', brand: 'MSI' },
-        { id: 'quartz-calacatta', name: 'Calacatta Laurent', color: '#f8f6f0', url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.webp', brand: 'Dekton' },
+        { id: 'quartz-stellar-white', name: 'Stellar White', color: '#f5f5f5', price: 15.57, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb21af6fbc914_msi-surfaces-quartz-surprise-granite-stellar-white-moment.webp', brand: 'MSI' },
+        { id: 'quartz-shell-white', name: 'Shell White', color: '#faf8f5', price: 12.30, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb28a6bfbc8cb_msi-surfaces-quartz-surprise-granite-shell-white-close-up.webp', brand: 'MSI' },
+        { id: 'quartz-perla-white', name: 'Perla White', color: '#f0ece5', price: 22.95, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb20436fbc89c_msi-surfaces-quartz-surprise-granite-perla-white-moment.webp', brand: 'MSI' },
+        { id: 'quartz-stellar-gray', name: 'Stellar Gray', color: '#8a8a8a', price: 15.57, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb2590afbc90f_msi-surfaces-quartz-surprise-granite-sstellar-gray-moment.webp', brand: 'MSI' },
+        { id: 'quartz-calacatta', name: 'Calacatta Laurent', color: '#f8f6f0', price: 22.95, url: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.webp', brand: 'Dekton' },
         // MSI Premium Natural Quartz (Jan 2025 Price List) - with CDN images
         { id: 'msi-aruca-white', name: 'Aruca White', color: '#F5F5F5', sku: 'QSL-ARUCAWHT', price: 8.40, brand: 'MSI Quartz', url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/aruca-white-quartz.jpg' },
         { id: 'msi-frost-white', name: 'Frost White', color: '#FFFFFF', sku: 'QSL-FRSTWHT', price: 8.40, brand: 'MSI Quartz', url: 'https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/frost-white-quartz.jpg' },
@@ -17818,8 +17817,11 @@
         });
       }
 
-      // Sort: image+real color first, then image+grey fallback last, then by name
+      // Sort: priced before priceless, image+real color first, then by name
       materials.sort((a, b) => {
+        const aPrice = a.price ? 0 : 1;
+        const bPrice = b.price ? 0 : 1;
+        if (aPrice !== bPrice) return aPrice - bPrice;
         const aImg = hasValidImageUrl(a.url);
         const bImg = hasValidImageUrl(b.url);
         const aRealColor = a.color && a.color !== '#888888' && a.color !== '#C0C0C0';
@@ -17900,7 +17902,7 @@
           ${imgTag}
           ${noTextureBadge}
           ${distributorBadge}
-          <div class="material-swatch-label">${mat.name}${displayPrice ? `<br><span style="font-size:10px;opacity:0.85${displayPrice.label ? ';color:#10b981' : ''}">$${Number(displayPrice.amount).toFixed(2)}/${mat.unit || 'sf'}${displayPrice.label ? ' ' + displayPrice.label : ''}</span>` : ''}</div>
+          <div class="material-swatch-label">${mat.name}${displayPrice ? `<br><span style="font-size:10px;opacity:0.85${displayPrice.label ? ';color:#10b981' : ''}">$${Number(displayPrice.amount).toFixed(2)}/${mat.unit || 'sf'}${displayPrice.label ? ' ' + displayPrice.label : ''}</span>` : (canShowPrice ? '<br><span style="font-size:9px;opacity:0.6;font-style:italic">Call for Price</span>' : '')}</div>
         </div>
       `;
       }).join('');
