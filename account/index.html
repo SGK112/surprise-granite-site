@@ -23139,16 +23139,30 @@
       }
     }
 
-    async function loadThreadMessages(customerId) {
+    async function loadThreadMessages(entityId) {
       const messagesEl = document.getElementById('thread-messages');
       if (!messagesEl) return;
 
       try {
-        const { data: messages, error } = await supabaseClient
+        // Try customer_id first, then lead_id
+        let { data: messages, error } = await supabaseClient
           .from('customer_messages')
           .select('*')
-          .eq('customer_id', customerId)
+          .eq('customer_id', entityId)
           .order('created_at', { ascending: true });
+
+        // If no results, try as lead_id
+        if ((!messages || messages.length === 0) && !error) {
+          const leadResult = await supabaseClient
+            .from('customer_messages')
+            .select('*')
+            .eq('lead_id', entityId)
+            .order('created_at', { ascending: true });
+          if (leadResult.data?.length) {
+            messages = leadResult.data;
+            error = leadResult.error;
+          }
+        }
 
         if (error) throw error;
 
@@ -23315,14 +23329,15 @@
         const user = await supabaseClient.auth.getUser();
         if (!user.data.user) throw new Error('Not authenticated');
 
+        const isLead = currentNotification.source === 'lead' || currentNotification.lead;
         await supabaseClient.from('customer_messages').insert({
-          customer_id: currentNotification.id,
+          ...(isLead ? { lead_id: currentNotification.id } : { customer_id: currentNotification.id }),
           sender_id: user.data.user.id,
           direction: 'outbound',
           channel: channel,
           message: message,
           sent_from: user.data.user.email,
-          sent_to: currentNotification.customer?.email || currentNotification.customer?.phone,
+          sent_to: currentNotification.customer?.email || currentNotification.customer?.phone || currentNotification.lead?.email,
           status: 'sent'
         });
 
