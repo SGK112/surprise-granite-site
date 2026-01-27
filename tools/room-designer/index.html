@@ -50346,98 +50346,101 @@
 
       // Build logo block — image if available, otherwise styled text (use concatenation to avoid nested backticks)
       const logoBlock = logoUrl
-        ? '<img src="' + logoUrl + '" alt="' + co + '" style="max-height:52px;max-width:200px;margin:0 auto 12px;display:block;" />'
-        : '<div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;margin-bottom:8px;">' + co + '</div>';
+        ? '<img src="' + logoUrl + '" alt="' + co + '" style="max-height:48px;max-width:200px;margin:0 auto 8px;display:block;" />'
+        : '<div style="font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;margin-bottom:4px;">' + co + '</div>';
 
       // Footer logo (smaller)
       const footerLogo = logoUrl
-        ? '<img src="' + logoUrl + '" alt="' + co + '" style="max-height:28px;max-width:120px;margin-bottom:12px;opacity:0.6;" />'
-        : '<div style="font-size:14px;font-weight:600;color:#6b7280;margin-bottom:8px;">' + co + '</div>';
+        ? '<img src="' + logoUrl + '" alt="' + co + '" style="max-height:24px;max-width:120px;margin-bottom:8px;" />'
+        : '<div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:6px;">' + co + '</div>';
 
       // Contact line
       const contactParts = [];
       if (phone) contactParts.push(phone);
-      if (email) contactParts.push('<a href="mailto:' + email + '" style="color:#9ca3af;text-decoration:none;">' + email + '</a>');
+      if (email) contactParts.push('<a href="mailto:' + email + '" style="color:#555555;text-decoration:none;">' + email + '</a>');
       const footerContact = contactParts.length > 0
-        ? '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">' + contactParts.join(' &nbsp;&middot;&nbsp; ') + '</div>'
+        ? '<div style="font-size:12px;color:#555555;margin-bottom:4px;">' + contactParts.join(' &nbsp;&middot;&nbsp; ') + '</div>'
         : '';
 
       return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Design Invitation from ${co}</title></head>
-<body style="margin:0;padding:0;background-color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
 
 <!-- Wrapper -->
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#111827;">
-<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f0f0f0;">
+<tr><td align="center" style="padding:24px 16px;">
 
   <!-- Main card -->
-  <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#1f2937;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.3);">
+  <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);">
 
     <!-- Header with logo/brand -->
-    <tr><td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#6366f1 100%);padding:40px 32px 36px;text-align:center;">
+    <tr><td style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d44 100%);padding:28px 32px 24px;text-align:center;">
       ${logoBlock}
-      <div style="font-size:14px;color:rgba(255,255,255,0.75);font-weight:400;letter-spacing:0.3px;">Room Design Invitation</div>
+      <div style="font-size:13px;color:#f9cb00;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Room Design Invitation</div>
     </td></tr>
 
+    <!-- Gold accent bar -->
+    <tr><td style="height:4px;background:linear-gradient(90deg,#f9cb00,#cca600,#f9cb00);font-size:0;line-height:0;">&nbsp;</td></tr>
+
     <!-- Body -->
-    <tr><td style="padding:36px 32px 28px;">
+    <tr><td style="padding:24px 32px 20px;">
 
       <!-- Greeting -->
-      <p style="margin:0 0 20px;font-size:17px;color:#f3f4f6;font-weight:500;">
+      <p style="margin:0 0 12px;font-size:17px;color:#1a1a2e;font-weight:600;">
         Hi ${recipientName},
       </p>
 
-      <p style="margin:0 0 24px;font-size:15px;color:#d1d5db;line-height:1.7;">
-        <strong style="color:#f9fafb;">${senderName}</strong> has invited you to ${actionText} a room design project:
+      <p style="margin:0 0 20px;font-size:15px;color:#333333;line-height:1.6;">
+        <strong style="color:#1a1a2e;">${senderName}</strong> has invited you to ${actionText} a room design project:
       </p>
 
       <!-- Project card -->
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:28px;">
-      <tr><td style="background:#111827;border-radius:12px;padding:20px 24px;border-left:4px solid #6366f1;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#9ca3af;margin-bottom:6px;font-weight:600;">Project</div>
-        <div style="font-size:18px;color:#f9fafb;font-weight:600;">${projectName}</div>
-        <div style="margin-top:10px;display:inline-block;">
-          <span style="display:inline-block;background:rgba(99,102,241,0.15);color:#a5b4fc;font-size:12px;padding:4px 10px;border-radius:6px;font-weight:500;">${permName} Access</span>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+      <tr><td style="background:#fafafa;border-radius:8px;padding:16px 20px;border-left:4px solid #f9cb00;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#888888;margin-bottom:4px;font-weight:600;">Project</div>
+        <div style="font-size:18px;color:#1a1a2e;font-weight:700;">${projectName}</div>
+        <div style="margin-top:8px;">
+          <span style="display:inline-block;background:rgba(249,203,0,0.15);color:#8a7000;font-size:12px;padding:3px 10px;border-radius:4px;font-weight:600;">${permName} Access</span>
         </div>
       </td></tr>
       </table>
 
       <!-- What you can do -->
-      <p style="margin:0 0 28px;font-size:14px;color:#9ca3af;line-height:1.65;">
+      <p style="margin:0 0 24px;font-size:14px;color:#555555;line-height:1.65;">
         ${permDesc}
       </p>
 
       <!-- CTA Button -->
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-      <tr><td align="center" style="padding:4px 0 8px;">
-        <a href="${shareUrl}" target="_blank" style="display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#6366f1,#7c3aed);color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:16px;letter-spacing:0.3px;box-shadow:0 4px 14px rgba(99,102,241,0.4);">
+      <tr><td align="center" style="padding:0 0 4px;">
+        <a href="${shareUrl}" target="_blank" style="display:inline-block;padding:14px 44px;background:linear-gradient(135deg,#f9cb00,#e6b800);color:#1a1a2e;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;letter-spacing:0.3px;box-shadow:0 3px 10px rgba(249,203,0,0.35);">
           View Design &rarr;
         </a>
       </td></tr>
       </table>
 
       <!-- Secondary link -->
-      <p style="margin:20px 0 0;font-size:12px;color:#6b7280;text-align:center;line-height:1.5;">
+      <p style="margin:16px 0 0;font-size:12px;color:#888888;text-align:center;line-height:1.5;">
         Or copy this link:<br/>
-        <a href="${shareUrl}" style="color:#818cf8;text-decoration:none;word-break:break-all;font-size:11px;">${shareUrl}</a>
+        <a href="${shareUrl}" style="color:#b8963e;text-decoration:none;word-break:break-all;font-size:11px;">${shareUrl}</a>
       </p>
 
     </td></tr>
 
     <!-- Divider -->
     <tr><td style="padding:0 32px;">
-      <div style="height:1px;background:linear-gradient(to right,transparent,#374151,transparent);"></div>
+      <div style="height:1px;background:#e5e5e5;"></div>
     </td></tr>
 
     <!-- Footer -->
-    <tr><td style="padding:24px 32px 28px;text-align:center;">
+    <tr><td style="padding:16px 32px 20px;text-align:center;background:#fafafa;">
       ${footerLogo}
       ${footerContact}
-      <div style="font-size:11px;color:#4b5563;margin-top:8px;">
+      <div style="font-size:11px;color:#888888;">
         Powered by Surprise Granite Room Designer
       </div>
-      <div style="font-size:11px;color:#374151;margin-top:12px;">
+      <div style="font-size:11px;color:#aaaaaa;margin-top:6px;">
         &copy; ${yr} ${co}. All rights reserved.
       </div>
     </td></tr>
@@ -50462,7 +50465,8 @@
             to: recipient.email,
             subject: `${branding.companyName} shared a design with you: ${projectName}`,
             message: emailHTML,
-            type: 'info'
+            type: 'info',
+            rawHtml: true
           })
         });
         return response.ok;

@@ -9418,6 +9418,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">System Logs</span>
           </a>
+          <a class="nav-item" data-page="god-designs" onclick="showPage('god-designs')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="nav-item-text">Designs</span>
+          </a>
           <div style="height: 1px; background: rgba(139, 92, 246, 0.2); margin: 8px 0;"></div>
           <a class="nav-item" data-page="god-analytics" onclick="showPage('god-analytics')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -11248,6 +11252,83 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
                   Reset Local Analytics
                 </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- All Designs (God Mode) -->
+        <section id="page-god-designs" class="page-section">
+          <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h1 class="page-title" style="color: #a855f7;"><span style="margin-right: 8px;">🏠</span> All Designs</h1>
+              <p class="page-subtitle">View and manage all room designs across all users</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-modern secondary" onclick="godExportDesigns()">Export CSV</button>
+              <button class="btn-modern primary" onclick="godLoadDesigns()">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Summary Stats -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0;">
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-designs-total">-</div><div class="stat-card-label">Total Designs</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-designs-shared" style="color: var(--success);">-</div><div class="stat-card-label">Shared</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-designs-private" style="color: var(--text-muted);">-</div><div class="stat-card-label">Private</div></div>
+            <div class="stat-card-mini"><div class="stat-card-value" id="god-designs-users" style="color: var(--accent);">-</div><div class="stat-card-label">Unique Users</div></div>
+          </div>
+
+          <!-- Search & Filters -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-body">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 1; min-width: 250px; position: relative;">
+                  <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" id="god-designs-search" placeholder="Search by design name or creator email..." style="width: 100%; padding: 12px 12px 12px 40px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary);" onkeyup="godSearchDesigns()">
+                </div>
+                <select id="god-designs-type-filter" onchange="godFilterDesignsType()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;">
+                  <option value="all">All Room Types</option>
+                  <option value="kitchen">Kitchen</option>
+                  <option value="bathroom">Bathroom</option>
+                  <option value="laundry">Laundry</option>
+                  <option value="outdoor">Outdoor</option>
+                  <option value="other">Other</option>
+                </select>
+                <select id="god-designs-status-filter" onchange="godFilterDesignsStatus()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); min-width: 150px;">
+                  <option value="all">All Status</option>
+                  <option value="shared">Shared</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Designs Table -->
+          <div class="card">
+            <div class="card-body" style="padding: 0; overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                <thead>
+                  <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-subtle);">
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Design</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Creator</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Room Type</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Elements</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Quote Total</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Status</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px; color: var(--text-muted);">Created</th>
+                    <th style="padding: 12px 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--text-muted);">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="god-designs-table-body">
+                  <tr><td colspan="8" style="padding: 40px; text-align: center; color: var(--text-muted);">Loading designs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-subtle);">
+              <span id="god-designs-count" style="font-size: 13px; color: var(--text-muted);">Showing 0 designs</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-modern secondary" onclick="godDesignsPagePrev()" id="god-designs-prev" disabled style="padding: 8px 12px; font-size: 13px;">Previous</button>
+                <button class="btn-modern secondary" onclick="godDesignsPageNext()" id="god-designs-next" style="padding: 8px 12px; font-size: 13px;">Next</button>
               </div>
             </div>
           </div>
@@ -16944,7 +17025,8 @@
         'admin-users': 'Manage Admins',
         'products': 'Products',
         'orders': 'Orders',
-        'messages': 'Messages'
+        'messages': 'Messages',
+        'god-designs': 'All Designs'
       };
       document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
 
@@ -28141,6 +28223,9 @@
         case 'god-config':
           await godLoadConfig();
           break;
+        case 'god-designs':
+          await godLoadDesigns();
+          break;
       }
     }
 
@@ -29965,6 +30050,273 @@
         initGodModePage(pageId);
       }
     };
+
+    // GOD MODE Designs Management
+    let godDesignsPage = 0;
+    const godDesignsPageSize = 50;
+    let godDesignsSearchTimeout = null;
+
+    async function godLoadDesigns() {
+      if (!isGodMode()) return;
+      try {
+        const searchTerm = document.getElementById('god-designs-search')?.value?.trim().toLowerCase() || '';
+        const typeFilter = document.getElementById('god-designs-type-filter')?.value || 'all';
+        const statusFilter = document.getElementById('god-designs-status-filter')?.value || 'all';
+
+        // Build query - join with sg_users to get creator info
+        let query = supabaseClient
+          .from('room_designs')
+          .select('*, sg_users(email, full_name)', { count: 'exact' });
+
+        // Apply room type filter
+        if (typeFilter !== 'all') {
+          query = query.eq('room_type', typeFilter);
+        }
+
+        // Apply status filter
+        if (statusFilter === 'shared') {
+          query = query.not('share_token', 'is', null);
+        } else if (statusFilter === 'private') {
+          query = query.is('share_token', null);
+        }
+
+        // Apply search filter
+        if (searchTerm) {
+          query = query.or(`name.ilike.%${searchTerm}%,project_name.ilike.%${searchTerm}%`);
+        }
+
+        const { data, error, count } = await query
+          .order('created_at', { ascending: false })
+          .range(godDesignsPage * godDesignsPageSize, (godDesignsPage + 1) * godDesignsPageSize - 1);
+
+        if (error) throw error;
+
+        // Update summary stats
+        await godUpdateDesignStats();
+
+        // Update count text
+        const total = count || 0;
+        document.getElementById('god-designs-count').textContent =
+          `Showing ${data?.length || 0} of ${total} designs`;
+
+        // Render table
+        godRenderDesignsTable(data || []);
+
+        // Update pagination buttons
+        document.getElementById('god-designs-prev').disabled = godDesignsPage === 0;
+        document.getElementById('god-designs-next').disabled = (godDesignsPage + 1) * godDesignsPageSize >= total;
+
+      } catch (error) {
+        console.error('Error loading designs:', error);
+        document.getElementById('god-designs-table-body').innerHTML =
+          '<tr><td colspan="8" style="padding: 40px; text-align: center; color: var(--error);">Error loading designs</td></tr>';
+      }
+    }
+
+    async function godUpdateDesignStats() {
+      try {
+        // Total designs
+        const { count: totalCount } = await supabaseClient
+          .from('room_designs')
+          .select('*', { count: 'exact', head: true });
+
+        // Shared designs (have share_token)
+        const { count: sharedCount } = await supabaseClient
+          .from('room_designs')
+          .select('*', { count: 'exact', head: true })
+          .not('share_token', 'is', null);
+
+        // Unique users
+        const { data: usersData } = await supabaseClient
+          .from('room_designs')
+          .select('user_id');
+
+        const uniqueUsers = new Set((usersData || []).map(d => d.user_id)).size;
+
+        document.getElementById('god-designs-total').textContent = totalCount || 0;
+        document.getElementById('god-designs-shared').textContent = sharedCount || 0;
+        document.getElementById('god-designs-private').textContent = (totalCount || 0) - (sharedCount || 0);
+        document.getElementById('god-designs-users').textContent = uniqueUsers;
+      } catch (err) {
+        console.error('Error updating design stats:', err);
+      }
+    }
+
+    function godRenderDesignsTable(designs) {
+      const tbody = document.getElementById('god-designs-table-body');
+      if (!designs || designs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 40px; text-align: center; color: var(--text-muted);">No designs found</td></tr>';
+        return;
+      }
+
+      const roomTypeColors = {
+        'kitchen': '#3b82f6',
+        'bathroom': '#14b8a6',
+        'laundry': '#a855f7',
+        'outdoor': '#f59e0b',
+        'other': '#6b7280'
+      };
+
+      tbody.innerHTML = designs.map(d => {
+        const name = escapeHtml(d.name || d.project_name || 'Untitled Design');
+        const creatorEmail = escapeHtml(d.sg_users?.email || 'Unknown');
+        const creatorName = escapeHtml(d.sg_users?.full_name || '');
+        const roomType = (d.room_type || 'other').toLowerCase();
+        const roomColor = roomTypeColors[roomType] || roomTypeColors['other'];
+        const elementsCount = Array.isArray(d.elements) ? d.elements.length : 0;
+        const quoteTotal = d.quote_total != null ? `$${parseFloat(d.quote_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
+        const isShared = !!d.share_token;
+        const createdDate = d.created_at ? new Date(d.created_at).toLocaleDateString() : '—';
+        const designLink = d.share_token
+          ? `/tools/room-designer/?p=${d.share_token}`
+          : `/tools/room-designer/?id=${d.id}`;
+
+        return `
+          <tr style="border-bottom: 1px solid var(--border-subtle);">
+            <td style="padding: 12px 16px;">
+              <div style="font-weight: 500;">${name}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">ID: ${escapeHtml(String(d.id).substring(0, 8))}...</div>
+            </td>
+            <td style="padding: 12px 16px;">
+              <div style="font-size: 13px;">${creatorName || creatorEmail}</div>
+              ${creatorName ? `<div style="font-size: 12px; color: var(--text-muted);">${creatorEmail}</div>` : ''}
+            </td>
+            <td style="padding: 12px 16px;">
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; background: ${roomColor}22; color: ${roomColor};">${escapeHtml(roomType.charAt(0).toUpperCase() + roomType.slice(1))}</span>
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; text-align: center;">${elementsCount}</td>
+            <td style="padding: 12px 16px; font-size: 13px; font-weight: 500;">${quoteTotal}</td>
+            <td style="padding: 12px 16px;">
+              ${isShared
+                ? '<span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; background: rgba(34,197,94,0.15); color: var(--success);">Shared</span>'
+                : '<span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; background: rgba(107,114,128,0.15); color: var(--text-muted);">Private</span>'}
+            </td>
+            <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${createdDate}</td>
+            <td style="padding: 12px 16px; text-align: center;">
+              <div style="display: flex; gap: 6px; justify-content: center;">
+                <a href="${designLink}" target="_blank" class="btn-modern secondary" style="padding: 6px 10px; font-size: 12px;" title="Open design">Open</a>
+                <button class="btn-modern secondary" onclick="godCopyDesignLink('${escapeHtml(d.share_token || '')}', '${escapeHtml(String(d.id))}')" style="padding: 6px 10px; font-size: 12px;" title="Copy link">Link</button>
+                <button class="btn-modern secondary" onclick="godDeleteDesign('${escapeHtml(String(d.id))}', '${name.replace(/'/g, "\\'")}')" style="padding: 6px 10px; font-size: 12px; color: var(--error);" title="Delete design">Del</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function godSearchDesigns() {
+      clearTimeout(godDesignsSearchTimeout);
+      godDesignsSearchTimeout = setTimeout(() => {
+        godDesignsPage = 0;
+        godLoadDesigns();
+      }, 300);
+    }
+
+    function godFilterDesignsType() {
+      godDesignsPage = 0;
+      godLoadDesigns();
+    }
+
+    function godFilterDesignsStatus() {
+      godDesignsPage = 0;
+      godLoadDesigns();
+    }
+
+    function godDesignsPagePrev() {
+      if (godDesignsPage > 0) {
+        godDesignsPage--;
+        godLoadDesigns();
+      }
+    }
+
+    function godDesignsPageNext() {
+      godDesignsPage++;
+      godLoadDesigns();
+    }
+
+    async function godDeleteDesign(id, name) {
+      if (!isGodMode()) return;
+      if (!confirm(`Delete design "${name}"?\n\nThis action cannot be undone.`)) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('room_designs')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast('Design deleted successfully', 'success');
+        godLoadDesigns();
+      } catch (err) {
+        console.error('Error deleting design:', err);
+        showToast('Error deleting design: ' + err.message, 'error');
+      }
+    }
+
+    function godCopyDesignLink(token, id) {
+      const baseUrl = window.location.origin;
+      const url = token
+        ? `${baseUrl}/tools/room-designer/?p=${token}`
+        : `${baseUrl}/tools/room-designer/?id=${id}`;
+
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Design link copied to clipboard', 'success');
+      }).catch(() => {
+        // Fallback
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Design link copied to clipboard', 'success');
+      });
+    }
+
+    function godExportDesigns() {
+      if (!isGodMode()) return;
+      showToast('Exporting designs...', 'info');
+
+      supabaseClient
+        .from('room_designs')
+        .select('*, sg_users(email, full_name)')
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            showToast('Export failed: ' + error.message, 'error');
+            return;
+          }
+          if (!data || data.length === 0) {
+            showToast('No designs to export', 'warning');
+            return;
+          }
+
+          const headers = ['ID', 'Name', 'Creator Email', 'Creator Name', 'Room Type', 'Elements Count', 'Quote Total', 'Status', 'Share Token', 'Created At', 'Updated At'];
+          const rows = data.map(d => [
+            d.id,
+            d.name || d.project_name || '',
+            d.sg_users?.email || '',
+            d.sg_users?.full_name || '',
+            d.room_type || '',
+            Array.isArray(d.elements) ? d.elements.length : 0,
+            d.quote_total != null ? d.quote_total : '',
+            d.share_token ? 'Shared' : 'Private',
+            d.share_token || '',
+            d.created_at || '',
+            d.updated_at || ''
+          ]);
+
+          const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `all-designs-${new Date().toISOString().split('T')[0]}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast('Designs exported successfully', 'success');
+        });
+    }
 
     console.log('⚡ GOD MODE functions loaded');
     // ==================== END GOD MODE FUNCTIONS ====================

@@ -80,7 +80,7 @@ router.post('/test', asyncHandler(async (req, res) => {
  * POST /api/email/notify
  */
 router.post('/notify', asyncHandler(async (req, res) => {
-  const { to, subject, message, type = 'info' } = req.body;
+  const { to, subject, message, type = 'info', rawHtml = false } = req.body;
 
   if (!to || !isValidEmail(to)) {
     return res.status(400).json({ error: 'Valid email address required' });
@@ -94,19 +94,26 @@ router.post('/notify', asyncHandler(async (req, res) => {
     return res.status(500).json({ error: 'Email not configured' });
   }
 
-  const colors = {
-    info: '#3b82f6',
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444'
-  };
+  let html;
 
-  const html = emailService.wrapEmailTemplate(`
-    <h2 style="color: ${colors[type] || colors.info}; margin-bottom: 20px;">${sanitizeString(subject, 200)}</h2>
-    <div style="color: #333; line-height: 1.6;">
-      ${sanitizeString(message, 2000).replace(/\n/g, '<br>')}
-    </div>
-  `);
+  if (rawHtml) {
+    // Send pre-built HTML email as-is (e.g. room design invitations)
+    html = message;
+  } else {
+    const colors = {
+      info: '#3b82f6',
+      success: '#22c55e',
+      warning: '#f59e0b',
+      error: '#ef4444'
+    };
+
+    html = emailService.wrapEmailTemplate(`
+      <h2 style="color: ${colors[type] || colors.info}; margin-bottom: 20px;">${sanitizeString(subject, 200)}</h2>
+      <div style="color: #333; line-height: 1.6;">
+        ${sanitizeString(message, 2000).replace(/\n/g, '<br>')}
+      </div>
+    `);
+  }
 
   try {
     await transporter.sendMail({
