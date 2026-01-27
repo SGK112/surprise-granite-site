@@ -18475,7 +18475,7 @@
         // Bulk insert new records
         if (toInsert.length > 0) {
           console.log('[Customers] Consolidating', toInsert.length, 'new records into customers table');
-          const { error } = await supabaseClient.from('customers').insert(toInsert);
+          const { error } = await supabaseClient.from('customers').upsert(toInsert, { onConflict: 'user_id,email', ignoreDuplicates: true });
           if (error) {
             console.warn('[Customers] Consolidation error (non-fatal):', error.message);
           }
@@ -20617,6 +20617,15 @@
           supabaseInvoices.map(inv => inv.stripe_invoice_id).filter(Boolean)
         );
 
+        // Safe date conversion for Unix timestamps
+        function safeISODate(ts) {
+          if (!ts) return null;
+          try {
+            const d = new Date(typeof ts === 'number' ? ts * 1000 : ts);
+            return isNaN(d.getTime()) ? null : d.toISOString();
+          } catch { return null; }
+        }
+
         // Map Stripe-only invoices (not already in Supabase)
         const stripeInvoices = (stripeResult.invoices || [])
           .filter(inv => inv.id && !knownStripeIds.has(inv.id))
@@ -20630,9 +20639,9 @@
             total: (inv.total || 0) / 100,
             amount_due: (inv.amount_due || 0) / 100,
             amount_paid: (inv.amount_paid || 0) / 100,
-            due_date: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+            due_date: safeISODate(inv.due_date),
             created: inv.created,
-            created_at: inv.created ? new Date(inv.created * 1000).toISOString() : null,
+            created_at: safeISODate(inv.created),
             source: 'stripe',
             stripe_invoice_id: inv.id,
             stripe_hosted_url: inv.hosted_invoice_url || null,
