@@ -16768,7 +16768,6 @@
     }
 
     let dashboardInitialized = false;
-    let leadsInterval = null;
 
     function setupDashboard() {
       // Prevent re-initialization which would reset stats
@@ -16788,10 +16787,6 @@
         loadCustomers();
         loadSubscriberStats();
         setupLeadsRealtime();
-        // Also refresh leads every 30 seconds to catch any missed updates
-        if (!leadsInterval) {
-          leadsInterval = setInterval(loadLeads, 30000);
-        }
         statsEl.innerHTML = `
           <div class="stat-card">
             <div class="stat-label">Total Leads</div>
@@ -17342,7 +17337,10 @@
       } catch (e) {}
     }
 
+    let isLoadingLeads = false;
     async function loadLeads() {
+      if (isLoadingLeads) return;
+      isLoadingLeads = true;
       console.log('[Leads] loadLeads called');
       try {
         const { data, error } = await supabaseClient
@@ -17364,6 +17362,8 @@
             <p>${escapeHtml(err.message || 'Unknown error')}</p>
           </div>
         `;
+      } finally {
+        isLoadingLeads = false;
       }
     }
 
@@ -18360,71 +18360,42 @@
       const paginationEl = document.getElementById('customers-pagination');
 
       try {
-        // Load from multiple sources in parallel
-        const [subscribersResult, shopifyResult] = await Promise.all([
-          // Account subscribers (sg_users)
-          supabaseClient.from('sg_users').select('id, email, full_name, phone, created_at, account_type, avatar_url'),
-          // Shopify customers
-          supabaseClient.from('shopify_customers').select('*').order('created_at', { ascending: false })
-        ]);
+        const { data: { user } } = await supabaseClient.auth.getUser();
 
-        // Process subscribers
-        const subscribers = (subscribersResult.data || []).map(u => ({
-          ...u,
-          _source: 'subscriber',
-          name: u.full_name || u.email?.split('@')[0] || 'Unknown',
-          total_spent: 0,
-          orders_count: 0,
-          _sourceLabel: 'Account',
-          _sourceColor: 'var(--gold-primary)'
-        }));
-        subscriberCount = subscribers.length;
+        // Step 1: Consolidate sg_users and shopify_customers into unified customers table
+        await consolidateCustomerSources(user);
 
-        // Process Shopify customers
-        const shopifyCustomers = (shopifyResult.data || []).map(c => ({
+        // Step 2: Load from the unified customers table (single source of truth)
+        const { data: customers, error } = await supabaseClient
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Map source labels for display
+        const sourceLabels = {
+          'subscriber': { label: 'Account', color: 'var(--gold-primary)' },
+          'shopify': { label: 'Shopify', color: 'var(--info)' },
+          'manual': { label: 'Manual', color: 'var(--text-muted)' },
+          'stripe_sync': { label: 'Stripe', color: 'var(--success)' },
+          'lead_conversion': { label: 'Lead', color: 'var(--warning)' }
+        };
+
+        allCustomers = (customers || []).map(c => ({
           ...c,
-          _source: 'shopify',
-          name: c.name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email?.split('@')[0] || 'Unknown',
+          _source: c.source || 'manual',
+          name: c.name || c.full_name || c.email?.split('@')[0] || 'Unknown',
           total_spent: parseFloat(c.total_spent || 0),
           orders_count: c.orders_count || 0,
-          _sourceLabel: 'Shopify',
-          _sourceColor: 'var(--info)'
+          _sourceLabel: sourceLabels[c.source]?.label || 'Customer',
+          _sourceColor: sourceLabels[c.source]?.color || 'var(--text-muted)'
         }));
-        shopifyCustomerCount = shopifyCustomers.length;
 
-        // Combine all customers (deduplicate by email)
-        const emailMap = new Map();
-
-        // Add Shopify customers first (they have more data)
-        shopifyCustomers.forEach(c => {
-          if (c.email) emailMap.set(c.email.toLowerCase(), c);
-          else allCustomers.push(c);
-        });
-
-        // Add subscribers, merge if email exists
-        subscribers.forEach(s => {
-          if (s.email) {
-            const existing = emailMap.get(s.email.toLowerCase());
-            if (existing) {
-              // Merge: mark as both subscriber and shopify customer
-              existing._source = 'both';
-              existing._sourceLabel = 'Subscriber + Shopify';
-              existing._sourceColor = 'var(--success)';
-              existing.account_type = s.account_type;
-              existing.avatar_url = s.avatar_url;
-            } else {
-              emailMap.set(s.email.toLowerCase(), s);
-            }
-          } else {
-            allCustomers.push(s);
-          }
-        });
-
-        // Combine map values with non-email customers
-        allCustomers = [...emailMap.values(), ...allCustomers];
-
-        // Sort by most recent
-        allCustomers.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        // Count by source for stats
+        subscriberCount = allCustomers.filter(c => c._source === 'subscriber').length;
+        shopifyCustomerCount = allCustomers.filter(c => c._source === 'shopify').length;
+        importedCustomerCount = allCustomers.filter(c => c._source === 'stripe_sync' || c._source === 'manual').length;
 
         customersLoaded = true;
         loadingEl.style.display = 'none';
@@ -18449,6 +18420,70 @@
       } catch (err) {
         console.error('Error loading customers:', err);
         loadingEl.innerHTML = `<p style="color: var(--error);">Error loading customers: ${escapeHtml(err.message || 'Unknown error')}</p>`;
+      }
+    }
+
+    // Consolidate records from sg_users and shopify_customers into the unified customers table
+    async function consolidateCustomerSources(user) {
+      try {
+        // Get existing customer emails for deduplication
+        const { data: existingCustomers } = await supabaseClient
+          .from('customers')
+          .select('email');
+
+        const existingEmails = new Set((existingCustomers || []).map(c => c.email?.toLowerCase()).filter(Boolean));
+
+        // Fetch from sg_users and shopify_customers in parallel
+        const [subscribersResult, shopifyResult] = await Promise.all([
+          supabaseClient.from('sg_users').select('id, email, full_name, phone, created_at, account_type, avatar_url'),
+          supabaseClient.from('shopify_customers').select('*').order('created_at', { ascending: false })
+        ]);
+
+        const toInsert = [];
+
+        // Process subscribers not yet in customers table
+        (subscribersResult.data || []).forEach(u => {
+          if (u.email && !existingEmails.has(u.email.toLowerCase())) {
+            existingEmails.add(u.email.toLowerCase());
+            toInsert.push({
+              user_id: user?.id,
+              name: u.full_name || u.email?.split('@')[0] || 'Unknown',
+              email: u.email,
+              phone: u.phone || null,
+              source: 'subscriber',
+              created_at: u.created_at
+            });
+          }
+        });
+
+        // Process Shopify customers not yet in customers table
+        (shopifyResult.data || []).forEach(c => {
+          const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email?.split('@')[0] || 'Unknown';
+          if (c.email && !existingEmails.has(c.email.toLowerCase())) {
+            existingEmails.add(c.email.toLowerCase());
+            toInsert.push({
+              user_id: user?.id,
+              name: name,
+              email: c.email,
+              phone: c.phone || null,
+              source: 'shopify',
+              total_spent: parseFloat(c.total_spent || 0),
+              orders_count: c.orders_count || 0,
+              created_at: c.created_at
+            });
+          }
+        });
+
+        // Bulk insert new records
+        if (toInsert.length > 0) {
+          console.log('[Customers] Consolidating', toInsert.length, 'new records into customers table');
+          const { error } = await supabaseClient.from('customers').insert(toInsert);
+          if (error) {
+            console.warn('[Customers] Consolidation error (non-fatal):', error.message);
+          }
+        }
+      } catch (err) {
+        console.warn('[Customers] Consolidation failed (non-fatal):', err.message);
       }
     }
 
@@ -20497,6 +20532,20 @@
     // ============ INVOICE MANAGEMENT ============
     const API_URL = 'https://surprise-granite-email-api.onrender.com';
 
+    // Reusable API call helper - auto-includes Supabase JWT auth token
+    async function apiCall(endpoint, options = {}) {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
+      return fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(options.headers || {})
+        }
+      });
+    }
+
     let allInvoices = [];
     let invoiceFilter = 'all';
     let invoiceItemCount = 1;
@@ -20519,43 +20568,24 @@
           return;
         }
 
-        // Fetch from both Stripe API and Supabase in parallel
+        // Supabase is the single source of truth for invoices
         const { data: { user } } = await supabaseClient.auth.getUser();
         console.log('[Invoices] User:', user?.id);
 
-        // Add timeout for Stripe API (cold starts can take a while)
-        const stripeController = new AbortController();
-        const stripeTimeout = setTimeout(() => stripeController.abort(), 15000); // 15s timeout
+        const { data, error } = await supabaseClient
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false });
 
-        const [stripeResponse, supabaseResult] = await Promise.all([
-          fetch(`${API_URL}/api/invoices?limit=50`, { signal: stripeController.signal })
-            .catch(err => {
-              console.warn('[Invoices] Stripe fetch failed:', err.message);
-              return null;
-            })
-            .finally(() => clearTimeout(stripeTimeout)),
-          supabaseClient.from('invoices').select('*, invoice_items(*)').eq('user_id', user?.id).order('created_at', { ascending: false })
-        ]);
+        if (error) throw error;
 
-        let stripeInvoices = [];
-        if (stripeResponse && stripeResponse.ok) {
-          const stripeData = await stripeResponse.json();
-          stripeInvoices = (stripeData.invoices || []).map(inv => ({
-            ...inv,
-            source: 'stripe',
-            amount_due: inv.amount_due || 0,
-            amount_paid: inv.amount_paid || 0
-          }));
-        }
-
-        // Transform Supabase invoices to match format
-        const supabaseInvoices = (supabaseResult.data || []).map(inv => ({
+        allInvoices = (data || []).map(inv => ({
           id: inv.id,
           number: inv.invoice_number,
           invoice_number: inv.invoice_number,
           customer_email: inv.customer_email,
           customer_name: inv.customer_name,
-          // Normalize status: Supabase uses 'unpaid', Stripe uses 'open'
           status: inv.status === 'unpaid' ? 'open' : inv.status,
           total: inv.total || 0,
           amount_due: inv.amount_due || inv.total || 0,
@@ -20565,17 +20595,14 @@
           created_at: inv.created_at,
           source: 'supabase',
           estimate_id: inv.estimate_id,
-          invoice_items: inv.invoice_items
+          stripe_invoice_id: inv.stripe_invoice_id,
+          stripe_hosted_url: inv.stripe_hosted_url,
+          stripe_pdf_url: inv.stripe_pdf_url,
+          invoice_items: inv.invoice_items,
+          view_count: inv.view_count || 0
         }));
 
-        // Combine and sort by date (newest first)
-        allInvoices = [...stripeInvoices, ...supabaseInvoices].sort((a, b) => {
-          const dateA = a.created || new Date(a.created_at).getTime() / 1000;
-          const dateB = b.created || new Date(b.created_at).getTime() / 1000;
-          return dateB - dateA;
-        });
-
-        console.log('[Invoices] Loaded', stripeInvoices.length, 'from Stripe,', supabaseInvoices.length, 'from Supabase');
+        console.log('[Invoices] Loaded', allInvoices.length, 'invoices from Supabase');
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
@@ -20616,14 +20643,14 @@
         if (!user) throw new Error('Not logged in');
         console.log('[Sync] User authenticated:', user.id);
 
-        // Fetch paid invoices from Stripe (with timeout for cold starts)
+        // Fetch paid invoices from Stripe via authenticated API (one-time import)
         console.log('[Sync] Fetching paid invoices from Stripe...');
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
         let response;
         try {
-          response = await fetch(`${API_URL}/api/invoices?status=paid&limit=100`, {
+          response = await apiCall('/api/invoices?status=paid&limit=100', {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
@@ -20842,7 +20869,7 @@
       if (!confirm('Void this invoice? The customer will no longer be able to pay it.')) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/void`, {
+        const response = await apiCall(`/api/invoices/${invoiceId}/void`, {
           method: 'POST'
         });
 
@@ -21415,33 +21442,103 @@
       // Get selected template
       const selectedTemplate = document.querySelector('input[name="invoice-template"]:checked')?.value || 'classic';
 
-      const invoiceData = {
-        customer_email: document.getElementById('invoice-email').value,
-        customer_name: document.getElementById('invoice-name').value,
-        customer_phone: document.getElementById('invoice-phone').value,
-        items,
-        due_days: parseInt(document.getElementById('invoice-due-days').value),
-        notes: document.getElementById('invoice-notes').value,
-        auto_send: true,
-        template: selectedTemplate
-      };
+      const customerEmail = document.getElementById('invoice-email').value;
+      const customerName = document.getElementById('invoice-name').value;
+      const customerPhone = document.getElementById('invoice-phone').value;
+      const dueDays = parseInt(document.getElementById('invoice-due-days').value) || 30;
+      const notes = document.getElementById('invoice-notes').value;
 
       try {
-        const response = await fetch(`${API_URL}/api/invoices`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invoiceData)
-        });
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-        const data = await response.json();
+        // Calculate total from items
+        const total = items.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create invoice');
+        // Generate invoice number
+        const invoicePrefix = businessSettings?.invoice_prefix || 'INV-';
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        const invoiceNumber = `${invoicePrefix}${timestamp}-${random}`;
+
+        // Step 1: Create invoice in Supabase (single source of truth)
+        const { data: invoice, error: invoiceError } = await supabaseClient
+          .from('invoices')
+          .insert({
+            user_id: user.id,
+            invoice_number: invoiceNumber,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            subtotal: total,
+            total: total,
+            amount_due: total,
+            amount_paid: 0,
+            due_date: new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString(),
+            notes: notes,
+            status: 'draft'
+          })
+          .select()
+          .single();
+
+        if (invoiceError) throw invoiceError;
+
+        // Step 2: Create invoice items in Supabase
+        if (items.length > 0) {
+          const invoiceItems = items.map(item => ({
+            invoice_id: invoice.id,
+            description: item.description,
+            name: item.description,
+            quantity: item.quantity,
+            unit_price: item.amount,
+            total: item.quantity * item.amount
+          }));
+
+          await supabaseClient.from('invoice_items').insert(invoiceItems);
+        }
+
+        // Step 3: Create Stripe invoice for payment processing (optional, non-blocking)
+        let stripeInvoiceId = null;
+        let stripeHostedUrl = null;
+        try {
+          const response = await apiCall('/api/invoices', {
+            method: 'POST',
+            body: JSON.stringify({
+              customer_email: customerEmail,
+              customer_name: customerName,
+              customer_phone: customerPhone,
+              items,
+              due_days: dueDays,
+              notes: notes,
+              auto_send: true,
+              template: selectedTemplate
+            })
+          });
+
+          if (response.ok) {
+            const stripeData = await response.json();
+            stripeInvoiceId = stripeData.invoice?.id;
+            stripeHostedUrl = stripeData.invoice?.hosted_invoice_url;
+
+            // Step 4: Update Supabase record with Stripe references
+            if (stripeInvoiceId) {
+              await supabaseClient
+                .from('invoices')
+                .update({
+                  stripe_invoice_id: stripeInvoiceId,
+                  stripe_hosted_url: stripeHostedUrl,
+                  status: 'open'
+                })
+                .eq('id', invoice.id);
+            }
+          }
+        } catch (stripeErr) {
+          console.warn('[Invoices] Stripe invoice creation failed (Supabase record saved):', stripeErr.message);
         }
 
         closeInvoiceModal();
         loadInvoices();
-        alert(`Invoice #${data.invoice.number} created and sent to ${invoiceData.customer_email}!`);
+        alert(`Invoice #${invoiceNumber} created${stripeInvoiceId ? ' and sent' : ' (saved as draft)'} to ${customerEmail}!`);
       } catch (err) {
         alert('Error creating invoice: ' + err.message);
       } finally {
@@ -21454,7 +21551,7 @@
       if (!confirm('Send payment reminder for this invoice?')) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/remind`, {
+        const response = await apiCall(`/api/invoices/${invoiceId}/remind`, {
           method: 'POST'
         });
 
@@ -21580,9 +21677,8 @@
         }
 
         // Send via email API
-        const response = await fetch(`${API_URL}/api/send-invoice-email`, {
+        const response = await apiCall('/api/send-invoice-email', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             customer_email: invoice.customer_email,
             customer_name: invoice.customer_name,
@@ -21770,7 +21866,7 @@
 
     async function loadBalance() {
       try {
-        const response = await fetch(`${API_URL}/api/balance`);
+        const response = await apiCall('/api/balance');
         if (!response.ok) throw new Error('Failed to load balance');
 
         const data = await response.json();
@@ -21790,7 +21886,7 @@
       if (!container) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/balance-transactions?limit=15`);
+        const response = await apiCall('/api/balance-transactions?limit=15');
         if (!response.ok) throw new Error('Failed to load transactions');
 
         const data = await response.json();
@@ -21852,7 +21948,7 @@
       if (!container) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/payouts?limit=10`);
+        const response = await apiCall('/api/payouts?limit=10');
         if (!response.ok) throw new Error('Failed to load payouts');
 
         const data = await response.json();
@@ -23666,14 +23762,11 @@
         const user = await supabaseClient.auth.getUser();
         if (!user.data.user) throw new Error('Not authenticated');
 
-        const API_URL = 'https://surprise-granite-email-api.onrender.com';
-
         // For email channel, send via API
         if (channel === 'email' && composeRecipient.email) {
           try {
-            await fetch(`${API_URL}/api/send-estimate`, {
+            await apiCall('/api/send-estimate', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 email: composeRecipient.email,
                 counterSqft: subject || 'Message from Surprise Granite',
@@ -25445,6 +25538,46 @@
           .update({ status: 'converted', converted_to_invoice_id: invoice.id })
           .eq('id', estimateId);
 
+        // Optionally create Stripe invoice for payment processing (non-blocking)
+        try {
+          const stripeItems = (estimate.estimate_items || []).map(item => ({
+            description: item.name || item.description,
+            quantity: item.quantity || 1,
+            amount: item.unit_price || item.total || 0
+          }));
+
+          if (stripeItems.length > 0 && estimate.customer_email) {
+            const response = await apiCall('/api/invoices', {
+              method: 'POST',
+              body: JSON.stringify({
+                customer_email: estimate.customer_email,
+                customer_name: estimate.customer_name,
+                customer_phone: estimate.customer_phone,
+                items: stripeItems,
+                due_days: 30,
+                notes: estimate.notes || '',
+                auto_send: false
+              })
+            });
+
+            if (response.ok) {
+              const stripeData = await response.json();
+              if (stripeData.invoice?.id) {
+                await supabaseClient
+                  .from('invoices')
+                  .update({
+                    stripe_invoice_id: stripeData.invoice.id,
+                    stripe_hosted_url: stripeData.invoice.hosted_invoice_url,
+                    stripe_pdf_url: stripeData.invoice.pdf
+                  })
+                  .eq('id', invoice.id);
+              }
+            }
+          }
+        } catch (stripeErr) {
+          console.warn('[ConvertToInvoice] Stripe invoice creation failed (Supabase record saved):', stripeErr.message);
+        }
+
         showToast('Invoice created successfully!');
         showPage('invoices');
         loadInvoices();
@@ -26446,9 +26579,8 @@
           showToast('Portal link copied to clipboard!');
         } else if (action === 'email' && customer.email) {
           try {
-            await fetch(`${API_URL}/api/customers/send-portal-link`, {
+            await apiCall('/api/customers/send-portal-link', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 customer_id: customer.id,
                 email: customer.email,
@@ -26511,9 +26643,8 @@
           showToast('Portal link copied!');
         } else if (action === 'email' && contractor.email) {
           try {
-            await fetch(`${API_URL}/api/contractors/send-invite`, {
+            await apiCall('/api/contractors/send-invite', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 contractor_id: contractor.id,
                 email: contractor.email,
@@ -26689,9 +26820,8 @@
         const sendEmail = confirm(`Link copied! Also send invite email to ${contractor.email}?`);
         if (sendEmail) {
           try {
-            await fetch(`${API_URL}/api/contractors/send-invite`, {
+            await apiCall('/api/contractors/send-invite', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 contractor_id: contractorId,
                 email: contractor.email,
@@ -26876,9 +27006,8 @@
         if (shouldNotify) {
           // Send invite email via API
           try {
-            await fetch(`${API_URL}/api/jobs/${currentJobId}/assign-contractor`, {
+            await apiCall(`/api/jobs/${currentJobId}/assign-contractor`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ contractor_id: contractorId, send_invite: true })
             });
           } catch (apiErr) {
@@ -27712,9 +27841,8 @@
 
       try {
         const inviteLink = document.getElementById('contractor-invite-link').value;
-        await fetch(`${API_URL}/api/contractors/send-invite`, {
+        await apiCall('/api/contractors/send-invite', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contractor_id: currentContractorId,
             email: contractor.email,
