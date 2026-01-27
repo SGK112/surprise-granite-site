@@ -224,7 +224,7 @@ function sanitizeString(str, maxLength = 1000) {
 // ============================================
 
 // Initialize Supabase client (service role for backend operations)
-const supabaseUrl = process.env.SUPABASE_URL || 'https://htjvyzmuqsrjpesdurni.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 

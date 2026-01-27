@@ -20536,11 +20536,14 @@
     async function apiCall(endpoint, options = {}) {
       const { data: { session } } = await supabaseClient.auth.getSession();
       const token = session?.access_token;
+      if (!token) {
+        console.warn('[apiCall] No auth token available for', endpoint, '- session:', !!session);
+      }
       return fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...(options.headers || {})
         }
       });
