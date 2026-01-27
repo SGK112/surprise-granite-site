@@ -10786,6 +10786,15 @@
       customerName: null          // Customer name for notifications
     };
 
+    // Helper: is this user a shared viewer with edit permission (full_collab)?
+    function isFullCollaborator() {
+      return SHARE_STATE.isSharedView && SHARE_STATE.allowedActions?.canEdit === true;
+    }
+
+    // Echo-back prevention for realtime collaboration
+    let _lastOwnSyncTime = null;
+    const ECHO_SUPPRESSION_WINDOW_MS = 3000;
+
     // ===== REALTIME SYNC FOR SHARED DESIGNS =====
     // Enables hot-reload: customers see designer changes instantly
 
@@ -11074,8 +11083,14 @@
               const design = data[0];
               // Check if updated since last poll
               if (SHARE_STATE.lastPollData && design.updated_at !== SHARE_STATE.lastPollData) {
-                console.log('Polling detected update:', design.updated_at);
-                handleRealtimeUpdate(design);
+                // Echo-back prevention for polling
+                if (_lastOwnSyncTime && (Date.now() - _lastOwnSyncTime) < ECHO_SUPPRESSION_WINDOW_MS) {
+                  console.log('Poll: skipping echo-back of own update');
+                  _lastOwnSyncTime = null;
+                } else {
+                  console.log('Polling detected update:', design.updated_at);
+                  handleRealtimeUpdate(design);
+                }
               }
               SHARE_STATE.lastPollData = design.updated_at;
               SHARE_STATE.isLiveConnected = true;
@@ -11105,11 +11120,18 @@
     function handleRealtimeUpdate(newData) {
       if (!newData) return;
 
+      // Echo-back prevention: skip our own updates bouncing back via Realtime
+      if (_lastOwnSyncTime && (Date.now() - _lastOwnSyncTime) < ECHO_SUPPRESSION_WINDOW_MS) {
+        console.log('Skipping echo-back of own update');
+        _lastOwnSyncTime = null;
+        return;
+      }
+
       console.log('Applying realtime update...');
       SHARE_STATE.lastSyncTime = new Date();
 
       // Show sync notification
-      showToast('Design updated by designer', 'info', 2000);
+      showToast('Design updated by collaborator', 'info', 2000);
 
       // Update room dimensions first (needed for fitToScreen before deserialization)
       if (newData.room_width) roomWidth = newData.room_width;
@@ -15760,6 +15782,9 @@
     // Element locking (simple grouping)
     let nextGroupId = 1;
 
+    // Multi-selection for shift+click linking
+    let multiSelectedElements = new Set(); // Set of element IDs
+
     // Element cycling state - for cycling through overlapping elements
     let lastClickPos = { x: 0, y: 0 };
     let lastClickTime = 0;
@@ -16774,9 +16799,9 @@
     function autoSaveDesign(immediate = false) {
       hasUnsavedChanges = true;
 
-      // CRITICAL: Never auto-save when viewing someone else's shared design
-      // This prevents overwriting the designer's own saved work
-      if (SHARE_STATE.isSharedView) {
+      // CRITICAL: Never auto-save for view-only shared viewers
+      // But allow full_collab shared viewers to save (they have edit permission)
+      if (SHARE_STATE.isSharedView && !isFullCollaborator()) {
         console.log('Auto-save skipped: viewing shared design (read-only for save purposes)');
         return;
       }
@@ -16887,7 +16912,8 @@
 
           // ===== REALTIME SYNC TO CLOUD =====
           // If design is saved to cloud, sync changes for live viewers
-          if (SHARE_STATE.designId && !SHARE_STATE.isSharedView) {
+          // Allow full_collab shared viewers to sync their edits too
+          if (SHARE_STATE.designId && (!SHARE_STATE.isSharedView || isFullCollaborator())) {
             syncDesignToCloud();
           }
         } catch (e) {
@@ -16949,6 +16975,7 @@
             console.warn('Cloud sync failed:', error);
           } else {
             console.log('Design synced to cloud - live viewers will see update');
+            _lastOwnSyncTime = Date.now(); // Echo-back prevention
           }
         } catch (err) {
           console.warn('Cloud sync error:', err);
@@ -23223,8 +23250,51 @@
       });
 
       sortedElements.forEach(el => {
-        drawElement(el, el === selectedElement);
+        const isMultiSelected = multiSelectedElements.has(el.id);
+        drawElement(el, el === selectedElement || isMultiSelected, isMultiSelected);
       });
+
+      // Draw connection lines between multi-selected elements
+      if (multiSelectedElements.size >= 2) {
+        const multiEls = [...multiSelectedElements]
+          .map(id => elements.find(e => e.id === id))
+          .filter(Boolean);
+
+        if (multiEls.length >= 2) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 4]);
+
+          // Draw lines connecting consecutive multi-selected elements
+          for (let i = 0; i < multiEls.length - 1; i++) {
+            const a = multiEls[i];
+            const b = multiEls[i + 1];
+            const ax = a.x + (a.width * pixelsPerFoot) / 2;
+            const ay = a.y + (a.height * pixelsPerFoot) / 2;
+            const bx = b.x + (b.width * pixelsPerFoot) / 2;
+            const by = b.y + (b.height * pixelsPerFoot) / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+          }
+
+          // Close the chain: connect last to first
+          if (multiEls.length > 2) {
+            const first = multiEls[0];
+            const last = multiEls[multiEls.length - 1];
+            ctx.beginPath();
+            ctx.moveTo(first.x + (first.width * pixelsPerFoot) / 2, first.y + (first.height * pixelsPerFoot) / 2);
+            ctx.lineTo(last.x + (last.width * pixelsPerFoot) / 2, last.y + (last.height * pixelsPerFoot) / 2);
+            ctx.stroke();
+          }
+
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      }
     }
 
     // Get element category for visibility toggles
@@ -23296,7 +23366,7 @@
       }
     }
 
-    function drawElement(el, isSelected) {
+    function drawElement(el, isSelected, isMultiSelected = false) {
       const x = el.x;
       const y = el.y;
       const w = el.width * pixelsPerFoot;
@@ -23363,15 +23433,25 @@
       const isLocked = el.groupId !== undefined;
 
       if (!isLOrUShape) {
-        ctx.strokeStyle = isSelected ? '#6366f1' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
-        ctx.lineWidth = isSelected ? 3 : 1.5;
-        ctx.strokeRect(x, y, w, h);
+        if (isMultiSelected) {
+          // Multi-selected elements: cyan dashed border to distinguish from primary selection
+          ctx.strokeStyle = '#22d3ee';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 4]);
+          ctx.strokeRect(x, y, w, h);
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = isSelected ? '#6366f1' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
+          ctx.lineWidth = isSelected ? 3 : 1.5;
+          ctx.strokeRect(x, y, w, h);
+        }
       } else if (isSelected) {
         // Draw L-shape selection outline
         const armWidthFt = el.armWidth || 2.17;
         const armPx = armWidthFt * pixelsPerFoot;
-        ctx.strokeStyle = '#6366f1';
+        ctx.strokeStyle = isMultiSelected ? '#22d3ee' : '#6366f1';
         ctx.lineWidth = 3;
+        if (isMultiSelected) ctx.setLineDash([8, 4]);
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + w, y);
@@ -23381,13 +23461,21 @@
         ctx.lineTo(x, y + h);
         ctx.closePath();
         ctx.stroke();
+        if (isMultiSelected) ctx.setLineDash([]);
       }
 
-      // Small lock icon for locked/grouped elements
-      if (isLocked && !isSelected) {
+      // Multi-selection link indicator badge
+      if (isMultiSelected) {
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.9)';
+        ctx.font = 'bold 11px Inter';
+        ctx.textAlign = 'left';
+        ctx.fillText('+ LINK', x + 4, y + 14);
+      }
+      // Small lock icon for locked/grouped elements (when not multi-selected)
+      else if (isLocked && !isSelected) {
         ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
         ctx.font = '10px sans-serif';
-        ctx.fillText('🔗', x + 4, y + 12);
+        ctx.fillText('\uD83D\uDD17', x + 4, y + 12);
       }
 
       // Only show label if element is large enough or selected
@@ -23914,6 +24002,55 @@
           return;
         }
 
+        // Shift+Click: Multi-selection for linking elements together
+        if (e.shiftKey) {
+          // Include current selectedElement as the anchor (only if different from clicked)
+          if (selectedElement && selectedElement !== clicked && !multiSelectedElements.has(selectedElement.id)) {
+            multiSelectedElements.add(selectedElement.id);
+          }
+
+          // Toggle clicked element in/out of multi-selection
+          if (multiSelectedElements.has(clicked.id)) {
+            multiSelectedElements.delete(clicked.id);
+            // Also remove its groupId if it was linked by this session
+            if (clicked.groupId) {
+              const groupId = clicked.groupId;
+              delete clicked.groupId;
+              // Clean up orphaned groups (only 1 member left)
+              const remaining = elements.filter(el => el.groupId === groupId);
+              if (remaining.length === 1) {
+                delete remaining[0].groupId;
+              }
+            }
+            // If we removed the selected element, pick another from the set
+            if (selectedElement === clicked) {
+              const remainingIds = [...multiSelectedElements];
+              selectedElement = remainingIds.length > 0
+                ? elements.find(el => el.id === remainingIds[remainingIds.length - 1])
+                : null;
+            }
+            if (multiSelectedElements.size > 0) {
+              showSnapFeedback(`Removed from selection (${multiSelectedElements.size} remaining)`);
+            }
+          } else {
+            multiSelectedElements.add(clicked.id);
+            selectedElement = clicked;
+          }
+
+          // Auto-link all multi-selected elements when 2+
+          if (multiSelectedElements.size >= 2) {
+            linkMultiSelectedElements();
+          }
+
+          updateLockUI();
+          updateProperties();
+          draw();
+          return; // Don't start dragging on shift+click
+        }
+
+        // Normal click (no shift) - clear multi-selection
+        multiSelectedElements.clear();
+
         selectedElement = clicked;
         updateLockUI();
         if (!clicked.locked) {
@@ -23925,6 +24062,7 @@
         updateProperties();
       } else {
         selectedElement = null;
+        multiSelectedElements.clear(); // Clear multi-selection on empty space click
         cancelLockMode(); // Cancel lock mode if clicking empty space
         cycleIndex = 0;
         updateProperties();
@@ -24675,6 +24813,8 @@
         case 'delete':
         case 'backspace':
           if (selectedElement && !selectedElement.locked) {
+            // Remove deleted element from multi-selection if present
+            multiSelectedElements.delete(selectedElement.id);
             elements = elements.filter(el => el !== selectedElement);
             selectedElement = null;
             updateProperties();
@@ -24727,6 +24867,8 @@
           if (lockMode) {
             cancelLockMode();
           }
+          // Clear multi-selection
+          multiSelectedElements.clear();
           // Cancel material selection
           if (selectedMaterial) {
             selectedMaterial = null;
@@ -25473,6 +25615,37 @@
       showSnapFeedback('Element unlocked');
     }
 
+    // Link all multi-selected elements with the same groupId (Shift+Click linking)
+    function linkMultiSelectedElements() {
+      if (multiSelectedElements.size < 2) return;
+
+      // Check if any selected element already has a groupId - reuse it
+      let groupId = null;
+      for (const id of multiSelectedElements) {
+        const el = elements.find(e => e.id === id);
+        if (el && el.groupId) {
+          groupId = el.groupId;
+          break;
+        }
+      }
+      if (!groupId) {
+        groupId = 'group-' + nextGroupId++;
+      }
+
+      // Assign all multi-selected elements to the same group
+      for (const id of multiSelectedElements) {
+        const el = elements.find(e => e.id === id);
+        if (el) {
+          el.groupId = groupId;
+        }
+      }
+
+      saveUndoState();
+
+      const count = multiSelectedElements.size;
+      showSnapFeedback(`${count} elements linked together`);
+    }
+
     // Get all elements in the same group as the given element
     function getGroupMembers(element) {
       if (!element || !element.groupId) return [element];
@@ -25505,7 +25678,10 @@
 
       // Update selection badge
       if (selectionCount && selectedElement) {
-        if (selectedElement.groupId) {
+        if (multiSelectedElements.size > 1) {
+          selectionCount.textContent = multiSelectedElements.size;
+          selectionType.textContent = 'Linking';
+        } else if (selectedElement.groupId) {
           const groupSize = getGroupMembers(selectedElement).length;
           selectionCount.textContent = groupSize;
           selectionType.textContent = 'Locked';
@@ -26500,6 +26676,7 @@
     function setTool(tool) {
       try {
         currentTool = tool;
+        multiSelectedElements.clear(); // Clear multi-selection on tool change
         document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
         const btn = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
         if (btn) btn.classList.add('active');
@@ -53381,8 +53558,14 @@
         calculateQuote();
         draw();
 
-        // Show Review Room UI first
-        showReviewRoom(design.project_name, permission);
+        // Show Review Room UI for non-editor viewers; full_collab goes straight to editor
+        if (!isFullCollaborator()) {
+          showReviewRoom(design.project_name, permission);
+        } else {
+          // Full collaborator: skip review overlay, stay in editor mode
+          document.body.classList.remove('review-readonly', 'view-only-mode');
+          showCollaboratorBadge();
+        }
 
         // Wait for textures to load, then initialize 3D view
         setTimeout(() => {
@@ -53758,10 +53941,12 @@
         reviewRoom.remove();
       }
 
-      // Reset share state
-      SHARE_STATE.isSharedView = false;
-      SHARE_STATE.permission = 'full_collab';
-      SHARE_STATE.allowedActions = PERMISSION_LEVELS.full_collab;
+      // Reset share state — but preserve for full_collab so sync keeps working
+      if (!isFullCollaborator()) {
+        SHARE_STATE.isSharedView = false;
+        SHARE_STATE.permission = 'full_collab';
+        SHARE_STATE.allowedActions = PERMISSION_LEVELS.full_collab;
+      }
 
       // Switch back to 2D view
       setView('2d');
@@ -54279,6 +54464,18 @@
       `;
 
       document.body.appendChild(badge);
+    }
+
+    function showCollaboratorBadge() {
+      const existing = document.getElementById('viewerModeBadge');
+      if (existing) existing.remove();
+      const badge = document.createElement('div');
+      badge.id = 'viewerModeBadge';
+      badge.style.cssText = 'position:fixed;top:12px;right:12px;z-index:10000;background:rgba(16,185,129,0.95);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);pointer-events:none;';
+      badge.innerHTML = '<span style="font-size:16px;">&#9998;</span> Collaborating <span style="font-size:9px;opacity:0.7;margin-left:4px;">LIVE</span>';
+      document.body.appendChild(badge);
+      // Auto-fade after 5 seconds
+      setTimeout(() => { if (badge.parentNode) badge.style.opacity = '0.5'; }, 5000);
     }
 
     function showPermissionNotice(permission) {
