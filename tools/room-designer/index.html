@@ -23839,7 +23839,8 @@
       const hint = document.querySelector('.material-hint');
       if (hint) {
         const original = hint.innerHTML;
-        hint.innerHTML = `📐 Snapped to: ${message}`;
+        const isSnap = message.toLowerCase().startsWith('snapped') || message.toLowerCase().startsWith('corner snap');
+        hint.innerHTML = isSnap ? `📐 Snapped to: ${message}` : message;
         hint.style.borderColor = 'var(--success)';
         setTimeout(() => {
           hint.innerHTML = original;
@@ -24147,6 +24148,13 @@
         }
         canvas.style.cursor = hit ? 'copy' : 'crosshair';
         if (!isDragging && !isResizing) return;
+      }
+
+      // Lock mode cursor: show crosshair when hovering elements to add/remove
+      if (lockMode && !isDragging && !isResizing) {
+        const hovered = [...elements].reverse().find(el => isPointInElement(x, y, el));
+        canvas.style.cursor = hovered ? 'cell' : 'default';
+        return;
       }
 
       // Update cursor when hovering over room resize handles
@@ -24790,8 +24798,6 @@
           // L key to toggle link mode (when not in layout tool)
           if (currentTool !== 'layout') {
             lockElementsTogether();
-          } else if (currentTool !== 'layout') {
-            setTool('layout');
           }
           break;
         case 'u':
@@ -25586,6 +25592,11 @@
         btn.style.background = 'rgba(99, 102, 241, 0.3)';
         btn.title = 'Lock with another element';
         btn.style.boxShadow = 'none';
+      }
+
+      // Reset cursor from lock mode cell cursor
+      if (wasActive && canvas) {
+        canvas.style.cursor = currentTool === 'pan' ? 'grab' : (currentTool === 'wall' ? 'crosshair' : 'default');
       }
 
       if (wasActive) {
@@ -30423,14 +30434,6 @@
     // Cache for 2D-rendered textures
     const texture2DCache = {};
 
-    /**
-     * Render a 2D element view to a canvas texture for use in 3D
-     * This allows using the cleaner 2D appearance in the 3D view
-     * @param {Object} el - The element to render
-     * @param {number} canvasWidth - Canvas width in pixels
-     * @param {number} canvasHeight - Canvas height in pixels
-     * @returns {THREE.CanvasTexture} The texture for use in 3D materials
-     */
     function render2DElementToTexture(el, canvasWidth = 256, canvasHeight = 256) {
       // Use cached texture if available
       const cacheKey = `${el.id}_${el.type}_${canvasWidth}x${canvasHeight}`;
@@ -30683,12 +30686,6 @@
       return group;
     }
 
-    // Configuration for which elements should use 2D-style 3D rendering
-    // All appliances now use detailed 3D rendering for HD quality
-    const use2DStyleFor3D = {
-      // All appliance types removed - use detailed 3D geometry instead of flat textures
-    };
-
     // Preload textures for elements that have them
     function preload3DTextures() {
       const textureUrls = new Set();
@@ -30736,17 +30733,6 @@
       }
 
       const group = new THREE.Group();
-
-      // Check if this element should use 2D-style 3D rendering
-      // This provides cleaner visuals matching the 2D view
-      if (use2DStyleFor3D[el.type] && !el.use3DDetailedRender) {
-        const texturedGroup = create3DElementWith2DTexture(el, w, h, d);
-        // Note: Do NOT add child.position.y = h/2 here.
-        // get3DYPosition already returns height/2 for floor-standing elements,
-        // which positions the mesh center correctly so the bottom sits at floor level.
-        // Adding an extra h/2 offset would cause double-offsetting (elements floating).
-        return { group: texturedGroup || group, height: h };
-      }
 
       // Helper to create high-quality metallic hardware materials (handles, knobs, faucets)
       // Uses proper environment mapping for realistic reflections
@@ -37427,6 +37413,142 @@
           group.add(ovenHandle);
           break;
 
+        case 'wall-oven-double': {
+          // Double wall oven with two stacked oven cavities
+          const woBodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.4 });
+          const woChromeMat = new THREE.MeshStandardMaterial({
+            color: 0xCCCCCC, roughness: 0.15, metalness: 0.85,
+            envMap: window.roomEnvMap || null
+          });
+          const woGlassMat = new THREE.MeshStandardMaterial({
+            color: 0x111111, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.3
+          });
+
+          // Main body shell
+          const woBody = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), woBodyMat);
+          group.add(woBody);
+
+          // Split height: upper oven ~45%, divider ~3%, lower oven ~45%, control strip ~7%
+          const controlH = h * 0.07;
+          const dividerH = h * 0.03;
+          const cavityH = (h - controlH - dividerH) / 2;
+          const upperCenterY = h/2 - controlH - cavityH/2;
+          const lowerCenterY = upperCenterY - cavityH - dividerH;
+
+          // Control panel strip at top
+          const woControlPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.06, controlH, 0.03),
+            new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 })
+          );
+          woControlPanel.position.set(0, h/2 - controlH/2, d/2 + 0.02);
+          group.add(woControlPanel);
+
+          // Digital display
+          const woDisplay = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.25, controlH * 0.5, 0.005),
+            new THREE.MeshStandardMaterial({ color: 0x003366, emissive: 0x001133, roughness: 0.2 })
+          );
+          woDisplay.position.set(0, h/2 - controlH/2, d/2 + 0.04);
+          group.add(woDisplay);
+
+          // Control knobs (left and right of display)
+          for (let ki = -1; ki <= 1; ki += 2) {
+            const woKnob = new THREE.Mesh(
+              new THREE.CylinderGeometry(controlH * 0.2, controlH * 0.2, 0.04, 16),
+              woChromeMat
+            );
+            woKnob.rotation.x = Math.PI / 2;
+            woKnob.position.set(ki * w * 0.35, h/2 - controlH/2, d/2 + 0.04);
+            group.add(woKnob);
+          }
+
+          // Render each oven cavity (upper and lower)
+          [upperCenterY, lowerCenterY].forEach((cy) => {
+            // Oven door face (slightly proud of body)
+            const woDoor = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.06, cavityH - 0.04, 0.025),
+              new THREE.MeshStandardMaterial({ color: 0x303030, roughness: 0.35, metalness: 0.4 })
+            );
+            woDoor.position.set(0, cy, d/2 + 0.015);
+            group.add(woDoor);
+
+            // Glass window (centered on door, ~60% of door height)
+            const glassH = cavityH * 0.55;
+            const woGlass = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.25, glassH, 0.015),
+              woGlassMat
+            );
+            woGlass.position.set(0, cy - cavityH * 0.05, d/2 + 0.03);
+            group.add(woGlass);
+
+            // Chrome frame around glass
+            const frameThick = 0.025;
+            // Top frame
+            const woFrameT = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.22, frameThick, 0.02),
+              woChromeMat
+            );
+            woFrameT.position.set(0, cy - cavityH * 0.05 + glassH/2 + frameThick/2, d/2 + 0.03);
+            group.add(woFrameT);
+            // Bottom frame
+            const woFrameB = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.22, frameThick, 0.02),
+              woChromeMat
+            );
+            woFrameB.position.set(0, cy - cavityH * 0.05 - glassH/2 - frameThick/2, d/2 + 0.03);
+            group.add(woFrameB);
+
+            // Towel-bar handle
+            const handleW = w * 0.55;
+            const handleY = cy + cavityH/2 - 0.06;
+            // Bar
+            const woBar = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.015, 0.015, handleW, 8),
+              woChromeMat
+            );
+            woBar.rotation.z = Math.PI / 2;
+            woBar.position.set(0, handleY, d/2 + 0.08);
+            group.add(woBar);
+            // Brackets
+            for (let bi = -1; bi <= 1; bi += 2) {
+              const woBracket = new THREE.Mesh(
+                new THREE.BoxGeometry(0.02, 0.02, 0.05),
+                woChromeMat
+              );
+              woBracket.position.set(bi * handleW/2, handleY, d/2 + 0.055);
+              group.add(woBracket);
+            }
+          });
+
+          // Center divider strip between ovens
+          const woDivider = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.04, dividerH, 0.03),
+            woChromeMat
+          );
+          woDivider.position.set(0, (upperCenterY + lowerCenterY) / 2, d/2 + 0.02);
+          group.add(woDivider);
+
+          // Side trim panels
+          for (let si = -1; si <= 1; si += 2) {
+            const woSide = new THREE.Mesh(
+              new THREE.BoxGeometry(0.02, h, d * 0.98),
+              new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3, metalness: 0.5 })
+            );
+            woSide.position.set(si * (w/2 - 0.01), 0, 0);
+            group.add(woSide);
+          }
+
+          // Brand badge
+          const woBadge = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.12, 0.02, 0.01),
+            woChromeMat
+          );
+          woBadge.position.set(0, h/2 - controlH - 0.04, d/2 + 0.04);
+          group.add(woBadge);
+
+          break;
+        }
+
         case 'door': {
           // Standard interior/exterior door with full frame
           // Construction-standard dimensions
@@ -43421,7 +43543,23 @@
           return false;
         }
         const category = getElementCategory(el.type);
-        return !hiddenCategories[category];
+        if (hiddenCategories[category]) return false;
+
+        // Exclude elements whose 2D position is mostly outside the room bounds
+        // This prevents ghost/stale elements from old designs or resized rooms
+        const elXFt = el.x / pixelsPerFoot;
+        const elYFt = el.y / pixelsPerFoot;
+        const elRight = elXFt + el.width;
+        const elBottom = elYFt + el.height;
+        // Element must have at least 25% of its area inside the room
+        const overlapX = Math.max(0, Math.min(elRight, roomWidth) - Math.max(elXFt, 0));
+        const overlapY = Math.max(0, Math.min(elBottom, roomDepth) - Math.max(elYFt, 0));
+        const overlapArea = overlapX * overlapY;
+        const elArea = el.width * el.height;
+        if (elArea > 0 && overlapArea / elArea < 0.25) {
+          return false; // Element is mostly outside room - skip it
+        }
+        return true;
       });
 
       // Track which elements are currently visible (for cleanup)
@@ -43696,9 +43834,17 @@
           group.rotation.y = -(el.rotation || 0) * Math.PI / 180;
         }
 
-        // Clamp positions to room boundaries (prevent ghost elements outside room)
-        xPos = Math.max(0, Math.min(xPos, roomWidth));
-        zPos = Math.max(0, Math.min(zPos, roomDepth));
+        // Clamp positions to room boundaries (prevent elements protruding through walls)
+        // Account for element dimensions so edges stay inside the room
+        const halfW = el.width / 2;
+        const halfD = el.height / 2;
+        // For rotated elements, width/depth swap in 3D space
+        const rot = (el.rotation || 0) % 360;
+        const isRotated90 = (rot === 90 || rot === 270 || rot === -90 || rot === -270) || autoRotated;
+        const xHalf = isRotated90 ? halfD : halfW;
+        const zHalf = isRotated90 ? halfW : halfD;
+        xPos = Math.max(xHalf, Math.min(xPos, roomWidth - xHalf));
+        zPos = Math.max(zHalf, Math.min(zPos, roomDepth - zHalf));
         yPos = Math.max(0, yPos);
 
         group.position.set(xPos, yPos, zPos);
