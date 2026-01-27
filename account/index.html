@@ -17656,7 +17656,7 @@
             message: message,
             sent_from: user?.email || 'Surprise Granite',
             sent_to: leadEmail || null,
-            status: leadEmail ? 'sending' : 'sent',
+            status: 'sent',
             created_at: new Date().toISOString()
           });
 
@@ -17680,10 +17680,6 @@
             });
             const result = await resp.json();
             if (result.success) {
-              // Update status to 'sent' in DB
-              if (data?.[0]?.id) {
-                await supabaseClient.from('customer_messages').update({ status: 'sent' }).eq('id', data[0].id);
-              }
               showToast('Reply sent via email!', 'success');
             } else {
               showToast('Saved but email delivery failed', 'warning');
@@ -23376,7 +23372,7 @@
           message: message,
           sent_from: user.data.user.email,
           sent_to: recipientEmail || currentNotification.customer?.phone || null,
-          status: (effectiveChannel === 'email' && recipientEmail) ? 'sending' : 'sent'
+          status: 'sent'
         }).select('id');
 
         if (inputEl) inputEl.value = '';
@@ -23397,9 +23393,6 @@
             });
             const result = await resp.json();
             if (result.success) {
-              if (insertedMsg?.[0]?.id) {
-                await supabaseClient.from('customer_messages').update({ status: 'sent' }).eq('id', insertedMsg[0].id);
-              }
               showToast('Message sent via email!', 'success');
             } else {
               showToast('Saved but email delivery failed', 'warning');
