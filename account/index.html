@@ -17641,26 +17641,60 @@
 
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
+        const leadEmail = selectedLead.email;
+        const leadName = selectedLead.full_name || selectedLead.name || '';
+        const channel = leadEmail ? 'email' : 'portal';
 
-        // Insert reply directly into Supabase customer_messages table
+        // Save to database
         const { data, error } = await supabaseClient
           .from('customer_messages')
           .insert({
             lead_id: selectedLead.id,
             sender_id: user?.id || null,
             direction: 'outbound',
-            channel: 'portal',
+            channel: channel,
             message: message,
             sent_from: user?.email || 'Surprise Granite',
-            status: 'sent',
+            sent_to: leadEmail || null,
+            status: leadEmail ? 'sending' : 'sent',
             created_at: new Date().toISOString()
           });
 
         if (error) throw error;
 
         input.value = '';
-        showToast('Reply sent!', 'success');
         loadLeadMessages(selectedLead.id);
+
+        // Send actual email if lead has an email address
+        if (leadEmail) {
+          try {
+            const resp = await apiCall('/api/send-lead-message', {
+              method: 'POST',
+              body: JSON.stringify({
+                to_email: leadEmail,
+                to_name: leadName,
+                message: message,
+                sender_name: user?.user_metadata?.full_name || user?.email || 'Surprise Granite',
+                lead_id: selectedLead.id
+              })
+            });
+            const result = await resp.json();
+            if (result.success) {
+              // Update status to 'sent' in DB
+              if (data?.[0]?.id) {
+                await supabaseClient.from('customer_messages').update({ status: 'sent' }).eq('id', data[0].id);
+              }
+              showToast('Reply sent via email!', 'success');
+            } else {
+              showToast('Saved but email delivery failed', 'warning');
+            }
+          } catch (emailErr) {
+            console.error('Email delivery error:', emailErr);
+            showToast('Saved but email delivery failed', 'warning');
+          }
+        } else {
+          showToast('Reply saved (no email on file for this lead)', 'info');
+        }
       } catch (err) {
         console.error('Send reply error:', err);
         showToast('Failed to send reply', 'error');
@@ -23330,20 +23364,53 @@
         if (!user.data.user) throw new Error('Not authenticated');
 
         const isLead = currentNotification.source === 'lead' || currentNotification.lead;
-        await supabaseClient.from('customer_messages').insert({
+        const recipientEmail = currentNotification.customer?.email || currentNotification.lead?.email;
+        const recipientName = currentNotification.customer?.name || currentNotification.lead?.full_name || currentNotification.lead?.name || '';
+        const effectiveChannel = (channel === 'email' && recipientEmail) ? 'email' : channel;
+
+        const { data: insertedMsg } = await supabaseClient.from('customer_messages').insert({
           ...(isLead ? { lead_id: currentNotification.id } : { customer_id: currentNotification.id }),
           sender_id: user.data.user.id,
           direction: 'outbound',
-          channel: channel,
+          channel: effectiveChannel,
           message: message,
           sent_from: user.data.user.email,
-          sent_to: currentNotification.customer?.email || currentNotification.customer?.phone || currentNotification.lead?.email,
-          status: 'sent'
-        });
+          sent_to: recipientEmail || currentNotification.customer?.phone || null,
+          status: (effectiveChannel === 'email' && recipientEmail) ? 'sending' : 'sent'
+        }).select('id');
 
         if (inputEl) inputEl.value = '';
         await loadThreadMessages(currentNotification.id);
-        showToast('Message sent', 'success');
+
+        // Send actual email if channel is email and recipient has email
+        if (effectiveChannel === 'email' && recipientEmail) {
+          try {
+            const resp = await apiCall('/api/send-lead-message', {
+              method: 'POST',
+              body: JSON.stringify({
+                to_email: recipientEmail,
+                to_name: recipientName,
+                message: message,
+                sender_name: user.data.user.user_metadata?.full_name || user.data.user.email || 'Surprise Granite',
+                lead_id: isLead ? currentNotification.id : null
+              })
+            });
+            const result = await resp.json();
+            if (result.success) {
+              if (insertedMsg?.[0]?.id) {
+                await supabaseClient.from('customer_messages').update({ status: 'sent' }).eq('id', insertedMsg[0].id);
+              }
+              showToast('Message sent via email!', 'success');
+            } else {
+              showToast('Saved but email delivery failed', 'warning');
+            }
+          } catch (emailErr) {
+            console.error('Email delivery error:', emailErr);
+            showToast('Saved but email delivery failed', 'warning');
+          }
+        } else {
+          showToast('Message sent', 'success');
+        }
 
       } catch (err) {
         console.error('Send error:', err);

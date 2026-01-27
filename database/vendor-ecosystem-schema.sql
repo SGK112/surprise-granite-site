@@ -42,8 +42,9 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
 INSERT INTO subscription_plans (name, display_name, price_monthly, price_annual, leads_per_month, lead_cost_extra, verified_badge, featured_reviews, booking_links, keywords, faqs, products_display, video_section, remove_competitor_ads, marketplace_commission, lead_priority, sort_order) VALUES
   ('starter', 'Starter', 0.00, 0.00, 0, 15.00, false, 0, 0, 0, 0, 0, false, false, 10.00, 'none', 1),
   ('basic', 'Basic', 9.99, 95.90, 3, 12.00, true, 1, 1, 10, 5, 5, false, false, 8.00, 'standard', 2),
-  ('plus', 'Plus', 19.99, 191.90, 10, 8.00, true, 3, 3, 20, 10, 10, true, true, 5.00, 'priority', 3),
-  ('pro', 'Pro', 29.99, 287.90, 50, 0.00, true, 6, 6, 40, 15, 20, true, true, 3.00, 'first', 4)
+  ('designer', 'Designer Pro', 14.99, 143.90, 5, 10.00, true, 2, 2, 15, 8, 8, false, false, 7.00, 'standard', 3),
+  ('plus', 'Plus', 19.99, 191.90, 10, 8.00, true, 3, 3, 20, 10, 10, true, true, 5.00, 'priority', 4),
+  ('pro', 'Pro', 29.99, 287.90, 50, 0.00, true, 6, 6, 40, 15, 20, true, true, 3.00, 'first', 5)
 ON CONFLICT (name) DO NOTHING;
 
 -- =====================================================

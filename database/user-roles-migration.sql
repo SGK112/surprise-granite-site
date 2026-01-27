@@ -85,6 +85,30 @@ INSERT INTO public.role_permissions (role, feature, enabled) VALUES
   ('vendor', 'manage_inventory', true),
   ('vendor', 'connect_contractors', true),
 
+  -- Designer permissions
+  ('designer', 'view_own_jobs', true),
+  ('designer', 'view_estimates', true),
+  ('designer', 'approve_estimates', true),
+  ('designer', 'message_team', true),
+  ('designer', 'view_calendar', true),
+  ('designer', 'upload_files', true),
+  ('designer', 'leave_reviews', true),
+  ('designer', 'view_contractors', true),
+  ('designer', 'create_designs', true),
+  ('designer', 'share_designs', true),
+  ('designer', 'room_designer_tools', true),
+  ('designer', 'design_handoff', true),
+  ('designer', 'commission_tracking', true),
+  ('designer', 'request_samples', true),
+  ('designer', 'view_leads', true),
+  ('designer', 'analytics', true),
+  ('designer', 'manage_customers', true),
+  ('designer', 'send_estimates', true),
+  ('designer', 'ai_tools', true),
+  ('designer', 'pay_invoices', true),
+  ('designer', 'connect_contractors', true),
+  ('designer', 'list_products', true),
+
   -- Admin permissions (everything)
   ('admin', 'full_access', true)
 ON CONFLICT (role, feature) DO NOTHING;

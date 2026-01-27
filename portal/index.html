@@ -1160,9 +1160,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span>Invoice</span>
               </div>
-              <div class="quick-action" onclick="showSection('messages')">
+              <div class="quick-action" onclick="showSection('messages')" style="position: relative;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                 <span>Messages</span>
+                <span id="unread-badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; min-width:16px; text-align:center;"></span>
               </div>
               <div class="quick-action" onclick="showSection('schedule')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -1390,6 +1391,13 @@
       loadInvoices();
       loadMessages();
       loadPhotos();
+
+      // Auto-refresh messages every 30 seconds
+      setInterval(() => {
+        if (document.getElementById('messages-list')) {
+          loadMessages();
+        }
+      }, 30000);
     }
 
     function renderAppointment(info) {
@@ -1483,35 +1491,61 @@
     async function loadMessages() {
       try {
         const leadId = portalData.lead_id;
-        if (!leadId) return;
+        const customerId = portalData.customer_id;
+        if (!leadId && !customerId) return;
 
-        const { data: messages } = await db
-          .from('customer_messages')
-          .select('*')
-          .eq('customer_id', leadId)
+        // Query by lead_id or customer_id
+        let query = db.from('customer_messages').select('*');
+        if (leadId) {
+          query = query.eq('lead_id', leadId);
+        } else {
+          query = query.eq('customer_id', customerId);
+        }
+
+        const { data: messages } = await query
           .order('created_at', { ascending: true })
           .limit(50);
 
         const container = document.getElementById('messages-list');
         if (!messages || messages.length === 0) {
           container.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No messages yet. Send us a message!</p>';
+          updateUnreadBadge(0);
           return;
         }
 
-        container.innerHTML = messages.map(msg => `
-          <div style="margin-bottom: 12px; text-align: ${msg.direction === 'outbound' ? 'right' : 'left'};">
-            <div style="display: inline-block; max-width: 80%; padding: 12px 16px; border-radius: 16px; background: ${msg.direction === 'outbound' ? 'var(--gold)' : 'rgba(255,255,255,0.1)'}; color: ${msg.direction === 'outbound' ? 'var(--dark)' : 'var(--text)'};">
+        // Count unread messages from admin (outbound = from admin to customer)
+        const unreadCount = messages.filter(m => m.direction === 'outbound' && m.status !== 'read').length;
+        updateUnreadBadge(unreadCount);
+
+        // outbound = from admin (left-aligned), inbound = from customer (right-aligned)
+        container.innerHTML = messages.map(msg => {
+          const isFromAdmin = msg.direction === 'outbound';
+          return `
+          <div style="margin-bottom: 12px; text-align: ${isFromAdmin ? 'left' : 'right'};">
+            <div style="display: inline-block; max-width: 80%; padding: 12px 16px; border-radius: 16px; background: ${isFromAdmin ? 'rgba(255,255,255,0.1)' : 'var(--gold)'}; color: ${isFromAdmin ? 'var(--text)' : 'var(--dark)'};">
               ${escapeHtml(msg.message)}
             </div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-              ${new Date(msg.created_at).toLocaleString()}
+              ${isFromAdmin ? 'Surprise Granite' : 'You'} &middot; ${new Date(msg.created_at).toLocaleString()}
             </div>
           </div>
-        `).join('');
+          `;
+        }).join('');
 
         container.scrollTop = container.scrollHeight;
       } catch (err) {
         console.error('Load messages error:', err);
+      }
+    }
+
+    function updateUnreadBadge(count) {
+      const badge = document.getElementById('unread-badge');
+      if (!badge) return;
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
       }
     }
 
@@ -1526,21 +1560,29 @@
 
       try {
         const leadId = portalData.lead_id;
-        if (!leadId) {
+        const customerId = portalData.customer_id;
+        if (!leadId && !customerId) {
           showToast('Unable to send message');
           return;
         }
 
-        await db.from('customer_messages').insert({
-          customer_id: leadId,
-          direction: 'inbound',
-          channel: 'in_app',
-          message: message,
-          sent_from: portalData.email || 'portal',
-          status: 'sent'
+        // Route through API for proper admin notification
+        const API_BASE = 'https://surprise-granite-email-api.onrender.com';
+        const response = await fetch(`${API_BASE}/api/portal/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token_id: portalData.id,
+            message: message,
+            lead_id: leadId || null,
+            customer_id: customerId || null
+          })
         });
 
-        await logActivity('message_sent', { message: message.slice(0, 100) });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to send');
+        }
 
         input.value = '';
         showToast('Message sent!');

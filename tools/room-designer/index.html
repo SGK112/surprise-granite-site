@@ -13984,7 +13984,7 @@
         // Corner cabinets: 36"x36" footprint
         { type: 'corner-cabinet', width: 3, height: 3, color: '#7B3F00', label: 'Corner Cabinet' },
         { type: 'lazy-susan', width: 3, height: 3, color: '#7B3F00', label: 'Lazy Susan' },
-        { type: 'blind-corner', width: 3.5, height: 2, color: '#7B3F00', label: 'Blind Corner' },
+        { type: 'blind-corner', width: 3, height: 3, color: '#7B3F00', label: 'Blind Corner' },
         // Island: 6ft wide, 3ft deep
         { type: 'island', width: 6, height: 3, color: '#654321', label: 'Island' }
       ],
@@ -19999,160 +19999,230 @@
         }
 
         case 'lazy-susan': {
-          // LAZY SUSAN - L-shaped corner cabinet with two bi-fold doors (like turnstyle)
-          const lsToeKickH = Math.max(6, h * 0.1);
-          const lsToeKickRecess = Math.max(4, w * 0.05);
-          const lsBodyH = h - lsToeKickH;
-          const lsArmW = w * 0.5;
-          const lsArmH = h * 0.5;
+          // LAZY SUSAN - L-shaped corner cabinet with rotating turntable shelves
+          // Plan view (top-down): L-shape with 24" depth arms, lazy susan circle in corner
+          const lsArmD = pixelsPerFoot * 2; // 24" standard cabinet depth for each arm
+          const lsInnerW = w - lsArmD; // exposed portion of bottom arm
+          const lsInnerH = h - lsArmD; // exposed portion of right arm
 
-          // L-shape cabinet body (clean solid fill)
+          // L-shape cabinet body
           ctx.fillStyle = el.color;
           ctx.beginPath();
           ctx.moveTo(x, y);
-          ctx.lineTo(x, y + h - lsToeKickH);
-          ctx.lineTo(x + lsArmW, y + h - lsToeKickH);
-          ctx.lineTo(x + lsArmW, y + lsArmH);
-          ctx.lineTo(x + w, y + lsArmH);
           ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + lsArmD);
+          ctx.lineTo(x + lsArmD, y + lsArmD);
+          ctx.lineTo(x + lsArmD, y + h);
+          ctx.lineTo(x, y + h);
           ctx.closePath();
           ctx.fill();
 
-          // Toe kick recess (dark void)
-          ctx.fillStyle = '#0a0a0e';
-          ctx.fillRect(x + lsToeKickRecess, y + h - lsToeKickH, lsArmW - lsToeKickRecess, lsToeKickH);
+          // Dark interior in corner overlap area
+          ctx.fillStyle = 'rgba(20,20,25,0.5)';
+          ctx.fillRect(x + 2, y + 2, lsArmD - 4, lsArmD - 4);
 
-          // TWO BI-FOLD DOORS meeting at diagonal (turnstyle style)
-          // Left door panel (horizontal arm)
-          const leftDoorX = x + 3;
-          const leftDoorY = y + lsArmH + 3;
-          const leftDoorW = lsArmW - 6;
-          const leftDoorH = lsBodyH - lsArmH - 6;
+          // Lazy susan turntable (circle in corner area)
+          const lsRadius = Math.min(lsArmD, lsArmD) * 0.42;
+          const lsCx = x + lsArmD * 0.5;
+          const lsCy = y + lsArmD * 0.5;
 
-          ctx.fillStyle = el.color;
-          ctx.fillRect(leftDoorX, leftDoorY, leftDoorW, leftDoorH);
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(leftDoorX + 0.5, leftDoorY + 0.5, leftDoorW - 1, leftDoorH - 1);
-
-          // Left door shaker panel
-          const panelInset = Math.min(8, leftDoorW * 0.1);
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(leftDoorX + panelInset, leftDoorY + panelInset, leftDoorW - panelInset * 2, leftDoorH - panelInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(leftDoorX + panelInset + 1, leftDoorY + panelInset + 1, leftDoorW - panelInset * 2 - 2, leftDoorH - panelInset * 2 - 2);
-
-          // Left door handle
-          ctx.fillStyle = '#C0C0C0';
-          ctx.fillRect(leftDoorX + leftDoorW - 7, leftDoorY + leftDoorH / 2 - 8, 3, 16);
-
-          // Right door panel (vertical arm)
-          const rightDoorX = x + lsArmW + 3;
-          const rightDoorY = y + 3;
-          const rightDoorW = w - lsArmW - 6;
-          const rightDoorH = lsArmH - 6;
-
-          ctx.fillStyle = el.color;
-          ctx.fillRect(rightDoorX, rightDoorY, rightDoorW, rightDoorH);
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.strokeRect(rightDoorX + 0.5, rightDoorY + 0.5, rightDoorW - 1, rightDoorH - 1);
-
-          // Right door shaker panel
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(rightDoorX + panelInset, rightDoorY + panelInset, rightDoorW - panelInset * 2, rightDoorH - panelInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(rightDoorX + panelInset + 1, rightDoorY + panelInset + 1, rightDoorW - panelInset * 2 - 2, rightDoorH - panelInset * 2 - 2);
-
-          // Right door handle
-          ctx.fillStyle = '#C0C0C0';
-          ctx.fillRect(rightDoorX + rightDoorW / 2 - 8, rightDoorY + rightDoorH - 7, 16, 3);
-
-          // Diagonal corner line (where doors meet)
-          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-          ctx.lineWidth = 1;
+          // Turntable base circle
+          ctx.fillStyle = 'rgba(180,160,120,0.35)';
           ctx.beginPath();
-          ctx.moveTo(x + lsArmW, y + lsArmH);
-          ctx.lineTo(x + lsArmW + 4, y + lsArmH + 4);
+          ctx.arc(lsCx, lsCy, lsRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+          ctx.lineWidth = 1.5;
           ctx.stroke();
 
-          // Cabinet outline
-          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+          // Pie-shaped shelf dividers (4 quadrants)
+          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
           ctx.lineWidth = 1;
           ctx.beginPath();
+          ctx.moveTo(lsCx - lsRadius, lsCy);
+          ctx.lineTo(lsCx + lsRadius, lsCy);
+          ctx.moveTo(lsCx, lsCy - lsRadius);
+          ctx.lineTo(lsCx, lsCy + lsRadius);
+          ctx.stroke();
+
+          // Center pivot
+          ctx.fillStyle = '#A0A0A0';
+          ctx.beginPath();
+          ctx.arc(lsCx, lsCy, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Rotation arrow hint
+          ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(lsCx, lsCy, lsRadius * 0.7, -0.3, Math.PI * 1.2);
+          ctx.stroke();
+          // Arrowhead
+          const arrowAngle = Math.PI * 1.2;
+          const arrowR = lsRadius * 0.7;
+          const ax = lsCx + Math.cos(arrowAngle) * arrowR;
+          const ay = lsCy + Math.sin(arrowAngle) * arrowR;
+          ctx.beginPath();
+          ctx.moveTo(ax + 4, ay - 3);
+          ctx.lineTo(ax, ay);
+          ctx.lineTo(ax + 5, ay + 2);
+          ctx.stroke();
+
+          // Diagonal door line (where bi-fold doors meet at 45°)
+          ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x + lsArmD, y + lsArmD);
+          ctx.lineTo(x + lsArmD + lsInnerW, y + lsArmD - lsInnerH);
+          ctx.stroke();
+
+          // Door on bottom arm (front-facing, at x + lsArmD edge going down)
+          const lsBottomDoorY = y + lsArmD + 3;
+          const lsBottomDoorH = h - lsArmD - 6;
+          const lsBottomDoorW = lsArmD - 6;
+          if (lsBottomDoorH > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(x + 3, lsBottomDoorY, lsBottomDoorW, lsBottomDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 3.5, lsBottomDoorY + 0.5, lsBottomDoorW - 1, lsBottomDoorH - 1);
+            const lsInset = Math.min(8, lsBottomDoorW * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(x + 3 + lsInset, lsBottomDoorY + lsInset, lsBottomDoorW - lsInset * 2, lsBottomDoorH - lsInset * 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x + 3 + lsBottomDoorW - 7, lsBottomDoorY + lsBottomDoorH / 2 - 8, 3, 16);
+          }
+
+          // Door on right arm (front-facing, at y + lsArmD edge going right)
+          const lsRightDoorX = x + lsArmD + 3;
+          const lsRightDoorW = w - lsArmD - 6;
+          const lsRightDoorH = lsArmD - 6;
+          if (lsRightDoorW > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(lsRightDoorX, y + 3, lsRightDoorW, lsRightDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(lsRightDoorX + 0.5, y + 3.5, lsRightDoorW - 1, lsRightDoorH - 1);
+            const lsInset2 = Math.min(8, lsRightDoorH * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(lsRightDoorX + lsInset2, y + 3 + lsInset2, lsRightDoorW - lsInset2 * 2, lsRightDoorH - lsInset2 * 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(lsRightDoorX + lsRightDoorW / 2 - 8, y + 3 + lsRightDoorH - 7, 16, 3);
+          }
+
+          // Cabinet outline
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
           ctx.moveTo(x, y);
-          ctx.lineTo(x, y + h - lsToeKickH);
-          ctx.lineTo(x + lsArmW, y + h - lsToeKickH);
-          ctx.lineTo(x + lsArmW, y + lsArmH);
-          ctx.lineTo(x + w, y + lsArmH);
           ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + lsArmD);
+          ctx.lineTo(x + lsArmD, y + lsArmD);
+          ctx.lineTo(x + lsArmD, y + h);
+          ctx.lineTo(x, y + h);
           ctx.closePath();
           ctx.stroke();
           break;
         }
 
         case 'blind-corner': {
-          // BLIND CORNER CABINET - Two doors side by side
-          const bcToeKickH = Math.max(6, h * 0.1);
-          const bcToeKickRecess = Math.max(4, w * 0.05);
-          const bcBodyH = h - bcToeKickH;
+          // BLIND CORNER CABINET - L-shaped with one accessible door, one blind side
+          // Plan view: L-shape with 24" depth arms, door only on main face
+          const bcArmD = pixelsPerFoot * 2; // 24" standard depth
+          const bcInnerW = w - bcArmD; // exposed bottom arm width
+          const bcInnerH = h - bcArmD; // exposed right arm height
 
-          // Cabinet body fill
+          // L-shape cabinet body
           ctx.fillStyle = el.color;
-          ctx.fillRect(x, y, w, bcBodyH);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + bcArmD);
+          ctx.lineTo(x + bcArmD, y + bcArmD);
+          ctx.lineTo(x + bcArmD, y + h);
+          ctx.lineTo(x, y + h);
+          ctx.closePath();
+          ctx.fill();
 
-          // Toe kick recess
-          ctx.fillStyle = '#0a0a0e';
-          ctx.fillRect(x + bcToeKickRecess, y + bcBodyH, w - bcToeKickRecess * 2, bcToeKickH);
-          ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.fillRect(x + bcToeKickRecess, y + bcBodyH, w - bcToeKickRecess * 2, 2);
+          // Dark dead space in corner (blind/inaccessible area)
+          ctx.fillStyle = 'rgba(15,15,20,0.6)';
+          ctx.fillRect(x + 2, y + 2, bcArmD - 4, bcArmD - 4);
 
-          // Two doors (30/70 split - blind side is narrower)
-          const blindDoorW = (w - 9) * 0.3;
-          const mainDoorW = (w - 9) * 0.7;
-          const doorGap = 3;
+          // "BLIND" label in dead space
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.font = `${Math.max(8, bcArmD * 0.12)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('BLIND', x + bcArmD / 2, y + bcArmD / 2);
 
-          // Blind door (narrower, left side)
-          const blindDx = x + 3;
-          const blindDy = y + 3;
-          const blindDh = bcBodyH - 6;
+          // Internal partition wall between blind area and accessible area
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+          ctx.lineWidth = 2;
+          // Vertical partition at armD
+          ctx.beginPath();
+          ctx.moveTo(x + bcArmD, y + bcArmD);
+          ctx.lineTo(x + bcArmD, y + 2);
+          ctx.stroke();
+          // Horizontal partition at armD
+          ctx.beginPath();
+          ctx.moveTo(x + bcArmD, y + bcArmD);
+          ctx.lineTo(x + 2, y + bcArmD);
+          ctx.stroke();
 
-          ctx.fillStyle = el.color;
-          ctx.fillRect(blindDx, blindDy, blindDoorW, blindDh);
+          // Main door on bottom arm (accessible side, faces room)
+          const bcDoorY = y + bcArmD + 3;
+          const bcDoorH = h - bcArmD - 6;
+          const bcDoorW = bcArmD - 6;
+          if (bcDoorH > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(x + 3, bcDoorY, bcDoorW, bcDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 3.5, bcDoorY + 0.5, bcDoorW - 1, bcDoorH - 1);
+            const bcPanelInset = Math.min(8, bcDoorW * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(x + 3 + bcPanelInset, bcDoorY + bcPanelInset, bcDoorW - bcPanelInset * 2, bcDoorH - bcPanelInset * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(x + 3 + bcPanelInset + 1, bcDoorY + bcPanelInset + 1, bcDoorW - bcPanelInset * 2 - 2, bcDoorH - bcPanelInset * 2 - 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x + 3 + bcDoorW - 7, bcDoorY + bcDoorH / 2 - 8, 3, 16);
+          }
+
+          // Right arm door (accessible side)
+          const bcRightDoorX = x + bcArmD + 3;
+          const bcRightDoorW = w - bcArmD - 6;
+          const bcRightDoorH = bcArmD - 6;
+          if (bcRightDoorW > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(bcRightDoorX, y + 3, bcRightDoorW, bcRightDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bcRightDoorX + 0.5, y + 3.5, bcRightDoorW - 1, bcRightDoorH - 1);
+            const bcInset2 = Math.min(8, bcRightDoorH * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(bcRightDoorX + bcInset2, y + 3 + bcInset2, bcRightDoorW - bcInset2 * 2, bcRightDoorH - bcInset2 * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(bcRightDoorX + bcInset2 + 1, y + 3 + bcInset2 + 1, bcRightDoorW - bcInset2 * 2 - 2, bcRightDoorH - bcInset2 * 2 - 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(bcRightDoorX + bcRightDoorW / 2 - 8, y + 3 + bcRightDoorH - 7, 16, 3);
+          }
+
+          // Cabinet outline
           ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(blindDx + 0.5, blindDy + 0.5, blindDoorW - 1, blindDh - 1);
-
-          // Blind door shaker panel
-          const bcInset = Math.min(6, blindDoorW * 0.12);
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(blindDx + bcInset, blindDy + bcInset, blindDoorW - bcInset * 2, blindDh - bcInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(blindDx + bcInset + 1, blindDy + bcInset + 1, blindDoorW - bcInset * 2 - 2, blindDh - bcInset * 2 - 2);
-
-          // Main door (wider, right side)
-          const mainDx = blindDx + blindDoorW + doorGap;
-
-          ctx.fillStyle = el.color;
-          ctx.fillRect(mainDx, blindDy, mainDoorW, blindDh);
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.strokeRect(mainDx + 0.5, blindDy + 0.5, mainDoorW - 1, blindDh - 1);
-
-          // Main door shaker panel
-          const mainInset = Math.min(8, mainDoorW * 0.1);
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(mainDx + mainInset, blindDy + mainInset, mainDoorW - mainInset * 2, blindDh - mainInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(mainDx + mainInset + 1, blindDy + mainInset + 1, mainDoorW - mainInset * 2 - 2, blindDh - mainInset * 2 - 2);
-
-          // Door handles
-          ctx.fillStyle = '#C0C0C0';
-          ctx.fillRect(blindDx + blindDoorW - 6, blindDy + blindDh / 2 - 8, 3, 16);
-          ctx.fillRect(mainDx + 3, blindDy + blindDh / 2 - 8, 3, 16);
-
-          // Side edges
-          ctx.fillStyle = 'rgba(0,0,0,0.15)';
-          ctx.fillRect(x, y, 1, bcBodyH);
-          ctx.fillRect(x + w - 1, y, 1, bcBodyH);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + bcArmD);
+          ctx.lineTo(x + bcArmD, y + bcArmD);
+          ctx.lineTo(x + bcArmD, y + h);
+          ctx.lineTo(x, y + h);
+          ctx.closePath();
+          ctx.stroke();
           break;
         }
 
@@ -21755,98 +21825,105 @@
           break;
 
         case 'corner-cabinet': {
-          // CORNER CABINET - L-shaped with two equal cabinet sections and open shelf in corner
-          // Like two equal base cabinets (18") butted together
-          const ccToeKickH = Math.max(6, h * 0.1);
-          const ccToeKickRecess = Math.max(4, w * 0.05);
-          const ccBodyH = h - ccToeKickH;
+          // CORNER CABINET - L-shaped with diagonal door and lazy susan cutout
+          // Plan view (top-down): corner at top-left, 24" depth arms, opening faces bottom-right
+          const ccArmD = pixelsPerFoot * 2; // 24" standard cabinet depth for each arm
+          const ccInnerW = w - ccArmD; // exposed portion of bottom arm
+          const ccInnerH = h - ccArmD; // exposed portion of right arm
 
-          // Equal arms - both half width/height
-          const ccArmW = w * 0.5;
-          const ccArmH = h * 0.5;
-
-          // L-shape cabinet body (clean solid fill)
+          // L-shape cabinet body
           ctx.fillStyle = el.color;
           ctx.beginPath();
           ctx.moveTo(x, y);
-          ctx.lineTo(x, y + ccBodyH);
-          ctx.lineTo(x + ccArmW, y + ccBodyH);
-          ctx.lineTo(x + ccArmW, y + ccArmH);
-          ctx.lineTo(x + w, y + ccArmH);
           ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + ccArmD);
+          ctx.lineTo(x + ccArmD, y + ccArmD);
+          ctx.lineTo(x + ccArmD, y + h);
+          ctx.lineTo(x, y + h);
           ctx.closePath();
           ctx.fill();
 
-          // Toe kick recesses
-          ctx.fillStyle = '#0a0a0e';
-          ctx.fillRect(x + ccToeKickRecess, y + ccBodyH, ccArmW - ccToeKickRecess, ccToeKickH);
+          // Dark interior in corner overlap area
+          ctx.fillStyle = 'rgba(20,20,25,0.5)';
+          ctx.fillRect(x + 2, y + 2, ccArmD - 4, ccArmD - 4);
 
-          // Open shelf/box in corner area (dark interior)
-          ctx.fillStyle = 'rgba(30,30,35,0.6)';
-          ctx.fillRect(x + ccArmW - 4, y + ccArmH - 4, w - ccArmW + 4 - 3, ccBodyH - ccArmH + 4 - 3);
+          // Lazy susan cutout circle in corner junction
+          const ccLsRadius = Math.min(ccArmD, ccArmD) * 0.38;
+          const ccLsCx = x + ccArmD * 0.5;
+          const ccLsCy = y + ccArmD * 0.5;
 
-          // Shelf lines
-          ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-          ctx.lineWidth = 1;
+          ctx.fillStyle = 'rgba(180,160,120,0.3)';
           ctx.beginPath();
-          ctx.moveTo(x + ccArmW, y + ccArmH + (ccBodyH - ccArmH) * 0.5);
-          ctx.lineTo(x + w - 3, y + ccArmH + (ccBodyH - ccArmH) * 0.5);
+          ctx.arc(ccLsCx, ccLsCy, ccLsRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+          ctx.lineWidth = 1;
           ctx.stroke();
 
-          // LEFT DOOR (vertical arm - bottom section)
-          const leftDoorX = x + 3;
-          const leftDoorY = y + ccArmH + 3;
-          const leftDoorW = ccArmW - 9;
-          const leftDoorH = ccBodyH - ccArmH - 6;
+          // Center pivot dot
+          ctx.fillStyle = '#A0A0A0';
+          ctx.beginPath();
+          ctx.arc(ccLsCx, ccLsCy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
 
-          ctx.fillStyle = el.color;
-          ctx.fillRect(leftDoorX, leftDoorY, leftDoorW, leftDoorH);
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(leftDoorX + 0.5, leftDoorY + 0.5, leftDoorW - 1, leftDoorH - 1);
+          // Diagonal door line from inner corner to opposite arm ends
+          ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x + ccArmD, y + h);
+          ctx.lineTo(x + w, y + ccArmD);
+          ctx.stroke();
 
-          // Left door shaker panel
-          const ccInset = Math.min(8, leftDoorW * 0.1);
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(leftDoorX + ccInset, leftDoorY + ccInset, leftDoorW - ccInset * 2, leftDoorH - ccInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(leftDoorX + ccInset + 1, leftDoorY + ccInset + 1, leftDoorW - ccInset * 2 - 2, leftDoorH - ccInset * 2 - 2);
+          // Door on bottom arm (front-facing)
+          const ccBotDoorY = y + ccArmD + 3;
+          const ccBotDoorH = h - ccArmD - 6;
+          const ccBotDoorW = ccArmD - 6;
+          if (ccBotDoorH > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(x + 3, ccBotDoorY, ccBotDoorW, ccBotDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 3.5, ccBotDoorY + 0.5, ccBotDoorW - 1, ccBotDoorH - 1);
+            const ccPanelInset = Math.min(8, ccBotDoorW * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(x + 3 + ccPanelInset, ccBotDoorY + ccPanelInset, ccBotDoorW - ccPanelInset * 2, ccBotDoorH - ccPanelInset * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(x + 3 + ccPanelInset + 1, ccBotDoorY + ccPanelInset + 1, ccBotDoorW - ccPanelInset * 2 - 2, ccBotDoorH - ccPanelInset * 2 - 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x + 3 + ccBotDoorW - 7, ccBotDoorY + ccBotDoorH / 2 - 8, 3, 16);
+          }
 
-          // Left door handle
-          ctx.fillStyle = '#C0C0C0';
-          ctx.fillRect(leftDoorX + leftDoorW - 7, leftDoorY + leftDoorH / 2 - 8, 3, 16);
-
-          // RIGHT DOOR (horizontal arm - top section)
-          const rightDoorX = x + ccArmW + 3;
-          const rightDoorY = y + 3;
-          const rightDoorW = w - ccArmW - 6;
-          const rightDoorH = ccArmH - 6;
-
-          ctx.fillStyle = el.color;
-          ctx.fillRect(rightDoorX, rightDoorY, rightDoorW, rightDoorH);
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.strokeRect(rightDoorX + 0.5, rightDoorY + 0.5, rightDoorW - 1, rightDoorH - 1);
-
-          // Right door shaker panel
-          ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-          ctx.strokeRect(rightDoorX + ccInset, rightDoorY + ccInset, rightDoorW - ccInset * 2, rightDoorH - ccInset * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.04)';
-          ctx.fillRect(rightDoorX + ccInset + 1, rightDoorY + ccInset + 1, rightDoorW - ccInset * 2 - 2, rightDoorH - ccInset * 2 - 2);
-
-          // Right door handle
-          ctx.fillStyle = '#C0C0C0';
-          ctx.fillRect(rightDoorX + rightDoorW / 2 - 8, rightDoorY + rightDoorH - 7, 16, 3);
+          // Door on right arm (front-facing)
+          const ccRightDoorX = x + ccArmD + 3;
+          const ccRightDoorW = w - ccArmD - 6;
+          const ccRightDoorH = ccArmD - 6;
+          if (ccRightDoorW > 8) {
+            ctx.fillStyle = el.color;
+            ctx.fillRect(ccRightDoorX, y + 3, ccRightDoorW, ccRightDoorH);
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(ccRightDoorX + 0.5, y + 3.5, ccRightDoorW - 1, ccRightDoorH - 1);
+            const ccPanelInset2 = Math.min(8, ccRightDoorH * 0.12);
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.strokeRect(ccRightDoorX + ccPanelInset2, y + 3 + ccPanelInset2, ccRightDoorW - ccPanelInset2 * 2, ccRightDoorH - ccPanelInset2 * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(ccRightDoorX + ccPanelInset2 + 1, y + 3 + ccPanelInset2 + 1, ccRightDoorW - ccPanelInset2 * 2 - 2, ccRightDoorH - ccPanelInset2 * 2 - 2);
+            // Handle
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(ccRightDoorX + ccRightDoorW / 2 - 8, y + 3 + ccRightDoorH - 7, 16, 3);
+          }
 
           // Cabinet outline
-          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(x, y);
-          ctx.lineTo(x, y + ccBodyH);
-          ctx.lineTo(x + ccArmW, y + ccBodyH);
-          ctx.lineTo(x + ccArmW, y + ccArmH);
-          ctx.lineTo(x + w, y + ccArmH);
           ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + ccArmD);
+          ctx.lineTo(x + ccArmD, y + ccArmD);
+          ctx.lineTo(x + ccArmD, y + h);
+          ctx.lineTo(x, y + h);
           ctx.closePath();
           ctx.stroke();
           break;
@@ -29697,6 +29774,7 @@
         case 'sink-base':
         case 'corner-cabinet':
         case 'lazy-susan':
+        case 'blind-corner':
         case 'island':
           return height / 2; // Base sits on floor
 
@@ -32582,14 +32660,14 @@
           const bodyYOffset = toeKickHeight / 2;
 
           // Create L-shaped cabinet body using THREE.Shape
+          // Shape Y maps to -Z: Y=+d/2 → Z=-d/2 (back), Y=-d/2 → Z=+d/2 (front)
           const lsShape = new THREE.Shape();
-          lsShape.moveTo(-w/2, -d/2);
-          lsShape.lineTo(-w/2, -d/2 + armDepth);
-          lsShape.lineTo(-w/2 + armDepth, -d/2 + armDepth);
-          lsShape.lineTo(-w/2 + armDepth, d/2);
-          lsShape.lineTo(w/2, d/2);
-          lsShape.lineTo(w/2, -d/2);
-          lsShape.closePath();
+          lsShape.moveTo(-w/2, d/2);                          // Back-left
+          lsShape.lineTo(-w/2, -d/2);                         // Front-left
+          lsShape.lineTo(-w/2 + armDepth, -d/2);              // Front of left arm
+          lsShape.lineTo(-w/2 + armDepth, d/2 - armDepth);    // Inner corner
+          lsShape.lineTo(w/2, d/2 - armDepth);                // Back arm inner, right
+          lsShape.lineTo(w/2, d/2);                           // Back-right
 
           const lsExtrudeSettings = { depth: cabinetBodyHeight, bevelEnabled: false };
           const lsGeometry = new THREE.ExtrudeGeometry(lsShape, lsExtrudeSettings);
@@ -32723,23 +32801,23 @@
             group.add(doorGroup);
           }
 
-          // TOE KICK
+          // TOE KICK (same orientation as body, inset by recess)
           const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
           const tkHeight = toeKickHeight - 0.02;
 
           const tkShape = new THREE.Shape();
-          tkShape.moveTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
-          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + armDepth - toeKickRecess);
-          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + armDepth - toeKickRecess);
-          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.moveTo(-w/2 + toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - armDepth + toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, d/2 - armDepth + toeKickRecess);
           tkShape.lineTo(w/2 - toeKickRecess, d/2 - toeKickRecess);
-          tkShape.lineTo(w/2 - toeKickRecess, -d/2 + toeKickRecess);
           tkShape.closePath();
 
           const tkExtrudeSettings = { depth: tkHeight, bevelEnabled: false };
           const tkGeometry = new THREE.ExtrudeGeometry(tkShape, tkExtrudeSettings);
           tkGeometry.rotateX(-Math.PI / 2);
-          tkGeometry.translate(0, -h/2 + tkHeight/2, 0);
+          tkGeometry.translate(0, -h/2, 0);
 
           const toeKick = new THREE.Mesh(tkGeometry, tkMat);
           group.add(toeKick);
@@ -32828,16 +32906,16 @@
           const bodyYOffset = toeKickHeight / 2;
 
           // Create L-shaped cabinet using THREE.Shape for proper geometry
+          // Shape Y maps to -Z after rotateX(-PI/2), so:
+          //   shape Y=+d/2 → world Z=-d/2 (back wall)
+          //   shape Y=-d/2 → world Z=+d/2 (front, toward camera)
           const lShape = new THREE.Shape();
-          // Start at back-left corner and trace L-shape clockwise
-          // In local coords: back is -Z, left is -X, front is +Z, right is +X
-          lShape.moveTo(-w/2, -d/2);                    // Back-left corner (into walls)
-          lShape.lineTo(-w/2, -d/2 + armDepth);         // Along left wall
-          lShape.lineTo(-w/2 + armDepth, -d/2 + armDepth); // Turn at inside corner
-          lShape.lineTo(-w/2 + armDepth, d/2);          // Forward along inside of left arm
-          lShape.lineTo(w/2, d/2);                      // Across front (this is where diagonal will be)
-          lShape.lineTo(w/2, -d/2);                     // Along right edge to back wall
-          lShape.lineTo(-w/2, -d/2);                    // Close back to start
+          lShape.moveTo(-w/2, d/2);                          // Back-left corner (into walls)
+          lShape.lineTo(-w/2, -d/2);                         // Front-left (along left wall)
+          lShape.lineTo(-w/2 + armDepth, -d/2);              // Front of left arm
+          lShape.lineTo(-w/2 + armDepth, d/2 - armDepth);    // Inner corner
+          lShape.lineTo(w/2, d/2 - armDepth);                // Back arm inner edge, right
+          lShape.lineTo(w/2, d/2);                           // Back-right corner
 
           // Extrude L-shape for cabinet body
           const extrudeSettings = {
@@ -32937,20 +33015,20 @@
           const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
           const tkHeight = toeKickHeight - 0.02;
 
-          // Create L-shaped toe kick using shape (smaller than cabinet by recess amount)
+          // Create L-shaped toe kick (same orientation as body, inset by recess)
           const tkShape = new THREE.Shape();
-          tkShape.moveTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
-          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + armDepth - toeKickRecess);
-          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + armDepth - toeKickRecess);
-          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - toeKickRecess);
+          tkShape.moveTo(-w/2 + toeKickRecess, d/2 - toeKickRecess);
+          tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, -d/2 + toeKickRecess);
+          tkShape.lineTo(-w/2 + armDepth - toeKickRecess, d/2 - armDepth + toeKickRecess);
+          tkShape.lineTo(w/2 - toeKickRecess, d/2 - armDepth + toeKickRecess);
           tkShape.lineTo(w/2 - toeKickRecess, d/2 - toeKickRecess);
-          tkShape.lineTo(w/2 - toeKickRecess, -d/2 + toeKickRecess);
           tkShape.closePath();
 
           const tkExtrudeSettings = { depth: tkHeight, bevelEnabled: false };
           const tkGeometry = new THREE.ExtrudeGeometry(tkShape, tkExtrudeSettings);
           tkGeometry.rotateX(-Math.PI / 2);
-          tkGeometry.translate(0, -h/2 + tkHeight/2, 0);
+          tkGeometry.translate(0, -h/2, 0);
 
           const toeKick = new THREE.Mesh(tkGeometry, tkMat);
           group.add(toeKick);
@@ -48311,6 +48389,7 @@
           break;
         case 'corner-cabinet':
         case 'lazy-susan':
+        case 'blind-corner':
           sizes.push({ label: '33" Corner', width: 2.75, height: 2.75 });
           sizes.push({ label: '36" Corner', width: 3, height: 3 });
           sizes.push({ label: '39" Corner', width: 3.25, height: 3.25 });

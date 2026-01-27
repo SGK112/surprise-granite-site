@@ -244,6 +244,9 @@ const proCustomersRouter = require('./routes/pro-customers');
 // Workflow Conversion Routes (Lead → Customer → Estimate → Invoice → Job)
 const workflowRouter = require('./routes/workflow');
 
+// Collaboration & Design Handoff Routes
+const collaborationRouter = require('./routes/collaboration');
+
 // Email Routes (new modular structure)
 const emailRouter = require('./routes/email');
 
@@ -3305,6 +3308,9 @@ app.use('/api/pro', proCustomersRouter);
 // Lead → Customer → Estimate → Invoice → Job conversions
 app.use('/api/workflow', workflowRouter);
 
+// ============ COLLABORATION & DESIGN HANDOFF ROUTES ============
+app.use('/api/collaboration', collaborationRouter);
+
 // ============ EMAIL ROUTES (MODULAR) ============
 app.use('/api/email', emailRouter);
 
@@ -5353,6 +5359,83 @@ app.post('/api/lead-welcome', async (req, res) => {
 
   } catch (error) {
     logger.error('Welcome email error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Send a message/reply to a lead via email
+app.post('/api/send-lead-message', authenticateJWT, async (req, res) => {
+  try {
+    const { to_email, to_name, message, subject, sender_name, lead_id } = req.body;
+
+    if (!to_email || !message) {
+      return res.status(400).json({ error: 'to_email and message are required' });
+    }
+
+    const recipientName = to_name ? to_name.split(' ')[0] : '';
+    const fromName = sender_name || 'Surprise Granite';
+    const emailSubject = subject || `Message from ${COMPANY.shortName}`;
+
+    // Look up portal token for this lead (if lead_id provided)
+    let portalUrl = null;
+    if (lead_id) {
+      try {
+        const supabase = req.app.get('supabase');
+        if (supabase) {
+          const { data: token } = await supabase
+            .from('portal_tokens')
+            .select('token')
+            .eq('lead_id', lead_id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          if (token?.token) {
+            portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
+          }
+        }
+      } catch (e) {
+        logger.warn('Portal token lookup failed for lead message', { lead_id, error: e.message });
+      }
+    }
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 24px 32px; text-align: center;">
+          <img src="${COMPANY.logo}" alt="${COMPANY.shortName}" style="height: 48px; margin-bottom: 8px;">
+          <h2 style="color: #e8c547; margin: 0; font-size: 18px;">${COMPANY.shortName}</h2>
+        </div>
+        <div style="padding: 32px;">
+          ${recipientName ? `<p style="font-size: 16px; color: #333;">Hi ${recipientName},</p>` : ''}
+          <div style="font-size: 15px; color: #444; line-height: 1.7; white-space: pre-wrap;">${message}</div>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+          <p style="font-size: 13px; color: #888;">— ${fromName}</p>
+        </div>
+        ${portalUrl ? `
+        <div style="padding: 0 32px 24px; text-align: center;">
+          <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">View Your Project Portal</a>
+        </div>
+        ` : ''}
+        <div style="padding: 0 32px 16px; text-align: center;">
+          <a href="https://www.surprisegranite.com/sign-up/" style="font-size: 13px; color: #666; text-decoration: underline;">Create Your Free Account</a>
+        </div>
+        <div style="background: #f8f9fa; padding: 16px 32px; text-align: center; font-size: 12px; color: #999;">
+          <p style="margin: 4px 0;">${COMPANY.name}</p>
+          <p style="margin: 4px 0;">${COMPANY.phone} | ${COMPANY.email}</p>
+          <p style="margin: 4px 0;">${COMPANY.address}</p>
+        </div>
+      </div>
+    `;
+
+    const result = await sendNotification(to_email, emailSubject, html);
+
+    if (result.success) {
+      res.json({ success: true, message: 'Email sent successfully' });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to send email', reason: result.reason });
+    }
+  } catch (error) {
+    logger.error('Send lead message error:', error);
     return handleApiError(res, error);
   }
 });

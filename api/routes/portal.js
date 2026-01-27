@@ -898,4 +898,86 @@ router.delete('/tokens/:id', authenticateJWT, asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Token deactivated' });
 }));
 
+// ============================================================
+// CONTRACTOR PORTAL ENDPOINTS
+// ============================================================
+
+/**
+ * Get selections/estimate for a contractor's assigned job
+ * POST /api/portal/contractor/selections
+ */
+router.post('/contractor/selections', portalAccessLimiter, asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const { contractor_id, job_id } = req.body;
+
+  if (!contractor_id || !job_id) {
+    return res.status(400).json({ error: 'Contractor ID and Job ID required' });
+  }
+
+  // Verify contractor is assigned to this job
+  const { data: assignment } = await supabase
+    .from('job_contractors')
+    .select('id')
+    .eq('contractor_id', contractor_id)
+    .eq('job_id', job_id)
+    .neq('contractor_status', 'declined')
+    .limit(1)
+    .single();
+
+  if (!assignment) {
+    return res.status(403).json({ error: 'Not authorized for this job' });
+  }
+
+  // Get job with material fields
+  const { data: job } = await supabase
+    .from('jobs')
+    .select('estimate_id, material_name, material_supplier, material_color, material_thickness, material_sqft')
+    .eq('id', job_id)
+    .single();
+
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+
+  let estimate = null;
+  let estimateItems = [];
+
+  if (job.estimate_id) {
+    const { data: est } = await supabase
+      .from('estimates')
+      .select('id, estimate_number, project_name, project_description, status, approved_at')
+      .eq('id', job.estimate_id)
+      .single();
+
+    if (est) {
+      estimate = est;
+      const { data: items } = await supabase
+        .from('estimate_items')
+        .select('id, name, description, category, quantity, unit_type')
+        .eq('estimate_id', est.id)
+        .order('sort_order', { ascending: true });
+      estimateItems = items || [];
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      materials: {
+        name: job.material_name,
+        supplier: job.material_supplier,
+        color: job.material_color,
+        thickness: job.material_thickness,
+        sqft: job.material_sqft
+      },
+      estimate,
+      items: estimateItems
+    }
+  });
+}));
+
 module.exports = router;

@@ -464,6 +464,64 @@ async function requireDistributor(req, res, next) {
   next();
 }
 
+/**
+ * Load collaborator context for a project
+ * Checks project_collaborators table and attaches role/access info to request
+ */
+async function loadCollaboratorContext(req, res, next) {
+  if (!supabase || !req.user?.id) {
+    return next();
+  }
+
+  const projectId = req.params.projectId;
+  if (!projectId) {
+    return next();
+  }
+
+  try {
+    // Check if user is project owner
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id')
+      .eq('id', projectId)
+      .single();
+
+    if (project && project.user_id === req.user.id) {
+      req.isCollaborator = true;
+      req.collaboratorRole = 'owner';
+      req.collaboratorAccessLevel = 'admin';
+      return next();
+    }
+
+    // Check project_collaborators table
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('role, access_level, invitation_status')
+      .eq('project_id', projectId)
+      .eq('user_id', req.user.id)
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (collab) {
+      req.isCollaborator = true;
+      req.collaboratorRole = collab.role;
+      req.collaboratorAccessLevel = collab.access_level;
+    } else {
+      req.isCollaborator = false;
+      req.collaboratorRole = null;
+      req.collaboratorAccessLevel = null;
+    }
+
+    next();
+  } catch (err) {
+    console.error('Error loading collaborator context:', err);
+    req.isCollaborator = false;
+    req.collaboratorRole = null;
+    req.collaboratorAccessLevel = null;
+    next();
+  }
+}
+
 module.exports = {
   initAuth,
   authenticateJWT,
@@ -475,5 +533,6 @@ module.exports = {
   loadUserRole,
   logAuditEvent,
   getClientIP,
-  verifyApiKey
+  verifyApiKey,
+  loadCollaboratorContext
 };

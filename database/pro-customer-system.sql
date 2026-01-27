@@ -11,12 +11,12 @@
 -- Add role column if not exists
 ALTER TABLE public.sg_users
 ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user'
-CHECK (role IN ('user', 'pro', 'admin', 'super_admin'));
+CHECK (role IN ('user', 'pro', 'designer', 'admin', 'super_admin'));
 
 -- Add pro-specific fields
 ALTER TABLE public.sg_users
 ADD COLUMN IF NOT EXISTS pro_subscription_tier TEXT DEFAULT 'free'
-CHECK (pro_subscription_tier IN ('free', 'pro', 'enterprise'));
+CHECK (pro_subscription_tier IN ('free', 'pro', 'designer', 'enterprise'));
 
 ALTER TABLE public.sg_users
 ADD COLUMN IF NOT EXISTS pro_subscription_expires_at TIMESTAMPTZ;

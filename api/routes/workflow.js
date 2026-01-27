@@ -40,7 +40,7 @@ const schemas = {
   }),
 
   notify: Joi.object({
-    type: Joi.string().valid('estimate', 'invoice', 'job', 'appointment').required(),
+    type: Joi.string().valid('estimate', 'invoice', 'job', 'appointment', 'handoff').required(),
     action: Joi.string().valid('sent', 'approved', 'status_change', 'reminder', 'paid', 'scheduled', 'confirmed').required(),
     entity: Joi.object().required(),
     recipient: Joi.object({
@@ -435,7 +435,8 @@ router.get('/flow/:type/:id', asyncHandler(async (req, res) => {
     customer: null,
     estimates: [],
     invoices: [],
-    jobs: []
+    jobs: [],
+    handoffs: []
   };
 
   if (type === 'lead') {
@@ -478,6 +479,15 @@ router.get('/flow/:type/:id', asyncHandler(async (req, res) => {
       .eq('lead_id', id);
     flow.jobs = jobs || [];
 
+    // Get design handoffs linked to this lead's project
+    if (lead?.project_id) {
+      const { data: handoffs } = await supabase
+        .from('design_handoffs')
+        .select('*')
+        .eq('project_id', lead.project_id);
+      flow.handoffs = handoffs || [];
+    }
+
   } else if (type === 'customer') {
     // Start from customer
     const { data: customer } = await supabase
@@ -517,6 +527,21 @@ router.get('/flow/:type/:id', asyncHandler(async (req, res) => {
       .select('*')
       .eq('customer_id', id);
     flow.jobs = jobs || [];
+
+    // Get design handoffs for customer's projects
+    const { data: customerProjects } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('customer_id', id);
+
+    if (customerProjects && customerProjects.length > 0) {
+      const projectIds = customerProjects.map(p => p.id);
+      const { data: handoffs } = await supabase
+        .from('design_handoffs')
+        .select('*')
+        .in('project_id', projectIds);
+      flow.handoffs = handoffs || [];
+    }
   }
 
   res.json({
@@ -576,6 +601,15 @@ router.post('/notify',
             email = emailService.generateAppointmentReminderEmail(entity);
           }
           break;
+
+        case 'handoff':
+          if (action === 'status_change' && entity.title) {
+            email = {
+              subject: `Design Handoff Update: ${entity.title}`,
+              html: `<p>The design handoff "${entity.title}" has been updated to: <strong>${(new_status || '').replace(/_/g, ' ')}</strong></p>`
+            };
+          }
+          break;
       }
 
       if (email) {
@@ -623,6 +657,15 @@ router.post('/notify',
             smsResult = await smsService.sendAppointmentReminder(entity, recipient.phone);
           } else if (action === 'confirmed') {
             smsResult = await smsService.sendAppointmentConfirmation(entity, recipient.phone);
+          }
+          break;
+
+        case 'handoff':
+          if (action === 'status_change' && entity.title) {
+            smsResult = await smsService.sendSMS(
+              recipient.phone,
+              `Surprise Granite: Design handoff "${entity.title}" updated to ${(new_status || '').replace(/_/g, ' ')}`
+            );
           }
           break;
       }

@@ -54,9 +54,9 @@ const verifyProUser = async (req, res, next) => {
       return res.status(403).json({ error: 'User profile not found' });
     }
 
-    // Check if pro or admin
-    if (!['pro', 'admin', 'super_admin'].includes(profile.role) &&
-        !['pro', 'enterprise'].includes(profile.pro_subscription_tier)) {
+    // Check if pro, designer, or admin
+    if (!['pro', 'designer', 'admin', 'super_admin'].includes(profile.role) &&
+        !['pro', 'designer', 'enterprise'].includes(profile.pro_subscription_tier)) {
       return res.status(403).json({ error: 'Pro subscription required' });
     }
 

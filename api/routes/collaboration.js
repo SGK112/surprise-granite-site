@@ -1,0 +1,1507 @@
+/**
+ * SURPRISE GRANITE - COLLABORATION & DESIGN HANDOFF API
+ * Handles project collaborators and design handoff workflow
+ */
+
+const express = require('express');
+const router = express.Router();
+const Joi = require('joi');
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
+const logger = require('../utils/logger');
+const { asyncHandler } = require('../middleware/errorHandler');
+const { validateBody } = require('../middleware/validator');
+const emailService = require('../services/emailService');
+const { escapeHtml } = require('../utils/security');
+
+// Initialize Supabase with service role for admin operations
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+} else {
+  console.warn('Collaboration: Supabase credentials not configured - routes will be disabled');
+}
+
+// ============================================================
+// VALIDATION SCHEMAS
+// ============================================================
+
+const schemas = {
+  inviteCollaborator: Joi.object({
+    user_id: Joi.string().uuid().required(),
+    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer').required(),
+    access_level: Joi.string().valid('read', 'write', 'admin').default('read'),
+    notes: Joi.string().max(500).trim().allow('')
+  }),
+
+  updateCollaborator: Joi.object({
+    invitation_status: Joi.string().valid('accepted', 'declined', 'removed'),
+    access_level: Joi.string().valid('read', 'write', 'admin'),
+    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer'),
+    notes: Joi.string().max(500).trim().allow('')
+  }),
+
+  createHandoff: Joi.object({
+    title: Joi.string().max(200).trim().required(),
+    description: Joi.string().max(2000).trim().allow(''),
+    fabricator_id: Joi.string().uuid().allow(null),
+    contractor_id: Joi.string().uuid().allow(null),
+    design_file_url: Joi.string().uri().max(500).allow('', null),
+    notes: Joi.string().max(2000).trim().allow('')
+  }),
+
+  inviteByEmail: Joi.object({
+    email: Joi.string().email().max(254).lowercase().trim().required(),
+    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer').required(),
+    access_level: Joi.string().valid('read', 'write', 'admin').default('read'),
+    notes: Joi.string().max(500).trim().allow('')
+  }),
+
+  acceptInvitation: Joi.object({
+    token: Joi.string().hex().length(64).required()
+  }),
+
+  updateHandoff: Joi.object({
+    title: Joi.string().max(200).trim(),
+    description: Joi.string().max(2000).trim().allow(''),
+    stage: Joi.string().valid(
+      'design_created', 'design_review', 'design_approved',
+      'fabrication_quote_requested', 'fabrication_quote_received',
+      'fabrication_approved', 'materials_ordered',
+      'fabrication_in_progress', 'fabrication_complete',
+      'install_scheduled', 'install_in_progress',
+      'install_complete', 'final_review'
+    ),
+    fabricator_id: Joi.string().uuid().allow(null),
+    contractor_id: Joi.string().uuid().allow(null),
+    design_file_url: Joi.string().uri().max(500).allow('', null),
+    quote_amount: Joi.number().precision(2).min(0).allow(null),
+    scheduled_date: Joi.date().iso().allow(null),
+    notes: Joi.string().max(2000).trim().allow('')
+  })
+};
+
+// ============================================================
+// MIDDLEWARE: Verify Pro or Designer User
+// ============================================================
+
+const verifyProOrDesigner = async (req, res, next) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database not configured' });
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing authorization token' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // Get user profile with role
+    const { data: profile } = await supabase
+      .from('sg_users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) {
+      return res.status(403).json({ error: 'User profile not found' });
+    }
+
+    // Check if pro, designer, or admin
+    if (!['pro', 'designer', 'admin', 'super_admin'].includes(profile.role) &&
+        !['pro', 'designer', 'enterprise'].includes(profile.pro_subscription_tier)) {
+      return res.status(403).json({ error: 'Pro or Designer subscription required' });
+    }
+
+    req.user = user;
+    req.profile = profile;
+    next();
+  } catch (err) {
+    logger.apiError(err, { context: 'Collaboration auth error' });
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+};
+
+// ============================================================
+// HELPER: Create notification
+// ============================================================
+
+async function createCollaborationNotification(proUserId, type, title, message, data = {}) {
+  try {
+    await supabase
+      .from('pro_notifications')
+      .insert({
+        pro_user_id: proUserId,
+        notification_type: type,
+        title,
+        message,
+        data
+      });
+  } catch (err) {
+    logger.apiError(err, { context: 'Failed to create collaboration notification' });
+  }
+}
+
+// ============================================================
+// HELPER: Invitation token utilities
+// ============================================================
+
+function generateInvitationToken() {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  return { rawToken, tokenHash };
+}
+
+function hashToken(rawToken) {
+  return crypto.createHash('sha256').update(rawToken).digest('hex');
+}
+
+// ============================================================
+// HELPER: Generate collaboration invitation email
+// ============================================================
+
+function generateCollaborationInviteEmail({ inviterName, projectTitle, role, isExistingUser, acceptUrl }) {
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 22px;">You're Invited to Collaborate</h2>
+    </div>
+
+    <p style="margin: 0 0 20px; color: #444; font-size: 15px; line-height: 1.6;">
+      <strong>${escapeHtml(inviterName)}</strong> has invited you to collaborate on
+      <strong>"${escapeHtml(projectTitle || 'Untitled Project')}"</strong> as a <strong>${escapeHtml(roleLabel)}</strong>.
+    </p>
+
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <table width="100%" cellspacing="0" cellpadding="8">
+        <tr>
+          <td style="color: #666; font-weight: 600; width: 120px;">Project:</td>
+          <td style="color: #1a1a2e;">${escapeHtml(projectTitle || 'Untitled Project')}</td>
+        </tr>
+        <tr>
+          <td style="color: #666; font-weight: 600;">Your Role:</td>
+          <td style="color: #1a1a2e;">${escapeHtml(roleLabel)}</td>
+        </tr>
+        <tr>
+          <td style="color: #666; font-weight: 600;">Invited By:</td>
+          <td style="color: #1a1a2e;">${escapeHtml(inviterName)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${acceptUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        ${isExistingUser ? 'Accept Invitation' : 'Create Account &amp; Join'}
+      </a>
+    </div>
+
+    <p style="margin: 0 0 8px; color: #888; font-size: 13px; text-align: center;">
+      ${isExistingUser
+        ? 'Click above to accept this collaboration invite.'
+        : 'Create your free account to start collaborating on this project.'}
+    </p>
+    <p style="margin: 0; color: #aaa; font-size: 12px; text-align: center;">
+      This invitation expires in 7 days.
+    </p>
+  `;
+
+  return {
+    subject: `${inviterName} invited you to collaborate - Surprise Granite`,
+    html: emailService.wrapEmailTemplate(content, { headerText: 'Project Invitation' })
+  };
+}
+
+// ============================================================
+// COLLABORATOR MANAGEMENT
+// ============================================================
+
+/**
+ * GET /api/collaboration/projects/:projectId/collaborators
+ * List project collaborators
+ */
+router.get('/projects/:projectId/collaborators', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  // Verify user is owner or collaborator
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, user_id')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  const isOwner = project.user_id === req.user.id;
+
+  if (!isOwner) {
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('user_id', req.user.id)
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (!collab && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to view collaborators' });
+    }
+  }
+
+  const { data: collaborators, error } = await supabase
+    .from('project_collaborators')
+    .select('*, user:sg_users!user_id(full_name, email, avatar_url, role)')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  logger.info('Listed project collaborators', { projectId, count: collaborators?.length || 0 });
+
+  res.json({ success: true, collaborators: collaborators || [] });
+}));
+
+/**
+ * POST /api/collaboration/projects/:projectId/collaborators
+ * Invite a user as collaborator
+ */
+router.post('/projects/:projectId/collaborators',
+  verifyProOrDesigner,
+  validateBody(schemas.inviteCollaborator),
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const { user_id, role, access_level, notes } = req.body;
+
+    // Verify project exists and user is owner
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id, title')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only project owner can invite collaborators' });
+    }
+
+    // Cannot invite yourself
+    if (user_id === req.user.id) {
+      return res.status(400).json({ error: 'Cannot invite yourself as collaborator' });
+    }
+
+    // Check if already invited
+    const { data: existing } = await supabase
+      .from('project_collaborators')
+      .select('id, invitation_status')
+      .eq('project_id', projectId)
+      .eq('user_id', user_id)
+      .single();
+
+    if (existing && existing.invitation_status !== 'removed' && existing.invitation_status !== 'declined') {
+      return res.status(400).json({ error: 'User already invited to this project' });
+    }
+
+    let collaborator;
+    if (existing) {
+      // Re-invite removed/declined user
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .update({
+          role,
+          access_level,
+          notes: notes || null,
+          invitation_status: 'pending',
+          invited_by: req.user.id,
+          invited_at: new Date().toISOString(),
+          removed_at: null,
+          accepted_at: null
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    } else {
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .insert({
+          project_id: projectId,
+          user_id,
+          role,
+          access_level,
+          notes: notes || null,
+          invited_by: req.user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    }
+
+    // Notify the invited user
+    await createCollaborationNotification(
+      user_id,
+      'collaborator_invited',
+      'Project Collaboration Invite',
+      `You have been invited as a ${role} on project "${project.title || 'Untitled'}"`,
+      { projectId, role, access_level, invited_by: req.user.id }
+    );
+
+    logger.info('Collaborator invited', { projectId, userId: user_id, role });
+
+    res.json({ success: true, collaborator });
+  })
+);
+
+/**
+ * PUT /api/collaboration/projects/:projectId/collaborators/:collaboratorId
+ * Accept/decline/update collaborator
+ */
+router.put('/projects/:projectId/collaborators/:collaboratorId',
+  verifyProOrDesigner,
+  validateBody(schemas.updateCollaborator),
+  asyncHandler(async (req, res) => {
+    const { projectId, collaboratorId } = req.params;
+    const updates = req.body;
+
+    // Get current collaborator record
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('*')
+      .eq('id', collaboratorId)
+      .eq('project_id', projectId)
+      .single();
+
+    if (!collab) {
+      return res.status(404).json({ error: 'Collaborator not found' });
+    }
+
+    // Determine permissions
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .single();
+
+    const isOwner = project && project.user_id === req.user.id;
+    const isSelf = collab.user_id === req.user.id;
+
+    // Self can accept/decline; owner can update role/access/remove
+    if (!isOwner && !isSelf && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to update this collaborator' });
+    }
+
+    const updateData = {};
+
+    // Self can only accept or decline
+    if (isSelf && !isOwner) {
+      if (updates.invitation_status && ['accepted', 'declined'].includes(updates.invitation_status)) {
+        updateData.invitation_status = updates.invitation_status;
+        if (updates.invitation_status === 'accepted') {
+          updateData.accepted_at = new Date().toISOString();
+        }
+      }
+    } else {
+      // Owner can update everything
+      if (updates.invitation_status) updateData.invitation_status = updates.invitation_status;
+      if (updates.access_level) updateData.access_level = updates.access_level;
+      if (updates.role) updateData.role = updates.role;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.invitation_status === 'removed') {
+        updateData.removed_at = new Date().toISOString();
+      }
+      if (updates.invitation_status === 'accepted') {
+        updateData.accepted_at = new Date().toISOString();
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid updates provided' });
+    }
+
+    const { data: updated, error } = await supabase
+      .from('project_collaborators')
+      .update(updateData)
+      .eq('id', collaboratorId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify on acceptance
+    if (updateData.invitation_status === 'accepted' && collab.invited_by) {
+      await createCollaborationNotification(
+        collab.invited_by,
+        'collaborator_accepted',
+        'Collaboration Accepted',
+        `A collaborator has accepted your invitation to the project`,
+        { projectId, collaboratorId, role: collab.role }
+      );
+    }
+
+    logger.info('Collaborator updated', { projectId, collaboratorId, updates: updateData });
+
+    res.json({ success: true, collaborator: updated });
+  })
+);
+
+/**
+ * DELETE /api/collaboration/projects/:projectId/collaborators/:collaboratorId
+ * Remove collaborator
+ */
+router.delete('/projects/:projectId/collaborators/:collaboratorId',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { projectId, collaboratorId } = req.params;
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only project owner can remove collaborators' });
+    }
+
+    const { error } = await supabase
+      .from('project_collaborators')
+      .update({
+        invitation_status: 'removed',
+        removed_at: new Date().toISOString()
+      })
+      .eq('id', collaboratorId)
+      .eq('project_id', projectId);
+
+    if (error) throw error;
+
+    logger.info('Collaborator removed', { projectId, collaboratorId });
+
+    res.json({ success: true });
+  })
+);
+
+/**
+ * GET /api/collaboration/my-projects
+ * List projects where user is a collaborator
+ */
+router.get('/my-projects', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { status, role } = req.query;
+
+  let query = supabase
+    .from('project_collaborators')
+    .select('*, project:projects!project_id(id, title, status, created_at, user_id)')
+    .eq('user_id', req.user.id)
+    .order('created_at', { ascending: false });
+
+  if (status) {
+    query = query.eq('invitation_status', status);
+  }
+
+  if (role) {
+    query = query.eq('role', role);
+  }
+
+  const { data: collaborations, error } = await query;
+
+  if (error) throw error;
+
+  logger.info('Listed user collaborations', { userId: req.user.id, count: collaborations?.length || 0 });
+
+  res.json({ success: true, collaborations: collaborations || [] });
+}));
+
+// ============================================================
+// DESIGN HANDOFF WORKFLOW
+// ============================================================
+
+// Ordered stage list for advancement
+const HANDOFF_STAGES = [
+  'design_created',
+  'design_review',
+  'design_approved',
+  'fabrication_quote_requested',
+  'fabrication_quote_received',
+  'fabrication_approved',
+  'materials_ordered',
+  'fabrication_in_progress',
+  'fabrication_complete',
+  'install_scheduled',
+  'install_in_progress',
+  'install_complete',
+  'final_review'
+];
+
+/**
+ * GET /api/collaboration/projects/:projectId/handoffs
+ * List all handoff stages for a project
+ */
+router.get('/projects/:projectId/handoffs', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  // Verify access
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, user_id')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  const isOwner = project.user_id === req.user.id;
+
+  if (!isOwner && req.profile.role !== 'super_admin') {
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('user_id', req.user.id)
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (!collab) {
+      // Also check if user is a handoff participant
+      const { data: handoff } = await supabase
+        .from('design_handoffs')
+        .select('id')
+        .eq('project_id', projectId)
+        .or(`designer_id.eq.${req.user.id},fabricator_id.eq.${req.user.id},contractor_id.eq.${req.user.id}`)
+        .limit(1)
+        .single();
+
+      if (!handoff) {
+        return res.status(403).json({ error: 'Not authorized to view handoffs' });
+      }
+    }
+  }
+
+  const { data: handoffs, error } = await supabase
+    .from('design_handoffs')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  logger.info('Listed project handoffs', { projectId, count: handoffs?.length || 0 });
+
+  res.json({ success: true, handoffs: handoffs || [] });
+}));
+
+/**
+ * POST /api/collaboration/projects/:projectId/handoffs
+ * Create a new handoff stage
+ */
+router.post('/projects/:projectId/handoffs',
+  verifyProOrDesigner,
+  validateBody(schemas.createHandoff),
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const { title, description, fabricator_id, contractor_id, design_file_url, notes } = req.body;
+
+    // Verify project exists
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id, title')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Must be owner, collaborator with write access, or super admin
+    const isOwner = project.user_id === req.user.id;
+    let hasWriteAccess = false;
+
+    if (!isOwner) {
+      const { data: collab } = await supabase
+        .from('project_collaborators')
+        .select('access_level')
+        .eq('project_id', projectId)
+        .eq('user_id', req.user.id)
+        .eq('invitation_status', 'accepted')
+        .single();
+
+      hasWriteAccess = collab && ['write', 'admin'].includes(collab.access_level);
+    }
+
+    if (!isOwner && !hasWriteAccess && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Write access required to create handoffs' });
+    }
+
+    const { data: handoff, error } = await supabase
+      .from('design_handoffs')
+      .insert({
+        project_id: projectId,
+        designer_id: req.user.id,
+        fabricator_id: fabricator_id || null,
+        contractor_id: contractor_id || null,
+        title,
+        description: description || null,
+        design_file_url: design_file_url || null,
+        notes: notes || null,
+        stage: 'design_created',
+        stage_history: [{ stage: 'design_created', changed_by: req.user.id, changed_at: new Date().toISOString() }]
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify project owner if creator is not owner
+    if (!isOwner) {
+      await createCollaborationNotification(
+        project.user_id,
+        'design_handoff_created',
+        'New Design Handoff',
+        `A design handoff "${title}" has been created for project "${project.title || 'Untitled'}"`,
+        { projectId, handoffId: handoff.id, designerId: req.user.id }
+      );
+    }
+
+    // Notify fabricator if assigned
+    if (fabricator_id) {
+      await createCollaborationNotification(
+        fabricator_id,
+        'design_handoff_created',
+        'Design Handoff Assigned',
+        `You have been assigned as fabricator on handoff "${title}"`,
+        { projectId, handoffId: handoff.id }
+      );
+    }
+
+    // Notify contractor if assigned
+    if (contractor_id) {
+      await createCollaborationNotification(
+        contractor_id,
+        'design_handoff_created',
+        'Design Handoff Assigned',
+        `You have been assigned as contractor on handoff "${title}"`,
+        { projectId, handoffId: handoff.id }
+      );
+    }
+
+    logger.info('Design handoff created', { projectId, handoffId: handoff.id, title });
+
+    res.json({ success: true, handoff });
+  })
+);
+
+/**
+ * PUT /api/collaboration/handoffs/:handoffId
+ * Update handoff details/status
+ */
+router.put('/handoffs/:handoffId',
+  verifyProOrDesigner,
+  validateBody(schemas.updateHandoff),
+  asyncHandler(async (req, res) => {
+    const { handoffId } = req.params;
+
+    // Get current handoff
+    const { data: handoff } = await supabase
+      .from('design_handoffs')
+      .select('*')
+      .eq('id', handoffId)
+      .single();
+
+    if (!handoff) {
+      return res.status(404).json({ error: 'Handoff not found' });
+    }
+
+    // Verify participant access
+    const isParticipant = [handoff.designer_id, handoff.fabricator_id, handoff.contractor_id].includes(req.user.id);
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', handoff.project_id)
+      .single();
+
+    const isOwner = project && project.user_id === req.user.id;
+
+    if (!isParticipant && !isOwner && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to update this handoff' });
+    }
+
+    const updateData = {};
+    if (req.body.title) updateData.title = req.body.title;
+    if (req.body.description !== undefined) updateData.description = req.body.description;
+    if (req.body.stage) updateData.stage = req.body.stage;
+    if (req.body.fabricator_id !== undefined) updateData.fabricator_id = req.body.fabricator_id;
+    if (req.body.contractor_id !== undefined) updateData.contractor_id = req.body.contractor_id;
+    if (req.body.design_file_url !== undefined) updateData.design_file_url = req.body.design_file_url;
+    if (req.body.quote_amount !== undefined) updateData.quote_amount = req.body.quote_amount;
+    if (req.body.scheduled_date !== undefined) updateData.scheduled_date = req.body.scheduled_date;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid updates provided' });
+    }
+
+    const { data: updated, error } = await supabase
+      .from('design_handoffs')
+      .update(updateData)
+      .eq('id', handoffId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Send stage change notification if stage changed
+    if (req.body.stage && req.body.stage !== handoff.stage) {
+      const notifyUsers = [handoff.designer_id, handoff.fabricator_id, handoff.contractor_id, project?.user_id]
+        .filter(id => id && id !== req.user.id);
+
+      const uniqueUsers = [...new Set(notifyUsers)];
+
+      for (const userId of uniqueUsers) {
+        await createCollaborationNotification(
+          userId,
+          'design_handoff_stage_change',
+          'Handoff Stage Updated',
+          `"${handoff.title}" moved to ${req.body.stage.replace(/_/g, ' ')}`,
+          { handoffId, fromStage: handoff.stage, toStage: req.body.stage, projectId: handoff.project_id }
+        );
+      }
+    }
+
+    // Notify on quote received
+    if (req.body.stage === 'fabrication_quote_received' && handoff.designer_id) {
+      await createCollaborationNotification(
+        handoff.designer_id,
+        'fabrication_quote_ready',
+        'Fabrication Quote Ready',
+        `Quote received for "${handoff.title}"${req.body.quote_amount ? ': $' + req.body.quote_amount : ''}`,
+        { handoffId, quoteAmount: req.body.quote_amount, projectId: handoff.project_id }
+      );
+    }
+
+    // Notify on install scheduled
+    if (req.body.stage === 'install_scheduled') {
+      const notifyUsers = [handoff.designer_id, handoff.contractor_id, project?.user_id]
+        .filter(id => id && id !== req.user.id);
+
+      for (const userId of [...new Set(notifyUsers)]) {
+        await createCollaborationNotification(
+          userId,
+          'install_scheduled',
+          'Installation Scheduled',
+          `Installation scheduled for "${handoff.title}"${req.body.scheduled_date ? ' on ' + new Date(req.body.scheduled_date).toLocaleDateString() : ''}`,
+          { handoffId, scheduledDate: req.body.scheduled_date, projectId: handoff.project_id }
+        );
+      }
+    }
+
+    logger.info('Handoff updated', { handoffId, updates: Object.keys(updateData) });
+
+    res.json({ success: true, handoff: updated });
+  })
+);
+
+/**
+ * GET /api/collaboration/handoffs/:handoffId
+ * Get handoff details
+ */
+router.get('/handoffs/:handoffId', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { handoffId } = req.params;
+
+  const { data: handoff, error } = await supabase
+    .from('design_handoffs')
+    .select(`
+      *,
+      designer:sg_users!designer_id(full_name, email, avatar_url),
+      fabricator:sg_users!fabricator_id(full_name, email, avatar_url),
+      contractor:sg_users!contractor_id(full_name, email, avatar_url)
+    `)
+    .eq('id', handoffId)
+    .single();
+
+  if (error || !handoff) {
+    return res.status(404).json({ error: 'Handoff not found' });
+  }
+
+  // Verify participant access
+  const isParticipant = [handoff.designer_id, handoff.fabricator_id, handoff.contractor_id].includes(req.user.id);
+
+  if (!isParticipant && req.profile.role !== 'super_admin') {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', handoff.project_id)
+      .single();
+
+    const isOwner = project && project.user_id === req.user.id;
+
+    if (!isOwner) {
+      const { data: collab } = await supabase
+        .from('project_collaborators')
+        .select('id')
+        .eq('project_id', handoff.project_id)
+        .eq('user_id', req.user.id)
+        .eq('invitation_status', 'accepted')
+        .single();
+
+      if (!collab) {
+        return res.status(403).json({ error: 'Not authorized to view this handoff' });
+      }
+    }
+  }
+
+  logger.info('Handoff details fetched', { handoffId });
+
+  res.json({ success: true, handoff });
+}));
+
+/**
+ * POST /api/collaboration/handoffs/:handoffId/advance
+ * Advance to the next workflow stage
+ */
+router.post('/handoffs/:handoffId/advance', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { handoffId } = req.params;
+
+  // Get current handoff
+  const { data: handoff } = await supabase
+    .from('design_handoffs')
+    .select('*')
+    .eq('id', handoffId)
+    .single();
+
+  if (!handoff) {
+    return res.status(404).json({ error: 'Handoff not found' });
+  }
+
+  // Verify participant access
+  const isParticipant = [handoff.designer_id, handoff.fabricator_id, handoff.contractor_id].includes(req.user.id);
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', handoff.project_id)
+    .single();
+
+  const isOwner = project && project.user_id === req.user.id;
+
+  if (!isParticipant && !isOwner && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized to advance this handoff' });
+  }
+
+  // Determine next stage
+  const currentIndex = HANDOFF_STAGES.indexOf(handoff.stage);
+  if (currentIndex === -1 || currentIndex >= HANDOFF_STAGES.length - 1) {
+    return res.status(400).json({
+      error: 'Handoff is already at the final stage or in an unknown state',
+      currentStage: handoff.stage
+    });
+  }
+
+  const nextStage = HANDOFF_STAGES[currentIndex + 1];
+
+  const { data: updated, error } = await supabase
+    .from('design_handoffs')
+    .update({ stage: nextStage })
+    .eq('id', handoffId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Notify all participants of advancement
+  const notifyUsers = [handoff.designer_id, handoff.fabricator_id, handoff.contractor_id, project?.user_id]
+    .filter(id => id && id !== req.user.id);
+
+  const uniqueUsers = [...new Set(notifyUsers)];
+
+  // Use specific notification types for key stages
+  let notificationType = 'design_handoff_stage_change';
+  if (nextStage === 'fabrication_quote_received') notificationType = 'fabrication_quote_ready';
+  if (nextStage === 'install_scheduled') notificationType = 'install_scheduled';
+  if (nextStage === 'final_review') notificationType = 'handoff_review_requested';
+
+  for (const userId of uniqueUsers) {
+    await createCollaborationNotification(
+      userId,
+      notificationType,
+      'Handoff Advanced',
+      `"${handoff.title}" advanced to ${nextStage.replace(/_/g, ' ')}`,
+      { handoffId, fromStage: handoff.stage, toStage: nextStage, projectId: handoff.project_id }
+    );
+  }
+
+  // If final review, also send handoff_completed to designer
+  if (nextStage === 'final_review' && handoff.designer_id && handoff.designer_id !== req.user.id) {
+    await createCollaborationNotification(
+      handoff.designer_id,
+      'handoff_completed',
+      'Handoff Complete',
+      `Design handoff "${handoff.title}" has reached final review`,
+      { handoffId, projectId: handoff.project_id }
+    );
+  }
+
+  logger.info('Handoff advanced', { handoffId, fromStage: handoff.stage, toStage: nextStage });
+
+  res.json({
+    success: true,
+    handoff: updated,
+    previousStage: handoff.stage,
+    currentStage: nextStage
+  });
+}));
+
+// ============================================================
+// EMAIL-BASED INVITATION FLOW
+// ============================================================
+
+/**
+ * POST /api/collaboration/projects/:projectId/invite
+ * Invite a collaborator by email address
+ * - Existing user: creates collaborator record + sends accept email
+ * - New user: creates pending invitation + sends signup email
+ */
+router.post('/projects/:projectId/invite',
+  verifyProOrDesigner,
+  validateBody(schemas.inviteByEmail),
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const { email, role, access_level, notes } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Verify project exists and user is owner
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id, title')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only project owner can invite collaborators' });
+    }
+
+    // Cannot invite yourself
+    if (normalizedEmail === req.profile.email?.toLowerCase()) {
+      return res.status(400).json({ error: 'Cannot invite yourself as collaborator' });
+    }
+
+    // Check if user exists by email
+    const { data: existingUser } = await supabase
+      .from('sg_users')
+      .select('id, email, full_name')
+      .eq('email', normalizedEmail)
+      .single();
+
+    const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
+    const inviterName = req.profile.full_name || req.profile.email || 'A Surprise Granite Pro';
+
+    if (existingUser) {
+      // --- EXISTING USER FLOW ---
+      const { data: existing } = await supabase
+        .from('project_collaborators')
+        .select('id, invitation_status')
+        .eq('project_id', projectId)
+        .eq('user_id', existingUser.id)
+        .single();
+
+      if (existing && existing.invitation_status !== 'removed' && existing.invitation_status !== 'declined') {
+        return res.status(400).json({ error: 'User already invited to this project' });
+      }
+
+      let collaborator;
+      if (existing) {
+        const { data, error } = await supabase
+          .from('project_collaborators')
+          .update({
+            role,
+            access_level,
+            notes: notes || null,
+            invitation_status: 'pending',
+            invited_by: req.user.id,
+            invited_at: new Date().toISOString(),
+            removed_at: null,
+            accepted_at: null
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        collaborator = data;
+      } else {
+        const { data, error } = await supabase
+          .from('project_collaborators')
+          .insert({
+            project_id: projectId,
+            user_id: existingUser.id,
+            role,
+            access_level,
+            notes: notes || null,
+            invited_by: req.user.id
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        collaborator = data;
+      }
+
+      // Generate token for email accept link
+      const { rawToken, tokenHash } = generateInvitationToken();
+
+      await supabase
+        .from('pending_email_invitations')
+        .insert({
+          project_id: projectId,
+          email: normalizedEmail,
+          role,
+          access_level,
+          notes: notes || null,
+          token_hash: tokenHash,
+          token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          invited_by: req.user.id,
+          metadata: { user_id: existingUser.id, collaborator_id: collaborator.id }
+        });
+
+      // Send branded accept email
+      const acceptUrl = `${SITE_URL}/account/?accept_invite=${rawToken}`;
+      const emailContent = generateCollaborationInviteEmail({
+        inviterName,
+        projectTitle: project.title,
+        role,
+        isExistingUser: true,
+        acceptUrl
+      });
+
+      await emailService.sendNotification(normalizedEmail, emailContent.subject, emailContent.html);
+
+      // In-app notification
+      await createCollaborationNotification(
+        existingUser.id,
+        'collaborator_invited',
+        'Project Collaboration Invite',
+        `${inviterName} invited you as a ${role} on project "${project.title || 'Untitled'}"`,
+        { projectId, role, access_level, invited_by: req.user.id }
+      );
+
+      logger.info('Collaborator invited by email (existing user)', {
+        projectId, email: normalizedEmail, role
+      });
+
+      res.json({
+        success: true,
+        collaborator,
+        inviteType: 'existing_user',
+        message: `Invitation sent to ${normalizedEmail}`
+      });
+
+    } else {
+      // --- NEW USER FLOW ---
+      const { data: existingInvite } = await supabase
+        .from('pending_email_invitations')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('email', normalizedEmail)
+        .eq('status', 'pending')
+        .single();
+
+      if (existingInvite) {
+        return res.status(400).json({ error: 'An invitation is already pending for this email' });
+      }
+
+      const { rawToken, tokenHash } = generateInvitationToken();
+
+      const { data: invitation, error } = await supabase
+        .from('pending_email_invitations')
+        .insert({
+          project_id: projectId,
+          email: normalizedEmail,
+          role,
+          access_level,
+          notes: notes || null,
+          token_hash: tokenHash,
+          token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          invited_by: req.user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Send signup + invite email
+      const signupUrl = `${SITE_URL}/sign-up/?invite=${rawToken}`;
+      const emailContent = generateCollaborationInviteEmail({
+        inviterName,
+        projectTitle: project.title,
+        role,
+        isExistingUser: false,
+        acceptUrl: signupUrl
+      });
+
+      await emailService.sendNotification(normalizedEmail, emailContent.subject, emailContent.html);
+
+      logger.info('Collaborator invited by email (new user)', {
+        projectId, email: normalizedEmail, role, invitationId: invitation.id
+      });
+
+      res.json({
+        success: true,
+        invitation: { id: invitation.id, email: normalizedEmail, role, status: 'pending' },
+        inviteType: 'new_user',
+        message: `Invitation sent to ${normalizedEmail}. They will need to create an account.`
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/collaboration/invite/accept
+ * Accept an invitation via token (requires authentication)
+ */
+router.post('/invite/accept',
+  verifyProOrDesigner,
+  validateBody(schemas.acceptInvitation),
+  asyncHandler(async (req, res) => {
+    const { token } = req.body;
+    const tokenHash = hashToken(token);
+
+    const { data: invitation } = await supabase
+      .from('pending_email_invitations')
+      .select('*')
+      .eq('token_hash', tokenHash)
+      .eq('status', 'pending')
+      .single();
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invalid or expired invitation token' });
+    }
+
+    if (new Date(invitation.token_expires_at) < new Date()) {
+      await supabase
+        .from('pending_email_invitations')
+        .update({ status: 'expired' })
+        .eq('id', invitation.id);
+
+      return res.status(400).json({ error: 'This invitation has expired' });
+    }
+
+    // Verify email matches the authenticated user
+    const userEmail = req.profile.email?.toLowerCase();
+    if (userEmail !== invitation.email.toLowerCase()) {
+      return res.status(403).json({
+        error: 'This invitation was sent to a different email address'
+      });
+    }
+
+    // Create or update collaborator record
+    const { data: existing } = await supabase
+      .from('project_collaborators')
+      .select('id')
+      .eq('project_id', invitation.project_id)
+      .eq('user_id', req.user.id)
+      .single();
+
+    let collaborator;
+    if (existing) {
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .update({
+          invitation_status: 'accepted',
+          accepted_at: new Date().toISOString(),
+          role: invitation.role,
+          access_level: invitation.access_level
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    } else {
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .insert({
+          project_id: invitation.project_id,
+          user_id: req.user.id,
+          role: invitation.role,
+          access_level: invitation.access_level,
+          notes: invitation.notes,
+          invited_by: invitation.invited_by,
+          invitation_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    }
+
+    // Mark invitation as accepted
+    await supabase
+      .from('pending_email_invitations')
+      .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+      .eq('id', invitation.id);
+
+    // Notify the inviter
+    await createCollaborationNotification(
+      invitation.invited_by,
+      'collaborator_accepted',
+      'Collaboration Accepted',
+      `${req.profile.full_name || req.profile.email} accepted your invitation`,
+      { projectId: invitation.project_id, collaboratorId: collaborator.id, role: invitation.role }
+    );
+
+    logger.info('Invitation accepted via token', {
+      invitationId: invitation.id,
+      projectId: invitation.project_id,
+      userId: req.user.id
+    });
+
+    res.json({
+      success: true,
+      collaborator,
+      projectId: invitation.project_id,
+      message: 'Invitation accepted successfully'
+    });
+  })
+);
+
+/**
+ * GET /api/collaboration/invite/verify/:token
+ * Verify an invitation token (public - no auth required)
+ * Used by frontend to show invitation details before login/signup
+ */
+router.get('/invite/verify/:token', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { token } = req.params;
+
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'Invalid token format' });
+  }
+
+  const tokenHash = hashToken(token);
+
+  const { data: invitation } = await supabase
+    .from('pending_email_invitations')
+    .select('id, project_id, email, role, access_level, status, token_expires_at, invited_by')
+    .eq('token_hash', tokenHash)
+    .single();
+
+  if (!invitation) {
+    return res.status(404).json({ error: 'Invitation not found' });
+  }
+
+  if (invitation.status !== 'pending') {
+    return res.status(400).json({ error: 'This invitation has already been ' + invitation.status });
+  }
+
+  if (new Date(invitation.token_expires_at) < new Date()) {
+    return res.status(400).json({ error: 'This invitation has expired' });
+  }
+
+  // Get project title and inviter name for display
+  const { data: project } = await supabase
+    .from('projects')
+    .select('title')
+    .eq('id', invitation.project_id)
+    .single();
+
+  const { data: inviter } = await supabase
+    .from('sg_users')
+    .select('full_name, email')
+    .eq('id', invitation.invited_by)
+    .single();
+
+  // Check if user already has an account
+  const { data: existingUser } = await supabase
+    .from('sg_users')
+    .select('id')
+    .eq('email', invitation.email.toLowerCase())
+    .single();
+
+  res.json({
+    success: true,
+    invitation: {
+      email: invitation.email,
+      role: invitation.role,
+      access_level: invitation.access_level,
+      projectTitle: project?.title || 'Untitled Project',
+      inviterName: inviter?.full_name || inviter?.email || 'A team member',
+      hasAccount: !!existingUser,
+      expiresAt: invitation.token_expires_at
+    }
+  });
+}));
+
+/**
+ * POST /api/collaboration/invite/claim
+ * Claim all pending invitations for the authenticated user's email
+ * Called after signup or login
+ */
+router.post('/invite/claim', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const userEmail = req.profile.email?.toLowerCase();
+
+  if (!userEmail) {
+    return res.status(400).json({ error: 'User email not found in profile' });
+  }
+
+  // Try RPC function first
+  const { data, error } = await supabase
+    .rpc('claim_pending_invitations', {
+      p_user_id: req.user.id,
+      p_email: userEmail
+    });
+
+  if (error) {
+    // Fallback: claim manually
+    logger.warn('RPC claim_pending_invitations failed, using fallback', { error: error.message });
+
+    const { data: pendingInvites } = await supabase
+      .from('pending_email_invitations')
+      .select('*')
+      .eq('email', userEmail)
+      .eq('status', 'pending')
+      .gt('token_expires_at', new Date().toISOString());
+
+    let claimedCount = 0;
+    for (const inv of (pendingInvites || [])) {
+      const { error: insertError } = await supabase
+        .from('project_collaborators')
+        .upsert({
+          project_id: inv.project_id,
+          user_id: req.user.id,
+          role: inv.role,
+          access_level: inv.access_level,
+          notes: inv.notes,
+          invited_by: inv.invited_by,
+          invitation_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        }, { onConflict: 'project_id,user_id' });
+
+      if (!insertError) {
+        await supabase
+          .from('pending_email_invitations')
+          .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+          .eq('id', inv.id);
+
+        await createCollaborationNotification(
+          inv.invited_by,
+          'collaborator_accepted',
+          'Collaboration Accepted',
+          `${req.profile.full_name || userEmail} accepted your invitation`,
+          { projectId: inv.project_id, role: inv.role }
+        );
+
+        claimedCount++;
+      }
+    }
+
+    logger.info('Pending invitations claimed (fallback)', { userId: req.user.id, claimedCount });
+    return res.json({ success: true, claimedCount });
+  }
+
+  const claimedCount = data || 0;
+
+  logger.info('Pending invitations claimed', { userId: req.user.id, email: userEmail, claimedCount });
+
+  res.json({ success: true, claimedCount });
+}));
+
+/**
+ * GET /api/collaboration/projects/:projectId/pending-invitations
+ * List pending email invitations for a project (owner only)
+ */
+router.get('/projects/:projectId/pending-invitations',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only project owner can view pending invitations' });
+    }
+
+    const { data: invitations, error } = await supabase
+      .from('pending_email_invitations')
+      .select('id, email, role, access_level, status, created_at, token_expires_at')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, invitations: invitations || [] });
+  })
+);
+
+/**
+ * DELETE /api/collaboration/projects/:projectId/pending-invitations/:invitationId
+ * Cancel a pending email invitation
+ */
+router.delete('/projects/:projectId/pending-invitations/:invitationId',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { projectId, invitationId } = req.params;
+
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project || (project.user_id !== req.user.id && req.profile.role !== 'super_admin')) {
+      return res.status(403).json({ error: 'Only project owner can cancel invitations' });
+    }
+
+    const { error } = await supabase
+      .from('pending_email_invitations')
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+      .eq('id', invitationId)
+      .eq('project_id', projectId)
+      .eq('status', 'pending');
+
+    if (error) throw error;
+
+    logger.info('Pending invitation cancelled', { projectId, invitationId });
+
+    res.json({ success: true });
+  })
+);
+
+module.exports = router;
