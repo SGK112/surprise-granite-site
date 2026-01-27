@@ -17575,7 +17575,7 @@
         const { data: messages } = await supabaseClient
           .from('customer_messages')
           .select('*')
-          .eq('customer_id', leadId)
+          .eq('lead_id', leadId)
           .order('created_at', { ascending: true });
 
         if (!messages || messages.length === 0) {
@@ -17646,7 +17646,7 @@
         const { data, error } = await supabaseClient
           .from('customer_messages')
           .insert({
-            customer_id: selectedLead.id,
+            lead_id: selectedLead.id,
             sender_id: user?.id || null,
             direction: 'outbound',
             channel: 'portal',
