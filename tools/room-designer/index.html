@@ -43371,17 +43371,36 @@
       const needsFullRebuild = forceFullRebuild3D || dirtyElements3D.size === 0;
 
       if (needsFullRebuild) {
-        // Clear non-lights and non-room-structure elements
-        scene.children = scene.children.filter(c =>
-          c.type.includes('Light') || c.userData?.isRoomStructure
-        );
-
-        // Clear mesh cache for full rebuild
-        meshCache3D.forEach((cached, id) => {
-          if (cached && cached.group && scene) {
-            scene.remove(cached.group);
+        // Properly remove all non-light, non-room-structure children using Three.js API
+        // Direct array assignment (scene.children = ...) bypasses parent tracking and causes ghost objects
+        const toRemove = [];
+        scene.children.forEach(c => {
+          if (!c.type.includes('Light') && !c.userData?.isRoomStructure) {
+            toRemove.push(c);
           }
         });
+        toRemove.forEach(c => {
+          scene.remove(c);
+          // Dispose geometry/materials to free GPU memory
+          if (c.traverse) {
+            c.traverse(obj => {
+              if (obj.geometry) obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                  obj.material.forEach(m => {
+                    if (m.map) m.map.dispose();
+                    m.dispose();
+                  });
+                } else {
+                  if (obj.material.map) obj.material.map.dispose();
+                  obj.material.dispose();
+                }
+              }
+            });
+          }
+        });
+
+        // Clear mesh cache for full rebuild
         meshCache3D.clear();
       }
 
@@ -43677,6 +43696,11 @@
           group.rotation.y = -(el.rotation || 0) * Math.PI / 180;
         }
 
+        // Clamp positions to room boundaries (prevent ghost elements outside room)
+        xPos = Math.max(0, Math.min(xPos, roomWidth));
+        zPos = Math.max(0, Math.min(zPos, roomDepth));
+        yPos = Math.max(0, yPos);
+
         group.position.set(xPos, yPos, zPos);
 
         // Store element data for tooltips
@@ -43733,6 +43757,9 @@
           wallMesh.position.set(xPos, yPos, zPos);
           wallMesh.castShadow = true;
           wallMesh.receiveShadow = true;
+
+          // Tag as custom wall (so full rebuild cleanup removes it properly)
+          wallMesh.userData.isCustomWall = true;
 
           // Store wall data for tooltips
           wallMesh.userData.elementData = {
