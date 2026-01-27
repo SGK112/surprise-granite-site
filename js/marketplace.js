@@ -291,9 +291,9 @@
     showLoading(true);
 
     try {
-      // Fetch from stone_listings table with seller info from sg_users
+      // Fetch from stone_listings table (no FK join to sg_users)
       const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/stone_listings?status=eq.active&select=*,seller:sg_users(id,full_name,company_name,phone,email)&order=created_at.desc`,
+        `${SUPABASE_URL}/rest/v1/stone_listings?status=eq.active&select=*&order=created_at.desc`,
         {
           headers: {
             'apikey': SUPABASE_ANON_KEY,

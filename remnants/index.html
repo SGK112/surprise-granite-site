@@ -992,10 +992,7 @@
       try {
         const { data: listings, error } = await supabaseClient
           .from('stone_listings')
-          .select(`
-            *,
-            sg_users(full_name, account_type, email, phone)
-          `)
+          .select('*')
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 

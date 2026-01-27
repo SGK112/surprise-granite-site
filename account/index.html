@@ -17491,6 +17491,8 @@
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    function openLeadModal(id) { viewLead(id); }
+
     async function viewLead(id) {
       selectedLead = allLeads.find(l => l.id === id);
       if (!selectedLead) return;
@@ -20529,6 +20531,7 @@
 
     // ============ INVOICE MANAGEMENT ============
     const API_URL = 'https://surprise-granite-email-api.onrender.com';
+    const API_BASE = API_URL;
 
     // Reusable API call helper - auto-includes Supabase JWT auth token
     async function apiCall(endpoint, options = {}) {
@@ -29115,17 +29118,21 @@
         const { data: distributors, count: distCount } = await supabaseClient.from('distributor_profiles').select('*', { count: 'exact' });
         document.getElementById('god-mp-distributors').textContent = distCount || 0;
 
-        // Load listings count
-        const { count: listingsCount } = await supabaseClient.from('marketplace_listings').select('*', { count: 'exact', head: true }).eq('status', 'active');
+        // Load listings count (stone_listings is the active table)
+        const { count: listingsCount } = await supabaseClient.from('stone_listings').select('*', { count: 'exact', head: true }).eq('status', 'active');
         document.getElementById('god-mp-listings').textContent = listingsCount || 0;
 
-        // Load slabs count
-        const { count: slabsCount } = await supabaseClient.from('distributor_inventory').select('*', { count: 'exact', head: true });
+        // Load slabs count (use stone_listings as inventory source)
+        const { count: slabsCount } = await supabaseClient.from('stone_listings').select('*', { count: 'exact', head: true });
         document.getElementById('god-mp-slabs').textContent = slabsCount || 0;
 
-        // Load inquiries
-        const { count: inquiriesCount } = await supabaseClient.from('marketplace_inquiries').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-        document.getElementById('god-mp-inquiries').textContent = inquiriesCount || 0;
+        // Load inquiries (use listing_inquiries if it exists)
+        let inquiriesCount = 0;
+        try {
+          const { count } = await supabaseClient.from('listing_inquiries').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+          inquiriesCount = count || 0;
+        } catch { /* table may not exist yet */ }
+        document.getElementById('god-mp-inquiries').textContent = inquiriesCount;
 
         // Render distributors list
         const distList = document.getElementById('god-distributors-list');
