@@ -14022,15 +14022,15 @@
         { type: 'sink', width: 2.75, height: 1.83, color: '#C0C0C0', label: 'Single Sink', mountType: 'undermount' },
         { type: 'sink-double', width: 3, height: 1.83, color: '#C0C0C0', label: 'Double Sink', mountType: 'undermount' },
         { type: 'sink-farmhouse', width: 2.5, height: 1.75, color: '#F5F5DC', label: 'Farmhouse Sink', mountType: 'farmhouse' },
-        { type: 'stove', width: 2.5, height: 2.5, color: '#2F2F2F', label: 'Freestanding Range' },
-        { type: 'slide-in-range', width: 2.5, height: 2, color: '#2F2F2F', label: 'Slide-In Range' },
+        { type: 'stove', width: 2.5, height: 2.17, color: '#2F2F2F', label: 'Freestanding Range' },
+        { type: 'slide-in-range', width: 2.5, height: 2.17, color: '#2F2F2F', label: 'Slide-In Range' },
         { type: 'cooktop', width: 2.5, height: 1.75, color: '#1a1a1a', label: 'Cooktop' },
-        { type: 'refrigerator', width: 3, height: 3, color: '#A9A9A9', label: 'Refrigerator' },
+        { type: 'refrigerator', width: 3, height: 2.5, color: '#A9A9A9', label: 'Refrigerator' },
         { type: 'dishwasher', width: 2, height: 2, color: '#808080', label: 'Dishwasher' },
-        { type: 'microwave', width: 2, height: 1.5, color: '#4a4a4a', label: 'Microwave' },
-        { type: 'range-hood', width: 2.5, height: 1.5, color: '#696969', label: 'Range Hood' },
-        { type: 'oven', width: 2.5, height: 2.5, color: '#3a3a3a', label: 'Wall Oven' },
-        { type: 'wall-oven-double', width: 2.5, height: 2.5, color: '#3a3a3a', label: 'Double Wall Oven' }
+        { type: 'microwave', width: 2.5, height: 1.33, color: '#4a4a4a', label: 'Microwave' },
+        { type: 'range-hood', width: 2.5, height: 1.67, color: '#696969', label: 'Range Hood' },
+        { type: 'oven', width: 2.5, height: 2.08, color: '#3a3a3a', label: 'Wall Oven' },
+        { type: 'wall-oven-double', width: 2.5, height: 2.08, color: '#3a3a3a', label: 'Double Wall Oven' }
       ],
       structure: [
         // Doors & Entryways
@@ -15781,9 +15781,6 @@
 
     // Element locking (simple grouping)
     let nextGroupId = 1;
-
-    // Multi-selection for shift+click linking
-    let multiSelectedElements = new Set(); // Set of element IDs
 
     // Element cycling state - for cycling through overlapping elements
     let lastClickPos = { x: 0, y: 0 };
@@ -23250,44 +23247,66 @@
       });
 
       sortedElements.forEach(el => {
-        const isMultiSelected = multiSelectedElements.has(el.id);
-        drawElement(el, el === selectedElement || isMultiSelected, isMultiSelected);
+        drawElement(el, el === selectedElement);
       });
 
-      // Draw connection lines between multi-selected elements
-      if (multiSelectedElements.size >= 2) {
-        const multiEls = [...multiSelectedElements]
+      // Draw link mode overlay: highlight pending elements and connection lines
+      if (lockMode && lockPendingElements.size > 0) {
+        const pendingEls = [...lockPendingElements]
           .map(id => elements.find(e => e.id === id))
           .filter(Boolean);
 
-        if (multiEls.length >= 2) {
+        // Draw highlight border on each pending element
+        pendingEls.forEach(el => {
+          const px = el.x;
+          const py = el.y;
+          const pw = el.width * pixelsPerFoot;
+          const ph = el.height * pixelsPerFoot;
+
           ctx.save();
-          ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)';
+          ctx.translate(px + pw/2, py + ph/2);
+          ctx.rotate((el.rotation || 0) * Math.PI / 180);
+          ctx.translate(-(px + pw/2), -(py + ph/2));
+
+          // Cyan dashed border
+          ctx.strokeStyle = '#22d3ee';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 4]);
+          ctx.strokeRect(px, py, pw, ph);
+          ctx.setLineDash([]);
+
+          // Number badge in top-left corner
+          const idx = pendingEls.indexOf(el) + 1;
+          const badgeSize = 18;
+          ctx.fillStyle = 'rgba(34, 211, 238, 0.9)';
+          ctx.beginPath();
+          ctx.arc(px + badgeSize/2 + 4, py + badgeSize/2 + 4, badgeSize/2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 11px Inter';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(idx), px + badgeSize/2 + 4, py + badgeSize/2 + 8);
+
+          ctx.restore();
+        });
+
+        // Draw connection lines between pending elements
+        if (pendingEls.length >= 2) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)';
           ctx.lineWidth = 2;
           ctx.setLineDash([6, 4]);
 
-          // Draw lines connecting consecutive multi-selected elements
-          for (let i = 0; i < multiEls.length - 1; i++) {
-            const a = multiEls[i];
-            const b = multiEls[i + 1];
+          for (let i = 0; i < pendingEls.length - 1; i++) {
+            const a = pendingEls[i];
+            const b = pendingEls[i + 1];
             const ax = a.x + (a.width * pixelsPerFoot) / 2;
             const ay = a.y + (a.height * pixelsPerFoot) / 2;
             const bx = b.x + (b.width * pixelsPerFoot) / 2;
             const by = b.y + (b.height * pixelsPerFoot) / 2;
-
             ctx.beginPath();
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
-            ctx.stroke();
-          }
-
-          // Close the chain: connect last to first
-          if (multiEls.length > 2) {
-            const first = multiEls[0];
-            const last = multiEls[multiEls.length - 1];
-            ctx.beginPath();
-            ctx.moveTo(first.x + (first.width * pixelsPerFoot) / 2, first.y + (first.height * pixelsPerFoot) / 2);
-            ctx.lineTo(last.x + (last.width * pixelsPerFoot) / 2, last.y + (last.height * pixelsPerFoot) / 2);
             ctx.stroke();
           }
 
@@ -23366,7 +23385,7 @@
       }
     }
 
-    function drawElement(el, isSelected, isMultiSelected = false) {
+    function drawElement(el, isSelected) {
       const x = el.x;
       const y = el.y;
       const w = el.width * pixelsPerFoot;
@@ -23433,25 +23452,15 @@
       const isLocked = el.groupId !== undefined;
 
       if (!isLOrUShape) {
-        if (isMultiSelected) {
-          // Multi-selected elements: cyan dashed border to distinguish from primary selection
-          ctx.strokeStyle = '#22d3ee';
-          ctx.lineWidth = 3;
-          ctx.setLineDash([8, 4]);
-          ctx.strokeRect(x, y, w, h);
-          ctx.setLineDash([]);
-        } else {
-          ctx.strokeStyle = isSelected ? '#6366f1' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
-          ctx.lineWidth = isSelected ? 3 : 1.5;
-          ctx.strokeRect(x, y, w, h);
-        }
+        ctx.strokeStyle = isSelected ? '#6366f1' : (isLocked ? 'rgba(99, 102, 241, 0.5)' : 'rgba(255,255,255,0.3)');
+        ctx.lineWidth = isSelected ? 3 : 1.5;
+        ctx.strokeRect(x, y, w, h);
       } else if (isSelected) {
         // Draw L-shape selection outline
         const armWidthFt = el.armWidth || 2.17;
         const armPx = armWidthFt * pixelsPerFoot;
-        ctx.strokeStyle = isMultiSelected ? '#22d3ee' : '#6366f1';
+        ctx.strokeStyle = '#6366f1';
         ctx.lineWidth = 3;
-        if (isMultiSelected) ctx.setLineDash([8, 4]);
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + w, y);
@@ -23461,18 +23470,10 @@
         ctx.lineTo(x, y + h);
         ctx.closePath();
         ctx.stroke();
-        if (isMultiSelected) ctx.setLineDash([]);
       }
 
-      // Multi-selection link indicator badge
-      if (isMultiSelected) {
-        ctx.fillStyle = 'rgba(34, 211, 238, 0.9)';
-        ctx.font = 'bold 11px Inter';
-        ctx.textAlign = 'left';
-        ctx.fillText('+ LINK', x + 4, y + 14);
-      }
-      // Small lock icon for locked/grouped elements (when not multi-selected)
-      else if (isLocked && !isSelected) {
+      // Small lock icon for locked/grouped elements
+      if (isLocked && !isSelected) {
         ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
         ctx.font = '10px sans-serif';
         ctx.fillText('\uD83D\uDD17', x + 4, y + 12);
@@ -23996,60 +23997,11 @@
           return;
         }
 
-        // If in lock mode, complete the lock with clicked element
-        if (lockMode && lockSourceElement) {
+        // If in lock mode, add/remove clicked element from pending link set
+        if (lockMode) {
           completeLock(clicked);
           return;
         }
-
-        // Shift+Click: Multi-selection for linking elements together
-        if (e.shiftKey) {
-          // Include current selectedElement as the anchor (only if different from clicked)
-          if (selectedElement && selectedElement !== clicked && !multiSelectedElements.has(selectedElement.id)) {
-            multiSelectedElements.add(selectedElement.id);
-          }
-
-          // Toggle clicked element in/out of multi-selection
-          if (multiSelectedElements.has(clicked.id)) {
-            multiSelectedElements.delete(clicked.id);
-            // Also remove its groupId if it was linked by this session
-            if (clicked.groupId) {
-              const groupId = clicked.groupId;
-              delete clicked.groupId;
-              // Clean up orphaned groups (only 1 member left)
-              const remaining = elements.filter(el => el.groupId === groupId);
-              if (remaining.length === 1) {
-                delete remaining[0].groupId;
-              }
-            }
-            // If we removed the selected element, pick another from the set
-            if (selectedElement === clicked) {
-              const remainingIds = [...multiSelectedElements];
-              selectedElement = remainingIds.length > 0
-                ? elements.find(el => el.id === remainingIds[remainingIds.length - 1])
-                : null;
-            }
-            if (multiSelectedElements.size > 0) {
-              showSnapFeedback(`Removed from selection (${multiSelectedElements.size} remaining)`);
-            }
-          } else {
-            multiSelectedElements.add(clicked.id);
-            selectedElement = clicked;
-          }
-
-          // Auto-link all multi-selected elements when 2+
-          if (multiSelectedElements.size >= 2) {
-            linkMultiSelectedElements();
-          }
-
-          updateLockUI();
-          updateProperties();
-          draw();
-          return; // Don't start dragging on shift+click
-        }
-
-        // Normal click (no shift) - clear multi-selection
-        multiSelectedElements.clear();
 
         selectedElement = clicked;
         updateLockUI();
@@ -24062,8 +24014,10 @@
         updateProperties();
       } else {
         selectedElement = null;
-        multiSelectedElements.clear(); // Clear multi-selection on empty space click
-        cancelLockMode(); // Cancel lock mode if clicking empty space
+        // Clicking empty space: finalize link if 2+ elements, otherwise cancel
+        if (lockMode) {
+          finalizeLockMode();
+        }
         cycleIndex = 0;
         updateProperties();
       }
@@ -24813,8 +24767,6 @@
         case 'delete':
         case 'backspace':
           if (selectedElement && !selectedElement.locked) {
-            // Remove deleted element from multi-selection if present
-            multiSelectedElements.delete(selectedElement.id);
             elements = elements.filter(el => el !== selectedElement);
             selectedElement = null;
             updateProperties();
@@ -24835,8 +24787,8 @@
           }
           break;
         case 'l':
-          // L key to start lock mode (when not in layout tool)
-          if (currentTool !== 'layout' && selectedElement) {
+          // L key to toggle link mode (when not in layout tool)
+          if (currentTool !== 'layout') {
             lockElementsTogether();
           } else if (currentTool !== 'layout') {
             setTool('layout');
@@ -24863,12 +24815,10 @@
               btn.textContent = '✚ Click to Place';
             }
           }
-          // Cancel lock mode
+          // Finalize or cancel lock mode
           if (lockMode) {
-            cancelLockMode();
+            finalizeLockMode();
           }
-          // Clear multi-selection
-          multiSelectedElements.clear();
           // Cancel material selection
           if (selectedMaterial) {
             selectedMaterial = null;
@@ -25530,63 +25480,116 @@
       }
     }
 
-    // ===== ELEMENT LOCKING (Simple grouping) =====
+    // ===== ELEMENT LOCKING (Multi-element link mode) =====
 
     // Lock mode state
     let lockMode = false;
-    let lockSourceElement = null;
+    let lockPendingElements = new Set(); // Element IDs queued for linking
 
-    // Start lock mode - next clicked element will be locked with current selection
+    // Toggle lock mode - click elements to add them, press L again or Escape to finish
     function lockElementsTogether() {
-      if (!selectedElement) {
-        showToast('Select an element first', 'warning', 2000);
+      if (lockMode) {
+        // Already in lock mode - pressing L again finalizes the link
+        finalizeLockMode();
         return;
       }
 
       lockMode = true;
-      lockSourceElement = selectedElement;
+      lockPendingElements.clear();
+
+      // Seed with currently selected element if there is one
+      if (selectedElement) {
+        lockPendingElements.add(selectedElement.id);
+      }
 
       const btn = document.getElementById('lockTogetherBtn');
       if (btn) {
-        btn.style.background = 'rgba(99, 102, 241, 0.8)';
+        btn.style.background = 'rgba(34, 211, 238, 0.7)';
+        btn.title = 'Link mode active - press L again to finish';
+        btn.style.boxShadow = '0 0 12px rgba(34, 211, 238, 0.6)';
       }
 
-      showSnapFeedback('Click another element to lock together');
+      const count = lockPendingElements.size;
+      showSnapFeedback(`Link mode: click elements to add (${count} selected). Press L or Esc to finish.`);
+      draw();
     }
 
-    // Complete the lock - lock clicked element with source
+    // Handle a click on an element while in lock mode
     function completeLock(targetElement) {
-      if (!lockSourceElement || !targetElement || lockSourceElement === targetElement) {
-        cancelLockMode();
+      if (!targetElement) {
         return;
       }
 
-      // Use source's groupId or create new one
-      let groupId = lockSourceElement.groupId;
-      if (!groupId) {
-        groupId = 'group-' + nextGroupId++;
-        lockSourceElement.groupId = groupId;
+      // Toggle element in/out of the pending set
+      if (lockPendingElements.has(targetElement.id)) {
+        lockPendingElements.delete(targetElement.id);
+      } else {
+        lockPendingElements.add(targetElement.id);
       }
 
-      // Add target to the same group
-      targetElement.groupId = groupId;
-
-      saveUndoState();
-      cancelLockMode();
+      selectedElement = targetElement;
+      updateLockUI();
+      updateProperties();
       draw();
 
-      const groupSize = elements.filter(el => el.groupId === groupId).length;
-      showSnapFeedback(`Locked! ${groupSize} elements move together`);
+      const count = lockPendingElements.size;
+      if (count < 2) {
+        showSnapFeedback(`Link mode: ${count} element${count !== 1 ? 's' : ''} selected. Click more to add.`);
+      } else {
+        showSnapFeedback(`Link mode: ${count} elements selected. Press L or Esc to link.`);
+      }
     }
 
-    // Cancel lock mode
+    // Finalize: link all pending elements and exit lock mode
+    function finalizeLockMode() {
+      if (lockPendingElements.size >= 2) {
+        // Find existing groupId or create new one
+        let groupId = null;
+        for (const id of lockPendingElements) {
+          const el = elements.find(e => e.id === id);
+          if (el && el.groupId) {
+            groupId = el.groupId;
+            break;
+          }
+        }
+        if (!groupId) {
+          groupId = 'group-' + nextGroupId++;
+        }
+
+        // Assign all pending elements to the group
+        for (const id of lockPendingElements) {
+          const el = elements.find(e => e.id === id);
+          if (el) {
+            el.groupId = groupId;
+          }
+        }
+
+        saveUndoState();
+        const count = lockPendingElements.size;
+        showSnapFeedback(`Locked! ${count} elements now move together`);
+      } else if (lockPendingElements.size === 1) {
+        showSnapFeedback('Need 2+ elements to link. Lock mode cancelled.');
+      }
+
+      cancelLockMode();
+      draw();
+    }
+
+    // Cancel lock mode without linking
     function cancelLockMode() {
+      const wasActive = lockMode;
       lockMode = false;
-      lockSourceElement = null;
+      lockPendingElements.clear();
 
       const btn = document.getElementById('lockTogetherBtn');
       if (btn) {
         btn.style.background = 'rgba(99, 102, 241, 0.3)';
+        btn.title = 'Lock with another element';
+        btn.style.boxShadow = 'none';
+      }
+
+      if (wasActive) {
+        draw();
       }
     }
 
@@ -25613,37 +25616,6 @@
       updateLockUI();
       draw();
       showSnapFeedback('Element unlocked');
-    }
-
-    // Link all multi-selected elements with the same groupId (Shift+Click linking)
-    function linkMultiSelectedElements() {
-      if (multiSelectedElements.size < 2) return;
-
-      // Check if any selected element already has a groupId - reuse it
-      let groupId = null;
-      for (const id of multiSelectedElements) {
-        const el = elements.find(e => e.id === id);
-        if (el && el.groupId) {
-          groupId = el.groupId;
-          break;
-        }
-      }
-      if (!groupId) {
-        groupId = 'group-' + nextGroupId++;
-      }
-
-      // Assign all multi-selected elements to the same group
-      for (const id of multiSelectedElements) {
-        const el = elements.find(e => e.id === id);
-        if (el) {
-          el.groupId = groupId;
-        }
-      }
-
-      saveUndoState();
-
-      const count = multiSelectedElements.size;
-      showSnapFeedback(`${count} elements linked together`);
     }
 
     // Get all elements in the same group as the given element
@@ -25677,15 +25649,15 @@
       }
 
       // Update selection badge
-      if (selectionCount && selectedElement) {
-        if (multiSelectedElements.size > 1) {
-          selectionCount.textContent = multiSelectedElements.size;
+      if (selectionCount) {
+        if (lockMode && lockPendingElements.size > 0) {
+          selectionCount.textContent = lockPendingElements.size;
           selectionType.textContent = 'Linking';
-        } else if (selectedElement.groupId) {
+        } else if (selectedElement && selectedElement.groupId) {
           const groupSize = getGroupMembers(selectedElement).length;
           selectionCount.textContent = groupSize;
           selectionType.textContent = 'Locked';
-        } else {
+        } else if (selectedElement) {
           selectionCount.textContent = '1';
           selectionType.textContent = 'Selected';
         }
@@ -26676,7 +26648,6 @@
     function setTool(tool) {
       try {
         currentTool = tool;
-        multiSelectedElements.clear(); // Clear multi-selection on tool change
         document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
         const btn = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
         if (btn) btn.classList.add('active');
@@ -29606,6 +29577,59 @@
         'fireplace-surround': el?.surroundWidth || 0.67, // Surround width as height
         'niche-surround': el?.surroundWidth || 0.5, // Niche surround
 
+        // Bathroom fixtures
+        'toilet': 2.3,                  // 27.6" standard toilet (to top of tank)
+        'toilet-round': 2.3,            // 27.6" round bowl toilet
+        'toilet-wall': 1.5,             // 18" wall-hung (no tank visible)
+        'bidet': 1.3,                   // 15.6" bidet height
+        'bathtub': 1.5,                 // 18" standard alcove tub
+        'bathtub-freestanding': 2,      // 24" freestanding (higher sides)
+        'bathtub-corner': 1.5,          // 18" corner tub
+        'bathtub-walk-in': 3.2,         // 38.4" walk-in tub (tall sides)
+        'vanity-24': 2.7,              // 32.4" standard vanity height
+        'vanity-30': 2.7,
+        'vanity-36': 2.7,
+        'vanity-48': 2.7,
+        'vanity-60': 2.7,
+        'vanity-72': 2.7,
+        'shower-bench': 1.5,            // 18" bench seat height
+        'shower-glass': 6.5,            // 78" shower glass panel
+        'shower-door': 6.5,             // 78" shower door
+        'shower-base-36': 0.08,         // Same as shower pan
+        'shower-base-48': 0.08,
+        'shower-base-60': 0.08,
+        'mirror': 3,                    // 36" typical bathroom mirror
+        'medicine-cabinet': 2.5,        // 30" medicine cabinet
+        'towel-bar': 0.25,              // 3" bar diameter
+        'toilet-paper': 0.5,            // 6" holder
+
+        // Laundry elements
+        'washer': 3,                    // 36" front-load washer height
+        'dryer': 3,                     // 36" dryer height
+        'washer-dryer-stack': 6,        // 72" stacked unit
+        'utility-sink': 2.9,            // 34.8" utility sink on legs
+        'laundry-sink': 2.7,            // 32.4" laundry sink
+        'laundry-cabinet': 2.9,         // 34.8" same as base cabinet
+        'ironing-board': 3,             // 36" standing height
+        'drying-rack': 5,               // 60" drying rack
+
+        // Closet elements
+        'closet-rod': 0.1,              // 1.2" rod diameter
+        'closet-shelf': 0.08,           // ~1" shelf thickness
+        'closet-drawers': 2.5,          // 30" drawer stack
+        'drawer-unit': 2.5,             // 30" drawer unit
+        'shoe-rack': 2.5,               // 30" shoe rack
+        'closet-island': 3,             // 36" island with top
+        'jewelry-cabinet': 3,           // 36" standing jewelry cabinet
+        'jewelry-drawer': 0.5,          // 6" small drawer
+        'tie-rack': 2,                  // 24" tie/belt rack
+        'full-mirror': 5,               // 60" full-length mirror
+
+        // Trim & Molding
+        'crown-molding': 0.4,           // ~5" crown drop
+        'baseboard': 0.5,               // 6" baseboard height
+        'chair-rail': 0.25,             // 3" chair rail height
+
         // Work surfaces (countertop-like materials)
         'surface-stainless': 0.1,       // 1.2" stainless steel work surface
         'surface-solid': 0.1,           // 1.2" solid surface (Corian)
@@ -29808,8 +29832,10 @@
 
         case 'stove':
         case 'range':
+        case 'slide-in-range':
         case 'dishwasher':
         case 'oven':
+        case 'wall-oven-double':
           return height / 2; // These are floor-standing appliances
 
         case 'refrigerator':
@@ -30176,6 +30202,38 @@
         case 'shower-glass':
         case 'shower-door':
           return height / 2; // Floor standing (full height panels)
+
+        // Shower bases (same as shower-pan - floor level)
+        case 'shower-base-36':
+        case 'shower-base-48':
+        case 'shower-base-60':
+          return 0.025; // Just above floor plane
+
+        // Trim & Molding
+        case 'crown-molding': {
+          const ceilingH = roomHeight || 8;
+          return ceilingH - height / 2; // At ceiling level
+        }
+        case 'baseboard':
+          return height / 2; // At floor level
+
+        case 'chair-rail':
+          return 3 + height / 2; // ~36" from floor (standard chair rail height)
+
+        // Bathroom fixtures - floor standing
+        case 'toilet-round':
+        case 'toilet-wall':
+        case 'bidet':
+        case 'bathtub-corner':
+        case 'bathtub-walk-in':
+          return height / 2; // Floor standing
+
+        // Laundry elements - floor standing
+        case 'washer-dryer-stack':
+        case 'laundry-cabinet':
+        case 'laundry-sink':
+        case 'ironing-board':
+          return height / 2; // Floor standing
 
         case 'microwave-cabinet':
           // Wall-mounted microwave cabinet - bottom typically at counter height (~3ft)
@@ -30626,13 +30684,9 @@
     }
 
     // Configuration for which elements should use 2D-style 3D rendering
+    // All appliances now use detailed 3D rendering for HD quality
     const use2DStyleFor3D = {
-      // Sinks removed - use detailed 3D rendering for undermount/topmount toggle
-      'stove': true,
-      'range': true,
-      'cooktop': true,
-      'refrigerator': true,
-      'dishwasher': true
+      // All appliance types removed - use detailed 3D geometry instead of flat textures
     };
 
     // Preload textures for elements that have them
@@ -30687,13 +30741,10 @@
       // This provides cleaner visuals matching the 2D view
       if (use2DStyleFor3D[el.type] && !el.use3DDetailedRender) {
         const texturedGroup = create3DElementWith2DTexture(el, w, h, d);
-        // Position the group correctly
-        if (texturedGroup && texturedGroup.children) {
-          texturedGroup.children.forEach(child => {
-            child.position.y = h / 2; // Lift so bottom is at y=0
-          });
-        }
-        // Return in the expected { group, height } format
+        // Note: Do NOT add child.position.y = h/2 here.
+        // get3DYPosition already returns height/2 for floor-standing elements,
+        // which positions the mesh center correctly so the bottom sits at floor level.
+        // Adding an extra h/2 offset would cause double-offsetting (elements floating).
         return { group: texturedGroup || group, height: h };
       }
 
@@ -35834,11 +35885,15 @@
         case 'stove':
         case 'range':
         case 'cooktop': {
-          // Professional range/stove/cooktop
+          // High-detail professional range/stove/cooktop
+          const isCooktopOnly = (el.type === 'cooktop');
+
           const stoveMat = new THREE.MeshStandardMaterial({
             color: 0x2a2a2a,
-            roughness: 0.3,
-            metalness: 0.5
+            roughness: 0.25,
+            metalness: 0.55,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.6
           });
 
           // Main body
@@ -35848,24 +35903,26 @@
           );
           group.add(stoveBody);
 
-          // Cooktop surface (glass or steel)
+          // Cooktop surface (black glass)
           const cooktopMat = new THREE.MeshStandardMaterial({
-            color: 0x1a1a1a,
-            roughness: 0.1,
-            metalness: 0.4
+            color: 0x0a0a0a,
+            roughness: 0.05,
+            metalness: 0.3,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.8
           });
-          const cooktop = new THREE.Mesh(
-            new THREE.BoxGeometry(w - 0.08, 0.04, d - 0.15),
+          const cooktopSurface = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.06, 0.04, d - 0.1),
             cooktopMat
           );
-          cooktop.position.y = h/2 - 0.02;
-          group.add(cooktop);
+          cooktopSurface.position.y = h/2 - 0.02;
+          group.add(cooktopSurface);
 
-          // Burner grates
+          // Cast iron burner grates with cross-bar detail
           const grateMat = new THREE.MeshStandardMaterial({
             color: 0x1a1a1a,
-            roughness: 0.6,
-            metalness: 0.3
+            roughness: 0.7,
+            metalness: 0.25
           });
 
           const burnerLayout = [
@@ -35874,86 +35931,204 @@
           ];
 
           burnerLayout.forEach(([bx, bz]) => {
-            // Grate
+            // Grate frame
             const grate = new THREE.Mesh(
-              new THREE.BoxGeometry(0.5, 0.04, 0.5),
+              new THREE.BoxGeometry(0.48, 0.035, 0.48),
               grateMat
             );
-            grate.position.set(bx, h/2 + 0.02, bz);
+            grate.position.set(bx, h/2 + 0.018, bz);
             group.add(grate);
 
-            // Burner ring
+            // Grate cross bars (2 perpendicular bars for realism)
+            for (let barDir = 0; barDir < 2; barDir++) {
+              const bar = new THREE.Mesh(
+                new THREE.BoxGeometry(barDir === 0 ? 0.44 : 0.04, 0.03, barDir === 0 ? 0.04 : 0.44),
+                grateMat
+              );
+              bar.position.set(bx, h/2 + 0.025, bz);
+              group.add(bar);
+            }
+
+            // Burner ring (cast brass look)
             const ringMat = new THREE.MeshStandardMaterial({
-              color: 0x333333,
-              roughness: 0.5,
-              metalness: 0.4
+              color: 0x444444,
+              roughness: 0.4,
+              metalness: 0.5
             });
             const ring = new THREE.Mesh(
-              new THREE.TorusGeometry(0.15, 0.02, 8, 24),
+              new THREE.TorusGeometry(0.14, 0.018, 12, 32),
               ringMat
             );
             ring.rotation.x = Math.PI / 2;
-            ring.position.set(bx, h/2, bz);
+            ring.position.set(bx, h/2 - 0.005, bz);
             group.add(ring);
+
+            // Inner burner cap
+            const capMat = new THREE.MeshStandardMaterial({
+              color: 0x555555,
+              roughness: 0.3,
+              metalness: 0.6
+            });
+            const cap = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.06, 0.07, 0.025, 16),
+              capMat
+            );
+            cap.position.set(bx, h/2, bz);
+            group.add(cap);
           });
 
-          // Control knobs
-          const knobMat = new THREE.MeshStandardMaterial({
-            color: 0x3a3a3a,
-            roughness: 0.4,
-            metalness: 0.3
+          // Control knobs (polished metal with indicator lines)
+          const knobBaseMat = new THREE.MeshStandardMaterial({
+            color: 0x505050,
+            roughness: 0.2,
+            metalness: 0.6,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.8
           });
-          for (let i = 0; i < 5; i++) {
+          const knobAccentMat = new THREE.MeshStandardMaterial({
+            color: 0xE0E0E0,
+            roughness: 0.1,
+            metalness: 0.9
+          });
+
+          const knobCount = isCooktopOnly ? 4 : 5;
+          const knobSpacing = (w - 0.3) / (knobCount + 1);
+          for (let i = 0; i < knobCount; i++) {
+            // Knob body
             const knob = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16),
-              knobMat
+              new THREE.CylinderGeometry(0.04, 0.035, 0.035, 16),
+              knobBaseMat
             );
             knob.rotation.x = Math.PI / 2;
-            knob.position.set(-w/2 + 0.2 + i * 0.18, h/2 - 0.3, d/2 + 0.02);
+            const knobX = -w/2 + 0.15 + (i + 1) * knobSpacing;
+            knob.position.set(knobX, h/2 - 0.3, d/2 + 0.025);
             group.add(knob);
+
+            // Knob indicator dot
+            const indicator = new THREE.Mesh(
+              new THREE.CircleGeometry(0.008, 6),
+              knobAccentMat
+            );
+            indicator.position.set(knobX, h/2 - 0.275, d/2 + 0.045);
+            group.add(indicator);
           }
 
-          // Oven door
-          const ovenDoorMat = new THREE.MeshStandardMaterial({
-            color: 0x2a2a2a,
-            roughness: 0.25,
-            metalness: 0.45
-          });
-          const ovenDoor = new THREE.Mesh(
-            new THREE.BoxGeometry(w - 0.15, h * 0.5, 0.05),
-            ovenDoorMat
-          );
-          ovenDoor.position.set(0, -h * 0.15, d/2);
-          group.add(ovenDoor);
+          // Oven section (only for full stove/range, not cooktop)
+          if (!isCooktopOnly) {
+            // Oven door (brushed stainless)
+            const ovenDoorMat = new THREE.MeshStandardMaterial({
+              color: 0x353535,
+              roughness: 0.2,
+              metalness: 0.5,
+              envMap: window.roomEnvMap || null,
+              envMapIntensity: 0.6
+            });
+            const ovenDoor = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.12, h * 0.48, 0.04),
+              ovenDoorMat
+            );
+            ovenDoor.position.set(0, -h * 0.15, d/2 + 0.01);
+            group.add(ovenDoor);
 
-          // Oven window
-          const glassMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 0.05,
-            metalness: 0.1,
-            transparent: true,
-            opacity: 0.85
-          });
-          const ovenWindow = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.6, h * 0.35, 0.02),
-            glassMat
-          );
-          ovenWindow.position.set(0, -h * 0.15, d/2 + 0.04);
-          group.add(ovenWindow);
+            // Oven window (tempered glass, slightly reflective)
+            const glassMat = new THREE.MeshStandardMaterial({
+              color: 0x0a0a0a,
+              roughness: 0.02,
+              metalness: 0.15,
+              transparent: true,
+              opacity: 0.88,
+              envMap: window.roomEnvMap || null,
+              envMapIntensity: 0.6
+            });
+            const ovenWindow = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.55, h * 0.32, 0.015),
+              glassMat
+            );
+            ovenWindow.position.set(0, -h * 0.15, d/2 + 0.04);
+            group.add(ovenWindow);
 
-          // Oven handle
-          const handleMat = new THREE.MeshStandardMaterial({
-            color: 0xB0B0B0,
-            roughness: 0.15,
-            metalness: 0.85
-          });
-          const ovenHandle = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.02, 0.02, w * 0.7, 12),
-            handleMat
-          );
-          ovenHandle.rotation.z = Math.PI / 2;
-          ovenHandle.position.set(0, h * 0.12, d/2 + 0.08);
-          group.add(ovenHandle);
+            // Window frame (thin chrome border)
+            const frameMat = new THREE.MeshStandardMaterial({
+              color: 0x888888,
+              roughness: 0.1,
+              metalness: 0.85
+            });
+            // Top frame
+            const frameTop = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.58, 0.02, 0.01),
+              frameMat
+            );
+            frameTop.position.set(0, -h * 0.15 + h * 0.16 + 0.01, d/2 + 0.045);
+            group.add(frameTop);
+            // Bottom frame
+            const frameBottom = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.58, 0.02, 0.01),
+              frameMat
+            );
+            frameBottom.position.set(0, -h * 0.15 - h * 0.16 - 0.01, d/2 + 0.045);
+            group.add(frameBottom);
+
+            // Oven handle (professional towel-bar style)
+            const stoveHandleMat = new THREE.MeshStandardMaterial({
+              color: 0xC0C0C0,
+              roughness: 0.08,
+              metalness: 0.95,
+              envMap: window.roomEnvMap || null,
+              envMapIntensity: 1.6
+            });
+            const ovenHandle = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.02, 0.02, w * 0.65, 12),
+              stoveHandleMat
+            );
+            ovenHandle.rotation.z = Math.PI / 2;
+            ovenHandle.position.set(0, h * 0.12, d/2 + 0.09);
+            group.add(ovenHandle);
+            // Handle brackets
+            for (let hSide = -1; hSide <= 1; hSide += 2) {
+              const hBracket = new THREE.Mesh(
+                new THREE.BoxGeometry(0.03, 0.03, 0.05),
+                stoveHandleMat
+              );
+              hBracket.position.set(hSide * w * 0.28, h * 0.12, d/2 + 0.06);
+              group.add(hBracket);
+            }
+
+            // Broiler drawer at very bottom
+            const broilerMat = new THREE.MeshStandardMaterial({
+              color: 0x2e2e2e,
+              roughness: 0.3,
+              metalness: 0.45
+            });
+            const broilerDrawer = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.15, h * 0.1, 0.035),
+              broilerMat
+            );
+            broilerDrawer.position.set(0, -h * 0.44, d/2 + 0.01);
+            group.add(broilerDrawer);
+
+            // Broiler handle
+            const broilerHandle = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.012, 0.012, w * 0.4, 8),
+              stoveHandleMat
+            );
+            broilerHandle.rotation.z = Math.PI / 2;
+            broilerHandle.position.set(0, -h * 0.44, d/2 + 0.05);
+            group.add(broilerHandle);
+
+            // Brand badge
+            const stoveBadgeMat = new THREE.MeshStandardMaterial({
+              color: 0x999999,
+              roughness: 0.05,
+              metalness: 0.95
+            });
+            const stoveBadge = new THREE.Mesh(
+              new THREE.BoxGeometry(0.2, 0.04, 0.004),
+              stoveBadgeMat
+            );
+            stoveBadge.position.set(0, h * 0.05, d/2 + 0.04);
+            group.add(stoveBadge);
+          }
+
           break;
         }
 
@@ -36689,11 +36864,13 @@
         }
 
         case 'refrigerator': {
-          // French door refrigerator
+          // High-detail French door refrigerator (stainless steel)
           const fridgeMat = new THREE.MeshStandardMaterial({
-            color: 0xD5D5D5,
-            roughness: 0.25,
-            metalness: 0.55
+            color: 0xCCCCCC,
+            roughness: 0.18,
+            metalness: 0.65,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.9
           });
 
           // Main body
@@ -36703,114 +36880,342 @@
           );
           group.add(fridgeBody);
 
-          // Upper doors (French style - two doors)
+          // Side panels (slightly darker, visible texture difference)
+          const fridgeSideMat = new THREE.MeshStandardMaterial({
+            color: 0xB8B8B8,
+            roughness: 0.25,
+            metalness: 0.5
+          });
+          // Left side panel
+          const leftSidePanel = new THREE.Mesh(
+            new THREE.BoxGeometry(0.01, h - 0.08, d - 0.04),
+            fridgeSideMat
+          );
+          leftSidePanel.position.set(-w/2 + 0.005, 0, 0);
+          group.add(leftSidePanel);
+          // Right side panel
+          const rightSidePanel = new THREE.Mesh(
+            new THREE.BoxGeometry(0.01, h - 0.08, d - 0.04),
+            fridgeSideMat
+          );
+          rightSidePanel.position.set(w/2 - 0.005, 0, 0);
+          group.add(rightSidePanel);
+
+          // Upper doors (French style - two doors) with brushed stainless look
           const doorMat = new THREE.MeshStandardMaterial({
-            color: 0xE0E0E0,
-            roughness: 0.2,
-            metalness: 0.6
+            color: 0xDCDCDC,
+            roughness: 0.12,
+            metalness: 0.72,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.2
           });
 
-          const upperDoorH = h * 0.65;
-          const doorW = (w - 0.15) / 2;
+          const upperDoorH = h * 0.63;
+          const doorGap = 0.04; // Gap between doors
+          const doorW = (w - 0.12 - doorGap) / 2;
 
           // Left upper door
           const leftDoor = new THREE.Mesh(
-            new THREE.BoxGeometry(doorW, upperDoorH, 0.04),
+            new THREE.BoxGeometry(doorW, upperDoorH, 0.035),
             doorMat
           );
-          leftDoor.position.set(-doorW/2 - 0.02, h * 0.15, d/2 + 0.02);
+          leftDoor.position.set(-doorW/2 - doorGap/2, h * 0.15, d/2 + 0.018);
           group.add(leftDoor);
 
           // Right upper door
           const rightDoor = new THREE.Mesh(
-            new THREE.BoxGeometry(doorW, upperDoorH, 0.04),
+            new THREE.BoxGeometry(doorW, upperDoorH, 0.035),
             doorMat
           );
-          rightDoor.position.set(doorW/2 + 0.02, h * 0.15, d/2 + 0.02);
+          rightDoor.position.set(doorW/2 + doorGap/2, h * 0.15, d/2 + 0.018);
           group.add(rightDoor);
 
-          // Freezer drawer
-          const freezerDrawer = new THREE.Mesh(
-            new THREE.BoxGeometry(w - 0.12, h * 0.28, 0.04),
-            doorMat
+          // Door gap line (dark vertical line between French doors)
+          const gapLineMat = new THREE.MeshStandardMaterial({
+            color: 0x222222, roughness: 0.8
+          });
+          const doorGapLine = new THREE.Mesh(
+            new THREE.BoxGeometry(0.015, upperDoorH + 0.02, 0.005),
+            gapLineMat
           );
-          freezerDrawer.position.set(0, -h * 0.33, d/2 + 0.02);
+          doorGapLine.position.set(0, h * 0.15, d/2 + 0.038);
+          group.add(doorGapLine);
+
+          // Horizontal divider line between fridge and freezer
+          const dividerLine = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.08, 0.015, 0.005),
+            gapLineMat
+          );
+          dividerLine.position.set(0, -h * 0.17, d/2 + 0.038);
+          group.add(dividerLine);
+
+          // Freezer drawer
+          const freezerDrawerMat = new THREE.MeshStandardMaterial({
+            color: 0xD8D8D8,
+            roughness: 0.14,
+            metalness: 0.7,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.1
+          });
+          const freezerDrawer = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.12, h * 0.28, 0.035),
+            freezerDrawerMat
+          );
+          freezerDrawer.position.set(0, -h * 0.35, d/2 + 0.018);
           group.add(freezerDrawer);
 
-          // Handles
-          const handleMat = new THREE.MeshStandardMaterial({
-            color: 0xA0A0A0,
-            roughness: 0.15,
-            metalness: 0.9
+          // Professional handles (cylindrical bar style)
+          const fHandleMat = new THREE.MeshStandardMaterial({
+            color: 0xC0C0C0,
+            roughness: 0.08,
+            metalness: 0.95,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.8
           });
 
-          // Left handle
-          const leftHandle = new THREE.Mesh(
-            new THREE.BoxGeometry(0.04, 0.7, 0.06),
-            handleMat
+          // Left door handle (vertical bar)
+          const lHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.018, upperDoorH * 0.55, 12),
+            fHandleMat
           );
-          leftHandle.position.set(-0.08, h * 0.15, d/2 + 0.08);
-          group.add(leftHandle);
+          lHandle.position.set(-doorGap/2 - 0.06, h * 0.15, d/2 + 0.08);
+          group.add(lHandle);
+          // Left handle mounting brackets
+          for (let bOff = -1; bOff <= 1; bOff += 2) {
+            const bracket = new THREE.Mesh(
+              new THREE.BoxGeometry(0.03, 0.04, 0.04),
+              fHandleMat
+            );
+            bracket.position.set(-doorGap/2 - 0.06, h * 0.15 + bOff * upperDoorH * 0.22, d/2 + 0.055);
+            group.add(bracket);
+          }
 
-          // Right handle
-          const rightHandle = new THREE.Mesh(
-            new THREE.BoxGeometry(0.04, 0.7, 0.06),
-            handleMat
+          // Right door handle (vertical bar)
+          const rHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.018, upperDoorH * 0.55, 12),
+            fHandleMat
           );
-          rightHandle.position.set(0.08, h * 0.15, d/2 + 0.08);
-          group.add(rightHandle);
+          rHandle.position.set(doorGap/2 + 0.06, h * 0.15, d/2 + 0.08);
+          group.add(rHandle);
+          // Right handle mounting brackets
+          for (let bOff = -1; bOff <= 1; bOff += 2) {
+            const bracket = new THREE.Mesh(
+              new THREE.BoxGeometry(0.03, 0.04, 0.04),
+              fHandleMat
+            );
+            bracket.position.set(doorGap/2 + 0.06, h * 0.15 + bOff * upperDoorH * 0.22, d/2 + 0.055);
+            group.add(bracket);
+          }
 
-          // Freezer handle
-          const freezerHandle = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.6, 0.04, 0.06),
-            handleMat
+          // Freezer handle (horizontal bar)
+          const frzHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.018, w * 0.5, 12),
+            fHandleMat
           );
-          freezerHandle.position.set(0, -h * 0.2, d/2 + 0.08);
-          group.add(freezerHandle);
+          frzHandle.rotation.z = Math.PI / 2;
+          frzHandle.position.set(0, -h * 0.22, d/2 + 0.08);
+          group.add(frzHandle);
+          // Freezer handle brackets
+          for (let bSide = -1; bSide <= 1; bSide += 2) {
+            const frzBracket = new THREE.Mesh(
+              new THREE.BoxGeometry(0.04, 0.03, 0.04),
+              fHandleMat
+            );
+            frzBracket.position.set(bSide * w * 0.2, -h * 0.22, d/2 + 0.055);
+            group.add(frzBracket);
+          }
 
-          // Water/ice dispenser
-          const dispenserMat = new THREE.MeshStandardMaterial({
-            color: 0x2a2a2a,
-            roughness: 0.3
+          // Water/ice dispenser recess
+          const dispenserRecessMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            roughness: 0.4,
+            metalness: 0.3
           });
-          const dispenser = new THREE.Mesh(
-            new THREE.BoxGeometry(0.3, 0.25, 0.02),
-            dispenserMat
+          const dispenserRecess = new THREE.Mesh(
+            new THREE.BoxGeometry(0.35, 0.3, 0.04),
+            dispenserRecessMat
           );
-          dispenser.position.set(0, h * 0.25, d/2 + 0.05);
-          group.add(dispenser);
+          dispenserRecess.position.set(0, h * 0.22, d/2 + 0.02);
+          group.add(dispenserRecess);
+
+          // Dispenser paddle
+          const paddleMat = new THREE.MeshStandardMaterial({
+            color: 0x3a3a3a,
+            roughness: 0.5,
+            metalness: 0.2
+          });
+          const paddle = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, 0.08, 0.015),
+            paddleMat
+          );
+          paddle.position.set(0, h * 0.17, d/2 + 0.045);
+          group.add(paddle);
+
+          // Dispenser LED indicator
+          const fridgeLedMat = new THREE.MeshStandardMaterial({
+            color: 0x00ccff,
+            emissive: 0x0088cc,
+            emissiveIntensity: 0.2
+          });
+          const fridgeLed = new THREE.Mesh(
+            new THREE.CircleGeometry(0.015, 8),
+            fridgeLedMat
+          );
+          fridgeLed.position.set(0, h * 0.28, d/2 + 0.045);
+          group.add(fridgeLed);
+
+          // Top cap (slightly darker top panel)
+          const topCapMat = new THREE.MeshStandardMaterial({
+            color: 0xB0B0B0,
+            roughness: 0.3,
+            metalness: 0.5
+          });
+          const topCap = new THREE.Mesh(
+            new THREE.BoxGeometry(w + 0.02, 0.03, d + 0.02),
+            topCapMat
+          );
+          topCap.position.set(0, h/2 + 0.015, 0);
+          group.add(topCap);
+
+          // Toe kick grille (bottom ventilation)
+          const fridgeToeKickMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            roughness: 0.8
+          });
+          const fridgeToeKick = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.04, 0.12, 0.06),
+            fridgeToeKickMat
+          );
+          fridgeToeKick.position.set(0, -h/2 + 0.06, d/2 - 0.03);
+          group.add(fridgeToeKick);
+
+          // Brand badge
+          const fridgeBadgeMat = new THREE.MeshStandardMaterial({
+            color: 0xAAAAAA,
+            roughness: 0.05,
+            metalness: 0.98
+          });
+          const fridgeBadge = new THREE.Mesh(
+            new THREE.BoxGeometry(0.3, 0.05, 0.005),
+            fridgeBadgeMat
+          );
+          fridgeBadge.position.set(0, -h * 0.06, d/2 + 0.04);
+          group.add(fridgeBadge);
+
           break;
         }
 
         case 'dishwasher': {
-          // Built-in dishwasher
-          const dwMat = new THREE.MeshStandardMaterial({
-            color: 0xD0D0D0,
-            roughness: 0.25,
-            metalness: 0.55
+          // High-detail built-in dishwasher (stainless steel)
+          const dwBodyMat = new THREE.MeshStandardMaterial({
+            color: 0xC8C8C8,
+            roughness: 0.2,
+            metalness: 0.65,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 0.8
           });
 
+          // Main body (slightly inset from front face)
           const dwBody = new THREE.Mesh(
             new THREE.BoxGeometry(w, h, d),
-            dwMat
+            dwBodyMat
           );
           group.add(dwBody);
 
-          // Control panel
-          const dwPanel = new THREE.Mesh(
-            new THREE.BoxGeometry(w - 0.1, 0.25, 0.02),
-            new THREE.MeshStandardMaterial({ color: 0x404040 })
+          // Front door panel - slightly proud of body for depth
+          const dwDoorMat = new THREE.MeshStandardMaterial({
+            color: 0xD8D8D8,
+            roughness: 0.15,
+            metalness: 0.7,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.0
+          });
+          const dwDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.06, h - 0.35, 0.03),
+            dwDoorMat
           );
-          dwPanel.position.set(0, h/2 - 0.2, d/2 + 0.02);
+          dwDoor.position.set(0, -0.05, d/2 + 0.015);
+          group.add(dwDoor);
+
+          // Hidden top-mount control panel (recessed dark strip at top)
+          const dwPanelMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            roughness: 0.4,
+            metalness: 0.3
+          });
+          const dwPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.08, 0.18, 0.025),
+            dwPanelMat
+          );
+          dwPanel.position.set(0, h/2 - 0.15, d/2 + 0.02);
           group.add(dwPanel);
 
-          // Handle
-          const dwHandle = new THREE.Mesh(
-            new THREE.BoxGeometry(w - 0.4, 0.05, 0.08),
-            new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0.8 })
+          // Control panel indicator lights (small LED dots)
+          const dwLedMat = new THREE.MeshStandardMaterial({
+            color: 0x00aaff,
+            emissive: 0x0066cc,
+            emissiveIntensity: 0.3
+          });
+          for (let li = 0; li < 4; li++) {
+            const led = new THREE.Mesh(
+              new THREE.CircleGeometry(0.012, 8),
+              dwLedMat
+            );
+            led.position.set(-w/4 + li * 0.12, h/2 - 0.15, d/2 + 0.035);
+            group.add(led);
+          }
+
+          // Pocket handle (recessed bar handle at top of door)
+          const dwHandleMat = new THREE.MeshStandardMaterial({
+            color: 0xB0B0B0,
+            roughness: 0.1,
+            metalness: 0.92,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.5
+          });
+          // Handle bar
+          const dwHandleBar = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, w * 0.65, 12),
+            dwHandleMat
           );
-          dwHandle.position.set(0, h/2 - 0.45, d/2 + 0.06);
-          group.add(dwHandle);
+          dwHandleBar.rotation.z = Math.PI / 2;
+          dwHandleBar.position.set(0, h/2 - 0.38, d/2 + 0.07);
+          group.add(dwHandleBar);
+          // Handle end caps
+          for (let side = -1; side <= 1; side += 2) {
+            const endCap = new THREE.Mesh(
+              new THREE.SphereGeometry(0.022, 8, 8),
+              dwHandleMat
+            );
+            endCap.position.set(side * w * 0.325, h/2 - 0.38, d/2 + 0.07);
+            group.add(endCap);
+          }
+
+          // Brand badge (small metallic rectangle)
+          const dwBadgeMat = new THREE.MeshStandardMaterial({
+            color: 0x999999,
+            roughness: 0.08,
+            metalness: 0.95
+          });
+          const dwBadge = new THREE.Mesh(
+            new THREE.BoxGeometry(0.25, 0.06, 0.005),
+            dwBadgeMat
+          );
+          dwBadge.position.set(0, -h * 0.35, d/2 + 0.035);
+          group.add(dwBadge);
+
+          // Toe kick (dark recess at bottom)
+          const dwToeKickMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            roughness: 0.8
+          });
+          const dwToeKick = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.04, 0.08, 0.06),
+            dwToeKickMat
+          );
+          dwToeKick.position.set(0, -h/2 + 0.04, d/2 - 0.03);
+          group.add(dwToeKick);
+
           break;
         }
 
@@ -43118,8 +43523,17 @@
         const cabinetApplianceTypes = [
           'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
           'corner-cabinet', 'lazy-susan', 'fridge-cabinet',
-          'refrigerator', 'range', 'dishwasher', 'oven', 'microwave', 'range-hood',
-          'countertop'
+          'refrigerator', 'range', 'stove', 'slide-in-range', 'dishwasher',
+          'oven', 'wall-oven-double', 'microwave', 'range-hood', 'cooktop',
+          'sink', 'sink-double', 'sink-farmhouse',
+          'countertop',
+          // Bathroom elements that face into room
+          'toilet', 'toilet-round', 'toilet-wall', 'bidet',
+          'bathtub', 'bathtub-freestanding', 'bathtub-corner', 'bathtub-walk-in',
+          'vanity-24', 'vanity-30', 'vanity-36', 'vanity-48', 'vanity-60', 'vanity-72',
+          // Laundry elements that face into room
+          'washer', 'dryer', 'washer-dryer-stack', 'laundry-cabinet',
+          'utility-sink', 'laundry-sink'
         ];
         const isCabinetAppliance = cabinetApplianceTypes.includes(el.type);
 
@@ -44438,12 +44852,12 @@
           { type: 'base-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
           { type: 'countertop', x: 9.83, y: 1.88, width: 2.17, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'wall-cabinet', x: 10, y: 2, width: 1, height: 2, label: 'Upper', rotation: 90 },
-          { type: 'range', x: 10, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range', x: 10, y: 4, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 90 },
           { type: 'range-hood', x: 10, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 10, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 10, y: 8.5, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
-          { type: 'countertop', x: 9.83, y: 6.38, width: 2.17, height: 3.75, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'wall-cabinet', x: 10, y: 6.5, width: 1, height: 3.5, label: 'Uppers', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 6.17, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 8.17, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
+          { type: 'countertop', x: 9.83, y: 6.05, width: 2.17, height: 3.75, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'wall-cabinet', x: 10, y: 6.17, width: 1, height: 3.5, label: 'Uppers', rotation: 90 },
 
           // === BACKSPLASH ===
           { type: 'backsplash', x: 3, y: 0, width: 9, height: 0.08, label: 'Backsplash', rotation: 0 },
@@ -44478,7 +44892,7 @@
           // Range side with fridge
           { type: 'refrigerator', x: 0, y: 6, width: 3, height: 2.5, label: 'Fridge', rotation: 180 },
           { type: 'base-cabinet', x: 3, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
-          { type: 'range', x: 5, y: 5.75, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 180 },
+          { type: 'range', x: 5, y: 5.83, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 180 },
           { type: 'range-hood', x: 5.25, y: 6, width: 2, height: 1, label: 'Hood', rotation: 180 },
           { type: 'base-cabinet', x: 7.5, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
           { type: 'base-cabinet', x: 9.5, y: 6, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
@@ -44510,7 +44924,7 @@
 
           // === LEFT WALL (x=0) - faces into room (rotation: 270) ===
           // Fridge at top, then pantry/storage
-          { type: 'refrigerator', x: 0, y: 0, width: 2.5, height: 3, label: 'Fridge', rotation: 270 },
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge', rotation: 270 },
           { type: 'tall-cabinet', x: 0, y: 3, width: 2, height: 2, label: 'Pantry', rotation: 270 },
           { type: 'base-cabinet', x: 0, y: 5, width: 2, height: 2, label: 'Base 24"', rotation: 270 },
           { type: 'base-cabinet', x: 0, y: 7, width: 2, height: 2, label: 'Base 24"', rotation: 270 },
@@ -44522,12 +44936,12 @@
           // Range centered with cabinets on both sides
           { type: 'base-cabinet', x: 12, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
           { type: 'base-cabinet', x: 12, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 90 },
           { type: 'range-hood', x: 12, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 12, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 12, y: 8.5, width: 2, height: 2.5, label: 'Base 30"', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 6.17, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 8.17, width: 2, height: 2.5, label: 'Base 30"', rotation: 90 },
           { type: 'countertop', x: 11.79, y: -0.125, width: 2.21, height: 4.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 11.79, y: 6.38, width: 2.21, height: 4.75, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 11.79, y: 6.05, width: 2.21, height: 5.08, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
           { type: 'wall-cabinet', x: 12, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
           { type: 'wall-cabinet', x: 12, y: 6.5, width: 1, height: 4.5, label: 'Uppers', rotation: 90 },
         ]
@@ -44545,7 +44959,7 @@
           { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
           { type: 'base-cabinet', x: 10, y: 0, width: 1.5, height: 2, label: 'Base 18"', rotation: 0 },
-          { type: 'range', x: 11.5, y: 0, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 0 },
+          { type: 'range', x: 11.5, y: 0, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 0 },
           { type: 'countertop', x: 2.88, y: -0.04, width: 8.75, height: 2.21, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
           { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
@@ -44579,11 +44993,11 @@
 
           // === RIGHT WALL (x=12) - faces into room (rotation: 90) ===
           { type: 'base-cabinet', x: 12, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range', x: 12, y: 4, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 90 },
           { type: 'range-hood', x: 12, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 12, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 12, y: 6.17, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
           { type: 'countertop', x: 11.79, y: 1.88, width: 2.21, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 11.79, y: 6.38, width: 2.21, height: 2.25, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 11.79, y: 6.05, width: 2.21, height: 2.58, label: 'Counter', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
           { type: 'wall-cabinet', x: 12, y: 2, width: 1, height: 2, label: 'Upper', rotation: 90 },
           { type: 'wall-cabinet', x: 12, y: 6.5, width: 1, height: 2, label: 'Upper', rotation: 90 },
 
@@ -44683,8 +45097,8 @@
         depth: 8,
         elements: [
           // === BACK WALL (y=0) - Washer, dryer, and utility sink ===
-          { type: 'dishwasher', x: 0, y: 0, width: 2.3, height: 2.3, label: 'Washer', rotation: 0 },
-          { type: 'dishwasher', x: 2.5, y: 0, width: 2.3, height: 2.3, label: 'Dryer', rotation: 0 },
+          { type: 'washer', x: 0, y: 0, width: 2.3, height: 2.3, label: 'Washer', rotation: 0 },
+          { type: 'dryer', x: 2.5, y: 0, width: 2.3, height: 2.3, label: 'Dryer', rotation: 0 },
           // Upper cabinets above W/D
           { type: 'wall-cabinet', x: 0, y: 0, width: 2.5, height: 1, rotation: 0 },
           { type: 'wall-cabinet', x: 2.5, y: 0, width: 2.5, height: 1, rotation: 0 },
