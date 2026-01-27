@@ -18467,8 +18467,6 @@
               email: c.email,
               phone: c.phone || null,
               source: 'shopify',
-              total_spent: parseFloat(c.total_spent || 0),
-              orders_count: c.orders_count || 0,
               created_at: c.created_at
             });
           }
@@ -20571,19 +20569,28 @@
           return;
         }
 
-        // Supabase is the single source of truth for invoices
         const { data: { user } } = await supabaseClient.auth.getUser();
         console.log('[Invoices] User:', user?.id);
 
-        const { data, error } = await supabaseClient
-          .from('invoices')
-          .select('*, invoice_items(*)')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
+        // Load from both Supabase (source of truth) and Stripe (supplementary) in parallel
+        const [supabaseResult, stripeResult] = await Promise.all([
+          supabaseClient
+            .from('invoices')
+            .select('*, invoice_items(*)')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false }),
+          apiCall('/api/invoices?limit=100')
+            .then(r => r.ok ? r.json() : { invoices: [] })
+            .catch(err => {
+              console.warn('[Invoices] Stripe fetch failed (non-fatal):', err.message);
+              return { invoices: [] };
+            })
+        ]);
 
-        if (error) throw error;
+        if (supabaseResult.error) throw supabaseResult.error;
 
-        allInvoices = (data || []).map(inv => ({
+        // Map Supabase invoices
+        const supabaseInvoices = (supabaseResult.data || []).map(inv => ({
           id: inv.id,
           number: inv.invoice_number,
           invoice_number: inv.invoice_number,
@@ -20605,7 +20612,44 @@
           view_count: inv.view_count || 0
         }));
 
-        console.log('[Invoices] Loaded', allInvoices.length, 'invoices from Supabase');
+        // Track Stripe IDs already in Supabase for deduplication
+        const knownStripeIds = new Set(
+          supabaseInvoices.map(inv => inv.stripe_invoice_id).filter(Boolean)
+        );
+
+        // Map Stripe-only invoices (not already in Supabase)
+        const stripeInvoices = (stripeResult.invoices || [])
+          .filter(inv => inv.id && !knownStripeIds.has(inv.id))
+          .map(inv => ({
+            id: inv.id,
+            number: inv.number || inv.id,
+            invoice_number: inv.number || inv.id,
+            customer_email: inv.customer_email || '',
+            customer_name: inv.customer_name || '',
+            status: inv.status || 'unknown',
+            total: (inv.total || 0) / 100,
+            amount_due: (inv.amount_due || 0) / 100,
+            amount_paid: (inv.amount_paid || 0) / 100,
+            due_date: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+            created: inv.created,
+            created_at: inv.created ? new Date(inv.created * 1000).toISOString() : null,
+            source: 'stripe',
+            stripe_invoice_id: inv.id,
+            stripe_hosted_url: inv.hosted_invoice_url || null,
+            stripe_pdf_url: inv.invoice_pdf || null,
+            invoice_items: (inv.lines?.data || []).map(line => ({
+              description: line.description || 'Item',
+              quantity: line.quantity || 1,
+              unit_price: (line.unit_amount || line.amount || 0) / 100,
+              amount: (line.amount || 0) / 100
+            })),
+            view_count: 0
+          }));
+
+        // Merge: Supabase first (source of truth), then Stripe-only records
+        allInvoices = [...supabaseInvoices, ...stripeInvoices];
+
+        console.log('[Invoices] Loaded', supabaseInvoices.length, 'from Supabase,', stripeInvoices.length, 'from Stripe (total:', allInvoices.length, ')');
         renderInvoices();
       } catch (err) {
         console.error('Error loading invoices:', err);
