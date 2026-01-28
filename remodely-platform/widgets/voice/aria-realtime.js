@@ -78,6 +78,15 @@
       // UI elements
       this.floatingBtn = null;
       this.modalOverlay = null;
+
+      // iOS detection - iOS Safari has limited webkitSpeechRecognition support
+      this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      this.useServerRecognition = this.isIOS || !('webkitSpeechRecognition' in window);
+
+      if (this.isIOS) {
+        console.log('[Aria] iOS detected - using WebSocket audio streaming mode');
+      }
     }
 
     // Initialize
@@ -820,33 +829,143 @@
       }
 
       try {
-        // Get microphone access
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        // Get microphone access - iOS requires specific constraints
+        const audioConstraints = this.isIOS ? {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 24000 // Request 24kHz on iOS if possible
+          }
+        } : {
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
           }
-        });
+        };
+
+        this.mediaStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
 
         // Create audio context - use device's native sample rate
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // On iOS, we need to handle the audio context specially
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        this.audioContext = new AudioContextClass();
+
+        // iOS Safari requires resuming the audio context after user gesture
+        if (this.audioContext.state === 'suspended') {
+          await this.audioContext.resume();
+        }
+
         const nativeSampleRate = this.audioContext.sampleRate;
-        console.log('[Aria] Native sample rate:', nativeSampleRate);
+        console.log('[Aria] Native sample rate:', nativeSampleRate, this.isIOS ? '(iOS)' : '');
 
         // Create source from microphone
         this.sourceNode = this.audioContext.createMediaStreamSource(this.mediaStream);
 
-        // Create script processor to capture audio
-        const bufferSize = 4096;
-        const processor = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+        // Use AudioWorklet on modern browsers, ScriptProcessor as fallback
+        if (this.audioContext.audioWorklet && !this.isIOS) {
+          // AudioWorklet preferred for better performance
+          await this.startAudioWorklet(nativeSampleRate);
+        } else {
+          // ScriptProcessor fallback (works better on iOS Safari)
+          await this.startScriptProcessor(nativeSampleRate);
+        }
 
-        processor.onaudioprocess = (e) => {
+        this.state.isListening = true;
+        this.updateStatus('Listening...');
+        this.updateTalkButton();
+        this.updateAvatar();
+
+        // Tell relay we're ready
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            type: 'start_listening',
+            isIOS: this.isIOS
+          }));
+        }
+
+        // Trigger greeting on first interaction (after mic permission granted)
+        if (!this.state.hasGreeted) {
+          this.state.hasGreeted = true;
+          setTimeout(() => this.triggerGreeting(), 300);
+        }
+
+      } catch (error) {
+        console.error('[Aria] Microphone error:', error);
+
+        // Provide helpful error message for iOS
+        if (this.isIOS && error.name === 'NotAllowedError') {
+          this.updateStatus('Please allow microphone in Settings > Safari');
+        } else {
+          this.updateStatus('Microphone access denied');
+        }
+      }
+    }
+
+    // Start audio processing with ScriptProcessor (iOS compatible)
+    async startScriptProcessor(nativeSampleRate) {
+      const bufferSize = this.isIOS ? 2048 : 4096; // Smaller buffer on iOS for lower latency
+      const processor = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+      processor.onaudioprocess = (e) => {
+        if (!this.state.isListening || this.state.isSpeaking) return;
+
+        const inputData = e.inputBuffer.getChannelData(0);
+
+        // Resample to 24000Hz if needed
+        const resampled = this.resample(inputData, nativeSampleRate, 24000);
+        const pcm16 = this.floatTo16BitPCM(resampled);
+        const base64 = this.arrayBufferToBase64(pcm16);
+
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            type: 'audio',
+            audio: base64
+          }));
+        }
+      };
+
+      this.sourceNode.connect(processor);
+      processor.connect(this.audioContext.destination);
+      this.processor = processor;
+    }
+
+    // Start audio processing with AudioWorklet (better performance, not iOS)
+    async startAudioWorklet(nativeSampleRate) {
+      // Fallback to ScriptProcessor if AudioWorklet fails
+      try {
+        // Create inline worklet processor
+        const workletCode = `
+          class AudioProcessor extends AudioWorkletProcessor {
+            constructor() {
+              super();
+              this.buffer = [];
+              this.bufferSize = 4096;
+            }
+            process(inputs, outputs, parameters) {
+              const input = inputs[0];
+              if (input && input[0]) {
+                // Send chunks to main thread
+                this.port.postMessage({ samples: Array.from(input[0]) });
+              }
+              return true;
+            }
+          }
+          registerProcessor('audio-processor', AudioProcessor);
+        `;
+
+        const blob = new Blob([workletCode], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+
+        await this.audioContext.audioWorklet.addModule(url);
+        URL.revokeObjectURL(url);
+
+        this.workletNode = new AudioWorkletNode(this.audioContext, 'audio-processor');
+        this.workletNode.port.onmessage = (event) => {
           if (!this.state.isListening || this.state.isSpeaking) return;
 
-          const inputData = e.inputBuffer.getChannelData(0);
-
-          // Resample to 24000Hz if needed
+          const inputData = new Float32Array(event.data.samples);
           const resampled = this.resample(inputData, nativeSampleRate, 24000);
           const pcm16 = this.floatTo16BitPCM(resampled);
           const base64 = this.arrayBufferToBase64(pcm16);
@@ -859,29 +978,12 @@
           }
         };
 
-        this.sourceNode.connect(processor);
-        processor.connect(this.audioContext.destination);
-        this.processor = processor;
-
-        this.state.isListening = true;
-        this.updateStatus('Listening...');
-        this.updateTalkButton();
-        this.updateAvatar();
-
-        // Tell relay we're ready
-        if (this.ws?.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ type: 'start_listening' }));
-        }
-
-        // Trigger greeting on first interaction (after mic permission granted)
-        if (!this.state.hasGreeted) {
-          this.state.hasGreeted = true;
-          setTimeout(() => this.triggerGreeting(), 300);
-        }
+        this.sourceNode.connect(this.workletNode);
+        this.workletNode.connect(this.audioContext.destination);
 
       } catch (error) {
-        console.error('[Aria] Microphone error:', error);
-        this.updateStatus('Microphone access denied');
+        console.warn('[Aria] AudioWorklet failed, falling back to ScriptProcessor:', error);
+        await this.startScriptProcessor(nativeSampleRate);
       }
     }
 

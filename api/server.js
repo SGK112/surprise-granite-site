@@ -253,6 +253,12 @@ const projectsRouter = require('./routes/projects');
 // Email Routes (new modular structure)
 const emailRouter = require('./routes/email');
 
+// Calendar Routes (multi-participant events)
+const calendarRouter = require('./routes/calendar');
+
+// Automation Routes (lead nurturing, client retention)
+const automationRouter = require('./routes/automation');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -3350,6 +3356,12 @@ app.use('/api/workflow', workflowRouter);
 
 // ============ COLLABORATION & DESIGN HANDOFF ROUTES ============
 app.use('/api/collaboration', collaborationRouter);
+
+// ============ CALENDAR ROUTES ============
+app.use('/api/calendar', calendarRouter);
+
+// ============ AUTOMATION ROUTES ============
+app.use('/api/automation', automationRouter);
 
 // ============ PROJECTS CRUD ROUTES ============
 app.use('/api/projects', projectsRouter);
@@ -10692,6 +10704,7 @@ wss.on('connection', (clientWs) => {
             temperature: 0.7,
             max_response_output_tokens: 300,
             tools: [
+              // LEAD CAPTURE
               {
                 type: 'function',
                 name: 'capture_lead',
@@ -10709,6 +10722,7 @@ wss.on('connection', (clientWs) => {
                   required: []
                 }
               },
+              // SCHEDULING
               {
                 type: 'function',
                 name: 'schedule_estimate',
@@ -10724,6 +10738,124 @@ wss.on('connection', (clientWs) => {
                     address: { type: 'string', description: 'Project address' }
                   },
                   required: ['name', 'phone']
+                }
+              },
+              // CALENDAR
+              {
+                type: 'function',
+                name: 'create_calendar_event',
+                description: 'Create a calendar event with participants for appointments, measurements, or installations',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'Event title' },
+                    event_type: { type: 'string', enum: ['appointment', 'measurement', 'installation', 'meeting', 'follow_up'], description: 'Type of event' },
+                    start_time: { type: 'string', description: 'Start time in ISO format' },
+                    duration_minutes: { type: 'number', description: 'Duration in minutes (default 60)' },
+                    location: { type: 'string', description: 'Event location or address' },
+                    participants: { type: 'array', items: { type: 'object', properties: { email: { type: 'string' }, name: { type: 'string' }, role: { type: 'string' } } }, description: 'List of participants' }
+                  },
+                  required: ['title', 'event_type', 'start_time']
+                }
+              },
+              {
+                type: 'function',
+                name: 'check_availability',
+                description: 'Check calendar for available time slots on a given date',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    date: { type: 'string', description: 'Date to check (YYYY-MM-DD)' },
+                    duration_minutes: { type: 'number', description: 'Desired appointment duration' }
+                  },
+                  required: ['date']
+                }
+              },
+              // MARKETPLACE
+              {
+                type: 'function',
+                name: 'search_products',
+                description: 'Search marketplace for countertop materials, slabs, or products',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    query: { type: 'string', description: 'Search query (e.g., "white quartz", "calacatta marble")' },
+                    category: { type: 'string', description: 'Product category (quartz, granite, marble, quartzite)' },
+                    brand: { type: 'string', description: 'Brand name filter' },
+                    max_price: { type: 'number', description: 'Maximum price per square foot' }
+                  },
+                  required: []
+                }
+              },
+              {
+                type: 'function',
+                name: 'get_product_info',
+                description: 'Get detailed information about a specific product',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    product_id: { type: 'string', description: 'Product ID' }
+                  },
+                  required: ['product_id']
+                }
+              },
+              // NOTIFICATIONS
+              {
+                type: 'function',
+                name: 'notify_owner',
+                description: 'Send a notification to the business owner about important events',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', enum: ['new_lead', 'appointment_booked', 'urgent', 'question'], description: 'Notification type' },
+                    title: { type: 'string', description: 'Notification title' },
+                    message: { type: 'string', description: 'Notification message' },
+                    priority: { type: 'string', enum: ['high', 'normal', 'low'], description: 'Priority level' }
+                  },
+                  required: ['type', 'message']
+                }
+              },
+              {
+                type: 'function',
+                name: 'send_sms',
+                description: 'Send an SMS message to a phone number',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    phone: { type: 'string', description: 'Phone number to send to' },
+                    message: { type: 'string', description: 'SMS message content' }
+                  },
+                  required: ['phone', 'message']
+                }
+              },
+              // LEAD MANAGEMENT
+              {
+                type: 'function',
+                name: 'qualify_lead',
+                description: 'Update lead qualification score and status',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    lead_id: { type: 'string', description: 'Lead ID' },
+                    score: { type: 'number', description: 'Qualification score (1-100)' },
+                    notes: { type: 'string', description: 'Qualification notes' }
+                  },
+                  required: ['lead_id']
+                }
+              },
+              // STATUS UPDATES
+              {
+                type: 'function',
+                name: 'update_job_status',
+                description: 'Update the status of a job or project',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    job_id: { type: 'string', description: 'Job ID' },
+                    status: { type: 'string', description: 'New status' },
+                    notes: { type: 'string', description: 'Status update notes' }
+                  },
+                  required: ['job_id', 'status']
                 }
               }
             ]
@@ -10847,80 +10979,387 @@ wss.on('connection', (clientWs) => {
 
     logger.info(`[Aria Realtime] Tool call: ${functionName}`, args);
 
-    if (functionName === 'capture_lead' || functionName === 'schedule_estimate') {
-      // Get admin email from session config or use default
-      const adminEmail = sessionConfig?.adminEmail || ADMIN_EMAIL;
-      const businessName = sessionConfig?.businessName || 'Surprise Granite';
+    let toolResult = { success: false, message: 'Unknown tool' };
 
-      // Build lead data
-      const leadData = {
-        name: args.name || '',
-        phone: args.phone || '',
-        email: args.email || '',
-        project_type: args.project_type || '',
-        project_details: args.project_details || args.address || '',
-        preferred_contact_time: args.preferred_contact_time || args.preferred_date || '',
-        notes: functionName === 'schedule_estimate' ? `Estimate requested for ${args.preferred_date || 'ASAP'}` : '',
-        source: `Aria Voice Chat - ${businessName}`,
-        tool: functionName,
-        timestamp: new Date().toISOString()
-      };
+    try {
+      switch (functionName) {
+        case 'capture_lead':
+        case 'schedule_estimate':
+          toolResult = await handleLeadCapture(args, functionName);
+          break;
 
-      // Only send if we have at least some contact info
-      if (leadData.name || leadData.phone || leadData.email) {
+        case 'create_calendar_event':
+          toolResult = await handleCreateCalendarEvent(args);
+          break;
+
+        case 'check_availability':
+          toolResult = await handleCheckAvailability(args);
+          break;
+
+        case 'search_products':
+          toolResult = await handleSearchProducts(args);
+          break;
+
+        case 'get_product_info':
+          toolResult = await handleGetProductInfo(args);
+          break;
+
+        case 'notify_owner':
+          toolResult = await handleNotifyOwner(args);
+          break;
+
+        case 'send_sms':
+          toolResult = await handleSendSms(args);
+          break;
+
+        case 'qualify_lead':
+          toolResult = await handleQualifyLead(args);
+          break;
+
+        case 'update_job_status':
+          toolResult = await handleUpdateJobStatus(args);
+          break;
+
+        default:
+          logger.warn(`[Aria Realtime] Unknown tool: ${functionName}`);
+      }
+    } catch (error) {
+      logger.error(`[Aria Realtime] Tool error for ${functionName}:`, error);
+      toolResult = { success: false, message: error.message };
+    }
+
+    // Send function output back to OpenAI
+    if (openAiWs?.readyState === WebSocket.OPEN) {
+      openAiWs.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: response.call_id,
+          output: JSON.stringify(toolResult)
+        }
+      }));
+      openAiWs.send(JSON.stringify({
+        type: 'response.create',
+        response: { modalities: ['text', 'audio'] }
+      }));
+    }
+  }
+
+  // Tool Handler: Lead Capture
+  async function handleLeadCapture(args, functionName) {
+    const adminEmail = sessionConfig?.adminEmail || ADMIN_EMAIL;
+    const businessName = sessionConfig?.businessName || 'Surprise Granite';
+
+    const leadData = {
+      name: args.name || '',
+      phone: args.phone || '',
+      email: args.email || '',
+      project_type: args.project_type || '',
+      project_details: args.project_details || args.address || '',
+      preferred_contact_time: args.preferred_contact_time || args.preferred_date || '',
+      notes: functionName === 'schedule_estimate' ? `Estimate requested for ${args.preferred_date || 'ASAP'}` : '',
+      source: `Aria Voice Chat - ${businessName}`,
+      tool: functionName,
+      timestamp: new Date().toISOString()
+    };
+
+    if (leadData.name || leadData.phone || leadData.email) {
+      const leadHtml = buildLeadEmailHtml(leadData, businessName, functionName);
+      await sendNotification(
+        adminEmail,
+        `🎤 New Voice Lead: ${leadData.name || 'Unknown'} - ${leadData.project_type || 'Inquiry'}`,
+        leadHtml
+      );
+
+      if (supabase) {
         try {
-          // Build and send the lead notification email
-          const leadHtml = buildLeadEmailHtml(leadData, businessName, functionName);
-
-          await sendNotification(
-            adminEmail,
-            `🎤 New Voice Lead: ${leadData.name || 'Unknown'} - ${leadData.project_type || 'Inquiry'}`,
-            leadHtml
-          );
-
-          logger.info(`[Aria Realtime] Lead sent to ${adminEmail}`);
-
-          // Also save to database if available
-          if (supabase) {
-            try {
-              await supabase.from('aria_leads').insert([{
-                ...leadData,
-                admin_email: adminEmail,
-                business_name: businessName
-              }]);
-            } catch (dbErr) {
-              logger.info('[Aria Realtime] DB save skipped:', dbErr.message);
-            }
-          }
-
-          // Notify client that lead was captured
-          clientWs.send(JSON.stringify({
-            type: 'lead_captured',
-            data: { name: leadData.name, phone: leadData.phone, email: leadData.email }
-          }));
-
-        } catch (error) {
-          logger.error('[Aria Realtime] Failed to send lead:', error);
+          await supabase.from('aria_leads').insert([{
+            ...leadData,
+            admin_email: adminEmail,
+            business_name: businessName
+          }]);
+        } catch (dbErr) {
+          logger.info('[Aria Realtime] DB save skipped:', dbErr.message);
         }
       }
 
-      // Send function output back to OpenAI so it can continue the conversation
-      if (openAiWs?.readyState === WebSocket.OPEN) {
-        openAiWs.send(JSON.stringify({
-          type: 'conversation.item.create',
-          item: {
-            type: 'function_call_output',
-            call_id: response.call_id,
-            output: JSON.stringify({ success: true, message: 'Lead captured successfully' })
-          }
-        }));
-        // Trigger a response
-        openAiWs.send(JSON.stringify({
-          type: 'response.create',
-          response: { modalities: ['text', 'audio'] }
-        }));
+      clientWs.send(JSON.stringify({
+        type: 'lead_captured',
+        data: { name: leadData.name, phone: leadData.phone, email: leadData.email }
+      }));
+
+      return { success: true, message: 'Lead captured successfully' };
+    }
+
+    return { success: false, message: 'No contact information provided' };
+  }
+
+  // Tool Handler: Create Calendar Event
+  async function handleCreateCalendarEvent(args) {
+    if (!supabase) return { success: false, message: 'Database not available' };
+
+    const adminEmail = sessionConfig?.adminEmail || ADMIN_EMAIL;
+    const { data: admin } = await supabase
+      .from('sg_users')
+      .select('id')
+      .eq('email', adminEmail)
+      .single();
+
+    if (!admin) return { success: false, message: 'Admin user not found' };
+
+    const durationMinutes = args.duration_minutes || 60;
+    const startTime = new Date(args.start_time);
+    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+
+    const { data: event, error } = await supabase
+      .from('calendar_events')
+      .insert({
+        created_by: admin.id,
+        title: args.title,
+        event_type: args.event_type || 'appointment',
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        location: args.location || null,
+        status: 'scheduled'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Add participants if provided
+    if (args.participants && Array.isArray(args.participants)) {
+      const participants = args.participants.map(p => ({
+        event_id: event.id,
+        email: p.email,
+        name: p.name,
+        role: p.role,
+        participant_type: 'attendee',
+        response_status: 'pending'
+      }));
+      await supabase.from('calendar_event_participants').insert(participants);
+    }
+
+    clientWs.send(JSON.stringify({
+      type: 'event_created',
+      data: { eventId: event.id, title: event.title, startTime: event.start_time }
+    }));
+
+    return {
+      success: true,
+      message: `Event "${args.title}" created for ${startTime.toLocaleString()}`,
+      eventId: event.id
+    };
+  }
+
+  // Tool Handler: Check Availability
+  async function handleCheckAvailability(args) {
+    if (!supabase) return { success: false, message: 'Database not available' };
+
+    const date = args.date;
+    const durationMinutes = args.duration_minutes || 60;
+
+    // Get events for the date
+    const startOfDay = new Date(date + 'T00:00:00');
+    const endOfDay = new Date(date + 'T23:59:59');
+
+    const { data: events } = await supabase
+      .from('calendar_events')
+      .select('start_time, end_time')
+      .neq('status', 'cancelled')
+      .gte('start_time', startOfDay.toISOString())
+      .lte('start_time', endOfDay.toISOString());
+
+    // Generate available slots (8am-6pm)
+    const availableSlots = [];
+    for (let hour = 8; hour < 18; hour++) {
+      const slotStart = new Date(date + `T${hour.toString().padStart(2, '0')}:00:00`);
+      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60 * 1000);
+
+      const isAvailable = !events?.some(e => {
+        const eventStart = new Date(e.start_time);
+        const eventEnd = new Date(e.end_time);
+        return (slotStart < eventEnd && slotEnd > eventStart);
+      });
+
+      if (isAvailable) {
+        availableSlots.push(slotStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
       }
     }
+
+    return {
+      success: true,
+      date,
+      availableSlots,
+      message: availableSlots.length > 0
+        ? `Available times on ${date}: ${availableSlots.slice(0, 5).join(', ')}${availableSlots.length > 5 ? ' and more' : ''}`
+        : `No available slots on ${date}`
+    };
+  }
+
+  // Tool Handler: Search Products
+  async function handleSearchProducts(args) {
+    if (!supabase) return { success: false, message: 'Database not available' };
+
+    let query = supabase
+      .from('distributor_products')
+      .select('id, name, color_name, material_type, brand, price_per_sqft, image_url')
+      .eq('is_active', true)
+      .limit(10);
+
+    if (args.query) {
+      query = query.or(`name.ilike.%${args.query}%,color_name.ilike.%${args.query}%`);
+    }
+    if (args.category) {
+      query = query.eq('material_type', args.category);
+    }
+    if (args.brand) {
+      query = query.ilike('brand', `%${args.brand}%`);
+    }
+    if (args.max_price) {
+      query = query.lte('price_per_sqft', args.max_price);
+    }
+
+    const { data: products, error } = await query;
+
+    if (error) throw error;
+
+    const productList = products?.map(p =>
+      `${p.name} (${p.material_type}) - $${p.price_per_sqft}/sqft`
+    ).join('; ') || 'No products found';
+
+    return {
+      success: true,
+      count: products?.length || 0,
+      products: products?.slice(0, 5) || [],
+      message: products?.length
+        ? `Found ${products.length} products: ${productList}`
+        : 'No matching products found'
+    };
+  }
+
+  // Tool Handler: Get Product Info
+  async function handleGetProductInfo(args) {
+    if (!supabase || !args.product_id) return { success: false, message: 'Product ID required' };
+
+    const { data: product, error } = await supabase
+      .from('distributor_products')
+      .select('*')
+      .eq('id', args.product_id)
+      .single();
+
+    if (error || !product) return { success: false, message: 'Product not found' };
+
+    return {
+      success: true,
+      product,
+      message: `${product.name}: ${product.description || ''} - $${product.price_per_sqft}/sqft. ${product.features || ''}`
+    };
+  }
+
+  // Tool Handler: Notify Owner
+  async function handleNotifyOwner(args) {
+    const adminEmail = sessionConfig?.adminEmail || ADMIN_EMAIL;
+    const businessName = sessionConfig?.businessName || 'Surprise Granite';
+
+    const notificationHtml = `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2 style="color: #f9cb00;">Aria Notification: ${args.title || args.type}</h2>
+        <p style="font-size: 16px;">${args.message}</p>
+        <p style="color: #666; font-size: 12px;">Priority: ${args.priority || 'normal'}</p>
+        <hr>
+        <p style="color: #999; font-size: 11px;">From Aria AI Assistant - ${businessName}</p>
+      </div>
+    `;
+
+    await sendNotification(adminEmail, `Aria: ${args.title || args.type}`, notificationHtml);
+
+    // Also create in-app notification if database available
+    if (supabase) {
+      const { data: admin } = await supabase
+        .from('sg_users')
+        .select('id')
+        .eq('email', adminEmail)
+        .single();
+
+      if (admin) {
+        await supabase.from('pro_notifications').insert({
+          pro_user_id: admin.id,
+          notification_type: args.type || 'aria_notification',
+          title: args.title || 'Aria Notification',
+          message: args.message,
+          data: { priority: args.priority, source: 'aria_voice' }
+        });
+      }
+    }
+
+    return { success: true, message: 'Owner notified' };
+  }
+
+  // Tool Handler: Send SMS
+  async function handleSendSms(args) {
+    if (!args.phone || !args.message) {
+      return { success: false, message: 'Phone and message required' };
+    }
+
+    // Use SMS service if available
+    try {
+      const smsService = require('./services/smsService');
+      await smsService.sendSMS(args.phone, args.message);
+      return { success: true, message: 'SMS sent' };
+    } catch (e) {
+      logger.warn('[Aria Realtime] SMS service not available');
+      return { success: false, message: 'SMS service not configured' };
+    }
+  }
+
+  // Tool Handler: Qualify Lead
+  async function handleQualifyLead(args) {
+    if (!supabase || !args.lead_id) return { success: false, message: 'Lead ID required' };
+
+    const updates = {};
+    if (args.score !== undefined) updates.qualification_score = args.score;
+    if (args.notes) updates.qualification_notes = args.notes;
+    updates.updated_at = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('leads')
+      .update(updates)
+      .eq('id', args.lead_id);
+
+    if (error) throw error;
+
+    return { success: true, message: `Lead qualification updated${args.score ? ` to score ${args.score}` : ''}` };
+  }
+
+  // Tool Handler: Update Job Status
+  async function handleUpdateJobStatus(args) {
+    if (!supabase || !args.job_id || !args.status) {
+      return { success: false, message: 'Job ID and status required' };
+    }
+
+    const updates = {
+      status: args.status,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('jobs')
+      .update(updates)
+      .eq('id', args.job_id);
+
+    if (error) throw error;
+
+    // Add status note if provided
+    if (args.notes && supabase) {
+      await supabase.from('job_notes').insert({
+        job_id: args.job_id,
+        note: `Status changed to ${args.status}: ${args.notes}`,
+        note_type: 'status_change'
+      });
+    }
+
+    return { success: true, message: `Job status updated to ${args.status}` };
   }
 
   // Build lead email HTML

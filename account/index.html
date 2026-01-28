@@ -4108,6 +4108,45 @@
         width: 100%;
         font-size: 16px;
       }
+
+      /* Calendar & Collaboration - Extra Small Mobile */
+      #calendar-event-modal .modal-body,
+      #invite-to-network-modal .modal-body {
+        padding: 16px !important;
+      }
+
+      .collab-tabs {
+        gap: 6px !important;
+      }
+
+      .collab-tab {
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+      }
+
+      /* Event participants compact view */
+      #event-participants-list {
+        max-height: 150px !important;
+      }
+
+      .participant-item {
+        flex-wrap: wrap !important;
+      }
+
+      .participant-item > * {
+        flex: 1 1 45% !important;
+        min-width: 120px !important;
+      }
+
+      /* Modal footer buttons stack */
+      .modal-footer {
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+      }
+
+      .modal-footer button {
+        width: 100% !important;
+      }
     }
 
     /* Calendar Mobile Optimization */
@@ -4144,6 +4183,85 @@
 
       .calendar-desktop-view {
         display: none;
+      }
+
+      /* Calendar Event Modal - Mobile */
+      #calendar-event-modal .modal-content {
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Form rows stack on mobile */
+      .form-row-modern {
+        flex-direction: column !important;
+        gap: 12px !important;
+      }
+
+      .form-row-modern .form-group {
+        width: 100% !important;
+      }
+
+      /* Collaboration tabs - horizontal scroll */
+      .collab-tabs {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap !important;
+        padding-bottom: 8px;
+        margin-bottom: 16px !important;
+      }
+
+      .collab-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .collab-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 12px 16px !important;
+        font-size: 14px !important;
+      }
+
+      /* Network/Invite modals - full screen on mobile */
+      #invite-to-network-modal .modal-content,
+      #calendar-event-detail-modal .modal-content {
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Participant list items - more touch friendly */
+      .participant-item {
+        padding: 12px !important;
+        gap: 12px !important;
+      }
+
+      .participant-item input,
+      .participant-item select {
+        min-height: 44px !important;
+        font-size: 16px !important;
+      }
+
+      /* Network cards - stack content */
+      .network-card,
+      .collaborator-card {
+        padding: 16px !important;
+      }
+
+      .network-card .card-actions,
+      .collaborator-card .card-actions {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+
+      .network-card .card-actions button,
+      .collaborator-card .card-actions button {
+        width: 100% !important;
+        justify-content: center !important;
       }
     }
 
@@ -9909,20 +10027,82 @@
 
         <!-- Collaborations Page -->
         <section id="page-collaborations" class="page-section">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">My Collaborations</h3>
-              <button class="btn-modern primary" onclick="openInviteToProjectModal()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                Invite Collaborator
-              </button>
+          <!-- Collaboration Tabs -->
+          <div class="collab-tabs" style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <button class="collab-tab active" onclick="switchCollabTab('collaborations')" id="tab-collaborations" style="padding: 10px 20px; border: none; background: var(--gold-primary); color: #1a1a2e; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+              Project Collaborations
+            </button>
+            <button class="collab-tab" onclick="switchCollabTab('network')" id="tab-network" style="padding: 10px 20px; border: 1px solid var(--border-subtle); background: var(--dark-surface); color: var(--text-secondary); border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+              My Network <span id="network-count-badge" style="display: none; margin-left: 6px; background: var(--gold-primary); color: #1a1a2e; padding: 2px 8px; border-radius: 10px; font-size: 11px;"></span>
+            </button>
+            <button class="collab-tab" onclick="switchCollabTab('invitations')" id="tab-invitations" style="padding: 10px 20px; border: 1px solid var(--border-subtle); background: var(--dark-surface); color: var(--text-secondary); border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+              Pending Invites <span id="invitations-count-badge" style="display: none; margin-left: 6px; background: var(--warning); color: #1a1a2e; padding: 2px 8px; border-radius: 10px; font-size: 11px;"></span>
+            </button>
+          </div>
+
+          <!-- Project Collaborations Tab -->
+          <div id="collab-tab-collaborations" class="collab-tab-content">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">My Collaborations</h3>
+                <button class="btn-modern primary" onclick="openInviteToProjectModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Invite to Project
+                </button>
+              </div>
+              <div class="card-body">
+                <div id="collaborations-list">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <h3>No collaborations yet</h3>
+                    <p>When you're invited to collaborate on projects, they'll appear here.</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-              <div id="collaborations-list">
-                <div class="empty-state">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  <h3>No collaborations yet</h3>
-                  <p>When you're invited to collaborate on projects, they'll appear here.</p>
+          </div>
+
+          <!-- My Network Tab (General Collaborators) -->
+          <div id="collab-tab-network" class="collab-tab-content" style="display: none;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">My Network</h3>
+                <button class="btn-modern primary" onclick="openInviteToNetworkModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Invite to Network
+                </button>
+              </div>
+              <div class="card-body">
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                  Build your professional network. Invite designers, fabricators, contractors, and partners - they can later be assigned to specific projects.
+                </p>
+                <div id="network-list">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                    <h3>No network contacts yet</h3>
+                    <p>Invite colleagues, vendors, and partners to build your professional network.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Invitations Tab -->
+          <div id="collab-tab-invitations" class="collab-tab-content" style="display: none;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Pending Invitations</h3>
+              </div>
+              <div class="card-body">
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                  Invitations you've received to join projects or networks.
+                </p>
+                <div id="received-invitations-list">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <h3>No pending invitations</h3>
+                    <p>When someone invites you to collaborate, it will appear here.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -10642,9 +10822,13 @@
                   </button>
                 </div>
                 <button class="btn-modern secondary" onclick="goToToday()">Today</button>
-                <button class="btn-modern primary" onclick="openQuickScheduleModal()">
+                <button class="btn-modern primary" onclick="openCalendarEventModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                  Schedule
+                  New Event
+                </button>
+                <button class="btn-modern secondary" onclick="openQuickScheduleModal()" title="Quick job scheduling">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  Quick Job
                 </button>
               </div>
             </div>
@@ -10675,19 +10859,31 @@
               <div style="display: flex; flex-wrap: wrap; gap: 16px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span class="calendar-event-dot" style="background: #3b82f6;"></span>
-                  <span style="font-size: 13px;">Scheduled</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #8b5cf6;"></span>
-                  <span style="font-size: 13px;">In Production</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #10b981;"></span>
-                  <span style="font-size: 13px;">Installing</span>
+                  <span style="font-size: 13px;">Appointment</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span class="calendar-event-dot" style="background: #f59e0b;"></span>
-                  <span style="font-size: 13px;">Field Measure</span>
+                  <span style="font-size: 13px;">Measurement</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #10b981;"></span>
+                  <span style="font-size: 13px;">Installation</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #8b5cf6;"></span>
+                  <span style="font-size: 13px;">Meeting</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #ec4899;"></span>
+                  <span style="font-size: 13px;">Consultation</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #06b6d4;"></span>
+                  <span style="font-size: 13px;">Delivery</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="calendar-event-dot" style="background: #6b7280;"></span>
+                  <span style="font-size: 13px;">Other</span>
                 </div>
               </div>
             </div>
@@ -13914,6 +14110,279 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
           Add Event
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Event Modal (Multi-Participant) -->
+  <div id="calendar-event-modal" class="modal-overlay" onclick="if(event.target === this) closeCalendarEventModal()">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="calendar-event-modal-title">New Calendar Event</h2>
+        <button class="modal-close" onclick="closeCalendarEventModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="calendar-event-form" onsubmit="submitCalendarEvent(event)">
+        <input type="hidden" id="cal-event-id" value="" />
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Event Title *</label>
+            <input type="text" id="cal-event-title" class="input-modern" required placeholder="e.g., Kitchen Measurement" maxlength="200" />
+          </div>
+
+          <div class="form-row-modern">
+            <div class="form-group">
+              <label>Event Type *</label>
+              <select id="cal-event-type" class="input-modern" required>
+                <option value="appointment">Appointment</option>
+                <option value="measurement">Measurement</option>
+                <option value="installation">Installation</option>
+                <option value="delivery">Delivery</option>
+                <option value="meeting">Meeting</option>
+                <option value="follow_up">Follow-up</option>
+                <option value="consultation">Consultation</option>
+                <option value="site_visit">Site Visit</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="cal-event-status" class="input-modern">
+                <option value="scheduled">Scheduled</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-modern">
+            <div class="form-group">
+              <label>Start Date *</label>
+              <input type="date" id="cal-event-start-date" class="input-modern" required />
+            </div>
+            <div class="form-group">
+              <label>Start Time *</label>
+              <input type="time" id="cal-event-start-time" class="input-modern" required value="09:00" />
+            </div>
+          </div>
+
+          <div class="form-row-modern">
+            <div class="form-group">
+              <label>End Date</label>
+              <input type="date" id="cal-event-end-date" class="input-modern" />
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="cal-event-end-time" class="input-modern" value="10:00" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="cal-event-location" class="input-modern" placeholder="Location name or address" maxlength="500" />
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="cal-event-description" class="input-modern" rows="2" placeholder="Event details..." maxlength="2000" style="resize: vertical;"></textarea>
+          </div>
+
+          <!-- Link to Lead/Customer/Job -->
+          <div class="form-row-modern">
+            <div class="form-group">
+              <label>Link to Customer</label>
+              <select id="cal-event-customer" class="input-modern">
+                <option value="">-- None --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Link to Job</label>
+              <select id="cal-event-job" class="input-modern">
+                <option value="">-- None --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Participants Section -->
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 16px; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <label style="font-weight: 600;">Participants</label>
+              <button type="button" class="btn-modern secondary" onclick="addEventParticipant()" style="padding: 4px 12px; font-size: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add
+              </button>
+            </div>
+            <div id="event-participants-list" style="max-height: 200px; overflow-y: auto;">
+              <!-- Participants added dynamically -->
+            </div>
+            <div id="add-participant-row" style="display: none; background: var(--dark-elevated); padding: 12px; border-radius: 8px; margin-top: 8px;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="participant-source" class="input-modern" style="flex: 1; min-width: 120px;" onchange="onParticipantSourceChange()">
+                  <option value="manual">Enter Manually</option>
+                  <option value="customer">From Customers</option>
+                  <option value="collaborator">From Network</option>
+                  <option value="lead">From Leads</option>
+                </select>
+                <select id="participant-preset" class="input-modern" style="flex: 2; min-width: 150px; display: none;">
+                  <option value="">-- Select --</option>
+                </select>
+              </div>
+              <div id="participant-manual-fields" style="margin-top: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <input type="text" id="participant-name" class="input-modern" placeholder="Name" style="flex: 1; min-width: 100px;" />
+                  <input type="email" id="participant-email" class="input-modern" placeholder="Email *" style="flex: 1; min-width: 150px;" />
+                  <input type="tel" id="participant-phone" class="input-modern" placeholder="Phone" style="flex: 1; min-width: 100px;" />
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <select id="participant-role" class="input-modern" style="flex: 1;">
+                    <option value="customer">Customer</option>
+                    <option value="contractor">Contractor</option>
+                    <option value="fabricator">Fabricator</option>
+                    <option value="installer">Installer</option>
+                    <option value="designer">Designer</option>
+                    <option value="vendor">Vendor</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select id="participant-type" class="input-modern" style="flex: 1;">
+                    <option value="attendee">Attendee</option>
+                    <option value="optional">Optional</option>
+                  </select>
+                  <button type="button" class="btn-modern primary" onclick="confirmAddParticipant()" style="padding: 8px 16px;">Add</button>
+                  <button type="button" class="btn-modern ghost" onclick="cancelAddParticipant()" style="padding: 8px;">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reminder Settings -->
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 16px; margin-top: 16px;">
+            <label style="font-weight: 600; margin-bottom: 8px; display: block;">Reminders</label>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);">
+                <input type="checkbox" id="cal-reminder-24h" checked style="width: 16px; height: 16px;"> 24 hours before
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);">
+                <input type="checkbox" id="cal-reminder-1h" checked style="width: 16px; height: 16px;"> 1 hour before
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);">
+                <input type="checkbox" id="cal-notify-participants" checked style="width: 16px; height: 16px;"> Notify participants
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modern secondary" onclick="closeCalendarEventModal()">Cancel</button>
+          <button type="submit" class="btn-modern primary" id="save-calendar-event-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Save Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Calendar Event Detail Modal -->
+  <div id="calendar-event-detail-modal" class="modal-overlay" onclick="if(event.target === this) closeCalendarEventDetailModal()">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="event-detail-title">Event Details</h2>
+        <button class="modal-close" onclick="closeCalendarEventDetailModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="event-detail-content">
+        <div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>
+      </div>
+      <div class="modal-footer" id="event-detail-actions">
+        <button type="button" class="btn-modern secondary" onclick="closeCalendarEventDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite to Network Modal (General Collaborator) -->
+  <div class="modal-overlay" id="invite-to-network-modal" onclick="if(event.target === this) closeInviteToNetworkModal()">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Invite to Network</h2>
+        <button class="modal-close" onclick="closeInviteToNetworkModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+          Invite someone to join your professional network. They can later be assigned to specific projects.
+        </p>
+        <form id="invite-network-form" onsubmit="return sendNetworkInvite(event)">
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="network-invite-email" required placeholder="colleague@example.com" class="input-modern" />
+          </div>
+          <div class="form-row-modern">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" id="network-invite-name" placeholder="Their name (optional)" class="input-modern" maxlength="200" />
+            </div>
+            <div class="form-group">
+              <label>Role *</label>
+              <select id="network-invite-role" required class="input-modern">
+                <option value="">Select Role</option>
+                <option value="designer">Designer</option>
+                <option value="fabricator">Fabricator</option>
+                <option value="contractor">Contractor</option>
+                <option value="installer">Installer</option>
+                <option value="vendor">Vendor</option>
+                <option value="partner">Partner</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes (optional)</label>
+            <textarea id="network-invite-notes" placeholder="Personal message or notes about this contact..." class="input-modern" rows="2" maxlength="1000" style="resize: vertical;"></textarea>
+          </div>
+          <button type="submit" class="btn-modern primary" id="send-network-invite-btn" style="width: 100%;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Send Invitation
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign to Project Modal -->
+  <div class="modal-overlay" id="assign-to-project-modal" onclick="if(event.target === this) closeAssignToProjectModal()">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Assign to Project</h2>
+        <button class="modal-close" onclick="closeAssignToProjectModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+          Assign <strong id="assign-collaborator-name"></strong> to a project.
+        </p>
+        <form id="assign-project-form" onsubmit="return submitAssignToProject(event)">
+          <input type="hidden" id="assign-collaborator-id" />
+          <div class="form-group">
+            <label>Select Project *</label>
+            <select id="assign-project-select" required class="input-modern">
+              <option value="">Loading projects...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Access Level</label>
+            <select id="assign-access-level" class="input-modern">
+              <option value="read">Read Only</option>
+              <option value="write">Read & Write</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-modern primary" style="width: 100%;">
+            Assign to Project
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -17878,6 +18347,7 @@
         if (page === 'calendar') {
           renderCalendar();
           await loadCalendarEvents();
+          loadFullCalendarEvents(); // Load multi-participant events from API
         }
 
         // Load customers when that page is shown
@@ -17893,6 +18363,9 @@
         // Load collaborations when that page is shown
         if (page === 'collaborations') {
           await loadCollaborations();
+          // Also load network count and invitations count for badges
+          loadMyNetwork();
+          loadReceivedInvitations();
         }
       } catch (err) {
         console.error('[showPage] Error loading data for', page, err);
@@ -28942,6 +29415,841 @@
       }
     }
 
+    // =============================================
+    // MY NETWORK (GENERAL COLLABORATORS)
+    // =============================================
+
+    // Track event participants being added
+    let eventParticipants = [];
+
+    function switchCollabTab(tab) {
+      // Update tab buttons
+      document.querySelectorAll('.collab-tab').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'var(--dark-surface)';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.border = '1px solid var(--border-subtle)';
+      });
+      const activeTab = document.getElementById('tab-' + tab);
+      if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.background = 'var(--gold-primary)';
+        activeTab.style.color = '#1a1a2e';
+        activeTab.style.border = 'none';
+      }
+
+      // Show/hide content
+      document.querySelectorAll('.collab-tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      const activeContent = document.getElementById('collab-tab-' + tab);
+      if (activeContent) activeContent.style.display = 'block';
+
+      // Load data for the active tab
+      if (tab === 'network') loadMyNetwork();
+      else if (tab === 'invitations') loadReceivedInvitations();
+      else if (tab === 'collaborations') loadCollaborations();
+    }
+
+    async function loadMyNetwork() {
+      const container = document.getElementById('network-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        const resp = await apiCall('/api/collaboration/my-collaborators');
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to load network');
+        }
+
+        const collaborators = data.collaborators || [];
+
+        // Update badge
+        const badge = document.getElementById('network-count-badge');
+        if (badge) {
+          badge.textContent = collaborators.length;
+          badge.style.display = collaborators.length > 0 ? 'inline' : 'none';
+        }
+
+        if (collaborators.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+              <h3>No network contacts yet</h3>
+              <p>Invite colleagues, vendors, and partners to build your professional network.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = collaborators.map(c => {
+          const roleLabel = (c.role || 'partner').charAt(0).toUpperCase() + (c.role || 'partner').slice(1);
+          const statusColor = c.status === 'accepted' ? '#10b981' : c.status === 'pending' ? '#f59e0b' : '#6b7280';
+          const statusLabel = c.status === 'accepted' ? 'Connected' : c.status === 'pending' ? 'Pending' : c.status;
+          const userName = c.user?.full_name || c.user?.email || c.email;
+          const dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : (c.invited_at ? 'Invited ' + new Date(c.invited_at).toLocaleDateString() : '');
+
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-size: 15px; font-weight: 600;">${escapeHtml(userName)}</span>
+                  <span style="font-size: 11px; padding: 2px 8px; background: rgba(249, 203, 0, 0.15); color: var(--gold-primary); border-radius: 4px; font-weight: 500;">${roleLabel}</span>
+                  <span style="font-size: 11px; padding: 2px 8px; background: ${statusColor}20; color: ${statusColor}; border-radius: 4px; font-weight: 500;">${statusLabel}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${escapeHtml(c.email)}${dateStr ? ' • ' + dateStr : ''}</div>
+                ${c.notes ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">${escapeHtml(c.notes)}</div>` : ''}
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                ${c.status === 'accepted' ? `
+                  <button class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openAssignToProjectModal('${c.id}', '${escapeHtml(userName)}')">
+                    Assign to Project
+                  </button>
+                ` : ''}
+                <button class="btn-modern ghost" style="padding: 6px 10px; color: var(--error);" onclick="removeNetworkCollaborator('${c.id}')" title="Remove">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading network:', err);
+        container.innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load network.</p></div>';
+      }
+    }
+
+    async function loadReceivedInvitations() {
+      const container = document.getElementById('received-invitations-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        const resp = await apiCall('/api/collaboration/my-invitations');
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to load invitations');
+        }
+
+        const invitations = data.invitations || [];
+
+        // Update badge
+        const badge = document.getElementById('invitations-count-badge');
+        if (badge) {
+          badge.textContent = invitations.length;
+          badge.style.display = invitations.length > 0 ? 'inline' : 'none';
+        }
+
+        if (invitations.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <h3>No pending invitations</h3>
+              <p>When someone invites you to collaborate, it will appear here.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = invitations.map(inv => {
+          const roleLabel = (inv.role || 'collaborator').charAt(0).toUpperCase() + (inv.role || 'collaborator').slice(1);
+          const inviterName = inv.inviter?.full_name || inv.inviter?.email || 'Someone';
+          const isNetwork = !inv.project_id;
+          const dateStr = inv.invited_at ? new Date(inv.invited_at).toLocaleDateString() : '';
+
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">
+                  ${isNetwork ? 'Network Invitation' : `Project: ${escapeHtml(inv.project?.name || 'Unknown')}`}
+                </div>
+                <div style="font-size: 13px; color: var(--text-secondary);">
+                  From: ${escapeHtml(inviterName)} • Role: ${roleLabel}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${dateStr}</div>
+                ${inv.notes ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; font-style: italic;">"${escapeHtml(inv.notes)}"</div>` : ''}
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                <button class="btn-modern primary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'accepted', ${isNetwork})">
+                  Accept
+                </button>
+                <button class="btn-modern secondary" style="padding: 8px 16px; font-size: 13px;" onclick="respondToInvitation('${inv.id}', 'declined', ${isNetwork})">
+                  Decline
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading invitations:', err);
+        container.innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load invitations.</p></div>';
+      }
+    }
+
+    async function respondToInvitation(invitationId, response, isNetwork) {
+      try {
+        const endpoint = isNetwork
+          ? `/api/collaboration/network/respond/${invitationId}`
+          : `/api/collaboration/invitations/${invitationId}/respond`;
+
+        const resp = await apiCall(endpoint, {
+          method: 'POST',
+          body: JSON.stringify({ response })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to respond');
+
+        showToast(response === 'accepted' ? 'Invitation accepted!' : 'Invitation declined', 'success');
+        loadReceivedInvitations();
+
+        // Refresh the relevant list
+        if (response === 'accepted') {
+          if (isNetwork) loadMyNetwork();
+          else loadCollaborations();
+        }
+      } catch (err) {
+        console.error('Error responding to invitation:', err);
+        showToast(err.message || 'Failed to respond to invitation', 'error');
+      }
+    }
+
+    function openInviteToNetworkModal() {
+      document.getElementById('invite-network-form').reset();
+      document.getElementById('invite-to-network-modal').classList.add('active');
+    }
+
+    function closeInviteToNetworkModal() {
+      document.getElementById('invite-to-network-modal').classList.remove('active');
+    }
+
+    async function sendNetworkInvite(event) {
+      event.preventDefault();
+      const btn = document.getElementById('send-network-invite-btn');
+      const email = document.getElementById('network-invite-email').value.trim().toLowerCase();
+      const name = document.getElementById('network-invite-name').value.trim();
+      const role = document.getElementById('network-invite-role').value;
+      const notes = document.getElementById('network-invite-notes').value.trim();
+
+      if (!email || !role) {
+        showToast('Please fill in email and role', 'warning');
+        return false;
+      }
+
+      if (currentUser && currentUser.email && email === currentUser.email.toLowerCase()) {
+        showToast('You cannot invite yourself', 'warning');
+        return false;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const resp = await apiCall('/api/collaboration/invite-general', {
+          method: 'POST',
+          body: JSON.stringify({ email, name: name || undefined, role, notes: notes || undefined })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
+
+        showToast(data.message || 'Invitation sent!', 'success');
+        closeInviteToNetworkModal();
+        loadMyNetwork();
+
+      } catch (err) {
+        console.error('Error sending network invite:', err);
+        showToast(err.message || 'Failed to send invitation', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Send Invitation';
+      }
+
+      return false;
+    }
+
+    async function removeNetworkCollaborator(collaboratorId) {
+      if (!confirm('Remove this contact from your network?')) return;
+
+      try {
+        const resp = await apiCall(`/api/collaboration/collaborators/${collaboratorId}`, {
+          method: 'DELETE'
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to remove');
+
+        showToast('Contact removed from network', 'success');
+        loadMyNetwork();
+      } catch (err) {
+        console.error('Error removing collaborator:', err);
+        showToast(err.message || 'Failed to remove contact', 'error');
+      }
+    }
+
+    function openAssignToProjectModal(collaboratorId, collaboratorName) {
+      document.getElementById('assign-collaborator-id').value = collaboratorId;
+      document.getElementById('assign-collaborator-name').textContent = collaboratorName;
+      loadProjectsForAssignment();
+      document.getElementById('assign-to-project-modal').classList.add('active');
+    }
+
+    function closeAssignToProjectModal() {
+      document.getElementById('assign-to-project-modal').classList.remove('active');
+    }
+
+    async function loadProjectsForAssignment() {
+      const select = document.getElementById('assign-project-select');
+      select.innerHTML = '<option value="">Loading projects...</option>';
+
+      try {
+        // Load owned projects
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { data: projects } = await supabaseClient
+          .from('projects')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        select.innerHTML = '<option value="">-- Select Project --</option>';
+
+        if (projects && projects.length > 0) {
+          projects.forEach(p => {
+            select.innerHTML += `<option value="${p.id}">${escapeHtml(p.name)}</option>`;
+          });
+        }
+
+        // Also add jobs
+        if (allJobs && allJobs.length > 0) {
+          allJobs.forEach(job => {
+            const label = (job.job_number || 'Job') + ' - ' + (job.customer_name || job.project_description || 'Untitled');
+            select.innerHTML += `<option value="${job.id}">${escapeHtml(label)}</option>`;
+          });
+        }
+
+        if (select.options.length === 1) {
+          select.innerHTML = '<option value="">No projects available</option>';
+        }
+      } catch (err) {
+        console.error('Error loading projects:', err);
+        select.innerHTML = '<option value="">Failed to load projects</option>';
+      }
+    }
+
+    async function submitAssignToProject(event) {
+      event.preventDefault();
+      const collaboratorId = document.getElementById('assign-collaborator-id').value;
+      const projectId = document.getElementById('assign-project-select').value;
+      const accessLevel = document.getElementById('assign-access-level').value;
+
+      if (!collaboratorId || !projectId) {
+        showToast('Please select a project', 'warning');
+        return false;
+      }
+
+      try {
+        const resp = await apiCall(`/api/collaboration/collaborators/${collaboratorId}/assign-project`, {
+          method: 'POST',
+          body: JSON.stringify({ project_id: projectId, access_level: accessLevel })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to assign');
+
+        showToast('Collaborator assigned to project!', 'success');
+        closeAssignToProjectModal();
+        loadCollaborations();
+      } catch (err) {
+        console.error('Error assigning to project:', err);
+        showToast(err.message || 'Failed to assign to project', 'error');
+      }
+
+      return false;
+    }
+
+    // =============================================
+    // CALENDAR EVENTS (MULTI-PARTICIPANT)
+    // =============================================
+
+    function openCalendarEventModal(eventId = null, preselectedDate = null) {
+      const form = document.getElementById('calendar-event-form');
+      const title = document.getElementById('calendar-event-modal-title');
+      form.reset();
+      document.getElementById('cal-event-id').value = eventId || '';
+      eventParticipants = [];
+      renderEventParticipants();
+      document.getElementById('add-participant-row').style.display = 'none';
+
+      if (eventId) {
+        title.textContent = 'Edit Event';
+        loadCalendarEventForEdit(eventId);
+      } else {
+        title.textContent = 'New Calendar Event';
+        // Set default dates
+        const today = preselectedDate || new Date().toISOString().split('T')[0];
+        document.getElementById('cal-event-start-date').value = today;
+        document.getElementById('cal-event-end-date').value = today;
+      }
+
+      // Populate customer dropdown
+      populateEventCustomerDropdown();
+      populateEventJobDropdown();
+
+      document.getElementById('calendar-event-modal').classList.add('active');
+    }
+
+    function closeCalendarEventModal() {
+      document.getElementById('calendar-event-modal').classList.remove('active');
+    }
+
+    function populateEventCustomerDropdown() {
+      const select = document.getElementById('cal-event-customer');
+      select.innerHTML = '<option value="">-- None --</option>';
+      if (allCustomers && allCustomers.length > 0) {
+        allCustomers.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}${c.email ? ' (' + c.email + ')' : ''}</option>`;
+        });
+      }
+    }
+
+    function populateEventJobDropdown() {
+      const select = document.getElementById('cal-event-job');
+      select.innerHTML = '<option value="">-- None --</option>';
+      if (allJobs && allJobs.length > 0) {
+        allJobs.forEach(j => {
+          const label = (j.job_number || 'Job') + ' - ' + (j.customer_name || j.project_description || 'Untitled');
+          select.innerHTML += `<option value="${j.id}">${escapeHtml(label)}</option>`;
+        });
+      }
+    }
+
+    function addEventParticipant() {
+      document.getElementById('add-participant-row').style.display = 'block';
+      document.getElementById('participant-source').value = 'manual';
+      document.getElementById('participant-preset').style.display = 'none';
+      document.getElementById('participant-manual-fields').style.display = 'block';
+      // Clear fields
+      document.getElementById('participant-name').value = '';
+      document.getElementById('participant-email').value = '';
+      document.getElementById('participant-phone').value = '';
+    }
+
+    function cancelAddParticipant() {
+      document.getElementById('add-participant-row').style.display = 'none';
+    }
+
+    function onParticipantSourceChange() {
+      const source = document.getElementById('participant-source').value;
+      const preset = document.getElementById('participant-preset');
+      const manualFields = document.getElementById('participant-manual-fields');
+
+      if (source === 'manual') {
+        preset.style.display = 'none';
+        manualFields.style.display = 'block';
+      } else {
+        preset.style.display = 'block';
+        manualFields.style.display = 'none';
+        populateParticipantPreset(source);
+      }
+    }
+
+    async function populateParticipantPreset(source) {
+      const preset = document.getElementById('participant-preset');
+      preset.innerHTML = '<option value="">-- Select --</option>';
+
+      if (source === 'customer' && allCustomers) {
+        allCustomers.forEach(c => {
+          if (c.email) {
+            preset.innerHTML += `<option value="${c.id}" data-name="${escapeHtml(c.name || '')}" data-email="${escapeHtml(c.email)}" data-phone="${escapeHtml(c.phone || '')}">${escapeHtml(c.name || c.email)}</option>`;
+          }
+        });
+      } else if (source === 'lead' && allLeads) {
+        allLeads.forEach(l => {
+          if (l.email) {
+            preset.innerHTML += `<option value="${l.id}" data-name="${escapeHtml(l.name || '')}" data-email="${escapeHtml(l.email)}" data-phone="${escapeHtml(l.phone || '')}">${escapeHtml(l.name || l.email)}</option>`;
+          }
+        });
+      } else if (source === 'collaborator') {
+        // Load network collaborators
+        try {
+          const resp = await apiCall('/api/collaboration/my-collaborators');
+          const data = await resp.json();
+          if (data.collaborators) {
+            data.collaborators.filter(c => c.status === 'accepted').forEach(c => {
+              const name = c.user?.full_name || c.email;
+              preset.innerHTML += `<option value="${c.id}" data-name="${escapeHtml(name)}" data-email="${escapeHtml(c.email)}" data-phone="" data-role="${c.role}">${escapeHtml(name)} (${c.role})</option>`;
+            });
+          }
+        } catch (e) {
+          console.error('Error loading collaborators for participant:', e);
+        }
+      }
+    }
+
+    function confirmAddParticipant() {
+      const source = document.getElementById('participant-source').value;
+      let name, email, phone, role, participantType;
+
+      if (source === 'manual') {
+        name = document.getElementById('participant-name').value.trim();
+        email = document.getElementById('participant-email').value.trim().toLowerCase();
+        phone = document.getElementById('participant-phone').value.trim();
+        role = document.getElementById('participant-role').value;
+        participantType = document.getElementById('participant-type').value;
+
+        if (!email) {
+          showToast('Email is required', 'warning');
+          return;
+        }
+      } else {
+        const preset = document.getElementById('participant-preset');
+        const option = preset.options[preset.selectedIndex];
+        if (!option || !option.value) {
+          showToast('Please select a person', 'warning');
+          return;
+        }
+        name = option.dataset.name;
+        email = option.dataset.email;
+        phone = option.dataset.phone || '';
+        role = option.dataset.role || (source === 'customer' ? 'customer' : source === 'lead' ? 'customer' : 'other');
+        participantType = 'attendee';
+      }
+
+      // Check for duplicates
+      if (eventParticipants.some(p => p.email.toLowerCase() === email.toLowerCase())) {
+        showToast('This email is already added', 'warning');
+        return;
+      }
+
+      eventParticipants.push({ name, email, phone, role, participant_type: participantType });
+      renderEventParticipants();
+      cancelAddParticipant();
+    }
+
+    function removeEventParticipant(index) {
+      eventParticipants.splice(index, 1);
+      renderEventParticipants();
+    }
+
+    function renderEventParticipants() {
+      const container = document.getElementById('event-participants-list');
+      if (eventParticipants.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">No participants added yet</div>';
+        return;
+      }
+
+      container.innerHTML = eventParticipants.map((p, i) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 6px;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 500;">${escapeHtml(p.name || p.email)}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(p.email)} • ${p.role}${p.participant_type === 'optional' ? ' (optional)' : ''}</div>
+          </div>
+          <button type="button" class="btn-modern ghost" onclick="removeEventParticipant(${i})" style="padding: 4px 8px; color: var(--error);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function submitCalendarEvent(event) {
+      event.preventDefault();
+      const btn = document.getElementById('save-calendar-event-btn');
+      const eventId = document.getElementById('cal-event-id').value;
+
+      const title = document.getElementById('cal-event-title').value.trim();
+      const eventType = document.getElementById('cal-event-type').value;
+      const status = document.getElementById('cal-event-status').value;
+      const startDate = document.getElementById('cal-event-start-date').value;
+      const startTime = document.getElementById('cal-event-start-time').value;
+      const endDate = document.getElementById('cal-event-end-date').value || startDate;
+      const endTime = document.getElementById('cal-event-end-time').value || startTime;
+      const location = document.getElementById('cal-event-location').value.trim();
+      const description = document.getElementById('cal-event-description').value.trim();
+      const customerId = document.getElementById('cal-event-customer').value;
+      const jobId = document.getElementById('cal-event-job').value;
+
+      // Reminders
+      const reminders = [];
+      if (document.getElementById('cal-reminder-24h').checked) reminders.push(1440);
+      if (document.getElementById('cal-reminder-1h').checked) reminders.push(60);
+      const notifyParticipants = document.getElementById('cal-notify-participants').checked;
+
+      if (!title || !startDate || !startTime) {
+        showToast('Please fill in required fields', 'warning');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        const payload = {
+          title,
+          event_type: eventType,
+          status,
+          start_time: `${startDate}T${startTime}:00`,
+          end_time: `${endDate}T${endTime}:00`,
+          location: location || undefined,
+          description: description || undefined,
+          customer_id: customerId || undefined,
+          job_id: jobId || undefined,
+          reminder_minutes: reminders,
+          notify_participants: notifyParticipants,
+          participants: eventParticipants
+        };
+
+        const url = eventId ? `/api/calendar/events/${eventId}` : '/api/calendar/events';
+        const method = eventId ? 'PUT' : 'POST';
+
+        const resp = await apiCall(url, {
+          method,
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to save event');
+
+        showToast(eventId ? 'Event updated!' : 'Event created!', 'success');
+        closeCalendarEventModal();
+        loadCalendarEvents();
+        loadFullCalendarEvents(); // Load the new calendar events
+
+      } catch (err) {
+        console.error('Error saving calendar event:', err);
+        showToast(err.message || 'Failed to save event', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Save Event';
+      }
+    }
+
+    // Full calendar events from API
+    let fullCalendarEvents = [];
+
+    async function loadFullCalendarEvents() {
+      try {
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1);
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+
+        const resp = await apiCall(`/api/calendar/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`);
+        const data = await resp.json();
+
+        if (resp.ok && data.events) {
+          fullCalendarEvents = data.events;
+          // Merge with existing calendar events
+          mergeCalendarEvents();
+        }
+      } catch (err) {
+        console.error('Error loading full calendar events:', err);
+      }
+    }
+
+    function mergeCalendarEvents() {
+      // Add API calendar events to the display
+      fullCalendarEvents.forEach(event => {
+        const date = event.start_time.split('T')[0];
+        const existing = calendarEvents.find(e => e.apiEventId === event.id);
+        if (!existing) {
+          calendarEvents.push({
+            date,
+            title: event.title,
+            type: event.event_type,
+            apiEventId: event.id,
+            status: event.status,
+            hasParticipants: event.participants && event.participants.length > 0
+          });
+        }
+      });
+      renderCalendar();
+      renderUpcomingEvents();
+    }
+
+    function openCalendarEventDetailModal(eventId) {
+      const modal = document.getElementById('calendar-event-detail-modal');
+      const content = document.getElementById('event-detail-content');
+      const actions = document.getElementById('event-detail-actions');
+
+      modal.classList.add('active');
+      content.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div></div>';
+
+      loadCalendarEventDetail(eventId, content, actions);
+    }
+
+    function closeCalendarEventDetailModal() {
+      document.getElementById('calendar-event-detail-modal').classList.remove('active');
+    }
+
+    async function loadCalendarEventDetail(eventId, content, actions) {
+      try {
+        const resp = await apiCall(`/api/calendar/events/${eventId}`);
+        const data = await resp.json();
+
+        if (!resp.ok) throw new Error(data.error || 'Failed to load event');
+
+        const event = data.event;
+        const typeColors = {
+          appointment: '#3b82f6',
+          measurement: '#f59e0b',
+          installation: '#10b981',
+          delivery: '#06b6d4',
+          meeting: '#8b5cf6',
+          follow_up: '#6b7280',
+          consultation: '#ec4899',
+          site_visit: '#f97316',
+          other: '#6b7280'
+        };
+        const color = typeColors[event.event_type] || '#6b7280';
+
+        const startTime = new Date(event.start_time);
+        const endTime = new Date(event.end_time);
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: 'numeric', minute: '2-digit' };
+
+        content.innerHTML = `
+          <div style="text-align: center; margin-bottom: 20px;">
+            <span style="display: inline-block; padding: 4px 12px; background: ${color}20; color: ${color}; border-radius: 16px; font-size: 12px; font-weight: 600; text-transform: capitalize;">${event.event_type.replace('_', ' ')}</span>
+            <span style="display: inline-block; padding: 4px 12px; background: var(--dark-elevated); color: var(--text-muted); border-radius: 16px; font-size: 12px; margin-left: 8px;">${event.status}</span>
+          </div>
+
+          <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; text-align: center;">${escapeHtml(event.title)}</h3>
+
+          <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span style="font-size: 14px;">${startTime.toLocaleDateString('en-US', dateOptions)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span style="font-size: 14px;">${startTime.toLocaleTimeString('en-US', timeOptions)} - ${endTime.toLocaleTimeString('en-US', timeOptions)}</span>
+            </div>
+            ${event.location ? `
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span style="font-size: 14px;">${escapeHtml(event.location)}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          ${event.description ? `
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Description</div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(event.description)}</div>
+          </div>
+          ` : ''}
+
+          ${event.participants && event.participants.length > 0 ? `
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Participants (${event.participants.length})</div>
+            <div style="max-height: 150px; overflow-y: auto;">
+              ${event.participants.map(p => {
+                const statusColors = { pending: '#f59e0b', accepted: '#10b981', declined: '#ef4444', tentative: '#6b7280' };
+                const statusColor = statusColors[p.response_status] || '#6b7280';
+                return `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--dark-surface); border-radius: 6px; margin-bottom: 4px;">
+                    <div>
+                      <div style="font-size: 13px; font-weight: 500;">${escapeHtml(p.name || p.email)}</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(p.email)} • ${p.role || 'attendee'}</div>
+                    </div>
+                    <span style="font-size: 10px; padding: 2px 8px; background: ${statusColor}20; color: ${statusColor}; border-radius: 10px; text-transform: capitalize;">${p.response_status}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          ` : ''}
+        `;
+
+        // Actions
+        actions.innerHTML = `
+          <button type="button" class="btn-modern secondary" onclick="closeCalendarEventDetailModal()">Close</button>
+          <button type="button" class="btn-modern secondary" onclick="closeCalendarEventDetailModal(); openCalendarEventModal('${event.id}')">Edit</button>
+          <button type="button" class="btn-modern primary" onclick="notifyEventParticipants('${event.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            Notify All
+          </button>
+        `;
+
+      } catch (err) {
+        console.error('Error loading event detail:', err);
+        content.innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load event details</p></div>';
+      }
+    }
+
+    async function notifyEventParticipants(eventId) {
+      try {
+        const resp = await apiCall(`/api/calendar/events/${eventId}/notify`, { method: 'POST' });
+        const data = await resp.json();
+
+        if (!resp.ok) throw new Error(data.error || 'Failed to send notifications');
+
+        showToast(`Notifications sent to ${data.notified || 0} participants`, 'success');
+      } catch (err) {
+        console.error('Error notifying participants:', err);
+        showToast(err.message || 'Failed to send notifications', 'error');
+      }
+    }
+
+    async function loadCalendarEventForEdit(eventId) {
+      try {
+        const resp = await apiCall(`/api/calendar/events/${eventId}`);
+        const data = await resp.json();
+
+        if (!resp.ok) throw new Error(data.error || 'Failed to load event');
+
+        const event = data.event;
+
+        document.getElementById('cal-event-title').value = event.title || '';
+        document.getElementById('cal-event-type').value = event.event_type || 'appointment';
+        document.getElementById('cal-event-status').value = event.status || 'scheduled';
+
+        const startTime = new Date(event.start_time);
+        const endTime = new Date(event.end_time);
+        document.getElementById('cal-event-start-date').value = startTime.toISOString().split('T')[0];
+        document.getElementById('cal-event-start-time').value = startTime.toTimeString().slice(0, 5);
+        document.getElementById('cal-event-end-date').value = endTime.toISOString().split('T')[0];
+        document.getElementById('cal-event-end-time').value = endTime.toTimeString().slice(0, 5);
+
+        document.getElementById('cal-event-location').value = event.location || '';
+        document.getElementById('cal-event-description').value = event.description || '';
+        document.getElementById('cal-event-customer').value = event.customer_id || '';
+        document.getElementById('cal-event-job').value = event.job_id || '';
+
+        // Load participants
+        if (event.participants) {
+          eventParticipants = event.participants.map(p => ({
+            name: p.name,
+            email: p.email,
+            phone: p.phone || '',
+            role: p.role || 'attendee',
+            participant_type: p.participant_type || 'attendee'
+          }));
+          renderEventParticipants();
+        }
+
+        // Reminders
+        const reminders = event.reminder_minutes || [];
+        document.getElementById('cal-reminder-24h').checked = reminders.includes(1440);
+        document.getElementById('cal-reminder-1h').checked = reminders.includes(60);
+
+      } catch (err) {
+        console.error('Error loading event for edit:', err);
+        showToast('Failed to load event', 'error');
+        closeCalendarEventModal();
+      }
+    }
+
     // Bridge 3: Navigate to a collaboration project
     function viewCollaborationProject(projectId) {
       if (!projectId) return;
@@ -30509,9 +31817,34 @@
 
       const typeColors = {
         job: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+        appointment: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
         install: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
+        installation: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
         measure: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
-        production: { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }
+        measurement: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
+        production: { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' },
+        meeting: { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' },
+        consultation: { bg: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' },
+        delivery: { bg: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4' },
+        follow_up: { bg: 'rgba(107, 114, 128, 0.15)', color: '#6b7280' },
+        site_visit: { bg: 'rgba(249, 115, 22, 0.15)', color: '#f97316' },
+        other: { bg: 'rgba(107, 114, 128, 0.15)', color: '#6b7280' }
+      };
+
+      const typeNames = {
+        job: 'Scheduled',
+        appointment: 'Appointment',
+        install: 'Installation',
+        installation: 'Installation',
+        measure: 'Field Measure',
+        measurement: 'Measurement',
+        production: 'In Production',
+        meeting: 'Meeting',
+        consultation: 'Consultation',
+        delivery: 'Delivery',
+        follow_up: 'Follow-up',
+        site_visit: 'Site Visit',
+        other: 'Event'
       };
 
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -30519,20 +31852,24 @@
       container.innerHTML = upcoming.map(event => {
         const date = new Date(event.date + 'T00:00:00');
         const colors = typeColors[event.type] || typeColors.job;
-        const typeName = event.type === 'measure' ? 'Field Measure' :
-                        event.type === 'install' ? 'Installation' :
-                        event.type === 'production' ? 'In Production' : 'Scheduled';
+        const typeName = typeNames[event.type] || 'Event';
+
+        // Determine click handler based on event source
+        const clickHandler = event.apiEventId
+          ? `openCalendarEventDetailModal('${event.apiEventId}')`
+          : (event.jobId ? `openJobDetail('${event.jobId}')` : '');
 
         return `
-          <div class="upcoming-event-item" onclick="openJobDetail('${event.jobId}')">
+          <div class="upcoming-event-item" onclick="${clickHandler}" style="${clickHandler ? 'cursor: pointer;' : ''}">
             <div class="upcoming-event-date">
               <span class="day">${date.getDate()}</span>
               <span class="month">${monthNames[date.getMonth()]}</span>
             </div>
             <div class="upcoming-event-info">
-              <div class="upcoming-event-title">${event.title}</div>
+              <div class="upcoming-event-title">${escapeHtml(event.title)}</div>
               <div class="upcoming-event-details">
                 <span class="upcoming-event-type" style="background: ${colors.bg}; color: ${colors.color};">${typeName}</span>
+                ${event.hasParticipants ? '<span style="margin-left: 6px; font-size: 11px; color: var(--text-muted);">👥</span>' : ''}
               </div>
             </div>
           </div>

@@ -262,15 +262,37 @@ router.get('/projects/:projectId/collaborators', verifyProOrDesigner, asyncHandl
 
   const { data: collaborators, error } = await supabase
     .from('project_collaborators')
-    .select('*, user:sg_users!user_id(full_name, email, avatar_url, role)')
+    .select('*')
     .eq('project_id', projectId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
-  logger.info('Listed project collaborators', { projectId, count: collaborators?.length || 0 });
+  // Fetch user details for collaborators
+  const userIds = collaborators?.filter(c => c.user_id).map(c => c.user_id) || [];
+  let userMap = {};
 
-  res.json({ success: true, collaborators: collaborators || [] });
+  if (userIds.length > 0) {
+    const { data: users } = await supabase
+      .from('sg_users')
+      .select('id, full_name, email, avatar_url, role')
+      .in('id', userIds);
+
+    userMap = (users || []).reduce((acc, u) => {
+      acc[u.id] = u;
+      return acc;
+    }, {});
+  }
+
+  // Attach user details
+  const enrichedCollaborators = collaborators?.map(c => ({
+    ...c,
+    user: c.user_id ? userMap[c.user_id] || null : null
+  })) || [];
+
+  logger.info('Listed project collaborators', { projectId, count: enrichedCollaborators.length });
+
+  res.json({ success: true, collaborators: enrichedCollaborators });
 }));
 
 /**
@@ -1503,5 +1525,691 @@ router.delete('/projects/:projectId/pending-invitations/:invitationId',
     res.json({ success: true });
   })
 );
+
+// ============================================================
+// GENERAL COLLABORATORS (PROJECT-INDEPENDENT)
+// ============================================================
+
+const generalCollaboratorSchema = Joi.object({
+  email: Joi.string().email().max(254).lowercase().trim().required(),
+  name: Joi.string().max(200).trim().allow('', null),
+  role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'vendor', 'partner').required(),
+  notes: Joi.string().max(500).trim().allow('')
+});
+
+/**
+ * Helper: Generate general collaborator invitation email
+ */
+function generateGeneralInviteEmail({ inviterName, inviterBusiness, role, isExistingUser, acceptUrl }) {
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+  const content = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 22px;">You're Invited to Connect</h2>
+    </div>
+
+    <p style="margin: 0 0 20px; color: #444; font-size: 15px; line-height: 1.6;">
+      <strong>${escapeHtml(inviterName)}</strong>${inviterBusiness ? ` from <strong>${escapeHtml(inviterBusiness)}</strong>` : ''}
+      has invited you to join their professional network as a <strong>${escapeHtml(roleLabel)}</strong>.
+    </p>
+
+    <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+      <table width="100%" cellspacing="0" cellpadding="8">
+        <tr>
+          <td style="color: #666; font-weight: 600; width: 140px;">Your Role:</td>
+          <td style="color: #1a1a2e;">${escapeHtml(roleLabel)}</td>
+        </tr>
+        <tr>
+          <td style="color: #666; font-weight: 600;">Invited By:</td>
+          <td style="color: #1a1a2e;">${escapeHtml(inviterName)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="margin: 0 0 20px; color: #444; font-size: 14px; line-height: 1.6;">
+      By accepting this invitation, you'll be able to:
+    </p>
+    <ul style="margin: 0 0 25px; color: #444; font-size: 14px; line-height: 1.8;">
+      <li>Collaborate on projects together</li>
+      <li>Share designs and specifications</li>
+      <li>Communicate directly through the platform</li>
+    </ul>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+      <a href="${acceptUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        ${isExistingUser ? 'Accept Invitation' : 'Create Account &amp; Connect'}
+      </a>
+    </div>
+
+    <p style="margin: 0; color: #aaa; font-size: 12px; text-align: center;">
+      This invitation expires in 7 days.
+    </p>
+  `;
+
+  return {
+    subject: `${inviterName} wants to connect - Surprise Granite`,
+    html: emailService.wrapEmailTemplate(content, { headerText: 'Network Invitation' })
+  };
+}
+
+/**
+ * POST /api/collaboration/invite-general
+ * Invite a collaborator without requiring a project
+ */
+router.post('/invite-general',
+  verifyProOrDesigner,
+  validateBody(generalCollaboratorSchema),
+  asyncHandler(async (req, res) => {
+    const { email, name, role, notes } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Cannot invite yourself
+    if (normalizedEmail === req.profile.email?.toLowerCase()) {
+      return res.status(400).json({ error: 'Cannot invite yourself' });
+    }
+
+    // Check if already invited by this user
+    const { data: existing } = await supabase
+      .from('general_collaborators')
+      .select('id, status')
+      .eq('invited_by', req.user.id)
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (existing && existing.status !== 'removed' && existing.status !== 'declined') {
+      return res.status(400).json({ error: 'You have already invited this person' });
+    }
+
+    const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
+    const inviterName = req.profile.full_name || req.profile.email || 'A Surprise Granite Pro';
+    const inviterBusiness = req.profile.business_name;
+
+    // Check if user exists
+    const { data: existingUser } = await supabase
+      .from('sg_users')
+      .select('id, email, full_name')
+      .eq('email', normalizedEmail)
+      .single();
+
+    const { rawToken, tokenHash } = generateInvitationToken();
+    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    let collaborator;
+    if (existing) {
+      // Re-invite removed/declined collaborator
+      const { data, error } = await supabase
+        .from('general_collaborators')
+        .update({
+          name: name || null,
+          role,
+          status: 'pending',
+          notes: notes || null,
+          token_hash: tokenHash,
+          token_expires_at: tokenExpires,
+          invited_at: new Date().toISOString(),
+          accepted_at: null,
+          user_id: existingUser?.id || null
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    } else {
+      const { data, error } = await supabase
+        .from('general_collaborators')
+        .insert({
+          invited_by: req.user.id,
+          user_id: existingUser?.id || null,
+          email: normalizedEmail,
+          name: name || existingUser?.full_name || null,
+          role,
+          notes: notes || null,
+          token_hash: tokenHash,
+          token_expires_at: tokenExpires
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      collaborator = data;
+    }
+
+    // Send invitation email
+    const acceptUrl = existingUser
+      ? `${SITE_URL}/account/?accept_network=${rawToken}`
+      : `${SITE_URL}/sign-up/?network_invite=${rawToken}`;
+
+    const emailContent = generateGeneralInviteEmail({
+      inviterName,
+      inviterBusiness,
+      role,
+      isExistingUser: !!existingUser,
+      acceptUrl
+    });
+
+    await emailService.sendNotification(normalizedEmail, emailContent.subject, emailContent.html);
+
+    // In-app notification if user exists
+    if (existingUser) {
+      await createCollaborationNotification(
+        existingUser.id,
+        'network_invitation',
+        'Network Connection Request',
+        `${inviterName} wants to add you to their professional network as a ${role}`,
+        { collaboratorId: collaborator.id, role, invited_by: req.user.id }
+      );
+    }
+
+    logger.info('General collaborator invited', {
+      email: normalizedEmail, role, existingUser: !!existingUser
+    });
+
+    res.json({
+      success: true,
+      collaborator,
+      inviteType: existingUser ? 'existing_user' : 'new_user',
+      message: `Invitation sent to ${normalizedEmail}`
+    });
+  })
+);
+
+/**
+ * GET /api/collaboration/my-collaborators
+ * List your general collaborators (network)
+ */
+router.get('/my-collaborators', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { status, role } = req.query;
+
+  let query = supabase
+    .from('general_collaborators')
+    .select('*')
+    .eq('invited_by', req.user.id)
+    .order('created_at', { ascending: false });
+
+  if (status) {
+    query = query.eq('status', status);
+  } else {
+    // Default: exclude removed
+    query = query.neq('status', 'removed');
+  }
+
+  if (role) {
+    query = query.eq('role', role);
+  }
+
+  const { data: collaborators, error } = await query;
+
+  if (error) throw error;
+
+  // Fetch user details for collaborators who have registered
+  const userIds = collaborators?.filter(c => c.user_id).map(c => c.user_id) || [];
+  let userMap = {};
+
+  if (userIds.length > 0) {
+    const { data: users } = await supabase
+      .from('sg_users')
+      .select('id, full_name, email, avatar_url, role')
+      .in('id', userIds);
+
+    userMap = (users || []).reduce((acc, u) => {
+      acc[u.id] = u;
+      return acc;
+    }, {});
+  }
+
+  // Attach user details to collaborators
+  const enrichedCollaborators = collaborators?.map(c => ({
+    ...c,
+    user: c.user_id ? userMap[c.user_id] || null : null
+  })) || [];
+
+  logger.info('Listed general collaborators', { userId: req.user.id, count: enrichedCollaborators.length });
+
+  res.json({ success: true, collaborators: enrichedCollaborators });
+}));
+
+/**
+ * GET /api/collaboration/my-invitations
+ * List invitations I've received (as collaborator)
+ */
+router.get('/my-invitations', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const { status } = req.query;
+  const userEmail = req.profile.email?.toLowerCase();
+
+  let query = supabase
+    .from('general_collaborators')
+    .select('*')
+    .or(`user_id.eq.${req.user.id},email.eq.${userEmail}`)
+    .order('created_at', { ascending: false });
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  const { data: invitations, error } = await query;
+
+  if (error) throw error;
+
+  // Fetch inviter details
+  const inviterIds = [...new Set(invitations?.map(i => i.invited_by) || [])];
+  let inviterMap = {};
+
+  if (inviterIds.length > 0) {
+    const { data: inviters } = await supabase
+      .from('sg_users')
+      .select('id, full_name, email, avatar_url, company_name')
+      .in('id', inviterIds);
+
+    inviterMap = (inviters || []).reduce((acc, u) => {
+      acc[u.id] = u;
+      return acc;
+    }, {});
+  }
+
+  // Attach inviter details
+  const enrichedInvitations = invitations?.map(i => ({
+    ...i,
+    inviter: inviterMap[i.invited_by] || null
+  })) || [];
+
+  res.json({ success: true, invitations: enrichedInvitations });
+}));
+
+/**
+ * POST /api/collaboration/network/accept
+ * Accept a network invitation via token
+ */
+router.post('/network/accept',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { token } = req.body;
+
+    if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+      return res.status(400).json({ error: 'Invalid token format' });
+    }
+
+    const tokenHash = hashToken(token);
+
+    const { data: invitation } = await supabase
+      .from('general_collaborators')
+      .select('*')
+      .eq('token_hash', tokenHash)
+      .eq('status', 'pending')
+      .single();
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invalid or expired invitation' });
+    }
+
+    if (new Date(invitation.token_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This invitation has expired' });
+    }
+
+    // Verify email matches (unless already linked to user_id)
+    const userEmail = req.profile.email?.toLowerCase();
+    if (invitation.user_id && invitation.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'This invitation was sent to a different user' });
+    }
+    if (!invitation.user_id && userEmail !== invitation.email.toLowerCase()) {
+      return res.status(403).json({ error: 'This invitation was sent to a different email address' });
+    }
+
+    // Accept the invitation
+    const { data: updated, error } = await supabase
+      .from('general_collaborators')
+      .update({
+        status: 'accepted',
+        user_id: req.user.id,
+        accepted_at: new Date().toISOString(),
+        token_hash: null,
+        token_expires_at: null
+      })
+      .eq('id', invitation.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify the inviter
+    await createCollaborationNotification(
+      invitation.invited_by,
+      'network_accepted',
+      'Connection Accepted',
+      `${req.profile.full_name || req.profile.email} accepted your invitation to connect`,
+      { collaboratorId: invitation.id, role: invitation.role }
+    );
+
+    logger.info('Network invitation accepted', {
+      invitationId: invitation.id, userId: req.user.id
+    });
+
+    res.json({ success: true, collaborator: updated });
+  })
+);
+
+/**
+ * POST /api/collaboration/network/respond/:id
+ * Accept or decline a network invitation by ID (for authenticated users)
+ */
+router.post('/network/respond/:id',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { response } = req.body; // 'accept' or 'decline'
+
+    if (!['accept', 'decline'].includes(response)) {
+      return res.status(400).json({ error: 'Invalid response. Use "accept" or "decline".' });
+    }
+
+    const userEmail = req.profile.email?.toLowerCase();
+
+    // Get invitation
+    const { data: invitation } = await supabase
+      .from('general_collaborators')
+      .select('*')
+      .eq('id', id)
+      .eq('status', 'pending')
+      .or(`user_id.eq.${req.user.id},email.eq.${userEmail}`)
+      .single();
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found or already processed' });
+    }
+
+    const newStatus = response === 'accept' ? 'accepted' : 'declined';
+
+    const { data: updated, error } = await supabase
+      .from('general_collaborators')
+      .update({
+        status: newStatus,
+        user_id: req.user.id,
+        accepted_at: response === 'accept' ? new Date().toISOString() : null,
+        token_hash: null,
+        token_expires_at: null
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Notify the inviter
+    await createCollaborationNotification(
+      invitation.invited_by,
+      response === 'accept' ? 'network_accepted' : 'network_declined',
+      response === 'accept' ? 'Connection Accepted' : 'Connection Declined',
+      `${req.profile.full_name || req.profile.email} ${response === 'accept' ? 'accepted' : 'declined'} your invitation`,
+      { collaboratorId: id, role: invitation.role }
+    );
+
+    logger.info(`Network invitation ${newStatus}`, { invitationId: id, userId: req.user.id });
+
+    res.json({ success: true, collaborator: updated });
+  })
+);
+
+/**
+ * DELETE /api/collaboration/collaborators/:id
+ * Remove a general collaborator from your network
+ */
+router.delete('/collaborators/:id',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    // Verify ownership
+    const { data: collab } = await supabase
+      .from('general_collaborators')
+      .select('id, invited_by')
+      .eq('id', id)
+      .single();
+
+    if (!collab) {
+      return res.status(404).json({ error: 'Collaborator not found' });
+    }
+
+    if (collab.invited_by !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to remove this collaborator' });
+    }
+
+    const { error } = await supabase
+      .from('general_collaborators')
+      .update({ status: 'removed' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    logger.info('General collaborator removed', { collaboratorId: id });
+
+    res.json({ success: true });
+  })
+);
+
+/**
+ * PUT /api/collaboration/collaborators/:id
+ * Update a general collaborator (role, notes)
+ */
+router.put('/collaborators/:id',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { role, notes } = req.body;
+
+    // Verify ownership
+    const { data: collab } = await supabase
+      .from('general_collaborators')
+      .select('id, invited_by')
+      .eq('id', id)
+      .single();
+
+    if (!collab) {
+      return res.status(404).json({ error: 'Collaborator not found' });
+    }
+
+    if (collab.invited_by !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to update this collaborator' });
+    }
+
+    const updateData = {};
+    if (role && ['designer', 'fabricator', 'contractor', 'installer', 'vendor', 'partner'].includes(role)) {
+      updateData.role = role;
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid updates provided' });
+    }
+
+    const { data: updated, error } = await supabase
+      .from('general_collaborators')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('General collaborator updated', { collaboratorId: id, updates: Object.keys(updateData) });
+
+    res.json({ success: true, collaborator: updated });
+  })
+);
+
+/**
+ * POST /api/collaboration/collaborators/:id/assign-project
+ * Assign a general collaborator to a specific project
+ */
+router.post('/collaborators/:id/assign-project',
+  verifyProOrDesigner,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { project_id, access_level = 'read' } = req.body;
+
+    if (!project_id) {
+      return res.status(400).json({ error: 'project_id is required' });
+    }
+
+    // Get the collaborator
+    const { data: collab } = await supabase
+      .from('general_collaborators')
+      .select('*')
+      .eq('id', id)
+      .eq('status', 'accepted')
+      .single();
+
+    if (!collab) {
+      return res.status(404).json({ error: 'Collaborator not found or not accepted' });
+    }
+
+    if (collab.invited_by !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    if (!collab.user_id) {
+      return res.status(400).json({ error: 'Collaborator has not created an account yet' });
+    }
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id, name')
+      .eq('id', project_id)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to add collaborators to this project' });
+    }
+
+    // Check if already on project
+    const { data: existing } = await supabase
+      .from('project_collaborators')
+      .select('id, invitation_status')
+      .eq('project_id', project_id)
+      .eq('user_id', collab.user_id)
+      .single();
+
+    let projectCollab;
+    if (existing) {
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .update({
+          role: collab.role,
+          access_level,
+          invitation_status: 'accepted',
+          accepted_at: new Date().toISOString(),
+          notes: collab.notes
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      projectCollab = data;
+    } else {
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .insert({
+          project_id,
+          user_id: collab.user_id,
+          role: collab.role,
+          access_level,
+          invitation_status: 'accepted',
+          invited_by: req.user.id,
+          accepted_at: new Date().toISOString(),
+          notes: collab.notes
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      projectCollab = data;
+    }
+
+    // Notify the collaborator
+    await createCollaborationNotification(
+      collab.user_id,
+      'project_assigned',
+      'Added to Project',
+      `You have been added to project "${project.name || 'Untitled'}" as a ${collab.role}`,
+      { projectId: project_id, role: collab.role }
+    );
+
+    logger.info('Collaborator assigned to project', {
+      collaboratorId: id, projectId: project_id, userId: collab.user_id
+    });
+
+    res.json({ success: true, projectCollaborator: projectCollab });
+  })
+);
+
+/**
+ * GET /api/collaboration/network/verify/:token
+ * Verify a network invitation token (public)
+ */
+router.get('/network/verify/:token', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { token } = req.params;
+
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'Invalid token format' });
+  }
+
+  const tokenHash = hashToken(token);
+
+  const { data: invitation } = await supabase
+    .from('general_collaborators')
+    .select('id, email, role, status, token_expires_at, invited_by')
+    .eq('token_hash', tokenHash)
+    .single();
+
+  if (!invitation) {
+    return res.status(404).json({ error: 'Invitation not found' });
+  }
+
+  if (invitation.status !== 'pending') {
+    return res.status(400).json({ error: 'This invitation has already been ' + invitation.status });
+  }
+
+  if (new Date(invitation.token_expires_at) < new Date()) {
+    return res.status(400).json({ error: 'This invitation has expired' });
+  }
+
+  // Get inviter info
+  const { data: inviter } = await supabase
+    .from('sg_users')
+    .select('full_name, email, business_name')
+    .eq('id', invitation.invited_by)
+    .single();
+
+  // Check if user already has an account
+  const { data: existingUser } = await supabase
+    .from('sg_users')
+    .select('id')
+    .eq('email', invitation.email.toLowerCase())
+    .single();
+
+  res.json({
+    success: true,
+    invitation: {
+      email: invitation.email,
+      role: invitation.role,
+      inviterName: inviter?.full_name || inviter?.email || 'A team member',
+      inviterBusiness: inviter?.business_name,
+      hasAccount: !!existingUser,
+      expiresAt: invitation.token_expires_at
+    }
+  });
+}));
 
 module.exports = router;

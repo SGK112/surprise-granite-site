@@ -93,6 +93,16 @@
       this.hasRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
       this.hasSynthesis = 'speechSynthesis' in window;
 
+      // iOS detection - iOS Safari has very limited webkitSpeechRecognition support
+      this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      // On iOS, redirect to realtime mode which uses WebSocket audio streaming
+      if (this.isIOS) {
+        console.log('[Aria Voice] iOS detected - recommending realtime mode for better voice experience');
+        this.useRealtimeMode = true;
+      }
+
       // Pre-load voices (they load asynchronously in most browsers)
       if (this.hasSynthesis) {
         this.loadVoices();
@@ -568,6 +578,28 @@
 
     // Open modal
     open() {
+      // On iOS, redirect to AriaRealtime if available (better voice support)
+      if (this.isIOS && this.useRealtimeMode && window.AriaRealtime) {
+        console.log('[Aria Voice] Redirecting to AriaRealtime for iOS');
+        // Initialize AriaRealtime with same config if not already done
+        if (!window.ariaRealtime) {
+          window.ariaRealtime = new window.AriaRealtime({
+            businessName: this.config.businessName,
+            assistantName: this.config.assistantName,
+            primaryColor: this.config.primaryColor,
+            secondaryColor: this.config.secondaryColor,
+            theme: this.config.theme,
+            position: this.config.position,
+            voice: this.config.voice || 'coral',
+            greeting: this.config.greeting,
+            businessContext: this.config.businessContext
+          });
+          window.ariaRealtime.init();
+        }
+        window.ariaRealtime.open();
+        return;
+      }
+
       if (!this.modalOverlay) {
         this.createModal();
       }
