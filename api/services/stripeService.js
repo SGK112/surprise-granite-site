@@ -223,6 +223,143 @@ async function createPaymentLink({ priceId, quantity = 1, metadata = {} }) {
 }
 
 /**
+ * Create a payment link for a specific entity (lead, estimate, or invoice)
+ * Creates a one-time product and price, then generates a shareable payment link
+ */
+async function createPayLinkForEntity({
+  entityType,      // 'lead', 'estimate', or 'invoice'
+  entityId,
+  amount,          // Amount in cents
+  description,
+  customerEmail,
+  customerName,
+  metadata = {},
+  successUrl = 'https://www.surprisegranite.com/thank-you/',
+  cancelUrl = 'https://www.surprisegranite.com/'
+}) {
+  try {
+    // Validate entity type
+    const validTypes = ['lead', 'estimate', 'invoice'];
+    if (!validTypes.includes(entityType)) {
+      throw new Error(`Invalid entity type: ${entityType}. Must be one of: ${validTypes.join(', ')}`);
+    }
+
+    // Validate amount
+    if (!amount || amount <= 0) {
+      throw new Error('Amount must be a positive number in cents');
+    }
+
+    // Create a product for this payment
+    const productName = `${entityType.charAt(0).toUpperCase() + entityType.slice(1)} Payment`;
+    const product = await stripe.products.create({
+      name: productName,
+      description: description || `Payment for ${entityType} #${entityId}`,
+      metadata: {
+        entity_type: entityType,
+        entity_id: entityId,
+        source: 'surprise_granite_api',
+        ...metadata
+      }
+    });
+
+    // Create a one-time price for this product
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: amount,
+      currency: 'usd'
+    });
+
+    // Build payment link options
+    const paymentLinkOptions = {
+      line_items: [{ price: price.id, quantity: 1 }],
+      after_completion: {
+        type: 'redirect',
+        redirect: { url: successUrl }
+      },
+      metadata: {
+        entity_type: entityType,
+        entity_id: entityId,
+        customer_email: customerEmail || '',
+        customer_name: customerName || '',
+        ...metadata
+      },
+      payment_method_types: ['card', 'us_bank_account'],
+      billing_address_collection: 'required',
+      phone_number_collection: { enabled: true }
+    };
+
+    // Pre-fill customer email if provided
+    if (customerEmail) {
+      paymentLinkOptions.customer_creation = 'if_required';
+    }
+
+    // Create the payment link
+    const paymentLink = await stripe.paymentLinks.create(paymentLinkOptions);
+
+    logger.paymentEvent('entity_pay_link_created', {
+      entityType,
+      entityId,
+      amount: amount / 100,
+      url: paymentLink.url,
+      paymentLinkId: paymentLink.id
+    });
+
+    return {
+      success: true,
+      payLink: {
+        id: paymentLink.id,
+        url: paymentLink.url,
+        amount: amount,
+        amountFormatted: `$${(amount / 100).toFixed(2)}`,
+        productId: product.id,
+        priceId: price.id,
+        entityType,
+        entityId,
+        createdAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    logger.apiError(error, {
+      context: 'Create pay link for entity',
+      entityType,
+      entityId,
+      amount
+    });
+    return { success: false, error: error.message || error };
+  }
+}
+
+/**
+ * Deactivate a payment link
+ */
+async function deactivatePaymentLink(paymentLinkId) {
+  try {
+    const paymentLink = await stripe.paymentLinks.update(paymentLinkId, {
+      active: false
+    });
+
+    logger.paymentEvent('payment_link_deactivated', { paymentLinkId });
+    return { success: true, paymentLink };
+  } catch (error) {
+    logger.apiError(error, { context: 'Deactivate payment link', paymentLinkId });
+    return { success: false, error: error.message || error };
+  }
+}
+
+/**
+ * Get payment link details
+ */
+async function getPaymentLink(paymentLinkId) {
+  try {
+    const paymentLink = await stripe.paymentLinks.retrieve(paymentLinkId);
+    return { success: true, paymentLink };
+  } catch (error) {
+    logger.apiError(error, { context: 'Get payment link', paymentLinkId });
+    return { success: false, error: error.message || error };
+  }
+}
+
+/**
  * Verify webhook signature
  */
 function verifyWebhookSignature(payload, signature, webhookSecret) {
@@ -252,6 +389,9 @@ module.exports = {
   getInvoice,
   listInvoices,
   createPaymentLink,
+  createPayLinkForEntity,
+  deactivatePaymentLink,
+  getPaymentLink,
   verifyWebhookSignature,
   getStripeInstance
 };

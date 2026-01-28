@@ -259,14 +259,26 @@ const calendarRouter = require('./routes/calendar');
 // Automation Routes (lead nurturing, client retention)
 const automationRouter = require('./routes/automation');
 
+// Marketplace Routes (designer products, slabs, stone yards)
+const marketplaceRouter = require('./routes/marketplace');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Make supabase available to routes via app.get('supabase')
+app.set('supabase', supabase);
+
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Import Stripe service for enhanced payment link features
+const stripeService = require('./services/stripeService');
+
+// Import Email service for templates
+const emailService = require('./services/emailService');
 
 // Email configuration - using Gmail SMTP or configure your own
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
@@ -3373,6 +3385,9 @@ app.use('/api/email', emailRouter);
 const portalRouter = require('./routes/portal');
 app.use('/api/portal', portalRouter);
 
+// ============ MARKETPLACE ROUTES ============
+app.use('/api/marketplace', marketplaceRouter);
+
 // ============ ARIA VOICE LEAD CAPTURE ============
 app.post('/api/aria-lead', leadRateLimiter, async (req, res) => {
   try {
@@ -4533,6 +4548,767 @@ app.post('/api/payment-links', authenticateJWT, async (req, res) => {
     });
   } catch (error) {
     logger.error('Payment link error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// ============ ATTACHMENTS SYSTEM ============
+
+// Create attachment (upload metadata - file should be uploaded to Supabase Storage first)
+app.post('/api/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const {
+      lead_id,
+      estimate_id,
+      invoice_id,
+      file_name,
+      file_url,
+      file_type,
+      mime_type,
+      file_size,
+      category,
+      description,
+      visible_to_customer,
+      include_in_email
+    } = req.body;
+
+    // Validate required fields
+    if (!file_name || !file_url) {
+      return res.status(400).json({ error: 'file_name and file_url are required' });
+    }
+
+    // Ensure exactly one parent is specified
+    const parentCount = [lead_id, estimate_id, invoice_id].filter(Boolean).length;
+    if (parentCount !== 1) {
+      return res.status(400).json({ error: 'Exactly one of lead_id, estimate_id, or invoice_id must be specified' });
+    }
+
+    // Check attachment limit (10 per entity)
+    const parentField = lead_id ? 'lead_id' : estimate_id ? 'estimate_id' : 'invoice_id';
+    const parentValue = lead_id || estimate_id || invoice_id;
+
+    const { count } = await supabase
+      .from('attachments')
+      .select('*', { count: 'exact', head: true })
+      .eq(parentField, parentValue);
+
+    if (count >= 10) {
+      return res.status(400).json({ error: 'Maximum of 10 attachments per item reached' });
+    }
+
+    // Insert attachment
+    const { data, error } = await supabase
+      .from('attachments')
+      .insert({
+        user_id: userId,
+        lead_id,
+        estimate_id,
+        invoice_id,
+        file_name,
+        file_url,
+        file_type: file_type || 'document',
+        mime_type,
+        file_size,
+        category: category || 'general',
+        description,
+        visible_to_customer: visible_to_customer !== false,
+        include_in_email: include_in_email === true,
+        uploaded_by: userId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('Attachment created:', { id: data.id, file_name, parentField, parentValue });
+    res.status(201).json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Create attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get single attachment
+app.get('/api/attachments/:id', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    res.json({ success: true, attachment: data });
+  } catch (error) {
+    logger.error('Get attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Delete attachment
+app.delete('/api/attachments/:id', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    // First get the attachment to verify ownership
+    const { data: existing } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    // Delete from database
+    const { error } = await supabase
+      .from('attachments')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    logger.info('Attachment deleted:', { id, file_name: existing.file_name });
+    res.json({ success: true, message: 'Attachment deleted' });
+  } catch (error) {
+    logger.error('Delete attachment error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get attachments for a lead
+app.get('/api/leads/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('lead_id', id)
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, attachments: data || [] });
+  } catch (error) {
+    logger.error('Get lead attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get attachments for an estimate
+app.get('/api/estimates/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('estimate_id', id)
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, attachments: data || [] });
+  } catch (error) {
+    logger.error('Get estimate attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Get attachments for an invoice
+app.get('/api/invoices/:id/attachments', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('attachments')
+      .select('*')
+      .eq('invoice_id', id)
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, attachments: data || [] });
+  } catch (error) {
+    logger.error('Get invoice attachments error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// ============ ENTITY PAY LINKS ============
+
+// Generate pay link for a lead (quick quote)
+app.post('/api/leads/:id/pay-link', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { amount, description } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+
+    // Get lead details
+    const { data: lead, error: leadError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (leadError || !lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    // Create pay link using stripeService
+    const result = await stripeService.createPayLinkForEntity({
+      entityType: 'lead',
+      entityId: id,
+      amount: Math.round(amount * 100), // Convert to cents
+      description: description || `Quick Quote - ${lead.name || 'Lead'}`,
+      customerEmail: lead.email,
+      customerName: lead.name,
+      metadata: { lead_id: id }
+    });
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    // Update lead with pay link info
+    await supabase
+      .from('leads')
+      .update({
+        pay_link_url: result.payLink.url,
+        pay_link_id: result.payLink.id,
+        pay_link_amount: result.payLink.amount,
+        pay_link_created_at: new Date().toISOString(),
+        quick_quote_amount: amount
+      })
+      .eq('id', id);
+
+    logger.info('Lead pay link created:', { leadId: id, amount, url: result.payLink.url });
+    res.json({ success: true, pay_link: result.payLink });
+  } catch (error) {
+    logger.error('Create lead pay link error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Generate pay link for an estimate (deposit)
+app.post('/api/estimates/:id/pay-link', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { amount_type = 'deposit', custom_amount } = req.body;
+
+    // Get estimate details
+    const { data: estimate, error: estError } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (estError || !estimate) {
+      return res.status(404).json({ error: 'Estimate not found' });
+    }
+
+    // Determine amount
+    let amount;
+    let description;
+    if (amount_type === 'custom' && custom_amount) {
+      amount = Math.round(custom_amount * 100);
+      description = `Custom Payment - Estimate ${estimate.estimate_number}`;
+    } else if (amount_type === 'full') {
+      amount = Math.round((estimate.total || 0) * 100);
+      description = `Full Payment - Estimate ${estimate.estimate_number}`;
+    } else {
+      // Default: deposit
+      amount = Math.round((estimate.deposit_amount || estimate.total * 0.5) * 100);
+      description = `Deposit - Estimate ${estimate.estimate_number}`;
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount calculated' });
+    }
+
+    // Create pay link
+    const result = await stripeService.createPayLinkForEntity({
+      entityType: 'estimate',
+      entityId: id,
+      amount,
+      description,
+      customerEmail: estimate.customer_email,
+      customerName: estimate.customer_name,
+      metadata: {
+        estimate_id: id,
+        estimate_number: estimate.estimate_number,
+        amount_type
+      }
+    });
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    // Update estimate with pay link info
+    await supabase
+      .from('estimates')
+      .update({
+        pay_link_url: result.payLink.url,
+        pay_link_id: result.payLink.id,
+        pay_link_amount: result.payLink.amount,
+        pay_link_created_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    logger.info('Estimate pay link created:', { estimateId: id, amount, url: result.payLink.url });
+    res.json({ success: true, pay_link: result.payLink });
+  } catch (error) {
+    logger.error('Create estimate pay link error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Generate pay link for an invoice
+app.post('/api/invoices/:id/pay-link', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { amount_type = 'balance', custom_amount } = req.body;
+
+    // Get invoice details
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (invError || !invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    // Determine amount
+    let amount;
+    let description;
+    if (amount_type === 'custom' && custom_amount) {
+      amount = Math.round(custom_amount * 100);
+      description = `Custom Payment - Invoice ${invoice.invoice_number}`;
+    } else if (amount_type === 'full') {
+      amount = Math.round((invoice.total || 0) * 100);
+      description = `Full Payment - Invoice ${invoice.invoice_number}`;
+    } else {
+      // Default: balance due
+      amount = Math.round((invoice.balance_due || invoice.total || 0) * 100);
+      description = `Balance Due - Invoice ${invoice.invoice_number}`;
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount calculated. Invoice may already be paid.' });
+    }
+
+    // Create pay link
+    const result = await stripeService.createPayLinkForEntity({
+      entityType: 'invoice',
+      entityId: id,
+      amount,
+      description,
+      customerEmail: invoice.customer_email,
+      customerName: invoice.customer_name,
+      metadata: {
+        invoice_id: id,
+        invoice_number: invoice.invoice_number,
+        amount_type
+      }
+    });
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+
+    // Update invoice with pay link info
+    await supabase
+      .from('invoices')
+      .update({
+        pay_link_url: result.payLink.url,
+        pay_link_id: result.payLink.id,
+        pay_link_amount: result.payLink.amount,
+        pay_link_created_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    logger.info('Invoice pay link created:', { invoiceId: id, amount, url: result.payLink.url });
+    res.json({ success: true, pay_link: result.payLink });
+  } catch (error) {
+    logger.error('Create invoice pay link error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// ============ SEND WITH ATTACHMENTS & PAY LINKS ============
+
+// Send pay link email
+app.post('/api/pay-link/send', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const {
+      to_email,
+      customer_name,
+      amount,
+      pay_link_url,
+      description,
+      entity_type,
+      entity_number,
+      due_date,
+      notes
+    } = req.body;
+
+    if (!to_email || !pay_link_url || !amount) {
+      return res.status(400).json({ error: 'to_email, pay_link_url, and amount are required' });
+    }
+
+    // Generate email using template
+    const emailData = emailService.generatePayLinkEmail({
+      customerName: customer_name,
+      amount: typeof amount === 'number' ? amount * 100 : amount, // Convert to cents if needed
+      description,
+      payLinkUrl: pay_link_url,
+      entityType: entity_type || 'payment',
+      entityNumber: entity_number,
+      dueDate: due_date,
+      notes
+    });
+
+    // Send email
+    const result = await emailService.sendNotification(to_email, emailData.subject, emailData.html);
+
+    if (!result.success) {
+      throw new Error(result.reason || 'Failed to send email');
+    }
+
+    logger.info('Pay link email sent:', { to: to_email, amount });
+    res.json({ success: true, message: 'Pay link email sent successfully' });
+  } catch (error) {
+    logger.error('Send pay link email error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Send estimate with attachments and optional pay link
+app.post('/api/estimates/:id/send', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const {
+      include_attachments = true,
+      include_pay_link = false,
+      generate_pay_link = false, // Create new pay link if doesn't exist
+      notes
+    } = req.body;
+
+    // Get estimate
+    const { data: estimate, error: estError } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (estError || !estimate) {
+      return res.status(404).json({ error: 'Estimate not found' });
+    }
+
+    if (!estimate.customer_email) {
+      return res.status(400).json({ error: 'Estimate has no customer email' });
+    }
+
+    // Generate pay link if requested and doesn't exist
+    let payLinkUrl = estimate.pay_link_url;
+    if (generate_pay_link && !payLinkUrl) {
+      const amount = Math.round((estimate.deposit_amount || estimate.total * 0.5) * 100);
+      const result = await stripeService.createPayLinkForEntity({
+        entityType: 'estimate',
+        entityId: id,
+        amount,
+        description: `Deposit - Estimate ${estimate.estimate_number}`,
+        customerEmail: estimate.customer_email,
+        customerName: estimate.customer_name
+      });
+      if (result.success) {
+        payLinkUrl = result.payLink.url;
+        await supabase
+          .from('estimates')
+          .update({
+            pay_link_url: payLinkUrl,
+            pay_link_id: result.payLink.id,
+            pay_link_amount: amount,
+            pay_link_created_at: new Date().toISOString()
+          })
+          .eq('id', id);
+      }
+    }
+
+    // Get attachments if requested
+    let attachments = [];
+    let attachmentData = [];
+    if (include_attachments) {
+      const { data: atts } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('estimate_id', id)
+        .eq('include_in_email', true);
+
+      if (atts && atts.length > 0) {
+        attachmentData = atts;
+        // Fetch actual files for email attachment
+        for (const att of atts) {
+          try {
+            const response = await fetch(att.file_url);
+            if (response.ok) {
+              const buffer = await response.buffer();
+              attachments.push({
+                filename: att.file_name,
+                content: buffer,
+                contentType: att.mime_type
+              });
+            }
+          } catch (e) {
+            logger.warn('Failed to fetch attachment:', att.file_name);
+          }
+        }
+      }
+    }
+
+    // Generate email
+    const emailData = emailService.generateEstimateWithAttachmentsEmail({
+      customerName: estimate.customer_name,
+      estimateNumber: estimate.estimate_number,
+      projectName: estimate.project_name,
+      total: estimate.total,
+      depositAmount: estimate.deposit_amount,
+      depositPercent: estimate.deposit_percent,
+      payLinkUrl: include_pay_link ? payLinkUrl : null,
+      validUntil: estimate.valid_until,
+      attachments: attachmentData,
+      notes: notes || estimate.notes
+    });
+
+    // Send email with attachments
+    const result = await emailService.sendNotification(
+      estimate.customer_email,
+      emailData.subject,
+      emailData.html,
+      attachments
+    );
+
+    if (!result.success) {
+      throw new Error(result.reason || 'Failed to send email');
+    }
+
+    // Update estimate sent status
+    await supabase
+      .from('estimates')
+      .update({
+        status: estimate.status === 'draft' ? 'sent' : estimate.status,
+        sent_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    logger.info('Estimate sent:', { estimateId: id, to: estimate.customer_email, attachmentCount: attachments.length });
+    res.json({
+      success: true,
+      message: 'Estimate sent successfully',
+      details: {
+        sent_to: estimate.customer_email,
+        attachments_count: attachments.length,
+        pay_link_included: include_pay_link && !!payLinkUrl
+      }
+    });
+  } catch (error) {
+    logger.error('Send estimate error:', error);
+    return handleApiError(res, error);
+  }
+});
+
+// Send invoice with attachments and optional pay link
+app.post('/api/invoices/:id/send', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!await verifyAdminAccess(userId)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const {
+      include_attachments = true,
+      include_pay_link = true,
+      generate_pay_link = false,
+      notes
+    } = req.body;
+
+    // Get invoice
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (invError || !invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    if (!invoice.customer_email) {
+      return res.status(400).json({ error: 'Invoice has no customer email' });
+    }
+
+    // Generate pay link if requested and doesn't exist
+    let payLinkUrl = invoice.pay_link_url;
+    if (generate_pay_link && !payLinkUrl && (invoice.balance_due || invoice.total) > 0) {
+      const amount = Math.round((invoice.balance_due || invoice.total) * 100);
+      const result = await stripeService.createPayLinkForEntity({
+        entityType: 'invoice',
+        entityId: id,
+        amount,
+        description: `Payment - Invoice ${invoice.invoice_number}`,
+        customerEmail: invoice.customer_email,
+        customerName: invoice.customer_name
+      });
+      if (result.success) {
+        payLinkUrl = result.payLink.url;
+        await supabase
+          .from('invoices')
+          .update({
+            pay_link_url: payLinkUrl,
+            pay_link_id: result.payLink.id,
+            pay_link_amount: amount,
+            pay_link_created_at: new Date().toISOString()
+          })
+          .eq('id', id);
+      }
+    }
+
+    // Get attachments if requested
+    let attachments = [];
+    let attachmentData = [];
+    if (include_attachments) {
+      const { data: atts } = await supabase
+        .from('attachments')
+        .select('*')
+        .eq('invoice_id', id)
+        .eq('include_in_email', true);
+
+      if (atts && atts.length > 0) {
+        attachmentData = atts;
+        for (const att of atts) {
+          try {
+            const response = await fetch(att.file_url);
+            if (response.ok) {
+              const buffer = await response.buffer();
+              attachments.push({
+                filename: att.file_name,
+                content: buffer,
+                contentType: att.mime_type
+              });
+            }
+          } catch (e) {
+            logger.warn('Failed to fetch attachment:', att.file_name);
+          }
+        }
+      }
+    }
+
+    // Generate email
+    const emailData = emailService.generateInvoiceWithAttachmentsEmail({
+      customerName: invoice.customer_name,
+      invoiceNumber: invoice.invoice_number,
+      projectName: invoice.project_name,
+      total: invoice.total,
+      amountPaid: invoice.amount_paid,
+      balanceDue: invoice.balance_due || invoice.total,
+      payLinkUrl: include_pay_link ? payLinkUrl : null,
+      dueDate: invoice.due_date,
+      attachments: attachmentData,
+      notes: notes || invoice.notes
+    });
+
+    // Send email with attachments
+    const result = await emailService.sendNotification(
+      invoice.customer_email,
+      emailData.subject,
+      emailData.html,
+      attachments
+    );
+
+    if (!result.success) {
+      throw new Error(result.reason || 'Failed to send email');
+    }
+
+    // Update invoice sent status
+    await supabase
+      .from('invoices')
+      .update({
+        status: invoice.status === 'draft' ? 'sent' : invoice.status,
+        sent_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    logger.info('Invoice sent:', { invoiceId: id, to: invoice.customer_email, attachmentCount: attachments.length });
+    res.json({
+      success: true,
+      message: 'Invoice sent successfully',
+      details: {
+        sent_to: invoice.customer_email,
+        attachments_count: attachments.length,
+        pay_link_included: include_pay_link && !!payLinkUrl
+      }
+    });
+  } catch (error) {
+    logger.error('Send invoice error:', error);
     return handleApiError(res, error);
   }
 });
@@ -8830,33 +9606,23 @@ app.get('/api/marketplace/slabs', async (req, res) => {
       let query = supabase
         .from('distributor_products')
         .select(`
-          *,
-          distributor_product_slabs(*),
-          distributors(
-            id, company_name, logo_url, website
-          ),
-          distributor_locations(
-            id, name, city, state, postal_code, phone
-          )
+          id, name, brand, sku, material_type, category, subcategory,
+          dimensions, thickness, finish, color,
+          unit_price, unit_type, sqft_per_box,
+          description, is_active, primary_image_url,
+          distributor_id, created_at, updated_at,
+          distributor_profiles(company_name, website)
         `, { count: 'exact' })
-        .eq('product_type', 'slab')
-        .eq('is_public', true)
-        .eq('status', 'active');
+        .eq('is_active', true);
 
       // Apply filters
       if (material_type) query = query.ilike('material_type', `%${material_type}%`);
       if (brand) query = query.ilike('brand', `%${brand}%`);
-      if (color) query = query.ilike('color_family', `%${color}%`);
-      if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
-      if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+      if (color) query = query.ilike('color', `%${color}%`);
+      if (min_price) query = query.gte('unit_price', parseFloat(min_price));
+      if (max_price) query = query.lte('unit_price', parseFloat(max_price));
       if (search) {
-        query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%,color_family.ilike.%${search}%`);
-      }
-
-      // Filter by sqft range if provided
-      if (min_sqft || max_sqft) {
-        // This requires joining with distributor_product_slabs
-        // For now, we'll filter client-side or add a database function
+        query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%,color.ilike.%${search}%`);
       }
 
       // Pagination
@@ -8868,31 +9634,24 @@ app.get('/api/marketplace/slabs', async (req, res) => {
 
       if (error) throw error;
 
-      // Transform products to match legacy slab format
+      // Transform products to match expected slab format
       const slabs = (products || []).map(p => ({
         id: p.id,
         distributor_id: p.distributor_id,
         product_name: p.name,
         brand: p.brand,
         material_type: p.material_type,
-        color_family: p.color_family,
+        color_family: p.color,
         finish: p.finish,
         description: p.description,
-        price_per_sqft: p.wholesale_price,
-        length_inches: p.distributor_product_slabs?.[0]?.length_inches,
-        width_inches: p.distributor_product_slabs?.[0]?.width_inches,
-        thickness_cm: p.distributor_product_slabs?.[0]?.thickness_cm,
-        sqft: p.distributor_product_slabs?.[0]?.sqft,
-        quality_grade: p.distributor_product_slabs?.[0]?.quality_grade,
-        origin_country: p.distributor_product_slabs?.[0]?.origin_country,
-        lot_number: p.distributor_product_slabs?.[0]?.lot_number,
-        images: p.images || [],
-        status: p.status === 'active' ? 'available' : p.status,
-        is_featured: p.is_featured,
+        price_per_sqft: p.unit_price,
+        dimensions: p.dimensions,
+        thickness: p.thickness,
+        images: p.primary_image_url ? [p.primary_image_url] : [],
+        status: p.is_active ? 'available' : 'inactive',
         created_at: p.created_at,
         updated_at: p.updated_at,
-        distributor: p.distributors,
-        location: p.distributor_locations
+        distributor: p.distributor_profiles
       }));
 
       return res.json({ slabs, total: count });
@@ -8944,27 +9703,23 @@ app.get('/api/marketplace/products', async (req, res) => {
     let query = supabase
       .from('distributor_products')
       .select(`
-        *,
-        distributor_product_slabs(*),
-        distributor_product_tiles(*),
-        distributor_product_flooring(*),
-        distributor_product_installation(*),
-        distributors(
-          id, company_name, logo_url, website, city, state
-        )
+        id, name, brand, sku, material_type, category, subcategory,
+        dimensions, thickness, finish, color,
+        unit_price, unit_type, sqft_per_box,
+        description, is_active, primary_image_url,
+        distributor_id, created_at, updated_at,
+        distributor_profiles(company_name, website)
       `, { count: 'exact' })
-      .eq('is_public', true)
-      .eq('status', 'active');
+      .eq('is_active', true);
 
     // Apply filters
-    if (product_type) query = query.eq('product_type', product_type);
+    if (product_type) query = query.eq('category', product_type);
     if (material_type) query = query.ilike('material_type', `%${material_type}%`);
     if (brand) query = query.ilike('brand', `%${brand}%`);
     const colorFilter = color_family || color;
-    if (colorFilter) query = query.ilike('color_family', `%${colorFilter}%`);
-    if (featured === 'true') query = query.eq('is_featured', true);
-    if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
-    if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+    if (colorFilter) query = query.ilike('color', `%${colorFilter}%`);
+    if (min_price) query = query.gte('unit_price', parseFloat(min_price));
+    if (max_price) query = query.lte('unit_price', parseFloat(max_price));
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%,material_type.ilike.%${search}%`);

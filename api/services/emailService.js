@@ -38,22 +38,41 @@ const transporter = nodemailer.createTransport({
 
 /**
  * Send an email notification
+ * @param {string} to - Recipient email address
+ * @param {string} subject - Email subject
+ * @param {string} html - HTML content
+ * @param {Array} attachments - Optional array of attachments
+ *   Each attachment can have: { filename, content (Buffer), contentType, path (URL) }
  */
-async function sendNotification(to, subject, html) {
+async function sendNotification(to, subject, html, attachments = []) {
   try {
     if (!SMTP_USER) {
       logger.warn('Email not sent - SMTP not configured', { to: to?.substring(0, 3) + '***', subject });
       return { success: false, reason: 'SMTP not configured' };
     }
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: `"${COMPANY.shortName}" <${SMTP_USER}>`,
       to,
       subject,
       html
-    });
+    };
 
-    logger.emailSent(subject, true);
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      mailOptions.attachments = attachments.map(att => {
+        const attachment = { filename: att.filename };
+        if (att.content) attachment.content = att.content;
+        if (att.contentType) attachment.contentType = att.contentType;
+        if (att.path) attachment.path = att.path;
+        if (att.href) attachment.href = att.href; // For URL-based attachments
+        return attachment;
+      });
+    }
+
+    await transporter.sendMail(mailOptions);
+
+    logger.emailSent(subject, true, { attachmentCount: attachments.length });
     return { success: true };
   } catch (err) {
     logger.apiError(err, { context: 'Email send failed', subject });
@@ -814,6 +833,370 @@ function generateAppointmentWithPortalEmail(data) {
   };
 }
 
+/**
+ * Generate pay link email - for sending payment links
+ */
+function generatePayLinkEmail({
+  customerName,
+  amount,
+  description,
+  payLinkUrl,
+  entityType = 'payment',  // 'estimate', 'invoice', 'deposit', 'payment'
+  entityNumber,
+  dueDate,
+  notes
+}) {
+  const firstName = (customerName || 'there').split(' ')[0];
+  const formattedAmount = typeof amount === 'number'
+    ? `$${(amount / 100).toFixed(2)}`
+    : amount;
+
+  // Determine header text and color based on entity type
+  const headerConfig = {
+    estimate: { text: 'Deposit Request', color: '#1a1a2e' },
+    invoice: { text: 'Invoice Payment', color: '#1a1a2e' },
+    deposit: { text: 'Deposit Payment', color: '#1a1a2e' },
+    payment: { text: 'Payment Request', color: '#1a1a2e' }
+  };
+
+  const { text: headerText, color: headerColor } = headerConfig[entityType] || headerConfig.payment;
+
+  const content = `
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.5;">
+      Hi ${escapeHtml(firstName)},
+    </p>
+
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      ${entityType === 'estimate' ? 'A deposit is requested to proceed with your project.' :
+        entityType === 'invoice' ? 'Please find your invoice payment link below.' :
+        'Please click the button below to complete your payment.'}
+    </p>
+
+    <!-- Payment Details Box -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td style="background: #f8f9fa; border-radius: 12px; padding: 24px; border-left: 4px solid #f9cb00;">
+          <table width="100%" cellspacing="0" cellpadding="0">
+            ${entityNumber ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px; width: 120px;">Reference:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">${escapeHtml(entityNumber)}</td>
+            </tr>
+            ` : ''}
+            ${description ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Description:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px;">${escapeHtml(description)}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Amount Due:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 20px; font-weight: 700;">${escapeHtml(formattedAmount)}</td>
+            </tr>
+            ${dueDate ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Due Date:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px;">${escapeHtml(dueDate)}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Pay Now Button -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(payLinkUrl)}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #f0b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(249, 203, 0, 0.4);">
+            Pay ${escapeHtml(formattedAmount)} Now
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    ${notes ? `
+    <p style="margin: 0 0 20px; color: #666; font-size: 14px; line-height: 1.5; font-style: italic; padding: 16px; background: #fafafa; border-radius: 8px;">
+      ${escapeHtml(notes)}
+    </p>
+    ` : ''}
+
+    <!-- Payment Methods Info -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="padding: 16px; background: #f0f7ff; border-radius: 8px; text-align: center;">
+          <p style="margin: 0 0 8px; color: #1a1a2e; font-size: 13px; font-weight: 600;">Secure Payment Options</p>
+          <p style="margin: 0; color: #666; font-size: 12px;">Credit Card • Debit Card • Bank Transfer (ACH)</p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin: 20px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  // Generate subject line
+  let subject;
+  if (entityType === 'estimate' && entityNumber) {
+    subject = `Deposit Request - Estimate ${entityNumber}`;
+  } else if (entityType === 'invoice' && entityNumber) {
+    subject = `Invoice ${entityNumber} - ${formattedAmount} Due`;
+  } else {
+    subject = `Payment Request - ${formattedAmount} - ${COMPANY.shortName}`;
+  }
+
+  return {
+    subject,
+    html: wrapEmailTemplate(content, { headerText, headerColor })
+  };
+}
+
+/**
+ * Generate estimate email with attachments info
+ */
+function generateEstimateWithAttachmentsEmail({
+  customerName,
+  estimateNumber,
+  projectName,
+  total,
+  depositAmount,
+  depositPercent,
+  payLinkUrl,
+  validUntil,
+  attachments = [],
+  notes
+}) {
+  const firstName = (customerName || 'there').split(' ')[0];
+  const formattedTotal = typeof total === 'number' ? `$${total.toFixed(2)}` : total;
+  const formattedDeposit = typeof depositAmount === 'number' ? `$${depositAmount.toFixed(2)}` : depositAmount;
+
+  const content = `
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.5;">
+      Hi ${escapeHtml(firstName)},
+    </p>
+
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      Thank you for considering ${COMPANY.shortName} for your project. Please find your estimate details below.
+    </p>
+
+    <!-- Estimate Summary Box -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td style="background: #f8f9fa; border-radius: 12px; padding: 24px; border-left: 4px solid #f9cb00;">
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px; width: 130px;">Estimate #:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">${escapeHtml(estimateNumber)}</td>
+            </tr>
+            ${projectName ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Project:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px;">${escapeHtml(projectName)}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Total:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 18px; font-weight: 700;">${escapeHtml(formattedTotal)}</td>
+            </tr>
+            ${depositAmount ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Deposit (${depositPercent || 50}%):</td>
+              <td style="padding: 6px 0; color: #f9cb00; font-size: 16px; font-weight: 700;">${escapeHtml(formattedDeposit)}</td>
+            </tr>
+            ` : ''}
+            ${validUntil ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Valid Until:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px;">${escapeHtml(validUntil)}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${attachments.length > 0 ? `
+    <!-- Attachments Section -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 12px; color: #1a1a2e; font-size: 14px; font-weight: 600;">📎 Attachments (${attachments.length}):</p>
+          <table width="100%" cellspacing="0" cellpadding="0" style="background: #fafafa; border-radius: 8px; padding: 12px;">
+            ${attachments.map(att => `
+            <tr>
+              <td style="padding: 8px 12px; color: #555; font-size: 13px;">
+                ${att.file_type === 'image' || att.file_type === 'photo' ? '🖼️' : '📄'} ${escapeHtml(att.file_name)}
+              </td>
+            </tr>
+            `).join('')}
+          </table>
+          <p style="margin: 8px 0 0; color: #888; font-size: 12px;">Files are attached to this email.</p>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+
+    ${payLinkUrl ? `
+    <!-- Pay Deposit Button -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(payLinkUrl)}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #f0b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(249, 203, 0, 0.4);">
+            Pay Deposit ${formattedDeposit ? `(${escapeHtml(formattedDeposit)})` : ''} to Approve
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+
+    ${notes ? `
+    <p style="margin: 0 0 20px; color: #666; font-size: 14px; line-height: 1.5; padding: 16px; background: #fafafa; border-radius: 8px;">
+      <strong>Notes:</strong> ${escapeHtml(notes)}
+    </p>
+    ` : ''}
+
+    <p style="margin: 20px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  return {
+    subject: `Estimate ${estimateNumber} - ${formattedTotal} - ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerText: 'Your Estimate', headerColor: '#1a1a2e' })
+  };
+}
+
+/**
+ * Generate invoice email with attachments info
+ */
+function generateInvoiceWithAttachmentsEmail({
+  customerName,
+  invoiceNumber,
+  projectName,
+  total,
+  amountPaid,
+  balanceDue,
+  payLinkUrl,
+  dueDate,
+  attachments = [],
+  notes
+}) {
+  const firstName = (customerName || 'there').split(' ')[0];
+  const formattedTotal = typeof total === 'number' ? `$${total.toFixed(2)}` : total;
+  const formattedPaid = typeof amountPaid === 'number' ? `$${amountPaid.toFixed(2)}` : amountPaid;
+  const formattedBalance = typeof balanceDue === 'number' ? `$${balanceDue.toFixed(2)}` : balanceDue;
+
+  const content = `
+    <p style="margin: 0 0 20px; color: #333; font-size: 16px; line-height: 1.5;">
+      Hi ${escapeHtml(firstName)},
+    </p>
+
+    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+      Please find your invoice from ${COMPANY.shortName} below.
+    </p>
+
+    <!-- Invoice Summary Box -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td style="background: #f8f9fa; border-radius: 12px; padding: 24px; border-left: 4px solid #1a1a2e;">
+          <table width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px; width: 130px;">Invoice #:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">${escapeHtml(invoiceNumber)}</td>
+            </tr>
+            ${projectName ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Project:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px;">${escapeHtml(projectName)}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Total:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 16px; font-weight: 600;">${escapeHtml(formattedTotal)}</td>
+            </tr>
+            ${amountPaid ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Amount Paid:</td>
+              <td style="padding: 6px 0; color: #4caf50; font-size: 14px;">-${escapeHtml(formattedPaid)}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Balance Due:</td>
+              <td style="padding: 6px 0; color: #f44336; font-size: 20px; font-weight: 700;">${escapeHtml(formattedBalance)}</td>
+            </tr>
+            ${dueDate ? `
+            <tr>
+              <td style="padding: 6px 0; color: #666; font-size: 13px;">Due Date:</td>
+              <td style="padding: 6px 0; color: #1a1a2e; font-size: 14px; font-weight: 600;">${escapeHtml(dueDate)}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${attachments.length > 0 ? `
+    <!-- Attachments Section -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 12px; color: #1a1a2e; font-size: 14px; font-weight: 600;">📎 Attachments (${attachments.length}):</p>
+          <table width="100%" cellspacing="0" cellpadding="0" style="background: #fafafa; border-radius: 8px; padding: 12px;">
+            ${attachments.map(att => `
+            <tr>
+              <td style="padding: 8px 12px; color: #555; font-size: 13px;">
+                ${att.file_type === 'image' || att.file_type === 'photo' ? '🖼️' : '📄'} ${escapeHtml(att.file_name)}
+              </td>
+            </tr>
+            `).join('')}
+          </table>
+          <p style="margin: 8px 0 0; color: #888; font-size: 12px;">Files are attached to this email.</p>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+
+    ${payLinkUrl ? `
+    <!-- Pay Now Button -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(payLinkUrl)}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #f0b800 100%); color: #1a1a2e; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px rgba(249, 203, 0, 0.4);">
+            Pay ${escapeHtml(formattedBalance)} Now
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+
+    ${notes ? `
+    <p style="margin: 0 0 20px; color: #666; font-size: 14px; line-height: 1.5; padding: 16px; background: #fafafa; border-radius: 8px;">
+      <strong>Notes:</strong> ${escapeHtml(notes)}
+    </p>
+    ` : ''}
+
+    <!-- Payment Methods Info -->
+    <table width="100%" cellspacing="0" cellpadding="0" style="margin: 24px 0;">
+      <tr>
+        <td style="padding: 16px; background: #f0f7ff; border-radius: 8px; text-align: center;">
+          <p style="margin: 0 0 8px; color: #1a1a2e; font-size: 13px; font-weight: 600;">Secure Payment Options</p>
+          <p style="margin: 0; color: #666; font-size: 12px;">Credit Card • Debit Card • Bank Transfer (ACH)</p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin: 20px 0 0; color: #888; font-size: 13px; text-align: center;">
+      Questions? Call us at <a href="tel:${COMPANY.phone}" style="color: #1a1a2e; font-weight: 600; text-decoration: none;">${COMPANY.phone}</a>
+    </p>
+  `;
+
+  return {
+    subject: `Invoice ${invoiceNumber} - ${formattedBalance} Due - ${COMPANY.shortName}`,
+    html: wrapEmailTemplate(content, { headerText: 'Invoice', headerColor: '#1a1a2e' })
+  };
+}
+
 module.exports = {
   sendNotification,
   sendAdminNotification,
@@ -830,6 +1213,9 @@ module.exports = {
   generateContractorAssignmentEmail,
   generatePortalWelcomeEmail,
   generateAppointmentWithPortalEmail,
+  generatePayLinkEmail,
+  generateEstimateWithAttachmentsEmail,
+  generateInvoiceWithAttachmentsEmail,
   COMPANY,
   ADMIN_EMAIL,
   isConfigured: () => !!SMTP_USER
