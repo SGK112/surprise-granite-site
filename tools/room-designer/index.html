@@ -4422,6 +4422,284 @@
     .invite-send-status .status-item.failed { color: #ef4444; }
     .invite-send-status .status-item.sending { color: var(--text-muted); }
 
+    /* ============================================
+       MOBILE OPTIMIZATIONS FOR SHARE & OVERLAY
+       ============================================ */
+
+    /* Share Modal - Mobile */
+    @media (max-width: 600px) {
+      #shareModal .modal {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 16px 16px 0 0;
+        max-height: 90vh;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      #shareModal .modal-content {
+        max-height: calc(90vh - 60px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 24px;
+      }
+
+      .share-link-box {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .share-link-input {
+        width: 100%;
+        font-size: 14px !important;
+        padding: 14px 12px !important;
+      }
+
+      .share-link-box .btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+      }
+
+      /* Social share buttons - 2 per row on mobile */
+      .social-share-section > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+      }
+
+      .social-share-btn {
+        padding: 12px 10px !important;
+        font-size: 12px !important;
+        justify-content: center;
+        width: 100%;
+      }
+
+      /* Permission options - stack vertically with larger touch targets */
+      .permission-options {
+        gap: 8px !important;
+      }
+
+      #shareModal .permission-btn {
+        padding: 14px 12px !important;
+        min-height: 64px;
+      }
+
+      .permission-icon {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+      }
+
+      .permission-icon svg {
+        width: 22px !important;
+        height: 22px !important;
+      }
+
+      .permission-btn-title {
+        font-size: 14px !important;
+      }
+
+      .permission-btn-desc {
+        font-size: 11px !important;
+      }
+
+      /* Invite section */
+      .invite-recipients-section {
+        margin: 16px 0;
+        padding: 12px;
+      }
+
+      #inviteSearchInput {
+        font-size: 16px !important; /* Prevent iOS zoom */
+        padding: 14px 12px !important;
+      }
+
+      .invite-chip {
+        padding: 8px 10px 8px 12px;
+        font-size: 13px;
+      }
+
+      /* Share actions button */
+      .share-actions .btn {
+        width: 100%;
+        padding: 16px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    /* Shared Design View - Customer View Mode */
+    .shared-view-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10000;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .shared-view-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .shared-view-banner-title {
+      font-weight: 600;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .shared-view-banner-meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .shared-view-banner-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .shared-view-banner-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .shared-view-banner-btn.primary {
+      background: white;
+      color: #4f46e5;
+    }
+
+    .shared-view-banner-btn.secondary {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .shared-view-banner {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .shared-view-banner-info {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .shared-view-banner-actions {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .shared-view-banner-btn {
+        flex: 1;
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+    }
+
+    /* Mobile Quote Summary Overlay */
+    .mobile-quote-overlay {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(26, 26, 46, 0.95) 20%, #1a1a2e 100%);
+      padding: 60px 16px 24px;
+      z-index: 999;
+      display: none;
+    }
+
+    .mobile-quote-overlay.show {
+      display: block;
+    }
+
+    .mobile-quote-card {
+      background: var(--dark-elevated);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .mobile-quote-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .mobile-quote-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .mobile-quote-amount {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .mobile-quote-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mobile-quote-actions .btn {
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 10px;
+    }
+
+    .mobile-quote-actions .btn-primary {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      padding: 16px;
+      font-size: 16px;
+    }
+
+    /* Mobile-friendly 3D controls */
+    @media (max-width: 600px) {
+      .three-controls {
+        bottom: 80px !important;
+        right: 12px !important;
+        gap: 6px !important;
+      }
+
+      .three-controls button {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+      }
+
+      /* Larger touch targets for canvas interaction */
+      #three-container {
+        touch-action: pan-x pan-y pinch-zoom;
+      }
+    }
+
     /* Quote Customer Search */
     .quote-customer-search-wrap {
       position: relative;
@@ -6615,6 +6893,208 @@
       font-size: 11px;
       font-weight: 600;
       margin-left: 4px;
+    }
+
+    /* ============================================
+       MOBILE REVIEW ROOM & SHARED VIEW
+       ============================================ */
+
+    @media (max-width: 768px) {
+      /* Review Header - Mobile */
+      .review-header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      .review-header-left {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .review-title {
+        font-size: 16px;
+        text-align: center;
+        width: 100%;
+      }
+
+      .review-permission-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      .live-indicator {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      .review-header-right {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .review-header-right .btn {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      .review-header-right .btn span {
+        display: none;
+      }
+
+      .review-header-right .btn svg {
+        margin: 0;
+      }
+
+      /* Review Panel - Full Screen on Mobile */
+      .review-panel {
+        width: 100%;
+        right: -100%;
+        top: auto;
+        bottom: 0;
+        height: 70vh;
+        border-radius: 20px 20px 0 0;
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+
+      .review-panel.open {
+        right: 0;
+      }
+
+      .review-panel-header {
+        padding: 16px;
+        border-radius: 20px 20px 0 0;
+      }
+
+      .review-panel-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .review-summary {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .review-stat {
+        flex: 1;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 20px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+      }
+
+      /* Review Elements List */
+      .review-elements {
+        max-height: calc(70vh - 280px);
+        padding: 8px 16px;
+      }
+
+      .review-element {
+        padding: 12px;
+      }
+
+      .review-element-name {
+        font-size: 13px;
+      }
+
+      .review-element-price {
+        font-size: 14px;
+      }
+
+      /* Comments Section */
+      .review-comments-section {
+        padding: 12px 16px;
+      }
+
+      .review-comments {
+        max-height: 100px;
+      }
+
+      .review-comment-input {
+        gap: 8px;
+      }
+
+      .review-comment-input input {
+        font-size: 16px; /* Prevent iOS zoom */
+        padding: 12px;
+      }
+
+      /* Approval Actions */
+      .review-actions {
+        padding: 16px;
+      }
+
+      .quote-approval-actions {
+        padding: 16px;
+      }
+
+      .approve-pay-btn {
+        width: 100%;
+        padding: 16px 24px;
+        font-size: 17px;
+      }
+
+      .approval-note {
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .approval-terms {
+        text-align: center;
+        font-size: 10px;
+      }
+
+      /* Adjust main content when review room on mobile */
+      body:has(.review-room) .main-content {
+        padding-top: 80px; /* Taller header on mobile */
+      }
+
+      /* Viewer Mode Badge - Mobile */
+      .viewer-mode-badge {
+        width: calc(100% - 24px);
+        max-width: 400px;
+        justify-content: center;
+        padding: 10px 16px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .review-header-right .btn {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .review-panel {
+        height: 80vh;
+      }
+
+      .stat-value {
+        font-size: 18px;
+      }
+
+      .approve-pay-btn {
+        font-size: 15px;
+        padding: 14px 20px;
+      }
     }
 
     /* Keyboard Shortcuts - auto-hide after delay */

@@ -105,11 +105,119 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Responsive */
-    @media (max-width: 600px) {
-      .embed-header { flex-direction: column; gap: 8px; text-align: center; }
-      .embed-footer { flex-direction: column; text-align: center; }
-      .embed-3d-viewer { height: 300px; }
+    /* Responsive - Mobile First */
+    @media (max-width: 768px) {
+      .embed-container {
+        border-radius: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .embed-header {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        padding: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .embed-title {
+        font-size: 18px;
+      }
+
+      .embed-3d-viewer {
+        flex: 1;
+        min-height: 50vh;
+        height: auto;
+      }
+
+      .embed-footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 16px;
+        gap: 16px;
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(248, 249, 250, 0.9) 0%, #f8f9fa 20%);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .embed-quote {
+        font-size: 32px;
+      }
+
+      .embed-cta {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 24px;
+        font-size: 16px;
+        border-radius: 12px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .embed-header { padding: 12px; }
+      .embed-title { font-size: 16px; }
+      .embed-meta { font-size: 12px; }
+      .embed-footer { padding: 16px 12px; }
+      .embed-quote { font-size: 28px; }
+    }
+
+    /* Touch-friendly controls */
+    @media (pointer: coarse) {
+      .embed-cta {
+        min-height: 52px;
+      }
+    }
+
+    /* Fullscreen mode for mobile */
+    .fullscreen-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      transition: background 0.2s;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Pinch zoom hint for mobile */
+    .zoom-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .zoom-hint.show {
+      opacity: 1;
     }
   </style>
 </head>
@@ -127,6 +235,17 @@
       <div class="loading">
         <div class="loading-spinner"></div>
         Loading 3D view...
+      </div>
+      <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+      <div class="zoom-hint" id="zoomHint">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Pinch to zoom, drag to rotate
       </div>
     </div>
 
@@ -315,6 +434,44 @@
       if (['window', 'door'].includes(type)) return h/2;
       return h/2;
     }
+
+    // Fullscreen toggle
+    function toggleFullscreen() {
+      const container = document.getElementById('viewer3d');
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    // Show zoom hint on mobile after load
+    function showZoomHint() {
+      if ('ontouchstart' in window) {
+        const hint = document.getElementById('zoomHint');
+        if (hint) {
+          setTimeout(() => {
+            hint.classList.add('show');
+            setTimeout(() => hint.classList.remove('show'), 3000);
+          }, 1500);
+        }
+      }
+    }
+
+    // Call after design loads
+    const origLoadDesign = loadDesign;
+    loadDesign = async function(token) {
+      await origLoadDesign(token);
+      showZoomHint();
+    };
   </script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
