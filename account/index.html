@@ -4910,6 +4910,84 @@
       }
     }
 
+    /* === PROJECTS PAGE STYLES === */
+    #page-projects .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    #page-projects .stat-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    #page-projects .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--gold-primary);
+    }
+    #page-projects .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* === PROJECTS PAGE MOBILE === */
+    @media (max-width: 768px) {
+      #page-projects .stat-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+      }
+      #page-projects .stat-card {
+        padding: 14px !important;
+      }
+      #page-projects .stat-value {
+        font-size: 18px !important;
+      }
+      #page-projects .stat-label {
+        font-size: 11px !important;
+      }
+      #page-projects .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      #page-projects .card-header > div {
+        width: 100%;
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+      #page-projects .view-toggle {
+        width: 100%;
+        justify-content: center;
+      }
+      #page-projects .view-toggle .view-btn {
+        flex: 1;
+        justify-content: center;
+      }
+      #page-projects .btn-modern {
+        width: 100%;
+        justify-content: center;
+      }
+      #page-projects .kanban-board {
+        padding: 0 0 16px 0 !important;
+        margin: 0 -16px;
+        padding-left: 16px !important;
+      }
+      #page-projects .kanban-column {
+        min-width: 260px !important;
+        padding: 12px !important;
+      }
+      #page-projects .kanban-column:last-child {
+        margin-right: 16px;
+      }
+    }
+
     /* === CONTRACTORS PAGE MOBILE === */
     @media (max-width: 768px) {
       #page-contractors .card-header {
@@ -9366,6 +9444,11 @@
             <span class="nav-item-text">Jobs</span>
             <span class="nav-badge" id="jobs-count" data-count="0">0</span>
           </a>
+          <a class="nav-item" data-page="projects" onclick="showPage('projects')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span class="nav-item-text">Projects</span>
+            <span class="nav-badge" id="projects-count" data-count="0">0</span>
+          </a>
           <a class="nav-item" data-page="calendar" onclick="showPage('calendar')">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <span class="nav-item-text">Calendar</span>
@@ -10301,6 +10384,124 @@
                       <span class="column-count" id="kanban-count-completed" style="background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div class="column-cards" id="kanban-cards-completed" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Projects Page -->
+        <section id="page-projects" class="page-section">
+          <!-- Stats Row -->
+          <div class="stat-grid">
+            <div class="stat-card" style="cursor: default;">
+              <div class="stat-value" style="color: #3b82f6;" id="stat-total-projects">0</div>
+              <div class="stat-label">Total Projects</div>
+            </div>
+            <div class="stat-card" style="cursor: default;">
+              <div class="stat-value" style="color: #06b6d4;" id="stat-active-projects">0</div>
+              <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card success" style="cursor: default;">
+              <div class="stat-value" id="stat-completed-projects">0</div>
+              <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card gold" style="cursor: default;">
+              <div class="stat-value" id="stat-pipeline-value">$0</div>
+              <div class="stat-label">Pipeline Value</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+              <h3 class="card-title">Projects</h3>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="projects-search" placeholder="Search projects..." oninput="debounceProjectSearch()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-elevated); color: var(--text-primary); font-size: 13px; width: 200px;" />
+                <div class="view-toggle" style="display: flex; background: var(--dark-elevated); border-radius: 8px; padding: 4px;">
+                  <button class="view-btn active" onclick="setProjectsView('list')" id="projectsListBtn" style="padding: 8px 12px; border: none; background: var(--gold-primary); color: var(--dark-primary); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    List
+                  </button>
+                  <button class="view-btn" onclick="setProjectsView('board')" id="projectsBoardBtn" style="padding: 8px 12px; border: none; background: transparent; color: var(--text-secondary); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Board
+                  </button>
+                </div>
+                <button class="btn-modern primary" onclick="openNewProjectModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                  New Project
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Filter Pills -->
+              <div class="filter-pills">
+                <button class="filter-pill active" data-proj-status="all" onclick="filterProjects('all')">All</button>
+                <button class="filter-pill" data-proj-status="lead" onclick="filterProjects('lead')">Lead</button>
+                <button class="filter-pill" data-proj-status="approved" onclick="filterProjects('approved')">Approved</button>
+                <button class="filter-pill" data-proj-status="scheduled" onclick="filterProjects('scheduled')">Scheduled</button>
+                <button class="filter-pill" data-proj-status="in_progress" onclick="filterProjects('in_progress')">In Progress</button>
+                <button class="filter-pill" data-proj-status="completed" onclick="filterProjects('completed')">Completed</button>
+                <button class="filter-pill" data-proj-status="on_hold" onclick="filterProjects('on_hold')">On Hold</button>
+              </div>
+
+              <!-- List View -->
+              <div id="projects-list-view">
+                <div id="projects-list">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; color: var(--text-muted); margin-bottom: 16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <h3>No projects yet</h3>
+                    <p>Create your first project to start tracking work, collaborators, and revenue.</p>
+                    <button class="btn-modern primary" style="margin-top: 16px;" onclick="openNewProjectModal()">Create First Project</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Kanban Board View (Hidden by default) -->
+              <div id="projects-board-view" style="display: none;">
+                <div class="kanban-board" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; min-height: 400px;">
+                  <div class="kanban-column" data-status="lead" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f59e0b;">
+                      <span style="font-weight: 600; color: #f59e0b;">Lead</span>
+                      <span id="proj-kanban-count-lead" style="background: rgba(245,158,11,0.2); color: #f59e0b; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-lead" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                  <div class="kanban-column" data-status="approved" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #3b82f6;">
+                      <span style="font-weight: 600; color: #3b82f6;">Approved</span>
+                      <span id="proj-kanban-count-approved" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-approved" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                  <div class="kanban-column" data-status="scheduled" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #8b5cf6;">
+                      <span style="font-weight: 600; color: #8b5cf6;">Scheduled</span>
+                      <span id="proj-kanban-count-scheduled" style="background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-scheduled" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                  <div class="kanban-column" data-status="in_progress" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #06b6d4;">
+                      <span style="font-weight: 600; color: #06b6d4;">In Progress</span>
+                      <span id="proj-kanban-count-in_progress" style="background: rgba(6,182,212,0.2); color: #06b6d4; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-in_progress" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                  <div class="kanban-column" data-status="completed" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #22c55e;">
+                      <span style="font-weight: 600; color: #22c55e;">Completed</span>
+                      <span id="proj-kanban-count-completed" style="background: rgba(34,197,94,0.2); color: #22c55e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-completed" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                  </div>
+                  <div class="kanban-column" data-status="on_hold" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #ef4444;">
+                      <span style="font-weight: 600; color: #ef4444;">On Hold</span>
+                      <span id="proj-kanban-count-on_hold" style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
+                    </div>
+                    <div id="proj-kanban-cards-on_hold" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
                 </div>
               </div>
@@ -14287,6 +14488,22 @@
               <option value="">Select a Project</option>
             </select>
           </div>
+          <div id="inline-create-project-form" style="display: none; background: var(--dark-elevated); border: 1px solid var(--dark-border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--gold-primary); margin-bottom: 12px;">Create New Project</div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <input type="text" id="inline-project-name" placeholder="Project Name *" maxlength="200" style="width: 100%;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <input type="text" id="inline-project-customer" placeholder="Customer Name *" maxlength="200" style="width: 100%;" />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <input type="text" id="inline-project-description" placeholder="Description (optional)" maxlength="2000" style="width: 100%;" />
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" class="btn-modern secondary" onclick="cancelInlineProjectCreate()" style="flex: 1; font-size: 12px; padding: 8px;">Cancel</button>
+              <button type="button" class="btn-modern primary" onclick="submitInlineProjectCreate()" id="inline-create-project-btn" style="flex: 1; font-size: 12px; padding: 8px;">Create & Select</button>
+            </div>
+          </div>
           <div class="form-group">
             <label>Email Address *</label>
             <input type="email" id="invite-email" required placeholder="colleague@example.com" />
@@ -14325,6 +14542,146 @@
           <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Pending Invitations</div>
           <div id="pending-invitations-list"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Project Modal -->
+  <div class="modal-overlay" id="project-modal" onclick="if(event.target === this) closeProjectModal()">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="project-modal-title">New Project</h2>
+        <button class="modal-close" onclick="closeProjectModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <form id="project-form" onsubmit="return saveProject(event)">
+          <input type="hidden" id="project-edit-id" />
+
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Project Details</div>
+          <div class="form-group">
+            <label>Project Name *</label>
+            <input type="text" id="proj-name" required maxlength="200" placeholder="e.g., Kitchen Countertops - Smith Residence" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="proj-description" rows="2" maxlength="2000" placeholder="Brief project description..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Status</label>
+              <select id="proj-status">
+                <option value="lead">Lead</option>
+                <option value="approved">Approved</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Priority</label>
+              <select id="proj-priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 20px 0 12px; text-transform: uppercase; letter-spacing: 0.5px;">Customer Information</div>
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input type="text" id="proj-customer-name" required maxlength="200" placeholder="Full name" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="proj-customer-email" maxlength="254" placeholder="email@example.com" />
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="proj-customer-phone" maxlength="20" placeholder="(555) 123-4567" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="proj-address" maxlength="500" placeholder="Street address" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" id="proj-city" maxlength="100" placeholder="City" />
+            </div>
+            <div class="form-group" style="max-width: 80px;">
+              <label>State</label>
+              <input type="text" id="proj-state" maxlength="2" placeholder="AZ" />
+            </div>
+            <div class="form-group" style="max-width: 120px;">
+              <label>ZIP</label>
+              <input type="text" id="proj-zip" maxlength="20" placeholder="85374" />
+            </div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 20px 0 12px; text-transform: uppercase; letter-spacing: 0.5px;">Financials & Schedule</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Value ($)</label>
+              <input type="number" id="proj-value" step="0.01" min="0" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label>Cost ($)</label>
+              <input type="number" id="proj-cost" step="0.01" min="0" placeholder="0.00" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="proj-start-date" />
+            </div>
+            <div class="form-group">
+              <label>End Date</label>
+              <input type="date" id="proj-end-date" />
+            </div>
+            <div class="form-group">
+              <label>Est. Duration (days)</label>
+              <input type="number" id="proj-duration" min="0" placeholder="0" />
+            </div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 20px 0 12px; text-transform: uppercase; letter-spacing: 0.5px;">Notes</div>
+          <div class="form-group">
+            <label>Internal Notes</label>
+            <textarea id="proj-notes" rows="2" maxlength="5000" placeholder="Internal notes (not visible to customer)..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Customer Notes</label>
+            <textarea id="proj-customer-notes" rows="2" maxlength="5000" placeholder="Notes visible to customer..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-modern primary" id="save-project-btn" style="width: 100%; margin-top: 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Save Project
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Detail Modal -->
+  <div class="modal-overlay" id="project-detail-modal" onclick="if(event.target === this) closeProjectDetail()">
+    <div class="modal-content" style="max-width: 720px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="project-detail-title">Project Details</h2>
+        <button class="modal-close" onclick="closeProjectDetail()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="project-detail-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="spinner" style="margin: 40px auto;"></div>
       </div>
     </div>
   </div>
@@ -16986,6 +17343,15 @@
               <p>Invite someone to collaborate on a project</p>
             </div>
           </a>
+          <a href="javascript:void(0)" class="action-card" onclick="showPage('projects'); return false;">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Projects</h4>
+              <p>Manage projects, track progress and revenue</p>
+            </div>
+          </a>
         `;
       } else {
         // Enhanced user stats
@@ -17176,6 +17542,7 @@
         'estimates': 'Estimates',
         'invoices': 'Invoices',
         'jobs': 'Jobs & Projects',
+        'projects': 'Projects',
         'contractors': 'Contractors & Team',
         'calendar': 'Calendar',
         'wallet': 'Wallet',
@@ -17245,6 +17612,11 @@
         // Load jobs when that page is shown
         if (page === 'jobs') {
           await loadJobs();
+        }
+
+        // Load projects when that page is shown
+        if (page === 'projects') {
+          await loadProjects();
         }
 
         // Load orders when that page is shown
@@ -26104,6 +26476,538 @@
     }
 
     // =============================================
+    // PROJECTS MANAGEMENT
+    // =============================================
+
+    let allProjects = [];
+    let projectFilter = 'all';
+    let projectSearchTerm = '';
+    let currentProjectsView = 'list';
+    let currentProjectId = null;
+    let projectSearchTimeout = null;
+
+    const PROJECT_STATUS_COLORS = {
+      lead: '#f59e0b',
+      approved: '#3b82f6',
+      scheduled: '#8b5cf6',
+      in_progress: '#06b6d4',
+      completed: '#22c55e',
+      on_hold: '#ef4444',
+      cancelled: '#6b7280'
+    };
+
+    const PROJECT_STATUS_LABELS = {
+      lead: 'Lead',
+      approved: 'Approved',
+      scheduled: 'Scheduled',
+      in_progress: 'In Progress',
+      completed: 'Completed',
+      on_hold: 'On Hold',
+      cancelled: 'Cancelled'
+    };
+
+    const PROJECT_PRIORITY_COLORS = {
+      low: '#6b7280',
+      medium: '#3b82f6',
+      high: '#f59e0b',
+      urgent: '#ef4444'
+    };
+
+    async function loadProjects() {
+      const listEl = document.getElementById('projects-list');
+      if (!listEl) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        listEl.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+
+        const { data: projects, error } = await supabaseClient
+          .from('projects')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        allProjects = projects || [];
+        updateProjectStats();
+        updateProjectsCount();
+        renderProjectsList();
+        renderProjectsKanban();
+      } catch (err) {
+        console.error('Error loading projects:', err);
+        listEl.innerHTML = '<div class="empty-state"><h3>Error loading projects</h3><p>' + (err.message || 'Please try again') + '</p></div>';
+      }
+    }
+
+    function updateProjectsCount() {
+      const badge = document.getElementById('projects-count');
+      if (!badge) return;
+      const active = allProjects.filter(p => ['approved', 'scheduled', 'in_progress'].includes(p.status)).length;
+      badge.textContent = active;
+      badge.dataset.count = active;
+    }
+
+    function updateProjectStats() {
+      const all = allProjects;
+      const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+      el('stat-total-projects', all.length);
+      el('stat-active-projects', all.filter(p => ['approved', 'scheduled', 'in_progress'].includes(p.status)).length);
+      el('stat-completed-projects', all.filter(p => p.status === 'completed').length);
+      const pipeline = all.filter(p => !['completed', 'cancelled'].includes(p.status))
+        .reduce((sum, p) => sum + (parseFloat(p.value) || 0), 0);
+      el('stat-pipeline-value', '$' + pipeline.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }));
+    }
+
+    function filterProjects(status) {
+      projectFilter = status;
+      document.querySelectorAll('[data-proj-status]').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.projStatus === status);
+      });
+      renderProjectsList();
+      renderProjectsKanban();
+    }
+
+    function debounceProjectSearch() {
+      clearTimeout(projectSearchTimeout);
+      projectSearchTimeout = setTimeout(() => {
+        projectSearchTerm = (document.getElementById('projects-search')?.value || '').toLowerCase().trim();
+        renderProjectsList();
+        renderProjectsKanban();
+      }, 300);
+    }
+
+    function getFilteredProjects() {
+      return allProjects.filter(p => {
+        if (projectFilter !== 'all' && p.status !== projectFilter) return false;
+        if (projectSearchTerm) {
+          const term = projectSearchTerm;
+          return (p.name || '').toLowerCase().includes(term) ||
+                 (p.customer_name || '').toLowerCase().includes(term) ||
+                 (p.description || '').toLowerCase().includes(term);
+        }
+        return true;
+      });
+    }
+
+    function renderProjectsList() {
+      const listEl = document.getElementById('projects-list');
+      if (!listEl) return;
+
+      const filtered = getFilteredProjects();
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; color: var(--text-muted); margin-bottom: 16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          <h3>${projectFilter !== 'all' ? 'No ' + (PROJECT_STATUS_LABELS[projectFilter] || projectFilter) + ' projects' : 'No projects yet'}</h3>
+          <p>${projectFilter !== 'all' ? 'No projects match this filter.' : 'Create your first project to start tracking work.'}</p>
+          ${projectFilter === 'all' ? '<button class="btn-modern primary" style="margin-top: 16px;" onclick="openNewProjectModal()">Create First Project</button>' : ''}
+        </div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(p => {
+        const statusColor = PROJECT_STATUS_COLORS[p.status] || '#6b7280';
+        const priorityColor = PROJECT_PRIORITY_COLORS[p.priority] || '#6b7280';
+        const value = parseFloat(p.value) || 0;
+        const progress = p.progress || 0;
+        const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+
+        return `<div class="list-item-modern" style="display: flex; align-items: center; gap: 16px; padding: 16px; cursor: pointer; border-bottom: 1px solid var(--dark-border); transition: background 0.15s;" onclick="openProjectDetail('${p.id}')" onmouseover="this.style.background='var(--dark-elevated)'" onmouseout="this.style.background='transparent'">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: ${statusColor}20; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="${statusColor}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(p.customer_name || 'No customer')}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+            ${progress > 0 ? `<div style="width: 60px; height: 6px; background: var(--dark-border); border-radius: 3px; overflow: hidden;"><div style="width: ${progress}%; height: 100%; background: ${statusColor}; border-radius: 3px;"></div></div>` : ''}
+            <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: ${statusColor}20; color: ${statusColor};">${PROJECT_STATUS_LABELS[p.status] || p.status}</span>
+            <span style="font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: ${priorityColor}15; color: ${priorityColor}; text-transform: capitalize;">${p.priority || 'medium'}</span>
+            ${value > 0 ? `<span style="font-size: 13px; font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>` : ''}
+            <span style="font-size: 11px; color: var(--text-muted);">${dateStr}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderProjectsKanban() {
+      const statuses = ['lead', 'approved', 'scheduled', 'in_progress', 'completed', 'on_hold'];
+      const filtered = getFilteredProjects();
+
+      statuses.forEach(status => {
+        const cardsEl = document.getElementById(`proj-kanban-cards-${status}`);
+        const countEl = document.getElementById(`proj-kanban-count-${status}`);
+        if (!cardsEl) return;
+
+        const statusProjects = filtered.filter(p => p.status === status);
+        if (countEl) countEl.textContent = statusProjects.length;
+
+        if (statusProjects.length === 0) {
+          cardsEl.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">No projects</div>';
+          return;
+        }
+
+        cardsEl.innerHTML = statusProjects.map(p => {
+          const value = parseFloat(p.value) || 0;
+          const progress = p.progress || 0;
+          const priorityColor = PROJECT_PRIORITY_COLORS[p.priority] || '#6b7280';
+
+          return `<div class="kanban-card" onclick="openProjectDetail('${p.id}')" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--dark-border)'">
+            <div style="font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${escapeHtml(p.customer_name || 'No customer')}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: ${priorityColor}15; color: ${priorityColor}; text-transform: capitalize;">${p.priority || 'medium'}</span>
+              ${value > 0 ? `<span style="font-size: 12px; font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>` : ''}
+            </div>
+            ${progress > 0 ? `<div style="margin-top: 8px; height: 4px; background: var(--dark-border); border-radius: 2px; overflow: hidden;"><div style="width: ${progress}%; height: 100%; background: var(--gold-primary); border-radius: 2px;"></div></div>` : ''}
+          </div>`;
+        }).join('');
+      });
+    }
+
+    function setProjectsView(view) {
+      currentProjectsView = view;
+      const listView = document.getElementById('projects-list-view');
+      const boardView = document.getElementById('projects-board-view');
+      const listBtn = document.getElementById('projectsListBtn');
+      const boardBtn = document.getElementById('projectsBoardBtn');
+
+      if (view === 'list') {
+        if (listView) listView.style.display = '';
+        if (boardView) boardView.style.display = 'none';
+        if (listBtn) { listBtn.style.background = 'var(--gold-primary)'; listBtn.style.color = 'var(--dark-primary)'; }
+        if (boardBtn) { boardBtn.style.background = 'transparent'; boardBtn.style.color = 'var(--text-secondary)'; }
+      } else {
+        if (listView) listView.style.display = 'none';
+        if (boardView) boardView.style.display = '';
+        if (listBtn) { listBtn.style.background = 'transparent'; listBtn.style.color = 'var(--text-secondary)'; }
+        if (boardBtn) { boardBtn.style.background = 'var(--gold-primary)'; boardBtn.style.color = 'var(--dark-primary)'; }
+      }
+    }
+
+    function openNewProjectModal() {
+      document.getElementById('project-modal-title').textContent = 'New Project';
+      document.getElementById('project-edit-id').value = '';
+      document.getElementById('project-form').reset();
+      document.getElementById('proj-status').value = 'lead';
+      document.getElementById('proj-priority').value = 'medium';
+      document.getElementById('project-modal').classList.add('active');
+    }
+
+    function openEditProjectModal(project) {
+      document.getElementById('project-modal-title').textContent = 'Edit Project';
+      document.getElementById('project-edit-id').value = project.id;
+      document.getElementById('proj-name').value = project.name || '';
+      document.getElementById('proj-description').value = project.description || '';
+      document.getElementById('proj-status').value = project.status || 'lead';
+      document.getElementById('proj-priority').value = project.priority || 'medium';
+      document.getElementById('proj-customer-name').value = project.customer_name || '';
+      document.getElementById('proj-customer-email').value = project.customer_email || '';
+      document.getElementById('proj-customer-phone').value = project.customer_phone || '';
+      document.getElementById('proj-address').value = project.address || '';
+      document.getElementById('proj-city').value = project.city || '';
+      document.getElementById('proj-state').value = project.state || '';
+      document.getElementById('proj-zip').value = project.zip || '';
+      document.getElementById('proj-value').value = project.value || '';
+      document.getElementById('proj-cost').value = project.cost || '';
+      document.getElementById('proj-start-date').value = project.start_date ? project.start_date.split('T')[0] : '';
+      document.getElementById('proj-end-date').value = project.end_date ? project.end_date.split('T')[0] : '';
+      document.getElementById('proj-duration').value = project.estimated_duration || '';
+      document.getElementById('proj-notes').value = project.notes || '';
+      document.getElementById('proj-customer-notes').value = project.customer_notes || '';
+      document.getElementById('project-modal').classList.add('active');
+    }
+
+    function closeProjectModal() {
+      document.getElementById('project-modal').classList.remove('active');
+    }
+
+    async function saveProject(event) {
+      event.preventDefault();
+
+      const editId = document.getElementById('project-edit-id').value;
+      const isEdit = !!editId;
+
+      const projectData = {
+        name: document.getElementById('proj-name').value.trim(),
+        description: document.getElementById('proj-description').value.trim() || null,
+        status: document.getElementById('proj-status').value,
+        priority: document.getElementById('proj-priority').value,
+        customer_name: document.getElementById('proj-customer-name').value.trim(),
+        customer_email: document.getElementById('proj-customer-email').value.trim() || null,
+        customer_phone: document.getElementById('proj-customer-phone').value.trim() || null,
+        address: document.getElementById('proj-address').value.trim() || null,
+        city: document.getElementById('proj-city').value.trim() || null,
+        state: document.getElementById('proj-state').value.trim() || null,
+        zip: document.getElementById('proj-zip').value.trim() || null,
+        value: parseFloat(document.getElementById('proj-value').value) || 0,
+        cost: parseFloat(document.getElementById('proj-cost').value) || 0,
+        start_date: document.getElementById('proj-start-date').value || null,
+        end_date: document.getElementById('proj-end-date').value || null,
+        estimated_duration: parseInt(document.getElementById('proj-duration').value) || null,
+        notes: document.getElementById('proj-notes').value.trim() || null,
+        customer_notes: document.getElementById('proj-customer-notes').value.trim() || null
+      };
+
+      const btn = document.getElementById('save-project-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width: 18px; height: 18px; margin: 0 auto;"></div>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        let result;
+        if (isEdit) {
+          result = await supabaseClient
+            .from('projects')
+            .update(projectData)
+            .eq('id', editId)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+        } else {
+          result = await supabaseClient
+            .from('projects')
+            .insert({ ...projectData, user_id: user.id })
+            .select()
+            .single();
+        }
+
+        if (result.error) throw result.error;
+
+        closeProjectModal();
+        showToast(isEdit ? 'Project updated' : 'Project created', 'success');
+        await loadProjects();
+
+        // If detail modal is open, refresh it
+        if (currentProjectId && isEdit) {
+          openProjectDetail(currentProjectId);
+        }
+      } catch (err) {
+        console.error('Error saving project:', err);
+        showToast('Error: ' + (err.message || 'Failed to save project'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Save Project';
+      }
+    }
+
+    async function openProjectDetail(projectId) {
+      currentProjectId = projectId;
+      const modal = document.getElementById('project-detail-modal');
+      const body = document.getElementById('project-detail-body');
+      modal.classList.add('active');
+      body.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data: project, error } = await supabaseClient
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .single();
+
+        if (error || !project) throw error || new Error('Project not found');
+
+        // Fetch related data in parallel
+        const [tasksResult, activityResult, collaboratorsResult] = await Promise.all([
+          supabaseClient.from('project_tasks').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
+          supabaseClient.from('project_activity').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(20),
+          supabaseClient.from('project_collaborators').select('*').eq('project_id', projectId)
+        ]);
+
+        const tasks = tasksResult.data || [];
+        const activity = activityResult.data || [];
+        const collaborators = collaboratorsResult.data || [];
+
+        document.getElementById('project-detail-title').textContent = project.name;
+
+        const statusColor = PROJECT_STATUS_COLORS[project.status] || '#6b7280';
+        const priorityColor = PROJECT_PRIORITY_COLORS[project.priority] || '#6b7280';
+        const value = parseFloat(project.value) || 0;
+        const cost = parseFloat(project.cost) || 0;
+        const profit = value - cost;
+        const progress = project.progress || 0;
+
+        body.innerHTML = `
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+            <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: ${statusColor}20; color: ${statusColor};">${PROJECT_STATUS_LABELS[project.status] || project.status}</span>
+            <span style="font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: ${priorityColor}15; color: ${priorityColor}; text-transform: capitalize;">${project.priority || 'medium'} priority</span>
+            <select onchange="quickUpdateProjectStatus('${project.id}', this.value)" style="font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-elevated); color: var(--text-primary); cursor: pointer;">
+              <option value="" disabled selected>Change Status...</option>
+              ${Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => `<option value="${k}" ${project.status === k ? 'disabled' : ''}>${v}</option>`).join('')}
+            </select>
+          </div>
+
+          ${progress > 0 ? `<div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">
+              <span>Progress</span><span>${progress}%</span>
+            </div>
+            <div style="height: 8px; background: var(--dark-border); border-radius: 4px; overflow: hidden;">
+              <div style="width: ${progress}%; height: 100%; background: ${statusColor}; border-radius: 4px; transition: width 0.3s;"></div>
+            </div>
+          </div>` : ''}
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Customer</div>
+              <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(project.customer_name || 'N/A')}</div>
+              ${project.customer_email ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(project.customer_email)}</div>` : ''}
+              ${project.customer_phone ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(project.customer_phone)}</div>` : ''}
+              ${project.address ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(project.address)}${project.city ? ', ' + escapeHtml(project.city) : ''}${project.state ? ', ' + escapeHtml(project.state) : ''} ${escapeHtml(project.zip || '')}</div>` : ''}
+            </div>
+            <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Financials</div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Value</span>
+                <span style="font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Cost</span>
+                <span style="font-weight: 600; color: var(--error-color);">$${cost.toLocaleString()}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--dark-border); padding-top: 4px; margin-top: 4px;">
+                <span style="font-size: 12px; color: var(--text-secondary);">Profit</span>
+                <span style="font-weight: 600; color: ${profit >= 0 ? '#22c55e' : '#ef4444'};">$${profit.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          ${project.start_date || project.end_date ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Schedule</div>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+              ${project.start_date ? `<div><span style="font-size: 12px; color: var(--text-secondary);">Start: </span><span style="font-weight: 600; color: var(--text-primary);">${new Date(project.start_date).toLocaleDateString()}</span></div>` : ''}
+              ${project.end_date ? `<div><span style="font-size: 12px; color: var(--text-secondary);">End: </span><span style="font-weight: 600; color: var(--text-primary);">${new Date(project.end_date).toLocaleDateString()}</span></div>` : ''}
+              ${project.estimated_duration ? `<div><span style="font-size: 12px; color: var(--text-secondary);">Duration: </span><span style="font-weight: 600; color: var(--text-primary);">${project.estimated_duration} days</span></div>` : ''}
+            </div>
+          </div>` : ''}
+
+          ${project.description ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
+            <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.description)}</div>
+          </div>` : ''}
+
+          ${project.notes ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Internal Notes</div>
+            <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.notes)}</div>
+          </div>` : ''}
+
+          ${collaborators.length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Collaborators (${collaborators.length})</div>
+              <button class="btn-modern secondary" style="font-size: 11px; padding: 4px 10px;" onclick="closeProjectDetail(); openInviteToProjectModal('${project.id}');">+ Invite</button>
+            </div>
+            ${collaborators.map(c => `<div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--gold-primary); color: var(--dark-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">${(c.collaborator_name || c.collaborator_email || '?').charAt(0).toUpperCase()}</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${escapeHtml(c.collaborator_name || c.collaborator_email || 'Unknown')}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">${c.role || 'Member'} - ${c.invitation_status || 'pending'}</div>
+              </div>
+            </div>`).join('')}
+          </div>` : `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">No collaborators yet</div>
+            <button class="btn-modern secondary" style="font-size: 12px; padding: 6px 14px;" onclick="closeProjectDetail(); openInviteToProjectModal('${project.id}');">+ Invite Collaborator</button>
+          </div>`}
+
+          ${activity.length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Recent Activity</div>
+            ${activity.slice(0, 10).map(a => `<div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold-primary); margin-top: 6px; flex-shrink: 0;"></div>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; color: var(--text-primary);">${escapeHtml(a.description || a.action || 'Activity')}</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${a.created_at ? new Date(a.created_at).toLocaleString() : ''}</div>
+              </div>
+            </div>`).join('')}
+          </div>` : ''}
+
+          <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button class="btn-modern primary" onclick="editCurrentProject()" style="flex: 1;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Edit
+            </button>
+            <button class="btn-modern secondary" onclick="deleteProject('${project.id}')" style="flex: 1; color: var(--error-color);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Delete
+            </button>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Error loading project detail:', err);
+        body.innerHTML = '<div class="empty-state"><h3>Error loading project</h3><p>' + (err.message || 'Please try again') + '</p></div>';
+      }
+    }
+
+    function closeProjectDetail() {
+      document.getElementById('project-detail-modal').classList.remove('active');
+      currentProjectId = null;
+    }
+
+    function editCurrentProject() {
+      const project = allProjects.find(p => p.id === currentProjectId);
+      if (project) {
+        closeProjectDetail();
+        openEditProjectModal(project);
+      }
+    }
+
+    async function quickUpdateProjectStatus(id, status) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabaseClient
+          .from('projects')
+          .update({ status })
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        showToast('Status updated to ' + (PROJECT_STATUS_LABELS[status] || status), 'success');
+        await loadProjects();
+
+        // Refresh detail if open
+        if (currentProjectId === id) {
+          openProjectDetail(id);
+        }
+      } catch (err) {
+        console.error('Error updating status:', err);
+        showToast('Error: ' + (err.message || 'Failed to update status'), 'error');
+      }
+    }
+
+    async function deleteProject(projectId) {
+      if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabaseClient
+          .from('projects')
+          .delete()
+          .eq('id', projectId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        closeProjectDetail();
+        showToast('Project deleted', 'success');
+        await loadProjects();
+      } catch (err) {
+        console.error('Error deleting project:', err);
+        showToast('Error: ' + (err.message || 'Failed to delete project'), 'error');
+      }
+    }
+
+    // =============================================
     // JOBS & PROJECT MANAGEMENT
     // =============================================
 
@@ -26987,37 +27891,37 @@
     // =============================================
 
     async function checkForInviteToken() {
-      var params = new URLSearchParams(window.location.search);
-      var token = params.get('accept_invite');
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('accept_invite');
       if (!token) return;
 
       // Clean URL
-      var url = new URL(window.location);
-      url.searchParams.delete('accept_invite');
-      history.replaceState(null, '', url.toString());
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('accept_invite');
+      history.replaceState(null, '', cleanUrl.toString());
 
       // Show modal
       document.getElementById('accept-invite-modal').classList.add('active');
-      var body = document.getElementById('accept-invite-body');
+      const body = document.getElementById('accept-invite-body');
 
       try {
-        var verifyResp = await fetch(API_BASE + '/api/collaboration/invite/verify/' + encodeURIComponent(token));
-        var verifyData = await verifyResp.json();
+        const verifyResp = await fetch(API_BASE + '/api/collaboration/invite/verify/' + encodeURIComponent(token));
+        const verifyData = await verifyResp.json();
 
         if (!verifyResp.ok || !verifyData.success) {
           body.innerHTML =
             '<div style="text-align: center; padding: 20px 0;">' +
               '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="var(--error)" stroke-width="1.5" style="margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>' +
               '<h3 style="margin-bottom: 8px; color: var(--error);">Invitation Invalid or Expired</h3>' +
-              '<p style="color: var(--text-muted); font-size: 14px;">' + (verifyData.error || 'This invitation link is no longer valid.') + '</p>' +
+              '<p style="color: var(--text-muted); font-size: 14px;">' + escapeHtml(verifyData.error || 'This invitation link is no longer valid.') + '</p>' +
               '<button class="btn-modern secondary" onclick="closeAcceptInviteModal()" style="margin-top: 16px;">Close</button>' +
             '</div>';
           return;
         }
 
-        var inv = verifyData.invitation;
-        var roleLabel = inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
-        var accessLabel = (inv.access_level || 'read').charAt(0).toUpperCase() + (inv.access_level || 'read').slice(1);
+        const inv = verifyData.invitation;
+        const roleLabel = inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
+        const accessLabel = (inv.access_level || 'read').charAt(0).toUpperCase() + (inv.access_level || 'read').slice(1);
 
         body.innerHTML =
           '<div style="text-align: center; padding: 12px 0;">' +
@@ -27055,22 +27959,22 @@
     }
 
     async function acceptInvitation(token) {
-      var btn = document.getElementById('accept-invite-btn');
+      const btn = document.getElementById('accept-invite-btn');
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-top-color: var(--dark-primary);"></div>';
       }
 
       try {
-        var resp = await apiCall('/api/collaboration/invite/accept', {
+        const resp = await apiCall('/api/collaboration/invite/accept', {
           method: 'POST',
           body: JSON.stringify({ token: token })
         });
 
-        var data = await resp.json();
+        const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || 'Failed to accept invitation');
 
-        var body = document.getElementById('accept-invite-body');
+        const body = document.getElementById('accept-invite-body');
         body.innerHTML =
           '<div style="text-align: center; padding: 20px 0;">' +
             '<div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">' +
@@ -27108,8 +28012,8 @@
       document.getElementById('invite-project-id').value = projectId || '';
 
       // Show/hide project selector
-      var projectSelector = document.getElementById('invite-project-selector');
-      var projectSelect = document.getElementById('invite-project-select');
+      const projectSelector = document.getElementById('invite-project-selector');
+      const projectSelect = document.getElementById('invite-project-select');
       if (projectId) {
         projectSelector.style.display = 'none';
         projectSelect.removeAttribute('required');
@@ -27126,8 +28030,8 @@
 
       // Pre-fill role
       if (prefillRole) {
-        var roleSelect = document.getElementById('invite-role');
-        for (var i = 0; i < roleSelect.options.length; i++) {
+        const roleSelect = document.getElementById('invite-role');
+        for (let i = 0; i < roleSelect.options.length; i++) {
           if (roleSelect.options[i].value === prefillRole) {
             roleSelect.selectedIndex = i;
             break;
@@ -27140,19 +28044,26 @@
     }
 
     function onInviteProjectSelected() {
-      var projectId = document.getElementById('invite-project-select').value;
-      document.getElementById('invite-project-id').value = projectId;
-      if (projectId) loadPendingInvitations(projectId);
+      const projectId = document.getElementById('invite-project-select').value;
+      const inlineForm = document.getElementById('inline-create-project-form');
+      if (projectId === '__create_new__') {
+        document.getElementById('invite-project-id').value = '';
+        if (inlineForm) inlineForm.style.display = '';
+      } else {
+        document.getElementById('invite-project-id').value = projectId;
+        if (inlineForm) inlineForm.style.display = 'none';
+        if (projectId) loadPendingInvitations(projectId);
+      }
     }
 
     async function loadProjectsForInvite() {
-      var select = document.getElementById('invite-project-select');
+      const select = document.getElementById('invite-project-select');
       select.innerHTML = '<option value="">Loading projects...</option>';
 
       try {
-        var resp = await apiCall('/api/collaboration/my-projects');
-        var data = await resp.json();
-        var projects = [];
+        const resp = await apiCall('/api/collaboration/my-projects');
+        const data = await resp.json();
+        let projects = [];
 
         if (resp.ok && data.collaborations) {
           projects = data.collaborations.filter(function(c) {
@@ -27163,9 +28074,9 @@
         // Also try to load owned projects from Supabase
         if (supabaseClient && currentUser) {
           try {
-            var result = await supabaseClient.from('projects').select('id, name').eq('owner_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
+            const result = await supabaseClient.from('projects').select('id, name').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
             if (result.data) {
-              var existingIds = projects.map(function(p) { return p.project_id; });
+              const existingIds = projects.map(function(p) { return p.project_id; });
               result.data.forEach(function(proj) {
                 if (existingIds.indexOf(proj.id) === -1) {
                   projects.push({ project_id: proj.id, project: { name: proj.name } });
@@ -27187,31 +28098,119 @@
           select.innerHTML += '<option value="" disabled>No projects available</option>';
         } else {
           projects.forEach(function(p) {
-            var title = (p.project && (p.project.name || p.project.title)) || 'Untitled Project';
-            var opt = document.createElement('option');
+            const title = (p.project && (p.project.name || p.project.title)) || 'Untitled Project';
+            const opt = document.createElement('option');
             opt.value = p.project_id;
             opt.textContent = title;
             select.appendChild(opt);
           });
         }
+        // Add "Create New Project" option
+        const createOpt = document.createElement('option');
+        createOpt.value = '__create_new__';
+        createOpt.textContent = '+ Create New Project';
+        createOpt.style.fontWeight = '600';
+        select.appendChild(createOpt);
       } catch (err) {
         console.error('Error loading projects for invite:', err);
         select.innerHTML = '<option value="">Could not load projects</option>';
       }
     }
 
+    function cancelInlineProjectCreate() {
+      const inlineForm = document.getElementById('inline-create-project-form');
+      if (inlineForm) inlineForm.style.display = 'none';
+      const select = document.getElementById('invite-project-select');
+      if (select) select.value = '';
+      document.getElementById('invite-project-id').value = '';
+    }
+
+    async function submitInlineProjectCreate() {
+      const nameInput = document.getElementById('inline-project-name');
+      const customerInput = document.getElementById('inline-project-customer');
+      const descInput = document.getElementById('inline-project-description');
+      const btn = document.getElementById('inline-create-project-btn');
+
+      const name = (nameInput.value || '').trim();
+      const customerName = (customerInput.value || '').trim();
+      const description = (descInput.value || '').trim();
+
+      if (!name) { nameInput.focus(); showToast('Project name is required', 'warning'); return; }
+      if (!customerName) { customerInput.focus(); showToast('Customer name is required', 'warning'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      try {
+        const userData = await supabaseClient.auth.getUser();
+        const user = userData.data && userData.data.user;
+        if (!user) throw new Error('Not authenticated');
+
+        const result = await supabaseClient.from('projects').insert({
+          name: name,
+          customer_name: customerName,
+          description: description || null,
+          user_id: user.id,
+          status: 'lead',
+          priority: 'medium'
+        }).select().single();
+
+        if (result.error) throw result.error;
+
+        const project = result.data;
+
+        // Add new option to select and auto-select it
+        const select = document.getElementById('invite-project-select');
+        const opt = document.createElement('option');
+        opt.value = project.id;
+        opt.textContent = name;
+        // Insert before the last option (Create New Project)
+        const lastOpt = select.querySelector('option[value="__create_new__"]');
+        if (lastOpt) {
+          select.insertBefore(opt, lastOpt);
+        } else {
+          select.appendChild(opt);
+        }
+        select.value = project.id;
+        document.getElementById('invite-project-id').value = project.id;
+
+        // Hide inline form and clear inputs
+        document.getElementById('inline-create-project-form').style.display = 'none';
+        nameInput.value = '';
+        customerInput.value = '';
+        descInput.value = '';
+
+        showToast('Project created and selected', 'success');
+
+        // Refresh projects list if on that page
+        if (typeof allProjects !== 'undefined') {
+          allProjects.push(project);
+          updateProjectsCount();
+        }
+      } catch (err) {
+        console.error('Error creating inline project:', err);
+        showToast('Error: ' + (err.message || 'Failed to create project'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create & Select';
+      }
+    }
+
     function closeInviteToProjectModal() {
       document.getElementById('invite-to-project-modal').classList.remove('active');
+      // Also hide inline form when modal closes
+      const inlineForm = document.getElementById('inline-create-project-form');
+      if (inlineForm) inlineForm.style.display = 'none';
     }
 
     async function sendCollaborationInvite(event) {
       event.preventDefault();
-      var btn = document.getElementById('send-invite-btn');
-      var projectId = document.getElementById('invite-project-id').value || document.getElementById('invite-project-select').value;
-      var email = document.getElementById('invite-email').value.trim();
-      var role = document.getElementById('invite-role').value;
-      var accessLevel = document.getElementById('invite-access-level').value;
-      var notes = document.getElementById('invite-notes').value.trim();
+      const btn = document.getElementById('send-invite-btn');
+      const projectId = document.getElementById('invite-project-id').value || document.getElementById('invite-project-select').value;
+      const email = document.getElementById('invite-email').value.trim();
+      const role = document.getElementById('invite-role').value;
+      const accessLevel = document.getElementById('invite-access-level').value;
+      const notes = document.getElementById('invite-notes').value.trim();
 
       if (!projectId) {
         showToast('Please select a project', 'warning');
@@ -27226,12 +28225,12 @@
       btn.textContent = 'Sending...';
 
       try {
-        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/invite', {
+        const resp = await apiCall('/api/collaboration/projects/' + projectId + '/invite', {
           method: 'POST',
           body: JSON.stringify({ email: email, role: role, access_level: accessLevel, notes: notes || undefined })
         });
 
-        var data = await resp.json();
+        const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
 
         showToast(data.message || 'Invitation sent!');
@@ -27250,19 +28249,19 @@
     }
 
     async function loadPendingInvitations(projectId) {
-      var section = document.getElementById('pending-invitations-section');
-      var list = document.getElementById('pending-invitations-list');
+      const section = document.getElementById('pending-invitations-section');
+      const list = document.getElementById('pending-invitations-list');
 
       try {
-        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations');
-        var data = await resp.json();
+        const resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations');
+        const data = await resp.json();
 
         if (!resp.ok || !data.invitations || !data.invitations.length) {
           section.style.display = 'none';
           return;
         }
 
-        var pending = data.invitations.filter(function(i) { return i.status === 'pending'; });
+        const pending = data.invitations.filter(function(i) { return i.status === 'pending'; });
         if (!pending.length) {
           section.style.display = 'none';
           return;
@@ -27291,7 +28290,7 @@
       if (!confirm('Cancel this invitation?')) return;
 
       try {
-        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations/' + invitationId, {
+        const resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations/' + invitationId, {
           method: 'DELETE'
         });
 
@@ -27309,14 +28308,14 @@
     // ============ MY COLLABORATIONS ============
 
     async function loadCollaborations() {
-      var container = document.getElementById('collaborations-list');
+      const container = document.getElementById('collaborations-list');
       if (!container) return;
 
       container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
 
       try {
-        var resp = await apiCall('/api/collaboration/my-projects?status=accepted');
-        var data = await resp.json();
+        const resp = await apiCall('/api/collaboration/my-projects?status=accepted');
+        const data = await resp.json();
 
         if (!resp.ok) {
           if (resp.status === 403) {
@@ -27326,10 +28325,10 @@
           throw new Error(data.error || 'Failed to load');
         }
 
-        var collabs = data.collaborations || [];
+        const collabs = data.collaborations || [];
 
         // Update badge
-        var badge = document.getElementById('collaborations-count');
+        const badge = document.getElementById('collaborations-count');
         if (badge) {
           badge.textContent = collabs.length;
           badge.dataset.count = collabs.length;
@@ -27342,10 +28341,10 @@
         }
 
         container.innerHTML = collabs.map(function(c) {
-          var roleLabel = (c.role || 'viewer').charAt(0).toUpperCase() + (c.role || 'viewer').slice(1);
-          var accessLabel = (c.access_level || 'read').charAt(0).toUpperCase() + (c.access_level || 'read').slice(1);
-          var projectTitle = (c.project && (c.project.name || c.project.title)) || 'Untitled Project';
-          var dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : '';
+          const roleLabel = (c.role || 'viewer').charAt(0).toUpperCase() + (c.role || 'viewer').slice(1);
+          const accessLabel = (c.access_level || 'read').charAt(0).toUpperCase() + (c.access_level || 'read').slice(1);
+          const projectTitle = (c.project && (c.project.name || c.project.title)) || 'Untitled Project';
+          const dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : '';
 
           return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px;">' +
             '<div style="flex: 1; min-width: 0;">' +
@@ -27381,32 +28380,29 @@
 
     /** Invite a contractor (from contractor cards or contractor profile) as collaborator */
     function inviteContractorAsCollaborator(contractorIdParam) {
-      var cId = contractorIdParam || currentContractorId;
-      var contractor = allContractors.find(function(c) { return c.id === cId; });
+      const cId = contractorIdParam || currentContractorId;
+      const contractor = allContractors.find(function(c) { return c.id === cId; });
       if (!contractor) {
         showToast('Contractor not found', 'error');
         return;
       }
-      // Map contractor type to collaboration role
-      var roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
-      var role = roleMap[contractor.type] || 'contractor';
+      const roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
+      const role = roleMap[contractor.type] || 'contractor';
       openInviteToProjectModal(null, contractor.email || '', role);
     }
 
     /** Invite a contractor assigned to the current job as collaborator */
     function inviteJobContractorAsCollaborator(contractorId) {
       if (!currentJobId) return;
-      var jc = null;
-      var job = allJobs.find(function(j) { return j.id === currentJobId; });
+      let jc = null;
+      const job = allJobs.find(function(j) { return j.id === currentJobId; });
       if (job && job.job_contractors) {
         jc = job.job_contractors.find(function(c) { return c.contractor_id === contractorId; });
       }
-      // Try to find contractor details
-      var contractor = allContractors.find(function(c) { return c.id === contractorId; });
-      var email = contractor ? contractor.email : '';
-      var role = (jc && jc.role) || (contractor && contractor.type) || 'contractor';
-      // Map to collaboration roles
-      var roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
+      const contractor = allContractors.find(function(c) { return c.id === contractorId; });
+      const email = contractor ? contractor.email : '';
+      let role = (jc && jc.role) || (contractor && contractor.type) || 'contractor';
+      const roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
       role = roleMap[role] || 'contractor';
       openInviteToProjectModal(currentJobId, email, role);
     }
@@ -27414,9 +28410,9 @@
     /** Invite the current job's customer as a collaborator (viewer) */
     function inviteCustomerAsCollaborator() {
       if (!currentJobId) return;
-      var job = allJobs.find(function(j) { return j.id === currentJobId; });
+      const job = allJobs.find(function(j) { return j.id === currentJobId; });
       if (!job) return;
-      var email = (job.customers && job.customers.email) || job.customer_email || '';
+      const email = (job.customers && job.customers.email) || job.customer_email || '';
       openInviteToProjectModal(currentJobId, email, 'viewer');
     }
 

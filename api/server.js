@@ -247,6 +247,9 @@ const workflowRouter = require('./routes/workflow');
 // Collaboration & Design Handoff Routes
 const collaborationRouter = require('./routes/collaboration');
 
+// Projects CRUD Routes
+const projectsRouter = require('./routes/projects');
+
 // Email Routes (new modular structure)
 const emailRouter = require('./routes/email');
 
@@ -3308,6 +3311,9 @@ app.use('/api/workflow', workflowRouter);
 
 // ============ COLLABORATION & DESIGN HANDOFF ROUTES ============
 app.use('/api/collaboration', collaborationRouter);
+
+// ============ PROJECTS CRUD ROUTES ============
+app.use('/api/projects', projectsRouter);
 
 // ============ EMAIL ROUTES (MODULAR) ============
 app.use('/api/email', emailRouter);
