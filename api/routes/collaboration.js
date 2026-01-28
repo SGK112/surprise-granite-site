@@ -287,7 +287,7 @@ router.post('/projects/:projectId/collaborators',
     // Verify project exists and user is owner
     const { data: project } = await supabase
       .from('projects')
-      .select('id, user_id, title')
+      .select('id, user_id, name')
       .eq('id', projectId)
       .single();
 
@@ -360,7 +360,7 @@ router.post('/projects/:projectId/collaborators',
       user_id,
       'collaborator_invited',
       'Project Collaboration Invite',
-      `You have been invited as a ${role} on project "${project.title || 'Untitled'}"`,
+      `You have been invited as a ${role} on project "${project.name || 'Untitled'}"`,
       { projectId, role, access_level, invited_by: req.user.id }
     );
 
@@ -512,7 +512,7 @@ router.get('/my-projects', verifyProOrDesigner, asyncHandler(async (req, res) =>
 
   let query = supabase
     .from('project_collaborators')
-    .select('*, project:projects!project_id(id, title, status, created_at, user_id)')
+    .select('*, project:projects!project_id(id, name, status, created_at, user_id)')
     .eq('user_id', req.user.id)
     .order('created_at', { ascending: false });
 
@@ -626,7 +626,7 @@ router.post('/projects/:projectId/handoffs',
     // Verify project exists
     const { data: project } = await supabase
       .from('projects')
-      .select('id, user_id, title')
+      .select('id, user_id, name')
       .eq('id', projectId)
       .single();
 
@@ -679,7 +679,7 @@ router.post('/projects/:projectId/handoffs',
         project.user_id,
         'design_handoff_created',
         'New Design Handoff',
-        `A design handoff "${title}" has been created for project "${project.title || 'Untitled'}"`,
+        `A design handoff "${title}" has been created for project "${project.name || 'Untitled'}"`,
         { projectId, handoffId: handoff.id, designerId: req.user.id }
       );
     }
@@ -992,7 +992,7 @@ router.post('/projects/:projectId/invite',
     // Verify project exists and user is owner
     const { data: project } = await supabase
       .from('projects')
-      .select('id, user_id, title')
+      .select('id, user_id, name')
       .eq('id', projectId)
       .single();
 
@@ -1091,7 +1091,7 @@ router.post('/projects/:projectId/invite',
       const acceptUrl = `${SITE_URL}/account/?accept_invite=${rawToken}`;
       const emailContent = generateCollaborationInviteEmail({
         inviterName,
-        projectTitle: project.title,
+        projectTitle: project.name,
         role,
         isExistingUser: true,
         acceptUrl
@@ -1104,7 +1104,7 @@ router.post('/projects/:projectId/invite',
         existingUser.id,
         'collaborator_invited',
         'Project Collaboration Invite',
-        `${inviterName} invited you as a ${role} on project "${project.title || 'Untitled'}"`,
+        `${inviterName} invited you as a ${role} on project "${project.name || 'Untitled'}"`,
         { projectId, role, access_level, invited_by: req.user.id }
       );
 
@@ -1156,7 +1156,7 @@ router.post('/projects/:projectId/invite',
       const signupUrl = `${SITE_URL}/sign-up/?invite=${rawToken}`;
       const emailContent = generateCollaborationInviteEmail({
         inviterName,
-        projectTitle: project.title,
+        projectTitle: project.name,
         role,
         isExistingUser: false,
         acceptUrl: signupUrl
@@ -1330,7 +1330,7 @@ router.get('/invite/verify/:token', asyncHandler(async (req, res) => {
   // Get project title and inviter name for display
   const { data: project } = await supabase
     .from('projects')
-    .select('title')
+    .select('name')
     .eq('id', invitation.project_id)
     .single();
 
@@ -1353,7 +1353,7 @@ router.get('/invite/verify/:token', asyncHandler(async (req, res) => {
       email: invitation.email,
       role: invitation.role,
       access_level: invitation.access_level,
-      projectTitle: project?.title || 'Untitled Project',
+      projectTitle: project?.name || 'Untitled Project',
       inviterName: inviter?.full_name || inviter?.email || 'A team member',
       hasAccount: !!existingUser,
       expiresAt: invitation.token_expires_at

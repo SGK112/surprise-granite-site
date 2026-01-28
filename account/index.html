@@ -27163,12 +27163,12 @@
         // Also try to load owned projects from Supabase
         if (supabaseClient && currentUser) {
           try {
-            var result = await supabaseClient.from('projects').select('id, title').eq('owner_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
+            var result = await supabaseClient.from('projects').select('id, name').eq('owner_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
             if (result.data) {
               var existingIds = projects.map(function(p) { return p.project_id; });
               result.data.forEach(function(proj) {
                 if (existingIds.indexOf(proj.id) === -1) {
-                  projects.push({ project_id: proj.id, project: { title: proj.title } });
+                  projects.push({ project_id: proj.id, project: { name: proj.name } });
                 }
               });
             }
@@ -27187,7 +27187,7 @@
           select.innerHTML += '<option value="" disabled>No projects available</option>';
         } else {
           projects.forEach(function(p) {
-            var title = (p.project && p.project.title) || 'Untitled Project';
+            var title = (p.project && (p.project.name || p.project.title)) || 'Untitled Project';
             var opt = document.createElement('option');
             opt.value = p.project_id;
             opt.textContent = title;
@@ -27344,7 +27344,7 @@
         container.innerHTML = collabs.map(function(c) {
           var roleLabel = (c.role || 'viewer').charAt(0).toUpperCase() + (c.role || 'viewer').slice(1);
           var accessLabel = (c.access_level || 'read').charAt(0).toUpperCase() + (c.access_level || 'read').slice(1);
-          var projectTitle = (c.project && c.project.title) || 'Untitled Project';
+          var projectTitle = (c.project && (c.project.name || c.project.title)) || 'Untitled Project';
           var dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : '';
 
           return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px;">' +
