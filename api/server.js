@@ -2099,9 +2099,7 @@ const developmentOrigins = [
   'http://127.0.0.1:8080'
 ];
 
-const corsOrigins = process.env.NODE_ENV === 'production'
-  ? productionOrigins
-  : developmentOrigins;
+const corsOrigins = developmentOrigins;
 
 app.use(cors({
   origin: corsOrigins,
