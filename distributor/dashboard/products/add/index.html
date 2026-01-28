@@ -688,6 +688,85 @@
       </div>
 
       <!-- Images -->
+      <!-- Room Designer Integration -->
+      <div class="form-section">
+        <h2 class="section-title">Room Designer Integration</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+          Enable this product to appear in the Room Designer tool so customers can visualize it in their space.
+        </p>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="designerVisible" name="designer_visible" style="width:18px;height:18px;accent-color:var(--gold-primary);">
+              <span>Show in Room Designer</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Element Type</label>
+            <select name="designer_element_type" id="designerElementType" class="form-input">
+              <option value="">-- Select Element Type --</option>
+              <optgroup label="Cabinets">
+                <option value="base-cabinet">Base Cabinet</option>
+                <option value="wall-cabinet">Wall Cabinet</option>
+                <option value="tall-cabinet">Tall Cabinet</option>
+                <option value="corner-cabinet">Corner Cabinet</option>
+                <option value="drawer-base">Drawer Base</option>
+                <option value="sink-base">Sink Base</option>
+                <option value="island">Island</option>
+                <option value="lazy-susan">Lazy Susan</option>
+                <option value="blind-corner">Blind Corner</option>
+                <option value="linen-closet">Linen Closet</option>
+                <option value="linen-tower">Linen Tower</option>
+              </optgroup>
+              <optgroup label="Bathroom">
+                <option value="vanity-24">Vanity 24"</option>
+                <option value="vanity-30">Vanity 30"</option>
+                <option value="vanity-36">Vanity 36"</option>
+                <option value="vanity-48">Vanity 48"</option>
+                <option value="vanity-60">Double Vanity 60"</option>
+                <option value="vanity-72">Double Vanity 72"</option>
+                <option value="vanity-double-60">Double Vanity 60" (His/Hers)</option>
+                <option value="vanity-double-72">Double Vanity 72" (His/Hers)</option>
+                <option value="vanity-double-84">Double Vanity 84" (His/Hers)</option>
+                <option value="vanity-hishers-96">His/Hers Vanity 96" w/ Table</option>
+                <option value="vanity-hishers-108">His/Hers Vanity 108" w/ Table</option>
+                <option value="powder-table">Powder Table</option>
+                <option value="makeup-vanity">Makeup Vanity</option>
+                <option value="pedestal-sink">Pedestal Sink</option>
+                <option value="toilet">Toilet</option>
+                <option value="bathtub">Bathtub</option>
+                <option value="bathtub-freestanding">Freestanding Tub</option>
+                <option value="shower-base-48">Shower Base</option>
+              </optgroup>
+              <optgroup label="Surfaces">
+                <option value="countertop">Countertop</option>
+                <option value="backsplash">Backsplash</option>
+                <option value="flooring">Flooring</option>
+                <option value="tile">Tile</option>
+              </optgroup>
+              <optgroup label="Fixtures &amp; Appliances">
+                <option value="sink">Sink</option>
+                <option value="sink-farmhouse">Farmhouse Sink</option>
+                <option value="stove">Range/Stove</option>
+                <option value="refrigerator">Refrigerator</option>
+                <option value="dishwasher">Dishwasher</option>
+                <option value="range-hood">Range Hood</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designer Category</label>
+            <select name="designer_category" id="designerCategory" class="form-input">
+              <option value="">-- Select Category --</option>
+              <option value="cabinets">Cabinets</option>
+              <option value="bathroom">Bathroom</option>
+              <option value="surfaces">Surfaces</option>
+              <option value="appliances">Appliances</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="form-section">
         <h2 class="section-title">Images</h2>
         <div class="image-upload" id="imageUpload">
@@ -812,6 +891,17 @@
         if (slab.origin_country) form.elements['origin_country'].value = slab.origin_country;
       }
 
+      // Room Designer fields
+      if (product.designer_visible) {
+        document.getElementById('designerVisible').checked = true;
+      }
+      if (product.designer_element_type) {
+        document.getElementById('designerElementType').value = product.designer_element_type;
+      }
+      if (product.designer_category) {
+        document.getElementById('designerCategory').value = product.designer_category;
+      }
+
       // Images
       if (product.images && Array.isArray(product.images)) {
         imageUrls = product.images;
@@ -931,7 +1021,11 @@
         min_stock_level: parseInt(form.elements['min_stock_level'].value) || 0,
         status: form.elements['status'].value,
         product_type: productType,
-        images: imageUrls
+        images: imageUrls,
+        // Room Designer integration fields
+        designer_visible: document.getElementById('designerVisible')?.checked || false,
+        designer_element_type: form.elements['designer_element_type']?.value || null,
+        designer_category: form.elements['designer_category']?.value || null
       };
 
       // Add type-specific data

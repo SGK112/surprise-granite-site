@@ -1537,6 +1537,120 @@
       font-size: 11px;
     }
 
+    /* Marketplace Product Grid */
+    .marketplace-product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 4px;
+      background: var(--dark);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .marketplace-card {
+      background: var(--dark-elevated);
+      border-radius: 6px;
+      padding: 6px;
+      cursor: grab;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      position: relative;
+    }
+
+    .marketplace-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .marketplace-card.out-of-stock {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .marketplace-card-img {
+      width: 100%;
+      height: 80px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .marketplace-card-name {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .marketplace-card-brand {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .marketplace-card-price {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .marketplace-card-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 8px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .marketplace-badge-instock {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .marketplace-badge-low {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+    }
+
+    .marketplace-badge-out {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .marketplace-card-distributor {
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      opacity: 0.7;
+    }
+
+    .marketplace-stock-filter {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .marketplace-stock-filter input[type="checkbox"] {
+      width: 12px;
+      height: 12px;
+      accent-color: var(--primary);
+    }
+
     /* Canvas Area */
     .canvas-area {
       flex: 1;
@@ -7938,6 +8052,57 @@
             <div class="product-hint">Click product to apply as material</div>
           </div>
         </div>
+
+        <!-- Marketplace Products (Live API) -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Browse marketplace products from vendors">
+            <span class="sidebar-title">Marketplace</span>
+            <span class="sidebar-toggle">&#9654;</span>
+          </div>
+          <div class="sidebar-content collapsed">
+            <div class="product-search-bar">
+              <input type="text" id="marketplaceSearchInput" placeholder="Search marketplace..." oninput="debounceMarketplaceSearch()">
+              <button class="search-icon" onclick="loadMarketplaceProducts()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </button>
+            </div>
+            <div class="materials-tabs" id="marketplaceCategoryTabs">
+              <button class="material-tab active" onclick="setMarketplaceCategory('all', this)">All</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('countertops', this)">Countertops</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('cabinets', this)">Cabinets</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('sinks', this)">Sinks</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('tile', this)">Tile</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('flooring', this)">Flooring</button>
+              <button class="material-tab" onclick="setMarketplaceCategory('vanities', this)">Vanities</button>
+            </div>
+            <div class="product-filters">
+              <select id="marketplaceBrandFilter" onchange="applyMarketplaceFilters()">
+                <option value="">All Brands</option>
+              </select>
+              <select id="marketplacePriceFilter" onchange="applyMarketplaceFilters()">
+                <option value="">Any Price</option>
+                <option value="0-50">Under $50</option>
+                <option value="50-200">$50 - $200</option>
+                <option value="200-500">$200 - $500</option>
+                <option value="500-1000">$500 - $1,000</option>
+                <option value="1000-99999">$1,000+</option>
+              </select>
+              <label class="marketplace-stock-filter">
+                <input type="checkbox" id="marketplaceInStockOnly" onchange="applyMarketplaceFilters()"> In Stock Only
+              </label>
+            </div>
+            <div class="marketplace-product-grid" id="marketplaceProductGrid">
+              <div class="loading-products">Browse marketplace products...</div>
+            </div>
+            <button class="btn btn-sm btn-secondary" id="marketplaceLoadMore" onclick="loadMoreMarketplace()" style="display:none;width:100%;margin-top:8px;">
+              Load More
+            </button>
+            <div class="product-hint">Drag product onto canvas or click to apply</div>
+          </div>
+        </div>
       </aside>
 
       <!-- Canvas Area -->
@@ -8342,6 +8507,26 @@
             <button class="template-btn" onclick="loadRoomTemplate('laundry-room')" title="Laundry room with cabinets">
               <span class="template-icon">🧺</span>
               <span class="template-name">Laundry</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('bathroom-master-full')" title="Master bath with his/hers vanity, tub, walk-in shower">
+              <span class="template-icon">🛁</span>
+              <span class="template-name">Master Bath Full</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('bathroom-guest')" title="Guest bathroom with vanity, tub, and toilet">
+              <span class="template-icon">🚿</span>
+              <span class="template-name">Guest Bath</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('bathroom-powder')" title="Small powder room with pedestal sink">
+              <span class="template-icon">🪞</span>
+              <span class="template-name">Powder Room</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('bathroom-jack-jill')" title="Jack-and-Jill shared bathroom">
+              <span class="template-icon">🚪</span>
+              <span class="template-name">Jack &amp; Jill</span>
+            </button>
+            <button class="template-btn" onclick="loadRoomTemplate('concept-modern-kitchen-bath')" title="Modern kitchen and master bath concept layout">
+              <span class="template-icon">🏠</span>
+              <span class="template-name">Kitchen+Bath</span>
             </button>
           </div>
           <p class="template-hint">Click a template to load preset room layout</p>
@@ -9502,6 +9687,21 @@
           </button>
           <button class="template-btn" onclick="loadRoomTemplate('laundry-room'); closeModal('templateModal');" title="Laundry room">
             <span class="template-icon">🧺</span><span class="template-name">Laundry</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-master-full'); closeModal('templateModal');" title="Master bath full luxury">
+            <span class="template-icon">🛁</span><span class="template-name">Master Bath Full</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-guest'); closeModal('templateModal');" title="Guest bathroom">
+            <span class="template-icon">🚿</span><span class="template-name">Guest Bath</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-powder'); closeModal('templateModal');" title="Powder room">
+            <span class="template-icon">🪞</span><span class="template-name">Powder Room</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('bathroom-jack-jill'); closeModal('templateModal');" title="Jack-and-Jill bathroom">
+            <span class="template-icon">🚪</span><span class="template-name">Jack &amp; Jill</span>
+          </button>
+          <button class="template-btn" onclick="loadRoomTemplate('concept-modern-kitchen-bath'); closeModal('templateModal');" title="Modern kitchen + bath">
+            <span class="template-icon">🏠</span><span class="template-name">Kitchen+Bath</span>
           </button>
         </div>
       </div>
@@ -13961,7 +14161,17 @@
       'countertop-corner': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M4 4 L4 44 L24 44 L24 24 L44 24 L44 4 Z" fill="#708090"/><path d="M6 6 L6 42 L22 42 L22 22 L42 22 L42 6 Z" fill="#5a6a7a"/><circle cx="12" cy="14" r="2" fill="#8090a0"/><circle cx="12" cy="32" r="2" fill="#8090a0"/><circle cx="32" cy="14" r="2" fill="#8090a0"/><path d="M4 44 L4 46 L26 46 L26 24 L44 24 L44 22 L24 22 L24 44 Z" fill="#4a5a6a"/></svg>',
       'slide-in-range': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="40" height="40" rx="2" fill="#2a2a2a"/><rect x="4" y="4" width="40" height="12" rx="2" fill="#1a1a1a"/><circle cx="14" cy="10" r="4" fill="#333" stroke="#444" stroke-width="1.5"/><circle cx="24" cy="10" r="4" fill="#333" stroke="#444" stroke-width="1.5"/><circle cx="34" cy="10" r="4" fill="#333" stroke="#444" stroke-width="1.5"/><rect x="6" y="18" width="36" height="4" rx="1" fill="#3a3a3a"/><circle cx="12" cy="20" r="1.5" fill="#666"/><circle cx="20" cy="20" r="1.5" fill="#666"/><circle cx="28" cy="20" r="1.5" fill="#666"/><circle cx="36" cy="20" r="1.5" fill="#666"/><rect x="8" y="24" width="32" height="18" rx="1" fill="#1a1a1a"/><rect x="10" y="26" width="28" height="14" rx="1" fill="#111"/></svg>',
       'cooktop': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="20" rx="2" fill="#1a1a1a"/><rect x="4" y="16" width="40" height="16" rx="1" fill="#2a2a2a"/><circle cx="14" cy="24" r="6" fill="#333" stroke="#555" stroke-width="2"/><circle cx="34" cy="24" r="6" fill="#333" stroke="#555" stroke-width="2"/><circle cx="14" cy="24" r="3" fill="#444"/><circle cx="34" cy="24" r="3" fill="#444"/><circle cx="14" cy="24" r="1" fill="#ff4500" opacity="0.6"/><circle cx="34" cy="24" r="1" fill="#ff4500" opacity="0.6"/><rect x="22" y="18" width="4" height="12" fill="#3a3a3a"/><circle cx="24" cy="20" r="1" fill="#666"/><circle cx="24" cy="28" r="1" fill="#666"/></svg>',
-      'wall-oven-double': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#2a2a2a"/><rect x="8" y="4" width="32" height="20" rx="1" fill="#3a3a3a"/><rect x="10" y="6" width="28" height="16" rx="1" fill="#1a1a1a"/><rect x="12" y="8" width="24" height="12" rx="1" fill="#222"/><rect x="34" y="12" width="2" height="4" rx="1" fill="#666"/><rect x="8" y="26" width="32" height="20" rx="1" fill="#3a3a3a"/><rect x="10" y="28" width="28" height="16" rx="1" fill="#1a1a1a"/><rect x="12" y="30" width="24" height="12" rx="1" fill="#222"/><rect x="34" y="34" width="2" height="4" rx="1" fill="#666"/></svg>'
+      'wall-oven-double': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#2a2a2a"/><rect x="8" y="4" width="32" height="20" rx="1" fill="#3a3a3a"/><rect x="10" y="6" width="28" height="16" rx="1" fill="#1a1a1a"/><rect x="12" y="8" width="24" height="12" rx="1" fill="#222"/><rect x="34" y="12" width="2" height="4" rx="1" fill="#666"/><rect x="8" y="26" width="32" height="20" rx="1" fill="#3a3a3a"/><rect x="10" y="28" width="28" height="16" rx="1" fill="#1a1a1a"/><rect x="12" y="30" width="24" height="12" rx="1" fill="#222"/><rect x="34" y="34" width="2" height="4" rx="1" fill="#666"/></svg>',
+      'vanity-double-60': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="28" rx="2" fill="#8B5A2B"/><rect x="4" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="26" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="23" y="16" width="2" height="24" fill="#6B3A1B"/><ellipse cx="14" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><ellipse cx="36" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><circle cx="14" cy="20" r="2" fill="#C0C0C0"/><circle cx="36" cy="20" r="2" fill="#C0C0C0"/><rect x="12" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/><rect x="34" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'vanity-double-72': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="28" rx="2" fill="#8B5A2B"/><rect x="4" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="26" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="23" y="16" width="2" height="24" fill="#6B3A1B"/><ellipse cx="14" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><ellipse cx="36" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><circle cx="14" cy="20" r="2" fill="#C0C0C0"/><circle cx="36" cy="20" r="2" fill="#C0C0C0"/><rect x="12" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/><rect x="34" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'vanity-double-84': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="28" rx="2" fill="#8B5A2B"/><rect x="4" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="26" y="16" width="20" height="24" rx="1" fill="#A0522D"/><rect x="23" y="16" width="2" height="24" fill="#6B3A1B"/><ellipse cx="14" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><ellipse cx="36" cy="28" rx="7" ry="5" fill="#FFF" stroke="#CCC" stroke-width="1"/><circle cx="14" cy="20" r="2" fill="#C0C0C0"/><circle cx="36" cy="20" r="2" fill="#C0C0C0"/><rect x="12" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/><rect x="34" y="38" width="4" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'vanity-hishers-96': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="28" rx="2" fill="#8B5A2B"/><rect x="3" y="16" width="14" height="24" rx="1" fill="#A0522D"/><rect x="19" y="16" width="10" height="24" rx="1" fill="#C4A87C"/><rect x="31" y="16" width="14" height="24" rx="1" fill="#A0522D"/><ellipse cx="10" cy="28" rx="5" ry="4" fill="#FFF" stroke="#CCC" stroke-width="1"/><ellipse cx="38" cy="28" rx="5" ry="4" fill="#FFF" stroke="#CCC" stroke-width="1"/><circle cx="10" cy="20" r="2" fill="#C0C0C0"/><circle cx="38" cy="20" r="2" fill="#C0C0C0"/><circle cx="24" cy="22" r="3" fill="#E8E8FF" stroke="#CCC" stroke-width="0.5"/><rect x="22" y="34" width="4" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'vanity-hishers-108': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="44" height="28" rx="2" fill="#8B5A2B"/><rect x="3" y="16" width="14" height="24" rx="1" fill="#A0522D"/><rect x="19" y="16" width="10" height="24" rx="1" fill="#C4A87C"/><rect x="31" y="16" width="14" height="24" rx="1" fill="#A0522D"/><ellipse cx="10" cy="28" rx="5" ry="4" fill="#FFF" stroke="#CCC" stroke-width="1"/><ellipse cx="38" cy="28" rx="5" ry="4" fill="#FFF" stroke="#CCC" stroke-width="1"/><circle cx="10" cy="20" r="2" fill="#C0C0C0"/><circle cx="38" cy="20" r="2" fill="#C0C0C0"/><circle cx="24" cy="22" r="3" fill="#E8E8FF" stroke="#CCC" stroke-width="0.5"/><rect x="22" y="34" width="4" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'powder-table': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="20" width="36" height="24" rx="2" fill="#A08060"/><rect x="8" y="22" width="32" height="8" rx="1" fill="#BFA070"/><circle cx="24" cy="12" r="8" fill="#E8E8FF" stroke="#CCC" stroke-width="1"/><rect x="20" y="40" width="8" height="2" rx="0.5" fill="#FFD700"/></svg>',
+      'makeup-vanity': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="24" width="36" height="20" rx="2" fill="#8B5A2B"/><rect x="8" y="26" width="32" height="16" rx="1" fill="#A0522D"/><rect x="10" y="4" width="28" height="18" rx="2" fill="#E8E8FF" stroke="#CCC" stroke-width="1"/><rect x="20" y="40" width="8" height="2" rx="0.5" fill="#FFD700"/><rect x="18" y="30" width="12" height="6" rx="1" fill="#BFA070"/></svg>',
+      'pedestal-sink': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><ellipse cx="24" cy="16" rx="16" ry="10" fill="#FFFFFF" stroke="#CCC" stroke-width="1.5"/><rect x="20" y="22" width="8" height="22" rx="1" fill="#F0F0F0" stroke="#CCC" stroke-width="1"/><ellipse cx="24" cy="16" rx="10" ry="6" fill="#F5F5F5" stroke="#DDD" stroke-width="1"/><circle cx="24" cy="16" r="2" fill="#888"/><circle cx="24" cy="10" r="2.5" fill="#C0C0C0"/></svg>',
+      'linen-closet': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#8B5A2B"/><rect x="8" y="4" width="32" height="40" rx="1" fill="#A0522D"/><line x1="8" y1="14" x2="40" y2="14" stroke="#6B3A1B" stroke-width="1"/><line x1="8" y1="24" x2="40" y2="24" stroke="#6B3A1B" stroke-width="1"/><line x1="8" y1="34" x2="40" y2="34" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="20" width="4" height="8" rx="1" fill="#FFD700"/></svg>',
+      'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>'
     };
 
     const ELEMENT_TYPES = {
@@ -13986,7 +14196,16 @@
         { type: 'lazy-susan', width: 3, height: 3, color: '#7B3F00', label: 'Lazy Susan' },
         { type: 'blind-corner', width: 3, height: 3, color: '#7B3F00', label: 'Blind Corner' },
         // Island: 6ft wide, 3ft deep
-        { type: 'island', width: 6, height: 3, color: '#654321', label: 'Island' }
+        { type: 'island', width: 6, height: 3, color: '#654321', label: 'Island' },
+        // Sized base cabinets (12" through 33")
+        { type: 'base-cabinet-12', width: 1, height: 2, color: '#8B4513', label: 'Base Cabinet 12"' },
+        { type: 'base-cabinet-15', width: 1.25, height: 2, color: '#8B4513', label: 'Base Cabinet 15"' },
+        { type: 'base-cabinet-18', width: 1.5, height: 2, color: '#8B4513', label: 'Base Cabinet 18"' },
+        { type: 'base-cabinet-21', width: 1.75, height: 2, color: '#8B4513', label: 'Base Cabinet 21"' },
+        { type: 'base-cabinet-24', width: 2, height: 2, color: '#8B4513', label: 'Base Cabinet 24"' },
+        { type: 'base-cabinet-27', width: 2.25, height: 2, color: '#8B4513', label: 'Base Cabinet 27"' },
+        { type: 'base-cabinet-30', width: 2.5, height: 2, color: '#8B4513', label: 'Base Cabinet 30"' },
+        { type: 'base-cabinet-33', width: 2.75, height: 2, color: '#8B4513', label: 'Base Cabinet 33"' }
       ],
       surfaces: [
         // Standard countertop: 25.5" depth (2.125') with 1.5" overhang = 2.17' total
@@ -14108,6 +14327,16 @@
         { type: 'vanity-48', width: 4, height: 1.75, color: '#8B7355', label: 'Vanity 48"' },
         { type: 'vanity-60', width: 5, height: 1.75, color: '#8B7355', label: 'Double Vanity 60"' },
         { type: 'vanity-72', width: 6, height: 1.75, color: '#8B7355', label: 'Double Vanity 72"' },
+        { type: 'vanity-double-60', width: 5, height: 1.75, color: '#8B7355', label: 'Double Vanity 60" (His/Hers)' },
+        { type: 'vanity-double-72', width: 6, height: 1.75, color: '#8B7355', label: 'Double Vanity 72" (His/Hers)' },
+        { type: 'vanity-double-84', width: 7, height: 1.75, color: '#8B7355', label: 'Double Vanity 84" (His/Hers)' },
+        { type: 'vanity-hishers-96', width: 8, height: 1.75, color: '#8B7355', label: 'His/Hers Vanity 96" w/ Table' },
+        { type: 'vanity-hishers-108', width: 9, height: 1.75, color: '#8B7355', label: 'His/Hers Vanity 108" w/ Table' },
+        { type: 'powder-table', width: 2, height: 1.75, color: '#A08060', label: 'Powder Table' },
+        { type: 'makeup-vanity', width: 3, height: 1.75, color: '#8B7355', label: 'Makeup Vanity 36"' },
+        { type: 'pedestal-sink', width: 1.5, height: 1.5, color: '#FFFFFF', label: 'Pedestal Sink' },
+        { type: 'linen-closet', width: 2, height: 1.5, color: '#8B7355', label: 'Linen Closet' },
+        { type: 'linen-tower', width: 1.5, height: 1.5, color: '#8B7355', label: 'Linen Tower' },
         // Shower Components
         { type: 'shower-base-36', width: 3, height: 3, color: '#D0D0D0', label: 'Shower Base 36x36' },
         { type: 'shower-base-48', width: 4, height: 3, color: '#D0D0D0', label: 'Shower Base 48x36' },
@@ -16264,8 +16493,11 @@
       let h = 2.5; // default height
 
       // Adjust height based on type
-      if (el.type.includes('tall')) h = 7;
+      if (el.type === 'linen-closet' || el.type === 'linen-tower') h = 6.5;
+      else if (el.type.includes('tall')) h = 7;
       else if (el.type.includes('wall-cabinet')) h = 2.5;
+      else if (el.type.includes('vanity-') || el.type === 'pedestal-sink') h = 2.9;
+      else if (el.type === 'powder-table' || el.type === 'makeup-vanity') h = 2.5;
       else if (el.type.includes('cabinet')) h = 2.9;
       else if (el.type === 'countertop') h = 0.1;
       else if (el.type === 'sink' || el.type === 'stove') h = 0.5;
@@ -18028,6 +18260,289 @@
     function filterStoreProducts() {
       renderStoreProducts();
     }
+
+    // ===== MARKETPLACE (Live API Bridge) =====
+    let marketplaceProducts = [];
+    let marketplaceCategory = 'all';
+    let marketplaceOffset = 0;
+    const MARKETPLACE_LIMIT = 20;
+    let marketplaceSearchTimer = null;
+    let marketplacePriceRefreshTimer = null;
+
+    function debounceMarketplaceSearch() {
+      clearTimeout(marketplaceSearchTimer);
+      marketplaceSearchTimer = setTimeout(() => loadMarketplaceProducts(false), 400);
+    }
+
+    function setMarketplaceCategory(category, btn) {
+      document.querySelectorAll('#marketplaceCategoryTabs .material-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      marketplaceCategory = category;
+      marketplaceOffset = 0;
+      loadMarketplaceProducts(false);
+    }
+
+    function applyMarketplaceFilters() {
+      marketplaceOffset = 0;
+      loadMarketplaceProducts(false);
+    }
+
+    function loadMoreMarketplace() {
+      marketplaceOffset += MARKETPLACE_LIMIT;
+      loadMarketplaceProducts(true);
+    }
+
+    async function loadMarketplaceProducts(append) {
+      const grid = document.getElementById('marketplaceProductGrid');
+      const loadMoreBtn = document.getElementById('marketplaceLoadMore');
+      if (!grid) return;
+
+      if (!append) {
+        grid.innerHTML = '<div class="loading-products">Loading marketplace...</div>';
+        marketplaceOffset = 0;
+      }
+
+      const search = document.getElementById('marketplaceSearchInput')?.value || '';
+      const brand = document.getElementById('marketplaceBrandFilter')?.value || '';
+      const priceRange = document.getElementById('marketplacePriceFilter')?.value || '';
+      const inStockOnly = document.getElementById('marketplaceInStockOnly')?.checked || false;
+
+      const params = new URLSearchParams();
+      params.set('limit', MARKETPLACE_LIMIT);
+      params.set('offset', marketplaceOffset);
+      if (search) params.set('search', search);
+      if (brand) params.set('brand', brand);
+      if (marketplaceCategory !== 'all') {
+        const categoryMap = {
+          'countertops': 'countertop',
+          'cabinets': 'cabinet',
+          'sinks': 'sink',
+          'tile': 'tile',
+          'flooring': 'flooring',
+          'vanities': 'vanity'
+        };
+        params.set('product_type', categoryMap[marketplaceCategory] || marketplaceCategory);
+      }
+      if (priceRange) {
+        const [min, max] = priceRange.split('-');
+        if (min) params.set('min_price', min);
+        if (max) params.set('max_price', max);
+      }
+
+      try {
+        const response = await fetch(`/api/marketplace/products?${params.toString()}`);
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
+
+        if (append) {
+          marketplaceProducts = [...marketplaceProducts, ...(data.products || [])];
+        } else {
+          marketplaceProducts = data.products || [];
+        }
+
+        renderMarketplaceGrid(inStockOnly);
+        updateMarketplaceBrandFilter();
+
+        // Show/hide Load More
+        if (loadMoreBtn) {
+          loadMoreBtn.style.display = (data.products?.length >= MARKETPLACE_LIMIT) ? 'block' : 'none';
+        }
+      } catch (err) {
+        console.warn('Marketplace load error:', err);
+        if (!append) {
+          grid.innerHTML = '<div class="loading-products">Marketplace unavailable</div>';
+        }
+      }
+    }
+
+    function renderMarketplaceGrid(inStockOnly) {
+      const grid = document.getElementById('marketplaceProductGrid');
+      if (!grid) return;
+
+      let products = marketplaceProducts;
+      if (inStockOnly) {
+        products = products.filter(p => (p.quantity_available || 0) > 0);
+      }
+
+      if (products.length === 0) {
+        grid.innerHTML = '<div class="loading-products">No products found</div>';
+        return;
+      }
+
+      grid.innerHTML = products.map(p => {
+        const imgUrl = p.images?.[0] || '';
+        const price = p.wholesale_price || p.unit_price || 0;
+        const qty = p.quantity_available || 0;
+        const isOutOfStock = qty <= 0;
+        const isLowStock = qty > 0 && qty <= 5;
+
+        let badgeHtml = '';
+        if (isOutOfStock) {
+          badgeHtml = '<span class="marketplace-card-badge marketplace-badge-out">Out</span>';
+        } else if (isLowStock) {
+          badgeHtml = '<span class="marketplace-card-badge marketplace-badge-low">Low</span>';
+        } else if (qty > 0) {
+          badgeHtml = '<span class="marketplace-card-badge marketplace-badge-instock">In Stock</span>';
+        }
+
+        const distributor = p.distributor_profiles?.company_name || '';
+
+        return `<div class="marketplace-card ${isOutOfStock ? 'out-of-stock' : ''}"
+                     draggable="true"
+                     ondragstart="onMarketplaceDragStart(event, '${p.id}')"
+                     onclick="selectMarketplaceProduct('${p.id}')"
+                     title="${(p.name || '').replace(/"/g, '&quot;')}">
+          ${badgeHtml}
+          ${imgUrl ? `<img class="marketplace-card-img" src="${imgUrl}" alt="${(p.name || '').replace(/"/g, '&quot;')}" loading="lazy" onerror="this.style.display='none'">` : '<div class="marketplace-card-img" style="background:var(--dark-elevated);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">No Image</div>'}
+          <div class="marketplace-card-name">${p.name || 'Product'}</div>
+          <div class="marketplace-card-brand">${p.brand || ''}</div>
+          <div class="marketplace-card-price">${price > 0 ? '$' + parseFloat(price).toFixed(2) : ''}</div>
+          ${distributor ? `<div class="marketplace-card-distributor">${distributor}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    function onMarketplaceDragStart(event, productId) {
+      const product = marketplaceProducts.find(p => String(p.id) === String(productId));
+      if (!product) return;
+      const dragData = {
+        type: 'marketplace-product',
+        product: {
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          sku: product.sku,
+          price: product.wholesale_price || product.unit_price,
+          type: product.product_type,
+          images: product.images,
+          image: product.images?.[0]
+        }
+      };
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+      event.dataTransfer.effectAllowed = 'copy';
+    }
+
+    function selectMarketplaceProduct(productId) {
+      const product = marketplaceProducts.find(p => String(p.id) === String(productId));
+      if (!product) return;
+
+      if (selectedElement) {
+        // Apply as material to selected element
+        applyStoreProductToElement(selectedElement, {
+          name: product.name,
+          brand: product.brand,
+          sku: product.sku,
+          price: product.wholesale_price || product.unit_price,
+          primaryImage: product.images?.[0],
+          slug: product.id
+        });
+        showToast(`Applied ${product.name} to ${selectedElement.type}`, 'success');
+      } else {
+        showToast('Select an element first, then click a product to apply it', 'info');
+      }
+    }
+
+    function updateMarketplaceBrandFilter() {
+      const select = document.getElementById('marketplaceBrandFilter');
+      if (!select) return;
+      const currentVal = select.value;
+      const brands = [...new Set(marketplaceProducts.map(p => p.brand).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">All Brands</option>' +
+        brands.map(b => `<option value="${b}" ${b === currentVal ? 'selected' : ''}>${b}</option>`).join('');
+    }
+
+    async function refreshMarketplacePrices() {
+      const marketplaceElements = elements.filter(el => el.storeProduct?.slug || el.vendorProduct);
+      if (marketplaceElements.length === 0) return;
+
+      try {
+        const ids = marketplaceElements.map(el => el.storeProduct?.slug || el.vendorProduct?.id).filter(Boolean);
+        const response = await fetch(`/api/marketplace/products?limit=50&search=`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const priceMap = {};
+        (data.products || []).forEach(p => { priceMap[p.id] = p.wholesale_price || p.unit_price; });
+
+        let updated = false;
+        marketplaceElements.forEach(el => {
+          const key = el.storeProduct?.slug || el.vendorProduct?.id;
+          if (key && priceMap[key] !== undefined) {
+            el.priceOverride = parseFloat(priceMap[key]);
+            el.costPrice = parseFloat(priceMap[key]);
+            updated = true;
+          }
+        });
+
+        if (updated) {
+          calculateQuote();
+          showToast('Marketplace prices refreshed', 'info');
+        }
+      } catch (err) {
+        console.warn('Price refresh failed:', err);
+      }
+    }
+
+    // Initialize marketplace on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => loadMarketplaceProducts(false), 1000);
+      // Refresh prices every 5 minutes
+      marketplacePriceRefreshTimer = setInterval(refreshMarketplacePrices, 5 * 60 * 1000);
+    });
+
+    // ===== VENDOR DESIGNER ELEMENTS =====
+    async function loadVendorDesignerElements() {
+      try {
+        const response = await fetch('/api/marketplace/designer-products?limit=200');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (!data.grouped || Object.keys(data.grouped).length === 0) return;
+
+        // Merge vendor products into ELEMENT_TYPES
+        Object.entries(data.grouped).forEach(([category, products]) => {
+          const targetCategory = ELEMENT_TYPES[category];
+          if (!targetCategory) return;
+
+          products.forEach(p => {
+            // Skip if element type already exists from vendor
+            if (targetCategory.find(e => e.type === `vendor-${p.id}`)) return;
+
+            targetCategory.push({
+              type: p.elementType || 'base-cabinet',
+              width: parseFloat(p.defaultWidth) || 3,
+              height: parseFloat(p.defaultHeight) || 2,
+              color: p.color || '#8B4513',
+              label: p.name || 'Vendor Product',
+              vendorProduct: {
+                id: p.id,
+                name: p.name,
+                brand: p.brand,
+                sku: p.sku,
+                unit_price: p.price,
+                image: p.images?.[0],
+                distributor: p.distributor
+              }
+            });
+          });
+        });
+
+        // Re-render sidebar to show new elements
+        if (typeof renderSidebar === 'function') {
+          renderSidebar();
+        }
+        console.log('Vendor designer elements loaded:', Object.keys(data.grouped).length, 'categories');
+      } catch (err) {
+        console.warn('Vendor designer elements unavailable:', err.message);
+      }
+    }
+
+    // Load vendor elements 2s after init
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(loadVendorDesignerElements, 2000);
+    });
+    // ===== END VENDOR DESIGNER ELEMENTS =====
+
+    // ===== END MARKETPLACE =====
 
     // Render products in the grid
     function renderStoreProducts() {
@@ -22653,7 +23168,10 @@
         case 'vanity-36':
         case 'vanity-48':
         case 'vanity-60':
-        case 'vanity-72': {
+        case 'vanity-72':
+        case 'vanity-double-60':
+        case 'vanity-double-72':
+        case 'vanity-double-84': {
           // Bathroom vanity (top-down view)
           const isDouble = w > pixelsPerFoot * 4;
 
@@ -22705,6 +23223,220 @@
             ctx.arc(x + w / 2, y + 8, 6, 0, Math.PI * 2);
             ctx.fill();
           }
+          break;
+        }
+
+        case 'vanity-hishers-96':
+        case 'vanity-hishers-108': {
+          // His/Hers vanity with center powder table
+          const sectionW = w * 0.35;
+          const centerW = w * 0.3;
+          const centerX = x + sectionW;
+
+          // Left vanity section
+          ctx.fillStyle = el.color || '#8B7355';
+          ctx.strokeStyle = 'rgba(180,180,180,0.8)';
+          ctx.lineWidth = 2;
+          ctx.fillRect(x, y, sectionW, h);
+          ctx.strokeRect(x, y, sectionW, h);
+
+          // Center powder table (lighter color)
+          ctx.fillStyle = '#C4A87C';
+          ctx.fillRect(centerX, y, centerW, h);
+          ctx.strokeRect(centerX, y, centerW, h);
+
+          // Right vanity section
+          ctx.fillStyle = el.color || '#8B7355';
+          ctx.fillRect(centerX + centerW, y, sectionW, h);
+          ctx.strokeRect(centerX + centerW, y, sectionW, h);
+
+          // Left sink ellipse
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.strokeStyle = 'rgba(200,200,200,0.8)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.ellipse(x + sectionW / 2, y + h / 2, sectionW * 0.3, h * 0.25, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Right sink ellipse
+          ctx.beginPath();
+          ctx.ellipse(x + w - sectionW / 2, y + h / 2, sectionW * 0.3, h * 0.25, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Center mirror indicator
+          ctx.fillStyle = 'rgba(232,232,255,0.5)';
+          ctx.beginPath();
+          ctx.arc(centerX + centerW / 2, y + h * 0.35, Math.min(centerW, h) * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Faucets
+          ctx.fillStyle = 'rgba(192,192,192,0.9)';
+          ctx.beginPath();
+          ctx.arc(x + sectionW / 2, y + 8, 4, 0, Math.PI * 2);
+          ctx.arc(x + w - sectionW / 2, y + 8, 4, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+
+        case 'powder-table': {
+          // Rectangular body with mirror circle and drawer handle
+          ctx.fillStyle = el.color || '#A08060';
+          ctx.strokeStyle = 'rgba(180,180,180,0.8)';
+          ctx.lineWidth = 2;
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeRect(x, y, w, h);
+
+          // Mirror circle
+          ctx.fillStyle = 'rgba(232,232,255,0.6)';
+          ctx.strokeStyle = 'rgba(200,200,200,0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(x + w / 2, y + h * 0.35, Math.min(w, h) * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Drawer handle
+          ctx.fillStyle = '#C0C0C0';
+          const handleW = w * 0.25;
+          ctx.fillRect(x + w / 2 - handleW / 2, y + h * 0.75, handleW, 3);
+          break;
+        }
+
+        case 'makeup-vanity': {
+          // Lower body + upper mirror rectangle
+          ctx.fillStyle = el.color || '#8B7355';
+          ctx.strokeStyle = 'rgba(180,180,180,0.8)';
+          ctx.lineWidth = 2;
+          ctx.fillRect(x, y + h * 0.3, w, h * 0.7);
+          ctx.strokeRect(x, y + h * 0.3, w, h * 0.7);
+
+          // Upper mirror rectangle
+          ctx.fillStyle = 'rgba(232,232,255,0.6)';
+          ctx.strokeStyle = 'rgba(200,200,200,0.6)';
+          ctx.lineWidth = 1;
+          const mirrorW = w * 0.7;
+          const mirrorH = h * 0.25;
+          ctx.fillRect(x + (w - mirrorW) / 2, y + 2, mirrorW, mirrorH);
+          ctx.strokeRect(x + (w - mirrorW) / 2, y + 2, mirrorW, mirrorH);
+
+          // Drawer handle
+          ctx.fillStyle = '#C0C0C0';
+          ctx.fillRect(x + w / 2 - w * 0.12, y + h * 0.85, w * 0.24, 3);
+          break;
+        }
+
+        case 'pedestal-sink': {
+          // Oval basin on narrow pedestal
+          const pedastalW = w * 0.3;
+          const basinW = w * 0.8;
+          const basinH = h * 0.55;
+
+          // Pedestal column
+          ctx.fillStyle = '#F0F0F0';
+          ctx.strokeStyle = 'rgba(200,200,200,0.8)';
+          ctx.lineWidth = 1;
+          ctx.fillRect(x + (w - pedastalW) / 2, y + h * 0.4, pedastalW, h * 0.6);
+          ctx.strokeRect(x + (w - pedastalW) / 2, y + h * 0.4, pedastalW, h * 0.6);
+
+          // Oval basin
+          ctx.fillStyle = '#FFFFFF';
+          ctx.strokeStyle = 'rgba(200,200,200,0.8)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(x + w / 2, y + basinH / 2 + 2, basinW / 2, basinH / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Faucet circle
+          ctx.fillStyle = 'rgba(192,192,192,0.9)';
+          ctx.beginPath();
+          ctx.arc(x + w / 2, y + 6, 4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Drain
+          ctx.fillStyle = '#888';
+          ctx.beginPath();
+          ctx.arc(x + w / 2, y + basinH / 2 + 2, 3, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+
+        case 'linen-closet':
+        case 'linen-tower': {
+          // Rectangle with horizontal shelf lines and door handle
+          ctx.fillStyle = el.color || '#8B7355';
+          ctx.strokeStyle = 'rgba(180,180,180,0.8)';
+          ctx.lineWidth = 2;
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeRect(x, y, w, h);
+
+          // Shelf lines
+          ctx.strokeStyle = 'rgba(100,60,30,0.5)';
+          ctx.lineWidth = 1;
+          const shelfCount = type === 'linen-tower' ? 5 : 4;
+          for (let s = 1; s < shelfCount; s++) {
+            const sy = y + (h / shelfCount) * s;
+            ctx.beginPath();
+            ctx.moveTo(x + 3, sy);
+            ctx.lineTo(x + w - 3, sy);
+            ctx.stroke();
+          }
+
+          // Door handle
+          ctx.fillStyle = '#C0C0C0';
+          const lHandleLen = h * 0.15;
+          ctx.fillRect(x + w - 10, y + h / 2 - lHandleLen / 2, 3, lHandleLen);
+          break;
+        }
+
+        case 'base-cabinet-12':
+        case 'base-cabinet-15':
+        case 'base-cabinet-18':
+        case 'base-cabinet-21':
+        case 'base-cabinet-24':
+        case 'base-cabinet-27':
+        case 'base-cabinet-30':
+        case 'base-cabinet-33': {
+          // Fall through to base-cabinet rendering
+          const bcStyle = el.materialName?.toLowerCase().includes('flat') ? 'flat' : 'shaker';
+          const bcToeKickH = Math.max(6, h * 0.12);
+          const bcToeKickRecess = Math.max(4, w * 0.05);
+          const bcBodyH = h - bcToeKickH;
+
+          ctx.fillStyle = el.color;
+          ctx.fillRect(x, y, w, bcBodyH);
+
+          // Toe kick
+          ctx.fillStyle = '#0a0a0e';
+          ctx.fillRect(x + bcToeKickRecess, y + bcBodyH, w - bcToeKickRecess * 2, bcToeKickH);
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(x + bcToeKickRecess, y + bcBodyH, w - bcToeKickRecess * 2, 2);
+
+          // Single door
+          const bcDx = x + 3;
+          const bcDy = y + 3;
+          const bcDw = w - 6;
+          const bcDh = bcBodyH - 6;
+          ctx.fillStyle = el.color;
+          ctx.fillRect(bcDx, bcDy, bcDw, bcDh);
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bcDx + 0.5, bcDy + 0.5, bcDw - 1, bcDh - 1);
+
+          if (bcStyle === 'shaker') {
+            const bcPanelInset = Math.min(10, Math.max(6, bcDw * 0.1));
+            ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+            ctx.strokeRect(bcDx + bcPanelInset + 0.5, bcDy + bcPanelInset + 0.5, bcDw - bcPanelInset * 2 - 1, bcDh - bcPanelInset * 2 - 1);
+            ctx.fillStyle = 'rgba(0,0,0,0.05)';
+            ctx.fillRect(bcDx + bcPanelInset + 1, bcDy + bcPanelInset + 1, bcDw - bcPanelInset * 2 - 2, bcDh - bcPanelInset * 2 - 2);
+          }
+
+          // Handle
+          const bcHandleLen = Math.min(20, bcDh * 0.3);
+          ctx.fillStyle = '#C0C0C0';
+          ctx.fillRect(bcDx + bcDw - 8, bcDy + bcDh / 2 - bcHandleLen / 2, 3, bcHandleLen);
           break;
         }
 
@@ -25113,6 +25845,11 @@
             handleStoreProductDrop(data.product, x, y, e);
             return;
           }
+          if (data.type === 'marketplace-product' && data.product) {
+            console.log('Handling marketplace product drop:', data.product.name);
+            handleStoreProductDrop(data.product, x, y, e);
+            return;
+          }
         } catch (parseErr) {
           console.log('Not JSON data, ignoring');
         }
@@ -25265,6 +26002,18 @@
         elementType = 'backsplash';
         width = 4;
         height = 1.5;
+      } else if (productType.includes('vanity')) {
+        elementType = 'vanity-36';
+        width = 3;
+        height = 1.75;
+      } else if (productType.includes('toilet')) {
+        elementType = 'toilet';
+        width = 1.5;
+        height = 2.3;
+      } else if (productType.includes('bathtub') || productType.includes('tub')) {
+        elementType = 'bathtub';
+        width = 5;
+        height = 2.7;
       }
 
       // Find the color from ELEMENT_TYPES by searching all categories
@@ -25346,8 +26095,12 @@
       const CABINET_TYPES = ['base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
                              'drawer-base', 'sink-base', 'lazy-susan', 'blind-corner', 'island',
                              'microwave-cabinet', 'above-microwave-cabinet', 'fridge-cabinet',
-                             'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'laundry-cabinet'];
+                             'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'laundry-cabinet',
+                             'linen-closet', 'linen-tower',
+                             'base-cabinet-12', 'base-cabinet-15', 'base-cabinet-18', 'base-cabinet-21',
+                             'base-cabinet-24', 'base-cabinet-27', 'base-cabinet-30', 'base-cabinet-33'];
       const isCabinet = CABINET_TYPES.includes(type);
+      const isVanity = type.startsWith('vanity-') || type === 'powder-table' || type === 'makeup-vanity';
       const isCountertop = type === 'countertop' || type === 'countertop-l' || type === 'countertop-u';
 
       // For countertops, check if dropping on/near a cabinet to auto-fit
@@ -30236,6 +30989,16 @@
         case 'vanity-48':
         case 'vanity-60':
         case 'vanity-72':
+        case 'vanity-double-60':
+        case 'vanity-double-72':
+        case 'vanity-double-84':
+        case 'vanity-hishers-96':
+        case 'vanity-hishers-108':
+        case 'powder-table':
+        case 'makeup-vanity':
+        case 'pedestal-sink':
+        case 'linen-closet':
+        case 'linen-tower':
         case 'shower-bench':
           return height / 2; // Floor standing
 
@@ -41822,7 +42585,17 @@
         case 'vanity-36':
         case 'vanity-48':
         case 'vanity-60':
-        case 'vanity-72': {
+        case 'vanity-72':
+        case 'vanity-double-60':
+        case 'vanity-double-72':
+        case 'vanity-double-84':
+        case 'vanity-hishers-96':
+        case 'vanity-hishers-108':
+        case 'powder-table':
+        case 'makeup-vanity':
+        case 'pedestal-sink':
+        case 'linen-closet':
+        case 'linen-tower': {
           // Bathroom vanity with sink and mirror
           const vanityMat = new THREE.MeshStandardMaterial({
             color: el.color ? parseInt(el.color.replace('#', ''), 16) : 0x8B7355,
@@ -45381,6 +46154,124 @@
           // Tall storage
           { type: 'tall-cabinet', x: 8, y: 6, width: 2, height: 2, rotation: 180 },
         ]
+      },
+      'bathroom-master-full': {
+        name: 'Master Bath (Full Luxury)',
+        roomType: 'bathroom',
+        width: 14,
+        depth: 12,
+        elements: [
+          // === His/Hers Vanity Wall (y=0) ===
+          { type: 'vanity-hishers-108', x: 2.5, y: 0, width: 9, height: 1.75, rotation: 0 },
+          { type: 'countertop', x: 2.38, y: -0.04, width: 9.25, height: 1.92, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 3.5, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          { type: 'sink', x: 9, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          { type: 'mirror', x: 3, y: 0, width: 2.5, height: 0.15, rotation: 0 },
+          { type: 'mirror', x: 8.5, y: 0, width: 2.5, height: 0.15, rotation: 0 },
+          // === Linen closet (left wall) ===
+          { type: 'linen-closet', x: 0, y: 0, width: 2, height: 1.5, rotation: 270 },
+          // === Toilet alcove (right wall) ===
+          { type: 'toilet', x: 12.25, y: 0.5, width: 1.5, height: 2.3, rotation: 90 },
+          { type: 'toilet-paper', x: 12, y: 2.5, width: 0.5, height: 0.5, rotation: 90 },
+          // === Freestanding tub (center) ===
+          { type: 'bathtub-freestanding', x: 4.25, y: 5, width: 5.5, height: 2.5, rotation: 0 },
+          // === Walk-in shower (back right) ===
+          { type: 'shower-base-60', x: 9, y: 9, width: 5, height: 3, rotation: 0 },
+          { type: 'shower-glass', x: 9, y: 9, width: 3, height: 0.15, rotation: 0 },
+          { type: 'shower-bench', x: 12, y: 10, width: 2, height: 1.5, rotation: 90 },
+          { type: 'shower-niche', x: 13, y: 9.5, width: 1, height: 1.5, rotation: 90 }
+        ]
+      },
+      'bathroom-guest': {
+        name: 'Guest Bathroom',
+        roomType: 'bathroom',
+        width: 8,
+        depth: 6,
+        elements: [
+          // === Vanity (back wall) ===
+          { type: 'vanity-36', x: 0.5, y: 0, width: 3, height: 1.75, rotation: 0 },
+          { type: 'countertop', x: 0.38, y: -0.04, width: 3.25, height: 1.92, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 1.1, y: 0.2, width: 1.8, height: 1.2, rotation: 0 },
+          { type: 'mirror', x: 0.75, y: 0, width: 2.5, height: 0.15, rotation: 0 },
+          // === Toilet (right wall) ===
+          { type: 'toilet', x: 6.25, y: 0.5, width: 1.5, height: 2.3, rotation: 90 },
+          // === Alcove tub/shower combo ===
+          { type: 'bathtub', x: 1.5, y: 3.3, width: 5, height: 2.7, rotation: 0 },
+          // === Towel bar ===
+          { type: 'towel-bar', x: 5, y: 0, width: 2, height: 0.15, rotation: 0 }
+        ]
+      },
+      'bathroom-powder': {
+        name: 'Powder Room',
+        roomType: 'bathroom',
+        width: 5,
+        depth: 4,
+        elements: [
+          // === Pedestal sink (back wall center) ===
+          { type: 'pedestal-sink', x: 1.75, y: 0, width: 1.5, height: 1.5, rotation: 0 },
+          { type: 'mirror', x: 1.25, y: 0, width: 2.5, height: 0.15, rotation: 0 },
+          // === Toilet (right wall) ===
+          { type: 'toilet', x: 3.25, y: 1.5, width: 1.5, height: 2.3, rotation: 90 },
+          // === Towel ring (left wall) ===
+          { type: 'towel-bar', x: 0, y: 1.5, width: 1, height: 0.15, rotation: 270 }
+        ]
+      },
+      'bathroom-jack-jill': {
+        name: 'Jack-and-Jill Bathroom',
+        roomType: 'bathroom',
+        width: 12,
+        depth: 8,
+        elements: [
+          // === Vanity A (left wall) ===
+          { type: 'vanity-36', x: 0, y: 0, width: 3, height: 1.75, rotation: 270 },
+          { type: 'countertop', x: -0.04, y: -0.04, width: 1.92, height: 3.25, color: '#708090', rotation: 0 },
+          { type: 'sink', x: 0.15, y: 0.75, width: 1.5, height: 1.5, rotation: 270 },
+          { type: 'mirror', x: 0, y: 0.25, width: 0.15, height: 2.5, rotation: 270 },
+          // === Vanity B (right wall) ===
+          { type: 'vanity-36', x: 10.25, y: 0, width: 3, height: 1.75, rotation: 90 },
+          { type: 'countertop', x: 10.12, y: -0.04, width: 1.92, height: 3.25, color: '#708090', rotation: 0 },
+          { type: 'sink', x: 10.35, y: 0.75, width: 1.5, height: 1.5, rotation: 90 },
+          { type: 'mirror', x: 11.85, y: 0.25, width: 0.15, height: 2.5, rotation: 90 },
+          // === Shared tub/shower (center back) ===
+          { type: 'bathtub', x: 3.5, y: 5.3, width: 5, height: 2.7, rotation: 0 },
+          // === Toilet (center) ===
+          { type: 'toilet', x: 5.25, y: 1, width: 1.5, height: 2.3, rotation: 0 },
+          // === Doors (Bedroom A left, Bedroom B right) ===
+          { type: 'door', x: 0, y: 6, width: 3, height: 0.5, rotation: 270 },
+          { type: 'door', x: 11.5, y: 6, width: 3, height: 0.5, rotation: 90 }
+        ]
+      },
+      'concept-modern-kitchen-bath': {
+        name: 'Modern Kitchen + Master Bath Concept',
+        roomType: 'kitchen',
+        width: 20,
+        depth: 14,
+        elements: [
+          // === KITCHEN SECTION (left half, 0-10ft) ===
+          // Refrigerator (back left corner)
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, rotation: 0 },
+          // Base cabinets (back wall)
+          { type: 'base-cabinet', x: 3, y: 0, width: 3, height: 2, rotation: 0 },
+          { type: 'dishwasher', x: 6, y: 0, width: 2, height: 2, rotation: 0 },
+          { type: 'sink-base', x: 8, y: 0, width: 3, height: 2, rotation: 0 },
+          { type: 'countertop', x: 2.88, y: -0.04, width: 8.25, height: 2.21, color: '#708090', rotation: 0, overhangFront: 0.167, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 8.5, y: 0.25, width: 2, height: 1.5, rotation: 0 },
+          // Island with waterfall
+          { type: 'island', x: 3, y: 5, width: 6, height: 3, rotation: 0 },
+          { type: 'countertop', x: 2.83, y: 4.83, width: 6.33, height: 3.33, color: '#708090', rotation: 0, overhangFront: 0.167, overhangBack: 0.167, overhangLeft: 0.167, overhangRight: 0.167 },
+          // === BATH SECTION (right half, 12-20ft) ===
+          // Double vanity 60" (right back wall)
+          { type: 'vanity-double-60', x: 13, y: 0, width: 5, height: 1.75, rotation: 0 },
+          { type: 'countertop', x: 12.88, y: -0.04, width: 5.25, height: 1.92, color: '#708090', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 14, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          { type: 'sink', x: 16.5, y: 0.2, width: 1.5, height: 1.2, rotation: 0 },
+          // Toilet
+          { type: 'toilet', x: 18.25, y: 3, width: 1.5, height: 2.3, rotation: 90 },
+          // Freestanding tub
+          { type: 'bathtub-freestanding', x: 13.25, y: 5, width: 5.5, height: 2.5, rotation: 0 },
+          // Divider wall between kitchen and bath
+          { type: 'wall', x: 11.75, y: 0, width: 0.5, height: 14, rotation: 0 }
+        ]
       }
     };
 
@@ -48854,6 +49745,11 @@
         return { price: element.priceOverride, source: 'override' };
       }
 
+      // 1.5) Check vendor product pricing
+      if (element.vendorProduct?.unit_price) {
+        return { price: parseFloat(element.vendorProduct.unit_price), source: 'vendor' };
+      }
+
       // 2) Check for cabinet catalog pricing (by SKU)
       if (element.sku && element.catalog) {
         const catalog = CABINET_CATALOGS[element.catalog];
@@ -49121,7 +50017,10 @@
       const CABINET_TYPES = [
         'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'corner-cabinet',
         'sink-base', 'drawer-base', 'lazy-susan', 'fridge-cabinet',
-        'pantry', 'blind-corner', 'microwave-cabinet'
+        'pantry', 'blind-corner', 'microwave-cabinet',
+        'linen-closet', 'linen-tower',
+        'base-cabinet-12', 'base-cabinet-15', 'base-cabinet-18', 'base-cabinet-21',
+        'base-cabinet-24', 'base-cabinet-27', 'base-cabinet-30', 'base-cabinet-33'
       ];
 
       // Helper to check if type is a cabinet

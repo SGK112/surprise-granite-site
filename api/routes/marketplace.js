@@ -492,6 +492,93 @@ router.get('/stone-yards', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Get designer-visible products for room designer integration
+ * GET /api/marketplace/designer-products
+ * Returns products where designer_visible = true with element type mapping
+ */
+router.get('/designer-products', asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const {
+    category,
+    element_type,
+    brand,
+    limit = 100,
+    offset = 0
+  } = req.query;
+
+  let query = supabase
+    .from('distributor_products')
+    .select(`
+      id, name, brand, sku, product_type, material_type,
+      wholesale_price, unit_price, quantity_available,
+      images, status,
+      designer_element_type, designer_category,
+      designer_default_width, designer_default_height, designer_color,
+      distributor_profiles(company_name, logo_url)
+    `, { count: 'exact' })
+    .eq('designer_visible', true)
+    .eq('is_public', true)
+    .eq('status', 'active');
+
+  if (category) {
+    query = query.eq('designer_category', sanitizeString(category, 50));
+  }
+  if (element_type) {
+    query = query.eq('designer_element_type', sanitizeString(element_type, 50));
+  }
+  if (brand) {
+    query = query.ilike('brand', `%${sanitizeString(brand, 100)}%`);
+  }
+
+  query = query
+    .order('designer_category', { ascending: true })
+    .order('name', { ascending: true })
+    .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+  const { data: products, error, count } = await query;
+
+  if (error) {
+    return handleApiError(res, error, 'Get designer products');
+  }
+
+  // Group by designer_category for sidebar rendering
+  const grouped = {};
+  (products || []).forEach(p => {
+    const cat = p.designer_category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      sku: p.sku,
+      productType: p.product_type,
+      materialType: p.material_type,
+      price: p.wholesale_price || p.unit_price,
+      quantity: p.quantity_available,
+      images: p.images,
+      elementType: p.designer_element_type,
+      category: p.designer_category,
+      defaultWidth: p.designer_default_width,
+      defaultHeight: p.designer_default_height,
+      color: p.designer_color,
+      distributor: p.distributor_profiles?.company_name
+    });
+  });
+
+  res.json({
+    products: products || [],
+    grouped,
+    total: count,
+    limit: parseInt(limit),
+    offset: parseInt(offset)
+  });
+}));
+
+/**
  * Get available material types and brands (for filters)
  * GET /api/marketplace/filters
  */
