@@ -9310,6 +9310,11 @@
             <span class="nav-item-text">My Listings</span>
             <span class="nav-badge" id="listings-count" data-count="0">0</span>
           </a>
+          <a class="nav-item" data-page="collaborations" onclick="showPage('collaborations')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span class="nav-item-text">Collaborations</span>
+            <span class="nav-badge" id="collaborations-count" data-count="0" style="display: none;">0</span>
+          </a>
         </div>
 
         <!-- Tools Section -->
@@ -9736,6 +9741,24 @@
                 <p style="color: var(--text-muted); margin-bottom: 0;">When someone contacts you about a listing, it will appear here.</p>
               </div>
               <div id="inquiries-list" style="display: none;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Collaborations Page -->
+        <section id="page-collaborations" class="page-section">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">My Collaborations</h3>
+            </div>
+            <div class="card-body">
+              <div id="collaborations-list">
+                <div class="empty-state">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <h3>No collaborations yet</h3>
+                  <p>When you're invited to collaborate on projects, they'll appear here.</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -14202,6 +14225,78 @@
     </div>
   </div>
 
+  <!-- Accept Invite Modal -->
+  <div class="modal-overlay" id="accept-invite-modal" onclick="if(event.target === this) closeAcceptInviteModal()">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Collaboration Invitation</h2>
+        <button class="modal-close" onclick="closeAcceptInviteModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="accept-invite-body">
+        <div style="text-align: center; padding: 20px 0;">
+          <div class="spinner" style="margin: 0 auto;"></div>
+          <p style="margin-top: 12px; color: var(--text-muted);">Loading invitation...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite to Project Modal -->
+  <div class="modal-overlay" id="invite-to-project-modal" onclick="if(event.target === this) closeInviteToProjectModal()">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Invite Collaborator</h2>
+        <button class="modal-close" onclick="closeInviteToProjectModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="invite-collaborator-form" onsubmit="return sendCollaborationInvite(event)">
+          <input type="hidden" id="invite-project-id" />
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="invite-email" required placeholder="colleague@example.com" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Role *</label>
+              <select id="invite-role" required>
+                <option value="">Select Role</option>
+                <option value="designer">Designer</option>
+                <option value="fabricator">Fabricator</option>
+                <option value="contractor">Contractor</option>
+                <option value="installer">Installer</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Access Level</label>
+              <select id="invite-access-level">
+                <option value="read">Read Only</option>
+                <option value="write">Read &amp; Write</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes (optional)</label>
+            <input type="text" id="invite-notes" placeholder="e.g., Please review kitchen layout" maxlength="500" />
+          </div>
+          <button type="submit" class="btn-modern primary" id="send-invite-btn" style="width: 100%;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Send Invitation
+          </button>
+        </form>
+        <div id="pending-invitations-section" style="margin-top: 24px; display: none;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Pending Invitations</div>
+          <div id="pending-invitations-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Payment Request Modal -->
   <div id="payment-request-modal" class="payment-modal" style="display: none;" onclick="if(event.target === this) closePaymentModal()">
     <div class="payment-modal-content">
@@ -15393,6 +15488,20 @@
       setAuthReady();
       console.log('[Auth] Auth ready, supabaseClient initialized');
 
+      // Check for invite acceptance token
+      checkForInviteToken();
+
+      // Listen for auto-claimed invitations
+      window.addEventListener('sg-invitations-claimed', function(e) {
+        var count = e.detail && e.detail.count || 0;
+        if (count > 0) {
+          showToast('You\'ve been added to ' + count + ' project' + (count > 1 ? 's' : '') + ' as collaborator!');
+          if (document.getElementById('page-collaborations') && document.getElementById('page-collaborations').classList.contains('active')) {
+            loadCollaborations();
+          }
+        }
+      });
+
       // Handle hash navigation (e.g., /account/#favorites)
       handleHashNavigation();
 
@@ -15403,7 +15512,7 @@
     async function handleHashNavigation() {
       const hash = window.location.hash.replace('#', '');
       console.log('[Nav] handleHashNavigation called, hash:', hash, 'authReady:', authReady);
-      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs', 'tools'];
+      const validPages = ['favorites', 'profile', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'products', 'dashboard', 'wallet', 'orders', 'messages', 'listings', 'admin-users', 'calendar', 'my-designs', 'tools', 'collaborations'];
       if (hash && validPages.includes(hash)) {
         console.log('[Nav] Calling showPage for:', hash);
         await showPage(hash);
@@ -17021,6 +17130,7 @@
         'products': 'Products',
         'orders': 'Orders',
         'messages': 'Messages',
+        'collaborations': 'My Collaborations',
         'god-designs': 'All Designs'
       };
       document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
@@ -17108,6 +17218,11 @@
         // Load messages when that page is shown
         if (page === 'messages') {
           await loadConversations();
+        }
+
+        // Load collaborations when that page is shown
+        if (page === 'collaborations') {
+          await loadCollaborations();
         }
       } catch (err) {
         console.error('[showPage] Error loading data for', page, err);
@@ -26804,6 +26919,296 @@
       } catch (err) {
         console.error('Send contractor portal link error:', err);
         alert('Error generating portal link: ' + err.message);
+      }
+    }
+
+    // =============================================
+    // COLLABORATION INVITATIONS
+    // =============================================
+
+    async function checkForInviteToken() {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get('accept_invite');
+      if (!token) return;
+
+      // Clean URL
+      var url = new URL(window.location);
+      url.searchParams.delete('accept_invite');
+      history.replaceState(null, '', url.toString());
+
+      // Show modal
+      document.getElementById('accept-invite-modal').classList.add('active');
+      var body = document.getElementById('accept-invite-body');
+
+      try {
+        var verifyResp = await fetch(API_BASE + '/api/collaboration/invite/verify/' + encodeURIComponent(token));
+        var verifyData = await verifyResp.json();
+
+        if (!verifyResp.ok || !verifyData.success) {
+          body.innerHTML =
+            '<div style="text-align: center; padding: 20px 0;">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="var(--error)" stroke-width="1.5" style="margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>' +
+              '<h3 style="margin-bottom: 8px; color: var(--error);">Invitation Invalid or Expired</h3>' +
+              '<p style="color: var(--text-muted); font-size: 14px;">' + (verifyData.error || 'This invitation link is no longer valid.') + '</p>' +
+              '<button class="btn-modern secondary" onclick="closeAcceptInviteModal()" style="margin-top: 16px;">Close</button>' +
+            '</div>';
+          return;
+        }
+
+        var inv = verifyData.invitation;
+        var roleLabel = inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
+        var accessLabel = (inv.access_level || 'read').charAt(0).toUpperCase() + (inv.access_level || 'read').slice(1);
+
+        body.innerHTML =
+          '<div style="text-align: center; padding: 12px 0;">' +
+            '<div style="width: 64px; height: 64px; background: rgba(249, 203, 0, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px;">&#x1F91D;</div>' +
+            '<h3 style="margin-bottom: 4px;">You\'re invited to collaborate</h3>' +
+            '<p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">on <strong style="color: var(--text-primary);">"' + escapeHtmlAttr(inv.projectTitle || 'Untitled Project') + '"</strong></p>' +
+          '</div>' +
+          '<div style="background: var(--dark-surface); border-radius: 10px; padding: 16px; margin-bottom: 20px;">' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">' +
+              '<span style="color: var(--text-muted); font-size: 13px;">Role</span>' +
+              '<span style="font-weight: 600; font-size: 13px;">' + roleLabel + '</span>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">' +
+              '<span style="color: var(--text-muted); font-size: 13px;">Access</span>' +
+              '<span style="font-weight: 600; font-size: 13px;">' + accessLabel + '</span>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between;">' +
+              '<span style="color: var(--text-muted); font-size: 13px;">Invited by</span>' +
+              '<span style="font-weight: 600; font-size: 13px;">' + escapeHtmlAttr(inv.inviterName || 'Unknown') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display: flex; gap: 12px;">' +
+            '<button class="btn-modern secondary" onclick="closeAcceptInviteModal()" style="flex: 1;">Decline</button>' +
+            '<button class="btn-modern primary" onclick="acceptInvitation(\'' + token + '\')" id="accept-invite-btn" style="flex: 1;">Accept Invitation</button>' +
+          '</div>';
+
+      } catch (err) {
+        body.innerHTML =
+          '<div style="text-align: center; padding: 20px 0;">' +
+            '<p style="color: var(--error);">Failed to load invitation details. Please try again.</p>' +
+            '<button class="btn-modern secondary" onclick="closeAcceptInviteModal()" style="margin-top: 16px;">Close</button>' +
+          '</div>';
+        console.error('Accept invite error:', err);
+      }
+    }
+
+    async function acceptInvitation(token) {
+      var btn = document.getElementById('accept-invite-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-top-color: var(--dark-primary);"></div>';
+      }
+
+      try {
+        var resp = await apiCall('/api/collaboration/invite/accept', {
+          method: 'POST',
+          body: JSON.stringify({ token: token })
+        });
+
+        var data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to accept invitation');
+
+        var body = document.getElementById('accept-invite-body');
+        body.innerHTML =
+          '<div style="text-align: center; padding: 20px 0;">' +
+            '<div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' +
+            '</div>' +
+            '<h3 style="color: var(--success); margin-bottom: 8px;">Invitation Accepted!</h3>' +
+            '<p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">You\'re now a collaborator on this project.</p>' +
+            '<button class="btn-modern primary" onclick="closeAcceptInviteModal(); showPage(\'collaborations\');">View My Collaborations</button>' +
+          '</div>';
+
+        showToast('Invitation accepted successfully!');
+
+      } catch (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Accept Invitation';
+        }
+        showToast(err.message || 'Failed to accept invitation');
+      }
+    }
+
+    function closeAcceptInviteModal() {
+      document.getElementById('accept-invite-modal').classList.remove('active');
+    }
+
+    function escapeHtmlAttr(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ============ INVITE TO PROJECT ============
+
+    function openInviteToProjectModal(projectId) {
+      document.getElementById('invite-project-id').value = projectId;
+      document.getElementById('invite-collaborator-form').reset();
+      document.getElementById('invite-project-id').value = projectId;
+      document.getElementById('invite-to-project-modal').classList.add('active');
+      loadPendingInvitations(projectId);
+    }
+
+    function closeInviteToProjectModal() {
+      document.getElementById('invite-to-project-modal').classList.remove('active');
+    }
+
+    async function sendCollaborationInvite(event) {
+      event.preventDefault();
+      var btn = document.getElementById('send-invite-btn');
+      var projectId = document.getElementById('invite-project-id').value;
+      var email = document.getElementById('invite-email').value.trim();
+      var role = document.getElementById('invite-role').value;
+      var accessLevel = document.getElementById('invite-access-level').value;
+      var notes = document.getElementById('invite-notes').value.trim();
+
+      if (!email || !role) {
+        showToast('Please fill in email and role');
+        return false;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/invite', {
+          method: 'POST',
+          body: JSON.stringify({ email: email, role: role, access_level: accessLevel, notes: notes || undefined })
+        });
+
+        var data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
+
+        showToast(data.message || 'Invitation sent!');
+        document.getElementById('invite-collaborator-form').reset();
+        document.getElementById('invite-project-id').value = projectId;
+        loadPendingInvitations(projectId);
+
+      } catch (err) {
+        showToast(err.message || 'Error sending invitation');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Send Invitation';
+      }
+
+      return false;
+    }
+
+    async function loadPendingInvitations(projectId) {
+      var section = document.getElementById('pending-invitations-section');
+      var list = document.getElementById('pending-invitations-list');
+
+      try {
+        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations');
+        var data = await resp.json();
+
+        if (!resp.ok || !data.invitations || !data.invitations.length) {
+          section.style.display = 'none';
+          return;
+        }
+
+        var pending = data.invitations.filter(function(i) { return i.status === 'pending'; });
+        if (!pending.length) {
+          section.style.display = 'none';
+          return;
+        }
+
+        section.style.display = 'block';
+        list.innerHTML = pending.map(function(inv) {
+          return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--dark-surface); border-radius: 8px; margin-bottom: 8px;">' +
+            '<div>' +
+              '<div style="font-size: 13px; font-weight: 500;">' + escapeHtmlAttr(inv.email) + '</div>' +
+              '<div style="font-size: 11px; color: var(--text-muted);">' + escapeHtmlAttr(inv.role) + ' &middot; ' + escapeHtmlAttr(inv.access_level) + '</div>' +
+            '</div>' +
+            '<button class="btn-modern secondary" onclick="cancelPendingInvitation(\'' + projectId + '\', \'' + inv.id + '\')" title="Cancel" style="padding: 6px 10px; min-width: auto;">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+            '</button>' +
+          '</div>';
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading pending invitations:', err);
+        section.style.display = 'none';
+      }
+    }
+
+    async function cancelPendingInvitation(projectId, invitationId) {
+      if (!confirm('Cancel this invitation?')) return;
+
+      try {
+        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/pending-invitations/' + invitationId, {
+          method: 'DELETE'
+        });
+
+        if (resp.ok) {
+          showToast('Invitation cancelled');
+          loadPendingInvitations(projectId);
+        } else {
+          showToast('Failed to cancel invitation');
+        }
+      } catch (err) {
+        showToast('Error cancelling invitation');
+      }
+    }
+
+    // ============ MY COLLABORATIONS ============
+
+    async function loadCollaborations() {
+      var container = document.getElementById('collaborations-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        var resp = await apiCall('/api/collaboration/my-projects?status=accepted');
+        var data = await resp.json();
+
+        if (!resp.ok) {
+          if (resp.status === 403) {
+            container.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><h3>No collaborations yet</h3><p>When you\'re invited to collaborate on projects, they\'ll appear here.</p></div>';
+            return;
+          }
+          throw new Error(data.error || 'Failed to load');
+        }
+
+        var collabs = data.collaborations || [];
+
+        // Update badge
+        var badge = document.getElementById('collaborations-count');
+        if (badge) {
+          badge.textContent = collabs.length;
+          badge.dataset.count = collabs.length;
+          badge.style.display = collabs.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        if (!collabs.length) {
+          container.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><h3>No collaborations yet</h3><p>When you\'re invited to collaborate on projects, they\'ll appear here.</p></div>';
+          return;
+        }
+
+        container.innerHTML = collabs.map(function(c) {
+          var roleLabel = (c.role || 'viewer').charAt(0).toUpperCase() + (c.role || 'viewer').slice(1);
+          var accessLabel = (c.access_level || 'read').charAt(0).toUpperCase() + (c.access_level || 'read').slice(1);
+          var projectTitle = (c.project && c.project.title) || 'Untitled Project';
+          var dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : '';
+
+          return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px;">' +
+            '<div style="flex: 1; min-width: 0;">' +
+              '<div style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + escapeHtmlAttr(projectTitle) + '</div>' +
+              '<div style="display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap;">' +
+                '<span style="font-size: 12px; padding: 2px 8px; background: rgba(249, 203, 0, 0.15); color: var(--gold-primary); border-radius: 4px; font-weight: 500;">' + roleLabel + '</span>' +
+                '<span style="font-size: 12px; padding: 2px 8px; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-radius: 4px;">' + accessLabel + ' access</span>' +
+                (dateStr ? '<span style="font-size: 12px; color: var(--text-muted);">Joined ' + dateStr + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+      } catch (err) {
+        console.error('Error loading collaborations:', err);
+        container.innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load collaborations.</p></div>';
       }
     }
 

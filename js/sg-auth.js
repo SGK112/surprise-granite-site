@@ -84,6 +84,8 @@
               updateNavUI();
               // Sync any local favorites to database
               syncLocalFavoritesToDB();
+              // Auto-claim pending collaboration invitations
+              claimPendingInvitations();
             } else if (event === 'SIGNED_OUT') {
               currentUser = null;
               userProfile = null;
@@ -919,6 +921,61 @@
     updateFavoritesBadge();
   }
 
+  // ============ Collaboration Invite Claim ============
+
+  async function claimPendingInvitations() {
+    if (!currentUser || !supabaseClient) return { claimedCount: 0 };
+
+    try {
+      let tokenAccepted = false;
+
+      // Check for stored invite token (from sign-up flow)
+      const storedToken = sessionStorage.getItem('sg_invite_token') || localStorage.getItem('sg_invite_token');
+      if (storedToken) {
+        sessionStorage.removeItem('sg_invite_token');
+        localStorage.removeItem('sg_invite_token');
+        try {
+          const acceptResp = await apiPost('/api/collaboration/invite/accept', { token: storedToken });
+          if (acceptResp.ok) {
+            tokenAccepted = true;
+            const acceptData = await acceptResp.json();
+            if (acceptData.projectId) {
+              sessionStorage.setItem('sg_accepted_project_id', acceptData.projectId);
+            }
+          }
+        } catch (e) {
+          console.warn('SG Auth: Token accept failed', e);
+        }
+      }
+
+      // Claim all pending invitations matching user's email
+      let claimedCount = 0;
+      try {
+        const claimResp = await apiPost('/api/collaboration/invite/claim', {});
+        if (claimResp.ok) {
+          const claimData = await claimResp.json();
+          claimedCount = claimData.claimedCount || 0;
+        }
+      } catch (e) {
+        console.warn('SG Auth: Claim invitations failed', e);
+      }
+
+      const totalClaimed = claimedCount + (tokenAccepted ? 1 : 0);
+      if (totalClaimed > 0) {
+        console.log('SG Auth: Claimed', totalClaimed, 'collaboration invitation(s)');
+        window.dispatchEvent(new CustomEvent('sg-invitations-claimed', {
+          detail: { count: totalClaimed }
+        }));
+      }
+
+      return { claimedCount: totalClaimed, tokenAccepted };
+    } catch (e) {
+      // 403 expected for homeowner accounts - silently ignore
+      console.log('SG Auth: Could not claim invitations', e.message || e);
+      return { claimedCount: 0 };
+    }
+  }
+
   // Initialize on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
@@ -956,6 +1013,8 @@
     getDashboardStats,
     updateFavoritesBadge,
     syncLocalFavoritesToDB,
+    // Collaboration
+    claimPendingInvitations,
     // Shopify customer data
     getShopifyCustomer,
     getOrderHistory,

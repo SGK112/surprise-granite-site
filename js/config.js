@@ -123,7 +123,12 @@
       DISTRIBUTOR_SETTINGS: '/distributor/dashboard/settings/',
       TERMS: '/legal/terms-of-use/',
       PRIVACY: '/legal/privacy-policy/',
-      DISTRIBUTOR_AGREEMENT: '/legal/distributor-agreement/'
+      DISTRIBUTOR_AGREEMENT: '/legal/distributor-agreement/',
+      // Collaboration
+      COLLABORATION_API: '/api/collaboration',
+      INVITE_VERIFY: '/api/collaboration/invite/verify/',
+      INVITE_ACCEPT: '/api/collaboration/invite/accept',
+      INVITE_CLAIM: '/api/collaboration/invite/claim'
     },
 
     // Feature Flags
@@ -135,6 +140,7 @@
       ENABLE_ANALYTICS: true,
       ENABLE_CSV_UPLOAD: true,
       ENABLE_API_ACCESS: true,
+      ENABLE_COLLABORATION: true,
       USE_NEW_PRODUCTS_SCHEMA: false // Enable after running migrations
     },
 
