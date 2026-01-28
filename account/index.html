@@ -28158,6 +28158,7 @@
         if (result.error) throw result.error;
 
         const project = result.data;
+        console.log('[InlineCreate] Project created:', project.id, project.name);
 
         // Add new option to select and auto-select it
         const select = document.getElementById('invite-project-select');
@@ -28207,19 +28208,27 @@
       event.preventDefault();
       const btn = document.getElementById('send-invite-btn');
       const projectId = document.getElementById('invite-project-id').value || document.getElementById('invite-project-select').value;
-      const email = document.getElementById('invite-email').value.trim();
+      const email = document.getElementById('invite-email').value.trim().toLowerCase();
       const role = document.getElementById('invite-role').value;
       const accessLevel = document.getElementById('invite-access-level').value;
       const notes = document.getElementById('invite-notes').value.trim();
 
-      if (!projectId) {
-        showToast('Please select a project', 'warning');
+      if (!projectId || projectId === '__create_new__') {
+        showToast('Please select a project first', 'warning');
         return false;
       }
       if (!email || !role) {
         showToast('Please fill in email and role', 'warning');
         return false;
       }
+
+      // Client-side self-invite check
+      if (currentUser && currentUser.email && email === currentUser.email.toLowerCase()) {
+        showToast('You cannot invite yourself as a collaborator', 'warning');
+        return false;
+      }
+
+      console.log('[Invite] Sending:', { projectId, email, role, accessLevel, notes: notes || '(none)' });
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
@@ -28230,23 +28239,31 @@
           body: JSON.stringify({ email: email, role: role, access_level: accessLevel, notes: notes || undefined })
         });
 
-        const data = await resp.json();
+        let data;
+        try {
+          data = await resp.json();
+        } catch (parseErr) {
+          console.error('[Invite] Failed to parse response:', parseErr);
+          throw new Error('Server returned an invalid response (status ' + resp.status + ')');
+        }
+
+        console.log('[Invite] Response:', resp.status, data);
         if (!resp.ok) {
           let errMsg = data.error || 'Failed to send invitation';
           if (data.details && Array.isArray(data.details)) {
-            errMsg += ': ' + data.details.map(d => d.message || d.field).join(', ');
+            errMsg += ': ' + data.details.map(function(d) { return d.message || d.field; }).join(', ');
           }
           throw new Error(errMsg);
         }
 
-        showToast(data.message || 'Invitation sent!');
+        showToast(data.message || 'Invitation sent successfully!', 'success');
         document.getElementById('invite-collaborator-form').reset();
         document.getElementById('invite-project-id').value = projectId;
         loadPendingInvitations(projectId);
 
       } catch (err) {
-        console.error('Invite error:', err);
-        showToast(err.message || 'Error sending invitation');
+        console.error('[Invite] Error:', err);
+        showToast(err.message || 'Error sending invitation', 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Send Invitation';
