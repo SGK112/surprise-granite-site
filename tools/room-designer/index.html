@@ -8460,6 +8460,36 @@
           </div>
         </div>
 
+        <!-- Team Collaboration Chat -->
+        <div class="panel-section" id="teamChatSection">
+          <div class="panel-title" onclick="togglePanelSection('teamChatSection')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+            <span>👥 Team Chat</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="online-indicator" id="teamOnlineCount" style="background: rgba(16,185,129,0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 10px;">0 online</span>
+              <span class="toggle-icon">▼</span>
+            </div>
+          </div>
+          <div class="panel-content" id="teamChatContent">
+            <!-- Active collaborators -->
+            <div id="activeCollaborators" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; min-height: 24px;">
+              <span style="color: var(--text-muted); font-size: 10px;">No one else here yet</span>
+            </div>
+            <!-- Chat messages -->
+            <div id="teamChatMessages" style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 8px; max-height: 150px; overflow-y: auto; min-height: 60px;">
+              <div style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 15px;">
+                Chat with your team while designing
+              </div>
+            </div>
+            <!-- Chat input -->
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="teamChatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendTeamChat()" style="flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--dark-elevated); color: var(--text); font-size: 12px;">
+              <button class="btn btn-primary btn-sm" onclick="sendTeamChat()" style="padding: 8px 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Room Templates (expanded by default for discoverability) -->
         <div class="panel-section" id="roomTemplatesSection">
           <div class="panel-title" onclick="togglePanelSection('roomTemplatesSection')">
@@ -55169,6 +55199,11 @@
               subscribeToDesignUpdates(SHARE_STATE.designId);
               console.log('Realtime subscription initiated for design:', SHARE_STATE.designId);
             }
+
+            // Initialize team chat for collaboration
+            if (SHARE_STATE.designId && typeof initTeamChat === 'function') {
+              initTeamChat(SHARE_STATE.designId);
+            }
           }, 300);
         }, 800);
 
@@ -57990,6 +58025,274 @@
         showToast('Failed to send message', 'error');
       }
     }
+
+    // ============================================================
+    // TEAM COLLABORATION CHAT
+    // Real-time chat between designers, fabricators, contractors
+    // ============================================================
+
+    const TEAM_CHAT = {
+      channel: null,
+      messages: [],
+      activeUsers: new Map(),
+      myUserId: null,
+      myUserName: null,
+      designId: null
+    };
+
+    // Initialize team chat when a design is loaded
+    async function initTeamChat(designId) {
+      if (!designId) return;
+
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
+      // Get current user info
+      const user = window.SgAuth?.getUser();
+      if (!user) return;
+
+      TEAM_CHAT.myUserId = user.id;
+      TEAM_CHAT.myUserName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous';
+      TEAM_CHAT.designId = designId;
+
+      // Clean up existing channel
+      if (TEAM_CHAT.channel) {
+        supabase.removeChannel(TEAM_CHAT.channel);
+      }
+
+      // Create broadcast channel for real-time chat
+      const channel = supabase.channel(`design-chat-${designId}`, {
+        config: { presence: { key: TEAM_CHAT.myUserId } }
+      });
+
+      // Handle presence (who's online)
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          TEAM_CHAT.activeUsers.clear();
+          Object.entries(state).forEach(([key, presences]) => {
+            if (presences[0]) {
+              TEAM_CHAT.activeUsers.set(key, presences[0]);
+            }
+          });
+          updateActiveCollaborators();
+        })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          if (newPresences[0] && key !== TEAM_CHAT.myUserId) {
+            TEAM_CHAT.activeUsers.set(key, newPresences[0]);
+            updateActiveCollaborators();
+            addSystemMessage(`${newPresences[0].name || 'Someone'} joined the design`);
+          }
+        })
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          if (leftPresences[0] && key !== TEAM_CHAT.myUserId) {
+            addSystemMessage(`${leftPresences[0].name || 'Someone'} left the design`);
+          }
+          TEAM_CHAT.activeUsers.delete(key);
+          updateActiveCollaborators();
+        });
+
+      // Handle broadcast messages (chat)
+      channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+        if (payload.userId !== TEAM_CHAT.myUserId) {
+          addChatMessage(payload.userName, payload.message, payload.userId, payload.timestamp);
+        }
+      });
+
+      // Subscribe and track presence
+      await channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            name: TEAM_CHAT.myUserName,
+            joinedAt: new Date().toISOString(),
+            userId: TEAM_CHAT.myUserId
+          });
+          console.log('Team chat connected for design:', designId);
+        }
+      });
+
+      TEAM_CHAT.channel = channel;
+
+      // Load recent messages from database
+      await loadRecentTeamMessages(designId);
+    }
+
+    // Load recent messages from database
+    async function loadRecentTeamMessages(designId) {
+      const supabase = getSupabaseClient();
+      if (!supabase || !designId) return;
+
+      try {
+        // Check if design_chat_messages table exists by attempting query
+        const { data: messages, error } = await supabase
+          .from('design_chat_messages')
+          .select('*')
+          .eq('design_id', designId)
+          .order('created_at', { ascending: true })
+          .limit(50);
+
+        if (!error && messages) {
+          const container = document.getElementById('teamChatMessages');
+          if (container) {
+            container.innerHTML = '';
+            messages.forEach(msg => {
+              addChatMessage(msg.user_name, msg.message, msg.user_id, msg.created_at, false);
+            });
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+      } catch (err) {
+        // Table might not exist yet - that's ok, just use broadcast
+        console.log('Team chat history not available:', err.message);
+      }
+    }
+
+    // Update the active collaborators display
+    function updateActiveCollaborators() {
+      const container = document.getElementById('activeCollaborators');
+      const countEl = document.getElementById('teamOnlineCount');
+      if (!container) return;
+
+      const users = Array.from(TEAM_CHAT.activeUsers.values());
+      const count = users.length;
+
+      if (countEl) {
+        countEl.textContent = `${count} online`;
+        countEl.style.background = count > 0 ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.1)';
+        countEl.style.color = count > 0 ? '#10b981' : 'var(--text-muted)';
+      }
+
+      if (count === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 10px;">No one else here yet</span>';
+        return;
+      }
+
+      const colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+      container.innerHTML = users.map((user, i) => {
+        const initial = (user.name || 'U')[0].toUpperCase();
+        const color = colors[i % colors.length];
+        const isMe = user.userId === TEAM_CHAT.myUserId;
+        return `
+          <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 12px;" title="${user.name || 'User'}${isMe ? ' (you)' : ''}">
+            <span style="width: 18px; height: 18px; border-radius: 50%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white;">${initial}</span>
+            <span style="font-size: 10px; color: var(--text-secondary); max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${user.name || 'User'}${isMe ? ' (you)' : ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Add a chat message to the UI
+    function addChatMessage(userName, message, userId, timestamp, scroll = true) {
+      const container = document.getElementById('teamChatMessages');
+      if (!container) return;
+
+      // Clear placeholder if this is the first message
+      if (container.querySelector('div[style*="text-align: center"]')) {
+        container.innerHTML = '';
+      }
+
+      const isMe = userId === TEAM_CHAT.myUserId;
+      const time = new Date(timestamp || Date.now()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const initial = (userName || 'U')[0].toUpperCase();
+
+      const msgEl = document.createElement('div');
+      msgEl.style.cssText = `display: flex; gap: 8px; margin-bottom: 8px; ${isMe ? 'flex-direction: row-reverse;' : ''}`;
+      msgEl.innerHTML = `
+        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${isMe ? '#f9cb00' : '#6366f1'}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: ${isMe ? '#1a1a2e' : 'white'}; flex-shrink: 0;">${initial}</div>
+        <div style="flex: 1; max-width: 85%;">
+          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; ${isMe ? 'text-align: right;' : ''}">${userName} • ${time}</div>
+          <div style="background: ${isMe ? 'rgba(249,203,0,0.15)' : 'rgba(99,102,241,0.15)'}; padding: 8px 10px; border-radius: 8px; font-size: 12px; color: var(--text); line-height: 1.4; ${isMe ? 'border-bottom-right-radius: 2px;' : 'border-bottom-left-radius: 2px;'}">${escapeHtml(message)}</div>
+        </div>
+      `;
+
+      container.appendChild(msgEl);
+      if (scroll) container.scrollTop = container.scrollHeight;
+
+      // Store message
+      TEAM_CHAT.messages.push({ userName, message, userId, timestamp });
+    }
+
+    // Add system message (join/leave notifications)
+    function addSystemMessage(text) {
+      const container = document.getElementById('teamChatMessages');
+      if (!container) return;
+
+      // Clear placeholder
+      if (container.querySelector('div[style*="text-align: center"]')) {
+        container.innerHTML = '';
+      }
+
+      const msgEl = document.createElement('div');
+      msgEl.style.cssText = 'text-align: center; padding: 4px; font-size: 10px; color: var(--text-muted); font-style: italic;';
+      msgEl.textContent = text;
+      container.appendChild(msgEl);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Send a chat message
+    async function sendTeamChat() {
+      const input = document.getElementById('teamChatInput');
+      const message = input?.value?.trim();
+      if (!message || !TEAM_CHAT.channel || !TEAM_CHAT.designId) return;
+
+      const timestamp = new Date().toISOString();
+
+      // Broadcast to other users
+      await TEAM_CHAT.channel.send({
+        type: 'broadcast',
+        event: 'chat',
+        payload: {
+          userId: TEAM_CHAT.myUserId,
+          userName: TEAM_CHAT.myUserName,
+          message,
+          timestamp
+        }
+      });
+
+      // Add to our own UI
+      addChatMessage(TEAM_CHAT.myUserName, message, TEAM_CHAT.myUserId, timestamp);
+
+      // Clear input
+      input.value = '';
+
+      // Persist to database (fire and forget)
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        supabase
+          .from('design_chat_messages')
+          .insert({
+            design_id: TEAM_CHAT.designId,
+            user_id: TEAM_CHAT.myUserId,
+            user_name: TEAM_CHAT.myUserName,
+            message
+          })
+          .then(() => {})
+          .catch(err => console.log('Chat message persist failed:', err.message));
+      }
+    }
+
+    // Clean up team chat when leaving
+    function cleanupTeamChat() {
+      if (TEAM_CHAT.channel) {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          supabase.removeChannel(TEAM_CHAT.channel);
+        }
+        TEAM_CHAT.channel = null;
+      }
+      TEAM_CHAT.messages = [];
+      TEAM_CHAT.activeUsers.clear();
+    }
+
+    // Helper to escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Listen for page unload to cleanup
+    window.addEventListener('beforeunload', cleanupTeamChat);
 
     // Load a locally saved design
     function loadLocalDesign(design) {
