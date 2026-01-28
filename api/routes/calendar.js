@@ -158,6 +158,55 @@ async function createNotification(userId, type, title, message, data = {}) {
   }
 }
 
+/**
+ * Generate calendar links for Google, Outlook, and iCal download
+ */
+function generateCalendarLinks(event) {
+  const startDate = new Date(event.start_time);
+  const endDate = new Date(event.end_time);
+
+  // Format dates for Google Calendar (YYYYMMDDTHHmmssZ)
+  const formatDateGoogle = (d) => d.toISOString().replace(/-|:|\.\d{3}/g, '');
+  const startStr = formatDateGoogle(startDate);
+  const endStr = formatDateGoogle(endDate);
+
+  const title = encodeURIComponent(event.title);
+  const details = encodeURIComponent(event.description || '');
+  const location = encodeURIComponent(event.location_address || event.location || '');
+
+  // Google Calendar link
+  const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`;
+
+  // Outlook.com link
+  const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${details}&location=${location}`;
+
+  // Generate .ics file content for download
+  const uid = event.id || crypto.randomUUID();
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Surprise Granite//Calendar//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${uid}@surprisegranite.com`,
+    `DTSTAMP:${formatDateGoogle(new Date())}`,
+    `DTSTART:${startStr}`,
+    `DTEND:${endStr}`,
+    `SUMMARY:${event.title.replace(/[,;\\]/g, '\\$&')}`,
+    event.description ? `DESCRIPTION:${event.description.replace(/\n/g, '\\n').replace(/[,;\\]/g, '\\$&')}` : '',
+    event.location || event.location_address ? `LOCATION:${(event.location_address || event.location).replace(/[,;\\]/g, '\\$&')}` : '',
+    `ORGANIZER:mailto:info@surprisegranite.com`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+
+  // Base64 encode for data URI
+  const icsDataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+
+  return { googleUrl, outlookUrl, icsDataUri, icsContent };
+}
+
 function generateEventEmailHtml(event, participant, isNew = true) {
   const startDate = new Date(event.start_time);
   const endDate = new Date(event.end_time);
@@ -167,6 +216,9 @@ function generateEventEmailHtml(event, participant, isNew = true) {
   const timeStr = `${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
   const eventTypeLabel = event.event_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  // Generate calendar links
+  const calendarLinks = generateCalendarLinks(event);
 
   return `
     <div style="text-align: center; margin-bottom: 25px;">
@@ -210,6 +262,30 @@ function generateEventEmailHtml(event, participant, isNew = true) {
         <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">${escapeHtml(event.description)}</p>
       </div>
       ` : ''}
+    </div>
+
+    <!-- Add to Calendar Buttons -->
+    <div style="text-align: center; margin-bottom: 25px;">
+      <p style="margin: 0 0 12px; color: #666; font-size: 13px; font-weight: 600;">Add to your calendar:</p>
+      <table align="center" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding: 0 6px;">
+            <a href="${calendarLinks.googleUrl}" target="_blank" style="display: inline-block; padding: 10px 16px; background: #4285f4; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+              Google
+            </a>
+          </td>
+          <td style="padding: 0 6px;">
+            <a href="${calendarLinks.outlookUrl}" target="_blank" style="display: inline-block; padding: 10px 16px; background: #0078d4; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+              Outlook
+            </a>
+          </td>
+          <td style="padding: 0 6px;">
+            <a href="${calendarLinks.icsDataUri}" download="${event.title.replace(/[^a-z0-9]/gi, '_')}.ics" style="display: inline-block; padding: 10px 16px; background: #333; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+              iCal / Apple
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
 
     ${participant ? `
