@@ -743,10 +743,16 @@
         sessionStorage.setItem('auth_redirect', redirect);
       }
 
-      // Check for invite token
+      // Check for invite token (project-based)
       const inviteToken = params.get('invite');
       if (inviteToken) {
         await handleInviteToken(inviteToken);
+      }
+
+      // Check for network invite token (general collaborator)
+      const networkInviteToken = params.get('network_invite');
+      if (networkInviteToken) {
+        await handleNetworkInvite(networkInviteToken);
       }
 
       // Account type selection with pro fields toggle
@@ -855,6 +861,79 @@
         bannerTitle.textContent = 'Could not load invitation';
         bannerDetail.textContent = 'Please check your link and try again.';
         console.error('Invite verify error:', err);
+      }
+    }
+
+    async function handleNetworkInvite(token) {
+      const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+      const banner = document.getElementById('invite-banner');
+      const bannerTitle = document.getElementById('invite-banner-title');
+      const bannerDetail = document.getElementById('invite-banner-detail');
+
+      banner.style.display = 'block';
+
+      try {
+        const response = await fetch(API_BASE + '/api/collaboration/network/verify/' + encodeURIComponent(token));
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          bannerTitle.textContent = 'Invalid Invitation';
+          bannerDetail.textContent = data.error || 'This invitation link is invalid or has expired.';
+          bannerDetail.style.color = 'var(--error)';
+          return;
+        }
+
+        const inv = data.invitation;
+        const roleLabel = inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
+
+        bannerTitle.textContent = 'You\'re invited to join Surprise Granite!';
+        bannerDetail.innerHTML =
+          '<strong>' + escapeText(inv.inviterName || 'Someone') + '</strong> invited you to join as a <strong>' + roleLabel + '</strong>.' +
+          '<br><span style="font-size: 12px; color: var(--text-muted);">Create your free account below to collaborate.</span>';
+
+        // If user already has an account, show login link
+        if (inv.hasAccount) {
+          bannerDetail.innerHTML +=
+            '<br><a href="/log-in/?redirect=' + encodeURIComponent('/account/?accept_network=' + token) + '" style="color: var(--gold-primary); font-weight: 600; margin-top: 8px; display: inline-block;">Already have an account? Log in to accept</a>';
+        }
+
+        // Pre-fill and lock email
+        if (inv.email) {
+          var emailInput = document.getElementById('email');
+          emailInput.value = inv.email;
+          emailInput.readOnly = true;
+          emailInput.style.opacity = '0.7';
+        }
+
+        // Auto-select account type based on role
+        var roleToType = {
+          'fabricator': 'pro_fabricator',
+          'designer': 'pro_designer',
+          'contractor': 'contractor',
+          'installer': 'contractor',
+          'vendor': 'contractor',
+          'partner': 'contractor'
+        };
+        var targetType = roleToType[inv.role] || 'contractor';
+        var targetOption = document.getElementById('type-' + targetType);
+        if (targetOption) {
+          document.querySelectorAll('.account-type-option').forEach(function(o) { o.classList.remove('selected'); });
+          targetOption.classList.add('selected');
+          targetOption.querySelector('input').checked = true;
+          if (targetType.startsWith('pro_')) {
+            document.getElementById('pro-fields').classList.add('show');
+          }
+        }
+
+        // Store token for post-signup claim
+        sessionStorage.setItem('sg_network_invite_token', token);
+        localStorage.setItem('sg_network_invite_token', token);
+        sessionStorage.setItem('auth_redirect', '/account/');
+
+      } catch (err) {
+        bannerTitle.textContent = 'Could not load invitation';
+        bannerDetail.textContent = 'Please check your link and try again.';
+        console.error('Network invite verify error:', err);
       }
     }
 

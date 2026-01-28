@@ -12,6 +12,7 @@ const logger = require('../utils/logger');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validateBody } = require('../middleware/validator');
 const emailService = require('../services/emailService');
+const smsService = require('../services/smsService');
 const { escapeHtml } = require('../utils/security');
 
 // Initialize Supabase with service role for admin operations
@@ -1531,10 +1532,17 @@ router.delete('/projects/:projectId/pending-invitations/:invitationId',
 // ============================================================
 
 const generalCollaboratorSchema = Joi.object({
-  email: Joi.string().email().max(254).lowercase().trim().required(),
-  name: Joi.string().max(200).trim().allow('', null),
+  email: Joi.string().email().max(254).lowercase().trim().allow('', null),
+  phone: Joi.string().max(20).trim().allow('', null),
+  name: Joi.string().max(200).trim().required(),
   role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'vendor', 'partner').required(),
   notes: Joi.string().max(500).trim().allow('')
+}).custom((value, helpers) => {
+  // Require at least email or phone
+  if (!value.email && !value.phone) {
+    return helpers.error('any.custom', { message: 'Either email or phone is required' });
+  }
+  return value;
 });
 
 /**
@@ -1600,21 +1608,33 @@ router.post('/invite-general',
   verifyProOrDesigner,
   validateBody(generalCollaboratorSchema),
   asyncHandler(async (req, res) => {
-    const { email, name, role, notes } = req.body;
-    const normalizedEmail = email.toLowerCase().trim();
+    const { email, phone, name, role, notes } = req.body;
+    const normalizedEmail = email ? email.toLowerCase().trim() : null;
+    const normalizedPhone = phone ? phone.replace(/\D/g, '') : null;
+
+    // Must have email or phone
+    if (!normalizedEmail && !normalizedPhone) {
+      return res.status(400).json({ error: 'Please provide email or phone number' });
+    }
 
     // Cannot invite yourself
-    if (normalizedEmail === req.profile.email?.toLowerCase()) {
+    if (normalizedEmail && normalizedEmail === req.profile.email?.toLowerCase()) {
       return res.status(400).json({ error: 'Cannot invite yourself' });
     }
 
-    // Check if already invited by this user
-    const { data: existing } = await supabase
+    // Check if already invited by this user (by email or phone)
+    let existingQuery = supabase
       .from('general_collaborators')
       .select('id, status')
-      .eq('invited_by', req.user.id)
-      .eq('email', normalizedEmail)
-      .single();
+      .eq('invited_by', req.user.id);
+
+    if (normalizedEmail) {
+      existingQuery = existingQuery.eq('email', normalizedEmail);
+    } else if (normalizedPhone) {
+      existingQuery = existingQuery.ilike('metadata->>phone', `%${normalizedPhone.slice(-10)}%`);
+    }
+
+    const { data: existing } = await existingQuery.single();
 
     if (existing && existing.status !== 'removed' && existing.status !== 'declined') {
       return res.status(400).json({ error: 'You have already invited this person' });
@@ -1622,34 +1642,42 @@ router.post('/invite-general',
 
     const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
     const inviterName = req.profile.full_name || req.profile.email || 'A Surprise Granite Pro';
-    const inviterBusiness = req.profile.business_name;
+    const inviterBusiness = req.profile.company_name;
 
-    // Check if user exists
-    const { data: existingUser } = await supabase
-      .from('sg_users')
-      .select('id, email, full_name')
-      .eq('email', normalizedEmail)
-      .single();
+    // Check if user exists (by email)
+    let existingUser = null;
+    if (normalizedEmail) {
+      const { data } = await supabase
+        .from('sg_users')
+        .select('id, email, full_name')
+        .eq('email', normalizedEmail)
+        .single();
+      existingUser = data;
+    }
 
     const { rawToken, tokenHash } = generateInvitationToken();
     const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     let collaborator;
+    const collaboratorData = {
+      name: name || existingUser?.full_name || null,
+      role,
+      status: 'pending',
+      notes: notes || null,
+      token_hash: tokenHash,
+      token_expires_at: tokenExpires,
+      invited_at: new Date().toISOString(),
+      accepted_at: null,
+      user_id: existingUser?.id || null,
+      email: normalizedEmail || null,
+      metadata: { phone: normalizedPhone }
+    };
+
     if (existing) {
       // Re-invite removed/declined collaborator
       const { data, error } = await supabase
         .from('general_collaborators')
-        .update({
-          name: name || null,
-          role,
-          status: 'pending',
-          notes: notes || null,
-          token_hash: tokenHash,
-          token_expires_at: tokenExpires,
-          invited_at: new Date().toISOString(),
-          accepted_at: null,
-          user_id: existingUser?.id || null
-        })
+        .update(collaboratorData)
         .eq('id', existing.id)
         .select()
         .single();
@@ -1660,14 +1688,8 @@ router.post('/invite-general',
       const { data, error } = await supabase
         .from('general_collaborators')
         .insert({
-          invited_by: req.user.id,
-          user_id: existingUser?.id || null,
-          email: normalizedEmail,
-          name: name || existingUser?.full_name || null,
-          role,
-          notes: notes || null,
-          token_hash: tokenHash,
-          token_expires_at: tokenExpires
+          ...collaboratorData,
+          invited_by: req.user.id
         })
         .select()
         .single();
@@ -1676,20 +1698,41 @@ router.post('/invite-general',
       collaborator = data;
     }
 
-    // Send invitation email
+    // Build invite URL
     const acceptUrl = existingUser
       ? `${SITE_URL}/account/?accept_network=${rawToken}`
       : `${SITE_URL}/sign-up/?network_invite=${rawToken}`;
 
-    const emailContent = generateGeneralInviteEmail({
-      inviterName,
-      inviterBusiness,
-      role,
-      isExistingUser: !!existingUser,
-      acceptUrl
-    });
+    let sentVia = [];
 
-    await emailService.sendNotification(normalizedEmail, emailContent.subject, emailContent.html);
+    // Send invitation email if we have email
+    if (normalizedEmail) {
+      try {
+        const emailContent = generateGeneralInviteEmail({
+          inviterName,
+          inviterBusiness,
+          role,
+          isExistingUser: !!existingUser,
+          acceptUrl
+        });
+        await emailService.sendNotification(normalizedEmail, emailContent.subject, emailContent.html);
+        sentVia.push('email');
+      } catch (emailErr) {
+        logger.warn('Failed to send invite email', { error: emailErr.message });
+      }
+    }
+
+    // Send SMS if we have phone
+    if (normalizedPhone && smsService) {
+      try {
+        const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+        const smsMessage = `${inviterName} invited you to Surprise Granite as a ${roleLabel}! Sign up free: ${acceptUrl}`;
+        await smsService.sendSMS(normalizedPhone, smsMessage);
+        sentVia.push('SMS');
+      } catch (smsErr) {
+        logger.warn('Failed to send invite SMS', { error: smsErr.message });
+      }
+    }
 
     // In-app notification if user exists
     if (existingUser) {
@@ -1703,14 +1746,23 @@ router.post('/invite-general',
     }
 
     logger.info('General collaborator invited', {
-      email: normalizedEmail, role, existingUser: !!existingUser
+      email: normalizedEmail, phone: normalizedPhone ? '***' : null, role, existingUser: !!existingUser, sentVia
     });
+
+    // Build response message
+    let message = 'Invite sent';
+    if (sentVia.length > 0) {
+      message = `Invite sent via ${sentVia.join(' and ')} to ${name}`;
+    } else if (existingUser) {
+      message = `${name} will see the invite in their dashboard`;
+    }
 
     res.json({
       success: true,
       collaborator,
       inviteType: existingUser ? 'existing_user' : 'new_user',
-      message: `Invitation sent to ${normalizedEmail}`
+      sentVia,
+      message
     });
   })
 );
@@ -1847,14 +1899,17 @@ router.post('/network/accept',
       return res.status(400).json({ error: 'This invitation has expired' });
     }
 
-    // Verify email matches (unless already linked to user_id)
+    // Verify user can accept this invite
+    // If invite has user_id, it must match current user
+    // If invite has email, user's email should match (but allow if no email on invite - phone-only)
     const userEmail = req.profile.email?.toLowerCase();
     if (invitation.user_id && invitation.user_id !== req.user.id) {
       return res.status(403).json({ error: 'This invitation was sent to a different user' });
     }
-    if (!invitation.user_id && userEmail !== invitation.email.toLowerCase()) {
+    if (!invitation.user_id && invitation.email && userEmail !== invitation.email.toLowerCase()) {
       return res.status(403).json({ error: 'This invitation was sent to a different email address' });
     }
+    // If phone-only invite (no email), allow anyone with the token to accept
 
     // Accept the invitation
     const { data: updated, error } = await supabase
@@ -2169,7 +2224,7 @@ router.get('/network/verify/:token', asyncHandler(async (req, res) => {
 
   const { data: invitation } = await supabase
     .from('general_collaborators')
-    .select('id, email, role, status, token_expires_at, invited_by')
+    .select('id, email, role, status, token_expires_at, invited_by, metadata')
     .eq('token_hash', tokenHash)
     .single();
 
@@ -2192,17 +2247,22 @@ router.get('/network/verify/:token', asyncHandler(async (req, res) => {
     .eq('id', invitation.invited_by)
     .single();
 
-  // Check if user already has an account
-  const { data: existingUser } = await supabase
-    .from('sg_users')
-    .select('id')
-    .eq('email', invitation.email.toLowerCase())
-    .single();
+  // Check if user already has an account (only if email provided)
+  let existingUser = null;
+  if (invitation.email) {
+    const { data } = await supabase
+      .from('sg_users')
+      .select('id')
+      .eq('email', invitation.email.toLowerCase())
+      .single();
+    existingUser = data;
+  }
 
   res.json({
     success: true,
     invitation: {
       email: invitation.email,
+      phone: invitation.metadata?.phone || null,
       role: invitation.role,
       inviterName: inviter?.full_name || inviter?.email || 'A team member',
       inviterBusiness: inviter?.business_name,

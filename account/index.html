@@ -14301,54 +14301,81 @@
     </div>
   </div>
 
-  <!-- Invite to Network Modal (General Collaborator) -->
+  <!-- Simple Invite Modal -->
   <div class="modal-overlay" id="invite-to-network-modal" onclick="if(event.target === this) closeInviteToNetworkModal()">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2 class="modal-title">Invite to Network</h2>
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+        <h2 class="modal-title" style="font-size: 22px;">Invite Someone</h2>
         <button class="modal-close" onclick="closeInviteToNetworkModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-      <div class="modal-body">
-        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-          Invite someone to join your professional network. They can later be assigned to specific projects.
+      <div class="modal-body" style="padding-top: 8px;">
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+          Send them a link to create their free account. They'll be able to collaborate with you, check messages, and use all the tools.
         </p>
         <form id="invite-network-form" onsubmit="return sendNetworkInvite(event)">
-          <div class="form-group">
-            <label>Email Address *</label>
-            <input type="email" id="network-invite-email" required placeholder="colleague@example.com" class="input-modern" />
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 13px; font-weight: 600;">Their Name</label>
+            <input type="text" id="network-invite-name" required placeholder="John Smith" class="input-modern" maxlength="200" style="font-size: 16px; padding: 14px;" />
           </div>
-          <div class="form-row-modern">
-            <div class="form-group">
-              <label>Name</label>
-              <input type="text" id="network-invite-name" placeholder="Their name (optional)" class="input-modern" maxlength="200" />
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 13px; font-weight: 600;">Email or Phone</label>
+            <input type="text" id="network-invite-contact" placeholder="john@email.com or (555) 123-4567" class="input-modern" style="font-size: 16px; padding: 14px;" />
+            <span style="font-size: 11px; color: var(--text-muted);">We'll send them an invite link</span>
+          </div>
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-size: 13px; font-weight: 600;">They are a...</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="contractor" style="display: none;">
+                <span style="font-size: 20px;">🔨</span>
+                <span style="font-size: 14px;">Contractor</span>
+              </label>
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="fabricator" style="display: none;">
+                <span style="font-size: 20px;">⚙️</span>
+                <span style="font-size: 14px;">Fabricator</span>
+              </label>
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="installer" style="display: none;">
+                <span style="font-size: 20px;">🛠️</span>
+                <span style="font-size: 14px;">Installer</span>
+              </label>
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="designer" style="display: none;">
+                <span style="font-size: 20px;">🎨</span>
+                <span style="font-size: 14px;">Designer</span>
+              </label>
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="partner" style="display: none;">
+                <span style="font-size: 20px;">🤝</span>
+                <span style="font-size: 14px;">Trade Partner</span>
+              </label>
+              <label class="role-option" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.15s;">
+                <input type="radio" name="invite-role" value="vendor" style="display: none;">
+                <span style="font-size: 20px;">📦</span>
+                <span style="font-size: 14px;">Vendor</span>
+              </label>
             </div>
-            <div class="form-group">
-              <label>Role *</label>
-              <select id="network-invite-role" required class="input-modern">
-                <option value="">Select Role</option>
-                <option value="designer">Designer</option>
-                <option value="fabricator">Fabricator</option>
-                <option value="contractor">Contractor</option>
-                <option value="installer">Installer</option>
-                <option value="vendor">Vendor</option>
-                <option value="partner">Partner</option>
-              </select>
-            </div>
           </div>
-          <div class="form-group">
-            <label>Notes (optional)</label>
-            <textarea id="network-invite-notes" placeholder="Personal message or notes about this contact..." class="input-modern" rows="2" maxlength="1000" style="resize: vertical;"></textarea>
-          </div>
-          <button type="submit" class="btn-modern primary" id="send-network-invite-btn" style="width: 100%;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            Send Invitation
+          <button type="submit" class="btn-modern primary" id="send-network-invite-btn" style="width: 100%; padding: 16px; font-size: 16px; font-weight: 600;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 10px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send Invite
           </button>
         </form>
       </div>
     </div>
   </div>
+  <style>
+    .role-option:has(input:checked) {
+      border-color: var(--gold-primary) !important;
+      background: rgba(249, 203, 0, 0.1) !important;
+    }
+    .role-option:hover {
+      border-color: var(--gold-primary);
+    }
+  </style>
 
   <!-- Assign to Project Modal -->
   <div class="modal-overlay" id="assign-to-project-modal" onclick="if(event.target === this) closeAssignToProjectModal()">
@@ -16525,8 +16552,9 @@
       setAuthReady();
       console.log('[Auth] Auth ready, supabaseClient initialized');
 
-      // Check for invite acceptance token
+      // Check for invite acceptance tokens
       checkForInviteToken();
+      checkForNetworkInviteToken();
 
       // Listen for auto-claimed invitations
       window.addEventListener('sg-invitations-claimed', function(e) {
@@ -28995,6 +29023,58 @@
       }
     }
 
+    // Network (general collaborator) invite handling
+    async function checkForNetworkInviteToken() {
+      const params = new URLSearchParams(window.location.search);
+      // Check URL parameter first, then stored token from signup
+      let token = params.get('accept_network');
+      let fromStorage = false;
+
+      if (!token) {
+        token = sessionStorage.getItem('sg_network_invite_token') || localStorage.getItem('sg_network_invite_token');
+        fromStorage = true;
+      }
+
+      if (!token) return;
+
+      // Clear stored token
+      sessionStorage.removeItem('sg_network_invite_token');
+      localStorage.removeItem('sg_network_invite_token');
+
+      // Clean URL
+      const cleanUrl = new URL(window.location);
+      cleanUrl.searchParams.delete('accept_network');
+      history.replaceState(null, '', cleanUrl.toString());
+
+      try {
+        // Verify the token first
+        const verifyResp = await fetch(API_BASE + '/api/collaboration/network/verify/' + encodeURIComponent(token));
+        const verifyData = await verifyResp.json();
+
+        if (!verifyResp.ok || !verifyData.success) {
+          showToast(verifyData.error || 'Invalid or expired invitation', 'error');
+          return;
+        }
+
+        // Auto-accept the network invite
+        const acceptResp = await apiCall('/api/collaboration/network/accept', {
+          method: 'POST',
+          body: JSON.stringify({ token })
+        });
+
+        const acceptData = await acceptResp.json();
+        if (!acceptResp.ok) throw new Error(acceptData.error || 'Failed to accept');
+
+        showToast(`You're now connected with ${verifyData.invitation.inviterName}!`, 'success');
+        showPage('collaborations');
+        switchCollabTab('network');
+
+      } catch (err) {
+        console.error('Network invite accept error:', err);
+        showToast(err.message || 'Failed to accept network invitation', 'error');
+      }
+    }
+
     function closeAcceptInviteModal() {
       document.getElementById('accept-invite-modal').classList.remove('active');
     }
@@ -29633,35 +29713,55 @@
     async function sendNetworkInvite(event) {
       event.preventDefault();
       const btn = document.getElementById('send-network-invite-btn');
-      const email = document.getElementById('network-invite-email').value.trim().toLowerCase();
       const name = document.getElementById('network-invite-name').value.trim();
-      const role = document.getElementById('network-invite-role').value;
-      const notes = document.getElementById('network-invite-notes').value.trim();
+      const contact = document.getElementById('network-invite-contact').value.trim();
+      const roleInput = document.querySelector('input[name="invite-role"]:checked');
+      const role = roleInput ? roleInput.value : '';
 
-      if (!email || !role) {
-        showToast('Please fill in email and role', 'warning');
+      if (!name) {
+        showToast('Please enter their name', 'warning');
         return false;
       }
 
-      if (currentUser && currentUser.email && email === currentUser.email.toLowerCase()) {
+      if (!contact) {
+        showToast('Please enter their email or phone', 'warning');
+        return false;
+      }
+
+      if (!role) {
+        showToast('Please select what they do', 'warning');
+        return false;
+      }
+
+      // Determine if contact is email or phone
+      const isEmail = contact.includes('@');
+      const email = isEmail ? contact.toLowerCase() : null;
+      const phone = !isEmail ? contact : null;
+
+      if (email && currentUser && currentUser.email && email === currentUser.email.toLowerCase()) {
         showToast('You cannot invite yourself', 'warning');
         return false;
       }
 
       btn.disabled = true;
-      btn.textContent = 'Sending...';
+      btn.innerHTML = '<span class="spinner-small"></span> Sending...';
 
       try {
         const resp = await apiCall('/api/collaboration/invite-general', {
           method: 'POST',
-          body: JSON.stringify({ email, name: name || undefined, role, notes: notes || undefined })
+          body: JSON.stringify({ email, phone, name, role })
         });
 
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
 
-        showToast(data.message || 'Invitation sent!', 'success');
+        showToast(data.message || `Invite sent to ${name}!`, 'success');
         closeInviteToNetworkModal();
+
+        // Reset form
+        document.getElementById('invite-network-form').reset();
+        document.querySelectorAll('.role-option').forEach(o => o.querySelector('input').checked = false);
+
         loadMyNetwork();
 
       } catch (err) {
@@ -29669,7 +29769,7 @@
         showToast(err.message || 'Failed to send invitation', 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Send Invitation';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 10px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Invite';
       }
 
       return false;
