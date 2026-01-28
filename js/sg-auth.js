@@ -926,14 +926,32 @@
   async function claimPendingInvitations() {
     if (!currentUser || !supabaseClient) return { claimedCount: 0 };
 
+    // Only pro/designer/admin roles can use collaboration endpoints.
+    // Skip API calls for homeowner accounts to avoid 403 errors.
+    const role = userProfile?.role;
+    const tier = userProfile?.pro_subscription_tier;
+    const canCollaborate = ['pro', 'designer', 'admin', 'super_admin'].includes(role)
+      || ['pro', 'designer', 'enterprise'].includes(tier);
+
+    // Check for stored invite token (from sign-up flow)
+    const storedToken = sessionStorage.getItem('sg_invite_token') || localStorage.getItem('sg_invite_token');
+
+    // Clean up stored tokens regardless of role
+    if (storedToken) {
+      sessionStorage.removeItem('sg_invite_token');
+      localStorage.removeItem('sg_invite_token');
+    }
+
+    // If user can't collaborate and has no stored token, nothing to do
+    if (!canCollaborate && !storedToken) {
+      return { claimedCount: 0 };
+    }
+
     try {
       let tokenAccepted = false;
 
-      // Check for stored invite token (from sign-up flow)
-      const storedToken = sessionStorage.getItem('sg_invite_token') || localStorage.getItem('sg_invite_token');
-      if (storedToken) {
-        sessionStorage.removeItem('sg_invite_token');
-        localStorage.removeItem('sg_invite_token');
+      // Accept stored invite token (from sign-up flow)
+      if (storedToken && canCollaborate) {
         try {
           const acceptResp = await apiPost('/api/collaboration/invite/accept', { token: storedToken });
           if (acceptResp.ok) {
@@ -944,20 +962,22 @@
             }
           }
         } catch (e) {
-          console.warn('SG Auth: Token accept failed', e);
+          console.log('SG Auth: Token accept skipped', e.message || e);
         }
       }
 
       // Claim all pending invitations matching user's email
       let claimedCount = 0;
-      try {
-        const claimResp = await apiPost('/api/collaboration/invite/claim', {});
-        if (claimResp.ok) {
-          const claimData = await claimResp.json();
-          claimedCount = claimData.claimedCount || 0;
+      if (canCollaborate) {
+        try {
+          const claimResp = await apiPost('/api/collaboration/invite/claim', {});
+          if (claimResp.ok) {
+            const claimData = await claimResp.json();
+            claimedCount = claimData.claimedCount || 0;
+          }
+        } catch (e) {
+          console.log('SG Auth: Claim invitations skipped', e.message || e);
         }
-      } catch (e) {
-        console.warn('SG Auth: Claim invitations failed', e);
       }
 
       const totalClaimed = claimedCount + (tokenAccepted ? 1 : 0);
@@ -970,7 +990,6 @@
 
       return { claimedCount: totalClaimed, tokenAccepted };
     } catch (e) {
-      // 403 expected for homeowner accounts - silently ignore
       console.log('SG Auth: Could not claim invitations', e.message || e);
       return { claimedCount: 0 };
     }

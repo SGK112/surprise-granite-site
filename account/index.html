@@ -9750,6 +9750,10 @@
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">My Collaborations</h3>
+              <button class="btn-modern primary" onclick="openInviteToProjectModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                Invite Collaborator
+              </button>
             </div>
             <div class="card-body">
               <div id="collaborations-list">
@@ -13649,6 +13653,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
             Assign Contractor
           </button>
+          <button class="btn-modern secondary small" onclick="inviteCollaboratorForJob()" title="Invite someone to collaborate on this job">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            Invite Collaborator
+          </button>
           <button class="btn-modern secondary small" onclick="orderMaterials()">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             Order Materials
@@ -13662,10 +13670,16 @@
             <div class="form-section">
               <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
                 Customer
-                <button class="btn-modern secondary small" onclick="sendCustomerPortalLink()" title="Send portal access link">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                  Portal Link
-                </button>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-modern secondary small" onclick="inviteCustomerAsCollaborator()" title="Invite customer to collaborate">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                    Invite
+                  </button>
+                  <button class="btn-modern secondary small" onclick="sendCustomerPortalLink()" title="Send portal access link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    Portal
+                  </button>
+                </div>
               </div>
               <div id="job-detail-customer" style="padding: 12px; background: var(--dark-elevated); border-radius: 8px;">
                 <div style="font-weight: 600;" id="job-customer-name-display">Loading...</div>
@@ -13720,10 +13734,16 @@
             <div class="form-section">
               <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center;">
                 Team & Contractors
-                <button class="btn-modern secondary small" onclick="openAssignContractorModal()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                  Add
-                </button>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-modern secondary small" onclick="inviteCollaboratorForJob()" title="Invite collaborator">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    Invite
+                  </button>
+                  <button class="btn-modern secondary small" onclick="openAssignContractorModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Add
+                  </button>
+                </div>
               </div>
               <div id="job-contractors-list" style="min-height: 60px;">
                 <div style="color: var(--text-muted); font-size: 13px;">No contractors assigned yet.</div>
@@ -13969,6 +13989,12 @@
                 <button class="btn-modern secondary small" onclick="sendInviteSMS()" style="flex: 1;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                   Text Invite
+                </button>
+              </div>
+              <div style="margin-top: 12px;">
+                <button class="btn-modern primary small" onclick="inviteContractorAsCollaborator()" style="width: 100%;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Invite as Collaborator
                 </button>
               </div>
             </div>
@@ -14255,6 +14281,12 @@
       <div class="modal-body">
         <form id="invite-collaborator-form" onsubmit="return sendCollaborationInvite(event)">
           <input type="hidden" id="invite-project-id" />
+          <div class="form-group" id="invite-project-selector" style="display: none;">
+            <label>Project *</label>
+            <select id="invite-project-select" required onchange="onInviteProjectSelected()">
+              <option value="">Select a Project</option>
+            </select>
+          </div>
           <div class="form-group">
             <label>Email Address *</label>
             <input type="email" id="invite-email" required placeholder="colleague@example.com" />
@@ -16594,8 +16626,11 @@
               </div>
               <div class="design-actions">
                 <a href="/tools/room-designer/?p=${design.share_token || design.id}" class="design-btn-open">Open</a>
-                <button class="design-btn-share" onclick="copyDesignLink('${design.share_token || design.id}')">
+                <button class="design-btn-share" onclick="copyDesignLink('${design.share_token || design.id}')" title="Copy share link">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                </button>
+                <button class="design-btn-share" onclick="inviteDesignCollaborator('${design.id}')" title="Invite collaborator" style="color: var(--gold-primary);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                 </button>
                 <button class="design-btn-delete" onclick="deleteDesign('${design.id}', '${escapeHtml(design.project_name || 'Untitled')}')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -16942,6 +16977,15 @@
               <p>Open the main website in a new tab</p>
             </div>
           </a>
+          <a href="javascript:void(0)" class="action-card" onclick="openInviteToProjectModal(); return false;">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Invite Collaborator</h4>
+              <p>Invite someone to collaborate on a project</p>
+            </div>
+          </a>
         `;
       } else {
         // Enhanced user stats
@@ -17015,6 +17059,15 @@
             <div class="action-text">
               <h4>Calculator</h4>
               <p>Estimate your project</p>
+            </div>
+          </a>
+          <a href="javascript:void(0)" onclick="showPage('collaborations'); return false;" class="action-card">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div class="action-text">
+              <h4>Collaborations</h4>
+              <p>View project collaborations</p>
             </div>
           </a>
         `;
@@ -26478,6 +26531,9 @@
               <button class="action-btn" onclick="sendContractorPortalLink('${jc.contractor_id}')" title="Send Portal Link" style="padding: 4px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
               </button>
+              <button class="action-btn" onclick="inviteJobContractorAsCollaborator('${jc.contractor_id}')" title="Invite as Collaborator" style="padding: 4px; color: var(--gold-primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+              </button>
               <span class="status-badge" style="font-size: 10px; background: ${jc.contractor_status === 'accepted' ? 'rgba(34,197,94,0.15)' : jc.contractor_status === 'declined' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color: ${jc.contractor_status === 'accepted' ? '#22c55e' : jc.contractor_status === 'declined' ? '#ef4444' : '#f59e0b'};">${jc.contractor_status || 'pending'}</span>
             </div>
           </div>
@@ -26822,7 +26878,7 @@
 
         // Show options modal
         const action = prompt(
-          `Customer Portal Link for ${customer.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
+          `Customer Portal Link for ${customer.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")\n4. Invite as collaborator (type "collab")`,
           'copy'
         );
 
@@ -26848,6 +26904,8 @@
         } else if (action === 'text' && customer.phone) {
           const message = encodeURIComponent(`Track your project with Surprise Granite: ${portalUrl}`);
           window.open(`sms:${customer.phone}?body=${message}`, '_blank');
+        } else if (action === 'collab') {
+          inviteCustomerAsCollaborator();
         } else if (action) {
           navigator.clipboard.writeText(portalUrl);
           showToast('Link copied to clipboard!');
@@ -26886,7 +26944,7 @@
         const portalUrl = `${window.location.origin}/contractor-portal/?token=${token}`;
 
         const action = prompt(
-          `Contractor Portal Link for ${contractor.company_name || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")`,
+          `Contractor Portal Link for ${contractor.company_name || contractor.name}:\n\n${portalUrl}\n\nOptions:\n1. Copy link (type "copy")\n2. Email link (type "email")\n3. Text link (type "text")\n4. Invite as collaborator (type "collab")`,
           'copy'
         );
 
@@ -26911,6 +26969,8 @@
         } else if (action === 'text' && contractor.phone) {
           const message = encodeURIComponent(`Access your contractor portal at Surprise Granite: ${portalUrl}`);
           window.open(`sms:${contractor.phone}?body=${message}`, '_blank');
+        } else if (action === 'collab') {
+          inviteContractorAsCollaborator(contractorId);
         } else if (action) {
           navigator.clipboard.writeText(portalUrl);
           showToast('Link copied!');
@@ -27043,12 +27103,101 @@
 
     // ============ INVITE TO PROJECT ============
 
-    function openInviteToProjectModal(projectId) {
-      document.getElementById('invite-project-id').value = projectId;
+    function openInviteToProjectModal(projectId, prefillEmail, prefillRole) {
       document.getElementById('invite-collaborator-form').reset();
-      document.getElementById('invite-project-id').value = projectId;
+      document.getElementById('invite-project-id').value = projectId || '';
+
+      // Show/hide project selector
+      var projectSelector = document.getElementById('invite-project-selector');
+      var projectSelect = document.getElementById('invite-project-select');
+      if (projectId) {
+        projectSelector.style.display = 'none';
+        projectSelect.removeAttribute('required');
+      } else {
+        projectSelector.style.display = 'block';
+        projectSelect.setAttribute('required', 'required');
+        loadProjectsForInvite();
+      }
+
+      // Pre-fill email
+      if (prefillEmail) {
+        document.getElementById('invite-email').value = prefillEmail;
+      }
+
+      // Pre-fill role
+      if (prefillRole) {
+        var roleSelect = document.getElementById('invite-role');
+        for (var i = 0; i < roleSelect.options.length; i++) {
+          if (roleSelect.options[i].value === prefillRole) {
+            roleSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
       document.getElementById('invite-to-project-modal').classList.add('active');
-      loadPendingInvitations(projectId);
+      if (projectId) loadPendingInvitations(projectId);
+    }
+
+    function onInviteProjectSelected() {
+      var projectId = document.getElementById('invite-project-select').value;
+      document.getElementById('invite-project-id').value = projectId;
+      if (projectId) loadPendingInvitations(projectId);
+    }
+
+    async function loadProjectsForInvite() {
+      var select = document.getElementById('invite-project-select');
+      select.innerHTML = '<option value="">Loading projects...</option>';
+
+      try {
+        var resp = await apiCall('/api/collaboration/my-projects');
+        var data = await resp.json();
+        var projects = [];
+
+        if (resp.ok && data.collaborations) {
+          projects = data.collaborations.filter(function(c) {
+            return c.access_level === 'admin' || c.access_level === 'write';
+          });
+        }
+
+        // Also try to load owned projects from Supabase
+        if (supabaseClient && currentUser) {
+          try {
+            var result = await supabaseClient.from('projects').select('id, title').eq('owner_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
+            if (result.data) {
+              var existingIds = projects.map(function(p) { return p.project_id; });
+              result.data.forEach(function(proj) {
+                if (existingIds.indexOf(proj.id) === -1) {
+                  projects.push({ project_id: proj.id, project: { title: proj.title } });
+                }
+              });
+            }
+          } catch (e) { /* projects table may not exist */ }
+        }
+
+        // Also add jobs as invitable contexts
+        if (allJobs && allJobs.length > 0) {
+          allJobs.forEach(function(job) {
+            projects.push({ project_id: job.id, project: { title: (job.job_number ? '#' + job.job_number + ' - ' : '') + (job.customer_name || job.title || 'Job') }, isJob: true });
+          });
+        }
+
+        select.innerHTML = '<option value="">Select a Project</option>';
+        if (projects.length === 0) {
+          select.innerHTML += '<option value="" disabled>No projects available</option>';
+        } else {
+          projects.forEach(function(p) {
+            var title = (p.project && p.project.title) || 'Untitled Project';
+            var opt = document.createElement('option');
+            opt.value = p.project_id;
+            opt.textContent = title;
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading projects for invite:', err);
+        select.innerHTML = '<option value="">Could not load projects</option>';
+      }
     }
 
     function closeInviteToProjectModal() {
@@ -27058,14 +27207,18 @@
     async function sendCollaborationInvite(event) {
       event.preventDefault();
       var btn = document.getElementById('send-invite-btn');
-      var projectId = document.getElementById('invite-project-id').value;
+      var projectId = document.getElementById('invite-project-id').value || document.getElementById('invite-project-select').value;
       var email = document.getElementById('invite-email').value.trim();
       var role = document.getElementById('invite-role').value;
       var accessLevel = document.getElementById('invite-access-level').value;
       var notes = document.getElementById('invite-notes').value.trim();
 
+      if (!projectId) {
+        showToast('Please select a project', 'warning');
+        return false;
+      }
       if (!email || !role) {
-        showToast('Please fill in email and role');
+        showToast('Please fill in email and role', 'warning');
         return false;
       }
 
@@ -27213,6 +27366,66 @@
     }
 
     // =============================================
+    // COLLABORATION HELPERS (unified invite wiring)
+    // =============================================
+
+    /** Open invite modal for the current job context */
+    function inviteCollaboratorForJob() {
+      if (!currentJobId) {
+        showToast('Please open a job first', 'warning');
+        return;
+      }
+      // Use the job ID as the project context
+      openInviteToProjectModal(currentJobId);
+    }
+
+    /** Invite a contractor (from contractor cards or contractor profile) as collaborator */
+    function inviteContractorAsCollaborator(contractorIdParam) {
+      var cId = contractorIdParam || currentContractorId;
+      var contractor = allContractors.find(function(c) { return c.id === cId; });
+      if (!contractor) {
+        showToast('Contractor not found', 'error');
+        return;
+      }
+      // Map contractor type to collaboration role
+      var roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
+      var role = roleMap[contractor.type] || 'contractor';
+      openInviteToProjectModal(null, contractor.email || '', role);
+    }
+
+    /** Invite a contractor assigned to the current job as collaborator */
+    function inviteJobContractorAsCollaborator(contractorId) {
+      if (!currentJobId) return;
+      var jc = null;
+      var job = allJobs.find(function(j) { return j.id === currentJobId; });
+      if (job && job.job_contractors) {
+        jc = job.job_contractors.find(function(c) { return c.contractor_id === contractorId; });
+      }
+      // Try to find contractor details
+      var contractor = allContractors.find(function(c) { return c.id === contractorId; });
+      var email = contractor ? contractor.email : '';
+      var role = (jc && jc.role) || (contractor && contractor.type) || 'contractor';
+      // Map to collaboration roles
+      var roleMap = { fabricator: 'fabricator', installer: 'installer', plumber: 'contractor', electrician: 'contractor', template: 'contractor', other: 'contractor' };
+      role = roleMap[role] || 'contractor';
+      openInviteToProjectModal(currentJobId, email, role);
+    }
+
+    /** Invite the current job's customer as a collaborator (viewer) */
+    function inviteCustomerAsCollaborator() {
+      if (!currentJobId) return;
+      var job = allJobs.find(function(j) { return j.id === currentJobId; });
+      if (!job) return;
+      var email = (job.customers && job.customers.email) || job.customer_email || '';
+      openInviteToProjectModal(currentJobId, email, 'viewer');
+    }
+
+    /** Invite a collaborator for a design project */
+    function inviteDesignCollaborator(designId) {
+      openInviteToProjectModal(designId, '', 'designer');
+    }
+
+    // =============================================
     // CONTRACTORS
     // =============================================
 
@@ -27311,8 +27524,11 @@
                   <button class="action-btn" onclick="openContractorProfile('${c.id}')" title="View Profile">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                   </button>
-                  <button class="action-btn" onclick="quickInviteContractor('${c.id}')" title="Send Invite" style="color: var(--gold-primary);">
+                  <button class="action-btn" onclick="quickInviteContractor('${c.id}')" title="Send Portal Invite" style="color: var(--gold-primary);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                  </button>
+                  <button class="action-btn" onclick="inviteContractorAsCollaborator('${c.id}')" title="Invite as Collaborator">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                   </button>
                 </div>
               </div>
@@ -27357,10 +27573,13 @@
         showToast('Invite link copied!');
       }
 
-      // If they have email, offer to send
+      // If they have email, offer to send or invite as collaborator
       if (contractor.email) {
-        const sendEmail = confirm(`Link copied! Also send invite email to ${contractor.email}?`);
-        if (sendEmail) {
+        const action = prompt(
+          `Portal link copied for ${contractor.company_name || contractor.name}!\n\nAdditional actions:\n1. Send email invite (type "email")\n2. Invite as project collaborator (type "collab")\n3. Done (press Enter)`,
+          ''
+        );
+        if (action === 'email') {
           try {
             await apiCall('/api/contractors/send-invite', {
               method: 'POST',
@@ -27374,6 +27593,8 @@
           } catch (err) {
             console.log('Could not send email:', err);
           }
+        } else if (action === 'collab') {
+          inviteContractorAsCollaborator(contractorId);
         }
       }
     }
@@ -27564,6 +27785,15 @@
         if (currentJobId) {
           const job = allJobs.find(j => j.id === currentJobId);
           if (job) openJobDetail(currentJobId);
+        }
+
+        // Offer to also invite as project collaborator
+        const assignedContractor = allContractors.find(c => c.id === contractorId);
+        if (assignedContractor && assignedContractor.email) {
+          const alsoCollab = confirm(`Contractor assigned! Also invite ${assignedContractor.email} as a project collaborator?`);
+          if (alsoCollab) {
+            inviteJobContractorAsCollaborator(contractorId);
+          }
         }
       } catch (err) {
         console.error('Assign contractor error:', err);
