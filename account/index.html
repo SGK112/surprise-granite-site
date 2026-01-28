@@ -4988,6 +4988,55 @@
       }
     }
 
+    /* === DESIGN HANDOFF STYLES === */
+    .handoff-stage-tracker {
+      display: flex;
+      gap: 2px;
+      margin: 16px 0;
+      overflow-x: auto;
+      padding: 4px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .handoff-stage {
+      flex: 1;
+      min-width: 58px;
+      text-align: center;
+      padding: 6px 3px;
+      border-radius: 6px;
+      font-size: 9px;
+      line-height: 1.3;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .handoff-stage.completed { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .handoff-stage.current { background: rgba(212,175,55,0.2); color: var(--gold-primary); font-weight: 700; border: 1px solid var(--gold-primary); }
+    .handoff-stage.future { background: var(--dark-elevated); color: var(--text-muted); }
+    .handoff-participant {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .handoff-participant-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    @media (max-width: 768px) {
+      .handoff-stage-tracker { padding-bottom: 8px; }
+      .handoff-stage { min-width: 50px; font-size: 8px; }
+    }
+
     /* === CONTRACTORS PAGE MOBILE === */
     @media (max-width: 768px) {
       #page-contractors .card-header {
@@ -9741,6 +9790,10 @@
                   <option value="shared">Shared</option>
                   <option value="private">Private</option>
                 </select>
+                <button class="btn-modern secondary" onclick="openInviteToProjectModal(null, '', 'designer')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Invite Collaborator
+                </button>
                 <a href="/tools/room-designer/" class="btn-modern primary">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                   New Design
@@ -10188,6 +10241,10 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                   Service Catalog
                 </button>
+                <button class="btn-modern secondary" onclick="openInviteToProjectModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Invite Collaborator
+                </button>
                 <button class="btn-modern primary" onclick="openCreateEstimateModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                   New Estimate
@@ -10254,6 +10311,10 @@
                 <button class="btn-modern secondary" onclick="openTemplatePreview()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
                   Email Templates
+                </button>
+                <button class="btn-modern secondary" onclick="openInviteToProjectModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Invite Collaborator
                 </button>
                 <button class="btn-modern primary" onclick="openInvoiceModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -11989,6 +12050,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
             Create Design
           </button>
+          <button class="btn-modern secondary" onclick="inviteLeadAsCollaborator()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            Invite to Project
+          </button>
           <button class="btn-modern ghost" onclick="archiveLead()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
             Archive
@@ -12291,6 +12356,10 @@
         <button class="btn-modern primary" onclick="createEstimateForCustomer()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           New Estimate
+        </button>
+        <button class="btn-modern secondary" onclick="inviteCustomerToProject()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          Invite to Project
         </button>
         <div style="flex: 1;"></div>
         <button class="btn-modern danger" onclick="deleteCustomer()" style="background: #dc2626;">
@@ -14542,6 +14611,75 @@
           <div style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Pending Invitations</div>
           <div id="pending-invitations-list"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Design Handoff Modal -->
+  <div class="modal-overlay" id="start-handoff-modal" onclick="if(event.target === this) closeStartHandoffModal()">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Start Design Handoff</h2>
+        <button class="modal-close" onclick="closeStartHandoffModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 13px;">Hand off your design to a fabricator and track the entire fabrication-to-installation pipeline.</p>
+        <form id="start-handoff-form" onsubmit="return submitStartHandoff(event)">
+          <input type="hidden" id="handoff-design-id" />
+          <div class="form-group">
+            <label>Select Project *</label>
+            <select id="handoff-project-select" required>
+              <option value="">Loading projects...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Handoff Title *</label>
+            <input type="text" id="handoff-title" required placeholder="e.g., Kitchen Countertop Fabrication" maxlength="200" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="handoff-description" placeholder="Describe what needs to be fabricated and installed..." maxlength="2000" rows="3" style="resize: vertical;"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Assign Fabricator</label>
+              <select id="handoff-fabricator">
+                <option value="">None (assign later)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Assign Contractor/Installer</label>
+              <select id="handoff-contractor">
+                <option value="">None (assign later)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" id="handoff-notes" placeholder="Special instructions for fabrication or installation..." maxlength="2000" />
+          </div>
+          <button type="submit" class="btn-modern primary" id="submit-handoff-btn" style="width: 100%;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            Start Handoff
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handoff Detail/Tracker Modal -->
+  <div class="modal-overlay" id="handoff-detail-modal" onclick="if(event.target === this) closeHandoffDetailModal()">
+    <div class="modal-content" style="max-width: 640px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="handoff-detail-title">Design Handoff</h2>
+        <button class="modal-close" onclick="closeHandoffDetailModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="handoff-detail-content">
+        <div style="text-align: center; padding: 40px;"><div class="spinner"></div><p style="color: var(--text-muted); margin-top: 12px;">Loading handoff...</p></div>
       </div>
     </div>
   </div>
@@ -16988,6 +17126,9 @@
                 </button>
                 <button class="design-btn-share" onclick="inviteDesignCollaborator('${design.id}')" title="Invite collaborator" style="color: var(--gold-primary);">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                </button>
+                <button class="design-btn-share" onclick="openStartHandoffModal('${design.id}', '${escapeHtml(design.project_name || '')}')" title="Start fabrication handoff" style="color: #22c55e;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                 </button>
                 <button class="design-btn-delete" onclick="deleteDesign('${design.id}', '${escapeHtml(design.project_name || 'Untitled')}')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -24808,6 +24949,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 Duplicate
               </button>
+              <button class="btn-modern secondary small" onclick="event.stopPropagation(); inviteFromEstimate('${estimate.id}')" title="Invite collaborator">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                Invite
+              </button>
               ${estimate.archived_at ? `
                 <button class="btn-modern secondary small" onclick="unarchiveEstimate('${estimate.id}')" title="Restore">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -26916,6 +27061,14 @@
             <button class="btn-modern secondary" style="font-size: 12px; padding: 6px 14px;" onclick="closeProjectDetail(); openInviteToProjectModal('${project.id}');">+ Invite Collaborator</button>
           </div>`}
 
+          <div id="project-handoffs-section" data-project-id="${project.id}" style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Design Handoffs</div>
+              <button class="btn-modern secondary" style="font-size: 11px; padding: 4px 10px; color: #22c55e;" onclick="closeProjectDetail(); openStartHandoffModal(null, '', '${project.id}');">+ New Handoff</button>
+            </div>
+            <div id="project-handoffs-list" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px;">Loading handoffs...</div>
+          </div>
+
           ${activity.length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Recent Activity</div>
             ${activity.slice(0, 10).map(a => `<div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
@@ -26938,6 +27091,10 @@
             </button>
           </div>
         `;
+
+        // Load design handoffs for this project
+        loadProjectHandoffs(projectId);
+
       } catch (err) {
         console.error('Error loading project detail:', err);
         body.innerHTML = '<div class="empty-state"><h3>Error loading project</h3><p>' + (err.message || 'Please try again') + '</p></div>';
@@ -28443,6 +28600,339 @@
     /** Invite a collaborator for a design project */
     function inviteDesignCollaborator(designId) {
       openInviteToProjectModal(designId, '', 'designer');
+    }
+
+    /** Invite collaborator from an estimate (pre-fills customer email) */
+    function inviteFromEstimate(estimateId) {
+      const estimate = allEstimates.find(function(e) { return e.id === estimateId; });
+      const email = (estimate && estimate.customer_email) || '';
+      openInviteToProjectModal(null, email, 'viewer');
+    }
+
+    /** Invite a lead to collaborate on a project */
+    function inviteLeadAsCollaborator() {
+      if (!selectedLead) {
+        showToast('Please open a lead first', 'warning');
+        return;
+      }
+      openInviteToProjectModal(null, selectedLead.email || '', 'viewer');
+    }
+
+    /** Invite a customer to collaborate on a project */
+    function inviteCustomerToProject() {
+      if (!selectedCustomer) {
+        showToast('Please open a customer first', 'warning');
+        return;
+      }
+      openInviteToProjectModal(null, selectedCustomer.email || '', 'viewer');
+    }
+
+    // =============================================
+    // DESIGN HANDOFF FUNCTIONS
+    // =============================================
+
+    const HANDOFF_STAGES = [
+      { key: 'design_created', label: 'Created' },
+      { key: 'design_review', label: 'Review' },
+      { key: 'design_approved', label: 'Approved' },
+      { key: 'fabrication_quote_requested', label: 'Quote Req' },
+      { key: 'fabrication_quote_received', label: 'Quote Recv' },
+      { key: 'fabrication_approved', label: 'Fab Approved' },
+      { key: 'materials_ordered', label: 'Ordered' },
+      { key: 'fabrication_in_progress', label: 'Fabricating' },
+      { key: 'fabrication_complete', label: 'Fab Done' },
+      { key: 'install_scheduled', label: 'Scheduled' },
+      { key: 'install_in_progress', label: 'Installing' },
+      { key: 'install_complete', label: 'Installed' },
+      { key: 'final_review', label: 'Final Review' }
+    ];
+
+    function renderHandoffStages(currentStage) {
+      const currentIdx = HANDOFF_STAGES.findIndex(function(s) { return s.key === currentStage; });
+      return '<div class="handoff-stage-tracker">' + HANDOFF_STAGES.map(function(stage, i) {
+        let cls = 'future';
+        if (i < currentIdx) cls = 'completed';
+        else if (i === currentIdx) cls = 'current';
+        return '<div class="handoff-stage ' + cls + '">' + stage.label + '</div>';
+      }).join('') + '</div>';
+    }
+
+    function openStartHandoffModal(designId, designName, preselectedProjectId) {
+      document.getElementById('start-handoff-form').reset();
+      document.getElementById('handoff-design-id').value = designId || '';
+      if (designName) {
+        document.getElementById('handoff-title').value = designName + ' - Fabrication Handoff';
+      }
+      document.getElementById('start-handoff-modal').classList.add('active');
+      loadHandoffProjectOptions(preselectedProjectId);
+      loadHandoffParticipants();
+    }
+
+    function closeStartHandoffModal() {
+      document.getElementById('start-handoff-modal').classList.remove('active');
+    }
+
+    async function loadHandoffProjectOptions(preselectedId) {
+      const select = document.getElementById('handoff-project-select');
+      select.innerHTML = '<option value="">Loading projects...</option>';
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) { select.innerHTML = '<option value="">Not authenticated</option>'; return; }
+        const { data: projects } = await supabaseClient
+          .from('projects')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        select.innerHTML = '<option value="">Select a Project</option>';
+        if (projects && projects.length > 0) {
+          projects.forEach(function(p) {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name || 'Untitled';
+            if (preselectedId && p.id === preselectedId) opt.selected = true;
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading projects for handoff:', err);
+        select.innerHTML = '<option value="">Error loading projects</option>';
+      }
+    }
+
+    async function loadHandoffParticipants() {
+      const fabSelect = document.getElementById('handoff-fabricator');
+      const conSelect = document.getElementById('handoff-contractor');
+      fabSelect.innerHTML = '<option value="">None (assign later)</option>';
+      conSelect.innerHTML = '<option value="">None (assign later)</option>';
+
+      try {
+        // Use allContractors if available, otherwise load
+        let contractors = typeof allContractors !== 'undefined' ? allContractors : [];
+        if (contractors.length === 0 && typeof loadContractors === 'function') {
+          await loadContractors();
+          contractors = typeof allContractors !== 'undefined' ? allContractors : [];
+        }
+        contractors.forEach(function(c) {
+          const name = c.name || c.company_name || c.email || 'Unknown';
+          const cType = (c.type || c.contractor_type || '').toLowerCase();
+          if (cType === 'fabricator' || cType === 'stone_fabricator') {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = name;
+            fabSelect.appendChild(opt);
+          }
+          if (cType === 'installer' || cType === 'general_contractor' || cType === 'contractor') {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = name;
+            conSelect.appendChild(opt);
+          }
+        });
+      } catch (err) {
+        console.error('Error loading handoff participants:', err);
+      }
+    }
+
+    async function submitStartHandoff(event) {
+      event.preventDefault();
+      const btn = document.getElementById('submit-handoff-btn');
+      const projectId = document.getElementById('handoff-project-select').value;
+      const title = document.getElementById('handoff-title').value.trim();
+      const description = document.getElementById('handoff-description').value.trim();
+      const fabricatorId = document.getElementById('handoff-fabricator').value;
+      const contractorId = document.getElementById('handoff-contractor').value;
+      const notes = document.getElementById('handoff-notes').value.trim();
+
+      if (!projectId) {
+        showToast('Please select a project', 'warning');
+        return false;
+      }
+      if (!title) {
+        showToast('Please enter a handoff title', 'warning');
+        return false;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Starting Handoff...';
+
+      try {
+        const body = { title: title, description: description || undefined, notes: notes || undefined };
+        if (fabricatorId) body.fabricator_id = fabricatorId;
+        if (contractorId) body.contractor_id = contractorId;
+
+        const designId = document.getElementById('handoff-design-id').value;
+        if (designId) body.design_file_url = '/tools/room-designer/?p=' + designId;
+
+        const resp = await apiCall('/api/collaboration/projects/' + projectId + '/handoffs', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
+
+        let data;
+        try { data = await resp.json(); } catch (e) {
+          throw new Error('Server returned invalid response (status ' + resp.status + ')');
+        }
+
+        if (!resp.ok) {
+          throw new Error(data.error || 'Failed to create handoff');
+        }
+
+        showToast('Design handoff started!', 'success');
+        closeStartHandoffModal();
+
+        // If fabricator or contractor was assigned, suggest inviting them
+        if (fabricatorId || contractorId) {
+          showToast('Tip: Invite your fabricator/contractor as a collaborator so they can track progress', 'info');
+        }
+
+      } catch (err) {
+        console.error('[Handoff] Error creating:', err);
+        showToast(err.message || 'Error starting handoff', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg> Start Handoff';
+      }
+      return false;
+    }
+
+    async function openHandoffDetailModal(handoffId) {
+      const modal = document.getElementById('handoff-detail-modal');
+      const content = document.getElementById('handoff-detail-content');
+      modal.classList.add('active');
+      content.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div><p style="color: var(--text-muted); margin-top: 12px;">Loading handoff...</p></div>';
+
+      try {
+        const resp = await apiCall('/api/collaboration/handoffs/' + handoffId);
+        let data;
+        try { data = await resp.json(); } catch (e) {
+          throw new Error('Invalid server response');
+        }
+        if (!resp.ok) throw new Error(data.error || 'Failed to load handoff');
+
+        const h = data.handoff || data;
+        document.getElementById('handoff-detail-title').textContent = h.title || 'Design Handoff';
+
+        const stage = h.stage || 'design_created';
+        const stageIdx = HANDOFF_STAGES.findIndex(function(s) { return s.key === stage; });
+        const stageLabel = HANDOFF_STAGES[stageIdx] ? HANDOFF_STAGES[stageIdx].label : stage;
+        const isComplete = stage === 'final_review' && h.completed_at;
+
+        content.innerHTML = `
+          <div style="text-align: center; margin-bottom: 16px;">
+            <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; background: ${isComplete ? 'rgba(34,197,94,0.15)' : 'rgba(212,175,55,0.2)'}; color: ${isComplete ? '#22c55e' : 'var(--gold-primary)'};">
+              ${isComplete ? 'Completed' : stageLabel}
+            </span>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Stage ${stageIdx + 1} of ${HANDOFF_STAGES.length}</div>
+          </div>
+          ${renderHandoffStages(stage)}
+          ${h.description ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">' + escapeHtml(h.description) + '</div>' : ''}
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div class="handoff-participant">
+              <div class="handoff-participant-avatar">${h.designer_name ? h.designer_name.charAt(0).toUpperCase() : 'D'}</div>
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Designer</div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">${escapeHtml(h.designer_name || h.designer_email || 'You')}</div>
+              </div>
+            </div>
+            <div class="handoff-participant">
+              <div class="handoff-participant-avatar" style="background: #3b82f6;">${h.fabricator_name ? h.fabricator_name.charAt(0).toUpperCase() : '?'}</div>
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Fabricator</div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">${escapeHtml(h.fabricator_name || h.fabricator_email || 'Not assigned')}</div>
+              </div>
+            </div>
+            <div class="handoff-participant">
+              <div class="handoff-participant-avatar" style="background: #8b5cf6;">${h.contractor_name ? h.contractor_name.charAt(0).toUpperCase() : '?'}</div>
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Installer</div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--text-primary);">${escapeHtml(h.contractor_name || h.contractor_email || 'Not assigned')}</div>
+              </div>
+            </div>
+          </div>
+          ${h.notes ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;"><div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Notes</div><div style="font-size: 13px; color: var(--text-secondary);">' + escapeHtml(h.notes) + '</div></div>' : ''}
+          ${h.quote_amount ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;"><div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Fabrication Quote</div><div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$' + parseFloat(h.quote_amount).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</div></div>' : ''}
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+            Created: ${new Date(h.created_at).toLocaleDateString()}
+            ${h.scheduled_date ? ' | Install: ' + new Date(h.scheduled_date).toLocaleDateString() : ''}
+          </div>
+          ${!isComplete ? '<button class="btn-modern primary" style="width: 100%;" onclick="advanceHandoff(\'' + h.id + '\')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg> Advance to Next Stage</button>' : '<div style="text-align: center; padding: 12px; color: #22c55e; font-weight: 600;">Handoff Complete</div>'}
+        `;
+      } catch (err) {
+        console.error('[Handoff] Error loading detail:', err);
+        content.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--error-color);">' + escapeHtml(err.message || 'Error loading handoff') + '</div>';
+      }
+    }
+
+    function closeHandoffDetailModal() {
+      document.getElementById('handoff-detail-modal').classList.remove('active');
+    }
+
+    async function advanceHandoff(handoffId) {
+      try {
+        const resp = await apiCall('/api/collaboration/handoffs/' + handoffId + '/advance', {
+          method: 'POST',
+          body: JSON.stringify({})
+        });
+        let data;
+        try { data = await resp.json(); } catch (e) {
+          throw new Error('Invalid server response');
+        }
+        if (!resp.ok) throw new Error(data.error || 'Failed to advance stage');
+
+        showToast(data.message || 'Stage advanced!', 'success');
+        // Refresh the handoff detail
+        openHandoffDetailModal(handoffId);
+      } catch (err) {
+        console.error('[Handoff] Advance error:', err);
+        showToast(err.message || 'Error advancing stage', 'error');
+      }
+    }
+
+    async function loadProjectHandoffs(projectId) {
+      const container = document.getElementById('project-handoffs-list');
+      if (!container) return;
+
+      try {
+        const resp = await apiCall('/api/collaboration/projects/' + projectId + '/handoffs');
+        let data;
+        try { data = await resp.json(); } catch (e) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">Could not load handoffs</div>';
+          return;
+        }
+        if (!resp.ok) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">No handoffs yet</div>';
+          return;
+        }
+
+        const handoffs = data.handoffs || data || [];
+        if (!Array.isArray(handoffs) || handoffs.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">No handoffs yet. Start one from the My Designs page.</div>';
+          return;
+        }
+
+        container.innerHTML = handoffs.map(function(h) {
+          const stage = h.stage || 'design_created';
+          const stageObj = HANDOFF_STAGES.find(function(s) { return s.key === stage; });
+          const stageLabel = stageObj ? stageObj.label : stage;
+          const stageIdx = HANDOFF_STAGES.findIndex(function(s) { return s.key === stage; });
+          const isComplete = stage === 'final_review' && h.completed_at;
+          return '<div onclick="closeProjectDetail(); openHandoffDetailModal(\'' + h.id + '\')" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--dark-border);" onmouseover="this.style.background=\'var(--dark-card)\'" onmouseout="this.style.background=\'transparent\'">' +
+            '<div style="width: 36px; height: 36px; border-radius: 50%; background: ' + (isComplete ? 'rgba(34,197,94,0.15)' : 'rgba(212,175,55,0.2)') + '; display: flex; align-items: center; justify-content: center;">' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="' + (isComplete ? '#22c55e' : 'var(--gold-primary)') + '" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
+            '</div>' +
+            '<div style="flex: 1;">' +
+              '<div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">' + escapeHtml(h.title || 'Untitled Handoff') + '</div>' +
+              '<div style="font-size: 11px; color: var(--text-secondary);">Stage ' + (stageIdx + 1) + '/13: ' + stageLabel + '</div>' +
+            '</div>' +
+            '<span style="font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: ' + (isComplete ? 'rgba(34,197,94,0.15)' : 'rgba(212,175,55,0.15)') + '; color: ' + (isComplete ? '#22c55e' : 'var(--gold-primary)') + ';">' + (isComplete ? 'Done' : stageLabel) + '</span>' +
+          '</div>';
+        }).join('');
+      } catch (err) {
+        console.error('[Handoff] Error loading project handoffs:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">Error loading handoffs</div>';
+      }
     }
 
     // =============================================
