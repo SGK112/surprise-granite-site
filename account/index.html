@@ -1077,6 +1077,25 @@
       padding: 24px;
     }
 
+    /* Vendor Onboarding Banner */
+    .vendor-onboarding-banner {
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .vendor-onboarding-banner .banner-text h3 { margin: 0 0 4px; font-size: 16px; color: var(--text-primary); }
+    .vendor-onboarding-banner .banner-text p { margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .vendor-onboarding-banner .banner-dismiss { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px; line-height: 1; align-self: flex-start; }
+    .vendor-onboarding-banner .banner-dismiss:hover { color: var(--text-primary); }
+    @media (max-width: 600px) {
+      .vendor-onboarding-banner { flex-direction: column; text-align: center; padding: 16px; }
+    }
+
     /* Quick Actions */
     .quick-actions {
       display: grid;
@@ -9200,6 +9219,11 @@
         grid-template-columns: repeat(4, 1fr) !important;
       }
     }
+
+    /* Kanban Drag-and-Drop */
+    .kanban-card[draggable="true"] { cursor: grab; }
+    .kanban-card[draggable="true"]:active { cursor: grabbing; }
+    .kanban-column.drag-over { outline: 2px solid var(--gold-primary) !important; }
   </style>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260112b">
@@ -9655,6 +9679,8 @@
           <div class="stats-grid" id="dashboard-stats">
             <!-- Filled by JS based on role -->
           </div>
+
+          <div id="vendor-onboarding-banner" style="display: none;"></div>
 
           <div class="card">
             <div class="card-header">
@@ -10522,42 +10548,42 @@
               <!-- Kanban Board View (Hidden by default) -->
               <div id="projects-board-view" style="display: none;">
                 <div class="kanban-board" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; min-height: 400px;">
-                  <div class="kanban-column" data-status="lead" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="lead" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'lead')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f59e0b;">
                       <span style="font-weight: 600; color: #f59e0b;">Lead</span>
                       <span id="proj-kanban-count-lead" style="background: rgba(245,158,11,0.2); color: #f59e0b; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div id="proj-kanban-cards-lead" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
-                  <div class="kanban-column" data-status="approved" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="approved" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'approved')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #3b82f6;">
                       <span style="font-weight: 600; color: #3b82f6;">Approved</span>
                       <span id="proj-kanban-count-approved" style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div id="proj-kanban-cards-approved" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
-                  <div class="kanban-column" data-status="scheduled" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="scheduled" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'scheduled')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #8b5cf6;">
                       <span style="font-weight: 600; color: #8b5cf6;">Scheduled</span>
                       <span id="proj-kanban-count-scheduled" style="background: rgba(139,92,246,0.2); color: #8b5cf6; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div id="proj-kanban-cards-scheduled" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
-                  <div class="kanban-column" data-status="in_progress" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="in_progress" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'in_progress')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #06b6d4;">
                       <span style="font-weight: 600; color: #06b6d4;">In Progress</span>
                       <span id="proj-kanban-count-in_progress" style="background: rgba(6,182,212,0.2); color: #06b6d4; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div id="proj-kanban-cards-in_progress" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
-                  <div class="kanban-column" data-status="completed" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="completed" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'completed')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #22c55e;">
                       <span style="font-weight: 600; color: #22c55e;">Completed</span>
                       <span id="proj-kanban-count-completed" style="background: rgba(34,197,94,0.2); color: #22c55e; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
                     </div>
                     <div id="proj-kanban-cards-completed" style="display: flex; flex-direction: column; gap: 12px;"></div>
                   </div>
-                  <div class="kanban-column" data-status="on_hold" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;">
+                  <div class="kanban-column" data-status="on_hold" style="min-width: 260px; flex: 1; background: var(--dark-elevated); border-radius: 12px; padding: 16px;" ondragover="onProjectDragOver(event)" ondragleave="onProjectDragLeave(event)" ondrop="onProjectDrop(event, 'on_hold')">
                     <div class="column-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #ef4444;">
                       <span style="font-weight: 600; color: #ef4444;">On Hold</span>
                       <span id="proj-kanban-count-on_hold" style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">0</span>
@@ -12053,6 +12079,10 @@
           <button class="btn-modern secondary" onclick="inviteLeadAsCollaborator()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
             Invite to Project
+          </button>
+          <button class="btn-modern secondary" onclick="createProjectFromLead()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            Create Project
           </button>
           <button class="btn-modern ghost" onclick="archiveLead()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
@@ -14261,10 +14291,14 @@
                   Text Invite
                 </button>
               </div>
-              <div style="margin-top: 12px;">
-                <button class="btn-modern primary small" onclick="inviteContractorAsCollaborator()" style="width: 100%;">
+              <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button class="btn-modern primary small" onclick="inviteContractorAsCollaborator()" style="flex: 1;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  Invite as Collaborator
+                  Collaborator
+                </button>
+                <button class="btn-modern secondary small" onclick="assignContractorToProject(currentContractorId)" style="flex: 1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                  Assign to Project
                 </button>
               </div>
             </div>
@@ -15333,6 +15367,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             Copy Payment Link
           </button>
+          <button class="context-menu-item" data-action="create-project">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            Create Project
+          </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item danger" data-action="void">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
@@ -15544,6 +15582,9 @@
               await navigator.clipboard.writeText(item.hosted_invoice_url);
               showToast('Payment link copied!', 'success');
             }
+            break;
+          case 'create-project':
+            createProjectFromInvoice(item.id);
             break;
           case 'void':
             await voidInvoice(item.id);
@@ -16668,11 +16709,15 @@
               ` : ''}
             </div>
 
-            <div class="order-footer">
+            <div class="order-footer" style="display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div class="order-total-label">Total</div>
                 <div class="order-total">$${parseFloat(order.total || 0).toFixed(2)}</div>
               </div>
+              <button class="btn-modern secondary small" onclick="event.stopPropagation(); createProjectFromOrder('${order.id}')" title="Create Project" style="font-size: 11px; padding: 4px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                Project
+              </button>
             </div>
           </div>
         `;
@@ -17446,6 +17491,10 @@
             <div class="stat-label">Total Users</div>
             <div class="stat-value" id="stat-total-users">-</div>
           </div>
+          <div class="stat-card clickable" onclick="showPage('collaborations')">
+            <div class="stat-label">Network</div>
+            <div class="stat-value" id="stat-network">-</div>
+          </div>
         `;
         actionsEl.innerHTML = `
           <a href="javascript:void(0)" class="action-card" onclick="showPage('leads'); return false;">
@@ -17511,6 +17560,11 @@
             <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
             <div class="stat-label">Quotes Sent</div>
             <div class="stat-value" id="stat-quotes">0</div>
+          </div>
+          <div class="stat-card clickable" onclick="showPage('collaborations')">
+            <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+            <div class="stat-label">My Network</div>
+            <div class="stat-value" id="stat-network">0</div>
           </div>
         `;
         actionsEl.innerHTML = `
@@ -17605,6 +17659,10 @@
       if (!isAdmin) {
         loadUserStats();
       }
+
+      // Bridge: check vendor onboarding + network stats
+      checkVendorOnboarding();
+      loadNetworkStats();
     }
 
     // Load real user stats from database
@@ -17649,6 +17707,52 @@
 
       } catch (error) {
         console.error('Error loading user stats:', error);
+      }
+    }
+
+    // Bridge 1: Check if pro user needs vendor onboarding
+    async function checkVendorOnboarding() {
+      try {
+        if (!currentUser || !userProfile) return;
+        var role = userProfile.account_type || userProfile.role || '';
+        if (['pro_fabricator', 'pro_designer', 'contractor'].indexOf(role) === -1) return;
+
+        var result = await supabaseClient
+          .from('vendor_profiles')
+          .select('id')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (result.data) return; // Already has vendor profile
+
+        var banner = document.getElementById('vendor-onboarding-banner');
+        if (!banner) return;
+        banner.style.display = '';
+        banner.innerHTML =
+          '<div class="vendor-onboarding-banner">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="1.5" style="flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>' +
+            '<div class="banner-text">' +
+              '<h3>Complete Your Vendor Profile</h3>' +
+              '<p>Set up your business profile to appear in our network, receive project leads, and list your inventory on the marketplace.</p>' +
+            '</div>' +
+            '<a href="/vendor/signup/" class="btn-modern primary" style="white-space: nowrap;">Set Up Profile</a>' +
+            '<button class="banner-dismiss" onclick="this.closest(\'.vendor-onboarding-banner\').parentElement.style.display=\'none\'" title="Dismiss">&times;</button>' +
+          '</div>';
+      } catch (err) {
+        console.error('[VendorOnboarding] Check failed:', err);
+      }
+    }
+
+    // Bridge 4: Load network/collaboration stats for dashboard
+    async function loadNetworkStats() {
+      try {
+        var resp = await apiCall('/api/collaboration/my-projects?status=accepted');
+        var data = await resp.json();
+        var count = (data.collaborations || []).length;
+        var el = document.getElementById('stat-network');
+        if (el) el.textContent = count;
+      } catch (e) {
+        // Silently fail - network stats are non-critical
       }
     }
 
@@ -18995,6 +19099,42 @@
     // Backward compatibility alias
     async function createEstimateFromLead() {
       return startEstimateFromLead(selectedLead?.id);
+    }
+
+    // Create project from lead
+    async function createProjectFromLead() {
+      if (!selectedLead) { showToast('No lead selected', 'warning'); return; }
+      var lead = selectedLead;
+
+      // Ensure customer exists first
+      await findOrCreateCustomerFromLead(lead);
+
+      // Close lead modal and navigate to projects
+      document.getElementById('lead-detail-modal').classList.remove('active');
+      showPage('projects');
+
+      setTimeout(function() {
+        openNewProjectModal();
+        // Pre-fill from lead data
+        document.getElementById('proj-name').value = (lead.project_type || 'New Project') + ' - ' + (lead.full_name || '');
+        document.getElementById('proj-customer-name').value = lead.full_name || '';
+        document.getElementById('proj-customer-email').value = lead.email || '';
+        document.getElementById('proj-customer-phone').value = lead.phone || '';
+        // Parse address
+        var addr = lead.project_address || lead.service_address || '';
+        if (typeof addr === 'object' && addr !== null) {
+          document.getElementById('proj-address').value = addr.street || '';
+          document.getElementById('proj-city').value = addr.city || '';
+          document.getElementById('proj-state').value = addr.state || 'AZ';
+          document.getElementById('proj-zip').value = addr.zip || '';
+        } else {
+          document.getElementById('proj-address').value = addr;
+        }
+        document.getElementById('proj-notes').value = 'From lead: ' + (lead.message || lead.project_details || '');
+        document.getElementById('proj-status').value = 'lead';
+
+        showToast('Project form pre-filled from lead', 'success');
+      }, 300);
     }
 
     // Create room design from lead
@@ -24953,6 +25093,12 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                 Invite
               </button>
+              ${!estimate.archived_at ? `
+                <button class="btn-modern secondary small" onclick="event.stopPropagation(); createProjectFromEstimate('${estimate.id}')" title="Create Project">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                  Project
+                </button>
+              ` : ''}
               ${estimate.archived_at ? `
                 <button class="btn-modern secondary small" onclick="unarchiveEstimate('${estimate.id}')" title="Restore">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -26271,6 +26417,111 @@
       }
     }
 
+    // Bridge: Create project pre-filled from order data
+    async function createProjectFromOrder(orderId) {
+      try {
+        var order = (allOrders || []).find(function(o) { return o.id === orderId; });
+        if (!order) {
+          var result = await supabaseClient.from('shopify_orders').select('*').eq('id', orderId).single();
+          order = result.data;
+        }
+        if (!order) { showToast('Order not found', 'warning'); return; }
+
+        showPage('projects');
+        setTimeout(function() {
+          openNewProjectModal();
+          document.getElementById('proj-name').value = 'Order #' + (order.order_number || order.id) + ' - ' + (order.customer_name || '');
+          document.getElementById('proj-customer-name').value = order.customer_name || '';
+          document.getElementById('proj-customer-email').value = order.customer_email || '';
+          document.getElementById('proj-customer-phone').value = order.customer_phone || '';
+          document.getElementById('proj-value').value = order.total || '';
+          document.getElementById('proj-notes').value = 'Created from order #' + (order.order_number || order.id);
+          document.getElementById('proj-status').value = (order.financial_status || '').toLowerCase() === 'paid' ? 'scheduled' : 'approved';
+          showToast('Project form pre-filled from order', 'success');
+        }, 300);
+      } catch (err) {
+        showToast('Error loading order', 'error');
+      }
+    }
+
+    // Bridge: Create project pre-filled from invoice data
+    async function createProjectFromInvoice(invoiceId) {
+      try {
+        var result = await supabaseClient.from('invoices').select('*').eq('id', invoiceId).single();
+        var inv = result.data;
+        if (!inv) { showToast('Invoice not found', 'warning'); return; }
+
+        showPage('projects');
+        setTimeout(function() {
+          openNewProjectModal();
+          document.getElementById('proj-name').value = 'Project - ' + (inv.customer_name || inv.invoice_number || '');
+          document.getElementById('proj-customer-name').value = inv.customer_name || '';
+          document.getElementById('proj-customer-email').value = inv.customer_email || '';
+          document.getElementById('proj-customer-phone').value = inv.customer_phone || '';
+          document.getElementById('proj-value').value = inv.total || '';
+          document.getElementById('proj-notes').value = 'Created from invoice #' + (inv.invoice_number || invoiceId.substring(0, 8));
+          document.getElementById('proj-status').value = inv.status === 'paid' ? 'scheduled' : 'approved';
+          showToast('Project form pre-filled from invoice', 'success');
+        }, 300);
+      } catch (err) {
+        showToast('Error loading invoice', 'error');
+      }
+    }
+
+    // Bridge: Create project pre-filled from estimate data
+    async function createProjectFromEstimate(estimateId) {
+      try {
+        var result = await supabaseClient.from('estimates').select('*').eq('id', estimateId).single();
+        var est = result.data;
+        if (!est) { showToast('Estimate not found', 'warning'); return; }
+
+        showPage('projects');
+        setTimeout(function() {
+          openNewProjectModal();
+          document.getElementById('proj-name').value = est.project_name || ('Project - ' + (est.customer_name || ''));
+          document.getElementById('proj-customer-name').value = est.customer_name || '';
+          document.getElementById('proj-customer-email').value = est.customer_email || '';
+          document.getElementById('proj-customer-phone').value = est.customer_phone || '';
+          document.getElementById('proj-address').value = est.customer_address || '';
+          document.getElementById('proj-city').value = est.customer_city || '';
+          document.getElementById('proj-state').value = est.customer_state || '';
+          document.getElementById('proj-zip').value = est.customer_zip || '';
+          document.getElementById('proj-value').value = est.total || '';
+          document.getElementById('proj-notes').value = 'Created from estimate ' + (est.estimate_number || '#' + estimateId.substring(0, 8));
+          document.getElementById('proj-status').value = 'approved';
+          showToast('Project form pre-filled from estimate', 'success');
+        }, 300);
+      } catch (err) {
+        showToast('Error loading estimate', 'error');
+      }
+    }
+
+    // Bridge: Create estimate pre-filled from project data
+    async function createEstimateFromProject(projectId) {
+      var project = allProjects.find(function(p) { return p.id === projectId; });
+      if (!project) { showToast('Project not found', 'warning'); return; }
+
+      // Close project detail modal
+      document.getElementById('project-detail-modal').classList.remove('active');
+      showPage('estimates');
+
+      estimateModalState = { customerId: null, leadId: null, editingEstimateId: null };
+
+      setTimeout(function() {
+        openCreateEstimateModal(false);
+        fillField('estimate-customer-name', project.customer_name);
+        fillField('estimate-customer-email', project.customer_email);
+        fillField('estimate-customer-phone', project.customer_phone);
+        fillField('estimate-customer-address', project.address);
+        fillField('estimate-customer-city', project.city);
+        fillField('estimate-customer-state', project.state);
+        fillField('estimate-customer-zip', project.zip);
+        fillField('estimate-project-name', project.name);
+        fillField('estimate-project-desc', project.description || '');
+        showToast('Estimate form pre-filled from project', 'success');
+      }, 300);
+    }
+
     async function convertToInvoice(estimateId) {
       if (!confirm('Convert this estimate to an invoice?')) return;
 
@@ -26395,6 +26646,19 @@
         } catch (stripeErr) {
           console.warn('[ConvertToInvoice] Stripe invoice creation failed (Supabase record saved):', stripeErr.message);
         }
+
+        // Bridge: Link invoice back to project if one references this estimate
+        try {
+          var projResult = await supabaseClient.from('projects')
+            .select('id')
+            .eq('estimate_id', estimateId)
+            .single();
+          if (projResult.data) {
+            await supabaseClient.from('projects')
+              .update({ invoice_id: invoice.id })
+              .eq('id', projResult.data.id);
+          }
+        } catch (e) { /* non-blocking */ }
 
         showToast('Invoice created successfully!');
         showPage('invoices');
@@ -26681,10 +26945,32 @@
         updateProjectsCount();
         renderProjectsList();
         renderProjectsKanban();
+
+        // Bridge: Check for design-to-project handoff
+        checkDesignToProjectBridge();
       } catch (err) {
         console.error('Error loading projects:', err);
         listEl.innerHTML = '<div class="empty-state"><h3>Error loading projects</h3><p>' + (err.message || 'Please try again') + '</p></div>';
       }
+    }
+
+    // Bridge: Detect design-to-project handoff from room designer
+    function checkDesignToProjectBridge() {
+      var designData = sessionStorage.getItem('sg_design_for_project');
+      if (!designData || !window.location.hash.includes('from_design')) return;
+      sessionStorage.removeItem('sg_design_for_project');
+
+      try {
+        var design = JSON.parse(designData);
+        setTimeout(function() {
+          openNewProjectModal();
+          document.getElementById('proj-name').value = design.name || 'Room Design Project';
+          document.getElementById('proj-description').value = 'From room designer' + (design.room_type ? ' (' + design.room_type + ')' : '');
+          if (design.quote_total) document.getElementById('proj-value').value = design.quote_total;
+          document.getElementById('proj-status').value = 'lead';
+          showToast('Project form pre-filled from design', 'success');
+        }, 400);
+      } catch (e) { /* ignore parse errors */ }
     }
 
     function updateProjectsCount() {
@@ -26801,7 +27087,7 @@
           const progress = p.progress || 0;
           const priorityColor = PROJECT_PRIORITY_COLORS[p.priority] || '#6b7280';
 
-          return `<div class="kanban-card" onclick="openProjectDetail('${p.id}')" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--dark-border)'">
+          return `<div class="kanban-card" draggable="true" ondragstart="onProjectDragStart(event, '${p.id}')" ondragend="onProjectDragEnd(event)" onclick="openProjectDetail('${p.id}')" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--dark-border)'">
             <div style="font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${escapeHtml(p.customer_name || 'No customer')}</div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
@@ -26812,6 +27098,53 @@
           </div>`;
         }).join('');
       });
+    }
+
+    // Kanban Drag-and-Drop
+    var draggedProjectId = null;
+
+    function onProjectDragStart(event, projectId) {
+      draggedProjectId = projectId;
+      event.dataTransfer.effectAllowed = 'move';
+      event.target.style.opacity = '0.5';
+      document.querySelectorAll('.kanban-column').forEach(function(col) {
+        col.style.outline = '2px dashed rgba(212,175,55,0.3)';
+      });
+    }
+
+    function onProjectDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      event.currentTarget.style.outline = '2px solid var(--gold-primary)';
+    }
+
+    function onProjectDragLeave(event) {
+      event.currentTarget.style.outline = '2px dashed rgba(212,175,55,0.3)';
+    }
+
+    function onProjectDrop(event, newStatus) {
+      event.preventDefault();
+      document.querySelectorAll('.kanban-column').forEach(function(col) {
+        col.style.outline = '';
+      });
+      if (!draggedProjectId) return;
+
+      var project = allProjects.find(function(p) { return p.id === draggedProjectId; });
+      if (!project || project.status === newStatus) {
+        draggedProjectId = null;
+        return;
+      }
+
+      quickUpdateProjectStatus(draggedProjectId, newStatus);
+      draggedProjectId = null;
+    }
+
+    function onProjectDragEnd(event) {
+      event.target.style.opacity = '';
+      document.querySelectorAll('.kanban-column').forEach(function(col) {
+        col.style.outline = '';
+      });
+      draggedProjectId = null;
     }
 
     function setProjectsView(view) {
@@ -26962,15 +27295,19 @@
         if (error || !project) throw error || new Error('Project not found');
 
         // Fetch related data in parallel
-        const [tasksResult, activityResult, collaboratorsResult] = await Promise.all([
+        const [tasksResult, activityResult, collaboratorsResult, estimatesResult, invoicesResult] = await Promise.all([
           supabaseClient.from('project_tasks').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
           supabaseClient.from('project_activity').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(20),
-          supabaseClient.from('project_collaborators').select('*').eq('project_id', projectId)
+          supabaseClient.from('project_collaborators').select('*').eq('project_id', projectId),
+          project.customer_email ? supabaseClient.from('estimates').select('id, estimate_number, status, total, created_at').eq('user_id', user.id).eq('customer_email', project.customer_email).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
+          project.customer_email ? supabaseClient.from('invoices').select('id, invoice_number, status, total, created_at').eq('user_id', user.id).eq('customer_email', project.customer_email).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] })
         ]);
 
         const tasks = tasksResult.data || [];
         const activity = activityResult.data || [];
         const collaborators = collaboratorsResult.data || [];
+        const linkedEstimates = estimatesResult.data || [];
+        const linkedInvoices = invoicesResult.data || [];
 
         document.getElementById('project-detail-title').textContent = project.name;
 
@@ -27034,6 +27371,29 @@
             </div>
           </div>` : ''}
 
+          <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Estimates & Invoices</div>
+              <button class="btn-modern primary small" onclick="createEstimateFromProject('${project.id}')" style="font-size: 11px; padding: 4px 10px;">+ Estimate</button>
+            </div>
+            ${linkedEstimates.length > 0 ? linkedEstimates.map(function(est) {
+              var estColor = est.status === 'approved' ? '#22c55e' : est.status === 'sent' ? '#3b82f6' : est.status === 'draft' ? '#6b7280' : '#f59e0b';
+              return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">' +
+                '<div><span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">#' + escapeHtml(est.estimate_number || 'Draft') + '</span>' +
+                '<span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; background: ' + estColor + '20; color: ' + estColor + ';">' + escapeHtml(est.status || 'draft') + '</span></div>' +
+                '<span style="font-weight: 600; color: var(--gold-primary);">$' + (est.total || 0).toLocaleString() + '</span></div>';
+            }).join('') : '<div style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">No linked estimates</div>'}
+            ${linkedInvoices.length > 0 ? '<div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--dark-border);">' +
+              '<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Invoices</div>' +
+              linkedInvoices.map(function(inv) {
+                var invColor = inv.status === 'paid' ? '#22c55e' : inv.status === 'open' ? '#3b82f6' : '#6b7280';
+                return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">' +
+                  '<div><span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">#' + escapeHtml(inv.invoice_number || 'Draft') + '</span>' +
+                  '<span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; background: ' + invColor + '20; color: ' + invColor + ';">' + escapeHtml(inv.status || 'draft') + '</span></div>' +
+                  '<span style="font-weight: 600; color: var(--gold-primary);">$' + (inv.total || 0).toLocaleString() + '</span></div>';
+              }).join('') + '</div>' : ''}
+          </div>
+
           ${project.description ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
             <div style="font-size: 13px; color: var(--text-primary); line-height: 1.5;">${escapeHtml(project.description)}</div>
@@ -27069,6 +27429,14 @@
             <div id="project-handoffs-list" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px;">Loading handoffs...</div>
           </div>
 
+          <div id="project-collab-listings" style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Collaborator Marketplace</div>
+              <a href="/remnants/" target="_blank" class="btn-modern secondary" style="font-size: 11px; padding: 4px 10px;">Browse All</a>
+            </div>
+            <div id="project-collab-listings-content" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px;">Loading listings...</div>
+          </div>
+
           ${activity.length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Recent Activity</div>
             ${activity.slice(0, 10).map(a => `<div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
@@ -27092,8 +27460,9 @@
           </div>
         `;
 
-        // Load design handoffs for this project
+        // Load design handoffs and collaborator listings for this project
         loadProjectHandoffs(projectId);
+        loadCollaboratorListings(projectId);
 
       } catch (err) {
         console.error('Error loading project detail:', err);
@@ -28417,6 +28786,22 @@
         document.getElementById('invite-collaborator-form').reset();
         closeInviteToProjectModal();
 
+        // Log activity
+        logProjectActivity(projectId, 'collaborator_invited', 'Invited ' + email + ' as ' + role);
+
+        // Bridge 6: Show role-specific guidance about what happens next
+        var roleGuidance = {
+          fabricator: 'They\'ll be guided to set up a vendor profile to list inventory and receive handoffs.',
+          designer: 'They\'ll get access to design tools and can collaborate on project layouts.',
+          contractor: 'They\'ll be able to view project details and get assigned to installation handoffs.',
+          installer: 'They\'ll receive installation scheduling notifications for this project.',
+          viewer: 'They\'ll be able to view project progress and updates.'
+        };
+        var guidance = roleGuidance[role];
+        if (guidance) {
+          setTimeout(function() { showToast(guidance, 'info'); }, 2000);
+        }
+
       } catch (err) {
         console.error('[Invite] Error:', err);
         showToast(err.message || 'Error sending invitation', 'error');
@@ -28524,16 +28909,29 @@
           const roleLabel = (c.role || 'viewer').charAt(0).toUpperCase() + (c.role || 'viewer').slice(1);
           const accessLabel = (c.access_level || 'read').charAt(0).toUpperCase() + (c.access_level || 'read').slice(1);
           const projectTitle = (c.project && (c.project.name || c.project.title)) || 'Untitled Project';
+          const customerName = (c.project && c.project.customer_name) || '';
           const dateStr = c.accepted_at ? new Date(c.accepted_at).toLocaleDateString() : '';
+          const pId = c.project_id || '';
+          const showHandoff = (c.role === 'designer' || c.role === 'fabricator');
+          const isViewer = (c.role === 'viewer');
+          const projStatus = (c.project && c.project.status) || '';
+          const projStatusLabel = PROJECT_STATUS_LABELS[projStatus] || projStatus;
+          const projStatusColor = PROJECT_STATUS_COLORS[projStatus] || '#6b7280';
 
-          return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px;">' +
+          return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; gap: 12px;">' +
             '<div style="flex: 1; min-width: 0;">' +
               '<div style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + escapeHtmlAttr(projectTitle) + '</div>' +
               '<div style="display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap;">' +
                 '<span style="font-size: 12px; padding: 2px 8px; background: rgba(249, 203, 0, 0.15); color: var(--gold-primary); border-radius: 4px; font-weight: 500;">' + roleLabel + '</span>' +
                 '<span style="font-size: 12px; padding: 2px 8px; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-radius: 4px;">' + accessLabel + ' access</span>' +
+                (projStatus ? '<span style="font-size: 12px; padding: 2px 8px; background: ' + projStatusColor + '15; color: ' + projStatusColor + '; border-radius: 4px; font-weight: 500;">' + projStatusLabel + '</span>' : '') +
                 (dateStr ? '<span style="font-size: 12px; color: var(--text-muted);">Joined ' + dateStr + '</span>' : '') +
               '</div>' +
+              (customerName ? '<div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Customer: ' + escapeHtmlAttr(customerName) + '</div>' : '') +
+            '</div>' +
+            '<div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">' +
+              (pId ? '<button class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px;" onclick="' + (isViewer ? 'openCustomerProjectView(\'' + pId + '\')' : 'viewCollaborationProject(\'' + pId + '\')') + '">View Project</button>' : '') +
+              (showHandoff && pId ? '<button class="btn-modern secondary" style="padding: 6px 12px; font-size: 12px; color: #22c55e;" onclick="openStartHandoffModal(null, \'\', \'' + pId + '\')">Start Handoff</button>' : '') +
             '</div>' +
           '</div>';
         }).join('');
@@ -28541,6 +28939,108 @@
       } catch (err) {
         console.error('Error loading collaborations:', err);
         container.innerHTML = '<div class="empty-state"><p style="color: var(--error);">Failed to load collaborations.</p></div>';
+      }
+    }
+
+    // Bridge 3: Navigate to a collaboration project
+    function viewCollaborationProject(projectId) {
+      if (!projectId) return;
+      if (typeof openProjectDetail === 'function') {
+        openProjectDetail(projectId);
+      } else {
+        showPage('projects');
+        setTimeout(function() {
+          if (typeof openProjectDetail === 'function') {
+            openProjectDetail(projectId);
+          }
+        }, 500);
+      }
+    }
+
+    // Bridge 3b: Customer/viewer read-only project view
+    async function openCustomerProjectView(projectId) {
+      var modal = document.getElementById('project-detail-modal');
+      var body = document.getElementById('project-detail-body');
+      modal.classList.add('active');
+      body.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        var result = await supabaseClient.from('projects').select('*').eq('id', projectId).single();
+        var project = result.data;
+
+        if (!project) {
+          body.innerHTML = '<div class="empty-state"><h3>Project not accessible</h3><p>You may not have permission to view this project.</p></div>';
+          return;
+        }
+
+        var statusColor = PROJECT_STATUS_COLORS[project.status] || '#6b7280';
+        var statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
+        var progress = project.progress || 0;
+
+        body.innerHTML =
+          '<div style="text-align: center; margin-bottom: 24px;">' +
+            '<h2 style="font-size: 20px; font-weight: 700; margin-bottom: 10px;">' + escapeHtml(project.name) + '</h2>' +
+            '<span style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: ' + statusColor + '20; color: ' + statusColor + ';">' + statusLabel + '</span>' +
+            (progress > 0 ? '<div style="margin-top: 12px; max-width: 300px; margin-left: auto; margin-right: auto;"><div style="height: 6px; background: var(--dark-surface); border-radius: 3px; overflow: hidden;"><div style="width: ' + progress + '%; height: 100%; background: var(--gold-primary); border-radius: 3px;"></div></div><div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">' + progress + '% complete</div></div>' : '') +
+          '</div>' +
+          (project.description ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">' + escapeHtml(project.description) + '</div>' : '') +
+          '<div id="customer-view-handoffs" style="margin-bottom: 16px;"><div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">Loading handoff status...</div></div>' +
+          (project.customer_notes ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;"><div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Notes</div><div style="font-size: 13px; color: var(--text-secondary);">' + escapeHtml(project.customer_notes) + '</div></div>' : '') +
+          '<div style="text-align: center; padding: 12px; font-size: 11px; color: var(--text-muted);">Read-only view</div>';
+
+        // Load handoffs for read-only stage display
+        loadCustomerViewHandoffs(projectId);
+      } catch (err) {
+        body.innerHTML = '<div class="empty-state"><h3>Error loading project</h3><p>' + escapeHtml(err.message || 'Unknown error') + '</p></div>';
+      }
+    }
+
+    async function loadCustomerViewHandoffs(projectId) {
+      var container = document.getElementById('customer-view-handoffs');
+      if (!container) return;
+
+      try {
+        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/handoffs');
+        var data = await resp.json();
+        if (!resp.ok || !data.handoffs || !data.handoffs.length) {
+          container.innerHTML = '<div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px;">No active handoffs</div>';
+          return;
+        }
+
+        container.innerHTML = '<div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Handoff Progress</div>' +
+          data.handoffs.map(function(h) {
+            var stageIdx = HANDOFF_STAGES.findIndex(function(s) { return s.key === h.stage; });
+            var stageLabel = HANDOFF_STAGES[stageIdx] ? HANDOFF_STAGES[stageIdx].label : h.stage;
+            var pct = Math.round(((stageIdx + 1) / HANDOFF_STAGES.length) * 100);
+            return '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 12px; margin-bottom: 8px;">' +
+              '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+                '<span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">' + escapeHtml(h.title) + '</span>' +
+                '<span style="font-size: 11px; color: var(--gold-primary); font-weight: 500;">' + stageLabel + '</span>' +
+              '</div>' +
+              '<div style="height: 4px; background: var(--dark-surface); border-radius: 2px; overflow: hidden;"><div style="width: ' + pct + '%; height: 100%; background: var(--gold-primary); border-radius: 2px;"></div></div>' +
+            '</div>';
+          }).join('');
+      } catch (err) {
+        container.innerHTML = '<div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px;">Could not load handoffs</div>';
+      }
+    }
+
+    // =============================================
+    // PROJECT ACTIVITY LOGGING
+    // =============================================
+
+    async function logProjectActivity(projectId, action, description) {
+      if (!projectId || !currentUser) return;
+      try {
+        await supabaseClient.from('project_activity').insert({
+          project_id: projectId,
+          action: action,
+          description: description,
+          user_id: currentUser.id,
+          user_name: userProfile ? (userProfile.full_name || userProfile.email) : currentUser.email
+        });
+      } catch (err) {
+        console.warn('[Activity] Failed to log:', err);
       }
     }
 
@@ -28781,6 +29281,9 @@
         showToast('Design handoff started!', 'success');
         closeStartHandoffModal();
 
+        // Log activity
+        logProjectActivity(projectId, 'handoff_created', 'Design handoff "' + title + '" created');
+
         // If fabricator or contractor was assigned, suggest inviting them
         if (fabricatorId || contractorId) {
           showToast('Tip: Invite your fabricator/contractor as a collaborator so they can track progress', 'info');
@@ -28795,6 +29298,9 @@
       }
       return false;
     }
+
+    // Store current handoff for cross-system bridges (e.g., convert to estimate)
+    let currentHandoffData = null;
 
     async function openHandoffDetailModal(handoffId) {
       const modal = document.getElementById('handoff-detail-modal');
@@ -28811,6 +29317,7 @@
         if (!resp.ok) throw new Error(data.error || 'Failed to load handoff');
 
         const h = data.handoff || data;
+        currentHandoffData = h;
         document.getElementById('handoff-detail-title').textContent = h.title || 'Design Handoff';
 
         const stage = h.stage || 'design_created';
@@ -28851,7 +29358,46 @@
             </div>
           </div>
           ${h.notes ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;"><div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Notes</div><div style="font-size: 13px; color: var(--text-secondary);">' + escapeHtml(h.notes) + '</div></div>' : ''}
-          ${h.quote_amount ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;"><div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Fabrication Quote</div><div style="font-size: 20px; font-weight: 700; color: var(--gold-primary);">$' + parseFloat(h.quote_amount).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</div></div>' : ''}
+          ${h.quote_amount
+            ? '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;">' +
+                '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+                  '<div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Fabrication Quote</div>' +
+                  '<button class="btn-modern secondary" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById(\'handoff-quote-edit-section\').style.display=document.getElementById(\'handoff-quote-edit-section\').style.display===\'none\'?\'block\':\'none\'">Edit Quote</button>' +
+                '</div>' +
+                '<div style="font-size: 20px; font-weight: 700; color: var(--gold-primary); margin-bottom: 4px;">$' + parseFloat(h.quote_amount).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</div>' +
+                (h.scheduled_date ? '<div style="font-size: 12px; color: var(--text-secondary);">Install: ' + new Date(h.scheduled_date).toLocaleDateString() + '</div>' : '') +
+                '<div id="handoff-quote-edit-section" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">' +
+                  '<div style="display: flex; gap: 10px; align-items: flex-end;">' +
+                    '<div style="flex: 1;"><label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Quote Amount ($)</label><input type="number" id="handoff-quote-input" min="0" step="0.01" value="' + (parseFloat(h.quote_amount) || '') + '" style="width: 100%; padding: 8px 10px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;"/></div>' +
+                    '<div style="flex: 1;"><label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Install Date</label><input type="date" id="handoff-date-input" value="' + (h.scheduled_date ? new Date(h.scheduled_date).toISOString().split('T')[0] : '') + '" style="width: 100%; padding: 8px 10px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;"/></div>' +
+                    '<button class="btn-modern primary" style="padding: 8px 16px; white-space: nowrap;" onclick="saveHandoffQuote(\'' + h.id + '\')">Update</button>' +
+                  '</div>' +
+                '</div>' +
+                '<button class="btn-modern secondary" style="margin-top: 10px; font-size: 12px; width: 100%;" onclick="convertHandoffToEstimate()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Convert to Estimate</button>' +
+              '</div>'
+            : '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;">' +
+                '<div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Fabrication Quote</div>' +
+                '<div style="display: flex; gap: 10px; align-items: flex-end;">' +
+                  '<div style="flex: 1;"><label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Quote Amount ($)</label><input type="number" id="handoff-quote-input" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px 10px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;"/></div>' +
+                  '<div style="flex: 1;"><label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Install Date</label><input type="date" id="handoff-date-input" style="width: 100%; padding: 8px 10px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); font-size: 13px;"/></div>' +
+                  '<button class="btn-modern primary" style="padding: 8px 16px; white-space: nowrap;" onclick="saveHandoffQuote(\'' + h.id + '\')">Save</button>' +
+                '</div>' +
+              '</div>'
+          }
+          <div style="background: var(--dark-elevated); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Design Files</div>
+            ${h.design_file_url
+              ? '<a href="' + escapeHtml(h.design_file_url) + '" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 8px; color: var(--gold-primary); text-decoration: none; font-size: 13px; margin-bottom: 10px;">' +
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> View Design File' +
+                '</a>' +
+                '<input type="file" id="handoff-file-input" accept="image/*,.pdf,.dxf,.dwg" style="display:none" onchange="handleHandoffFileUpload(\'' + h.id + '\')"/>' +
+                '<button onclick="document.getElementById(\'handoff-file-input\').click()" class="btn-modern secondary" style="width: 100%; font-size: 12px;">Replace File</button>'
+              : '<input type="file" id="handoff-file-input" accept="image/*,.pdf,.dxf,.dwg" style="display:none" onchange="handleHandoffFileUpload(\'' + h.id + '\')"/>' +
+                '<button onclick="document.getElementById(\'handoff-file-input\').click()" class="btn-modern secondary" style="width: 100%; font-size: 12px;">' +
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>' +
+                  'Upload Design File</button>'
+            }
+          </div>
           <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
             Created: ${new Date(h.created_at).toLocaleDateString()}
             ${h.scheduled_date ? ' | Install: ' + new Date(h.scheduled_date).toLocaleDateString() : ''}
@@ -28883,9 +29429,92 @@
         showToast(data.message || 'Stage advanced!', 'success');
         // Refresh the handoff detail
         openHandoffDetailModal(handoffId);
+
+        // Log activity
+        if (currentHandoffData && currentHandoffData.project_id) {
+          var newStage = (data.handoff && data.handoff.stage) || 'next stage';
+          var stageObj = HANDOFF_STAGES.find(function(s) { return s.key === newStage; });
+          logProjectActivity(currentHandoffData.project_id, 'handoff_advanced', 'Handoff "' + (currentHandoffData.title || 'Untitled') + '" advanced to ' + (stageObj ? stageObj.label : newStage));
+        }
       } catch (err) {
         console.error('[Handoff] Advance error:', err);
         showToast(err.message || 'Error advancing stage', 'error');
+      }
+    }
+
+    async function saveHandoffQuote(handoffId) {
+      var quoteEl = document.getElementById('handoff-quote-input');
+      var dateEl = document.getElementById('handoff-date-input');
+      var quote = parseFloat(quoteEl.value);
+      var schedDate = dateEl.value || null;
+
+      if (!quote || quote <= 0) {
+        showToast('Enter a valid quote amount', 'warning');
+        return;
+      }
+
+      try {
+        var resp = await apiCall('/api/collaboration/handoffs/' + handoffId, {
+          method: 'PUT',
+          body: JSON.stringify({
+            quote_amount: quote,
+            scheduled_date: schedDate ? new Date(schedDate).toISOString() : null
+          })
+        });
+        var data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to save quote');
+
+        showToast('Quote saved!', 'success');
+        openHandoffDetailModal(handoffId);
+
+        if (currentHandoffData && currentHandoffData.project_id) {
+          logProjectActivity(currentHandoffData.project_id, 'quote_submitted', 'Fabrication quote of $' + quote.toFixed(2) + ' submitted');
+        }
+      } catch (err) {
+        showToast(err.message || 'Error saving quote', 'error');
+      }
+    }
+
+    async function handleHandoffFileUpload(handoffId) {
+      var fileInput = document.getElementById('handoff-file-input');
+      var file = fileInput && fileInput.files[0];
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('File must be under 10MB', 'warning');
+        return;
+      }
+
+      showToast('Uploading file...', 'info');
+
+      try {
+        var ext = file.name.split('.').pop();
+        var fileName = 'handoff-files/' + handoffId + '-' + Date.now() + '.' + ext;
+
+        var uploadResult = await supabaseClient.storage
+          .from('lead-images')
+          .upload(fileName, file, { contentType: file.type, upsert: true });
+
+        if (uploadResult.error) throw uploadResult.error;
+
+        var urlResult = supabaseClient.storage.from('lead-images').getPublicUrl(fileName);
+        var publicUrl = urlResult.data.publicUrl;
+
+        var resp = await apiCall('/api/collaboration/handoffs/' + handoffId, {
+          method: 'PUT',
+          body: JSON.stringify({ design_file_url: publicUrl })
+        });
+        var data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to update handoff');
+
+        showToast('Design file uploaded!', 'success');
+        openHandoffDetailModal(handoffId);
+
+        if (currentHandoffData && currentHandoffData.project_id) {
+          logProjectActivity(currentHandoffData.project_id, 'file_uploaded', 'Design file uploaded to handoff');
+        }
+      } catch (err) {
+        showToast('Upload failed: ' + (err.message || 'Unknown error'), 'error');
       }
     }
 
@@ -28932,6 +29561,154 @@
         console.error('[Handoff] Error loading project handoffs:', err);
         container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">Error loading handoffs</div>';
       }
+    }
+
+    // =============================================
+    // BRIDGE 5: Collaborator Marketplace Listings in Project Detail
+    // =============================================
+
+    async function loadCollaboratorListings(projectId) {
+      var container = document.getElementById('project-collab-listings-content');
+      if (!container) return;
+
+      try {
+        // Get collaborator user IDs for this project
+        var resp = await apiCall('/api/collaboration/projects/' + projectId + '/collaborators');
+        var data;
+        try { data = await resp.json(); } catch (e) { data = {}; }
+
+        if (!resp.ok || !data.collaborators || !data.collaborators.length) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No collaborator listings yet. Invite fabricators to see their inventory here.</div>';
+          return;
+        }
+
+        var userIds = data.collaborators.map(function(c) { return c.user_id; }).filter(Boolean);
+        if (!userIds.length) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No collaborator listings available.</div>';
+          return;
+        }
+
+        // Query stone_listings for collaborating users
+        var result = await supabaseClient
+          .from('stone_listings')
+          .select('id, title, stone_name, material_type, price, image_url, city, state')
+          .in('user_id', userIds)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(6);
+
+        if (result.error || !result.data || !result.data.length) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No active listings from collaborators.</div>';
+          return;
+        }
+
+        container.innerHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">' +
+          result.data.map(function(l) {
+            var name = escapeHtml(l.stone_name || l.title || 'Listing');
+            var type = escapeHtml(l.material_type || '');
+            var priceStr = l.price ? '<div style="font-size: 11px; color: var(--gold-primary); font-weight: 600;">$' + parseFloat(l.price).toFixed(2) + '</div>' : '<div style="font-size: 10px; color: var(--text-muted);">Contact for pricing</div>';
+            var img = l.image_url ? '<img src="' + l.image_url + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px; margin-bottom: 6px;" loading="lazy" alt="' + escapeHtmlAttr(name) + '"/>' : '<div style="width: 100%; height: 80px; background: var(--dark-border); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px;">No Image</div>';
+            return '<a href="/remnants/?listing=' + l.id + '" target="_blank" style="background: var(--dark-surface); border-radius: 8px; padding: 8px; text-decoration: none; color: inherit; display: block; border: 1px solid var(--border-subtle); transition: border-color 0.15s;" onmouseover="this.style.borderColor=\'var(--gold-primary)\'" onmouseout="this.style.borderColor=\'var(--border-subtle)\'">' +
+              img +
+              '<div style="font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + name + '</div>' +
+              '<div style="font-size: 10px; color: var(--text-muted);">' + type + '</div>' +
+              priceStr +
+            '</a>';
+          }).join('') + '</div>';
+
+      } catch (err) {
+        console.error('[CollabListings] Error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">Could not load listings.</div>';
+      }
+    }
+
+    // =============================================
+    // BRIDGE 2: Convert Handoff Quote to Estimate
+    // =============================================
+
+    function fillField(id, value) {
+      var el = document.getElementById(id);
+      if (el && value) el.value = value;
+    }
+
+    async function convertHandoffToEstimate() {
+      var handoff = currentHandoffData;
+      if (!handoff || !handoff.quote_amount) {
+        showToast('No handoff quote data available', 'warning');
+        return;
+      }
+
+      closeHandoffDetailModal();
+
+      // Fetch project details for customer info
+      var project = null;
+      if (handoff.project_id) {
+        try {
+          var result = await supabaseClient
+            .from('projects')
+            .select('*')
+            .eq('id', handoff.project_id)
+            .single();
+          project = result.data;
+        } catch (e) {
+          console.warn('[Bridge2] Could not fetch project:', e);
+        }
+      }
+
+      // Navigate to estimates page
+      showPage('estimates');
+
+      // Set up estimate modal state
+      estimateModalState = {
+        customerId: null,
+        leadId: null,
+        editingEstimateId: null
+      };
+
+      // Open modal after page renders
+      setTimeout(function() {
+        openCreateEstimateModal(false);
+
+        // Pre-fill from project
+        if (project) {
+          fillField('estimate-customer-name', project.customer_name);
+          fillField('estimate-customer-email', project.customer_email);
+          fillField('estimate-customer-phone', project.customer_phone);
+          fillField('estimate-customer-address', project.address);
+          fillField('estimate-customer-city', project.city);
+          fillField('estimate-customer-state', project.state);
+          fillField('estimate-customer-zip', project.zip);
+          fillField('estimate-project-name', project.name);
+        }
+
+        fillField('estimate-project-desc', (handoff.title || '') + (handoff.description ? ' - ' + handoff.description : ''));
+
+        // Add the quote as a line item
+        if (typeof addEstimateLineItem === 'function') {
+          addEstimateLineItem();
+          var lastItem = document.querySelector('#estimate-line-items .estimate-line-item:last-child');
+          if (lastItem) {
+            var nameEl = lastItem.querySelector('.item-name');
+            var descEl = lastItem.querySelector('.item-desc');
+            var qtyEl = lastItem.querySelector('.item-qty');
+            var priceEl = lastItem.querySelector('.item-price');
+            if (nameEl) nameEl.value = 'Fabrication & Installation';
+            if (descEl) descEl.value = 'Per handoff quote - ' + (handoff.title || 'Design Handoff');
+            if (qtyEl) qtyEl.value = '1';
+            if (priceEl) priceEl.value = parseFloat(handoff.quote_amount) || 0;
+            if (typeof updateEstimateTotals === 'function') updateEstimateTotals();
+          }
+        }
+
+        fillField('estimate-notes', 'Converted from design handoff' + (handoff.id ? ' #' + handoff.id.substring(0, 8) : ''));
+
+        showToast('Handoff quote loaded into estimate form', 'success');
+
+        // Log activity
+        if (handoff.project_id) {
+          logProjectActivity(handoff.project_id, 'estimate_from_handoff', 'Created estimate from handoff quote');
+        }
+      }, 400);
     }
 
     // =============================================
@@ -30074,6 +30851,41 @@
     function closeContractorProfileModal() {
       document.getElementById('contractor-profile-modal').classList.remove('active');
       currentContractorId = null;
+    }
+
+    // Bridge: Assign contractor to a project
+    async function assignContractorToProject(contractorId) {
+      if (!contractorId) { showToast('No contractor selected', 'warning'); return; }
+
+      var activeProjects = (allProjects || []).filter(function(p) {
+        return p.status !== 'completed' && p.status !== 'cancelled';
+      });
+
+      if (!activeProjects.length) { showToast('No active projects available', 'warning'); return; }
+
+      var projectNames = activeProjects.map(function(p, i) {
+        return (i + 1) + '. ' + p.name + ' (' + (PROJECT_STATUS_LABELS[p.status] || p.status) + ')';
+      }).join('\n');
+
+      var choice = prompt('Assign contractor to project:\n' + projectNames + '\n\nEnter number:');
+      if (!choice) return;
+
+      var idx = parseInt(choice) - 1;
+      var project = activeProjects[idx];
+      if (!project) { showToast('Invalid selection', 'warning'); return; }
+
+      try {
+        await supabaseClient.from('project_crew').insert({
+          project_id: project.id,
+          contractor_id: contractorId,
+          role: 'contractor',
+          assigned_at: new Date().toISOString()
+        });
+        showToast('Contractor assigned to ' + project.name, 'success');
+        logProjectActivity(project.id, 'contractor_assigned', 'Contractor assigned to project');
+      } catch (err) {
+        showToast('Error assigning contractor: ' + (err.message || 'Unknown error'), 'error');
+      }
     }
 
     async function generateInviteLink(contractorId, contractor) {

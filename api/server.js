@@ -2243,6 +2243,45 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
                   logger.error('Error inserting order items:', itemsErr.message);
                 }
               }
+
+              // Auto-create lead from store purchase
+              try {
+                const customerEmail = session.customer_details?.email;
+                const customerName = session.customer_details?.name || session.shipping_details?.name;
+                if (customerEmail) {
+                  const { data: existingLead } = await supabase
+                    .from('leads')
+                    .select('id')
+                    .eq('email', customerEmail.toLowerCase())
+                    .limit(1)
+                    .single();
+
+                  if (!existingLead) {
+                    const { data: newLead, error: leadErr } = await supabase
+                      .from('leads')
+                      .insert({
+                        full_name: customerName || 'Store Customer',
+                        email: customerEmail.toLowerCase(),
+                        phone: session.customer_details?.phone || null,
+                        project_type: 'store_purchase',
+                        source: 'store_checkout',
+                        form_name: 'stripe_checkout',
+                        message: 'Store purchase - Order ' + orderNumber + ' - $' + total.toFixed(2),
+                        status: 'won',
+                        project_address: shippingAddress.line1 || null,
+                        zip_code: shippingAddress.postal_code || null
+                      })
+                      .select()
+                      .single();
+
+                    if (!leadErr && newLead) {
+                      logger.info('Lead auto-created from store checkout:', newLead.id);
+                    }
+                  }
+                }
+              } catch (leadAutoErr) {
+                logger.warn('Could not auto-create lead from checkout:', leadAutoErr.message);
+              }
             }
           } catch (dbErr) {
             logger.error('Database error creating order:', dbErr.message);

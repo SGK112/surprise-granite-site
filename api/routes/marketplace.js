@@ -356,6 +356,27 @@ router.post('/slabs/:id/inquiry', asyncHandler(async (req, res) => {
     }
   }
 
+  // Auto-create lead from marketplace inquiry
+  try {
+    const leadData = {
+      full_name: sanitizeString(name, 200),
+      email: email.toLowerCase().trim(),
+      phone: phone || null,
+      project_type: 'marketplace_inquiry',
+      source: 'marketplace',
+      form_name: 'marketplace_inquiry',
+      message: 'Marketplace inquiry for: ' + (product.name || 'Product') +
+        (product.brand ? ' (' + product.brand + ')' : '') +
+        '. Message: ' + sanitizeString(message, 500),
+      status: 'new'
+    };
+
+    await supabase.from('leads').insert(leadData).select().single();
+  } catch (leadErr) {
+    // Non-blocking - inquiry still succeeds even if lead creation fails
+    logger.warn('Could not auto-create lead from marketplace inquiry:', leadErr.message);
+  }
+
   logger.info('Product inquiry submitted', {
     productId: req.params.id,
     inquiryId: inquiry.id

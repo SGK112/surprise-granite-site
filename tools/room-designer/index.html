@@ -56060,6 +56060,20 @@
           await setupDesignerCommentNotifications(designId);
 
           showToast('Design saved to cloud!', 'success');
+
+          // Offer to create a project from this design
+          if (user && designId) {
+            var createProj = confirm('Design saved! Would you like to create a project from this design?');
+            if (createProj) {
+              sessionStorage.setItem('sg_design_for_project', JSON.stringify({
+                design_id: designId,
+                name: projectName || 'Room Design',
+                room_type: roomType || '',
+                quote_total: quoteTotal || 0
+              }));
+              window.location.href = '/account/#projects&from_design=1';
+            }
+          }
         } else {
           // Update existing design
           const updateData = {
