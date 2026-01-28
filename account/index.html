@@ -28231,7 +28231,13 @@
         });
 
         const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || 'Failed to send invitation');
+        if (!resp.ok) {
+          let errMsg = data.error || 'Failed to send invitation';
+          if (data.details && Array.isArray(data.details)) {
+            errMsg += ': ' + data.details.map(d => d.message || d.field).join(', ');
+          }
+          throw new Error(errMsg);
+        }
 
         showToast(data.message || 'Invitation sent!');
         document.getElementById('invite-collaborator-form').reset();
@@ -28239,6 +28245,7 @@
         loadPendingInvitations(projectId);
 
       } catch (err) {
+        console.error('Invite error:', err);
         showToast(err.message || 'Error sending invitation');
       } finally {
         btn.disabled = false;
