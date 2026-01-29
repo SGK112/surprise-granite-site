@@ -1051,6 +1051,57 @@
     .alignment-toolbar button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
     .alignment-toolbar button:hover { background: var(--gold-primary); color: var(--dark-primary); }
 
+    /* Pro Feature Modals */
+    .shortcuts-modal, .stats-modal, .cost-summary-modal, .element-search-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;
+    }
+    .shortcuts-content, .stats-content, .cost-summary-content, .element-search-content {
+      background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow: hidden;
+    }
+    .shortcuts-header, .stats-header, .cost-summary-header {
+      display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .shortcuts-header h3, .stats-header h3, .cost-summary-header h3 { margin: 0; font-size: 16px; color: var(--text); }
+    .shortcuts-header button, .stats-header button, .cost-summary-header button {
+      width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 18px;
+    }
+    .shortcuts-header button:hover, .stats-header button:hover, .cost-summary-header button:hover { background: rgba(255,255,255,0.2); color: var(--text); }
+    .shortcuts-body, .stats-body, .cost-summary-body { padding: 16px 20px; overflow-y: auto; max-height: 60vh; }
+    .shortcut-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .shortcut-row:last-child { border-bottom: none; }
+    .shortcut-row kbd { min-width: 80px; padding: 4px 8px; background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 11px; color: var(--gold-primary); text-align: center; }
+    .shortcut-row span { color: var(--text-secondary); font-size: 13px; }
+
+    /* Stats Modal */
+    .stats-body { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .stat-card { background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--gold-primary); }
+    .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .stat-breakdown { grid-column: 1 / -1; margin-top: 8px; }
+    .stat-breakdown h4 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    .stat-breakdown ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+    .stat-breakdown li { font-size: 12px; color: var(--text-muted); padding: 4px 0; }
+
+    /* Cost Summary */
+    .cost-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .cost-table th, .cost-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .cost-table th { color: var(--text-muted); font-weight: 500; }
+    .cost-table td { color: var(--text); }
+    .cost-table tfoot tr.subtotal td { color: var(--text-secondary); }
+    .cost-table tfoot tr.grand-total td { font-size: 14px; font-weight: 700; color: var(--gold-primary); border-top: 2px solid var(--gold-primary); }
+
+    /* Element Search */
+    .element-search-content { padding: 16px; }
+    .element-search-content input { width: 100%; padding: 12px 16px; background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
+    .element-search-content input:focus { outline: none; border-color: var(--gold-primary); }
+    .element-search-results { margin-top: 12px; max-height: 300px; overflow-y: auto; }
+    .search-result-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+    .search-result-item:hover { background: var(--dark-hover); border-left: 3px solid var(--gold-primary); }
+    .search-result-icon { font-size: 18px; }
+    .search-result-name { flex: 1; font-size: 13px; color: var(--text); }
+    .search-result-type { font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; }
+    .search-empty { text-align: center; padding: 20px; color: var(--text-muted); }
+
     /* =============================================
        UPGRADED TOOL GRID - Enhanced UX
        ============================================= */
@@ -2201,6 +2252,14 @@
     }
     .save-status.error .save-icon {
       stroke: #ef4444;
+    }
+    .save-status .save-time {
+      font-size: 9px;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+    .save-status.saved .save-time {
+      color: var(--text-muted);
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -10872,6 +10931,7 @@
                 <polyline points="7 3 7 8 15 8"/>
               </svg>
               <span class="save-text">Saved</span>
+              <span class="save-time" id="saveTime"></span>
             </span>
             <button class="help-btn" onclick="openModal('shortcutsModal')" title="Keyboard shortcuts (?)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -16437,7 +16497,7 @@
 
         doc.save('takeoff-report.pdf');
       } else {
-        alert('PDF export requires jsPDF library');
+        showToast('PDF export requires jsPDF library', 'error');
       }
     }
 
@@ -22240,13 +22300,13 @@
             }
 
             renderCabinetCatalog();
-            alert(`Imported ${cabinets.length} cabinets successfully!`);
+            showToast(`Imported ${cabinets.length} cabinets successfully!`, 'success');
           } else {
-            alert('No valid cabinet data found in file.');
+            showToast('No valid cabinet data found in file', 'error');
           }
         } catch (err) {
           console.error('Import error:', err);
-          alert('Error importing file. Please check the format.\n\nExpected CSV format:\nsku,name,width,height,depth,type\nB24,Base 24",2,2,2,base-cabinet');
+          showToast('Error importing file. Check CSV format.', 'error');
         }
       };
       input.click();
@@ -53279,7 +53339,7 @@
     // Quick upload texture directly from properties panel
     function quickUploadTexture() {
       if (!selectedElement) {
-        alert('Please select an element first');
+        showToast('Please select an element first', 'warning');
         return;
       }
 
@@ -54893,11 +54953,32 @@
       }
     }
 
+    // Track which element had focus before modal opened
+    let previousFocusElement = null;
+
     function openModal(id) {
       const modal = document.getElementById(id);
       if (!modal) return;
+
+      // Store the currently focused element
+      previousFocusElement = document.activeElement;
+
       modal.style.display = ''; // Reset any inline display style
       modal.classList.add('active');
+
+      // Focus the first focusable element in the modal
+      requestAnimationFrame(() => {
+        const focusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable) focusable.focus();
+      });
+
+      // Add escape key handler for this modal
+      modal._escHandler = (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          closeModal(id);
+        }
+      };
+      document.addEventListener('keydown', modal._escHandler);
     }
 
     function closeModal(id) {
@@ -54910,6 +54991,18 @@
       modal.classList.remove('active');
       // Reset inline display style so CSS class controls visibility
       modal.style.display = '';
+
+      // Remove escape handler
+      if (modal._escHandler) {
+        document.removeEventListener('keydown', modal._escHandler);
+        modal._escHandler = null;
+      }
+
+      // Restore focus to previous element
+      if (previousFocusElement && previousFocusElement.focus) {
+        previousFocusElement.focus();
+        previousFocusElement = null;
+      }
     }
 
     // ===== EDGE PREVIEW MODAL =====
@@ -55446,7 +55539,7 @@
         }).catch(() => {
           input.select();
           document.execCommand('copy');
-          alert('Link copied!');
+          showToast('Link copied!', 'success');
         });
       }
     }
@@ -56100,7 +56193,7 @@
 
         showColumnMapping(data);
       } catch (error) {
-        alert('Error parsing file: ' + error.message);
+        showToast('Error parsing file: ' + error.message, 'error');
         console.error(error);
       }
     }
@@ -56243,7 +56336,7 @@
       const priceCol = parseInt(document.getElementById('mapPrice').value);
 
       if (isNaN(priceCol)) {
-        alert('Please select the Price column');
+        showToast('Please select the Price column', 'warning');
         return;
       }
 
@@ -58984,7 +59077,7 @@
 
       } catch (err) {
         console.error('loadDesignData error:', err);
-        alert('Error loading design: ' + err.message);
+        showToast('Error loading design: ' + err.message, 'error');
         hidePreloader();
       }
     }
@@ -60130,7 +60223,7 @@
 
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
-        alert('Copied to clipboard!');
+        showToast('Copied to clipboard!', 'success');
       }).catch(() => {
         const temp = document.createElement('textarea');
         temp.value = text;
@@ -60138,7 +60231,7 @@
         temp.select();
         document.execCommand('copy');
         document.body.removeChild(temp);
-        alert('Copied to clipboard!');
+        showToast('Copied to clipboard!', 'success');
       });
     }
 
@@ -60164,8 +60257,9 @@
         if (error) throw error;
 
         loadActiveShares();
+        showToast('Share link revoked', 'success');
       } catch (err) {
-        alert('Error revoking share: ' + err.message);
+        showToast('Error revoking share: ' + err.message, 'error');
       }
     }
 
@@ -60768,9 +60862,9 @@
             draw();
             update3DScene();
 
-            alert('Design loaded successfully!');
+            showToast('Design loaded successfully!', 'success');
           } catch (err) {
-            alert('Error loading design: ' + err.message);
+            showToast('Error loading design: ' + err.message, 'error');
           }
         };
         reader.readAsText(file);
@@ -64016,12 +64110,31 @@
     let autoSaveIndicatorTimeout = null;
     let saveStatusResetTimeout = null;
 
+    // Track last save time
+    let lastSaveTime = null;
+
+    // Format time as relative string (e.g., "just now", "2m ago")
+    function formatRelativeTime(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+      const diffHour = Math.floor(diffMin / 60);
+
+      if (diffSec < 10) return 'just now';
+      if (diffSec < 60) return `${diffSec}s ago`;
+      if (diffMin < 60) return `${diffMin}m ago`;
+      if (diffHour < 24) return `${diffHour}h ago`;
+      return date.toLocaleDateString();
+    }
+
     // Update the save status indicator in the toolbar
     function updateSaveStatus(status, text = null) {
       const statusEl = document.getElementById('saveStatus');
       if (!statusEl) return;
 
       const textEl = statusEl.querySelector('.save-text');
+      const timeEl = statusEl.querySelector('.save-time') || document.getElementById('saveTime');
 
       // Remove all status classes
       statusEl.classList.remove('saved', 'saving', 'unsaved', 'error');
@@ -64040,6 +64153,20 @@
         textEl.textContent = text || statusTexts[status] || status;
       }
 
+      // Update timestamp on save
+      if (status === 'saved') {
+        lastSaveTime = new Date();
+        if (timeEl) {
+          timeEl.textContent = formatRelativeTime(lastSaveTime);
+          // Update tooltip with full timestamp
+          statusEl.title = `Last saved: ${lastSaveTime.toLocaleString()}`;
+        }
+      } else if (status === 'saving' && timeEl) {
+        timeEl.textContent = '';
+      } else if (timeEl && lastSaveTime) {
+        timeEl.textContent = formatRelativeTime(lastSaveTime);
+      }
+
       // Reset to "saved" after showing error
       if (status === 'error') {
         if (saveStatusResetTimeout) clearTimeout(saveStatusResetTimeout);
@@ -64048,6 +64175,37 @@
         }, 3000);
       }
     }
+
+    // Periodically update the relative time display
+    setInterval(() => {
+      if (lastSaveTime) {
+        const timeEl = document.getElementById('saveTime');
+        if (timeEl) {
+          timeEl.textContent = formatRelativeTime(lastSaveTime);
+        }
+      }
+    }, 60000); // Update every minute
+
+    // ===== ONLINE/OFFLINE DETECTION =====
+    let isOnline = navigator.onLine;
+
+    function updateConnectionStatus(online) {
+      isOnline = online;
+      if (online) {
+        showToast('Back online - changes will sync', 'success');
+        // Attempt to sync any pending changes
+        if (typeof saveToCloud === 'function') {
+          setTimeout(() => saveToCloud(), 1000);
+        }
+      } else {
+        showToast('You are offline - changes saved locally', 'warning', 5000);
+        updateSaveStatus('unsaved', 'Offline');
+      }
+    }
+
+    // Listen for online/offline events
+    window.addEventListener('online', () => updateConnectionStatus(true));
+    window.addEventListener('offline', () => updateConnectionStatus(false));
 
     function showAutoSaveIndicator() {
       // Update toolbar save status

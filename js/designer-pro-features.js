@@ -649,11 +649,539 @@
     }
   });
 
+  // === DESIGN HISTORY / VERSION CONTROL ===
+  const HISTORY_KEY = 'sg_designer_history';
+  const MAX_HISTORY = 20;
+  let designHistory = [];
+  let historyIndex = -1;
+
+  window.initHistory = function() {
+    try {
+      const stored = localStorage.getItem(HISTORY_KEY);
+      if (stored) {
+        designHistory = JSON.parse(stored);
+        historyIndex = designHistory.length - 1;
+      }
+    } catch (e) {}
+  };
+
+  window.saveToHistory = function(label) {
+    if (!window.elements) return;
+
+    // Remove any future states if we're not at the end
+    if (historyIndex < designHistory.length - 1) {
+      designHistory = designHistory.slice(0, historyIndex + 1);
+    }
+
+    const snapshot = {
+      id: 'snap_' + Date.now(),
+      label: label || 'Change',
+      elements: JSON.parse(JSON.stringify(window.elements)),
+      timestamp: new Date().toISOString()
+    };
+
+    designHistory.push(snapshot);
+    if (designHistory.length > MAX_HISTORY) {
+      designHistory.shift();
+    }
+    historyIndex = designHistory.length - 1;
+
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(designHistory)); } catch (e) {}
+  };
+
+  window.undoToHistory = function() {
+    if (historyIndex <= 0) {
+      if (typeof showToast === 'function') showToast('Nothing to undo', 'info');
+      return;
+    }
+    historyIndex--;
+    const snapshot = designHistory[historyIndex];
+    if (snapshot && snapshot.elements) {
+      window.elements = JSON.parse(JSON.stringify(snapshot.elements));
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast(`Undo: ${snapshot.label}`, 'info');
+    }
+  };
+
+  window.redoFromHistory = function() {
+    if (historyIndex >= designHistory.length - 1) {
+      if (typeof showToast === 'function') showToast('Nothing to redo', 'info');
+      return;
+    }
+    historyIndex++;
+    const snapshot = designHistory[historyIndex];
+    if (snapshot && snapshot.elements) {
+      window.elements = JSON.parse(JSON.stringify(snapshot.elements));
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast(`Redo: ${snapshot.label}`, 'info');
+    }
+  };
+
+  window.getHistorySnapshots = function() {
+    return designHistory.map((s, i) => ({
+      ...s,
+      isCurrent: i === historyIndex
+    }));
+  };
+
+  window.restoreSnapshot = function(snapshotId) {
+    const index = designHistory.findIndex(s => s.id === snapshotId);
+    if (index === -1) return;
+    historyIndex = index;
+    const snapshot = designHistory[index];
+    if (snapshot && snapshot.elements) {
+      window.elements = JSON.parse(JSON.stringify(snapshot.elements));
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast(`Restored: ${snapshot.label}`, 'success');
+    }
+  };
+
+  // === MATERIAL COST CALCULATOR ===
+  const DEFAULT_PRICES = {
+    counter: { perSqFt: 75, install: 35 },
+    cabinet: { perUnit: 450, install: 150 },
+    sink: { perUnit: 350, install: 200 },
+    faucet: { perUnit: 250, install: 100 },
+    backsplash: { perSqFt: 25, install: 15 },
+    flooring: { perSqFt: 8, install: 4 },
+    appliance: { perUnit: 800, install: 100 }
+  };
+
+  window.calculateMaterialCosts = function(elements, customPrices) {
+    if (!elements) elements = window.elements;
+    if (!elements || elements.length === 0) return { items: [], total: 0, laborTotal: 0, grandTotal: 0 };
+
+    const prices = { ...DEFAULT_PRICES, ...customPrices };
+    const items = [];
+    let total = 0;
+    let laborTotal = 0;
+
+    elements.forEach(el => {
+      const type = el.type || 'other';
+      const price = prices[type] || { perUnit: 100, install: 50 };
+      let cost = 0;
+      let labor = 0;
+      let quantity = 1;
+      let unit = 'unit';
+
+      if (el.width && el.height && (type === 'counter' || type === 'backsplash' || type === 'flooring')) {
+        // Calculate square footage
+        const ppi = window.pixelsPerInch || 12;
+        const sqFt = (el.width / ppi / 12) * (el.height / ppi / 12);
+        quantity = Math.round(sqFt * 10) / 10;
+        unit = 'sq ft';
+        cost = quantity * (price.perSqFt || 50);
+        labor = quantity * (price.install || 20);
+      } else {
+        cost = price.perUnit || 100;
+        labor = price.install || 50;
+      }
+
+      items.push({
+        id: el.id,
+        name: el.name || type,
+        type: type,
+        quantity: quantity,
+        unit: unit,
+        materialCost: Math.round(cost),
+        laborCost: Math.round(labor),
+        total: Math.round(cost + labor)
+      });
+
+      total += cost;
+      laborTotal += labor;
+    });
+
+    return {
+      items,
+      materialTotal: Math.round(total),
+      laborTotal: Math.round(laborTotal),
+      grandTotal: Math.round(total + laborTotal)
+    };
+  };
+
+  window.showCostSummary = function() {
+    const costs = window.calculateMaterialCosts();
+    const modal = document.createElement('div');
+    modal.className = 'cost-summary-modal';
+    modal.innerHTML = `
+      <div class="cost-summary-content">
+        <div class="cost-summary-header">
+          <h3>Cost Estimate</h3>
+          <button onclick="this.closest('.cost-summary-modal').remove()">&times;</button>
+        </div>
+        <div class="cost-summary-body">
+          <table class="cost-table">
+            <thead>
+              <tr><th>Item</th><th>Qty</th><th>Material</th><th>Labor</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              ${costs.items.map(i => `
+                <tr>
+                  <td>${i.name}</td>
+                  <td>${i.quantity} ${i.unit}</td>
+                  <td>$${i.materialCost.toLocaleString()}</td>
+                  <td>$${i.laborCost.toLocaleString()}</td>
+                  <td>$${i.total.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="subtotal"><td colspan="2">Materials</td><td colspan="3">$${costs.materialTotal.toLocaleString()}</td></tr>
+              <tr class="subtotal"><td colspan="2">Labor</td><td colspan="3">$${costs.laborTotal.toLocaleString()}</td></tr>
+              <tr class="grand-total"><td colspan="2">Total</td><td colspan="3">$${costs.grandTotal.toLocaleString()}</td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  // === ELEMENT SEARCH ===
+  window.searchElements = function(query) {
+    if (!window.elements || !query) return [];
+    const q = query.toLowerCase();
+    return window.elements.filter(el =>
+      (el.name && el.name.toLowerCase().includes(q)) ||
+      (el.type && el.type.toLowerCase().includes(q)) ||
+      (el.material && el.material.toLowerCase().includes(q))
+    );
+  };
+
+  window.showElementSearch = function() {
+    const existing = document.getElementById('elementSearchModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'elementSearchModal';
+    modal.className = 'element-search-modal';
+    modal.innerHTML = `
+      <div class="element-search-content">
+        <input type="text" id="elementSearchInput" placeholder="Search elements..." autofocus>
+        <div id="elementSearchResults" class="element-search-results"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const input = document.getElementById('elementSearchInput');
+    const results = document.getElementById('elementSearchResults');
+
+    input.addEventListener('input', function() {
+      const matches = window.searchElements(this.value);
+      if (matches.length === 0) {
+        results.innerHTML = '<div class="search-empty">No matches found</div>';
+        return;
+      }
+      results.innerHTML = matches.map(el => `
+        <div class="search-result-item" onclick="selectAndZoomElement('${el.id}')">
+          <span class="search-result-icon">${getElementIcon(el.type)}</span>
+          <span class="search-result-name">${el.name || el.type}</span>
+          <span class="search-result-type">${el.type}</span>
+        </div>
+      `).join('');
+    });
+
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.remove();
+    });
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') modal.remove();
+    });
+  };
+
+  window.selectAndZoomElement = function(elementId) {
+    const el = window.elements?.find(e => e.id === elementId);
+    if (!el) return;
+
+    window.selectedElement = el;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+
+    // Close search modal
+    const modal = document.getElementById('elementSearchModal');
+    if (modal) modal.remove();
+
+    if (typeof showToast === 'function') showToast(`Selected: ${el.name || el.type}`, 'info');
+  };
+
+  // === KEYBOARD SHORTCUTS PANEL ===
+  const SHORTCUTS = [
+    { key: 'V', action: 'Select tool' },
+    { key: 'W', action: 'Wall tool' },
+    { key: 'C', action: 'Counter tool' },
+    { key: 'M', action: 'Measure tool' },
+    { key: 'P', action: 'Pan tool' },
+    { key: 'S', action: 'Slab layout tool' },
+    { key: 'N', action: 'Add note' },
+    { key: 'Delete/Backspace', action: 'Delete selected' },
+    { key: 'Ctrl+D', action: 'Duplicate' },
+    { key: 'Ctrl+G', action: 'Group elements' },
+    { key: 'Ctrl+Shift+G', action: 'Ungroup' },
+    { key: 'Ctrl+Z', action: 'Undo' },
+    { key: 'Ctrl+Y', action: 'Redo' },
+    { key: 'Ctrl+S', action: 'Save design' },
+    { key: 'Ctrl+Shift+S', action: 'Save as template' },
+    { key: 'Ctrl+F', action: 'Search elements' },
+    { key: 'Ctrl+E', action: 'Export' },
+    { key: 'Space', action: 'Toggle 3D view' },
+    { key: 'Escape', action: 'Cancel / Deselect' },
+    { key: 'Arrow keys', action: 'Nudge selected' },
+    { key: '?', action: 'Show shortcuts' }
+  ];
+
+  window.showKeyboardShortcuts = function() {
+    const existing = document.getElementById('shortcutsModal');
+    if (existing) { existing.remove(); return; }
+
+    const modal = document.createElement('div');
+    modal.id = 'shortcutsModal';
+    modal.className = 'shortcuts-modal';
+    modal.innerHTML = `
+      <div class="shortcuts-content">
+        <div class="shortcuts-header">
+          <h3>⌨️ Keyboard Shortcuts</h3>
+          <button onclick="this.closest('.shortcuts-modal').remove()">&times;</button>
+        </div>
+        <div class="shortcuts-body">
+          ${SHORTCUTS.map(s => `
+            <div class="shortcut-row">
+              <kbd>${s.key}</kbd>
+              <span>${s.action}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.remove();
+    });
+  };
+
+  // === DESIGN STATISTICS ===
+  window.getDesignStats = function() {
+    if (!window.elements) return null;
+
+    const ppi = window.pixelsPerInch || 12;
+    const stats = {
+      totalElements: window.elements.length,
+      byType: {},
+      totalArea: 0,
+      countertopArea: 0,
+      cabinetCount: 0,
+      applianceCount: 0
+    };
+
+    window.elements.forEach(el => {
+      // Count by type
+      stats.byType[el.type] = (stats.byType[el.type] || 0) + 1;
+
+      // Calculate areas
+      if (el.width && el.height) {
+        const sqFt = (el.width / ppi / 12) * (el.height / ppi / 12);
+        stats.totalArea += sqFt;
+        if (el.type === 'counter') stats.countertopArea += sqFt;
+      }
+
+      // Count categories
+      if (el.type === 'cabinet') stats.cabinetCount++;
+      if (['sink', 'stove', 'dishwasher', 'refrigerator'].includes(el.type)) stats.applianceCount++;
+    });
+
+    stats.totalArea = Math.round(stats.totalArea * 10) / 10;
+    stats.countertopArea = Math.round(stats.countertopArea * 10) / 10;
+
+    return stats;
+  };
+
+  window.showDesignStats = function() {
+    const stats = window.getDesignStats();
+    if (!stats) {
+      if (typeof showToast === 'function') showToast('No design data', 'info');
+      return;
+    }
+
+    const typeList = Object.entries(stats.byType)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) => `<li>${getElementIcon(type)} ${type}: ${count}</li>`)
+      .join('');
+
+    const modal = document.createElement('div');
+    modal.className = 'stats-modal';
+    modal.innerHTML = `
+      <div class="stats-content">
+        <div class="stats-header">
+          <h3>📊 Design Statistics</h3>
+          <button onclick="this.closest('.stats-modal').remove()">&times;</button>
+        </div>
+        <div class="stats-body">
+          <div class="stat-card">
+            <div class="stat-value">${stats.totalElements}</div>
+            <div class="stat-label">Total Elements</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.countertopArea} sf</div>
+            <div class="stat-label">Countertop Area</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.cabinetCount}</div>
+            <div class="stat-label">Cabinets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.applianceCount}</div>
+            <div class="stat-label">Appliances</div>
+          </div>
+          <div class="stat-breakdown">
+            <h4>Elements by Type</h4>
+            <ul>${typeList}</ul>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.remove();
+    });
+  };
+
+  // === RULER & GRID SETTINGS ===
+  let gridSettings = {
+    show: true,
+    size: 12, // pixels
+    snap: true,
+    showRulers: true
+  };
+
+  window.getGridSettings = function() { return gridSettings; };
+
+  window.setGridSettings = function(settings) {
+    gridSettings = { ...gridSettings, ...settings };
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+  };
+
+  window.toggleGrid = function() {
+    gridSettings.show = !gridSettings.show;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast(`Grid ${gridSettings.show ? 'shown' : 'hidden'}`, 'info');
+  };
+
+  window.toggleSnap = function() {
+    gridSettings.snap = !gridSettings.snap;
+    if (typeof showToast === 'function') showToast(`Snap ${gridSettings.snap ? 'enabled' : 'disabled'}`, 'info');
+  };
+
+  window.setGridSize = function(size) {
+    gridSettings.size = size;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+  };
+
+  // === COPY/PASTE BETWEEN DESIGNS ===
+  const CLIPBOARD_KEY = 'sg_designer_clipboard';
+
+  window.copyElementsToClipboard = function(elements) {
+    if (!elements) elements = window.selectedElements || (window.selectedElement ? [window.selectedElement] : []);
+    if (!elements || elements.length === 0) {
+      if (typeof showToast === 'function') showToast('Nothing to copy', 'warning');
+      return;
+    }
+    try {
+      localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(elements));
+      if (typeof showToast === 'function') showToast(`Copied ${elements.length} element(s)`, 'success');
+    } catch (e) {}
+  };
+
+  window.pasteElementsFromClipboard = function() {
+    try {
+      const stored = localStorage.getItem(CLIPBOARD_KEY);
+      if (!stored) {
+        if (typeof showToast === 'function') showToast('Clipboard empty', 'info');
+        return;
+      }
+      const elements = JSON.parse(stored);
+      if (!elements || elements.length === 0) return;
+
+      // Offset pasted elements
+      elements.forEach(el => {
+        el.id = el.type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        el.x = (el.x || 0) + 20;
+        el.y = (el.y || 0) + 20;
+        if (window.elements) window.elements.push(el);
+      });
+
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast(`Pasted ${elements.length} element(s)`, 'success');
+    } catch (e) {}
+  };
+
+  // === ENHANCED KEYBOARD SHORTCUTS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+
+    // Ctrl/Cmd + G = Group selected
+    if ((e.ctrlKey || e.metaKey) && e.key === 'g' && !e.shiftKey) {
+      e.preventDefault();
+      window.groupSelectedElements();
+    }
+    // Ctrl/Cmd + Shift + G = Ungroup
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
+      e.preventDefault();
+      if (selectedGroup) window.ungroupElements(selectedGroup);
+    }
+    // N = Toggle note mode
+    if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !isInput) {
+      e.preventDefault();
+      noteMode ? window.disableNoteMode() : window.enableNoteMode();
+    }
+    // Escape = Cancel
+    if (e.key === 'Escape') {
+      if (noteMode) window.disableNoteMode();
+      window.hideQuickActions();
+      document.querySelectorAll('.shortcuts-modal, .stats-modal, .cost-summary-modal, .element-search-modal').forEach(m => m.remove());
+    }
+    // Ctrl/Cmd + D = Duplicate
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      window.duplicateWithOffset();
+    }
+    // Ctrl/Cmd + Shift + S = Save as template
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      e.preventDefault();
+      window.saveAsTemplate();
+    }
+    // Ctrl/Cmd + F = Search elements
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f' && !isInput) {
+      e.preventDefault();
+      window.showElementSearch();
+    }
+    // Ctrl/Cmd + C = Copy
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !isInput) {
+      window.copyElementsToClipboard();
+    }
+    // Ctrl/Cmd + V = Paste
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !isInput) {
+      window.pasteElementsFromClipboard();
+    }
+    // ? = Show shortcuts
+    if (e.key === '?' && !isInput) {
+      e.preventDefault();
+      window.showKeyboardShortcuts();
+    }
+    // G = Toggle grid (without Ctrl)
+    if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !isInput) {
+      window.toggleGrid();
+    }
+  });
+
   // === INIT ON LOAD ===
   document.addEventListener('DOMContentLoaded', function() {
     window.initFavorites();
     window.initNotes();
+    window.initTemplates();
+    window.initHistory();
   });
 
-  console.log('Room Designer Pro Features loaded');
+  console.log('Room Designer Pro Features v2.0 loaded');
 })();
