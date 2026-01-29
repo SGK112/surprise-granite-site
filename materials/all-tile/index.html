@@ -668,26 +668,6 @@
     }
 
     /* ============================================
-       MOBILE SWIPE BUTTON
-       ============================================ */
-    .swipe-mode-btn {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--accent);
-      color: var(--primary);
-      border: none;
-      padding: 14px 20px;
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      z-index: 100;
-    }
-
-    /* ============================================
        RESPONSIVE - TABLET
        ============================================ */
     @media (max-width: 991px) {
@@ -785,12 +765,6 @@
         font-size: 11px;
         margin-top: 2px;
       }
-
-      /* Show swipe mode button - position above safe area */
-      .swipe-mode-btn {
-        display: block;
-        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-      }
     }
 
     /* ============================================
@@ -882,11 +856,6 @@
       </section>
     </div>
   </main>
-
-  <!-- Mobile Swipe Mode Button -->
-  <button class="swipe-mode-btn" onclick="activateSwipeMode()">
-    Swipe Mode
-  </button>
 
   <!-- Unified Navigation Script -->
   <script src="/js/unified-nav.js?v=20260129"></script>
@@ -1190,16 +1159,6 @@
 
         observer.observe(sentinel);
       }
-
-      // Activate Swipe Mode (global function for mobile)
-      window.activateSwipeMode = function() {
-        // The swipe-cards-universal.js auto-initializes and exposes window.startSwipeMode()
-        if (typeof window.startSwipeMode === 'function') {
-          window.startSwipeMode();
-        } else {
-          console.warn('Swipe mode not available - ensure swipe-cards-universal.js is loaded');
-        }
-      };
 
       // ===== MOBILE FILTER DRAWER =====
       function initMobileFilters() {
