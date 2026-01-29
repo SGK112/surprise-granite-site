@@ -1534,12 +1534,578 @@
     }
   });
 
+  // === PROJECT INFO PANEL ===
+  const PROJECT_KEY = 'sg_designer_project';
+  let projectInfo = {
+    name: 'Untitled Project',
+    client: '',
+    address: '',
+    phone: '',
+    email: '',
+    notes: '',
+    createdAt: null,
+    modifiedAt: null
+  };
+
+  window.initProjectInfo = function() {
+    try {
+      const stored = localStorage.getItem(PROJECT_KEY);
+      if (stored) projectInfo = { ...projectInfo, ...JSON.parse(stored) };
+    } catch (e) {}
+  };
+
+  window.saveProjectInfo = function(info) {
+    projectInfo = { ...projectInfo, ...info, modifiedAt: new Date().toISOString() };
+    if (!projectInfo.createdAt) projectInfo.createdAt = projectInfo.modifiedAt;
+    try { localStorage.setItem(PROJECT_KEY, JSON.stringify(projectInfo)); } catch (e) {}
+  };
+
+  window.getProjectInfo = function() { return projectInfo; };
+
+  window.showProjectInfoModal = function() {
+    const existing = document.getElementById('projectInfoModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'projectInfoModal';
+    modal.className = 'project-info-modal';
+    modal.innerHTML = `
+      <div class="project-info-content">
+        <div class="project-info-header">
+          <h3>📋 Project Information</h3>
+          <button onclick="this.closest('.project-info-modal').remove()">&times;</button>
+        </div>
+        <div class="project-info-body">
+          <div class="form-group">
+            <label>Project Name</label>
+            <input type="text" id="projName" value="${projectInfo.name || ''}" placeholder="Kitchen Remodel">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Client Name</label>
+              <input type="text" id="projClient" value="${projectInfo.client || ''}" placeholder="John Smith">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="projPhone" value="${projectInfo.phone || ''}" placeholder="(555) 123-4567">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="projEmail" value="${projectInfo.email || ''}" placeholder="client@email.com">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="projAddress" value="${projectInfo.address || ''}" placeholder="123 Main St, City, ST 12345">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="projNotes" rows="3" placeholder="Special requirements, preferences...">${projectInfo.notes || ''}</textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" onclick="this.closest('.project-info-modal').remove()">Cancel</button>
+            <button class="btn-primary" onclick="saveProjectInfoFromModal()">Save</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.saveProjectInfoFromModal = function() {
+    window.saveProjectInfo({
+      name: document.getElementById('projName')?.value || '',
+      client: document.getElementById('projClient')?.value || '',
+      phone: document.getElementById('projPhone')?.value || '',
+      email: document.getElementById('projEmail')?.value || '',
+      address: document.getElementById('projAddress')?.value || '',
+      notes: document.getElementById('projNotes')?.value || ''
+    });
+    document.getElementById('projectInfoModal')?.remove();
+    if (typeof showToast === 'function') showToast('Project info saved', 'success');
+  };
+
+  // === QUICK MEASUREMENT TOOL ===
+  let measureMode = false;
+  let measureStart = null;
+  let measureLine = null;
+
+  window.enableMeasureMode = function() {
+    measureMode = true;
+    measureStart = null;
+    document.body.style.cursor = 'crosshair';
+    if (typeof showToast === 'function') showToast('Click two points to measure', 'info');
+  };
+
+  window.disableMeasureMode = function() {
+    measureMode = false;
+    measureStart = null;
+    document.body.style.cursor = '';
+    clearMeasureLine();
+  };
+
+  window.isMeasureMode = function() { return measureMode; };
+
+  window.handleMeasureClick = function(x, y) {
+    if (!measureMode) return false;
+
+    if (!measureStart) {
+      measureStart = { x, y };
+      showMeasurePoint(x, y);
+      return true;
+    }
+
+    // Calculate distance
+    const dx = x - measureStart.x;
+    const dy = y - measureStart.y;
+    const distPx = Math.sqrt(dx * dx + dy * dy);
+
+    // Convert to real units
+    const ppi = window.pixelsPerInch || 12;
+    const inches = distPx / ppi;
+    const feet = Math.floor(inches / 12);
+    const remainingInches = Math.round((inches % 12) * 16) / 16;
+
+    let measurement = '';
+    if (feet > 0) measurement += `${feet}'`;
+    if (remainingInches > 0 || feet === 0) measurement += `${remainingInches}"`;
+
+    showMeasureLine(measureStart.x, measureStart.y, x, y, measurement);
+
+    // Reset for next measurement
+    measureStart = null;
+
+    return true;
+  };
+
+  function showMeasurePoint(x, y) {
+    clearMeasureLine();
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    const point = document.createElement('div');
+    point.className = 'measure-point';
+    point.style.cssText = `left:${x - 5}px;top:${y - 5}px`;
+    canvas.parentElement.appendChild(point);
+  }
+
+  function showMeasureLine(x1, y1, x2, y2, label) {
+    clearMeasureLine();
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+    measureLine = document.createElement('div');
+    measureLine.className = 'measure-line-display';
+    measureLine.innerHTML = `
+      <div class="measure-line" style="width:${length}px;transform:rotate(${angle}deg);left:${x1}px;top:${y1}px"></div>
+      <div class="measure-label" style="left:${(x1 + x2) / 2}px;top:${(y1 + y2) / 2 - 20}px">${label}</div>
+      <div class="measure-point" style="left:${x1 - 5}px;top:${y1 - 5}px"></div>
+      <div class="measure-point" style="left:${x2 - 5}px;top:${y2 - 5}px"></div>
+    `;
+    canvas.parentElement.appendChild(measureLine);
+
+    // Auto-clear after 5 seconds
+    setTimeout(clearMeasureLine, 5000);
+  }
+
+  function clearMeasureLine() {
+    document.querySelectorAll('.measure-line-display, .measure-point').forEach(el => el.remove());
+    measureLine = null;
+  }
+
+  // === MATERIAL PREVIEW PANEL ===
+  window.showMaterialPreview = function(material) {
+    const existing = document.getElementById('materialPreview');
+    if (existing) existing.remove();
+
+    if (!material) return;
+
+    const preview = document.createElement('div');
+    preview.id = 'materialPreview';
+    preview.className = 'material-preview-panel';
+    preview.innerHTML = `
+      <div class="material-preview-image" style="background-image: url('${material.image || material.thumbnail || ''}')"></div>
+      <div class="material-preview-info">
+        <div class="material-preview-name">${material.name || 'Unknown'}</div>
+        <div class="material-preview-details">
+          ${material.brand ? `<span>Brand: ${material.brand}</span>` : ''}
+          ${material.color ? `<span>Color: ${material.color}</span>` : ''}
+          ${material.finish ? `<span>Finish: ${material.finish}</span>` : ''}
+          ${material.price ? `<span class="price">$${material.price}/sf</span>` : ''}
+        </div>
+      </div>
+      <button class="material-preview-close" onclick="hideMaterialPreview()">&times;</button>
+    `;
+    document.body.appendChild(preview);
+
+    setTimeout(() => preview.classList.add('show'), 10);
+  };
+
+  window.hideMaterialPreview = function() {
+    const preview = document.getElementById('materialPreview');
+    if (preview) {
+      preview.classList.remove('show');
+      setTimeout(() => preview.remove(), 200);
+    }
+  };
+
+  // === AUTO-SAVE SYSTEM ===
+  const AUTOSAVE_KEY = 'sg_designer_autosave';
+  let autoSaveInterval = null;
+  let autoSaveEnabled = true;
+  let lastSaveTime = null;
+  let hasUnsavedChanges = false;
+
+  window.initAutoSave = function(intervalMs = 30000) {
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => {
+      if (autoSaveEnabled && hasUnsavedChanges) {
+        window.performAutoSave();
+      }
+    }, intervalMs);
+
+    // Listen for changes
+    window.markUnsaved = function() {
+      hasUnsavedChanges = true;
+      updateSaveStatus('unsaved');
+    };
+  };
+
+  window.performAutoSave = function() {
+    if (!window.elements) return;
+
+    const data = {
+      timestamp: new Date().toISOString(),
+      elements: window.elements,
+      roomWidth: window.roomWidth,
+      roomDepth: window.roomDepth,
+      projectInfo: projectInfo,
+      notes: designNotes,
+      groups: elementGroups
+    };
+
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+      hasUnsavedChanges = false;
+      lastSaveTime = new Date();
+      updateSaveStatus('saved');
+    } catch (e) {
+      updateSaveStatus('error');
+    }
+  };
+
+  window.loadAutoSave = function() {
+    try {
+      const stored = localStorage.getItem(AUTOSAVE_KEY);
+      if (!stored) return null;
+      return JSON.parse(stored);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  window.hasAutoSave = function() {
+    return localStorage.getItem(AUTOSAVE_KEY) !== null;
+  };
+
+  window.clearAutoSave = function() {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  };
+
+  function updateSaveStatus(status) {
+    const indicator = document.getElementById('saveStatusIndicator');
+    if (!indicator) return;
+
+    indicator.className = `save-status ${status}`;
+    const icon = indicator.querySelector('.save-icon');
+    const text = indicator.querySelector('.save-text');
+
+    switch (status) {
+      case 'saved':
+        if (text) text.textContent = 'Saved';
+        break;
+      case 'saving':
+        if (text) text.textContent = 'Saving...';
+        break;
+      case 'unsaved':
+        if (text) text.textContent = 'Unsaved';
+        break;
+      case 'error':
+        if (text) text.textContent = 'Error';
+        break;
+    }
+  }
+
+  // === WORK TRIANGLE VALIDATOR ===
+  window.validateWorkTriangle = function() {
+    if (!window.elements) return null;
+
+    const sink = window.elements.find(e => e.type === 'sink');
+    const stove = window.elements.find(e => e.type === 'stove' || e.type === 'range' || e.type === 'cooktop');
+    const fridge = window.elements.find(e => e.type === 'refrigerator' || e.type === 'fridge');
+
+    if (!sink || !stove || !fridge) {
+      return { valid: false, message: 'Need sink, stove, and refrigerator for work triangle' };
+    }
+
+    const ppi = window.pixelsPerInch || 12;
+
+    // Calculate distances
+    const getCenterPoint = (el) => ({
+      x: el.x + (el.width || 0) / 2,
+      y: el.y + (el.height || 0) / 2
+    });
+
+    const distance = (p1, p2) => {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      return Math.sqrt(dx * dx + dy * dy) / ppi / 12; // Convert to feet
+    };
+
+    const sinkCenter = getCenterPoint(sink);
+    const stoveCenter = getCenterPoint(stove);
+    const fridgeCenter = getCenterPoint(fridge);
+
+    const sinkToStove = distance(sinkCenter, stoveCenter);
+    const stoveToFridge = distance(stoveCenter, fridgeCenter);
+    const fridgeToSink = distance(fridgeCenter, sinkCenter);
+
+    const perimeter = sinkToStove + stoveToFridge + fridgeToSink;
+
+    // Ideal: Each leg 4-9 feet, total 13-26 feet
+    const issues = [];
+    if (sinkToStove < 4) issues.push('Sink to stove too close');
+    if (sinkToStove > 9) issues.push('Sink to stove too far');
+    if (stoveToFridge < 4) issues.push('Stove to fridge too close');
+    if (stoveToFridge > 9) issues.push('Stove to fridge too far');
+    if (fridgeToSink < 4) issues.push('Fridge to sink too close');
+    if (fridgeToSink > 9) issues.push('Fridge to sink too far');
+    if (perimeter < 13) issues.push('Triangle too small');
+    if (perimeter > 26) issues.push('Triangle too large');
+
+    return {
+      valid: issues.length === 0,
+      perimeter: Math.round(perimeter * 10) / 10,
+      legs: {
+        sinkToStove: Math.round(sinkToStove * 10) / 10,
+        stoveToFridge: Math.round(stoveToFridge * 10) / 10,
+        fridgeToSink: Math.round(fridgeToSink * 10) / 10
+      },
+      issues,
+      message: issues.length === 0 ? 'Work triangle is optimal!' : issues.join(', ')
+    };
+  };
+
+  window.showWorkTriangleModal = function() {
+    const result = window.validateWorkTriangle();
+    if (!result) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'work-triangle-modal';
+    modal.innerHTML = `
+      <div class="work-triangle-content">
+        <div class="work-triangle-header">
+          <h3>${result.valid ? '✅' : '⚠️'} Work Triangle Analysis</h3>
+          <button onclick="this.closest('.work-triangle-modal').remove()">&times;</button>
+        </div>
+        <div class="work-triangle-body">
+          <div class="triangle-status ${result.valid ? 'valid' : 'invalid'}">
+            ${result.message}
+          </div>
+          ${result.legs ? `
+            <div class="triangle-measurements">
+              <div class="triangle-leg">
+                <span>Sink → Stove</span>
+                <strong>${result.legs.sinkToStove} ft</strong>
+              </div>
+              <div class="triangle-leg">
+                <span>Stove → Fridge</span>
+                <strong>${result.legs.stoveToFridge} ft</strong>
+              </div>
+              <div class="triangle-leg">
+                <span>Fridge → Sink</span>
+                <strong>${result.legs.fridgeToSink} ft</strong>
+              </div>
+              <div class="triangle-total">
+                <span>Total Perimeter</span>
+                <strong>${result.perimeter} ft</strong>
+              </div>
+            </div>
+            <div class="triangle-guide">
+              <p>Ideal work triangle:</p>
+              <ul>
+                <li>Each leg: 4-9 feet</li>
+                <li>Total: 13-26 feet</li>
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === CABINET SPECIFICATIONS ===
+  window.showCabinetSpecs = function(cabinet) {
+    if (!cabinet) cabinet = window.selectedElement;
+    if (!cabinet || cabinet.type !== 'cabinet') {
+      if (typeof showToast === 'function') showToast('Select a cabinet', 'info');
+      return;
+    }
+
+    const ppi = window.pixelsPerInch || 12;
+    const widthIn = (cabinet.width || 0) / ppi;
+    const heightIn = (cabinet.height || 0) / ppi;
+    const depthIn = (cabinet.depth || 24);
+
+    const modal = document.createElement('div');
+    modal.className = 'cabinet-specs-modal';
+    modal.innerHTML = `
+      <div class="cabinet-specs-content">
+        <div class="cabinet-specs-header">
+          <h3>🗄️ Cabinet Specifications</h3>
+          <button onclick="this.closest('.cabinet-specs-modal').remove()">&times;</button>
+        </div>
+        <div class="cabinet-specs-body">
+          <div class="spec-row"><span>Type</span><strong>${cabinet.cabinetType || cabinet.subType || 'Base'}</strong></div>
+          <div class="spec-row"><span>Width</span><strong>${widthIn}"</strong></div>
+          <div class="spec-row"><span>Height</span><strong>${heightIn}"</strong></div>
+          <div class="spec-row"><span>Depth</span><strong>${depthIn}"</strong></div>
+          <div class="spec-row"><span>Style</span><strong>${cabinet.style || 'Shaker'}</strong></div>
+          <div class="spec-row"><span>Color</span><strong>${cabinet.color || 'White'}</strong></div>
+          ${cabinet.doorStyle ? `<div class="spec-row"><span>Door Style</span><strong>${cabinet.doorStyle}</strong></div>` : ''}
+          ${cabinet.hardware ? `<div class="spec-row"><span>Hardware</span><strong>${cabinet.hardware}</strong></div>` : ''}
+          ${cabinet.sku ? `<div class="spec-row"><span>SKU</span><strong>${cabinet.sku}</strong></div>` : ''}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === DIMENSION INPUT HELPER ===
+  window.parseDimension = function(input) {
+    if (!input) return null;
+    input = input.toString().trim().toLowerCase();
+
+    // Handle various formats: "3'6\"", "3'-6\"", "3' 6\"", "42\"", "42", "3.5'"
+    let inches = 0;
+
+    // Feet and inches: 3'6", 3'-6", 3' 6"
+    const feetInches = input.match(/(\d+(?:\.\d+)?)\s*['']\s*-?\s*(\d+(?:\.\d+)?)\s*["""]?/);
+    if (feetInches) {
+      inches = parseFloat(feetInches[1]) * 12 + parseFloat(feetInches[2]);
+      return inches;
+    }
+
+    // Just feet: 3', 3.5'
+    const justFeet = input.match(/^(\d+(?:\.\d+)?)\s*['']\s*$/);
+    if (justFeet) {
+      inches = parseFloat(justFeet[1]) * 12;
+      return inches;
+    }
+
+    // Just inches: 42", 42
+    const justInches = input.match(/^(\d+(?:\.\d+)?)\s*["""]?\s*$/);
+    if (justInches) {
+      inches = parseFloat(justInches[1]);
+      return inches;
+    }
+
+    return null;
+  };
+
+  window.formatDimensionFull = function(inches) {
+    if (inches === null || inches === undefined) return '';
+    const feet = Math.floor(inches / 12);
+    const remaining = Math.round((inches % 12) * 16) / 16;
+
+    if (feet === 0) return `${remaining}"`;
+    if (remaining === 0) return `${feet}'`;
+    return `${feet}'-${remaining}"`;
+  };
+
+  // === COMPARISON VIEW ===
+  let comparisonSnapshot = null;
+
+  window.takeComparisonSnapshot = function() {
+    if (!window.elements) return;
+    comparisonSnapshot = JSON.parse(JSON.stringify(window.elements));
+    if (typeof showToast === 'function') showToast('Snapshot saved for comparison', 'success');
+  };
+
+  window.showComparison = function() {
+    if (!comparisonSnapshot) {
+      if (typeof showToast === 'function') showToast('Take a snapshot first', 'info');
+      return;
+    }
+
+    const current = window.elements || [];
+    const added = current.filter(e => !comparisonSnapshot.find(s => s.id === e.id));
+    const removed = comparisonSnapshot.filter(s => !current.find(e => e.id === s.id));
+    const modified = current.filter(e => {
+      const orig = comparisonSnapshot.find(s => s.id === e.id);
+      return orig && JSON.stringify(orig) !== JSON.stringify(e);
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'comparison-modal';
+    modal.innerHTML = `
+      <div class="comparison-content">
+        <div class="comparison-header">
+          <h3>📊 Design Comparison</h3>
+          <button onclick="this.closest('.comparison-modal').remove()">&times;</button>
+        </div>
+        <div class="comparison-body">
+          <div class="comparison-section added">
+            <h4>➕ Added (${added.length})</h4>
+            ${added.map(e => `<div class="comparison-item">${getElementIcon(e.type)} ${e.name || e.type}</div>`).join('') || '<div class="comparison-empty">None</div>'}
+          </div>
+          <div class="comparison-section removed">
+            <h4>➖ Removed (${removed.length})</h4>
+            ${removed.map(e => `<div class="comparison-item">${getElementIcon(e.type)} ${e.name || e.type}</div>`).join('') || '<div class="comparison-empty">None</div>'}
+          </div>
+          <div class="comparison-section modified">
+            <h4>✏️ Modified (${modified.length})</h4>
+            ${modified.map(e => `<div class="comparison-item">${getElementIcon(e.type)} ${e.name || e.type}</div>`).join('') || '<div class="comparison-empty">None</div>'}
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === KEYBOARD SHORTCUT ADDITIONS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isInput) return;
+
+    // I = Project info
+    if (e.key === 'i' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showProjectInfoModal();
+    }
+    // T = Work triangle
+    if (e.key === 't' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showWorkTriangleModal();
+    }
+  });
+
   // === INIT ON LOAD ===
   document.addEventListener('DOMContentLoaded', function() {
     window.initFavorites();
     window.initNotes();
     window.initTemplates();
     window.initHistory();
+    window.initProjectInfo();
+    window.initAutoSave();
 
     // Add zoom controls if not present
     const canvas = document.getElementById('roomCanvas');
@@ -1555,7 +2121,28 @@
       `;
       canvas.parentElement?.appendChild(controls);
     }
+
+    // Check for auto-save recovery
+    if (window.hasAutoSave()) {
+      const autoSave = window.loadAutoSave();
+      if (autoSave && autoSave.timestamp) {
+        const saveDate = new Date(autoSave.timestamp);
+        const age = Date.now() - saveDate.getTime();
+        if (age < 24 * 60 * 60 * 1000) { // Less than 24 hours
+          setTimeout(() => {
+            if (confirm(`Recover auto-saved design from ${saveDate.toLocaleString()}?`)) {
+              if (autoSave.elements) window.elements = autoSave.elements;
+              if (autoSave.roomWidth) window.roomWidth = autoSave.roomWidth;
+              if (autoSave.roomDepth) window.roomDepth = autoSave.roomDepth;
+              if (autoSave.projectInfo) projectInfo = autoSave.projectInfo;
+              if (typeof window.renderCanvas === 'function') window.renderCanvas();
+              if (typeof showToast === 'function') showToast('Design recovered', 'success');
+            }
+          }, 1000);
+        }
+      }
+    }
   });
 
-  console.log('Room Designer Pro Features v3.0 loaded');
+  console.log('Room Designer Pro Features v4.0 loaded');
 })();
