@@ -72,78 +72,118 @@ const CONFIG = {
  * @returns {Promise<Object>} Takeoff analysis results
  */
 async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey) {
-  const systemPrompt = `You are an expert millwork/cabinet shop drawing reader. Your job is to extract EXACT cabinet data from commercial architectural drawings.
+  const systemPrompt = `You are an expert at reading cabinet shop drawings, especially from 2020 Design software and similar CAD programs.
 
-STEP 1 - IDENTIFY THE PAGE TYPE:
-- CABINET SCHEDULE: A table/legend listing cabinets with dimensions
-- ELEVATION VIEW: Side view showing cabinets arranged along a wall
-- PLAN VIEW: Top-down floor plan showing cabinet footprints
-- DETAIL VIEW: Closeup of specific cabinet construction
+YOUR MISSION: Extract PRECISE cabinet data to create an accurate 3D virtual room.
 
-STEP 2 - FIND THE ROOM/AREA NAME:
-Look for text in title blocks, headers, or labels like:
-- "Teammate Lounge", "Wet Bar", "Kitchen", "Reception"
-- May include wall numbers like "Wall 1", "Wall 2"
+COMMON SOFTWARE FORMATS TO RECOGNIZE:
+- 2020 Design: Cabinet schedules with SKU codes (B36, W3030, SB36, etc.)
+- Cabinet Vision: Detailed elevation views with dimension callouts
+- KCD Software: Plan and elevation views
+- AutoCAD: Architectural cabinet layouts
 
-STEP 3 - EXTRACT CABINET DATA:
+STEP 1 - IDENTIFY DRAWING TYPE:
+- CABINET SCHEDULE/LEGEND: Table listing all cabinets with dimensions
+- ELEVATION VIEW: Front view of wall showing cabinet arrangement
+- PLAN VIEW: Bird's eye view showing cabinet layout
+- PERSPECTIVE/3D VIEW: 3D rendering of the space
 
-For CABINET SCHEDULES (tables):
-- Read each row: Cabinet # | Width | Depth | Height
-- Dimensions are typically in INCHES (e.g., 36", 24", 32")
-- Include ALL rows, even if some data is missing
+STEP 2 - EXTRACT ROOM INFO:
+- Room/Area name from title block or header
+- Wall identification (Wall A, Wall 1, North Wall, etc.)
+- Overall room dimensions if shown
 
-For ELEVATION VIEWS:
-- Read dimension strings above/below/beside each cabinet
-- Cabinet numbers are usually in circles or tags
-- Upper cabinets are typically above the counter line
-- Base cabinets are below
+STEP 3 - READ EACH CABINET PRECISELY:
 
-For EACH CABINET found:
-- "label": EXACT number shown (1, 2, 42, B1, W1, etc.)
-- "type": base-cabinet, wall-cabinet, sink-base, drawer-base, tall-cabinet, tv-niche, microwave, filler
-- "width": in INCHES as shown (NOT feet)
-- "depth": in INCHES as shown
-- "height": in INCHES as shown
-- "wall": top, bottom, left, right, island (based on position in drawing)
+For 2020 Design SKU CODES:
+- B = Base cabinet (B36 = Base 36")
+- W = Wall cabinet (W3030 = Wall 30"W x 30"H)
+- SB = Sink Base
+- DB = Drawer Base
+- BC = Blind Corner
+- LS = Lazy Susan
+- T = Tall/Pantry
+- V = Vanity
+- Numbers typically = Width in inches
 
-RETURN FORMAT:
+For DIMENSION STRINGS:
+- Read exact measurements: 36", 24", 18.5", etc.
+- W x D x H format is common
+- May show fractional inches (36-3/4")
+
+For EACH CABINET, extract:
+- "label": The cabinet number/tag EXACTLY as shown (1, 2, B36, W3030, etc.)
+- "type": base-cabinet, wall-cabinet, sink-base, drawer-base, corner-cabinet, tall-cabinet, lazy-susan, appliance-cabinet, filler, end-panel
+- "width": Width in INCHES (e.g., 36, 18, 24)
+- "depth": Depth in INCHES (e.g., 24 for base, 12 for wall)
+- "height": Height in INCHES (e.g., 34.5 for base, 30 or 42 for wall, 84-96 for tall)
+- "wall": Which wall it's on (top, bottom, left, right, island)
+
+RETURN THIS JSON:
 {
   "rooms": [
     {
-      "name": "EXACT ROOM NAME",
-      "widthFt": 20,
+      "name": "EXACT ROOM/AREA NAME",
+      "widthFt": 14,
       "depthFt": 12,
       "cabinets": [
-        { "label": "1", "type": "base-cabinet", "width": 18, "depth": 30.5, "height": 32, "wall": "top" },
-        { "label": "2", "type": "base-cabinet", "width": 36, "depth": 24, "height": 32, "wall": "top" }
+        { "label": "B36", "type": "base-cabinet", "width": 36, "depth": 24, "height": 34.5, "wall": "top" },
+        { "label": "SB36", "type": "sink-base", "width": 36, "depth": 24, "height": 34.5, "wall": "top" },
+        { "label": "W3030", "type": "wall-cabinet", "width": 30, "depth": 12, "height": 30, "wall": "top" }
       ],
-      "notes": "Brief description of what this page shows"
+      "appliances": [
+        { "type": "refrigerator", "width": 36, "location": "right" },
+        { "type": "range", "width": 30, "location": "top" }
+      ],
+      "notes": "Wall 1 elevation showing base and wall cabinet run"
     }
   ],
-  "pageType": "schedule|elevation|plan|detail",
-  "pageTitle": "Title if visible",
+  "pageType": "schedule|elevation|plan|perspective",
+  "pageTitle": "Title from drawing",
   "confidence": "high|medium|low",
-  "notes": ["Any issues reading the drawing"]
+  "notes": ["Observations about drawing quality or unclear elements"]
 }
 
-CRITICAL RULES:
-1. Use EXACT numbers from drawing - if it says "42", use "42" not "1"
-2. Use EXACT dimensions - if drawing shows 36.75", use 36.75 not 36
-3. ALL dimensions in INCHES (standard for cabinet drawings)
-4. Include EVERY cabinet visible, even fillers and specialty items
-5. If dimension is unclear, note it but provide best estimate
-6. TV niches, microwave cabinets, panels = include as cabinets
-7. Do NOT make up data - only report what you can read`;
+CRITICAL ACCURACY RULES:
+1. READ dimensions EXACTLY - 36.75" means 36.75, not 36 or 37
+2. Use the EXACT label/number shown on drawing
+3. All dimensions must be in INCHES
+4. Base cabinets: typically 24" deep, 34.5" tall
+5. Wall cabinets: typically 12" deep, 30" or 36" or 42" tall
+6. Tall cabinets: typically 24" deep, 84" or 90" or 96" tall
+7. Include ALL cabinets - fillers, panels, appliance garages, etc.
+8. Note appliance locations (fridge, range, dishwasher, microwave)
+9. If you can't read a dimension clearly, use type-appropriate defaults but note low confidence`;
 
-  const userPrompt = `Analyze this ${projectType || 'commercial cabinet'} drawing.
+  const userPrompt = `Analyze this ${projectType || 'cabinet'} drawing for 3D room creation.
 
-INSTRUCTIONS:
-1. What type of page is this? (schedule, elevation, plan, detail)
-2. What is the room/area name shown?
-3. List EVERY cabinet with its EXACT label and dimensions
-4. Note which wall each cabinet is on if you can tell
+EXTRACT ALL DATA NEEDED TO BUILD AN ACCURATE 3D MODEL:
 
-Be thorough - extract ALL cabinets visible. Include exact dimensions in inches.`;
+1. DRAWING TYPE: Is this a schedule, elevation, plan view, or 3D perspective?
+
+2. ROOM IDENTIFICATION:
+   - What room/area is this? (Kitchen, Wet Bar, Pantry, etc.)
+   - Which wall is shown? (Wall 1, Wall A, North Wall, etc.)
+
+3. CABINET INVENTORY - For EVERY cabinet visible:
+   - Cabinet label/number (B36, 1, W3030, etc.)
+   - EXACT width in inches
+   - EXACT depth in inches
+   - EXACT height in inches
+   - Cabinet type (base, wall, sink, drawer, tall, corner, etc.)
+   - Wall position
+
+4. APPLIANCES - Note any:
+   - Refrigerator location and width
+   - Range/cooktop location and width
+   - Dishwasher, microwave, hood locations
+
+5. SPECIAL ITEMS:
+   - Fillers, panels, moldings
+   - TV niches, wine racks
+   - Appliance garages
+
+Return complete JSON with all cabinets and their PRECISE dimensions for 3D rendering.`;
 
   try {
     const response = await fetch(CONFIG.openai.apiUrl, {

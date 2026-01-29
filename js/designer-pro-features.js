@@ -6015,9 +6015,11 @@
       }
 
       // Convert feet to pixels for direct canvas placement
+      // Store ACTUAL dimensions in inches for accurate 3D rendering
       const newElement = {
         id: `imp_${cab.number}_${Date.now()}_${i}`,
         type: elementType,
+        subType: elementType,
         label: `#${cab.number} ${cab.name}`,
         x: xFeet * ppf,
         y: yFeet * ppf,
@@ -6025,7 +6027,19 @@
         height: depthFeet,
         color: getColorForElementType(elementType),
         rotation: 0,
-        locked: false
+        locked: false,
+        // CRITICAL: Store actual dimensions in inches for 3D rendering
+        actualWidth: cab.width || 36,
+        actualDepth: cab.depth || 24,
+        actualHeight: cab.height || (elementType === 'wall-cabinet' ? 30 : 34.5),
+        // Cabinet-specific properties for 3D
+        doorStyle: 'shaker',
+        construction: 'frameless',
+        doorOverlay: 'full',
+        cabinetFinish: 'wood-grain',
+        // Source tracking
+        importedFrom: 'blueprint',
+        originalNumber: cab.number
       };
 
       if (window.elements) {
@@ -6242,9 +6256,18 @@
             wallPositions.top += widthFeet + gapFeet;
         }
 
+        // Get the actual 3D height based on cabinet type
+        const defaultHeights = {
+          'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
+          'wall-cabinet': 30, 'tall-cabinet': 84, 'pantry': 84,
+          'island': 36, 'microwave': 18, 'tv-niche': 36, 'corner-cabinet': 34.5
+        };
+        const actualHeight = cab.height || defaultHeights[elementType] || 34.5;
+
         newRoom.elements.push({
           id: `imp_r${roomIndex}_c${cabIndex}_${Date.now()}`,
           type: elementType,
+          subType: elementType,
           label: `#${cab.number} ${cab.name}`,
           xFt: xFt,
           yFt: yFt,
@@ -6254,7 +6277,19 @@
           rotation: rotation,
           locked: false,
           wall: wall,
-          isAppliance: cab.isAppliance || false
+          isAppliance: cab.isAppliance || false,
+          // CRITICAL: Store actual dimensions in inches for accurate 3D rendering
+          actualWidth: cab.width || 36,
+          actualDepth: cab.depth || 24,
+          actualHeight: actualHeight,
+          // Cabinet-specific properties for 3D
+          doorStyle: 'shaker',
+          construction: 'frameless',
+          doorOverlay: 'full',
+          cabinetFinish: 'wood-grain',
+          // Source tracking
+          importedFrom: 'blueprint',
+          originalNumber: cab.number
         });
       });
 
