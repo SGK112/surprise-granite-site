@@ -10611,6 +10611,17 @@
           </div>
         </div>
 
+        <!-- Create New Button -->
+        <button class="btn btn-secondary" onclick="createNewDesign()" title="Create New Design">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          New
+        </button>
+
         <!-- Save Design Button -->
         <button class="btn btn-primary" id="saveDesignBtn" onclick="saveDesignToCloud()" style="background: #10B981; border-color: #10B981;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -61396,6 +61407,55 @@
       }
       showSnapFeedback('Design saved locally');
       return design;
+    }
+
+    // Create a new blank design
+    function createNewDesign() {
+      // Check for unsaved changes
+      if (elements.length > 0) {
+        if (!confirm('Create a new design? Any unsaved changes will be lost.')) {
+          return;
+        }
+      }
+
+      // Clear all elements
+      elements.length = 0;
+      selectedElement = null;
+      selectedElements = [];
+
+      // Reset project name
+      const projectInput = document.getElementById('projectName');
+      if (projectInput) {
+        projectInput.value = 'Untitled Project';
+      }
+
+      // Reset share state
+      if (typeof SHARE_STATE !== 'undefined') {
+        SHARE_STATE.designId = null;
+        SHARE_STATE.isSharedView = false;
+        SHARE_STATE.shareCode = null;
+      }
+
+      // Clear URL parameters
+      window.history.replaceState({}, '', window.location.pathname);
+
+      // Reset room dimensions to default
+      if (typeof roomWidth !== 'undefined') roomWidth = 240;
+      if (typeof roomDepth !== 'undefined') roomDepth = 180;
+
+      // Clear local autosave
+      try {
+        localStorage.removeItem('room_designer_autosave');
+      } catch (e) {}
+
+      // Re-render canvas
+      if (typeof renderCanvas === 'function') renderCanvas();
+      if (typeof render3D === 'function' && typeof scene !== 'undefined') render3D();
+
+      // Update save status
+      if (typeof updateSaveStatus === 'function') updateSaveStatus('unsaved');
+
+      showToast('New design created', 'success');
     }
 
     // Save design to cloud (Supabase) or locally
