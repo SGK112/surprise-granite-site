@@ -8956,7 +8956,10 @@
               <div class="notification-dropdown-title">
                 <span>🔔</span> Activity
               </div>
-              <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark all read</button>
+              <div style="display: flex; gap: 8px;">
+                <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark read</button>
+                <button class="mark-all-read" onclick="clearAllNotifications()" style="color: #ef4444;">Clear all</button>
+              </div>
             </div>
             <div class="notification-tabs">
               <button class="notification-tab active" data-filter="all" onclick="filterNotifications('all')">
@@ -15798,38 +15801,51 @@
       'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>'
     };
 
+    // Industry standard cabinet dimensions:
+    // Base cabinets: 24" deep (2 ft), 34.5" tall (2.875 ft) - top-down view shows depth as 'height'
+    // Wall cabinets: 12" deep (1 ft), 30-42" tall, mounted 54" from floor
+    // Countertop overhang: 1.5" front (0.125 ft)
+    // Total counter depth: 25.5" (2.125 ft) with overhang
     const ELEMENT_TYPES = {
       cabinets: [
-        // Base cabinets: standard 24" (2ft) deep
-        { type: 'base-cabinet', width: 3, height: 2, color: '#8B4513', label: 'Base Cabinet 36"' },
-        { type: 'drawer-base', width: 1.5, height: 2, color: '#8B4513', label: 'Drawer Base 18"' },
-        { type: 'sink-base', width: 3, height: 2, color: '#8B4513', label: 'Sink Base 36"' },
-        // Wall cabinets: standard 12" (1ft) deep
-        { type: 'wall-cabinet', width: 3, height: 1, color: '#A0522D', label: 'Wall Cabinet 36"' },
-        { type: 'microwave-cabinet', width: 2.5, height: 1.5, color: '#8B4513', label: 'Microwave Shelf' },
-        { type: 'above-microwave-cabinet', width: 2.5, height: 1, color: '#8B4513', label: 'Above Microwave' },
-        // Tall/Pantry cabinets: 24" (2ft) deep (same as base)
-        { type: 'tall-cabinet', width: 2, height: 2, color: '#8B4513', label: 'Tall Cabinet 24"' },
-        { type: 'fridge-cabinet', width: 3, height: 2, color: '#8B4513', label: 'Fridge Cabinet 36"' },
-        // Oven cabinets: built-in oven housings (30" wide standard, 24" deep)
-        { type: 'single-oven-cabinet', width: 2.5, height: 2, color: '#8B4513', label: 'Single Oven Cabinet 30"' },
-        { type: 'tall-oven', width: 2.5, height: 2, color: '#8B4513', label: 'Tall Oven Cabinet 30"' },
-        { type: 'double-oven-cabinet', width: 2.5, height: 2, color: '#8B4513', label: 'Double Oven Cabinet 30"' },
-        // Corner cabinets: 36"x36" footprint
-        { type: 'corner-cabinet', width: 3, height: 3, color: '#7B3F00', label: 'Corner Cabinet' },
-        { type: 'lazy-susan', width: 3, height: 3, color: '#7B3F00', label: 'Lazy Susan' },
-        { type: 'blind-corner', width: 3, height: 3, color: '#7B3F00', label: 'Blind Corner' },
-        // Island: 6ft wide, 3ft deep
-        { type: 'island', width: 6, height: 3, color: '#654321', label: 'Island' },
-        // Sized base cabinets (12" through 33")
-        { type: 'base-cabinet-12', width: 1, height: 2, color: '#8B4513', label: 'Base Cabinet 12"' },
-        { type: 'base-cabinet-15', width: 1.25, height: 2, color: '#8B4513', label: 'Base Cabinet 15"' },
-        { type: 'base-cabinet-18', width: 1.5, height: 2, color: '#8B4513', label: 'Base Cabinet 18"' },
-        { type: 'base-cabinet-21', width: 1.75, height: 2, color: '#8B4513', label: 'Base Cabinet 21"' },
-        { type: 'base-cabinet-24', width: 2, height: 2, color: '#8B4513', label: 'Base Cabinet 24"' },
-        { type: 'base-cabinet-27', width: 2.25, height: 2, color: '#8B4513', label: 'Base Cabinet 27"' },
-        { type: 'base-cabinet-30', width: 2.5, height: 2, color: '#8B4513', label: 'Base Cabinet 30"' },
-        { type: 'base-cabinet-33', width: 2.75, height: 2, color: '#8B4513', label: 'Base Cabinet 33"' }
+        // Base cabinets: 24" (2 ft) deep - this is the 'height' in top-down view
+        { type: 'base-cabinet', width: 3, height: 2, color: '#8B7355', label: 'Base Cabinet 36"' },
+        { type: 'drawer-base', width: 1.5, height: 2, color: '#8B7355', label: 'Drawer Base 18"' },
+        { type: 'sink-base', width: 3, height: 2, color: '#8B7355', label: 'Sink Base 36"' },
+        // Wall cabinets: 12" (1 ft) deep - this is the 'height' in top-down view
+        { type: 'wall-cabinet', width: 3, height: 1, color: '#9B8465', label: 'Wall Cabinet 36"' },
+        { type: 'microwave-cabinet', width: 2.5, height: 1.25, color: '#8B7355', label: 'Microwave Shelf' },
+        { type: 'above-microwave-cabinet', width: 2.5, height: 1, color: '#8B7355', label: 'Above Microwave' },
+        // Tall/Pantry cabinets: 24" (2 ft) deep, 84-96" tall
+        { type: 'tall-cabinet', width: 2, height: 2, color: '#8B7355', label: 'Tall Cabinet 24"' },
+        { type: 'fridge-cabinet', width: 3, height: 2, color: '#8B7355', label: 'Fridge Cabinet 36"' },
+        // Oven cabinets: 30" wide, 24" deep
+        { type: 'single-oven-cabinet', width: 2.5, height: 2, color: '#8B7355', label: 'Single Oven Cabinet 30"' },
+        { type: 'tall-oven', width: 2.5, height: 2, color: '#8B7355', label: 'Tall Oven Cabinet 30"' },
+        { type: 'double-oven-cabinet', width: 2.5, height: 2, color: '#8B7355', label: 'Double Oven Cabinet 30"' },
+        // Corner cabinets: 36"x36" footprint (diagonal or lazy susan)
+        { type: 'corner-cabinet', width: 3, height: 3, color: '#7B6545', label: 'Corner Cabinet' },
+        { type: 'lazy-susan', width: 3, height: 3, color: '#7B6545', label: 'Lazy Susan' },
+        { type: 'blind-corner', width: 3.5, height: 2, color: '#7B6545', label: 'Blind Corner 42"' },
+        // Island: configurable, default 6ft x 3ft (24" deep cabinets on each side)
+        { type: 'island', width: 6, height: 3, color: '#6B5545', label: 'Island 72"x36"' },
+        // Sized base cabinets (width in inches, depth always 24"/2ft)
+        { type: 'base-cabinet-12', width: 1, height: 2, color: '#8B7355', label: 'Base Cabinet 12"' },
+        { type: 'base-cabinet-15', width: 1.25, height: 2, color: '#8B7355', label: 'Base Cabinet 15"' },
+        { type: 'base-cabinet-18', width: 1.5, height: 2, color: '#8B7355', label: 'Base Cabinet 18"' },
+        { type: 'base-cabinet-21', width: 1.75, height: 2, color: '#8B7355', label: 'Base Cabinet 21"' },
+        { type: 'base-cabinet-24', width: 2, height: 2, color: '#8B7355', label: 'Base Cabinet 24"' },
+        { type: 'base-cabinet-27', width: 2.25, height: 2, color: '#8B7355', label: 'Base Cabinet 27"' },
+        { type: 'base-cabinet-30', width: 2.5, height: 2, color: '#8B7355', label: 'Base Cabinet 30"' },
+        { type: 'base-cabinet-33', width: 2.75, height: 2, color: '#8B7355', label: 'Base Cabinet 33"' },
+        // Sized wall cabinets (width in inches, depth always 12"/1ft)
+        { type: 'wall-cabinet-12', width: 1, height: 1, color: '#9B8465', label: 'Wall Cabinet 12"' },
+        { type: 'wall-cabinet-15', width: 1.25, height: 1, color: '#9B8465', label: 'Wall Cabinet 15"' },
+        { type: 'wall-cabinet-18', width: 1.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 18"' },
+        { type: 'wall-cabinet-24', width: 2, height: 1, color: '#9B8465', label: 'Wall Cabinet 24"' },
+        { type: 'wall-cabinet-30', width: 2.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 30"' },
+        { type: 'wall-cabinet-36', width: 3, height: 1, color: '#9B8465', label: 'Wall Cabinet 36"' },
+        { type: 'wall-cabinet-42', width: 3.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 42"' }
       ],
       surfaces: [
         // Standard countertop: 25.5" depth (2.125') with 1.5" overhang = 2.17' total
@@ -15995,6 +16011,101 @@
         { type: 'jewelry-drawer', width: 2, height: 0.5, color: '#8B7355', label: 'Jewelry Drawer' },
         { type: 'tie-rack', width: 1.5, height: 2, color: '#A0A0A0', label: 'Tie/Belt Rack' },
         { type: 'full-mirror', width: 2, height: 0.15, color: '#E8E8FF', label: 'Full-Length Mirror' }
+      ],
+      // === FURNITURE ===
+      furniture: [
+        // Dining Tables
+        { type: 'dining-table-rect', width: 6, height: 3, color: '#8B6914', label: 'Dining Table 72x36' },
+        { type: 'dining-table-square', width: 4, height: 4, color: '#8B6914', label: 'Dining Table 48x48' },
+        { type: 'dining-table-round', width: 4, height: 4, color: '#8B6914', label: 'Round Dining Table 48"' },
+        { type: 'dining-table-oval', width: 6, height: 3.5, color: '#8B6914', label: 'Oval Dining Table 72x42' },
+        { type: 'breakfast-table', width: 3, height: 3, color: '#A08060', label: 'Breakfast Table 36"' },
+        { type: 'pub-table', width: 2.5, height: 2.5, color: '#6B4423', label: 'Pub/Bar Table 30"' },
+        // Dining Chairs
+        { type: 'dining-chair', width: 1.5, height: 1.5, color: '#8B7355', label: 'Dining Chair' },
+        { type: 'armchair', width: 2, height: 2, color: '#6B5545', label: 'Armchair' },
+        { type: 'bar-stool', width: 1.25, height: 1.25, color: '#8B7355', label: 'Bar Stool' },
+        { type: 'bench', width: 4, height: 1.5, color: '#8B6914', label: 'Bench 48"' },
+        // Kitchen/Breakfast Tables
+        { type: 'kitchen-table', width: 4, height: 2.5, color: '#A08060', label: 'Kitchen Table 48x30' },
+        { type: 'cafe-table', width: 2.5, height: 2.5, color: '#6B4423', label: 'Cafe Table 30"' },
+        // Living Room Seating
+        { type: 'sofa-3seat', width: 7, height: 3, color: '#5C4033', label: '3-Seat Sofa 84"' },
+        { type: 'sofa-2seat', width: 5, height: 3, color: '#5C4033', label: 'Loveseat 60"' },
+        { type: 'sectional-l', width: 8, height: 8, color: '#5C4033', label: 'L-Sectional' },
+        { type: 'sectional-u', width: 10, height: 6, color: '#5C4033', label: 'U-Sectional' },
+        { type: 'accent-chair', width: 2.5, height: 2.5, color: '#8B6914', label: 'Accent Chair' },
+        { type: 'recliner', width: 3, height: 3, color: '#5C4033', label: 'Recliner' },
+        { type: 'ottoman', width: 2, height: 2, color: '#6B5545', label: 'Ottoman' },
+        // Coffee & Side Tables
+        { type: 'coffee-table-rect', width: 4, height: 2, color: '#8B6914', label: 'Coffee Table 48x24' },
+        { type: 'coffee-table-round', width: 3, height: 3, color: '#8B6914', label: 'Round Coffee Table 36"' },
+        { type: 'side-table', width: 2, height: 2, color: '#8B7355', label: 'Side Table 24"' },
+        { type: 'console-table', width: 4, height: 1.25, color: '#8B6914', label: 'Console Table 48x15' },
+        { type: 'end-table', width: 2, height: 2, color: '#8B7355', label: 'End Table' },
+        // Entertainment
+        { type: 'tv-stand', width: 5, height: 1.5, color: '#4A4A4A', label: 'TV Stand 60"' },
+        { type: 'entertainment-center', width: 6, height: 2, color: '#5C4033', label: 'Entertainment Center' },
+        { type: 'bookshelf', width: 3, height: 1, color: '#8B7355', label: 'Bookshelf 36"' },
+        { type: 'bookshelf-tall', width: 3, height: 1.5, color: '#8B7355', label: 'Tall Bookshelf 36"' },
+        // Bedroom
+        { type: 'bed-king', width: 6.5, height: 6.75, color: '#D4C4A8', label: 'King Bed 76x80' },
+        { type: 'bed-queen', width: 5, height: 6.75, color: '#D4C4A8', label: 'Queen Bed 60x80' },
+        { type: 'bed-full', width: 4.5, height: 6.25, color: '#D4C4A8', label: 'Full Bed 54x75' },
+        { type: 'bed-twin', width: 3.25, height: 6.25, color: '#D4C4A8', label: 'Twin Bed 38x75' },
+        { type: 'nightstand', width: 2, height: 1.5, color: '#8B7355', label: 'Nightstand 24"' },
+        { type: 'dresser', width: 5, height: 1.5, color: '#8B7355', label: 'Dresser 60"' },
+        { type: 'chest-drawers', width: 3, height: 1.5, color: '#8B7355', label: 'Chest of Drawers' },
+        { type: 'wardrobe', width: 4, height: 2, color: '#6B5545', label: 'Wardrobe 48"' },
+        // Office
+        { type: 'desk', width: 5, height: 2.5, color: '#8B6914', label: 'Desk 60x30' },
+        { type: 'desk-l', width: 5, height: 5, color: '#8B6914', label: 'L-Shaped Desk' },
+        { type: 'office-chair', width: 2, height: 2, color: '#404040', label: 'Office Chair' },
+        { type: 'filing-cabinet', width: 1.25, height: 2, color: '#606060', label: 'Filing Cabinet' }
+      ],
+      // === DECOR & SHELVING ===
+      decor: [
+        // Wall Shelving
+        { type: 'floating-shelf', width: 3, height: 0.75, color: '#A08060', label: 'Floating Shelf 36"' },
+        { type: 'floating-shelf-24', width: 2, height: 0.75, color: '#A08060', label: 'Floating Shelf 24"' },
+        { type: 'floating-shelf-48', width: 4, height: 0.75, color: '#A08060', label: 'Floating Shelf 48"' },
+        { type: 'corner-shelf', width: 1.5, height: 1.5, color: '#A08060', label: 'Corner Shelf' },
+        { type: 'bracket-shelf', width: 3, height: 1, color: '#8B7355', label: 'Bracket Shelf 36"' },
+        { type: 'ladder-shelf', width: 2.5, height: 1.5, color: '#8B6914', label: 'Ladder Shelf' },
+        // Shadow Boxes & Display
+        { type: 'shadow-box-sm', width: 1, height: 0.33, color: '#3A3A3A', label: 'Shadow Box 12"' },
+        { type: 'shadow-box-md', width: 1.5, height: 0.33, color: '#3A3A3A', label: 'Shadow Box 18"' },
+        { type: 'shadow-box-lg', width: 2, height: 0.33, color: '#3A3A3A', label: 'Shadow Box 24"' },
+        { type: 'display-shelf', width: 3, height: 0.5, color: '#8B7355', label: 'Display Shelf' },
+        { type: 'cube-shelf', width: 1, height: 1, color: '#A08060', label: 'Cube Shelf 12"' },
+        { type: 'cube-shelf-set', width: 3, height: 3, color: '#A08060', label: 'Cube Shelf Set' },
+        // Picture Frames & Art
+        { type: 'picture-frame-sm', width: 0.67, height: 0.17, color: '#4A4A4A', label: 'Picture Frame 8x10' },
+        { type: 'picture-frame-md', width: 1, height: 0.17, color: '#4A4A4A', label: 'Picture Frame 12x16' },
+        { type: 'picture-frame-lg', width: 1.5, height: 0.17, color: '#4A4A4A', label: 'Picture Frame 18x24' },
+        { type: 'picture-frame-xl', width: 2, height: 0.17, color: '#4A4A4A', label: 'Picture Frame 24x36' },
+        { type: 'gallery-frame', width: 2.5, height: 0.17, color: '#3A3A3A', label: 'Gallery Frame 30"' },
+        { type: 'canvas-art', width: 3, height: 0.17, color: '#F5F5DC', label: 'Canvas Art 36"' },
+        { type: 'wall-art', width: 4, height: 0.17, color: '#E8E4E0', label: 'Wall Art 48"' },
+        // Mirrors (Decorative)
+        { type: 'decorative-mirror', width: 2, height: 0.17, color: '#C4D4E4', label: 'Decorative Mirror 24"' },
+        { type: 'round-mirror', width: 2.5, height: 0.17, color: '#C4D4E4', label: 'Round Mirror 30"' },
+        { type: 'floor-mirror', width: 2, height: 0.17, color: '#E8E8FF', label: 'Floor Mirror' },
+        // Wall Decor
+        { type: 'wall-clock', width: 1, height: 0.17, color: '#3A3A3A', label: 'Wall Clock 12"' },
+        { type: 'wall-sconce', width: 0.5, height: 0.25, color: '#C0A080', label: 'Wall Sconce' },
+        { type: 'wall-planter', width: 1, height: 0.5, color: '#228B22', label: 'Wall Planter' },
+        // Plants & Greenery
+        { type: 'potted-plant-sm', width: 1, height: 1, color: '#228B22', label: 'Small Plant' },
+        { type: 'potted-plant-md', width: 1.5, height: 1.5, color: '#228B22', label: 'Medium Plant' },
+        { type: 'potted-plant-lg', width: 2, height: 2, color: '#228B22', label: 'Large Plant' },
+        { type: 'tree-indoor', width: 2.5, height: 2.5, color: '#2E8B57', label: 'Indoor Tree' },
+        // Rugs & Floor Decor
+        { type: 'area-rug-sm', width: 4, height: 6, color: '#8B6914', label: 'Area Rug 4x6' },
+        { type: 'area-rug-md', width: 5, height: 8, color: '#8B6914', label: 'Area Rug 5x8' },
+        { type: 'area-rug-lg', width: 8, height: 10, color: '#8B6914', label: 'Area Rug 8x10' },
+        { type: 'runner-rug', width: 2.5, height: 8, color: '#8B6914', label: 'Runner Rug 2.5x8' },
+        { type: 'round-rug', width: 6, height: 6, color: '#8B6914', label: 'Round Rug 6\'' }
       ]
     };
 
@@ -21454,93 +21565,186 @@
       ctx.save();
       ctx.globalAlpha = opacity;
 
-      // Subtle wood grain lines
-      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-      ctx.lineWidth = 0.8;
+      // HD wood grain with multiple layers for realism
+      // Layer 1: Primary grain lines (darker, thicker)
+      ctx.strokeStyle = 'rgba(60,40,20,0.18)';
+      ctx.lineWidth = 1.2;
 
-      const grainCount = Math.floor(h / 6);
+      const grainCount = Math.floor(h / 4); // More grain lines for HD
       for (let i = 0; i < grainCount; i++) {
-        const gy = y + 4 + i * (h - 8) / grainCount;
-        const waveAmp = 1 + rand(i) * 2;
-        const waveFreq = 0.02 + rand(i + 50) * 0.03;
+        const gy = y + 3 + i * (h - 6) / grainCount;
+        const waveAmp = 0.8 + rand(i) * 1.5;
+        const waveFreq = 0.015 + rand(i + 50) * 0.025;
+        const phaseShift = rand(i + 100) * Math.PI * 2;
 
         ctx.beginPath();
-        ctx.moveTo(x + 2, gy);
+        ctx.moveTo(x + 1, gy);
 
-        for (let gx = x + 2; gx < x + w - 2; gx += 3) {
-          const yOffset = Math.sin((gx - x) * waveFreq + rand(i + 100) * Math.PI) * waveAmp;
+        for (let gx = x + 1; gx < x + w - 1; gx += 2) {
+          const progress = (gx - x) / w;
+          const yOffset = Math.sin((gx - x) * waveFreq + phaseShift) * waveAmp * (0.8 + progress * 0.4);
           ctx.lineTo(gx, gy + yOffset);
         }
         ctx.stroke();
       }
 
-      // Occasional darker grain knots
-      ctx.fillStyle = 'rgba(0,0,0,0.08)';
-      const knotCount = Math.floor(w * h / 3000);
+      // Layer 2: Secondary fine grain (lighter, thinner)
+      ctx.strokeStyle = 'rgba(80,60,40,0.10)';
+      ctx.lineWidth = 0.5;
+      const fineGrainCount = Math.floor(h / 2.5);
+      for (let i = 0; i < fineGrainCount; i++) {
+        const gy = y + 2 + i * (h - 4) / fineGrainCount;
+        const waveAmp = 0.3 + rand(i + 200) * 0.8;
+        const waveFreq = 0.03 + rand(i + 250) * 0.04;
+
+        ctx.beginPath();
+        ctx.moveTo(x + 1, gy);
+        for (let gx = x + 1; gx < x + w - 1; gx += 1.5) {
+          const yOffset = Math.sin((gx - x) * waveFreq + rand(i + 300) * Math.PI) * waveAmp;
+          ctx.lineTo(gx, gy + yOffset);
+        }
+        ctx.stroke();
+      }
+
+      // Layer 3: Highlight grain streaks
+      ctx.strokeStyle = 'rgba(255,240,220,0.06)';
+      ctx.lineWidth = 1.5;
+      const highlightCount = Math.floor(h / 10);
+      for (let i = 0; i < highlightCount; i++) {
+        const gy = y + 5 + rand(i * 17) * (h - 10);
+        ctx.beginPath();
+        ctx.moveTo(x + rand(i) * w * 0.2, gy);
+        ctx.lineTo(x + w * 0.3 + rand(i + 1) * w * 0.7, gy + rand(i + 2) * 3 - 1.5);
+        ctx.stroke();
+      }
+
+      // Darker grain knots with rings
+      const knotCount = Math.floor(w * h / 2000);
       for (let k = 0; k < knotCount; k++) {
         const kx = x + rand(k * 3) * w * 0.8 + w * 0.1;
         const ky = y + rand(k * 5) * h * 0.8 + h * 0.1;
-        const kr = 2 + rand(k * 7) * 4;
+        const kr = 2 + rand(k * 7) * 5;
+
+        // Knot center (darkest)
+        ctx.fillStyle = 'rgba(40,25,10,0.15)';
+        ctx.beginPath();
+        ctx.ellipse(kx, ky, Math.abs(kr * 0.4), Math.abs(kr * 0.25), rand(k * 11) * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Knot ring
+        ctx.strokeStyle = 'rgba(50,30,15,0.12)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.ellipse(kx, ky, Math.abs(kr), Math.abs(kr * 0.6), rand(k * 11) * Math.PI, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Subtle color variation patches
+      ctx.fillStyle = 'rgba(80,50,20,0.03)';
+      const patchCount = Math.floor(w * h / 1500);
+      for (let p = 0; p < patchCount; p++) {
+        const px = x + rand(p * 7) * w;
+        const py = y + rand(p * 11) * h;
+        const pw = 10 + rand(p * 13) * 20;
+        const ph = 5 + rand(p * 17) * 15;
+        ctx.fillRect(px, py, pw, ph);
       }
 
       ctx.restore();
     }
 
-    // Draw a single cabinet door with shaker style
+    // Draw a single cabinet door with shaker style - HD rendering
     function drawCabinetDoor(ctx, x, y, w, h, color) {
       // Guard against invalid dimensions
       w = Math.abs(w);
       h = Math.abs(h);
       if (w < 1 || h < 1) return;
 
-      // Door background
-      ctx.fillStyle = color;
+      // Door background with subtle gradient
+      const doorGrad = ctx.createLinearGradient(x, y, x, y + h);
+      doorGrad.addColorStop(0, adjustColor(color, 8));
+      doorGrad.addColorStop(0.5, color);
+      doorGrad.addColorStop(1, adjustColor(color, -5));
+      ctx.fillStyle = doorGrad;
       ctx.fillRect(x, y, w, h);
 
-      // Wood grain
-      drawWoodGrain(ctx, x, y, w, h, color, 0.5);
+      // HD wood grain texture
+      drawWoodGrain(ctx, x, y, w, h, color, 0.6);
 
-      // Shaker panel inset
-      const inset = Math.min(10, w * 0.1, h * 0.08);
+      // Shaker panel inset - HD with beveled edges
+      const inset = Math.min(12, w * 0.12, h * 0.1);
       const px = x + inset;
       const py = y + inset;
       const pw = w - inset * 2;
       const ph = h - inset * 2;
 
-      // Panel shadow (inset effect)
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(px, py, pw, 2);
-      ctx.fillRect(px, py, 2, ph);
+      // Outer bevel shadow (top-left inset)
+      ctx.fillStyle = 'rgba(0,0,0,0.20)';
+      ctx.fillRect(px - 1, py - 1, pw + 2, 3);
+      ctx.fillRect(px - 1, py - 1, 3, ph + 2);
 
-      // Panel highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.1)';
-      ctx.fillRect(px, py + ph - 2, pw, 2);
-      ctx.fillRect(px + pw - 2, py, 2, ph);
+      // Outer bevel highlight (bottom-right)
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(px, py + ph - 2, pw, 3);
+      ctx.fillRect(px + pw - 2, py, 3, ph);
 
-      // Inner panel darker
-      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      // Inner panel with subtle gradient
+      const panelGrad = ctx.createLinearGradient(px, py, px, py + ph);
+      panelGrad.addColorStop(0, adjustColor(color, -8));
+      panelGrad.addColorStop(0.3, adjustColor(color, -3));
+      panelGrad.addColorStop(1, adjustColor(color, -12));
+      ctx.fillStyle = panelGrad;
       ctx.fillRect(px + 2, py + 2, pw - 4, ph - 4);
 
-      // Edge highlights
-      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      // Inner panel grain
+      drawWoodGrain(ctx, px + 2, py + 2, pw - 4, ph - 4, color, 0.4);
+
+      // Crisp edge definition
+      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 1, py + 1, pw - 2, ph - 2);
+
+      // Door frame outer highlights (simulates light source top-left)
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.fillRect(x, y, w, 2);
       ctx.fillRect(x, y, 2, h);
 
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(x, y + h - 2, w, 2);
       ctx.fillRect(x + w - 2, y, 2, h);
 
-      // Handle
-      const handleLen = Math.min(18, h * 0.3);
-      const handleX = x + w - 8;
+      // HD Handle with metallic finish
+      const handleLen = Math.min(22, h * 0.35);
+      const handleW = 4;
+      const handleX = x + w - 10;
       const handleY = y + h / 2 - handleLen / 2;
-      ctx.fillStyle = 'rgba(180,180,180,0.85)';
-      ctx.fillRect(handleX, handleY, 3, handleLen);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+
+      // Handle shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(handleX + 2, handleY + 2, handleW, handleLen);
+
+      // Handle body with metallic gradient
+      const handleGrad = ctx.createLinearGradient(handleX, handleY, handleX + handleW, handleY);
+      handleGrad.addColorStop(0, '#C8C8C8');
+      handleGrad.addColorStop(0.3, '#E8E8E8');
+      handleGrad.addColorStop(0.5, '#F5F5F5');
+      handleGrad.addColorStop(0.7, '#D8D8D8');
+      handleGrad.addColorStop(1, '#A0A0A0');
+      ctx.fillStyle = handleGrad;
+      ctx.fillRect(handleX, handleY, handleW, handleLen);
+
+      // Handle edge highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
       ctx.fillRect(handleX, handleY, 1, handleLen);
+
+      // Handle ends (rounded caps)
+      ctx.fillStyle = '#B0B0B0';
+      ctx.beginPath();
+      ctx.arc(handleX + handleW/2, handleY + 2, handleW/2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(handleX + handleW/2, handleY + handleLen - 2, handleW/2, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // Draw countertop surface with material-specific patterns
@@ -21619,30 +21823,35 @@
           break;
 
         case 'quartz':
-          // Quartz: Uniform with subtle sparkle/flecks
+          // Quartz: Uniform with subtle sparkle/flecks (optimized)
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
 
-          // Fine uniform speckling
-          const speckleCount = Math.floor(w * h / 40);
+          // Pre-defined speckle colors for performance (avoid string concat)
+          const quartzSpeckles = [
+            'rgba(255,255,255,0.06)', 'rgba(255,255,255,0.10)', 'rgba(255,255,255,0.14)',
+            'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.08)', 'rgba(0,0,0,0.12)'
+          ];
+
+          // Reduced speckle count for performance (was /40, now /80)
+          const speckleCount = Math.floor(w * h / 80);
           for (let i = 0; i < speckleCount; i++) {
             const sx = x + rand(i) * w;
             const sy = y + rand(i + 500) * h;
-            const brightness = rand(i + 1000) > 0.5 ? 'rgba(255,255,255,' : 'rgba(0,0,0,';
-            const alpha = 0.05 + rand(i + 1500) * 0.1;
-            ctx.fillStyle = brightness + alpha + ')';
+            ctx.fillStyle = quartzSpeckles[Math.floor(rand(i + 1000) * quartzSpeckles.length)];
             ctx.fillRect(sx, sy, 1.5, 1.5);
           }
 
-          // Occasional larger sparkle spots
+          // Occasional larger sparkle spots (batched)
           ctx.fillStyle = 'rgba(255,255,255,0.25)';
-          for (let i = 0; i < speckleCount / 20; i++) {
+          ctx.beginPath();
+          for (let i = 0; i < speckleCount / 25; i++) {
             const sx = x + rand(i + 2000) * w;
             const sy = y + rand(i + 2500) * h;
-            ctx.beginPath();
+            ctx.moveTo(sx + 1, sy);
             ctx.arc(sx, sy, 1, 0, Math.PI * 2);
-            ctx.fill();
           }
+          ctx.fill();
           break;
 
         case 'quartzite':
@@ -21732,7 +21941,7 @@
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
 
-          // Multi-colored speckles (mineral flecks)
+          // Pre-defined mineral colors for performance
           const mineralColors = [
             'rgba(0,0,0,0.3)',
             'rgba(255,255,255,0.25)',
@@ -21741,24 +21950,36 @@
             'rgba(60,60,70,0.2)'
           ];
 
-          const graniteSpeckles = Math.floor(w * h / 25);
-          for (let i = 0; i < graniteSpeckles; i++) {
-            const gx = x + rand(i) * w;
-            const gy = y + rand(i + 500) * h;
-            const colorIdx = Math.floor(rand(i + 1000) * mineralColors.length);
+          // Reduced speckle count for performance (was /25, now /60)
+          const graniteSpeckles = Math.floor(w * h / 60);
+
+          // Batch speckles by color for fewer fillStyle changes
+          for (let colorIdx = 0; colorIdx < mineralColors.length; colorIdx++) {
             ctx.fillStyle = mineralColors[colorIdx];
-            const size = 1 + rand(i + 1500) * 2;
-            ctx.fillRect(gx, gy, size, size);
+            const specklesPerColor = Math.floor(graniteSpeckles / mineralColors.length);
+            for (let i = 0; i < specklesPerColor; i++) {
+              const seed = colorIdx * specklesPerColor + i;
+              const gx = x + rand(seed) * w;
+              const gy = y + rand(seed + 500) * h;
+              const size = 1 + rand(seed + 1500) * 2;
+              ctx.fillRect(gx, gy, size, size);
+            }
           }
 
-          // Larger mineral clusters
-          for (let i = 0; i < graniteSpeckles / 30; i++) {
-            const cx = x + rand(i + 2000) * w;
-            const cy = y + rand(i + 2500) * h;
-            const ccolor = mineralColors[Math.floor(rand(i + 3000) * mineralColors.length)];
-            ctx.fillStyle = ccolor;
+          // Larger mineral clusters - batched by color
+          const clusterCount = Math.floor(graniteSpeckles / 20);
+          for (let colorIdx = 0; colorIdx < mineralColors.length; colorIdx++) {
+            ctx.fillStyle = mineralColors[colorIdx];
             ctx.beginPath();
-            ctx.arc(cx, cy, 2 + rand(i + 3500) * 3, 0, Math.PI * 2);
+            const clustersPerColor = Math.floor(clusterCount / mineralColors.length);
+            for (let i = 0; i < clustersPerColor; i++) {
+              const seed = colorIdx * clustersPerColor + i + 2000;
+              const cx = x + rand(seed) * w;
+              const cy = y + rand(seed + 500) * h;
+              const radius = 2 + rand(seed + 1000) * 3;
+              ctx.moveTo(cx + radius, cy);
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            }
             ctx.fill();
           }
       }
@@ -25822,6 +26043,9 @@
       }
     }
 
+    // Cache for texture patterns (performance optimization)
+    const texturePatternCache = new Map();
+
     function drawElement(el, isSelected) {
       const x = el.x;
       const y = el.y;
@@ -25833,37 +26057,59 @@
       ctx.rotate((el.rotation || 0) * Math.PI / 180);
       ctx.translate(-(x + w/2), -(y + h/2));
 
-      // Background with slight shadow
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetX = 3;
-      ctx.shadowOffsetY = 3;
+      // Shadow only for selected elements or when performance allows (optimization)
+      const applyShadow = isSelected || elements.length < 50;
+      if (applyShadow) {
+        ctx.shadowColor = 'rgba(0,0,0,0.35)';
+        ctx.shadowBlur = isSelected ? 12 : 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+      }
 
       // Draw base shape with texture or color (skip for L/U shaped - they draw their own shape)
       const isLOrUShape = el.type === 'countertop-l' || el.type === 'countertop-u';
       if (!isLOrUShape) {
         if (el.textureImg) {
-          // Scale texture proportionally to slab dimensions for realistic stone/tile look
-          // Standard stone slab: 10ft × 5ft; tile: repeating at natural size
           ctx.save();
           ctx.beginPath();
           ctx.rect(x, y, w, h);
           ctx.clip();
-          // Create repeating pattern at proper scale
+
           const imgW = el.textureImg.naturalWidth || el.textureImg.width;
           const imgH = el.textureImg.naturalHeight || el.textureImg.height;
+
           if (imgW > 0 && imgH > 0) {
-            // For stone: map the slab image across element proportionally
-            // For small elements, show full texture; for large, tile it
-            const slabWidthPx = 10 * pixelsPerFoot; // 10ft slab width
-            const slabHeightPx = 5 * pixelsPerFoot; // 5ft slab height
-            const drawW = Math.max(w, slabWidthPx);
-            const drawH = drawW * (imgH / imgW);
-            // Tile the texture across the element
-            for (let tx = x; tx < x + w; tx += drawW) {
-              for (let ty = y; ty < y + h; ty += drawH) {
-                ctx.drawImage(el.textureImg, tx, ty, drawW, drawH);
+            // Use cached pattern for performance (much faster than nested loops)
+            const cacheKey = `${el.texture || el.textureImg.src}_${pixelsPerFoot}`;
+            let pattern = texturePatternCache.get(cacheKey);
+
+            if (!pattern) {
+              // Create scaled texture canvas for pattern
+              const slabWidthPx = 10 * pixelsPerFoot;
+              const drawW = Math.max(w, slabWidthPx);
+              const drawH = drawW * (imgH / imgW);
+
+              const patternCanvas = document.createElement('canvas');
+              patternCanvas.width = drawW;
+              patternCanvas.height = drawH;
+              const patternCtx = patternCanvas.getContext('2d');
+              patternCtx.drawImage(el.textureImg, 0, 0, drawW, drawH);
+
+              pattern = ctx.createPattern(patternCanvas, 'repeat');
+              texturePatternCache.set(cacheKey, pattern);
+
+              // Limit cache size
+              if (texturePatternCache.size > 100) {
+                const firstKey = texturePatternCache.keys().next().value;
+                texturePatternCache.delete(firstKey);
               }
+            }
+
+            if (pattern) {
+              ctx.fillStyle = pattern;
+              ctx.fillRect(x, y, w, h);
+            } else {
+              ctx.drawImage(el.textureImg, x, y, w, h);
             }
           } else {
             ctx.drawImage(el.textureImg, x, y, w, h);
@@ -25875,8 +26121,8 @@
         }
       }
 
-      // Reset shadow
-      ctx.shadowColor = 'transparent';
+      // Reset shadow using proper rgba value
+      ctx.shadowColor = 'rgba(0,0,0,0)';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
@@ -47501,15 +47747,16 @@
         depth: 10,
         elements: [
           // === BACK WALL (y=0) - faces into room (rotation: 0) ===
-          // Work triangle: Fridge left, Sink center, Range on right wall
-          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Fridge', rotation: 0 },
+          // Design: Work triangle - Fridge (left) to Sink (center) to Range (right wall)
+          // Triangle distances: Fridge-Sink ~5', Sink-Range ~6', Range-Fridge ~7' (ideal 12-26' total)
+          { type: 'refrigerator', x: 0, y: 0, width: 3, height: 2.5, label: 'Refrigerator 36"', rotation: 0 },
           { type: 'base-cabinet', x: 3, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
-          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'dishwasher', x: 5, y: 0, width: 2, height: 2, label: 'Dishwasher 24"', rotation: 0 },
           { type: 'sink-base', x: 7, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
-          // Countertop: 2.125' depth (2' cabinet + 1.5" front overhang)
-          { type: 'countertop', x: 2.875, y: -0.04, width: 7.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 7.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
-          // Upper cabinets on back wall
+          // Countertop: base depth 2' + 1.5" overhang = 2.125' total
+          { type: 'countertop', x: 2.875, y: -0.04, width: 7.25, height: 2.165, label: 'Back Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 7.5, y: 0.25, width: 2.5, height: 1.5, label: 'Undermount Sink', rotation: 0 },
+          // Wall cabinets: 12" (1') deep, mounted 18" above counter
           { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
           { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
 
@@ -47517,26 +47764,25 @@
           // Position: x = roomWidth - cabinetDepth = 12 - 2 = 10
           { type: 'base-cabinet', x: 10, y: 0, width: 2, height: 2, label: 'Corner Base', rotation: 90 },
           { type: 'base-cabinet', x: 10, y: 2, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'range', x: 10, y: 4, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 90 },
-          { type: 'range-hood', x: 10, y: 4.25, width: 1, height: 2, label: 'Hood', rotation: 90 },
-          { type: 'base-cabinet', x: 10, y: 6.17, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
-          { type: 'base-cabinet', x: 10, y: 8.17, width: 2, height: 1.83, label: 'Base 22"', rotation: 90 },
+          { type: 'range', x: 10, y: 4, width: 2.5, height: 2.5, label: 'Range 30"', rotation: 90 },
+          { type: 'range-hood', x: 11, y: 4.25, width: 1, height: 2.5, label: 'Range Hood', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 6.5, width: 2, height: 2, label: 'Base 24"', rotation: 90 },
+          { type: 'base-cabinet', x: 10, y: 8.5, width: 2, height: 1.5, label: 'Base 18"', rotation: 90 },
           // Right wall countertops
-          { type: 'countertop', x: 9.835, y: -0.04, width: 2.165, height: 4.21, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          { type: 'countertop', x: 9.835, y: 6.05, width: 2.165, height: 3.95, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
-          // Upper cabinets on right wall
-          { type: 'wall-cabinet', x: 11, y: 0, width: 1, height: 4, label: 'Uppers', rotation: 90 },
-          { type: 'wall-cabinet', x: 11, y: 6.5, width: 1, height: 3.5, label: 'Uppers', rotation: 90 },
+          { type: 'countertop', x: 9.835, y: -0.04, width: 2.165, height: 4.21, label: 'Right Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'countertop', x: 9.835, y: 6.375, width: 2.165, height: 3.625, label: 'Right Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          // Wall cabinets: 1' deep
+          { type: 'wall-cabinet', x: 11, y: 0, width: 1, height: 4, label: 'Upper 48"', rotation: 90 },
+          { type: 'wall-cabinet', x: 11, y: 6.5, width: 1, height: 3.5, label: 'Upper 42"', rotation: 90 },
 
-          // === BACKSPLASH ===
-          { type: 'backsplash', x: 3, y: 0, width: 7, height: 0.08, label: 'Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 11.92, y: 0, width: 0.08, height: 10, label: 'Backsplash', rotation: 0 },
+          // === BACKSPLASH - thin (1") against wall ===
+          { type: 'backsplash', x: 3, y: 0, width: 7, height: 0.08, label: 'Tile Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 11.92, y: 0, width: 0.08, height: 10, label: 'Tile Backsplash', rotation: 0 },
 
-          // === ISLAND (centered with 42"+ walkways) ===
-          // Island at y=5.5 gives 3.5' walkway to back (5.5-2=3.5) and 2.5' to front (10-5.5-2=2.5)
-          // Adjusted for better balance: y=5 with seating overhang toward front
-          { type: 'base-cabinet', x: 2.5, y: 5, width: 5, height: 2, label: 'Island Base', rotation: 180 },
-          { type: 'countertop', x: 2.375, y: 4.875, width: 5.25, height: 3, label: 'Island Top', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.875, overhangLeft: 0.125, overhangRight: 0.125 },
+          // === ISLAND - 42" walkway all sides ===
+          // Position: 3.5' from back cabinets (2' + 0.125 overhang + 3.5' walkway = 5.625)
+          { type: 'base-cabinet', x: 2.5, y: 5.5, width: 5, height: 2, label: 'Island Base 60"', rotation: 180 },
+          { type: 'countertop', x: 2.375, y: 5.375, width: 5.25, height: 3, label: 'Island w/ Seating', rotation: 0, waterfallSides: ['left', 'right'], overhangFront: 0.125, overhangBack: 0.875, overhangLeft: 0.125, overhangRight: 0.125 },
         ]
       },
       'kitchen-galley': {
@@ -47546,33 +47792,36 @@
         depth: 8,
         elements: [
           // === BACK WALL (y=0) - faces into room (rotation: 0) ===
-          // Sink side with dishwasher - 48" (4') walkway between counters
+          // Design: Parallel counters with 48" (4') walkway - efficient for one cook
+          // Sink side - windows often here for natural light while washing
           { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
-          { type: 'dishwasher', x: 2, y: 0, width: 2, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'dishwasher', x: 2, y: 0, width: 2, height: 2, label: 'Dishwasher 24"', rotation: 0 },
           { type: 'sink-base', x: 4, y: 0, width: 3, height: 2, label: 'Sink Base 36"', rotation: 0 },
           { type: 'base-cabinet', x: 7, y: 0, width: 2, height: 2, label: 'Base 24"', rotation: 0 },
           { type: 'base-cabinet', x: 9, y: 0, width: 3, height: 2, label: 'Base 36"', rotation: 0 },
           { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 4.5, y: 0.25, width: 2, height: 1.5, label: 'Sink', rotation: 0 },
+          { type: 'sink', x: 4.5, y: 0.25, width: 2.5, height: 1.5, label: 'Sink', rotation: 0 },
+          // Wall cabinets: 12" (1') deep
           { type: 'wall-cabinet', x: 0, y: 0, width: 4, height: 1, label: 'Upper 48"', rotation: 0 },
           { type: 'wall-cabinet', x: 4, y: 0, width: 3, height: 1, label: 'Upper 36"', rotation: 0 },
           { type: 'wall-cabinet', x: 7, y: 0, width: 5, height: 1, label: 'Upper 60"', rotation: 0 },
 
           // === FRONT WALL (y=6) - faces into room (rotation: 180) ===
           // Position: y = roomDepth - cabinetDepth = 8 - 2 = 6
-          // Range side with fridge
-          { type: 'refrigerator', x: 0, y: 5.5, width: 3, height: 2.5, label: 'Fridge', rotation: 180 },
+          // Cooking side - range centered for efficient workflow
+          { type: 'refrigerator', x: 0, y: 5.5, width: 3, height: 2.5, label: 'Refrigerator 36"', rotation: 180 },
           { type: 'base-cabinet', x: 3, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
-          { type: 'range', x: 5, y: 5.83, width: 2.5, height: 2.17, label: 'Range 30"', rotation: 180 },
-          { type: 'range-hood', x: 5.25, y: 7, width: 2, height: 1, label: 'Hood', rotation: 180 },
+          { type: 'range', x: 5, y: 5.75, width: 2.5, height: 2.25, label: 'Range 30"', rotation: 180 },
+          { type: 'range-hood', x: 5.25, y: 7, width: 2.5, height: 1, label: 'Range Hood', rotation: 180 },
           { type: 'base-cabinet', x: 7.5, y: 6, width: 2, height: 2, label: 'Base 24"', rotation: 180 },
           { type: 'base-cabinet', x: 9.5, y: 6, width: 2.5, height: 2, label: 'Base 30"', rotation: 180 },
           { type: 'countertop', x: 2.875, y: 5.835, width: 9.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Wall cabinets: 12" (1') deep
           { type: 'wall-cabinet', x: 3, y: 7, width: 2, height: 1, label: 'Upper 24"', rotation: 180 },
-          { type: 'wall-cabinet', x: 7.5, y: 7, width: 4.5, height: 1, label: 'Uppers', rotation: 180 },
+          { type: 'wall-cabinet', x: 7.5, y: 7, width: 4.5, height: 1, label: 'Uppers 54"', rotation: 180 },
           // === BACKSPLASH ===
-          { type: 'backsplash', x: 0, y: 0, width: 12, height: 0.08, label: 'Backsplash', rotation: 0 },
-          { type: 'backsplash', x: 3, y: 7.92, width: 9, height: 0.08, label: 'Backsplash', rotation: 0 },
+          { type: 'backsplash', x: 0, y: 0, width: 12, height: 0.08, label: 'Subway Tile', rotation: 0 },
+          { type: 'backsplash', x: 3, y: 7.92, width: 9, height: 0.08, label: 'Subway Tile', rotation: 0 },
         ]
       },
       'kitchen-u': {
@@ -59586,12 +59835,174 @@
       }
     });
 
+    // Seamlessly load a design directly into the workspace canvas (no page reload)
+    function loadDesignToWorkspace(design, options = {}) {
+      const { showPreloaderUI = false, updateURL = true, isShared = false } = options;
+
+      try {
+        // Set share state
+        SHARE_STATE.isSharedView = isShared;
+        SHARE_STATE.designId = design.id;
+        SHARE_STATE.designToken = design.share_token;
+
+        // Extract design data
+        const designElements = design.elements || [];
+        const designWalls = design.settings?.walls || design.walls || [];
+
+        // Load directly into workspace
+        elements = designElements.map(el => ({
+          ...el,
+          id: el.id || Date.now() + Math.random(),
+          color: el.color || getDefaultColor(el.type),
+          category: getElementCategory(el.type)
+        }));
+        walls = designWalls;
+
+        // Load room dimensions
+        roomWidth = design.room_width || design.settings?.room_width || 12;
+        roomDepth = design.room_depth || design.settings?.room_depth || 10;
+
+        // Update UI inputs
+        const widthInput = document.getElementById('roomWidth');
+        const depthInput = document.getElementById('roomDepth');
+        const typeInput = document.getElementById('roomType');
+        const nameInput = document.getElementById('projectName');
+
+        if (widthInput) widthInput.value = roomWidth;
+        if (depthInput) depthInput.value = roomDepth;
+        if (typeInput) typeInput.value = design.room_type || design.settings?.room_type || 'kitchen';
+        if (nameInput) nameInput.value = design.name || 'Untitled';
+
+        // Fit to screen and redraw
+        fitToScreen();
+        saveUndoState();
+        draw();
+
+        // Update 3D view if active
+        if (currentView === '3d') {
+          init3D();
+          render3D();
+        }
+
+        // Update URL without reload
+        if (updateURL && design.share_token) {
+          const newUrl = `${window.location.pathname}?share=${design.share_token}`;
+          history.pushState({ shareToken: design.share_token }, '', newUrl);
+        } else if (updateURL) {
+          history.pushState({ designId: design.id }, '', window.location.pathname);
+        }
+
+        console.log('Design loaded seamlessly:', design.name, 'with', elements.length, 'elements');
+        return true;
+      } catch (err) {
+        console.error('Error loading design to workspace:', err);
+        return false;
+      }
+    }
+
+    // Return to user's own workspace (from viewing a shared design)
+    function returnToMyWorkspace() {
+      // Try to restore from protected auto-save first
+      const protectedSave = localStorage.getItem(AUTOSAVE_KEY + '_protected');
+      const regularSave = localStorage.getItem(AUTOSAVE_KEY);
+
+      let savedDesign = null;
+      if (protectedSave) {
+        try {
+          savedDesign = JSON.parse(protectedSave);
+          console.log('Restoring from protected save:', savedDesign.elements?.length, 'elements');
+        } catch (e) { /* ignore */ }
+      }
+
+      if (!savedDesign && regularSave) {
+        try {
+          savedDesign = JSON.parse(regularSave);
+          console.log('Restoring from regular save:', savedDesign.elements?.length, 'elements');
+        } catch (e) { /* ignore */ }
+      }
+
+      if (savedDesign && savedDesign.elements) {
+        // Clear share state
+        SHARE_STATE.isSharedView = false;
+        SHARE_STATE.designId = null;
+        SHARE_STATE.designToken = null;
+
+        // Load the design seamlessly
+        loadDesignToWorkspace(savedDesign, { showPreloaderUI: false, updateURL: true });
+
+        // Clear URL parameters
+        history.pushState({}, '', window.location.pathname);
+
+        showToast('Returned to your workspace', 'success');
+      } else {
+        // Start fresh workspace
+        elements.length = 0;
+        walls.length = 0;
+        roomWidth = 12;
+        roomDepth = 10;
+
+        SHARE_STATE.isSharedView = false;
+        SHARE_STATE.designId = null;
+        SHARE_STATE.designToken = null;
+
+        // Clear URL parameters
+        history.pushState({}, '', window.location.pathname);
+
+        fitToScreen();
+        draw();
+        showToast('Started new workspace', 'info');
+      }
+    }
+
+    // Quick switch between designs without page reload
+    async function quickSwitchDesign(designId, isShared = false) {
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          showToast('Cannot load design - offline', 'error');
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('room_designs')
+          .select('*')
+          .eq('id', designId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          const designObj = data.design_data || {
+            id: data.id,
+            name: data.name || 'Untitled',
+            room_type: data.room_type || 'kitchen',
+            room_width: data.room_width || 12,
+            room_depth: data.room_depth || 10,
+            elements: data.elements || [],
+            walls: data.settings?.walls || data.walls || [],
+            settings: data.settings || {},
+            share_token: data.share_token
+          };
+
+          // Merge ID and token if using design_data
+          if (data.design_data) {
+            designObj.id = data.id;
+            designObj.share_token = data.share_token;
+            designObj.name = data.name;
+          }
+
+          loadDesignToWorkspace(designObj, { showPreloaderUI: false, updateURL: true, isShared });
+          showToast(`Loaded: ${data.name || 'Design'}`, 'success');
+        }
+      } catch (err) {
+        console.error('Quick switch error:', err);
+        showToast('Error loading design', 'error');
+      }
+    }
+
     async function loadDesignFromList(id, shareToken, isLocal, originalIndex) {
       console.log('loadDesignFromList called:', { id, shareToken, isLocal, originalIndex });
       closeModal('myDesignsModal');
-
-      // Show loading indicator
-      showToast('Loading design...', 'info');
 
       if (isLocal) {
         try {
@@ -59609,10 +60020,13 @@
             console.log('Loading local design:', design.name, 'with', design.elements?.length, 'elements');
             // Save current state to history before loading new design
             saveCurrentDesignToHistory();
-            loadLocalDesign(design);
-            // Update URL without reload
-            history.pushState({ designId: id, isLocal: true }, '', window.location.pathname);
-            showToast(`Loaded: ${design.name || 'Untitled Design'}`, 'success');
+            // Load seamlessly without preloader
+            if (loadDesignToWorkspace(design, { showPreloaderUI: false, updateURL: true })) {
+              showToast(`Loaded: ${design.name || 'Untitled Design'}`, 'success');
+            } else {
+              loadLocalDesign(design); // Fallback to original method
+              showToast(`Loaded: ${design.name || 'Untitled Design'}`, 'success');
+            }
           } else {
             console.error('Design not found in localStorage. ID:', id, 'Index:', originalIndex);
             showToast('Design not found in local storage', 'error');
@@ -59655,46 +60069,37 @@
 
         if (data && hasDesignData) {
           // Designer loading their own design - NOT a shared view
-          SHARE_STATE.isSharedView = false;
-          SHARE_STATE.designId = id;
-          SHARE_STATE.designToken = data.share_token;
-
           // Save current state before loading
           saveCurrentDesignToHistory();
 
-          // Determine where the design data is stored
-          if (data.design_data) {
-            // Design data is in nested object - merge in the record id and share_token
-            loadDesignData({ ...data.design_data, id: data.id, share_token: data.share_token });
-          } else {
-            // Design data is directly on the record (elements, settings, etc.)
-            // Build the design object that loadDesignData expects
-            const designObj = {
-              id: data.id,
-              name: data.name || 'Untitled',
-              room_type: data.room_type || 'kitchen',
-              room_width: data.room_width || 12,
-              room_depth: data.room_depth || 10,
-              elements: data.elements || [],
-              walls: data.settings?.walls || data.walls || [],
-              rooms: data.rooms || [],
-              settings: data.settings || { pixelsPerFoot: 40 },
-              share_token: data.share_token
-            };
-            console.log('Built design object from record:', {
-              name: designObj.name,
-              room_width: designObj.room_width,
-              room_depth: designObj.room_depth,
-              elements_count: designObj.elements.length,
-              walls_count: designObj.walls.length,
-              rooms_count: designObj.rooms.length
-            });
-            loadDesignData(designObj);
-          }
+          // Build design object from record
+          const designObj = data.design_data
+            ? { ...data.design_data, id: data.id, share_token: data.share_token, name: data.name }
+            : {
+                id: data.id,
+                name: data.name || 'Untitled',
+                room_type: data.room_type || 'kitchen',
+                room_width: data.room_width || 12,
+                room_depth: data.room_depth || 10,
+                elements: data.elements || [],
+                walls: data.settings?.walls || data.walls || [],
+                rooms: data.rooms || [],
+                settings: data.settings || { pixelsPerFoot: 40 },
+                share_token: data.share_token
+              };
 
-          // Update project name from design record
-          if (data.name) {
-            document.getElementById('projectName').value = data.name;
+          console.log('Built design object from record:', {
+            name: designObj.name,
+            room_width: designObj.room_width,
+            room_depth: designObj.room_depth,
+            elements_count: (designObj.elements || []).length
+          });
+
+          // Try seamless loading first, fallback to full loadDesignData if needed
+          if (loadDesignToWorkspace(designObj, { showPreloaderUI: false, updateURL: true, isShared: false })) {
+            showToast(`Loaded: ${data.name || 'Design'}`, 'success');
+          } else {
+            loadDesignData(designObj);
           }
 
           // Set up realtime sync for this design
@@ -60573,6 +60978,22 @@
     // Mark all as read
     function markAllNotificationsRead() {
       NOTIFICATION_HUB.notifications.forEach(n => n.read = true);
+      renderNotificationHub();
+      updateHubBadge();
+      showToast('All notifications marked as read', 'success');
+    }
+
+    // Clear all notifications
+    function clearAllNotifications() {
+      NOTIFICATION_HUB.notifications = [];
+      renderNotificationHub();
+      updateHubBadge();
+      showToast('All notifications cleared', 'success');
+    }
+
+    // Clear a single notification
+    function clearNotification(notificationId) {
+      NOTIFICATION_HUB.notifications = NOTIFICATION_HUB.notifications.filter(n => n.id !== notificationId);
       renderNotificationHub();
       updateHubBadge();
     }
