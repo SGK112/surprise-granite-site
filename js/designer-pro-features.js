@@ -4826,12 +4826,12 @@
           const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'X-Account-Type': accountType
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               image: base64,
-              projectType: 'commercial-cabinets'
+              projectType: 'commercial-cabinets',
+              accountType: accountType // Pass in body to avoid CORS issues
             })
           });
 
@@ -5084,12 +5084,12 @@
       const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Account-Type': accountType
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           image: imageBase64,
-          projectType: 'commercial'
+          projectType: 'commercial',
+          accountType: accountType // Pass in body instead of header to avoid CORS
         })
       });
 

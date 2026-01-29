@@ -89,8 +89,8 @@ function recordUsage(key, feature) {
 function aiRateLimiter(feature) {
   return (req, res, next) => {
     const key = getRateLimitKey(req);
-    // Check multiple headers for plan/account type - support super_admin
-    let plan = req.headers['x-user-plan'] || req.headers['x-account-type'] || 'free';
+    // Check headers AND body for plan/account type - support super_admin
+    let plan = req.headers['x-user-plan'] || req.headers['x-account-type'] || req.body?.accountType || 'free';
     // Map account types to rate limit tiers
     if (plan === 'super_admin' || plan === 'admin') {
       plan = 'super_admin';
