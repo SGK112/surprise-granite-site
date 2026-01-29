@@ -3357,7 +3357,8 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 });
 
 // JSON body parser - AFTER webhook route
-app.use(express.json());
+// Increase limit for base64-encoded images (blueprints can be large)
+app.use(express.json({ limit: '50mb' }));
 
 // CSRF Protection - checks Origin/Referer for state-changing requests
 app.use(csrfOriginCheck());
