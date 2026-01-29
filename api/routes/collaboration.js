@@ -218,7 +218,7 @@ function generateCollaborationInviteEmail({ inviterName, projectTitle, role, isE
   `;
 
   return {
-    subject: `${inviterName} invited you to collaborate - Surprise Granite`,
+    subject: `${inviterName} invited you to collaborate - Remodely`,
     html: emailService.wrapEmailTemplate(content, { headerText: 'Project Invitation' })
   };
 }
@@ -1040,7 +1040,7 @@ router.post('/projects/:projectId/invite',
       .single();
 
     const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
-    const inviterName = req.profile.full_name || req.profile.email || 'A Surprise Granite Pro';
+    const inviterName = req.profile.full_name || req.profile.email || 'A Remodely Pro';
 
     if (existingUser) {
       // --- EXISTING USER FLOW ---
@@ -1599,7 +1599,7 @@ function generateGeneralInviteEmail({ inviterName, inviterBusiness, role, isExis
   `;
 
   return {
-    subject: `${inviterName} wants to connect - Surprise Granite`,
+    subject: `${inviterName} wants to connect on Remodely`,
     html: emailService.wrapEmailTemplate(content, { headerText: 'Network Invitation' })
   };
 }
@@ -1645,7 +1645,7 @@ router.post('/invite-general',
     }
 
     const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
-    const inviterName = req.profile.full_name || req.profile.email || 'A Surprise Granite Pro';
+    const inviterName = req.profile.full_name || req.profile.email || 'A Remodely Pro';
     const inviterBusiness = req.profile.company_name;
 
     // Check if user exists (by email)
@@ -1730,7 +1730,7 @@ router.post('/invite-general',
     if (normalizedPhone && smsService) {
       try {
         const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-        const smsMessage = `${inviterName} invited you to Surprise Granite as a ${roleLabel}! Sign up free: ${acceptUrl}`;
+        const smsMessage = `${inviterName} invited you to Remodely as a ${roleLabel}! Sign up free: ${acceptUrl}`;
         await smsService.sendSMS(normalizedPhone, smsMessage);
         sentVia.push('SMS');
       } catch (smsErr) {

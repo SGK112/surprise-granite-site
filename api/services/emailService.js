@@ -12,17 +12,17 @@ const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER;
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@surprisegranite.com';
 
-// Company Branding
+// Company Branding - Remodely Platform
 const COMPANY = {
-  name: 'Surprise Granite Marble & Quartz',
-  shortName: 'Surprise Granite',
-  email: 'info@surprisegranite.com',
+  name: 'Remodely',
+  shortName: 'Remodely',
+  email: 'hello@remodely.ai',
   phone: '(602) 833-3189',
-  address: '15464 W Aster Dr, Surprise, AZ 85379',
-  website: 'https://www.surprisegranite.com',
-  logo: 'https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb23120fbb175_Surprise-Granite-webclip-icon-256x256px.png',
-  tagline: 'Premium Countertops & Expert Installation',
-  license: 'AZ ROC# 341113'
+  address: 'Serving Nationwide',
+  website: 'https://www.remodely.ai',
+  logo: 'https://www.surprisegranite.com/remodely-platform/assets/remodely-logo.svg',
+  tagline: 'AI-Powered Home Remodeling Platform',
+  license: ''
 };
 
 // Create transporter
@@ -146,7 +146,7 @@ function wrapEmailTemplate(content, options = {}) {
                       <a href="mailto:${COMPANY.email}" style="color: #666; text-decoration: none;">${COMPANY.email}</a>
                     </p>
                     <p style="margin: 0 0 8px; color: #888; font-size: 12px;">${COMPANY.address}</p>
-                    <p style="margin: 0; color: #aaa; font-size: 11px;">${COMPANY.license} • Licensed, Bonded & Insured</p>
+                    ${COMPANY.license ? `<p style="margin: 0; color: #aaa; font-size: 11px;">${COMPANY.license} • Licensed, Bonded & Insured</p>` : ''}
                   </td>
                 </tr>
               </table>

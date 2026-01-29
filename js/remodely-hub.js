@@ -17,12 +17,12 @@
   const WIDGET_BASE = '/remodely-platform/widgets';
   const WIDGET_VERSION = '20260121a'; // v8 premium chat
 
-  // Aria configuration for Surprise Granite (OpenAI TTS via VoiceNow CRM)
+  // Aria configuration (OpenAI TTS via VoiceNow CRM)
   const ARIA_CONFIG = {
     // API Configuration - VoiceNow CRM backend for OpenAI TTS
     apiEndpoint: 'https://voiceflow-crm.onrender.com',
 
-    businessName: 'Surprise Granite',
+    businessName: 'Remodely',
     assistantName: 'Aria',
     primaryColor: '#f9cb00',
     secondaryColor: '#1a1a2e',
@@ -31,7 +31,7 @@
     triggerType: 'none', // We control opening via hub
 
     // Greeting
-    greeting: "Hey! I'm Aria from Surprise Granite. How can I help you today?",
+    greeting: "Hey! I'm Aria, your AI remodeling assistant. How can I help you today?",
 
     // Phone number for transfers
     phone: '(602) 833-3189',
