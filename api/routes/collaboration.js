@@ -1588,8 +1588,8 @@ function generateGeneralInviteEmail({ inviterName, inviterBusiness, role, isExis
     </ul>
 
     <div style="text-align: center; margin-bottom: 25px;">
-      <a href="${acceptUrl}" style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #e6b800 100%); color: #1a1a2e; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-        ${isExistingUser ? 'Accept Invitation' : 'Create Account &amp; Connect'}
+      <a href="${acceptUrl}" style="display: inline-block; background: linear-gradient(135deg, #4285F4 0%, #34A853 100%); color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        ${isExistingUser ? 'Accept Invitation' : 'Join Remodely Free'}
       </a>
     </div>
 
@@ -1770,6 +1770,54 @@ router.post('/invite-general',
     });
   })
 );
+
+/**
+ * POST /api/collaboration/quick-share
+ * Generate a quick shareable invite link (no email sent, just returns the link)
+ */
+router.post('/quick-share', verifyProOrDesigner, asyncHandler(async (req, res) => {
+  const SITE_URL = process.env.SITE_URL || 'https://www.surprisegranite.com';
+  const inviterName = req.profile.full_name || req.profile.email || 'A Remodely Pro';
+
+  const { rawToken, tokenHash } = generateInvitationToken();
+  const tokenExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+
+  // Create a pending collaborator entry with just the token
+  const { data: collaborator, error } = await supabase
+    .from('general_collaborators')
+    .insert({
+      invited_by: req.user.id,
+      name: null,
+      email: null,
+      role: 'partner',
+      status: 'pending',
+      notes: 'Quick share link',
+      token_hash: tokenHash,
+      token_expires_at: tokenExpires,
+      invited_at: new Date().toISOString(),
+      metadata: { quick_share: true }
+    })
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Quick share link creation failed', { error: error.message });
+    throw error;
+  }
+
+  // Generate the invite URL
+  const inviteUrl = `${SITE_URL}/sign-up/?network_invite=${rawToken}`;
+
+  logger.info('Quick share link generated', { userId: req.user.id });
+
+  res.json({
+    success: true,
+    link: inviteUrl,
+    expiresAt: tokenExpires,
+    inviterName,
+    message: 'Share this link to invite collaborators'
+  });
+}));
 
 /**
  * GET /api/collaboration/my-collaborators

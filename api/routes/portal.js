@@ -920,7 +920,7 @@ router.post('/contractor/selections', portalAccessLimiter, asyncHandler(async (r
 
   // Verify contractor is assigned to this job
   const { data: assignment } = await supabase
-    .from('job_contractors')
+    .from('job_collaborators')
     .select('id')
     .eq('contractor_id', contractor_id)
     .eq('job_id', job_id)

@@ -106,14 +106,14 @@ const API_ROUTES = {
         match: `${API_BASE}/ai/match` // Contractor matching
     },
 
-    // Contractors
-    contractors: {
-        list: `${API_BASE}/contractors`,
-        search: `${API_BASE}/contractors/search`,
-        get: (id) => `${API_BASE}/contractors/${id}`,
-        reviews: (id) => `${API_BASE}/contractors/${id}/reviews`,
-        portfolio: (id) => `${API_BASE}/contractors/${id}/portfolio`,
-        availability: (id) => `${API_BASE}/contractors/${id}/availability`
+    // Collaborators
+    collaborators: {
+        list: `${API_BASE}/collaborators`,
+        search: `${API_BASE}/collaborators/search`,
+        get: (id) => `${API_BASE}/collaborators/${id}`,
+        reviews: (id) => `${API_BASE}/collaborators/${id}/reviews`,
+        portfolio: (id) => `${API_BASE}/collaborators/${id}/portfolio`,
+        availability: (id) => `${API_BASE}/collaborators/${id}/availability`
     },
 
     // Vendors / Distributors

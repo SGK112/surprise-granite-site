@@ -84,11 +84,13 @@
 
     .app {
       height: 100vh;
+      max-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Header */
+    /* Header - MUST stay at top */
     .header {
       background: linear-gradient(90deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
       backdrop-filter: blur(12px);
@@ -99,7 +101,10 @@
       align-items: center;
       justify-content: space-between;
       height: 56px;
+      min-height: 56px;
+      max-height: 56px;
       flex-shrink: 0;
+      flex-grow: 0;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       position: relative;
       z-index: 100;
@@ -481,11 +486,15 @@
       flex: 1;
       display: flex;
       overflow: hidden;
+      min-height: 0; /* Prevents flex children from overflowing */
+      max-height: calc(100vh - 56px); /* Header height is 56px */
     }
 
     /* Sidebar */
     .sidebar {
       width: 220px;
+      min-width: 220px;
+      max-width: 220px;
       background: linear-gradient(180deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -493,8 +502,11 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      flex-grow: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+      max-height: 100%;
     }
 
     /* =============================================
@@ -1913,6 +1925,7 @@
       position: absolute;
       inset: 0;
       display: none;
+      overflow: hidden;
     }
 
     #three-container.active {
@@ -2390,6 +2403,43 @@
       border-radius: 9px;
       font-size: 10px;
       font-weight: 700;
+    }
+
+    /* Floating toolbar mobile optimization */
+    @media (max-width: 600px) {
+      .floating-toolbar {
+        bottom: 80px !important; /* Above mobile toolbar */
+        padding: 6px 10px !important;
+        max-width: calc(100% - 24px) !important;
+        flex-wrap: wrap !important;
+      }
+
+      .floating-toolbar-group {
+        padding: 3px 4px !important;
+      }
+
+      .floating-toolbar-divider {
+        display: none !important;
+      }
+
+      .float-btn {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+      }
+
+      .float-btn svg {
+        width: 16px !important;
+        height: 16px !important;
+      }
+
+      .float-btn .shortcut {
+        display: none !important;
+      }
+
+      .selection-badge {
+        display: none !important; /* Too cluttered on mobile */
+      }
     }
 
     /* Right Panel */
@@ -4684,19 +4734,56 @@
     @media (max-width: 600px) {
       .three-controls {
         bottom: 80px !important;
+        left: auto !important; /* Reset left positioning */
         right: 12px !important;
+        max-width: calc(100% - 24px) !important;
+        flex-wrap: wrap !important;
         gap: 6px !important;
+        padding: 8px !important;
       }
 
       .three-controls button {
-        width: 44px !important;
-        height: 44px !important;
-        font-size: 18px !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 6px !important;
+        font-size: 10px !important;
+      }
+
+      .three-controls button span {
+        display: none !important; /* Hide text labels on mobile */
+      }
+
+      .three-controls button svg {
+        width: 18px !important;
+        height: 18px !important;
+      }
+
+      .three-controls-group {
+        padding: 2px !important;
+      }
+
+      .three-controls-divider {
+        display: none !important; /* Hide dividers on mobile */
       }
 
       /* Larger touch targets for canvas interaction */
       #three-container {
         touch-action: pan-x pan-y pinch-zoom;
+      }
+
+      /* Hide axis indicator on mobile - takes up too much space */
+      .axis-indicator-container {
+        display: none !important;
+      }
+
+      /* Move 3D hint to top center on mobile */
+      .three-hint {
+        bottom: auto !important;
+        top: 70px !important;
+        right: 50% !important;
+        transform: translateX(50%) !important;
+        font-size: 10px !important;
+        padding: 6px 10px !important;
       }
     }
 
@@ -5769,13 +5856,11 @@
     .axis-label-z { color: #4488ff; }
 
     @media (max-width: 600px) {
+      /* Hide axis indicator on small screens - too cluttered */
       .axis-indicator-container {
-        width: 70px;
-        height: 70px;
-        bottom: 80px;
-        left: 10px;
+        display: none !important;
       }
-      .axis-label { font-size: 9px; }
+      .axis-label { display: none !important; }
     }
 
     /* Button danger variant */
@@ -6364,18 +6449,96 @@
       padding: 12px 20px;
       background: linear-gradient(135deg, var(--dark-surface) 0%, #1a1a35 100%);
       border-bottom: 1px solid var(--border);
+      gap: 12px;
     }
 
     .review-header-left {
       display: flex;
       align-items: center;
       gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .review-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .review-back-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--gold);
     }
 
     .review-title {
       font-size: 18px;
       font-weight: 600;
       color: var(--gold);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .review-header-right {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .review-header-right .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .review-header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+      }
+
+      .review-header-left {
+        gap: 8px;
+      }
+
+      .review-back-btn {
+        width: 36px;
+        height: 36px;
+      }
+
+      .review-title {
+        font-size: 14px;
+        max-width: 120px;
+      }
+
+      .review-permission-badge {
+        display: none;
+      }
+
+      .review-header-right .btn .btn-text {
+        display: none;
+      }
+
+      .review-header-right .btn {
+        padding: 8px 10px;
+      }
+
+      .live-indicator span:not(.live-dot) {
+        display: none;
+      }
+
+      .live-indicator {
+        padding: 6px;
+      }
     }
 
     .review-permission-badge {
@@ -6652,50 +6815,178 @@
       color: white;
     }
 
-    .review-comments-section {
+    /* Chat-style comments section */
+    .review-chat-section {
       border-top: 1px solid var(--border);
-      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      height: 280px;
     }
 
-    .review-comments-section h4 {
-      font-size: 12px;
-      margin-bottom: 8px;
-      color: var(--text-secondary);
-    }
-
-    .review-comments {
-      max-height: 150px;
-      overflow-y: auto;
-      margin-bottom: 8px;
-    }
-
-    .review-comment {
+    .review-chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
       background: var(--dark-elevated);
-      border-radius: 6px;
-      padding: 8px;
-      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
       font-size: 12px;
+      font-weight: 600;
     }
 
-    .comment-header {
+    .chat-status {
+      font-size: 10px;
+      color: #10b981;
+      font-weight: 500;
+    }
+
+    .chat-status.disconnected {
+      color: #ef4444;
+    }
+
+    .review-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-message-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 4px;
-      font-size: 10px;
+      max-width: 85%;
+    }
+
+    .chat-message-row.outbound {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .chat-message-row.inbound {
+      align-self: flex-start;
+    }
+
+    .chat-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .chat-message-row.inbound .chat-avatar {
+      background: linear-gradient(135deg, #f9cb00, #f59e0b);
+      color: #1a1a2e;
+    }
+
+    .chat-message-row.outbound .chat-avatar {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+
+    .chat-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .chat-bubble {
+      padding: 8px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .chat-message-row.inbound .chat-bubble {
+      background: var(--dark-elevated);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-message-row.outbound .chat-bubble {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-meta {
+      font-size: 9px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .chat-message-row.outbound .chat-meta {
+      text-align: right;
+    }
+
+    .review-chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--dark-elevated);
+      border-top: 1px solid var(--border);
+    }
+
+    .review-chat-input input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .review-chat-input input:focus {
+      border-color: var(--primary);
+    }
+
+    .chat-send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .chat-send-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .chat-send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .chat-empty {
+      text-align: center;
+      padding: 30px 20px;
       color: var(--text-muted);
     }
 
-    .comment-author {
-      font-weight: 600;
-      color: var(--text-secondary);
+    .chat-empty-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.5;
     }
 
-    .comment-element {
-      color: var(--primary);
-    }
-
-    .comment-text {
-      color: var(--text);
+    /* Legacy styles for backwards compatibility */
+    .review-comments-section {
+      border-top: 1px solid var(--border);
+      padding: 12px;
     }
 
     .review-comment-input {
@@ -6800,11 +7091,21 @@
       display: none;
     }
 
-    body:has(.review-room) .main-content {
+    body:has(.review-room) .main {
       padding-top: 56px;
+      margin-top: 0;
+      height: 100vh;
+      box-sizing: border-box;
     }
 
-    body:has(.review-room) .sidebar {
+    /* Hide sidebar completely in review mode (non-collaborators) */
+    body:has(.review-room).view-only-mode .sidebar,
+    body:has(.review-room).review-readonly .sidebar {
+      display: none !important;
+    }
+
+    /* For full collaborators, show sidebar with adjusted position */
+    body:has(.review-room):not(.view-only-mode):not(.review-readonly) .sidebar {
       margin-top: 56px;
       height: calc(100vh - 56px);
     }
@@ -6814,8 +7115,26 @@
       height: calc(100vh - 56px);
     }
 
-    body:has(.review-room) .canvas-container {
+    body:has(.review-room) .canvas-area {
+      flex: 1 1 auto;
       height: calc(100vh - 56px);
+      min-height: 400px;
+    }
+
+    body:has(.review-room) .canvas-wrapper {
+      flex: 1 1 auto;
+      height: 100%;
+      min-height: 300px;
+    }
+
+    body:has(.review-room) #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    body:has(.review-room) .canvas-toolbar {
+      display: none;
     }
 
     body:has(.review-room) .shortcuts-hint {
@@ -6836,7 +7155,7 @@
       display: none !important;
     }
 
-    body.view-only-mode .main-content {
+    body.view-only-mode .main {
       margin-left: 0 !important;
     }
 
@@ -6854,6 +7173,37 @@
     }
 
     body.view-only-mode .right-panel .panel-section:not(#quotePanel) {
+      display: none !important;
+    }
+
+    /* Hide mobile toolbar in view-only/review mode */
+    body.view-only-mode .mobile-toolbar,
+    body.review-readonly .mobile-toolbar,
+    body:has(.review-room) .mobile-toolbar {
+      display: none !important;
+    }
+
+    /* Hide all tool buttons in shared view */
+    body.view-only-mode .tool-btn,
+    body.review-readonly .tool-btn {
+      display: none !important;
+    }
+
+    /* Hide the entire TOOLS section in shared view */
+    body.view-only-mode .tool-grid,
+    body.review-readonly .tool-grid,
+    body.view-only-mode #toolsSection,
+    body.review-readonly #toolsSection {
+      display: none !important;
+    }
+
+    /* Hide the entire left sidebar in shared view (only show canvas and review panel) */
+    body.view-only-mode .left-panel,
+    body.review-readonly .left-panel,
+    body.view-only-mode .sidebar,
+    body.review-readonly .sidebar,
+    body.view-only-mode #leftSidebar,
+    body.review-readonly #leftSidebar {
       display: none !important;
     }
 
@@ -6902,25 +7252,61 @@
     @media (max-width: 768px) {
       /* Review Header - Mobile */
       .review-header {
-        flex-direction: column;
-        gap: 12px;
-        padding: 12px 16px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
       }
 
       .review-header-left {
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
         gap: 8px;
       }
 
+      .review-back-btn {
+        width: 36px;
+        height: 36px;
+      }
+
       .review-title {
-        font-size: 16px;
-        text-align: center;
-        width: 100%;
+        font-size: 14px;
+        flex: 1;
+        min-width: 0;
       }
 
       .review-permission-badge {
+        display: none;
+      }
+
+      .live-indicator span:not(.live-dot) {
+        display: none;
+      }
+
+      .live-indicator {
+        padding: 6px;
+        min-width: auto;
+      }
+
+      .review-header-right {
+        gap: 6px;
+      }
+
+      .review-header-right .btn {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .review-header-right .btn .btn-text {
+        display: none;
+      }
+
+      .review-header-right .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .review-permission-badge-mobile {
         font-size: 10px;
         padding: 3px 8px;
       }
@@ -7063,7 +7449,7 @@
       }
 
       /* Adjust main content when review room on mobile */
-      body:has(.review-room) .main-content {
+      body:has(.review-room) .main {
         padding-top: 80px; /* Taller header on mobile */
       }
 
@@ -7145,6 +7531,20 @@
       .right-panel { width: 220px; }
     }
 
+    /* Mobile toolbar - MUST be hidden by default on desktop */
+    .mobile-toolbar {
+      display: none !important;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--dark-elevated);
+      border-top: 1px solid var(--border);
+      padding: 8px 16px;
+      justify-content: space-around;
+      z-index: 1000;
+    }
+
     @media (max-width: 900px) {
       .sidebar, .right-panel { display: none; }
       .header { padding: 8px 12px; }
@@ -7155,18 +7555,9 @@
       .toolbar { padding: 8px; gap: 4px; }
       .tool-btn { width: 36px; height: 36px; }
 
-      /* Mobile bottom toolbar */
+      /* Mobile bottom toolbar - only show on narrow screens */
       .mobile-toolbar {
         display: flex !important;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--dark-elevated);
-        border-top: 1px solid var(--border);
-        padding: 8px 16px;
-        justify-content: space-around;
-        z-index: 1000;
       }
 
       .canvas-wrapper {
@@ -7175,8 +7566,31 @@
     }
 
     @media (max-width: 600px) {
-      .header { height: 48px; }
-      .project-name-input { max-width: 120px; font-size: 13px; }
+      .header {
+        height: 48px;
+        min-height: 48px;
+        max-height: 48px;
+        padding: 0 8px;
+        flex-wrap: nowrap;
+        overflow: hidden;
+      }
+      .header-left { flex-shrink: 0; max-width: 100px; }
+      .header-center {
+        flex-shrink: 1;
+        min-width: 0;
+        gap: 2px;
+        padding: 2px;
+      }
+      .header-center .view-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      .header-zoom-controls { display: none; }
+      .header-right { flex-shrink: 0; gap: 4px; }
+      .project-name-input { display: none; }
+      .user-name-display { display: none; }
+      .user-menu-btn { padding: 4px 8px; }
+      .notification-hub-btn { width: 36px; height: 36px; }
       .btn { padding: 6px 10px; font-size: 12px; }
       .modal { margin: 10px; max-height: calc(100vh - 20px); }
       .modal-header h3 { font-size: 16px; }
@@ -7189,12 +7603,9 @@
 
     @media (max-width: 400px) {
       .logo { display: none; }
-      .project-name-input { max-width: 100px; }
-    }
-
-    /* Mobile toolbar - hidden by default */
-    .mobile-toolbar {
-      display: none;
+      .header-center .view-btn { padding: 4px 8px; font-size: 10px; }
+      .project-name-input { display: none; }
+      .user-avatar-small { width: 24px; height: 24px; font-size: 10px; }
     }
 
     /* Touch-friendly adjustments */
@@ -7764,6 +8175,365 @@
       white-space: nowrap;
     }
 
+    /* ========================================
+       GAMING-STYLE NOTIFICATION HUB
+       Single unified notification center
+       ======================================== */
+
+    .notification-hub {
+      position: relative;
+    }
+
+    .notification-hub-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .notification-hub-btn:hover {
+      background: var(--dark-hover);
+      border-color: var(--gold);
+      transform: scale(1.05);
+    }
+
+    .notification-hub-btn.has-notifications {
+      border-color: #ef4444;
+      animation: hubGlow 2s infinite;
+    }
+
+    @keyframes hubGlow {
+      0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .notification-hub-btn svg {
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+
+    .notification-hub-btn:hover svg,
+    .notification-hub-btn.has-notifications svg {
+      color: var(--text);
+    }
+
+    .hub-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      border: 2px solid var(--dark);
+      animation: badgeBounce 0.3s ease;
+    }
+
+    @keyframes badgeBounce {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    .hub-badge.hidden {
+      display: none;
+    }
+
+    /* Notification Dropdown Panel */
+    .notification-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 360px;
+      max-height: 480px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px) scale(0.95);
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+
+    .notification-dropdown.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .notification-dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .notification-dropdown-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .notification-dropdown-title span {
+      font-size: 16px;
+    }
+
+    .mark-all-read {
+      font-size: 11px;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .mark-all-read:hover {
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    /* Tab Filter */
+    .notification-tabs {
+      display: flex;
+      padding: 8px 12px;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .notification-tab {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .notification-tab:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .notification-tab.active {
+      color: var(--gold);
+      background: rgba(249, 203, 0, 0.15);
+    }
+
+    .notification-tab .tab-count {
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .notification-tab.active .tab-count {
+      background: rgba(249, 203, 0, 0.3);
+    }
+
+    /* Notification List */
+    .notification-list {
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .notification-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .notification-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+
+    .notification-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+      position: relative;
+    }
+
+    .notification-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .notification-item.unread {
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .notification-item.unread::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .notif-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .notif-icon.chat { background: rgba(139, 92, 246, 0.2); }
+    .notif-icon.team { background: rgba(16, 185, 129, 0.2); }
+    .notif-icon.alert { background: rgba(249, 115, 22, 0.2); }
+    .notif-icon.system { background: rgba(99, 102, 241, 0.2); }
+
+    .notif-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .notif-source {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    .notif-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .notif-message {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .notif-context {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .notif-context .design-link {
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    /* Empty State */
+    .notification-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .notification-empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+
+    .notification-empty-text {
+      font-size: 13px;
+    }
+
+    .notification-empty-subtext {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    /* Quick Actions Footer */
+    .notification-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+    }
+
+    .view-all-btn {
+      font-size: 12px;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .view-all-btn:hover {
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    /* Hide old sections - replaced by hub */
+    #designNotificationsSection {
+      display: none !important;
+    }
+
     /* Messages Section Styles */
     #messagesSection {
       background: rgba(139, 92, 246, 0.08);
@@ -7855,6 +8625,267 @@
       padding: 8px 14px;
       font-size: 9px;
     }
+
+    /* ========================================
+       MESSAGES PANEL - Simple & Visible
+       ======================================== */
+    #teamChatSection {
+      background: rgba(99, 102, 241, 0.05);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 8px;
+      margin: 8px;
+    }
+
+    #teamChatSection .panel-title {
+      background: rgba(99, 102, 241, 0.1);
+      color: #a5b4fc;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: none;
+    }
+
+    #teamChatSection .panel-content {
+      padding: 0;
+    }
+
+    /* Message tabs */
+    .message-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .message-tab {
+      flex: 1;
+      padding: 8px 6px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .message-tab:hover {
+      color: var(--text);
+    }
+
+    .message-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .message-tab .tab-badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 6px;
+      background: #ef4444;
+      color: white;
+      margin-left: 4px;
+    }
+
+    .message-tab .tab-badge.hidden {
+      display: none;
+    }
+
+    #teamChatMessages {
+      background: rgba(0, 0, 0, 0.1);
+      min-height: 120px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* Chat message bubbles */
+    .chat-message {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      animation: messageSlide 0.2s ease-out;
+    }
+
+    .chat-message.own-message {
+      flex-direction: row-reverse;
+    }
+
+    .chat-message .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .chat-message .bubble {
+      max-width: 80%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .chat-message.own-message .bubble {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.2), rgba(234, 179, 8, 0.15));
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-message:not(.own-message) .bubble {
+      background: rgba(99, 102, 241, 0.15);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-message .meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .chat-message.own-message .meta {
+      text-align: right;
+    }
+
+    @keyframes messageSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* System messages */
+    .chat-system-message {
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-style: italic;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      margin: 8px 0;
+    }
+
+    /* Chat input area */
+    .chat-input-wrapper {
+      display: flex;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.15);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    #teamChatInput {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    #teamChatInput::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    #teamChatInput:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    #teamChatSection .btn-primary {
+      background: var(--primary);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    #teamChatSection .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    #teamChatSection .btn-primary svg {
+      width: 14px;
+      height: 14px;
+      color: white;
+    }
+
+    /* Online indicator */
+    .online-indicator {
+      animation: onlinePulse 2s infinite;
+      font-weight: 500;
+    }
+
+    @keyframes onlinePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Active collaborators */
+    #activeCollaborators {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .collaborator-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 10px 4px 4px;
+      border-radius: 16px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .collaborator-chip .avatar-small {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .collaborator-chip.is-you {
+      border: 1px solid rgba(249, 203, 0, 0.4);
+    }
+
+    /* Team chat notification badge */
+    .team-chat-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      animation: badgePulse 2s infinite;
+    }
   </style>
 </head>
 <body>
@@ -7911,6 +8942,46 @@
       </div>
 
       <div class="header-right">
+        <!-- Gaming-Style Notification Hub -->
+        <div class="notification-hub" id="notificationHub">
+          <button class="notification-hub-btn" id="notifHubBtn" onclick="toggleNotificationHub()" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="hub-badge hidden" id="hubBadge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-dropdown-header">
+              <div class="notification-dropdown-title">
+                <span>🔔</span> Activity
+              </div>
+              <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark all read</button>
+            </div>
+            <div class="notification-tabs">
+              <button class="notification-tab active" data-filter="all" onclick="filterNotifications('all')">
+                All <span class="tab-count" id="tabCountAll">0</span>
+              </button>
+              <button class="notification-tab" data-filter="chat" onclick="filterNotifications('chat')">
+                💬 Clients <span class="tab-count" id="tabCountChat">0</span>
+              </button>
+              <button class="notification-tab" data-filter="team" onclick="filterNotifications('team')">
+                👥 Team <span class="tab-count" id="tabCountTeam">0</span>
+              </button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <div class="notification-empty">
+                <div class="notification-empty-icon">🔔</div>
+                <div class="notification-empty-text">No notifications yet</div>
+                <div class="notification-empty-subtext">Messages from clients and team will appear here</div>
+              </div>
+            </div>
+            <div class="notification-footer">
+              <button class="view-all-btn" onclick="openFullInbox()">View Full Inbox</button>
+            </div>
+          </div>
+        </div>
+
         <!-- User Account Menu -->
         <div class="user-account-menu" id="userAccountMenu">
           <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
@@ -8091,7 +9162,7 @@
     <!-- Main Content -->
     <main class="main">
       <!-- Left Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="leftSidebar">
         <!-- Multi-Room Manager -->
         <div class="sidebar-section" data-tutorial="rooms">
           <div class="sidebar-header" onclick="toggleSection(this)">
@@ -8130,7 +9201,7 @@
         </div>
 
         <!-- Tools -->
-        <div class="sidebar-section">
+        <div class="sidebar-section" id="toolsSection">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Draw & edit tools">
             <span class="sidebar-title">Tools</span>
             <span class="sidebar-toggle">▼</span>
@@ -8920,53 +9991,54 @@
           </div>
         </div>
 
-        <!-- Customer Messages Section -->
-        <div class="panel-section" id="messagesSection">
-          <div class="panel-title" onclick="toggleMessagesPanel()" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
-            <span>💬 Messages</span>
-            <span class="message-badge" id="messageBadge" style="background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; display: none;">0</span>
-          </div>
-          <div class="messages-panel-content" id="messagesContent">
-            <div class="customer-messages-list" id="customerMessagesList" style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 8px; max-height: 120px; overflow-y: auto;">
-              <div class="no-messages" id="noCustomerMessage" style="color: #a78bfa; font-size: 11px; text-align: center; padding: 10px;">
-                No customer linked<br>
-                <span style="font-size: 9px; opacity: 0.7;">Share design to enable messaging</span>
-              </div>
-            </div>
-            <div class="customer-message-input" id="messageInputArea" style="display: none; gap: 6px;">
-              <input type="text" id="designerReplyInput" placeholder="Type a reply..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--dark-elevated); color: var(--text); font-size: 11px;">
-              <button class="btn btn-primary btn-sm" onclick="sendDesignerReply()">Send</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Team Collaboration Chat -->
+        <!-- Unified Messages Panel -->
         <div class="panel-section" id="teamChatSection">
           <div class="panel-title" onclick="togglePanelSection('teamChatSection')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
-            <span>👥 Team Chat</span>
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px;">💬</span>
+              <span>Messages</span>
+            </span>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="online-indicator" id="teamOnlineCount" style="background: rgba(16,185,129,0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 10px;">0 online</span>
-              <span class="toggle-icon">▼</span>
+              <span class="online-indicator" id="teamOnlineCount" style="background: rgba(16,185,129,0.2); color: #10b981; font-size: 9px; padding: 2px 6px; border-radius: 8px; font-weight: 500;">0 online</span>
+              <span class="toggle-icon" style="font-size: 10px; opacity: 0.5;">▼</span>
             </div>
           </div>
           <div class="panel-content" id="teamChatContent">
-            <!-- Active collaborators -->
-            <div id="activeCollaborators" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; min-height: 24px;">
-              <span style="color: var(--text-muted); font-size: 10px;">No one else here yet</span>
+            <!-- Active collaborators (compact) -->
+            <div id="activeCollaborators" style="display: none;"></div>
+            <!-- Message type tabs -->
+            <div class="message-tabs" style="display: flex; align-items: center; gap: 4px;">
+              <button class="message-tab active" id="tabAllMessages" onclick="switchMessageTab('all')">
+                All
+                <span class="tab-badge hidden" id="badgeAll">0</span>
+              </button>
+              <button class="message-tab" id="tabClientMessages" onclick="switchMessageTab('client')">
+                👤 Clients
+                <span class="tab-badge hidden" id="badgeClient">0</span>
+              </button>
+              <button class="message-tab" id="tabTeamMessages" onclick="switchMessageTab('team')">
+                👥 Team
+                <span class="tab-badge hidden" id="badgeTeam">0</span>
+              </button>
+              <button onclick="refreshMessages()" title="Refresh messages" style="margin-left: auto; padding: 4px 8px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 12px;">🔄</button>
             </div>
-            <!-- Chat messages -->
-            <div id="teamChatMessages" style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; margin-bottom: 8px; max-height: 150px; overflow-y: auto; min-height: 60px;">
-              <div style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 15px;">
-                Chat with your team while designing
+            <!-- Messages list -->
+            <div id="teamChatMessages">
+              <div class="chat-empty-state" style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 30px 12px;">
+                <div style="font-size: 24px; margin-bottom: 8px; opacity: 0.4;">💬</div>
+                <div style="font-weight: 500; margin-bottom: 4px;">No messages yet</div>
+                <div style="font-size: 10px; opacity: 0.6;">Customer comments and team chat will appear here</div>
               </div>
             </div>
-            <!-- Chat input -->
-            <div style="display: flex; gap: 6px;">
-              <input type="text" id="teamChatInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendTeamChat()" style="flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--dark-elevated); color: var(--text); font-size: 12px;">
-              <button class="btn btn-primary btn-sm" onclick="sendTeamChat()" style="padding: 8px 12px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <!-- Chat input - wrapped in form to prevent password autofill -->
+            <form class="chat-input-wrapper" onsubmit="sendUnifiedMessage(); return false;" autocomplete="off">
+              <input type="search" id="teamChatInput" placeholder="Type a message..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" style="-webkit-appearance: none;">
+              <button type="submit" class="btn btn-primary" title="Send message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l18-9L3 3l3 9m0 0h12"/>
+                </svg>
               </button>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -11719,7 +12791,7 @@
       // Scroll to comments section after a short delay
       setTimeout(() => {
         const commentsSection = document.getElementById('reviewComments') ||
-                               document.querySelector('.review-comments-section');
+                               document.querySelector('.review-chat-section');
         if (commentsSection) {
           commentsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
           // Highlight the section briefly
@@ -15857,9 +16929,12 @@
     }
 
     // ===== DISTRIBUTOR MARKETPLACE INTEGRATION =====
+    // Use local API in development, Render in production
     const MARKETPLACE_API_BASE = (window.SG_CONFIG && window.SG_CONFIG.API_BASE)
       ? window.SG_CONFIG.API_BASE
-      : 'https://surprise-granite-email-api.onrender.com';
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3001'
+        : 'https://surprise-granite-email-api.onrender.com';
 
     const MARKETPLACE_ENDPOINTS = {
       products: `${MARKETPLACE_API_BASE}/api/marketplace/products`,
@@ -16513,6 +17588,7 @@
     let elements = [];
     let walls = [];
     let selectedElement = null;
+    let currentDesignId = null; // Current design ID for messaging/collaboration
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
     let autoRotationApplied = false; // Track if auto-rotation was applied during this drag
@@ -18840,7 +19916,7 @@
       }
 
       try {
-        const response = await fetch(`/api/marketplace/products?${params.toString()}`);
+        const response = await fetch(`${MARKETPLACE_API_BASE}/api/marketplace/products?${params.toString()}`);
         if (!response.ok) throw new Error('API error');
         const data = await response.json();
 
@@ -18967,7 +20043,7 @@
 
       try {
         const ids = marketplaceElements.map(el => el.storeProduct?.slug || el.vendorProduct?.id).filter(Boolean);
-        const response = await fetch(`/api/marketplace/products?limit=50&search=`);
+        const response = await fetch(`${MARKETPLACE_API_BASE}/api/marketplace/products?limit=50&search=`);
         if (!response.ok) return;
         const data = await response.json();
         const priceMap = {};
@@ -19002,7 +20078,7 @@
     // ===== VENDOR DESIGNER ELEMENTS =====
     async function loadVendorDesignerElements() {
       try {
-        const response = await fetch('/api/marketplace/designer-products?limit=200');
+        const response = await fetch(`${MARKETPLACE_API_BASE}/api/marketplace/designer-products?limit=200`);
         if (!response.ok) return;
         const data = await response.json();
 
@@ -55500,14 +56576,19 @@
           companyEl.textContent = companyName;
         }
 
-        // Set share state - only mark as shared view if permission was explicitly provided
-        // (When designer loads their own design, no permission is passed)
-        const isActuallySharedView = permission !== undefined && permission !== null;
+        // Set share state - mark as shared view if:
+        // 1. URL has a share token parameter, OR
+        // 2. Permission was explicitly provided
+        // When designer loads their own design directly (no share param), it's not a shared view
+        const urlHasShareToken = new URLSearchParams(window.location.search).has('share');
+        const isActuallySharedView = urlHasShareToken || (permission !== undefined && permission !== null);
         SHARE_STATE.isSharedView = isActuallySharedView;
-        SHARE_STATE.permission = permission || 'full_collab';
+        // Default to 'quote_view' for shared views without explicit permission (safer)
+        SHARE_STATE.permission = permission || (isActuallySharedView ? 'quote_view' : 'full_collab');
         SHARE_STATE.allowedActions = PERMISSION_LEVELS[permission] || PERMISSION_LEVELS.full_collab;
         SHARE_STATE.designId = design.id;
         SHARE_STATE.designToken = design.share_token;
+        currentDesignId = design.id; // Set for unified messages system
 
         if (shareData) {
           SHARE_STATE.shareId = shareData.id;
@@ -55644,13 +56725,24 @@
         calculateQuote();
         draw();
 
-        // Show Review Room UI for non-editor viewers; full_collab goes straight to editor
-        if (!isFullCollaborator()) {
-          showReviewRoom(design.project_name, permission);
+        // Show Review Room UI ONLY for shared views with non-full-collab permission
+        // (Designer loading their own design should NOT see review room)
+        console.log('=== SHARE VIEW CHECK ===');
+        console.log('SHARE_STATE.isSharedView:', SHARE_STATE.isSharedView);
+        console.log('Permission:', permission);
+        console.log('isFullCollaborator():', isFullCollaborator());
+        console.log('SHARE_STATE.allowedActions:', SHARE_STATE.allowedActions);
+
+        if (SHARE_STATE.isSharedView && !isFullCollaborator()) {
+          console.log('-> Showing Review Room (shared view, not full collab)');
+          showReviewRoom(design.project_name || design.name || 'Design Review', permission);
         } else {
-          // Full collaborator: skip review overlay, stay in editor mode
+          console.log('-> NOT showing Review Room');
+          // Either designer's own design OR full collaborator - no review overlay
           document.body.classList.remove('review-readonly', 'view-only-mode');
-          showCollaboratorBadge();
+          if (isFullCollaborator()) {
+            showCollaboratorBadge();
+          }
         }
 
         // Wait for textures to load, then initialize 3D view
@@ -55683,6 +56775,11 @@
             // Initialize team chat for collaboration
             if (SHARE_STATE.designId && typeof initTeamChat === 'function') {
               initTeamChat(SHARE_STATE.designId);
+            }
+
+            // Initialize unified messages panel
+            if (typeof initUnifiedMessages === 'function') {
+              initUnifiedMessages();
             }
           }, 300);
         }, 800);
@@ -55785,8 +56882,61 @@
               console.log('Direct design query result:', directDesign);
 
               if (directDesign) {
-                // Found as a direct design link - load it directly
-                loadDesignData(directDesign, directDesign.settings?.share_mode === 'edit' ? 'full_collab' : 'quote_view');
+                // Found as a direct design link - need to find or create a share record for comments to work
+                console.log('Direct design found, looking for existing share record...');
+
+                // Try to find an existing share record for this design
+                let existingShareData = null;
+                try {
+                  const existingShareRes = await fetch(
+                    `${SUPABASE_URL}/rest/v1/room_design_shares?design_id=eq.${directDesign.id}&select=*&order=created_at.desc&limit=1`,
+                    { headers }
+                  );
+                  if (existingShareRes.ok) {
+                    const existingShares = await existingShareRes.json();
+                    if (existingShares && existingShares.length > 0) {
+                      existingShareData = existingShares[0];
+                      console.log('Found existing share record:', existingShareData.id);
+                    }
+                  }
+                } catch (e) {
+                  console.warn('Could not check for existing share:', e);
+                }
+
+                // If no share record exists, create one so comments can be saved
+                if (!existingShareData) {
+                  console.log('No share record found, creating one for comment support...');
+                  try {
+                    const newShareRes = await fetch(
+                      `${SUPABASE_URL}/rest/v1/room_design_shares`,
+                      {
+                        method: 'POST',
+                        headers: { ...headers, 'Prefer': 'return=representation' },
+                        body: JSON.stringify({
+                          design_id: directDesign.id,
+                          share_token: shareToken,
+                          permission_level: directDesign.settings?.share_mode === 'edit' ? 'full_collab' : 'quote_view',
+                          comments: [],
+                          access_count: 1,
+                          created_at: new Date().toISOString()
+                        })
+                      }
+                    );
+                    if (newShareRes.ok) {
+                      const newShares = await newShareRes.json();
+                      existingShareData = Array.isArray(newShares) ? newShares[0] : newShares;
+                      console.log('Created new share record:', existingShareData?.id);
+                    } else {
+                      console.warn('Could not create share record:', newShareRes.status);
+                    }
+                  } catch (e) {
+                    console.warn('Error creating share record:', e);
+                  }
+                }
+
+                // Load design with share data (even if null, at least we tried)
+                const permission = directDesign.settings?.share_mode === 'edit' ? 'full_collab' : 'quote_view';
+                loadDesignData(directDesign, permission, existingShareData);
                 return;
               }
             } else {
@@ -55901,7 +57051,29 @@
 
     // Show the Review Room overlay UI
     function showReviewRoom(projectName, permission) {
-      const permInfo = PERMISSION_LEVELS[permission];
+      // Ensure permission has a valid value
+      const safePermission = permission || 'view_only';
+      const permInfo = PERMISSION_LEVELS[safePermission];
+      const permissionLabel = permInfo?.name || 'View Only';
+
+      // Clean up editing UI elements that shouldn't be visible in review mode
+      const mobileToolbar = document.getElementById('mobileToolbar');
+      if (mobileToolbar) mobileToolbar.remove();
+
+      // Add view-only classes to hide editing UI
+      document.body.classList.add('view-only-mode');
+      document.body.classList.add('review-readonly');
+
+      // FORCE hide the left sidebar and all tool elements
+      const leftSidebar = document.getElementById('leftSidebar');
+      if (leftSidebar) leftSidebar.style.display = 'none';
+
+      const toolsSection = document.getElementById('toolsSection');
+      if (toolsSection) toolsSection.style.display = 'none';
+
+      document.querySelectorAll('.tool-btn, .tool-grid').forEach(el => {
+        el.style.display = 'none';
+      });
 
       // Create review room overlay
       const reviewRoom = document.createElement('div');
@@ -55910,8 +57082,13 @@
       reviewRoom.innerHTML = `
         <div class="review-header">
           <div class="review-header-left">
+            <a href="/" class="review-back-btn" title="Back to Home">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+            </a>
             <h2 class="review-title">${projectName || 'Design Review'}</h2>
-            <span class="review-permission-badge">${permInfo?.name || permission}</span>
+            <span class="review-permission-badge">${permissionLabel}</span>
             <div id="liveIndicator" class="live-indicator disconnected" title="Connecting to live updates...">
               <span class="live-dot"></span>
               <span>LIVE</span>
@@ -55922,16 +57099,17 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-              Review Panel
+              <span class="btn-text">Review</span>
             </button>
             <button class="btn btn-secondary" id="toggle3DBtn" onclick="toggle3DView()">
-              2D View
+              <span class="btn-text">2D View</span>
             </button>
             ${permission === 'full_collab' ? `
             <button class="btn btn-secondary" onclick="exitReviewMode()" title="Exit to Editor">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
-                <path d="M18 6L6 18M6 6l12 12"/>
+                <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
               </svg>
+              <span class="btn-text">Edit</span>
             </button>
             ` : ''}
           </div>
@@ -55962,15 +57140,22 @@
             <!-- Populated by JS -->
           </div>
 
-          <div class="review-comments-section">
-            <h4>Comments</h4>
-            <div class="review-comments" id="reviewComments">
+          <div class="review-chat-section">
+            <div class="review-chat-header">
+              <span>💬 Chat with Designer</span>
+              <span class="chat-status" id="chatConnectionStatus">● Live</span>
+            </div>
+            <div class="review-chat-messages" id="reviewComments">
               <!-- Populated by JS -->
             </div>
-            <div class="review-comment-input">
-              <input type="text" id="newCommentInput" placeholder="Add a comment..." onkeypress="if(event.key==='Enter')addReviewComment()">
-              <button class="btn btn-primary btn-sm" onclick="addReviewComment()">Send</button>
-            </div>
+            <form class="review-chat-input" onsubmit="addReviewComment(); return false;" autocomplete="off">
+              <input type="search" id="newCommentInput" placeholder="Type a message..." autocomplete="off">
+              <button type="submit" class="chat-send-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l18-9L3 3l3 9m0 0h12"/>
+                </svg>
+              </button>
+            </form>
           </div>
 
           ${permission === 'quote_approval' ? `
@@ -56015,6 +57200,83 @@
           console.log('Auto-opened review panel for permission:', permission);
         }
       }
+
+      // Subscribe to real-time comment updates (so customer sees designer replies)
+      subscribeToShareCommentsForCustomer();
+
+      // Force canvas redraw after layout change (multiple attempts for layout settling)
+      const redrawCanvas = () => {
+        const wrapper = document.getElementById('canvasWrapper');
+        if (wrapper && wrapper.clientWidth > 0 && wrapper.clientHeight > 0) {
+          updateCanvasSize();
+          console.log('Canvas redrawn after review room shown:', wrapper.clientWidth, 'x', wrapper.clientHeight);
+        } else {
+          console.log('Canvas wrapper not ready yet, will retry...');
+        }
+      };
+      setTimeout(redrawCanvas, 100);
+      setTimeout(redrawCanvas, 300);
+      setTimeout(redrawCanvas, 600);
+    }
+
+    // Subscribe to share comment updates for customer view
+    function subscribeToShareCommentsForCustomer() {
+      const supabase = getSupabaseClient();
+      if (!supabase || !SHARE_STATE.shareId) {
+        console.log('Cannot subscribe to comments - no shareId');
+        return;
+      }
+
+      console.log('Customer subscribing to comment updates for share:', SHARE_STATE.shareId);
+
+      const channel = supabase
+        .channel('customer-share-comments-' + SHARE_STATE.shareId)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room_design_shares',
+          filter: `id=eq.${SHARE_STATE.shareId}`
+        }, (payload) => {
+          console.log('=== CUSTOMER: Received share update ===', payload);
+
+          // Update local comments and refresh UI
+          if (payload.new.comments) {
+            SHARE_STATE.comments = payload.new.comments;
+            updateReviewComments();
+
+            // Show toast for new designer messages
+            const newComments = payload.new.comments;
+            const lastComment = newComments[newComments.length - 1];
+            if (lastComment && lastComment.direction === 'outbound') {
+              showToast(`💬 ${lastComment.author || 'Designer'}: ${lastComment.text.substring(0, 40)}...`, 'info');
+            }
+          }
+        })
+        .subscribe((status) => {
+          console.log('Customer comment subscription status:', status);
+          // Update connection status in chat header
+          const statusEl = document.getElementById('chatConnectionStatus');
+          if (statusEl) {
+            if (status === 'SUBSCRIBED') {
+              statusEl.textContent = '● Live';
+              statusEl.classList.remove('disconnected');
+            } else {
+              statusEl.textContent = '○ Connecting...';
+              statusEl.classList.add('disconnected');
+            }
+          }
+          // Also update the live indicator in review header
+          const indicator = document.getElementById('liveIndicator');
+          if (indicator) {
+            if (status === 'SUBSCRIBED') {
+              indicator.classList.remove('disconnected');
+              indicator.classList.add('connected');
+            } else {
+              indicator.classList.remove('connected');
+              indicator.classList.add('disconnected');
+            }
+          }
+        });
     }
 
     // Toggle review panel visibility
@@ -56271,22 +57533,31 @@
       const comments = SHARE_STATE.comments || [];
 
       if (comments.length === 0) {
-        container.innerHTML = '<p class="empty-state">No comments yet. Start the conversation!</p>';
+        container.innerHTML = `
+          <div class="chat-empty">
+            <div class="chat-empty-icon">💬</div>
+            <div>No messages yet</div>
+            <div style="font-size: 11px; margin-top: 4px;">Send a message to start the conversation</div>
+          </div>
+        `;
         return;
       }
 
       container.innerHTML = comments.map(c => {
-        const isStaff = c.direction === 'outbound' || (c.author && c.author !== 'Customer' && c.author !== 'Reviewer');
-        const safeAuthor = escapeHtml(c.author || 'Customer');
-        const safeElementLabel = c.elementLabel ? escapeHtml(c.elementLabel) : null;
+        // Designer messages are 'outbound', customer messages are 'inbound'
+        const isDesigner = c.direction === 'outbound';
+        const direction = isDesigner ? 'inbound' : 'outbound'; // Flip for customer view
+        const authorName = c.author || (isDesigner ? 'Designer' : 'You');
+        const initial = authorName[0].toUpperCase();
+        const time = new Date(c.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
         return `
-          <div class="review-comment ${isStaff ? 'staff-comment' : 'customer-comment'}" style="${isStaff ? 'background: rgba(249, 168, 37, 0.1); border-left: 3px solid var(--gold);' : ''}">
-            <div class="comment-header">
-              <span class="comment-author" style="${isStaff ? 'color: var(--gold);' : ''}">${safeAuthor}</span>
-              ${safeElementLabel ? `<span class="comment-element">on ${safeElementLabel}</span>` : ''}
-              <span class="comment-time">${new Date(c.timestamp).toLocaleString()}</span>
+          <div class="chat-message-row ${direction}">
+            <div class="chat-avatar">${initial}</div>
+            <div class="chat-bubble-wrap">
+              <div class="chat-bubble">${escapeHtml(c.text)}</div>
+              <div class="chat-meta">${escapeHtml(authorName)} • ${time}</div>
             </div>
-            <div class="comment-text">${escapeHtml(c.text)}</div>
           </div>
         `;
       }).join('');
@@ -56406,8 +57677,8 @@
 
     // Apply UI restrictions based on permission level
     function applyPermissionRestrictions() {
-      const perms = SHARE_STATE.allowedActions;
-      if (!perms) return;
+      // Default to restrictive permissions if not set (safer for shared views)
+      const perms = SHARE_STATE.allowedActions || { canEdit: false, canComment: true, canApprove: false };
 
       console.log('Applying permission restrictions:', SHARE_STATE.permission, perms);
 
@@ -56416,11 +57687,24 @@
         document.body.classList.add('review-readonly');
         document.body.classList.add('view-only-mode');
 
+        // Remove mobile toolbar if it exists
+        const mobileToolbar = document.getElementById('mobileToolbar');
+        if (mobileToolbar) mobileToolbar.remove();
+
         // Hide the entire left sidebar (tools, cabinets, floor plans, etc.)
         const sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-          sidebar.style.display = 'none';
-        }
+        if (sidebar) sidebar.style.display = 'none';
+
+        const leftSidebar = document.getElementById('leftSidebar');
+        if (leftSidebar) leftSidebar.style.display = 'none';
+
+        const toolsSection = document.getElementById('toolsSection');
+        if (toolsSection) toolsSection.style.display = 'none';
+
+        // Hide all tool buttons via direct DOM
+        document.querySelectorAll('.tool-btn, .tool-grid').forEach(el => {
+          el.style.display = 'none';
+        });
 
         // Hide the top toolbar action buttons (save, export, etc.) except view controls
         const topToolbar = document.querySelector('.top-toolbar');
@@ -58137,8 +59421,8 @@
 
           // Determine where the design data is stored
           if (data.design_data) {
-            // Design data is in nested object
-            loadDesignData(data.design_data);
+            // Design data is in nested object - merge in the record id and share_token
+            loadDesignData({ ...data.design_data, id: data.id, share_token: data.share_token });
           } else {
             // Design data is directly on the record (elements, settings, etc.)
             // Build the design object that loadDesignData expects
@@ -58191,22 +59475,24 @@
     // Set up comment notifications for designers when they load their own design
     async function setupDesignerCommentNotifications(designId) {
       if (!designId) return;
+      console.log('=== setupDesignerCommentNotifications START ===', designId);
 
       try {
         const supabase = getSupabaseClient();
         if (!supabase) return;
 
-        // Find any shares for this design that have an associated lead
+        // Find ANY share for this design (not just ones with lead_id)
         let shares, error;
         try {
           const result = await supabase
             .from('room_design_shares')
-            .select('id, lead_id, customer_name')
+            .select('id, lead_id, customer_name, comments')
             .eq('design_id', designId)
-            .not('lead_id', 'is', null)
+            .order('created_at', { ascending: false })
             .limit(1);
           shares = result.data;
           error = result.error;
+          console.log('Share query result:', shares, 'Error:', error);
         } catch (queryErr) {
           // Table may not exist yet — non-critical feature
           console.log('room_design_shares query failed (table may not exist):', queryErr.message);
@@ -58214,7 +59500,7 @@
         }
 
         if (error || !shares || shares.length === 0) {
-          console.log('No customer shares found for this design');
+          console.log('No shares found for this design');
           return;
         }
 
@@ -58222,20 +59508,27 @@
         SHARE_STATE.leadId = share.lead_id;
         SHARE_STATE.customerName = share.customer_name || null;
         SHARE_STATE.shareId = share.id;
+        SHARE_STATE.comments = share.comments || [];
 
-        // Fetch customer name if not set
-        if (!SHARE_STATE.customerName) {
+        console.log('Share loaded - ID:', share.id, 'Comments:', SHARE_STATE.comments?.length || 0);
+
+        // Fetch customer name if we have a lead
+        if (share.lead_id && !SHARE_STATE.customerName) {
           await fetchCustomerName(share.lead_id);
         }
 
-        // Subscribe to realtime comment notifications
-        subscribeToCustomerComments(share.lead_id);
+        // Subscribe to realtime comment notifications on the share
+        subscribeToShareComments();
 
-        // Show the messages panel and load messages
-        showDesignerMessagesPanel();
-        await loadDesignerMessages(share.lead_id);
+        // If we have a lead, also subscribe to customer_messages
+        if (share.lead_id) {
+          subscribeToCustomerComments(share.lead_id);
+        }
 
-        console.log('Designer comment notifications set up for lead:', share.lead_id);
+        // Load messages into the unified panel
+        await loadUnifiedMessages();
+
+        console.log('Designer comment notifications set up. ShareId:', SHARE_STATE.shareId);
       } catch (err) {
         console.warn('Could not set up comment notifications:', err);
       }
@@ -58245,7 +59538,15 @@
     function togglePanelSection(sectionId) {
       const section = document.getElementById(sectionId);
       if (section) {
+        const wasCollapsed = section.classList.contains('collapsed');
         section.classList.toggle('collapsed');
+
+        // Clear team chat unread and refresh messages when expanded
+        if (sectionId === 'teamChatSection' && wasCollapsed) {
+          onTeamChatSectionExpanded();
+          // Auto-refresh messages when panel is opened
+          refreshMessages();
+        }
       }
     }
 
@@ -58507,6 +59808,603 @@
     }
 
     // ============================================================
+    // DESIGN NOTIFICATIONS - Comments from all shared designs
+    // ============================================================
+
+    // ========================================
+    // GAMING-STYLE NOTIFICATION HUB
+    // Unified notification center like game HUDs
+    // ========================================
+
+    const NOTIFICATION_HUB = {
+      notifications: [],
+      filter: 'all',  // 'all', 'chat', 'team'
+      isOpen: false,
+      subscription: null,
+      designMap: {},
+      teamSubscription: null
+    };
+
+    // Toggle notification hub dropdown
+    function toggleNotificationHub() {
+      const dropdown = document.getElementById('notificationDropdown');
+      const btn = document.getElementById('notifHubBtn');
+      NOTIFICATION_HUB.isOpen = !NOTIFICATION_HUB.isOpen;
+
+      if (NOTIFICATION_HUB.isOpen) {
+        dropdown.classList.add('show');
+        btn.style.background = 'var(--dark-hover)';
+      } else {
+        dropdown.classList.remove('show');
+        btn.style.background = '';
+      }
+    }
+
+    // Close hub when clicking outside
+    document.addEventListener('click', (e) => {
+      const hub = document.getElementById('notificationHub');
+      if (hub && !hub.contains(e.target) && NOTIFICATION_HUB.isOpen) {
+        toggleNotificationHub();
+      }
+    });
+
+    // Filter notifications by type
+    function filterNotifications(filter) {
+      NOTIFICATION_HUB.filter = filter;
+
+      // Update active tab
+      document.querySelectorAll('.notification-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
+      });
+
+      renderNotificationHub();
+    }
+
+    // Initialize notification hub
+    async function initNotificationHub() {
+      const supabase = getSupabaseClient();
+      const user = window.SgAuth?.getUser();
+      if (!supabase || !user) return;
+
+      console.log('=== initNotificationHub START ===');
+
+      try {
+        // Get all designs owned by this user
+        const { data: userDesigns } = await supabase
+          .from('room_designs')
+          .select('id, name, share_token')
+          .eq('user_id', user.id);
+
+        console.log('User designs:', userDesigns?.length || 0);
+
+        if (userDesigns?.length) {
+          userDesigns.forEach(d => { NOTIFICATION_HUB.designMap[d.id] = d; });
+          const designIds = userDesigns.map(d => d.id);
+
+          // Load client messages from customer_messages
+          const { data: clientMessages } = await supabase
+            .from('customer_messages')
+            .select('*')
+            .eq('channel', 'design_share')
+            .eq('direction', 'inbound')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (clientMessages) {
+            const filtered = clientMessages.filter(m => {
+              const designId = m.metadata?.design_id;
+              return designId && designIds.includes(designId);
+            });
+
+            filtered.forEach(m => {
+              const design = NOTIFICATION_HUB.designMap[m.metadata?.design_id];
+              NOTIFICATION_HUB.notifications.push({
+                id: m.id,
+                type: 'chat',
+                source: design?.name || 'Untitled Design',
+                message: m.message,
+                author: m.metadata?.author || 'Customer',
+                time: m.created_at,
+                read: m.read_at != null,
+                designId: m.metadata?.design_id,
+                shareToken: design?.share_token
+              });
+            });
+          }
+
+          // ALSO load comments from room_design_shares.comments JSONB
+          const { data: shares } = await supabase
+            .from('room_design_shares')
+            .select('id, design_id, share_token, comments')
+            .in('design_id', designIds);
+
+          console.log('Shares with comments:', shares?.length || 0);
+
+          if (shares) {
+            shares.forEach(share => {
+              const design = NOTIFICATION_HUB.designMap[share.design_id];
+              const comments = share.comments || [];
+
+              comments.forEach((c, idx) => {
+                // Skip outbound (designer) messages
+                if (c.direction === 'outbound') return;
+
+                // Check for duplicates
+                const isDupe = NOTIFICATION_HUB.notifications.some(n =>
+                  n.message === c.text && n.time === c.timestamp
+                );
+                if (isDupe) return;
+
+                NOTIFICATION_HUB.notifications.push({
+                  id: `share-comment-${share.id}-${idx}`,
+                  type: 'chat',
+                  source: design?.name || 'Untitled Design',
+                  message: c.text,
+                  author: c.author || 'Customer',
+                  time: c.timestamp,
+                  read: false,
+                  designId: share.design_id,
+                  shareToken: design?.share_token || share.share_token,
+                  shareId: share.id
+                });
+              });
+            });
+          }
+
+          // Subscribe to real-time client messages
+          subscribeToClientMessages(designIds);
+
+          // Subscribe to real-time share comment updates for ALL user's designs
+          subscribeToAllShareComments(designIds);
+        }
+
+        // Load team chat messages
+        await loadTeamChatNotifications();
+        subscribeToTeamChat();
+
+        // Sort notifications by time (newest first)
+        NOTIFICATION_HUB.notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        renderNotificationHub();
+        updateHubBadge();
+
+        console.log('Notification hub initialized with', NOTIFICATION_HUB.notifications.length, 'notifications');
+
+      } catch (err) {
+        console.log('Notification hub init:', err.message);
+      }
+    }
+
+    // Subscribe to share comments for ALL of user's designs (global notifications)
+    function subscribeToAllShareComments(designIds) {
+      const supabase = getSupabaseClient();
+      if (!supabase || !designIds?.length) return;
+
+      console.log('Subscribing to share comments for', designIds.length, 'designs');
+
+      // Subscribe to changes on room_design_shares for any of the user's designs
+      const channel = supabase
+        .channel('global-share-comments')
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room_design_shares'
+        }, (payload) => {
+          // Check if this share belongs to one of the user's designs
+          if (!designIds.includes(payload.new.design_id)) return;
+
+          console.log('=== GLOBAL SHARE UPDATE ===', payload.new.design_id);
+
+          const design = NOTIFICATION_HUB.designMap[payload.new.design_id];
+          const newComments = payload.new.comments || [];
+
+          // Find new comments that aren't already in notifications
+          newComments.forEach((c, idx) => {
+            if (c.direction === 'outbound') return;
+
+            const isDupe = NOTIFICATION_HUB.notifications.some(n =>
+              n.message === c.text && n.time === c.timestamp
+            );
+
+            if (!isDupe) {
+              const notification = {
+                id: `share-comment-${payload.new.id}-${idx}-${Date.now()}`,
+                type: 'chat',
+                source: design?.name || 'Untitled Design',
+                message: c.text,
+                author: c.author || 'Customer',
+                time: c.timestamp,
+                read: false,
+                designId: payload.new.design_id,
+                shareToken: design?.share_token || payload.new.share_token,
+                shareId: payload.new.id
+              };
+
+              // Add to beginning of notifications
+              NOTIFICATION_HUB.notifications.unshift(notification);
+
+              // Show toast notification
+              showToast(`💬 New comment on "${design?.name || 'Design'}": ${c.text.substring(0, 30)}...`, 'info');
+
+              // Update the hub
+              renderNotificationHub();
+              updateHubBadge();
+
+              // Flash the notification button
+              const btn = document.getElementById('notifHubBtn');
+              if (btn) {
+                btn.classList.add('has-notifications');
+                btn.style.animation = 'pulse 0.5s ease-in-out 3';
+                setTimeout(() => btn.style.animation = '', 1500);
+              }
+            }
+          });
+        })
+        .subscribe((status) => {
+          console.log('Global share comments subscription:', status);
+        });
+    }
+
+    // Load team chat notifications
+    async function loadTeamChatNotifications() {
+      const supabase = getSupabaseClient();
+      if (!supabase || !currentDesignId) return;
+
+      try {
+        const { data: teamMessages } = await supabase
+          .from('design_chat_messages')
+          .select('*')
+          .eq('design_id', currentDesignId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (teamMessages) {
+          teamMessages.forEach(m => {
+            // Don't add own messages as notifications
+            const user = window.SgAuth?.getUser();
+            if (m.user_id === user?.id) return;
+
+            NOTIFICATION_HUB.notifications.push({
+              id: m.id,
+              type: 'team',
+              source: m.user_name || 'Team Member',
+              message: m.message,
+              author: m.user_name,
+              time: m.created_at,
+              read: true,  // Team messages already seen
+              designId: m.design_id
+            });
+          });
+        }
+      } catch (err) {
+        console.log('Team chat load:', err.message);
+      }
+    }
+
+    // Subscribe to client messages
+    function subscribeToClientMessages(designIds) {
+      const supabase = getSupabaseClient();
+      if (!supabase || !designIds?.length) return;
+
+      if (NOTIFICATION_HUB.subscription) {
+        supabase.removeChannel(NOTIFICATION_HUB.subscription);
+      }
+
+      const channel = supabase
+        .channel('hub-client-messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'customer_messages',
+          filter: `channel=eq.design_share`
+        }, (payload) => {
+          const designId = payload.new.metadata?.design_id;
+          if (designId && designIds.includes(designId) && payload.new.direction === 'inbound') {
+            const design = NOTIFICATION_HUB.designMap[designId];
+            const notif = {
+              id: payload.new.id,
+              type: 'chat',
+              source: design?.name || 'Untitled Design',
+              message: payload.new.message,
+              author: payload.new.metadata?.author || 'Customer',
+              time: payload.new.created_at,
+              read: false,
+              designId: designId,
+              shareToken: design?.share_token
+            };
+            NOTIFICATION_HUB.notifications.unshift(notif);
+            renderNotificationHub();
+            updateHubBadge();
+            showNotificationToast(notif);
+            playNotificationSound();
+          }
+        })
+        .subscribe();
+
+      NOTIFICATION_HUB.subscription = channel;
+    }
+
+    // Subscribe to team chat
+    function subscribeToTeamChat() {
+      const supabase = getSupabaseClient();
+      if (!supabase || !currentDesignId) return;
+
+      if (NOTIFICATION_HUB.teamSubscription) {
+        supabase.removeChannel(NOTIFICATION_HUB.teamSubscription);
+      }
+
+      const channel = supabase
+        .channel('hub-team-chat')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'design_chat_messages',
+          filter: `design_id=eq.${currentDesignId}`
+        }, (payload) => {
+          const user = window.SgAuth?.getUser();
+          if (payload.new.user_id === user?.id) return;
+
+          const notif = {
+            id: payload.new.id,
+            type: 'team',
+            source: payload.new.user_name || 'Team Member',
+            message: payload.new.message,
+            author: payload.new.user_name,
+            time: payload.new.created_at,
+            read: false,
+            designId: payload.new.design_id
+          };
+          NOTIFICATION_HUB.notifications.unshift(notif);
+          renderNotificationHub();
+          updateHubBadge();
+          showNotificationToast(notif);
+        })
+        .subscribe();
+
+      NOTIFICATION_HUB.teamSubscription = channel;
+    }
+
+    // Show toast notification
+    function showNotificationToast(notif) {
+      const icon = notif.type === 'chat' ? '💬' : '👥';
+      showToast(`${icon} ${notif.author}: "${notif.message.substring(0, 50)}..."`, 'info');
+    }
+
+    // Play notification sound
+    function playNotificationSound() {
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleU47XZyUZC');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    // Render notification hub list
+    function renderNotificationHub() {
+      const container = document.getElementById('notificationList');
+      if (!container) return;
+
+      // Sort by time (newest first)
+      const sorted = [...NOTIFICATION_HUB.notifications].sort((a, b) =>
+        new Date(b.time) - new Date(a.time)
+      );
+
+      // Filter by type
+      const filtered = NOTIFICATION_HUB.filter === 'all'
+        ? sorted
+        : sorted.filter(n => n.type === NOTIFICATION_HUB.filter);
+
+      // Update tab counts
+      const allCount = sorted.filter(n => !n.read).length;
+      const chatCount = sorted.filter(n => n.type === 'chat' && !n.read).length;
+      const teamCount = sorted.filter(n => n.type === 'team' && !n.read).length;
+
+      document.getElementById('tabCountAll').textContent = allCount;
+      document.getElementById('tabCountChat').textContent = chatCount;
+      document.getElementById('tabCountTeam').textContent = teamCount;
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="notification-empty">
+            <div class="notification-empty-icon">🔔</div>
+            <div class="notification-empty-text">No notifications</div>
+            <div class="notification-empty-subtext">Messages from clients and team appear here</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.slice(0, 15).map(n => {
+        const timeAgo = getTimeAgo(n.time);
+        const iconClass = n.type === 'chat' ? 'chat' : 'team';
+        const icon = n.type === 'chat' ? '💬' : '👥';
+
+        return `
+          <div class="notification-item ${n.read ? '' : 'unread'}"
+               onclick="handleNotificationClick('${n.id}', '${n.type}', '${n.shareToken || ''}', '${n.designId || ''}')">
+            <div class="notif-icon ${iconClass}">${icon}</div>
+            <div class="notif-content">
+              <div class="notif-header">
+                <div class="notif-source">${escapeHtml(n.source)}</div>
+                <div class="notif-time">${timeAgo}</div>
+              </div>
+              <div class="notif-message">${escapeHtml(n.message)}</div>
+              <div class="notif-context">
+                <span>${escapeHtml(n.author)}</span>
+                ${n.type === 'chat' ? '<span class="design-link">→ Open Design</span>' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Handle notification click
+    async function handleNotificationClick(notifId, type, shareToken, designId) {
+      // Mark as read
+      const notif = NOTIFICATION_HUB.notifications.find(n => n.id === notifId);
+      if (notif) notif.read = true;
+
+      renderNotificationHub();
+      updateHubBadge();
+
+      // Navigate to design if it's a client message
+      if (type === 'chat' && shareToken) {
+        toggleNotificationHub();
+        await loadDesignByShareToken(shareToken);
+      }
+
+      // For team messages, scroll to chat section
+      if (type === 'team') {
+        toggleNotificationHub();
+        const chatSection = document.getElementById('teamChatSection');
+        if (chatSection) {
+          chatSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+
+    // Load design by share token
+    async function loadDesignByShareToken(shareToken) {
+      const supabase = getSupabaseClient();
+      if (!supabase || !shareToken) return;
+
+      try {
+        const { data: design } = await supabase
+          .from('room_designs')
+          .select('*')
+          .eq('share_token', shareToken)
+          .single();
+
+        if (design) {
+          currentDesignId = design.id;
+          SHARE_STATE.designId = design.id;
+          SHARE_STATE.designToken = design.share_token;
+          document.getElementById('projectName').value = design.name || 'Untitled';
+
+          // Load design data
+          if (design.design_data) {
+            const data = typeof design.design_data === 'string'
+              ? JSON.parse(design.design_data)
+              : design.design_data;
+            loadDesignData({ ...data, id: design.id, share_token: design.share_token });
+          } else if (design.elements) {
+            loadDesignData(design);
+          }
+
+          // Load share data and comments
+          await setupDesignerCommentNotifications(design.id);
+
+          // Scroll to messages panel
+          setTimeout(() => {
+            const chatSection = document.getElementById('teamChatSection');
+            if (chatSection) {
+              chatSection.classList.remove('collapsed');
+              chatSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 500);
+
+          showToast('Design loaded', 'success');
+        }
+      } catch (err) {
+        console.log('Load design error:', err.message);
+      }
+    }
+
+    // Update hub badge
+    function updateHubBadge() {
+      const badge = document.getElementById('hubBadge');
+      const btn = document.getElementById('notifHubBtn');
+      const unreadCount = NOTIFICATION_HUB.notifications.filter(n => !n.read).length;
+
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.classList.remove('hidden');
+        btn.classList.add('has-notifications');
+      } else {
+        badge.classList.add('hidden');
+        btn.classList.remove('has-notifications');
+      }
+    }
+
+    // Mark all as read
+    function markAllNotificationsRead() {
+      NOTIFICATION_HUB.notifications.forEach(n => n.read = true);
+      renderNotificationHub();
+      updateHubBadge();
+    }
+
+    // Open full inbox (redirect to account CRM messages page)
+    function openFullInbox() {
+      window.location.href = '/account/?page=messages';
+    }
+
+    // Legacy compatibility
+    function initDesignNotifications() {
+      initNotificationHub();
+    }
+
+    function updateNotificationBadge() {
+      updateHubBadge();
+    }
+
+    // Open design from notification
+    async function openDesignFromNotification(shareToken, notificationId) {
+      if (!shareToken) {
+        showToast('Unable to open design', 'error');
+        return;
+      }
+
+      // Mark notification as read
+      const notification = DESIGN_NOTIFICATIONS.notifications.find(n => n.id === notificationId);
+      if (notification && !notification.read) {
+        notification.read = true;
+        DESIGN_NOTIFICATIONS.unreadCount = Math.max(0, DESIGN_NOTIFICATIONS.unreadCount - 1);
+        updateNotificationBadge();
+        renderDesignNotifications();
+
+        // Update in database (customer_messages table)
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          supabase
+            .from('customer_messages')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', notificationId)
+            .then(() => {})
+            .catch(() => {});
+        }
+      }
+
+      // Navigate to design with share token
+      window.location.href = `/tools/room-designer/?share=${shareToken}`;
+    }
+
+    // Helper: Get time ago string
+    function getTimeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    }
+
+    // Initialize notifications on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (window.SgAuth?.getUser()) {
+          initDesignNotifications();
+        }
+      }, 2000);
+    });
+
+    // ============================================================
     // TEAM COLLABORATION CHAT
     // Real-time chat between designers, fabricators, contractors
     // ============================================================
@@ -58517,8 +60415,31 @@
       activeUsers: new Map(),
       myUserId: null,
       myUserName: null,
-      designId: null
+      designId: null,
+      unreadCount: 0
     };
+
+    // Show/update team chat badge
+    function updateTeamChatBadge() {
+      const section = document.getElementById('teamChatSection');
+      const badge = document.getElementById('teamChatBadge');
+      if (!section || !badge) return;
+
+      const isCollapsed = section.classList.contains('collapsed');
+
+      if (TEAM_CHAT.unreadCount > 0 && isCollapsed) {
+        badge.textContent = TEAM_CHAT.unreadCount > 9 ? '9+' : TEAM_CHAT.unreadCount;
+        badge.style.display = 'inline-flex';
+      } else if (badge) {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Clear unread count when section is expanded
+    function onTeamChatSectionExpanded() {
+      TEAM_CHAT.unreadCount = 0;
+      updateTeamChatBadge();
+    }
 
     // Initialize team chat when a design is loaded
     async function initTeamChat(designId) {
@@ -58643,19 +60564,20 @@
       }
 
       if (count === 0) {
-        container.innerHTML = '<span style="color: var(--text-muted); font-size: 10px;">No one else here yet</span>';
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 11px; padding: 4px;">No collaborators online</span>';
         return;
       }
 
-      const colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+      const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'];
       container.innerHTML = users.map((user, i) => {
         const initial = (user.name || 'U')[0].toUpperCase();
         const color = colors[i % colors.length];
         const isMe = user.userId === TEAM_CHAT.myUserId;
+        const displayName = user.name || 'User';
         return `
-          <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 12px;" title="${user.name || 'User'}${isMe ? ' (you)' : ''}">
-            <span style="width: 18px; height: 18px; border-radius: 50%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: white;">${initial}</span>
-            <span style="font-size: 10px; color: var(--text-secondary); max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${user.name || 'User'}${isMe ? ' (you)' : ''}</span>
+          <div class="collaborator-chip ${isMe ? 'is-you' : ''}" title="${displayName}${isMe ? ' (you)' : ''}">
+            <span class="avatar-small" style="background: ${color};">${initial}</span>
+            <span style="max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}${isMe ? ' (you)' : ''}</span>
           </div>
         `;
       }).join('');
@@ -58666,22 +60588,25 @@
       const container = document.getElementById('teamChatMessages');
       if (!container) return;
 
-      // Clear placeholder if this is the first message
-      if (container.querySelector('div[style*="text-align: center"]')) {
+      // Clear empty state placeholder
+      const emptyState = container.querySelector('.chat-empty-state');
+      if (emptyState) {
         container.innerHTML = '';
       }
 
       const isMe = userId === TEAM_CHAT.myUserId;
       const time = new Date(timestamp || Date.now()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       const initial = (userName || 'U')[0].toUpperCase();
+      const avatarColor = isMe ? '#f9cb00' : '#6366f1';
+      const avatarTextColor = isMe ? '#1a1a2e' : 'white';
 
       const msgEl = document.createElement('div');
-      msgEl.style.cssText = `display: flex; gap: 8px; margin-bottom: 8px; ${isMe ? 'flex-direction: row-reverse;' : ''}`;
+      msgEl.className = `chat-message ${isMe ? 'own-message' : ''}`;
       msgEl.innerHTML = `
-        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${isMe ? '#f9cb00' : '#6366f1'}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: ${isMe ? '#1a1a2e' : 'white'}; flex-shrink: 0;">${initial}</div>
-        <div style="flex: 1; max-width: 85%;">
-          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; ${isMe ? 'text-align: right;' : ''}">${userName} • ${time}</div>
-          <div style="background: ${isMe ? 'rgba(249,203,0,0.15)' : 'rgba(99,102,241,0.15)'}; padding: 8px 10px; border-radius: 8px; font-size: 12px; color: var(--text); line-height: 1.4; ${isMe ? 'border-bottom-right-radius: 2px;' : 'border-bottom-left-radius: 2px;'}">${escapeHtml(message)}</div>
+        <div class="avatar" style="background: ${avatarColor}; color: ${avatarTextColor};">${initial}</div>
+        <div style="flex: 1; max-width: 80%;">
+          <div class="meta">${userName} • ${time}</div>
+          <div class="bubble">${escapeHtml(message)}</div>
         </div>
       `;
 
@@ -58690,6 +60615,19 @@
 
       // Store message
       TEAM_CHAT.messages.push({ userName, message, userId, timestamp });
+
+      // Update unread badge if section is collapsed and message is from someone else
+      const section = document.getElementById('teamChatSection');
+      if (!isMe && section?.classList.contains('collapsed')) {
+        TEAM_CHAT.unreadCount++;
+        updateTeamChatBadge();
+        // Play notification sound (optional)
+        try {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleU47XZyUZC');
+          audio.volume = 0.2;
+          audio.play().catch(() => {});
+        } catch (e) {}
+      }
     }
 
     // Add system message (join/leave notifications)
@@ -58697,13 +60635,14 @@
       const container = document.getElementById('teamChatMessages');
       if (!container) return;
 
-      // Clear placeholder
-      if (container.querySelector('div[style*="text-align: center"]')) {
+      // Clear empty state
+      const emptyState = container.querySelector('.chat-empty-state');
+      if (emptyState) {
         container.innerHTML = '';
       }
 
       const msgEl = document.createElement('div');
-      msgEl.style.cssText = 'text-align: center; padding: 4px; font-size: 10px; color: var(--text-muted); font-style: italic;';
+      msgEl.className = 'chat-system-message';
       msgEl.textContent = text;
       container.appendChild(msgEl);
       container.scrollTop = container.scrollHeight;
@@ -58764,15 +60703,617 @@
       TEAM_CHAT.activeUsers.clear();
     }
 
-    // Helper to escape HTML
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     // Listen for page unload to cleanup
     window.addEventListener('beforeunload', cleanupTeamChat);
+
+    // ============================================================
+    // UNIFIED MESSAGE SYSTEM
+    // Combines customer messages and team chat into one panel
+    // ============================================================
+
+    const UNIFIED_MESSAGES = {
+      allMessages: [],
+      clientMessages: [],
+      teamMessages: [],
+      currentTab: 'all',
+      clientSubscription: null,
+      shareCommentsSubscription: null
+    };
+
+    // Manual refresh messages (reload from database)
+    async function refreshMessages() {
+      console.log('=== refreshMessages START ===');
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        showToast('Not connected', 'error');
+        return;
+      }
+
+      const designId = currentDesignId || SHARE_STATE.designId;
+      if (!designId) {
+        showToast('Save or load a design first to see messages', 'info');
+        return;
+      }
+
+      showToast('Refreshing...', 'info');
+
+      try {
+        // Reload share data
+        const { data: shares, error } = await supabase
+          .from('room_design_shares')
+          .select('*')
+          .eq('design_id', designId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        console.log('Refresh - Share query:', shares, 'Error:', error);
+
+        if (shares && shares.length > 0) {
+          const share = shares[0];
+          SHARE_STATE.shareId = share.id;
+          SHARE_STATE.shareToken = share.share_token;
+          SHARE_STATE.leadId = share.lead_id;
+          SHARE_STATE.comments = share.comments || [];
+          console.log('Refresh - Loaded', SHARE_STATE.comments?.length || 0, 'comments');
+        }
+
+        // Reload messages
+        await loadUnifiedMessages();
+        showToast(`Found ${SHARE_STATE.comments?.length || 0} customer comments`, 'success');
+      } catch (err) {
+        console.error('Refresh error:', err);
+        showToast('Refresh failed: ' + err.message, 'error');
+      }
+    }
+
+    // Switch message tab
+    function switchMessageTab(tab) {
+      UNIFIED_MESSAGES.currentTab = tab;
+
+      // Update tab UI
+      document.querySelectorAll('.message-tab').forEach(t => {
+        t.classList.toggle('active', t.id === `tab${tab.charAt(0).toUpperCase() + tab.slice(1)}Messages`);
+      });
+
+      // Re-render messages
+      renderUnifiedMessages();
+    }
+
+    // Load all messages for current design
+    async function loadUnifiedMessages() {
+      const supabase = getSupabaseClient();
+      if (!supabase || !currentDesignId) return;
+
+      UNIFIED_MESSAGES.allMessages = [];
+      UNIFIED_MESSAGES.clientMessages = [];
+      UNIFIED_MESSAGES.teamMessages = [];
+
+      try {
+        // Load team chat messages
+        const { data: teamMsgs } = await supabase
+          .from('design_chat_messages')
+          .select('*')
+          .eq('design_id', currentDesignId)
+          .order('created_at', { ascending: true })
+          .limit(50);
+
+        if (teamMsgs) {
+          teamMsgs.forEach(m => {
+            const msg = {
+              id: m.id,
+              type: 'team',
+              author: m.user_name,
+              userId: m.user_id,
+              message: m.message,
+              time: m.created_at
+            };
+            UNIFIED_MESSAGES.teamMessages.push(msg);
+            UNIFIED_MESSAGES.allMessages.push(msg);
+          });
+        }
+
+        // Load customer messages from multiple sources
+
+        // Source 1: customer_messages table (if lead linked)
+        if (SHARE_STATE.leadId) {
+          const { data: clientMsgs } = await supabase
+            .from('customer_messages')
+            .select('*')
+            .eq('customer_id', SHARE_STATE.leadId)
+            .eq('channel', 'design_share')
+            .order('created_at', { ascending: true })
+            .limit(50);
+
+          if (clientMsgs) {
+            clientMsgs.forEach(m => {
+              const msg = {
+                id: m.id,
+                type: 'client',
+                author: m.direction === 'inbound' ? (m.metadata?.author || SHARE_STATE.customerName || 'Customer') : 'You',
+                direction: m.direction,
+                message: m.message,
+                time: m.created_at,
+                read: m.read_at != null
+              };
+              UNIFIED_MESSAGES.clientMessages.push(msg);
+              UNIFIED_MESSAGES.allMessages.push(msg);
+            });
+          }
+
+          subscribeToClientMessages();
+        }
+
+        // Source 2: SHARE_STATE.comments (JSONB from room_design_shares)
+        if (SHARE_STATE.comments && SHARE_STATE.comments.length > 0) {
+          SHARE_STATE.comments.forEach((c, idx) => {
+            // Avoid duplicates if already loaded from customer_messages
+            const isDupe = UNIFIED_MESSAGES.clientMessages.some(m =>
+              m.message === c.text && m.time === c.timestamp
+            );
+            if (!isDupe) {
+              const msg = {
+                id: `comment-${idx}`,
+                type: 'client',
+                author: c.author || 'Customer',
+                direction: c.direction || 'inbound',
+                message: c.text,
+                time: c.timestamp,
+                read: true
+              };
+              UNIFIED_MESSAGES.clientMessages.push(msg);
+              UNIFIED_MESSAGES.allMessages.push(msg);
+            }
+          });
+        }
+
+        // Source 3: Subscribe to real-time updates on room_design_shares
+        subscribeToShareComments();
+
+        // Sort all messages by time
+        UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        renderUnifiedMessages();
+        updateMessageBadges();
+
+      } catch (err) {
+        console.log('Load messages error:', err.message);
+      }
+    }
+
+    // Subscribe to real-time customer messages
+    function subscribeToClientMessages() {
+      const supabase = getSupabaseClient();
+      if (!supabase || !SHARE_STATE.leadId) return;
+
+      if (UNIFIED_MESSAGES.clientSubscription) {
+        supabase.removeChannel(UNIFIED_MESSAGES.clientSubscription);
+      }
+
+      const channel = supabase
+        .channel('unified-client-messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'customer_messages',
+          filter: `customer_id=eq.${SHARE_STATE.leadId}`
+        }, (payload) => {
+          if (payload.new.channel === 'design_share') {
+            const msg = {
+              id: payload.new.id,
+              type: 'client',
+              author: payload.new.direction === 'inbound' ? (payload.new.metadata?.author || SHARE_STATE.customerName || 'Customer') : 'You',
+              direction: payload.new.direction,
+              message: payload.new.message,
+              time: payload.new.created_at,
+              read: false
+            };
+
+            UNIFIED_MESSAGES.clientMessages.push(msg);
+            UNIFIED_MESSAGES.allMessages.push(msg);
+            UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            renderUnifiedMessages();
+            updateMessageBadges();
+
+            // Show toast for inbound messages
+            if (payload.new.direction === 'inbound') {
+              showToast(`💬 ${msg.author}: "${msg.message.substring(0, 40)}..."`, 'info');
+            }
+          }
+        })
+        .subscribe();
+
+      UNIFIED_MESSAGES.clientSubscription = channel;
+    }
+
+    // Subscribe to share comments updates (room_design_shares.comments JSONB)
+    function subscribeToShareComments() {
+      console.log('=== subscribeToShareComments START ===');
+      console.log('SHARE_STATE.shareId:', SHARE_STATE.shareId);
+
+      const supabase = getSupabaseClient();
+      if (!supabase || !SHARE_STATE.shareId) {
+        console.log('Cannot subscribe - supabase:', !!supabase, 'shareId:', SHARE_STATE.shareId);
+        return;
+      }
+
+      // Clean up existing subscription to avoid duplicates
+      if (UNIFIED_MESSAGES.shareCommentsSubscription) {
+        console.log('Removing existing subscription');
+        supabase.removeChannel(UNIFIED_MESSAGES.shareCommentsSubscription);
+      }
+
+      console.log('Creating realtime subscription for share:', SHARE_STATE.shareId);
+
+      const channel = supabase
+        .channel('share-comments-updates-' + SHARE_STATE.shareId)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room_design_shares',
+          filter: `id=eq.${SHARE_STATE.shareId}`
+        }, (payload) => {
+          console.log('=== REALTIME UPDATE RECEIVED ===', payload);
+          // Reload comments from updated share
+          if (payload.new.comments) {
+            const newComments = payload.new.comments;
+            console.log('New comments array:', newComments);
+            newComments.forEach((c, idx) => {
+              const isDupe = UNIFIED_MESSAGES.clientMessages.some(m =>
+                m.message === c.text && m.time === c.timestamp
+              );
+              if (!isDupe) {
+                console.log('Adding new comment:', c.text);
+                const msg = {
+                  id: `comment-new-${idx}-${Date.now()}`,
+                  type: 'client',
+                  author: c.author || 'Customer',
+                  direction: c.direction || 'inbound',
+                  message: c.text,
+                  time: c.timestamp,
+                  read: false
+                };
+                UNIFIED_MESSAGES.clientMessages.push(msg);
+                UNIFIED_MESSAGES.allMessages.push(msg);
+                UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+                if (c.direction !== 'outbound') {
+                  showToast(`💬 ${msg.author}: "${msg.message.substring(0, 40)}..."`, 'info');
+                }
+              }
+            });
+            renderUnifiedMessages();
+            updateMessageBadges();
+          }
+        })
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
+
+      UNIFIED_MESSAGES.shareCommentsSubscription = channel;
+      console.log('Subscription created');
+    }
+
+    // Render messages based on current tab
+    function renderUnifiedMessages() {
+      const container = document.getElementById('teamChatMessages');
+      if (!container) return;
+
+      let messages;
+      switch (UNIFIED_MESSAGES.currentTab) {
+        case 'client':
+          messages = UNIFIED_MESSAGES.clientMessages;
+          break;
+        case 'team':
+          messages = UNIFIED_MESSAGES.teamMessages;
+          break;
+        default:
+          messages = UNIFIED_MESSAGES.allMessages;
+      }
+
+      if (!messages.length) {
+        const emptyText = UNIFIED_MESSAGES.currentTab === 'client'
+          ? 'No customer messages yet'
+          : UNIFIED_MESSAGES.currentTab === 'team'
+            ? 'No team messages yet'
+            : 'No messages yet';
+
+        container.innerHTML = `
+          <div class="chat-empty-state" style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 30px 12px;">
+            <div style="font-size: 24px; margin-bottom: 8px; opacity: 0.4;">💬</div>
+            <div style="font-weight: 500; margin-bottom: 4px;">${emptyText}</div>
+            <div style="font-size: 10px; opacity: 0.6;">Messages will appear here</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = messages.map(m => {
+        const isMe = m.userId === TEAM_CHAT.myUserId || m.direction === 'outbound';
+        const time = new Date(m.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const initial = (m.author || 'U')[0].toUpperCase();
+
+        // Color coding by type
+        let avatarColor, avatarText;
+        if (m.type === 'client') {
+          avatarColor = m.direction === 'inbound' ? '#8b5cf6' : '#10b981';
+          avatarText = 'white';
+        } else {
+          avatarColor = isMe ? '#f9cb00' : '#6366f1';
+          avatarText = isMe ? '#1a1a2e' : 'white';
+        }
+
+        // Type indicator
+        const typeIcon = m.type === 'client' ? '👤' : '👥';
+
+        return `
+          <div class="chat-message ${isMe ? 'own-message' : ''}">
+            <div class="avatar" style="background: ${avatarColor}; color: ${avatarText};">${initial}</div>
+            <div style="flex: 1; max-width: 80%;">
+              <div class="meta">${typeIcon} ${escapeHtml(m.author)} • ${time}</div>
+              <div class="bubble">${escapeHtml(m.message)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Update badge counts
+    function updateMessageBadges() {
+      const unreadClient = UNIFIED_MESSAGES.clientMessages.filter(m => !m.read && m.direction === 'inbound').length;
+      const unreadTeam = UNIFIED_MESSAGES.teamMessages.filter(m => !m.read).length;
+      const unreadAll = unreadClient + unreadTeam;
+
+      updateBadge('badgeAll', unreadAll);
+      updateBadge('badgeClient', unreadClient);
+      updateBadge('badgeTeam', unreadTeam);
+    }
+
+    function updateBadge(id, count) {
+      const badge = document.getElementById(id);
+      if (!badge) return;
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    // Send unified message (to team chat or as reply to customer)
+    async function sendUnifiedMessage() {
+      const input = document.getElementById('teamChatInput');
+      const message = input?.value?.trim();
+      if (!message) return;
+
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        showToast('Not connected', 'error');
+        return;
+      }
+
+      // Check if we have a design loaded
+      const designId = currentDesignId || SHARE_STATE.designId;
+      if (!designId) {
+        showToast('Save your design first to enable messaging', 'info');
+        return;
+      }
+
+      // Determine where to send based on current tab or context
+      const tab = UNIFIED_MESSAGES.currentTab;
+
+      if (tab === 'client' || (SHARE_STATE.shareId && tab === 'all')) {
+        // Send as reply to customer - save to BOTH customer_messages AND room_design_shares.comments
+        const timestamp = new Date().toISOString();
+        const authorName = TEAM_CHAT.myUserName || window.SgAuth?.getUser()?.email?.split('@')[0] || 'Designer';
+
+        try {
+          // 1. Save to customer_messages if we have a lead
+          if (SHARE_STATE.leadId) {
+            await supabase.from('customer_messages').insert({
+              customer_id: SHARE_STATE.leadId,
+              channel: 'design_share',
+              direction: 'outbound',
+              message: message,
+              metadata: {
+                design_id: currentDesignId,
+                share_id: SHARE_STATE.shareId,
+                author: authorName
+              }
+            });
+          }
+
+          // 2. ALSO save to room_design_shares.comments so customer can see the reply
+          if (SHARE_STATE.shareId) {
+            // First get current comments
+            const { data: shareData } = await supabase
+              .from('room_design_shares')
+              .select('comments')
+              .eq('id', SHARE_STATE.shareId)
+              .single();
+
+            const currentComments = shareData?.comments || [];
+            const newComment = {
+              text: message,
+              timestamp: timestamp,
+              author: authorName,
+              direction: 'outbound'
+            };
+
+            // Update with new comment appended
+            await supabase
+              .from('room_design_shares')
+              .update({ comments: [...currentComments, newComment] })
+              .eq('id', SHARE_STATE.shareId);
+
+            // Update local state
+            SHARE_STATE.comments = [...currentComments, newComment];
+          }
+
+          // Add to local list
+          const msg = {
+            id: Date.now().toString(),
+            type: 'client',
+            author: 'You',
+            direction: 'outbound',
+            message: message,
+            time: timestamp,
+            read: true
+          };
+          UNIFIED_MESSAGES.clientMessages.push(msg);
+          UNIFIED_MESSAGES.allMessages.push(msg);
+          UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+          renderUnifiedMessages();
+          input.value = '';
+          showToast('Reply sent', 'success');
+
+        } catch (err) {
+          console.error('Send reply error:', err);
+          showToast('Failed to send message', 'error');
+        }
+
+      } else {
+        // Send as team chat message
+        if (!TEAM_CHAT.channel || !TEAM_CHAT.designId) {
+          // Fallback: save directly to database if not connected to realtime
+          const user = window.SgAuth?.getUser();
+          if (!user) {
+            showToast('Please log in to send messages', 'error');
+            return;
+          }
+
+          try {
+            const designId = currentDesignId || SHARE_STATE.designId;
+            if (!designId) {
+              showToast('No design loaded', 'error');
+              return;
+            }
+
+            await supabase.from('design_chat_messages').insert({
+              design_id: designId,
+              user_id: user.id,
+              user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Designer',
+              message: message
+            });
+
+            // Add to local list
+            const msg = {
+              id: Date.now().toString(),
+              type: 'team',
+              author: user.user_metadata?.full_name || user.email?.split('@')[0] || 'You',
+              userId: user.id,
+              message: message,
+              time: new Date().toISOString()
+            };
+            UNIFIED_MESSAGES.teamMessages.push(msg);
+            UNIFIED_MESSAGES.allMessages.push(msg);
+            UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            renderUnifiedMessages();
+            input.value = '';
+            return;
+          } catch (err) {
+            console.error('Fallback message send failed:', err);
+            showToast('Failed to send message', 'error');
+            return;
+          }
+        }
+
+        const timestamp = new Date().toISOString();
+
+        // Broadcast to other users
+        await TEAM_CHAT.channel.send({
+          type: 'broadcast',
+          event: 'chat',
+          payload: {
+            userId: TEAM_CHAT.myUserId,
+            userName: TEAM_CHAT.myUserName,
+            message,
+            timestamp
+          }
+        });
+
+        // Add to local list
+        const msg = {
+          id: Date.now().toString(),
+          type: 'team',
+          author: TEAM_CHAT.myUserName,
+          userId: TEAM_CHAT.myUserId,
+          message: message,
+          time: timestamp
+        };
+        UNIFIED_MESSAGES.teamMessages.push(msg);
+        UNIFIED_MESSAGES.allMessages.push(msg);
+        UNIFIED_MESSAGES.allMessages.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        renderUnifiedMessages();
+        input.value = '';
+
+        // Persist to database
+        supabase
+          .from('design_chat_messages')
+          .insert({
+            design_id: TEAM_CHAT.designId,
+            user_id: TEAM_CHAT.myUserId,
+            user_name: TEAM_CHAT.myUserName,
+            message
+          })
+          .catch(err => console.log('Save failed:', err.message));
+      }
+    }
+
+    // Initialize unified messages when design loads
+    async function initUnifiedMessages() {
+      console.log('=== initUnifiedMessages START ===');
+      console.log('currentDesignId:', currentDesignId);
+      console.log('SHARE_STATE.shareId:', SHARE_STATE.shareId);
+
+      if (!currentDesignId) {
+        console.log('No currentDesignId, returning early');
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.log('No supabase client, returning early');
+        return;
+      }
+
+      // If we don't have share data yet, try to load it for this design
+      if (!SHARE_STATE.shareId && currentDesignId) {
+        console.log('Loading share data for design:', currentDesignId);
+        try {
+          // Try to find a share for this design
+          const { data: shares, error } = await supabase
+            .from('room_design_shares')
+            .select('*')
+            .eq('design_id', currentDesignId)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          console.log('Share query result:', shares, 'Error:', error);
+
+          if (shares && shares.length > 0) {
+            const share = shares[0];
+            SHARE_STATE.shareId = share.id;
+            SHARE_STATE.shareToken = share.share_token;
+            SHARE_STATE.leadId = share.lead_id;
+            SHARE_STATE.comments = share.comments || [];
+            console.log('Loaded share data for messages:', share.id, 'Comments:', SHARE_STATE.comments?.length || 0);
+          } else {
+            console.log('No share found for this design');
+          }
+        } catch (err) {
+          console.log('Could not load share data:', err.message);
+        }
+      }
+
+      console.log('Calling loadUnifiedMessages with shareId:', SHARE_STATE.shareId);
+      loadUnifiedMessages();
+    }
 
     // Load a locally saved design
     function loadLocalDesign(design) {
@@ -59039,6 +61580,16 @@
     function initMobileToolbar() {
       // Only create if not already exists and on mobile
       if (document.getElementById('mobileToolbar') || window.innerWidth > 900) return;
+
+      // Don't create mobile toolbar in shared/review mode
+      // Also check URL for share parameter (catches early init)
+      const urlHasShare = new URLSearchParams(window.location.search).has('share');
+      if (urlHasShare ||
+          document.body.classList.contains('view-only-mode') ||
+          document.body.classList.contains('review-readonly') ||
+          document.getElementById('reviewRoom')) {
+        return;
+      }
 
       const toolbar = document.createElement('div');
       toolbar.id = 'mobileToolbar';

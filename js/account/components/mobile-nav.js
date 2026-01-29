@@ -45,7 +45,7 @@
       estimates: { label: 'Estimates', icon: 'file-text', roles: ['admin', 'contractor'], badge: 'estimatesCount' },
       invoices: { label: 'Invoices', icon: 'receipt', roles: ['admin'] },
       jobs: { label: 'Jobs', icon: 'briefcase', roles: ['admin', 'contractor'] },
-      contractors: { label: 'Contractors', icon: 'hard-hat', roles: ['admin'] },
+      collaborators: { label: 'Collaborators', icon: 'hard-hat', roles: ['admin'] },
       calendar: { label: 'Calendar', icon: 'calendar', roles: ['admin', 'contractor'] },
       wallet: { label: 'Wallet', icon: 'wallet', roles: ['contractor', 'vendor'] },
       products: { label: 'Products', icon: 'package', roles: ['vendor'] },
@@ -242,7 +242,7 @@
       const categories = {
         account: ['profile'],
         features: ['favorites', 'my-designs', 'listings', 'tools'],
-        business: ['leads', 'customers', 'estimates', 'invoices', 'jobs', 'contractors', 'calendar', 'wallet'],
+        business: ['leads', 'customers', 'estimates', 'invoices', 'jobs', 'collaborators', 'calendar', 'wallet'],
         store: ['products', 'orders'],
         admin: ['admin-users']
       };

@@ -529,6 +529,36 @@
     .tools-section {
       padding-bottom: 120px;
     }
+
+    /* Auth Required Lock Badge */
+    .auth-lock-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 5;
+    }
+
+    .auth-lock-badge svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .auth-lock-badge.unlocked {
+      background: rgba(34, 197, 94, 0.9);
+    }
+
+    .auth-lock-badge.unlocked svg {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -591,7 +621,7 @@
 
       <div class="tools-grid">
         <!-- FEATURED: AI Kitchen Visualizer -->
-        <a href="/tools/visualizer/" class="tool-card featured-tool">
+        <a href="/tools/visualizer/" class="tool-card featured-tool" data-requires-auth="true">
           <div class="tool-card-image">
             <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80" alt="Modern Kitchen">
             <span class="tool-card-badge ai">AI Powered</span>
@@ -610,7 +640,7 @@
         </a>
 
         <!-- Room Designer Pro -->
-        <a href="/tools/room-designer/" class="tool-card room-designer-card">
+        <a href="/tools/room-designer/" class="tool-card room-designer-card" data-requires-auth="true">
           <div class="tool-card-image">
             <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80" alt="Room Designer">
             <span class="tool-card-badge pro">Pro</span>
@@ -688,7 +718,7 @@
         </a>
 
         <!-- Blueprint Takeoff - NEW -->
-        <a href="/tools/blueprint-takeoff/" class="tool-card">
+        <a href="/tools/blueprint-takeoff/" class="tool-card" data-requires-auth="true">
           <div class="tool-card-image">
             <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=80" alt="Blueprint Analysis">
             <span class="tool-card-badge ai">AI</span>
@@ -707,7 +737,7 @@
         </a>
 
         <!-- Color Matcher -->
-        <a href="/tools/color-matcher/" class="tool-card">
+        <a href="/tools/color-matcher/" class="tool-card" data-requires-auth="true">
           <div class="tool-card-image">
             <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" alt="Stone Colors">
             <span class="tool-card-badge ai">AI</span>
@@ -729,7 +759,7 @@
         </a>
 
         <!-- Budget Estimator -->
-        <a href="/tools/budget-estimator/" class="tool-card">
+        <a href="/tools/budget-estimator/" class="tool-card" data-requires-auth="true">
           <div class="tool-card-image">
             <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80" alt="Budget Planning">
             <div class="coming-soon-overlay">
@@ -765,36 +795,42 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Auth check for Pro tools
-    document.addEventListener('DOMContentLoaded', function() {
-      // Skip auth check for local file viewing
-      const isLocal = window.location.protocol === 'file:' ||
-                      window.location.hostname === 'localhost' ||
-                      window.location.hostname === '127.0.0.1';
-
-      if (isLocal) {
-        // Local dev mode - allow direct access
-        return;
-      }
-
+    document.addEventListener('DOMContentLoaded', async function() {
       const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MzA2MjAsImV4cCI6MjA1MjIwNjYyMH0.j4d1I5E0iMzKaCOnAc66ElkUBffnTiBgLhPFJAaQxQU';
 
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Handle clicks on auth-required tools
+      // Check current auth state
+      const { data: { session } } = await supabase.auth.getSession();
+      const isLoggedIn = !!session;
+
+      // Add lock badges to auth-required tools
       document.querySelectorAll('[data-requires-auth="true"]').forEach(card => {
+        const imageContainer = card.querySelector('.tool-card-image');
+        if (imageContainer) {
+          const lockBadge = document.createElement('div');
+          lockBadge.className = 'auth-lock-badge' + (isLoggedIn ? ' unlocked' : '');
+          lockBadge.innerHTML = isLoggedIn
+            ? 'Unlocked'
+            : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>Pro Only';
+          imageContainer.appendChild(lockBadge);
+        }
+
+        // Handle clicks
         card.addEventListener('click', async function(e) {
           e.preventDefault();
 
-          const { data: { session } } = await supabase.auth.getSession();
+          // Re-check session at click time
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-          if (session) {
+          if (currentSession) {
             // User is logged in, proceed to tool
             window.location.href = this.href;
           } else {
-            // Not logged in, redirect to login with return URL
+            // Not logged in, redirect to signup with return URL
             const returnUrl = encodeURIComponent(this.href);
-            window.location.href = '/account/?redirect=' + returnUrl;
+            window.location.href = '/sign-up/?redirect=' + returnUrl;
           }
         });
       });

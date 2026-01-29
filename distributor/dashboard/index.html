@@ -724,6 +724,7 @@
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
     let currentUser = null;
+    let accessToken = null;
     let distributorProfile = null;
     let isAdmin = false;
 
@@ -734,12 +735,20 @@
       'sgk112@gmail.com'
     ];
 
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      return headers;
+    }
+
     // Check auth on load
     async function init() {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         if (isLocalhost) {
           currentUser = { id: 'demo-user', email: 'demo@example.com' };
           console.log('Demo mode: Using demo user');
@@ -750,8 +759,9 @@
         return;
       }
 
-      currentUser = user;
-      isAdmin = SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+      currentUser = session.user;
+      accessToken = session.access_token;
+      isAdmin = SUPER_ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
       await loadDashboard();
     }
 
@@ -880,7 +890,6 @@
         document.getElementById('userAvatar').textContent = profile.primary_contact_name.charAt(0).toUpperCase();
 
         // Show admin banner if viewing as admin
-        const urlParams = new URLSearchParams(window.location.search);
         if (isAdmin && urlParams.get('distributor')) {
           const banner = document.createElement('div');
           banner.innerHTML = `
@@ -910,7 +919,7 @@
     async function loadStats() {
       try {
         const response = await fetch(`${API_BASE}/api/distributor/analytics`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 

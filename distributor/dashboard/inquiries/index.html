@@ -891,11 +891,20 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
+    let accessToken = null;
     let currentInquiries = [];
     let currentPage = 1;
     let totalPages = 1;
     let selectedInquiryId = null;
     let currentFilter = 'all';
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      return headers;
+    }
 
     // Auth check
     async function checkAuth() {
@@ -914,6 +923,7 @@
           return null;
         }
         currentUser = session.user;
+        accessToken = session.access_token;
         return session.user;
       } catch (error) {
         console.error('Auth check error:', error);
@@ -927,7 +937,7 @@
     async function loadStats() {
       try {
         const response = await fetch(`${API_BASE}/api/distributor/inquiries/stats/summary`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 
@@ -953,7 +963,7 @@
       try {
         const status = currentFilter === 'all' ? '' : `&status=${currentFilter}`;
         const response = await fetch(`${API_BASE}/api/distributor/inquiries?page=${page}&limit=10${status}`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 
@@ -1141,10 +1151,7 @@
       try {
         const response = await fetch(`${API_BASE}/api/distributor/inquiries/${selectedInquiryId}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': currentUser.id
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ status, notes, response_message })
         });
 

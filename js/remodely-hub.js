@@ -186,7 +186,13 @@
         .aria-el-btn,
         .aria-voice-btn,
         .aria-realtime-btn,
-        .aria-floating-btn {
+        .aria-floating-btn,
+        .rb-floating-btn,
+        .floating-cart-btn,
+        .mobile-fab,
+        .calendly-badge-widget,
+        [class*="booking-fab"],
+        [class*="calendar-fab"] {
           display: none !important;
         }
 
@@ -354,6 +360,47 @@
         .rh-item-icon.aria svg { color: #1a1a2e; }
         .rh-item-icon.calc { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%); }
         .rh-item-icon.tools { background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%); }
+        .rh-item-icon.account { background: linear-gradient(135deg, #34A853 0%, #4285F4 100%); }
+        .rh-item-icon.login { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+
+        /* Auth required badge */
+        .rh-item-lock {
+          width: 14px;
+          height: 14px;
+          color: rgba(255,255,255,0.4);
+          flex-shrink: 0;
+        }
+
+        .rh-item.auth-required:not(.authenticated) {
+          opacity: 0.7;
+        }
+
+        .rh-item.auth-required:not(.authenticated):hover {
+          opacity: 1;
+        }
+
+        /* User avatar */
+        .rh-user-avatar {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #34A853 0%, #4285F4 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 600;
+          color: #fff;
+          flex-shrink: 0;
+        }
+
+        /* User initials in icon */
+        .rh-user-initials {
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          text-transform: uppercase;
+        }
 
         .rh-item-text {
           flex: 1;
@@ -489,7 +536,8 @@
         </div>
 
         <div class="rh-items">
-          <a href="/tools/room-designer/" class="rh-item">
+          <!-- Auth-gated: Room Designer -->
+          <a href="javascript:void(0)" class="rh-item auth-required" id="rhDesignerLink" data-tool-url="/tools/room-designer/">
             <div class="rh-item-icon designer">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -500,10 +548,14 @@
               <div class="rh-item-title">Room Designer Pro</div>
               <div class="rh-item-desc">Design your space in 3D</div>
             </div>
-            <span class="rh-item-badge">New</span>
+            <svg class="rh-item-lock" id="rhDesignerLock" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
           </a>
 
-          <button class="rh-item" id="rhAriaBtn">
+          <!-- Auth-gated: Aria Voice -->
+          <button class="rh-item auth-required" id="rhAriaBtn">
             <div class="rh-item-icon aria">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -516,8 +568,13 @@
               <div class="rh-item-title">Aria Voice</div>
               <div class="rh-item-desc">AI assistant</div>
             </div>
+            <svg class="rh-item-lock" id="rhAriaLock" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
           </button>
 
+          <!-- Public: Cost Calculator (no auth required) -->
           <a href="/tools/countertop-calculator/" class="rh-item">
             <div class="rh-item-icon calc">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -535,7 +592,7 @@
             </div>
             <div class="rh-item-text">
               <div class="rh-item-title">Cost Calculator</div>
-              <div class="rh-item-desc">Get instant estimates</div>
+              <div class="rh-item-desc">Free instant estimates</div>
             </div>
           </a>
 
@@ -551,6 +608,23 @@
             <div class="rh-item-text">
               <div class="rh-item-title">All Tools</div>
               <div class="rh-item-desc">Explore design suite</div>
+            </div>
+          </a>
+
+          <div class="rh-divider"></div>
+
+          <!-- Login / Account Section -->
+          <a href="/account/" class="rh-item" id="rhAccountLink">
+            <div class="rh-item-icon login" id="rhAccountIcon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+            </div>
+            <div class="rh-item-text">
+              <div class="rh-item-title" id="rhAccountTitle">Sign In</div>
+              <div class="rh-item-desc" id="rhAccountDesc">Access your projects</div>
             </div>
           </a>
         </div>
@@ -600,6 +674,90 @@
         closeMenu();
       }
     });
+
+    // Auth state management
+    const designerLink = document.getElementById('rhDesignerLink');
+    const designerLock = document.getElementById('rhDesignerLock');
+    const ariaLock = document.getElementById('rhAriaLock');
+    const accountLink = document.getElementById('rhAccountLink');
+    const accountIcon = document.getElementById('rhAccountIcon');
+    const accountTitle = document.getElementById('rhAccountTitle');
+    const accountDesc = document.getElementById('rhAccountDesc');
+
+    function updateAuthState() {
+      const isLoggedIn = window.SgAuth?.isLoggedIn?.() || false;
+      const profile = window.SgAuth?.getProfile?.() || {};
+      const userName = profile.full_name || profile.email?.split('@')[0] || 'User';
+      const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+      // Update auth-required items
+      document.querySelectorAll('.rh-item.auth-required').forEach(item => {
+        if (isLoggedIn) {
+          item.classList.add('authenticated');
+        } else {
+          item.classList.remove('authenticated');
+        }
+      });
+
+      // Hide/show lock icons
+      if (designerLock) designerLock.style.display = isLoggedIn ? 'none' : 'block';
+      if (ariaLock) ariaLock.style.display = isLoggedIn ? 'none' : 'block';
+
+      // Update account section
+      if (isLoggedIn) {
+        accountIcon.className = 'rh-item-icon account';
+        accountIcon.innerHTML = `<span class="rh-user-initials">${initials}</span>`;
+        accountTitle.textContent = 'My Account';
+        accountDesc.textContent = 'Dashboard & projects';
+      } else {
+        accountIcon.className = 'rh-item-icon login';
+        accountIcon.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>`;
+        accountTitle.textContent = 'Sign In';
+        accountDesc.textContent = 'Access your projects';
+      }
+    }
+
+    // Handle auth-gated tool clicks
+    designerLink?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isLoggedIn = window.SgAuth?.isLoggedIn?.() || false;
+      const toolUrl = designerLink.getAttribute('data-tool-url');
+
+      if (isLoggedIn) {
+        window.location.href = toolUrl;
+      } else {
+        window.location.href = '/sign-up/?redirect=' + encodeURIComponent(toolUrl);
+      }
+    });
+
+    // Handle Aria button (auth-gated)
+    ariaBtn?.addEventListener('click', () => {
+      const isLoggedIn = window.SgAuth?.isLoggedIn?.() || false;
+
+      if (!isLoggedIn) {
+        window.location.href = '/sign-up/?redirect=' + encodeURIComponent('/account/');
+        return;
+      }
+
+      closeMenu();
+      openAria();
+    });
+
+    // Initialize auth state
+    updateAuthState();
+
+    // Listen for auth changes
+    if (window.SgAuth?.onAuthChange) {
+      window.SgAuth.onAuthChange(updateAuthState);
+    }
+
+    // Also check after a delay (for slow auth init)
+    setTimeout(updateAuthState, 1000);
+    setTimeout(updateAuthState, 3000);
 
     // Aria button - trigger Aria widget (loads directly, no dependency on remodely-widgets.js)
     ariaBtn.addEventListener('click', () => {

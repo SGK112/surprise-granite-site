@@ -7,6 +7,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script>
+    // Detect localhost early
+    window._sgIsLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  </script>
+  <!-- Supabase and config - only needed in production -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="/js/config.js"></script>
 
@@ -614,11 +619,58 @@
       .settings-nav { flex-wrap: wrap; }
       .team-table { display: block; overflow-x: auto; }
       .page-header { flex-direction: column; gap: 16px; }
+
+      /* Mobile modal - bottom sheet style */
+      .modal-overlay {
+        align-items: flex-end;
+      }
+      .modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 90vh;
+        max-height: 90dvh;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+      }
+      .modal-header {
+        position: sticky;
+        top: 0;
+        background: var(--dark-surface);
+        z-index: 5;
+      }
+      .modal-footer {
+        position: sticky;
+        bottom: 0;
+        background: var(--dark-surface);
+        z-index: 5;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+      .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* Touch-friendly inputs */
+      .modal input,
+      .modal select,
+      .modal textarea {
+        min-height: 48px;
+        font-size: 16px !important;
+      }
+      .modal .btn {
+        min-height: 48px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <!-- LOCALHOST DEMO: Activate demo mode to prevent redirects -->
+  <script>
+    if (window._sgIsLocalhost) {
+      window._sgDemoMode = true;
+    }
+  </script>
   <div class="dashboard-layout">
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -829,38 +881,41 @@
   <div class="modal-overlay" id="inviteModal">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">Invite Team Member</h2>
+        <h2 class="modal-title">Invite to Team</h2>
         <button class="modal-close" onclick="closeModal('inviteModal')">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
+
+      <!-- Quick Share Link -->
+      <div class="modal-body" style="border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+        <p class="form-label" style="text-align: center; margin-bottom: 12px;">Share your invite link</p>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" class="form-input" id="quickShareLink" readonly style="flex: 1;" placeholder="Click to generate link...">
+          <button type="button" class="btn btn-primary" id="copyLinkBtn" onclick="generateAndCopyTeamLink()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 12px;">or send via email</div>
+
       <form onsubmit="inviteMember(event)">
-        <div class="modal-body">
+        <div class="modal-body" style="padding-top: 0;">
           <div class="form-group">
-            <label class="form-label">Email Address *</label>
-            <input type="email" class="form-input" id="inviteEmail" required placeholder="colleague@company.com">
-            <p class="form-hint">They'll receive an email invitation to join your team.</p>
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" id="inviteEmail" required placeholder="email@example.com">
           </div>
 
           <div class="form-group">
-            <label class="form-label">Role *</label>
-            <select class="form-select" id="inviteRole" required onchange="updateRoleDescription()">
-              <option value="">Select a role...</option>
-              <option value="admin">Admin</option>
-              <option value="sales">Sales</option>
-              <option value="warehouse_manager">Warehouse Manager</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </div>
-
-          <div id="roleDescriptionBox" class="role-description" style="display: none;">
-            <h4 id="roleDescTitle"></h4>
-            <ul id="roleDescList"></ul>
+            <label class="form-label">Message (Optional)</label>
+            <textarea class="form-input" id="inviteMessage" rows="2" placeholder="Add a note..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('inviteModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="inviteSubmitBtn">Send Invitation</button>
+          <button type="submit" class="btn btn-primary" id="inviteSubmitBtn">Send Invite</button>
         </div>
       </form>
     </div>
@@ -923,11 +978,28 @@
     </div>
   </div>
 
-  <script src="/js/supabase-init.js"></script>
-  <script src="/js/sg-auth.js"></script>
-  <script src="/js/distributor-sso-auth.js"></script>
   <script>
+    const isLocalhost = window._sgIsLocalhost;
     const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+
+    // Load auth scripts only in production
+    function loadAuthScripts() {
+      return new Promise((resolve) => {
+        if (isLocalhost) {
+          resolve();
+          return;
+        }
+        const scripts = ['/js/supabase-init.js', '/js/sg-auth.js', '/js/distributor-sso-auth.js'];
+        let loaded = 0;
+        scripts.forEach(src => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => { loaded++; if (loaded === scripts.length) resolve(); };
+          script.onerror = () => { loaded++; if (loaded === scripts.length) resolve(); };
+          document.head.appendChild(script);
+        });
+      });
+    }
 
     let currentUser = null;
     let currentRole = null;
@@ -954,34 +1026,41 @@
     };
 
     async function init() {
-      // Wait for SgSSOAuth to be ready
-      await waitForSSOAuth();
-
-      const supabase = window._sgSupabaseClient;
-      if (!supabase) {
-        console.error('Supabase not initialized');
+      // For localhost development, use demo mode immediately
+      if (isLocalhost) {
+        showDemoMode();
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      // Production: Load auth scripts first
+      await loadAuthScripts();
 
-      if (!user) {
-        window.location.href = '/log-in/?redirect=/distributor/dashboard/settings/team/';
-        return;
-      }
-
-      currentUser = user;
-
-      // Load distributor context and role
+      // Production auth flow
       try {
+        await waitForSSOAuth();
+
+        const supabase = window._sgSupabaseClient;
+        if (!supabase) {
+          console.error('Supabase not initialized');
+          return;
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          window.location.href = '/log-in/?redirect=/distributor/dashboard/settings/team/';
+          return;
+        }
+
+        currentUser = user;
+
         const distributors = await window.SgSSOAuth.loadUserDistributors();
 
-        if (distributors.length === 0) {
+        if (!distributors || distributors.length === 0) {
           window.location.href = '/distributor/signup/';
           return;
         }
 
-        // Use first distributor (or saved context)
         const savedContext = sessionStorage.getItem('sg_distributor_context');
         const distributor = savedContext
           ? distributors.find(d => d.distributor_id === savedContext) || distributors[0]
@@ -990,10 +1069,8 @@
         distributorId = distributor.distributor_id;
         currentRole = distributor.role;
 
-        // Update sidebar user info
         updateUserInfo(user, distributor);
 
-        // Check permission
         if (!['admin'].includes(currentRole)) {
           document.getElementById('loadingState').style.display = 'none';
           document.getElementById('permissionDenied').style.display = 'block';
@@ -1001,13 +1078,61 @@
           return;
         }
 
-        // Load team members
         await loadTeamMembers();
 
       } catch (error) {
         console.error('Init error:', error);
         showStatus('Failed to initialize. Please refresh.', 'error');
       }
+    }
+
+    function showDemoMode() {
+      console.log('Team page: Demo mode active');
+
+      // Set demo user and role
+      currentUser = { id: 'demo-user', email: 'demo@example.com', user_metadata: { full_name: 'Demo User' } };
+      currentRole = 'admin';
+      distributorId = 'demo-distributor';
+
+      // Update sidebar with demo info
+      document.getElementById('userName').textContent = 'Demo User';
+      document.getElementById('userEmail').textContent = 'demo@example.com';
+      document.getElementById('userAvatar').textContent = 'D';
+      document.getElementById('userRole').textContent = 'admin';
+
+      // Set demo team members
+      teamMembers = [
+        {
+          user_id: 'demo-user',
+          email: 'demo@example.com',
+          full_name: 'Demo User',
+          role: 'admin',
+          status: 'active',
+          created_at: new Date().toISOString()
+        },
+        {
+          user_id: 'demo-sales-1',
+          email: 'sales@example.com',
+          full_name: 'Sales Rep',
+          role: 'sales',
+          status: 'active',
+          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          user_id: 'demo-pending-1',
+          email: 'pending@example.com',
+          full_name: null,
+          role: 'viewer',
+          status: 'pending',
+          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+
+      // Hide loading and show content
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('teamContent').style.display = 'block';
+
+      renderTeamTable();
     }
 
     function waitForSSOAuth() {
@@ -1159,24 +1284,111 @@
       box.style.display = 'block';
     }
 
+    async function generateAndCopyTeamLink() {
+      const linkInput = document.getElementById('quickShareLink');
+      const copyBtn = document.getElementById('copyLinkBtn');
+      const originalHtml = copyBtn.innerHTML;
+      const isDemo = distributorId === 'demo-distributor';
+
+      // If we already have a link, just copy it
+      if (linkInput.value && linkInput.value.startsWith('http')) {
+        try {
+          await navigator.clipboard.writeText(linkInput.value);
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg> Copied!';
+          showStatus('Link copied!', 'success');
+          setTimeout(() => { copyBtn.innerHTML = originalHtml; }, 2000);
+          return;
+        } catch (err) {
+          showStatus('Failed to copy', 'error');
+          return;
+        }
+      }
+
+      copyBtn.disabled = true;
+      copyBtn.innerHTML = '...';
+
+      try {
+        // Demo mode: generate a mock link
+        if (isDemo) {
+          await new Promise(r => setTimeout(r, 300));
+          const demoLink = window.location.origin + '/sign-up/?network_invite=demo' + Date.now();
+          linkInput.value = demoLink;
+          await navigator.clipboard.writeText(demoLink);
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg> Copied!';
+          showStatus('Demo link copied!', 'success');
+          setTimeout(() => { copyBtn.innerHTML = originalHtml; }, 2000);
+          return;
+        }
+
+        const response = await fetch(`${API_BASE}/api/collaboration/quick-share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getAccessToken()}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to generate link');
+        }
+
+        linkInput.value = data.link;
+        await navigator.clipboard.writeText(data.link);
+        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg> Copied!';
+        showStatus('Link generated and copied!', 'success');
+        setTimeout(() => { copyBtn.innerHTML = originalHtml; }, 2000);
+
+      } catch (err) {
+        showStatus(err.message || 'Failed to generate link', 'error');
+        copyBtn.innerHTML = originalHtml;
+      } finally {
+        copyBtn.disabled = false;
+      }
+    }
+
     async function inviteMember(e) {
       e.preventDefault();
 
       const email = document.getElementById('inviteEmail').value.trim();
-      const role = document.getElementById('inviteRole').value;
+      const message = document.getElementById('inviteMessage')?.value?.trim() || '';
       const btn = document.getElementById('inviteSubmitBtn');
+      const isDemo = distributorId === 'demo-distributor';
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
 
       try {
-        const response = await window.SgSSOAuth.apiRequest(
-          `/api/distributor/${distributorId}/team/invite`,
-          {
-            method: 'POST',
-            body: JSON.stringify({ email, role })
-          }
-        );
+        // Demo mode: simulate invitation
+        if (isDemo) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          teamMembers.push({
+            user_id: 'demo-' + Date.now(),
+            email: email,
+            full_name: null,
+            role: 'partner',
+            status: 'pending',
+            created_at: new Date().toISOString()
+          });
+          showStatus(`Invitation sent to ${email} (Demo)`, 'success');
+          closeModal('inviteModal');
+          renderTeamTable();
+          return;
+        }
+
+        // Use unified collaboration invite API
+        const response = await fetch(`${API_BASE}/api/collaboration/invite-general`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getAccessToken()}`
+          },
+          body: JSON.stringify({
+            email: email,
+            notes: message || null
+          })
+        });
 
         const data = await response.json();
 
@@ -1192,8 +1404,15 @@
         showStatus(error.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Send Invitation';
+        btn.textContent = 'Send Invite';
       }
+    }
+
+    async function getAccessToken() {
+      const supabase = window._sgSupabaseClient;
+      if (!supabase) return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || null;
     }
 
     async function updateMemberRole(e) {
@@ -1201,8 +1420,21 @@
 
       const userId = document.getElementById('editMemberId').value;
       const newRole = document.getElementById('editMemberRole').value;
+      const isDemo = distributorId === 'demo-distributor';
 
       try {
+        // Demo mode: simulate role update
+        if (isDemo) {
+          const member = teamMembers.find(m => m.user_id === userId);
+          if (member) {
+            member.role = newRole;
+          }
+          showStatus('Role updated successfully (Demo)', 'success');
+          closeModal('editRoleModal');
+          renderTeamTable();
+          return;
+        }
+
         const response = await window.SgSSOAuth.apiRequest(
           `/api/distributor/${distributorId}/team/${userId}`,
           {
@@ -1228,8 +1460,18 @@
 
     async function confirmRemoveMember() {
       const userId = document.getElementById('removeMemberId').value;
+      const isDemo = distributorId === 'demo-distributor';
 
       try {
+        // Demo mode: simulate member removal
+        if (isDemo) {
+          teamMembers = teamMembers.filter(m => m.user_id !== userId);
+          showStatus('Team member removed (Demo)', 'success');
+          closeModal('removeModal');
+          renderTeamTable();
+          return;
+        }
+
         const response = await window.SgSSOAuth.apiRequest(
           `/api/distributor/${distributorId}/team/${userId}`,
           { method: 'DELETE' }

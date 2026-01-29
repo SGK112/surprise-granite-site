@@ -657,6 +657,7 @@
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
     let currentUser = null;
+    let accessToken = null;
     let distributorProfile = null;
     let locations = [];
     let editingId = null;
@@ -673,19 +674,28 @@
       }
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
-        if (!user) {
+        if (!session) {
           window.location.href = '/log-in/?redirect=/distributor/dashboard/locations/';
           return;
         }
 
-        currentUser = user;
+        currentUser = session.user;
+        accessToken = session.access_token;
         await loadDistributor();
         await loadLocations();
       } catch (error) {
         console.error('Init error:', error);
       }
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      return headers;
     }
 
     function renderEmptyState() {
@@ -722,7 +732,7 @@
     async function loadLocations() {
       try {
         const response = await fetch(`${API_BASE}/api/distributor/locations`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 
@@ -858,19 +868,13 @@
         if (editingId) {
           response = await fetch(`${API_BASE}/api/distributor/locations/${editingId}`, {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': currentUser.id
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(locationData)
           });
         } else {
           response = await fetch(`${API_BASE}/api/distributor/locations`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': currentUser.id
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(locationData)
           });
         }
@@ -897,7 +901,7 @@
       try {
         const response = await fetch(`${API_BASE}/api/distributor/locations/${id}`, {
           method: 'DELETE',
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
 
         if (!response.ok) {

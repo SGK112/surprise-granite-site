@@ -37,23 +37,24 @@ router.get('/products', asyncHandler(async (req, res) => {
   let query = supabase
     .from('distributor_products')
     .select(`
-      *,
-      distributor_product_slabs(*),
-      distributor_profiles(company_name, logo_url, city, state)
+      id, name, brand, sku, material_type, category, subcategory,
+      dimensions, thickness, finish, color,
+      unit_price, unit_type, sqft_per_box,
+      description, is_active, primary_image_url,
+      distributor_id, created_at, updated_at,
+      distributor_profiles(company_name, website)
     `, { count: 'exact' })
-    .eq('is_public', true)
-    .eq('status', 'active');
+    .eq('is_active', true);
 
   // Apply filters
-  if (product_type) query = query.eq('product_type', product_type);
+  if (product_type) query = query.eq('category', product_type);
   if (material_type) query = query.ilike('material_type', `%${sanitizeString(material_type, 100)}%`);
   if (brand) query = query.ilike('brand', `%${sanitizeString(brand, 100)}%`);
 
   const colorFilter = color_family || color;
-  if (colorFilter) query = query.ilike('color_family', `%${sanitizeString(colorFilter, 100)}%`);
-  if (featured === 'true') query = query.eq('is_featured', true);
-  if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
-  if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+  if (colorFilter) query = query.ilike('color', `%${sanitizeString(colorFilter, 100)}%`);
+  if (min_price) query = query.gte('unit_price', parseFloat(min_price));
+  if (max_price) query = query.lte('unit_price', parseFloat(max_price));
 
   if (search) {
     const searchTerm = sanitizeString(search, 100);
@@ -134,27 +135,28 @@ router.get('/slabs', asyncHandler(async (req, res) => {
     use_legacy_schema = 'false'
   } = req.query;
 
-  // Use new distributor_products schema (default)
+  // Use distributor_products table with actual schema
   if (use_legacy_schema !== 'true') {
     let query = supabase
       .from('distributor_products')
       .select(`
-        *,
-        distributor_product_slabs(*),
-        distributor_profiles(company_name, logo_url, city, state)
+        id, name, brand, sku, material_type, category, subcategory,
+        dimensions, thickness, finish, color,
+        unit_price, unit_type, sqft_per_box,
+        description, is_active, primary_image_url,
+        distributor_id, created_at, updated_at,
+        distributor_profiles(company_name, website)
       `, { count: 'exact' })
-      .eq('product_type', 'slab')
-      .eq('is_public', true)
-      .eq('status', 'active');
+      .eq('is_active', true);
 
     if (material_type) query = query.ilike('material_type', `%${sanitizeString(material_type, 100)}%`);
     if (brand) query = query.ilike('brand', `%${sanitizeString(brand, 100)}%`);
-    if (color) query = query.ilike('color_family', `%${sanitizeString(color, 100)}%`);
-    if (min_price) query = query.gte('wholesale_price', parseFloat(min_price));
-    if (max_price) query = query.lte('wholesale_price', parseFloat(max_price));
+    if (color) query = query.ilike('color', `%${sanitizeString(color, 100)}%`);
+    if (min_price) query = query.gte('unit_price', parseFloat(min_price));
+    if (max_price) query = query.lte('unit_price', parseFloat(max_price));
     if (search) {
       const searchTerm = sanitizeString(search, 100);
-      query = query.or(`name.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,material_type.ilike.%${searchTerm}%,color_family.ilike.%${searchTerm}%`);
+      query = query.or(`name.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,material_type.ilike.%${searchTerm}%,color.ilike.%${searchTerm}%`);
     }
 
     query = query
@@ -167,23 +169,22 @@ router.get('/slabs', asyncHandler(async (req, res) => {
       return handleApiError(res, error, 'Search slabs');
     }
 
-    // Transform products to match legacy slab format
+    // Transform products to match expected slab format
     const slabs = (products || []).map(p => ({
       id: p.id,
       distributor_id: p.distributor_id,
       product_name: p.name,
       brand: p.brand,
       material_type: p.material_type,
-      color_family: p.color_family,
+      color_family: p.color,
       finish: p.finish,
       description: p.description,
-      price_per_sqft: p.wholesale_price,
-      length_inches: p.distributor_product_slabs?.[0]?.length_inches,
-      width_inches: p.distributor_product_slabs?.[0]?.width_inches,
-      thickness_cm: p.distributor_product_slabs?.[0]?.thickness_cm,
-      primary_image_url: p.images?.[0],
-      images: p.images,
-      status: p.status,
+      price_per_sqft: p.unit_price,
+      dimensions: p.dimensions,
+      thickness: p.thickness,
+      primary_image_url: p.primary_image_url,
+      images: p.primary_image_url ? [p.primary_image_url] : [],
+      status: p.is_active ? 'available' : 'inactive',
       distributor: p.distributor_profiles,
       created_at: p.created_at
     }));
@@ -292,93 +293,283 @@ router.post('/slabs/:id/inquiry', asyncHandler(async (req, res) => {
   }
 
   // Get product and distributor info
-  const { data: product } = await supabase
+  const { data: product, error: productError } = await supabase
     .from('distributor_products')
     .select(`
-      id, distributor_id, name, brand, wholesale_price,
-      distributors(id, company_name, email, contact_name)
+      id, distributor_id, name, brand, unit_price, primary_image_url,
+      distributor_profiles!distributor_id(id, company_name, primary_contact_email, primary_contact_name, primary_contact_phone)
     `)
     .eq('id', req.params.id)
+    .eq('is_active', true)
     .single();
+
+  if (productError) {
+    logger.error('Product inquiry lookup error', { error: productError.message, productId: req.params.id });
+    return res.status(404).json({ error: 'Product not found' });
+  }
 
   if (!product) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
+  const distributor = product.distributor_profiles;
+
+  // Store inquiry as a lead with marketplace context
+  const leadData = {
+    full_name: sanitizeString(name, 200),
+    email: email.toLowerCase().trim(),
+    phone: phone || null,
+    project_type: 'marketplace_inquiry',
+    source: 'marketplace',
+    form_name: 'product_inquiry',
+    message: `[Marketplace Inquiry]\n` +
+             `Product: ${product.name}${product.brand ? ` (${product.brand})` : ''}\n` +
+             `Product ID: ${req.params.id}\n` +
+             `Price: $${product.unit_price || 'N/A'}/sqft\n` +
+             `Distributor: ${distributor?.company_name || 'Unknown'}\n` +
+             (company ? `Company: ${sanitizeString(company, 200)}\n` : '') +
+             `\nCustomer Message:\n${sanitizeString(message, 2000)}`,
+    status: 'new'
+  };
+
+  const { data: inquiry, error } = await supabase
+    .from('leads')
+    .insert(leadData)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Failed to store inquiry', { error: error.message });
+    return handleApiError(res, error, 'Submit inquiry');
+  }
+
+  // Send email notification to distributor/fabricator
+  if (distributor?.primary_contact_email) {
+    try {
+      const productImageHtml = product.primary_image_url
+        ? `<img src="${product.primary_image_url}" alt="${product.name}" style="max-width: 200px; border-radius: 8px; margin-bottom: 16px;">`
+        : '';
+
+      await emailService.sendNotification(
+        distributor.primary_contact_email,
+        `New Inquiry: ${product.name}`,
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 32px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 24px;">New Product Inquiry</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0;">Someone is interested in your listing!</p>
+            </div>
+
+            <div style="padding: 32px;">
+              <div style="background: #f8f9fa; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+                ${productImageHtml}
+                <h2 style="margin: 0 0 8px; color: #1a1a2e; font-size: 18px;">${product.name}</h2>
+                ${product.brand ? `<p style="margin: 0 0 8px; color: #666;">Brand: ${product.brand}</p>` : ''}
+                <p style="margin: 0; color: #1a1a2e; font-weight: 600;">$${product.unit_price || 'Contact for price'}/sqft</p>
+              </div>
+
+              <h3 style="color: #1a1a2e; margin: 0 0 16px; font-size: 16px; border-bottom: 2px solid #f9cb00; padding-bottom: 8px;">Customer Information</h3>
+              <table style="width: 100%; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #666; width: 100px;">Name:</td>
+                  <td style="padding: 8px 0; color: #1a1a2e; font-weight: 500;">${sanitizeString(name, 200)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Email:</td>
+                  <td style="padding: 8px 0;"><a href="mailto:${email}" style="color: #2563eb;">${email}</a></td>
+                </tr>
+                ${phone ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Phone:</td>
+                  <td style="padding: 8px 0;"><a href="tel:${phone}" style="color: #2563eb;">${phone}</a></td>
+                </tr>` : ''}
+                ${company ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Company:</td>
+                  <td style="padding: 8px 0; color: #1a1a2e;">${sanitizeString(company, 200)}</td>
+                </tr>` : ''}
+              </table>
+
+              <h3 style="color: #1a1a2e; margin: 0 0 16px; font-size: 16px; border-bottom: 2px solid #f9cb00; padding-bottom: 8px;">Message</h3>
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #f9cb00;">
+                <p style="margin: 0; color: #333; line-height: 1.6;">${sanitizeString(message, 2000).replace(/\n/g, '<br>')}</p>
+              </div>
+
+              <div style="margin-top: 32px; text-align: center;">
+                <a href="https://www.surprisegranite.com/distributor/dashboard/inquiries/"
+                   style="display: inline-block; background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%); color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                  View in Dashboard
+                </a>
+              </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #666; font-size: 13px;">
+                This inquiry was submitted through the Surprise Granite Marketplace.<br>
+                <a href="https://www.surprisegranite.com" style="color: #f9cb00;">www.surprisegranite.com</a>
+              </p>
+            </div>
+          </div>
+        `
+      );
+      logger.info('Inquiry notification email sent', { to: distributor.primary_contact_email, productId: req.params.id });
+    } catch (emailErr) {
+      logger.apiError(emailErr, { context: 'Send inquiry notification email' });
+    }
+  }
+
+  logger.info('Product inquiry submitted', {
+    productId: req.params.id,
+    leadId: inquiry.id
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Inquiry submitted successfully',
+    inquiry_id: inquiry.id
+  });
+}));
+
+/**
+ * Submit inquiry for user-generated stone listing (remnants)
+ * POST /api/marketplace/listings/:id/inquiry
+ */
+router.post('/listings/:id/inquiry', asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const { name, email, phone, message } = req.body;
+
+  // Validation
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: 'Name, email, and message are required' });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (phone && !isValidPhone(phone)) {
+    return res.status(400).json({ error: 'Invalid phone format' });
+  }
+
+  // Get listing and owner info
+  const { data: listing, error: listingError } = await supabase
+    .from('stone_listings')
+    .select(`
+      id, user_id, stone_name, material_type, price, city, state,
+      image_url, show_phone, show_email, contact_form_only,
+      sg_users(id, full_name, email, phone)
+    `)
+    .eq('id', req.params.id)
+    .eq('status', 'active')
+    .single();
+
+  if (listingError || !listing) {
+    return res.status(404).json({ error: 'Listing not found' });
+  }
+
+  const owner = listing.sg_users;
+
   // Store inquiry
   const { data: inquiry, error } = await supabase
-    .from('product_inquiries')
+    .from('listing_inquiries')
     .insert({
-      product_id: req.params.id,
-      distributor_id: product.distributor_id,
-      customer_name: sanitizeString(name, 200),
-      customer_email: email.toLowerCase().trim(),
-      customer_phone: phone,
-      customer_company: sanitizeString(company, 200),
+      listing_id: req.params.id,
+      sender_name: sanitizeString(name, 200),
+      sender_email: email.toLowerCase().trim(),
+      sender_phone: phone || null,
       message: sanitizeString(message, 2000),
-      status: 'new'
+      is_read: false
     })
     .select()
     .single();
 
   if (error) {
-    return handleApiError(res, error, 'Submit inquiry');
+    return handleApiError(res, error, 'Submit listing inquiry');
   }
 
-  // Increment inquiry count
-  await supabase.rpc('increment_product_inquiries', { product_id: req.params.id }).catch(() => {});
+  // Update inquiry count on listing
+  await supabase
+    .from('stone_listings')
+    .update({ inquiries: supabase.sql`COALESCE(inquiries, 0) + 1` })
+    .eq('id', req.params.id)
+    .catch(() => {});
 
-  // Send email to distributor
-  if (product.distributors?.email) {
+  // Send email notification to listing owner
+  if (owner?.email) {
     try {
-      await emailService.sendEmail({
-        to: product.distributors.email,
-        subject: `New Product Inquiry: ${product.name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1a1a2e;">New Product Inquiry</h2>
-            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Product:</strong> ${product.name} ${product.brand ? `(${product.brand})` : ''}</p>
-              <p><strong>Price:</strong> $${product.wholesale_price || 'N/A'}/sqft</p>
+      const listingImageHtml = listing.image_url
+        ? `<img src="${listing.image_url}" alt="${listing.stone_name}" style="max-width: 200px; border-radius: 8px; margin-bottom: 16px;">`
+        : '';
+
+      await emailService.sendNotification(
+        owner.email,
+        `New Inquiry: ${listing.stone_name} Remnant`,
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); padding: 32px; text-align: center;">
+              <h1 style="color: #f9cb00; margin: 0; font-size: 24px;">New Remnant Inquiry</h1>
+              <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0;">Someone is interested in your listing!</p>
             </div>
-            <h3>Contact Information</h3>
-            <p><strong>Name:</strong> ${sanitizeString(name, 200)}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-            ${company ? `<p><strong>Company:</strong> ${sanitizeString(company, 200)}</p>` : ''}
-            <h3>Message</h3>
-            <p style="background: #f9f9f9; padding: 15px; border-radius: 4px;">${sanitizeString(message, 2000)}</p>
+
+            <div style="padding: 32px;">
+              <div style="background: #f8f9fa; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+                ${listingImageHtml}
+                <h2 style="margin: 0 0 8px; color: #1a1a2e; font-size: 18px;">${listing.stone_name}</h2>
+                <p style="margin: 0 0 8px; color: #666;">${listing.material_type ? listing.material_type.charAt(0).toUpperCase() + listing.material_type.slice(1) : 'Stone'} Remnant</p>
+                ${listing.price ? `<p style="margin: 0; color: #1a1a2e; font-weight: 600;">$${listing.price}</p>` : ''}
+                <p style="margin: 8px 0 0; color: #888; font-size: 13px;">${listing.city || ''}${listing.city && listing.state ? ', ' : ''}${listing.state || ''}</p>
+              </div>
+
+              <h3 style="color: #1a1a2e; margin: 0 0 16px; font-size: 16px; border-bottom: 2px solid #f9cb00; padding-bottom: 8px;">Interested Buyer</h3>
+              <table style="width: 100%; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #666; width: 100px;">Name:</td>
+                  <td style="padding: 8px 0; color: #1a1a2e; font-weight: 500;">${sanitizeString(name, 200)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Email:</td>
+                  <td style="padding: 8px 0;"><a href="mailto:${email}" style="color: #2563eb;">${email}</a></td>
+                </tr>
+                ${phone ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #666;">Phone:</td>
+                  <td style="padding: 8px 0;"><a href="tel:${phone}" style="color: #2563eb;">${phone}</a></td>
+                </tr>` : ''}
+              </table>
+
+              <h3 style="color: #1a1a2e; margin: 0 0 16px; font-size: 16px; border-bottom: 2px solid #f9cb00; padding-bottom: 8px;">Message</h3>
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #f9cb00;">
+                <p style="margin: 0; color: #333; line-height: 1.6;">${sanitizeString(message, 2000).replace(/\n/g, '<br>')}</p>
+              </div>
+
+              <div style="margin-top: 32px; padding: 20px; background: #fffbeb; border-radius: 8px; border: 1px solid #fcd34d;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>Tip:</strong> Respond quickly to inquiries! Buyers are often comparing multiple options.
+                </p>
+              </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #666; font-size: 13px;">
+                This inquiry was submitted through the Surprise Granite Marketplace.<br>
+                <a href="https://www.surprisegranite.com/marketplace/listings/" style="color: #f9cb00;">View your listings</a>
+              </p>
+            </div>
           </div>
         `
-      });
+      );
+      logger.info('Listing inquiry notification email sent', { to: owner.email, listingId: req.params.id });
     } catch (emailErr) {
-      logger.apiError(emailErr, { context: 'Send inquiry email' });
+      logger.apiError(emailErr, { context: 'Send listing inquiry email' });
     }
   }
 
-  // Auto-create lead from marketplace inquiry
-  try {
-    const leadData = {
-      full_name: sanitizeString(name, 200),
-      email: email.toLowerCase().trim(),
-      phone: phone || null,
-      project_type: 'marketplace_inquiry',
-      source: 'marketplace',
-      form_name: 'marketplace_inquiry',
-      message: 'Marketplace inquiry for: ' + (product.name || 'Product') +
-        (product.brand ? ' (' + product.brand + ')' : '') +
-        '. Message: ' + sanitizeString(message, 500),
-      status: 'new'
-    };
-
-    await supabase.from('leads').insert(leadData).select().single();
-  } catch (leadErr) {
-    // Non-blocking - inquiry still succeeds even if lead creation fails
-    logger.warn('Could not auto-create lead from marketplace inquiry:', leadErr.message);
-  }
-
-  logger.info('Product inquiry submitted', {
-    productId: req.params.id,
+  logger.info('Stone listing inquiry submitted', {
+    listingId: req.params.id,
     inquiryId: inquiry.id
   });
 
@@ -504,38 +695,36 @@ router.get('/designer-products', asyncHandler(async (req, res) => {
 
   const {
     category,
-    element_type,
+    material_type,
     brand,
     limit = 100,
     offset = 0
   } = req.query;
 
+  // Query actual table structure
   let query = supabase
     .from('distributor_products')
     .select(`
-      id, name, brand, sku, product_type, material_type,
-      wholesale_price, unit_price, quantity_available,
-      images, status,
-      designer_element_type, designer_category,
-      designer_default_width, designer_default_height, designer_color,
-      distributor_profiles(company_name, logo_url)
+      id, name, brand, sku, material_type, category, subcategory,
+      dimensions, thickness, finish, color,
+      unit_price, unit_type, sqft_per_box,
+      description, is_active, primary_image_url,
+      distributor_profiles(company_name)
     `, { count: 'exact' })
-    .eq('designer_visible', true)
-    .eq('is_public', true)
-    .eq('status', 'active');
+    .eq('is_active', true);
 
   if (category) {
-    query = query.eq('designer_category', sanitizeString(category, 50));
+    query = query.eq('category', sanitizeString(category, 50));
   }
-  if (element_type) {
-    query = query.eq('designer_element_type', sanitizeString(element_type, 50));
+  if (material_type) {
+    query = query.eq('material_type', sanitizeString(material_type, 50));
   }
   if (brand) {
     query = query.ilike('brand', `%${sanitizeString(brand, 100)}%`);
   }
 
   query = query
-    .order('designer_category', { ascending: true })
+    .order('category', { ascending: true })
     .order('name', { ascending: true })
     .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
@@ -545,26 +734,28 @@ router.get('/designer-products', asyncHandler(async (req, res) => {
     return handleApiError(res, error, 'Get designer products');
   }
 
-  // Group by designer_category for sidebar rendering
+  // Group by category for sidebar rendering
   const grouped = {};
   (products || []).forEach(p => {
-    const cat = p.designer_category || 'other';
+    const cat = p.category || 'other';
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push({
       id: p.id,
       name: p.name,
       brand: p.brand,
       sku: p.sku,
-      productType: p.product_type,
       materialType: p.material_type,
-      price: p.wholesale_price || p.unit_price,
-      quantity: p.quantity_available,
-      images: p.images,
-      elementType: p.designer_element_type,
-      category: p.designer_category,
-      defaultWidth: p.designer_default_width,
-      defaultHeight: p.designer_default_height,
-      color: p.designer_color,
+      category: p.category,
+      subcategory: p.subcategory,
+      dimensions: p.dimensions,
+      thickness: p.thickness,
+      finish: p.finish,
+      color: p.color,
+      price: p.unit_price,
+      unitType: p.unit_type,
+      sqftPerBox: p.sqft_per_box,
+      description: p.description,
+      image: p.primary_image_url,
       distributor: p.distributor_profiles?.company_name
     });
   });

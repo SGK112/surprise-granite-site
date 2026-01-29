@@ -636,13 +636,15 @@
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
     let currentUser = null;
+    let accessToken = null;
     let distributorProfile = null;
+    let pendingLogoFile = null;
 
     async function init() {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         if (isLocalhost) {
           currentUser = { id: 'demo-user', email: 'demo@example.com' };
           console.log('Demo mode: Using demo user');
@@ -653,8 +655,17 @@
         return;
       }
 
-      currentUser = user;
+      currentUser = session.user;
+      accessToken = session.access_token;
       await loadProfile();
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      return headers;
     }
 
     function showDemoSettings() {
@@ -674,7 +685,7 @@
     async function loadProfile() {
       try {
         const response = await fetch(`${API_BASE}/api/distributor/profile`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 
@@ -736,6 +747,36 @@
       const brandsInput = document.getElementById('brandsCarried').value;
       const brandsCarried = brandsInput ? brandsInput.split(',').map(b => b.trim()).filter(b => b) : [];
 
+      // Upload logo if pending
+      let logoUrl = distributorProfile?.logo_url || null;
+      if (pendingLogoFile) {
+        try {
+          btn.innerHTML = '<span>Uploading logo...</span>';
+          const fileExt = pendingLogoFile.name.split('.').pop();
+          const fileName = `${currentUser.id}-logo-${Date.now()}.${fileExt}`;
+
+          const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('distributor-assets')
+            .upload(fileName, pendingLogoFile, {
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error('Logo upload error:', uploadError);
+            showStatus('Logo upload failed: ' + uploadError.message, 'error');
+          } else {
+            const { data: { publicUrl } } = supabaseClient.storage
+              .from('distributor-assets')
+              .getPublicUrl(fileName);
+            logoUrl = publicUrl;
+          }
+          pendingLogoFile = null;
+        } catch (logoErr) {
+          console.error('Logo upload error:', logoErr);
+        }
+      }
+
       const profileData = {
         company_name: document.getElementById('companyName').value,
         company_type: document.getElementById('companyType').value,
@@ -747,16 +788,16 @@
         primary_contact_email: document.getElementById('contactEmail').value,
         primary_contact_phone: document.getElementById('contactPhone').value,
         material_types: materialTypes,
-        brands_carried: brandsCarried
+        brands_carried: brandsCarried,
+        logo_url: logoUrl
       };
+
+      btn.innerHTML = '<span>Saving profile...</span>';
 
       try {
         const response = await fetch(`${API_BASE}/api/distributor/profile`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': currentUser.id
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(profileData)
         });
 
@@ -779,11 +820,29 @@
 
     function previewLogo(input) {
       if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+          showStatus('Please select an image file', 'error');
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          showStatus('Image must be less than 5MB', 'error');
+          return;
+        }
+
+        // Store for upload on save
+        pendingLogoFile = file;
+
+        // Show preview
         const reader = new FileReader();
         reader.onload = (e) => {
           document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" alt="Logo preview">`;
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
+
+        showStatus('Logo selected. Click "Save Changes" to upload.', 'success');
       }
     }
 

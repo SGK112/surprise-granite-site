@@ -727,13 +727,14 @@
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
     let currentUser = null;
+    let accessToken = null;
     let addAnother = false;
 
     async function init() {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const { data: { user } } = await supabaseClient.auth.getUser();
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         if (isLocalhost) {
           currentUser = { id: 'demo-user', email: 'demo@example.com' };
           console.log('Demo mode: Using demo user');
@@ -745,10 +746,19 @@
         return;
       }
 
-      currentUser = user;
+      currentUser = session.user;
+      accessToken = session.access_token;
       await loadDistributor();
       await loadLocations();
       setupCalculations();
+    }
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      return headers;
     }
 
     function showDemoAddSlab() {
@@ -785,7 +795,7 @@
     async function loadLocations() {
       try {
         const response = await fetch(`${API_BASE}/api/distributor/locations`, {
-          headers: { 'x-user-id': currentUser.id }
+          headers: getAuthHeaders()
         });
         const data = await response.json();
 
@@ -864,10 +874,7 @@
       try {
         const response = await fetch(`${API_BASE}/api/distributor/inventory`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': currentUser.id
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(slabData)
         });
 
