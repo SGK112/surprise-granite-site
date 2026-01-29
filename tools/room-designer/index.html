@@ -20591,7 +20591,7 @@
     // ===== AUTO-SAVE TO LOCALSTORAGE =====
     const AUTOSAVE_KEY = 'room_designer_autosave';
     let autosaveTimeout = null;
-    let lastSaveTime = 0;
+    let lastAutoSaveTimestamp = 0;
     let hasUnsavedChanges = false;
 
     function autoSaveDesign(immediate = false) {
@@ -20703,7 +20703,7 @@
               console.error('Auto-save failed even after freeing space:', retryErr);
             }
           }
-          lastSaveTime = Date.now();
+          lastAutoSaveTimestamp = Date.now();
           hasUnsavedChanges = false;
           console.log('Auto-saved design:', elements.length, 'elements');
 
@@ -65326,7 +65326,8 @@
 
     // Initialize messaging unread count on page load
     window.addEventListener('load', function() {
-      if (currentUser) {
+      const user = window.SgAuth?.getUser();
+      if (user) {
         loadConversations().then(() => {
           updateMsgBadge();
         }).catch(() => {});
