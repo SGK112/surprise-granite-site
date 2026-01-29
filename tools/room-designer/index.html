@@ -8231,6 +8231,606 @@
       color: var(--text);
     }
 
+    /* ========== UNIFIED MESSAGING SYSTEM ========== */
+    .messaging-hub {
+      position: relative;
+      margin-right: 8px;
+    }
+
+    .messaging-hub-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .messaging-hub-btn:hover {
+      background: var(--dark-hover);
+      border-color: #3b82f6;
+      transform: scale(1.05);
+    }
+
+    .messaging-hub-btn.has-messages {
+      border-color: #3b82f6;
+      animation: messageGlow 2s infinite;
+    }
+
+    @keyframes messageGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+    }
+
+    .messaging-hub-btn svg {
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+
+    .messaging-hub-btn:hover svg {
+      color: var(--text);
+    }
+
+    .msg-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      background: #3b82f6;
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    .msg-badge.hidden {
+      display: none;
+    }
+
+    /* Messaging Panel */
+    .messaging-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 100vw;
+      height: 100vh;
+      background: var(--dark-surface);
+      border-left: 1px solid var(--border);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s ease;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .messaging-panel.open {
+      right: 0;
+    }
+
+    .messaging-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .messaging-panel-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .msg-panel-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--dark-elevated);
+    }
+
+    .msg-panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .msg-panel-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .msg-panel-close:hover {
+      background: var(--dark-hover);
+      color: var(--text);
+    }
+
+    /* Conversation List */
+    .msg-conversations {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg-search {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .msg-search-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .msg-search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .msg-new-chat-btn {
+      margin: 12px;
+      padding: 12px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .msg-new-chat-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .msg-conversation-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .msg-conversation-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .msg-conversation-item:hover {
+      background: var(--dark-elevated);
+    }
+
+    .msg-conversation-item.active {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+    }
+
+    .msg-conversation-item.unread {
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .msg-conv-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .msg-conv-avatar.customer {
+      background: linear-gradient(135deg, #f9cb00, #f59e0b);
+      color: #1a1a2e;
+    }
+
+    .msg-conv-avatar.collaborator {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .msg-conv-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msg-conv-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .msg-conv-name .role-tag {
+      font-size: 9px;
+      padding: 2px 6px;
+      background: var(--dark-elevated);
+      border-radius: 4px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .msg-conv-preview {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msg-conv-meta {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .msg-conv-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .msg-conv-unread {
+      width: 8px;
+      height: 8px;
+      background: #3b82f6;
+      border-radius: 50%;
+      margin-top: 6px;
+      margin-left: auto;
+    }
+
+    /* Chat View */
+    .msg-chat-view {
+      position: absolute;
+      inset: 0;
+      background: var(--dark-surface);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .msg-chat-view.open {
+      transform: translateX(0);
+    }
+
+    .msg-chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--dark-elevated);
+    }
+
+    .msg-chat-back {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .msg-chat-back:hover {
+      background: var(--dark-hover);
+      color: var(--text);
+    }
+
+    .msg-chat-recipient {
+      flex: 1;
+    }
+
+    .msg-chat-recipient-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .msg-chat-recipient-status {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .msg-chat-recipient-status.online {
+      color: #10b981;
+    }
+
+    .msg-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg-message-row {
+      display: flex;
+      gap: 8px;
+      max-width: 85%;
+    }
+
+    .msg-message-row.outbound {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .msg-message-row.inbound {
+      align-self: flex-start;
+    }
+
+    .msg-message-bubble {
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: 100%;
+      word-wrap: break-word;
+    }
+
+    .msg-message-row.inbound .msg-message-bubble {
+      background: var(--dark-elevated);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-message-row.outbound .msg-message-bubble {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-message-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .msg-message-row.outbound .msg-message-time {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .msg-chat-input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--dark-elevated);
+    }
+
+    .msg-chat-input-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .msg-chat-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text);
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+      min-height: 40px;
+    }
+
+    .msg-chat-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .msg-send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .msg-send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .msg-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* New Chat Modal */
+    .msg-new-chat-modal {
+      position: absolute;
+      inset: 0;
+      background: var(--dark-surface);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .msg-new-chat-modal.open {
+      transform: translateX(0);
+    }
+
+    .msg-add-recipient {
+      padding: 16px;
+    }
+
+    .msg-add-recipient label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .msg-email-input-wrapper {
+      display: flex;
+      gap: 8px;
+    }
+
+    .msg-email-input {
+      flex: 1;
+      padding: 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .msg-email-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .msg-add-email-btn {
+      padding: 12px 16px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .msg-add-email-btn:hover {
+      background: #2563eb;
+    }
+
+    .msg-collaborators-section {
+      padding: 0 16px 16px;
+    }
+
+    .msg-collaborators-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .msg-collaborator-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .msg-collaborator-item {
+      padding: 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .msg-collaborator-item:hover {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .msg-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .msg-empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .msg-empty-text {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .msg-empty-subtext {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 280px;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .messaging-panel {
+        width: 100vw;
+        right: -100vw;
+      }
+    }
+
     .hub-badge {
       position: absolute;
       top: -4px;
@@ -8942,6 +9542,16 @@
       </div>
 
       <div class="header-right">
+        <!-- Messaging Hub -->
+        <div class="messaging-hub" id="messagingHub">
+          <button class="messaging-hub-btn" id="msgHubBtn" onclick="toggleMessagingPanel()" title="Messages">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="msg-badge hidden" id="msgBadge">0</span>
+          </button>
+        </div>
+
         <!-- Gaming-Style Notification Hub -->
         <div class="notification-hub" id="notificationHub">
           <button class="notification-hub-btn" id="notifHubBtn" onclick="toggleNotificationHub()" title="Notifications">
@@ -9697,6 +10307,15 @@
             <div class="toolbar-divider"></div>
             <!-- Canvas Actions -->
             <div class="toolbar-btn-group">
+              <button class="btn btn-sm btn-secondary" onclick="createNewDesign()" title="Start a fresh new design" style="color: #22c55e;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                New
+              </button>
               <button class="btn btn-sm btn-secondary" onclick="clearCanvas()" title="Clear all elements (keeps room settings)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -11666,17 +12285,26 @@
           <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
         </svg>
         <p>No designs found</p>
-        <button class="btn btn-primary" onclick="closeModal('myDesignsModal')">Create New Design</button>
+        <button class="btn btn-primary" onclick="createNewDesign(); closeModal('myDesignsModal');">Create New Design</button>
       </div>
 
       <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 12px;">
+        <button class="btn btn-primary" onclick="createNewDesign(); closeModal('myDesignsModal');" style="background: #22c55e;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          New Design
+        </button>
         <button class="btn btn-primary" onclick="saveDesignLocally(); loadMyDesigns();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/>
             <polyline points="7 3 7 8 15 8"/>
           </svg>
-          Save Current Design
+          Save Current
         </button>
         <button class="btn btn-secondary" onclick="closeModal('myDesignsModal')">Close</button>
       </div>
@@ -17741,6 +18369,8 @@
     let elements = [];
     let walls = [];
     let selectedElement = null;
+    let elementListDirty = true; // Flag to track when element list needs updating
+    let lastSelectedElementId = null; // Track selection changes
     let currentDesignId = null; // Current design ID for messaging/collaboration
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
@@ -18094,7 +18724,7 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
       container.appendChild(renderer.domElement);
@@ -18666,7 +19296,7 @@
         restoreLeadInfo();
       }
 
-      // Keyboard shortcuts for undo/redo
+      // Keyboard shortcuts for undo/redo and new design
       document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
           e.preventDefault();
@@ -18679,6 +19309,11 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
           e.preventDefault();
           redo();
+        }
+        // Ctrl+N for new design
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+          e.preventDefault();
+          createNewDesign();
         }
       });
 
@@ -19557,6 +20192,7 @@
 
       // Clear everything
       elements = [];
+      elementListDirty = true;
       walls = [];
       selectedElement = null;
       undoStack = [];
@@ -20789,6 +21425,7 @@
       };
 
       elements.push(element);
+      elementListDirty = true;
       selectedElement = element;
       updateProperties();
       calculateQuote();
@@ -21885,19 +22522,19 @@
             ctx.stroke();
           }
 
-          // Crystalline shimmer
+          // Crystalline shimmer - batched drawing
           ctx.fillStyle = 'rgba(255,255,255,0.08)';
-          for (let i = 0; i < 30; i++) {
+          ctx.beginPath();
+          for (let i = 0; i < 20; i++) {
             const cx = x + rand(i + 300) * w;
             const cy = y + rand(i + 400) * h;
-            ctx.beginPath();
             ctx.moveTo(cx, cy - 3);
             ctx.lineTo(cx + 2, cy);
             ctx.lineTo(cx, cy + 3);
             ctx.lineTo(cx - 2, cy);
             ctx.closePath();
-            ctx.fill();
           }
+          ctx.fill();
           break;
 
         case 'concrete':
@@ -21905,46 +22542,66 @@
           ctx.fillStyle = color;
           ctx.fillRect(x, y, w, h);
 
-          // Subtle aggregate texture
+          // Subtle aggregate texture - reduced count for performance (was /100, now /200)
+          const concreteAggCount = Math.floor(w * h / 200);
           ctx.fillStyle = 'rgba(0,0,0,0.03)';
-          for (let i = 0; i < w * h / 100; i++) {
+          ctx.beginPath();
+          for (let i = 0; i < concreteAggCount; i++) {
             const cx = x + rand(i) * w;
             const cy = y + rand(i + 500) * h;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 1 + rand(i + 1000) * 2, 0, Math.PI * 2);
-            ctx.fill();
+            const radius = 1 + rand(i + 1000) * 2;
+            ctx.moveTo(cx + radius, cy);
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
           }
+          ctx.fill();
 
-          // Subtle variation patches
+          // Subtle variation patches - batched by dark/light
+          ctx.fillStyle = 'rgba(0,0,0,0.02)';
+          ctx.beginPath();
           for (let i = 0; i < 4; i++) {
-            ctx.fillStyle = rand(i) > 0.5 ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)';
-            ctx.beginPath();
-            ctx.ellipse(
-              x + rand(i + 100) * Math.abs(w),
-              y + rand(i + 200) * Math.abs(h),
-              Math.abs(rand(i + 300) * w * 0.3) || 1,
-              Math.abs(rand(i + 400) * h * 0.3) || 1,
-              rand(i + 500) * Math.PI,
-              0, Math.PI * 2
-            );
-            ctx.fill();
+            if (rand(i) > 0.5) {
+              ctx.ellipse(
+                x + rand(i + 100) * Math.abs(w),
+                y + rand(i + 200) * Math.abs(h),
+                Math.abs(rand(i + 300) * w * 0.3) || 1,
+                Math.abs(rand(i + 400) * h * 0.3) || 1,
+                rand(i + 500) * Math.PI,
+                0, Math.PI * 2
+              );
+            }
           }
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.02)';
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            if (rand(i) <= 0.5) {
+              ctx.ellipse(
+                x + rand(i + 100) * Math.abs(w),
+                y + rand(i + 200) * Math.abs(h),
+                Math.abs(rand(i + 300) * w * 0.3) || 1,
+                Math.abs(rand(i + 400) * h * 0.3) || 1,
+                rand(i + 500) * Math.PI,
+                0, Math.PI * 2
+              );
+            }
+          }
+          ctx.fill();
           break;
 
         case 'wood':
           // Wood countertop: butcher block style
           drawWoodGrain(ctx, x, y, w, h, color);
 
-          // Butcher block strips
+          // Butcher block strips - batched for performance
           const stripWidth = pixelsPerFoot * 0.25;
           ctx.strokeStyle = 'rgba(0,0,0,0.1)';
           ctx.lineWidth = 1;
+          ctx.beginPath();
           for (let sx = x + stripWidth; sx < x + w; sx += stripWidth) {
-            ctx.beginPath();
             ctx.moveTo(sx, y);
             ctx.lineTo(sx, y + h);
-            ctx.stroke();
           }
+          ctx.stroke();
           break;
 
         default: // granite
@@ -26730,7 +27387,7 @@
       if (isPanning) {
         panX = screenX - panStart.x;
         panY = screenY - panStart.y;
-        draw();
+        drawThrottled();
         return;
       }
 
@@ -26763,7 +27420,7 @@
         } else {
           updateCanvasSize();
         }
-        draw();
+        drawThrottled();
         return;
       }
 
@@ -26779,13 +27436,13 @@
         const dy = y - resizeStart.y;
         applyResize(selectedElement, resizeHandle, dx, dy);
         updateProperties();
-        draw();
+        drawThrottled();
         return;
       }
 
       if (isDrawingWall && wallStart) {
         // Preview wall while drawing
-        draw();
+        drawThrottled();
         ctx.save();
         ctx.translate(panX, panY);
         ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
@@ -26800,7 +27457,7 @@
 
       if (isDrawingCountertop && countertopStart) {
         // Preview countertop while drawing with measurements
-        draw();
+        drawThrottled();
         ctx.save();
         ctx.translate(panX, panY);
 
@@ -26895,7 +27552,7 @@
           moveGroupedElements(selectedElement, dx, dy);
         }
 
-        draw();
+        drawThrottled();
         return;
       }
 
@@ -27254,7 +27911,7 @@
         moveGroupedElements(selectedElement, dx, dy);
       }
 
-      draw();
+      drawThrottled();
     }
 
     function onMouseUp(e) {
@@ -28834,6 +29491,14 @@
       const countDisplay = document.getElementById('elementCountDisplay');
       if (!listContainer) return;
 
+      // Check if anything actually changed - skip rebuild if nothing changed
+      const currentSelectedId = selectedElement ? selectedElement.id : null;
+      if (!elementListDirty && currentSelectedId === lastSelectedElementId) {
+        return; // Skip rebuild - nothing changed
+      }
+      elementListDirty = false;
+      lastSelectedElementId = currentSelectedId;
+
       // Update count
       if (countDisplay) countDisplay.textContent = elements.length;
 
@@ -29119,6 +29784,7 @@
     function deleteSelectedElement() {
       if (selectedElement && !selectedElement.locked) {
         elements = elements.filter(el => el !== selectedElement);
+        elementListDirty = true;
         selectedElement = null;
         updateProperties();
         calculateQuote();
@@ -31324,7 +31990,7 @@
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15; // Balanced exposure for realistic look
       renderer.physicallyCorrectLights = true; // More realistic light falloff
-      renderer.outputEncoding = THREE.sRGBEncoding; // Proper color encoding (r128 API)
+      renderer.outputColorSpace = THREE.SRGBColorSpace; // Proper color encoding (r128 API)
       container.appendChild(renderer.domElement);
 
       // Orbit controls with smooth zoom - allows close-up inspection
@@ -32155,7 +32821,7 @@
 
       const envTexture = new THREE.CanvasTexture(envCanvas);
       envTexture.mapping = THREE.EquirectangularReflectionMapping;
-      envTexture.encoding = THREE.sRGBEncoding;
+      envTexture.colorSpace = THREE.SRGBColorSpace;
 
       // Generate environment map with higher quality
       const envMap = pmremGenerator.fromEquirectangular(envTexture).texture;
@@ -33337,7 +34003,7 @@
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.ClampToEdgeWrapping;
       texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.encoding = THREE.sRGBEncoding;
+      texture.colorSpace = THREE.SRGBColorSpace;
       texture.needsUpdate = true;
 
       // Cache the texture
@@ -33426,7 +34092,7 @@
           textureLoader.load(url, (texture) => {
             texture.wrapS = THREE.RepeatWrapping;
             texture.wrapT = THREE.RepeatWrapping;
-            texture.encoding = THREE.sRGBEncoding;
+            texture.colorSpace = THREE.SRGBColorSpace;
             addTextureToCache(url, texture);
             console.log('Preloaded texture successfully:', url.substring(0, 50) + '...');
           }, undefined, (err) => {
@@ -33784,7 +34450,7 @@
               texture.wrapS = THREE.RepeatWrapping;
               texture.wrapT = THREE.RepeatWrapping;
               texture.repeat.set(repeatX, repeatY);
-              texture.encoding = THREE.sRGBEncoding;
+              texture.colorSpace = THREE.SRGBColorSpace;
               // Maximum anisotropy for sharpest textures at angles
               texture.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 16;
               // Use trilinear filtering for best quality
@@ -33901,7 +34567,7 @@
           texture.wrapT = THREE.RepeatWrapping;
           texture.repeat.set(1, 1);
           texture.anisotropy = 16;
-          texture.encoding = THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace;
           texture.needsUpdate = true;
           return texture;
         }
@@ -34098,7 +34764,7 @@
         const repeatVal = grainType === 'maple' ? 1.2 : (grainType === 'hickory' ? 1.8 : 1.5);
         texture.repeat.set(repeatVal, repeatVal);
         texture.anisotropy = 16;  // Better quality at angles
-        texture.encoding = THREE.sRGBEncoding;  // Correct color encoding for r128
+        texture.colorSpace = THREE.SRGBColorSpace;  // Correct color encoding for r128
         texture.needsUpdate = true;  // Ensure texture is uploaded to GPU
         return texture;
       }
@@ -46856,7 +47522,7 @@
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.minFilter = THREE.LinearFilter;
-      texture.encoding = THREE.sRGBEncoding;
+      texture.colorSpace = THREE.SRGBColorSpace;
 
       const material = new THREE.SpriteMaterial({
         map: texture,
@@ -48440,6 +49106,7 @@
 
       // Clear current elements
       elements.length = 0;
+      elementListDirty = true;
       selectedElement = null;
 
       // Set room dimensions FIRST
@@ -58724,6 +59391,7 @@
       if (!confirm('Clear all elements from canvas?\n\nRoom settings will be preserved.\nYour progress will still be auto-saved.')) return;
 
       elements = [];
+      elementListDirty = true;
       walls = walls.filter(w => w.type === 'area');
       selectedElement = null;
 
@@ -58736,6 +59404,74 @@
       render3D();
 
       showToast('Canvas cleared', 'info');
+    }
+
+    // Create a completely fresh new design
+    function createNewDesign() {
+      // Check if there are unsaved changes
+      const hasContent = elements.length > 0 || walls.length > 0;
+
+      if (hasContent) {
+        if (!confirm('Start a new design?\n\nYour current work will be saved automatically.\nYou can access it later from "My Designs".')) {
+          return;
+        }
+        // Trigger a save of current work before starting new
+        saveToCloud();
+      }
+
+      // Clear all shared/viewing state
+      SHARE_STATE.isSharedView = false;
+      SHARE_STATE.designId = null;
+      SHARE_STATE.designToken = null;
+      SHARE_STATE.ownerEmail = null;
+      SHARE_STATE.allowedActions = {};
+
+      // Reset current design ID (will get new ID on next save)
+      currentDesignId = null;
+
+      // Clear all elements and walls
+      elements = [];
+      elementListDirty = true;
+      walls = [];
+      selectedElement = null;
+      undoStack = [];
+      redoStack = [];
+
+      // Reset room to defaults
+      roomWidth = 12;
+      roomDepth = 10;
+      roomHeight = 8;
+      document.getElementById('roomWidth').value = 12;
+      document.getElementById('roomDepth').value = 10;
+      document.getElementById('roomType').value = 'kitchen';
+
+      // Reset project name
+      const projectNameInput = document.getElementById('projectName');
+      if (projectNameInput) {
+        projectNameInput.value = 'New Design';
+      }
+
+      // Clear URL parameters (in case viewing shared design)
+      history.pushState({}, '', window.location.pathname);
+
+      // Remove any viewer mode badges
+      const viewerBadge = document.getElementById('viewerModeBadge');
+      if (viewerBadge) viewerBadge.remove();
+
+      // Update UI
+      fitToScreen();
+      updateProperties();
+      updateElementSelector();
+      updateItemPicker();
+      calculateQuote();
+      draw();
+
+      // Reset 3D if in 3D view
+      if (currentView === '3d') {
+        init3D();
+      }
+
+      showToast('New design created', 'success');
     }
 
     // ===== EXPORT FUNCTIONALITY =====
@@ -62322,6 +63058,15 @@
               <button class="modal-close" onclick="document.getElementById('mobileMenuOverlay').classList.remove('active')">×</button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px;">
+              <button class="btn btn-primary" onclick="createNewDesign(); document.getElementById('mobileMenuOverlay').classList.remove('active');" style="background: #22c55e;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                New Design
+              </button>
               <button class="btn btn-secondary" onclick="openModal('templateModal'); document.getElementById('mobileMenuOverlay').classList.remove('active');">Load Template</button>
               <button class="btn btn-secondary" onclick="openModal('myDesignsModal'); document.getElementById('mobileMenuOverlay').classList.remove('active');">My Designs</button>
               <button class="btn btn-secondary" onclick="setView(currentView === '2d' ? '3d' : '2d'); document.getElementById('mobileMenuOverlay').classList.remove('active');">Toggle 2D/3D</button>
@@ -62375,6 +63120,276 @@
       }
     });
   </script>
+
+  <!-- Messaging Panel Overlay -->
+  <div class="messaging-panel-overlay" id="msgPanelOverlay" onclick="closeMessagingPanel()"></div>
+
+  <!-- Messaging Panel -->
+  <div class="messaging-panel" id="msgPanel">
+    <div class="msg-panel-header">
+      <div class="msg-panel-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        Messages
+      </div>
+      <button class="msg-panel-close" onclick="closeMessagingPanel()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="msg-conversations">
+      <div class="msg-search">
+        <input type="text" class="msg-search-input" id="msgSearchInput" placeholder="Search messages..." oninput="filterMessages(this.value)">
+      </div>
+      <button class="msg-new-chat-btn" onclick="openNewChatModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New Message
+      </button>
+      <div class="msg-conversation-list" id="msgConversationList">
+        <div class="msg-empty-state" id="msgEmptyState">
+          <div class="msg-empty-icon">💬</div>
+          <div class="msg-empty-text">No messages yet</div>
+          <div class="msg-empty-subtext">Start a conversation with your collaborators or clients</div>
+        </div>
+      </div>
+    </div>
+    <!-- Chat View -->
+    <div class="msg-chat-view" id="msgChatView">
+      <div class="msg-chat-header">
+        <button class="msg-chat-back" onclick="closeChatView()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="msg-chat-recipient">
+          <div class="msg-chat-recipient-name" id="msgChatRecipientName">Recipient</div>
+          <div class="msg-chat-recipient-status" id="msgChatRecipientStatus">Last seen recently</div>
+        </div>
+      </div>
+      <div class="msg-chat-messages" id="msgChatMessages"></div>
+      <div class="msg-chat-input-area">
+        <div class="msg-chat-input-wrapper">
+          <textarea class="msg-chat-input" id="msgChatInput" placeholder="Type a message..." rows="1" onkeydown="handleMsgKeydown(event)"></textarea>
+          <button class="msg-send-btn" onclick="sendDirectMessage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- New Chat Modal -->
+    <div class="msg-new-chat-modal" id="msgNewChatModal">
+      <div class="msg-chat-header">
+        <button class="msg-chat-back" onclick="closeNewChatModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="msg-chat-recipient">
+          <div class="msg-chat-recipient-name">New Message</div>
+          <div class="msg-chat-recipient-status">Select a recipient</div>
+        </div>
+      </div>
+      <div class="msg-add-recipient">
+        <label>Send to email address</label>
+        <div class="msg-email-input-wrapper">
+          <input type="email" class="msg-email-input" id="msgNewEmailInput" placeholder="email@example.com">
+          <button class="msg-add-email-btn" onclick="startChatWithEmail()">Start Chat</button>
+        </div>
+      </div>
+      <div class="msg-collaborators-section">
+        <div class="msg-collaborators-title"><span>👥</span> Or select from your network</div>
+        <div class="msg-collaborator-list" id="msgCollaboratorList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== UNIFIED MESSAGING SYSTEM ==========
+    let msgPanelOpen = false;
+    let currentConversation = null;
+    let conversations = [];
+
+    function toggleMessagingPanel() {
+      msgPanelOpen ? closeMessagingPanel() : openMessagingPanel();
+    }
+
+    function openMessagingPanel() {
+      msgPanelOpen = true;
+      document.getElementById('msgPanel').classList.add('open');
+      document.getElementById('msgPanelOverlay').classList.add('open');
+      loadConversations();
+    }
+
+    function closeMessagingPanel() {
+      msgPanelOpen = false;
+      document.getElementById('msgPanel').classList.remove('open');
+      document.getElementById('msgPanelOverlay').classList.remove('open');
+      closeChatView();
+      closeNewChatModal();
+    }
+
+    async function loadConversations() {
+      if (!currentUser) { showMsgEmptyState('Sign in to view messages'); return; }
+      try {
+        const supabase = window._sgSupabaseClient;
+        if (!supabase) return;
+        const { data: designChats } = await supabase.from('design_chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
+        conversations = [];
+        if (designChats?.length > 0) {
+          const groups = {};
+          designChats.forEach(msg => { if (!groups[msg.design_id]) groups[msg.design_id] = []; groups[msg.design_id].push(msg); });
+          Object.entries(groups).forEach(([designId, msgs]) => {
+            const latest = msgs[0];
+            const other = msgs.find(m => m.user_id !== currentUser.id);
+            conversations.push({ id: `design_${designId}`, type: 'design', designId, name: other?.user_name || 'Design Chat', avatar: (other?.user_name || 'D').charAt(0).toUpperCase(), avatarType: 'collaborator', lastMessage: latest.message, lastMessageTime: latest.created_at, unread: false });
+          });
+        }
+        conversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+        renderConversations();
+        updateMsgBadge();
+      } catch (err) { console.error('Error loading conversations:', err); }
+    }
+
+    function renderConversations() {
+      const container = document.getElementById('msgConversationList');
+      const empty = document.getElementById('msgEmptyState');
+      if (conversations.length === 0) { empty.style.display = 'flex'; return; }
+      empty.style.display = 'none';
+      container.innerHTML = conversations.map(c => `
+        <div class="msg-conversation-item ${c.unread ? 'unread' : ''}" onclick="openConversation('${c.id}')">
+          <div class="msg-conv-avatar ${c.avatarType}">${c.avatar}</div>
+          <div class="msg-conv-info"><div class="msg-conv-name">${c.name}<span class="role-tag">${c.type === 'customer' ? 'Client' : 'Team'}</span></div><div class="msg-conv-preview">${truncateText(c.lastMessage, 40)}</div></div>
+          <div class="msg-conv-meta"><div class="msg-conv-time">${formatMsgTime(c.lastMessageTime)}</div>${c.unread ? '<div class="msg-conv-unread"></div>' : ''}</div>
+        </div>`).join('');
+    }
+
+    function showMsgEmptyState(text) { const el = document.getElementById('msgEmptyState'); el.innerHTML = `<div class="msg-empty-icon">💬</div><div class="msg-empty-text">${text}</div>`; el.style.display = 'flex'; }
+
+    async function openConversation(convId) {
+      currentConversation = conversations.find(c => c.id === convId);
+      if (!currentConversation) return;
+      document.getElementById('msgChatRecipientName').textContent = currentConversation.name;
+      document.getElementById('msgChatRecipientStatus').textContent = currentConversation.email || 'Active';
+      document.getElementById('msgChatView').classList.add('open');
+      await loadMessages(currentConversation);
+    }
+
+    function closeChatView() { document.getElementById('msgChatView').classList.remove('open'); currentConversation = null; }
+
+    async function loadMessages(conv) {
+      const container = document.getElementById('msgChatMessages');
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>';
+      try {
+        const supabase = window._sgSupabaseClient;
+        if (!supabase || conv.type !== 'design') return;
+        const { data } = await supabase.from('design_chat_messages').select('*').eq('design_id', conv.designId).order('created_at', { ascending: true });
+        const messages = (data || []).map(m => ({ id: m.id, text: m.message, time: m.created_at, isOutbound: m.user_id === currentUser?.id }));
+        renderMessages(messages);
+      } catch (err) { container.innerHTML = '<div style="text-align:center;padding:20px">Error loading</div>'; }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('msgChatMessages');
+      if (messages.length === 0) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:12px">👋</div>Start the conversation!</div>'; return; }
+      container.innerHTML = messages.map(m => `<div class="msg-message-row ${m.isOutbound ? 'outbound' : 'inbound'}"><div class="msg-message-bubble">${escapeHtml(m.text)}<div class="msg-message-time">${formatMsgTime(m.time)}</div></div></div>`).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendDirectMessage() {
+      const input = document.getElementById('msgChatInput');
+      const message = input.value.trim();
+      if (!message || !currentConversation || !currentUser) return;
+      input.value = '';
+      try {
+        const supabase = window._sgSupabaseClient;
+        if (supabase && currentConversation.type === 'design') {
+          await supabase.from('design_chat_messages').insert({ design_id: currentConversation.designId, user_id: currentUser.id, user_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'You', message });
+          await loadMessages(currentConversation);
+          notifyRecipient(currentConversation, message);
+        }
+      } catch (err) { console.error('Send error:', err); showToast('Failed to send', 'error'); }
+    }
+
+    async function notifyRecipient(conv, message) {
+      try {
+        const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+        await fetch(`${API_BASE}/api/email/notify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'new_message', recipientEmail: conv.email, senderName: currentUser?.user_metadata?.full_name || 'Designer', message, link: window.location.href }) });
+      } catch (e) { console.log('Notify skipped'); }
+    }
+
+    function handleMsgKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDirectMessage(); } }
+
+    function openNewChatModal() { document.getElementById('msgNewChatModal').classList.add('open'); loadCollaboratorsForChat(); }
+    function closeNewChatModal() { document.getElementById('msgNewChatModal').classList.remove('open'); }
+
+    async function loadCollaboratorsForChat() {
+      const container = document.getElementById('msgCollaboratorList');
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>';
+      try {
+        const API_BASE = window.SG_CONFIG?.API_BASE || 'https://surprise-granite-email-api.onrender.com';
+        const token = await getAccessToken();
+        const res = await fetch(`${API_BASE}/api/collaboration/my-collaborators`, { headers: { 'Authorization': token ? `Bearer ${token}` : '' } });
+        const data = await res.json();
+        const collabs = data.collaborators || [];
+        if (collabs.length === 0) { container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No collaborators yet</div>'; return; }
+        container.innerHTML = collabs.map(c => `<div class="msg-collaborator-item" onclick="startChatWithCollaborator('${c.id}','${escapeHtml(c.name || c.email)}','${c.email}')"><div class="msg-conv-avatar collaborator">${(c.name || c.email || '?').charAt(0).toUpperCase()}</div><div class="msg-conv-info"><div class="msg-conv-name">${c.name || c.email}</div><div class="msg-conv-preview">${c.role || 'Collaborator'}</div></div></div>`).join('');
+      } catch (err) { container.innerHTML = '<div style="text-align:center;padding:20px">Error loading</div>'; }
+    }
+
+    function startChatWithEmail() {
+      const email = document.getElementById('msgNewEmailInput').value.trim();
+      if (!email || !email.includes('@')) { showToast('Enter a valid email', 'error'); return; }
+      const conv = { id: `email_${Date.now()}`, type: 'email', email, name: email.split('@')[0], avatar: email.charAt(0).toUpperCase(), avatarType: 'collaborator', lastMessage: '', lastMessageTime: new Date().toISOString(), unread: false };
+      conversations.unshift(conv);
+      closeNewChatModal();
+      openConversation(conv.id);
+    }
+
+    function startChatWithCollaborator(id, name, email) {
+      const conv = { id: `collaborator_${id}`, type: 'collaborator', collaboratorId: id, email, name, avatar: name.charAt(0).toUpperCase(), avatarType: 'collaborator', lastMessage: '', lastMessageTime: new Date().toISOString(), unread: false };
+      if (!conversations.find(c => c.id === conv.id)) conversations.unshift(conv);
+      closeNewChatModal();
+      openConversation(conv.id);
+    }
+
+    function updateMsgBadge() {
+      const count = conversations.filter(c => c.unread).length;
+      const badge = document.getElementById('msgBadge');
+      const btn = document.getElementById('msgHubBtn');
+      if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.classList.remove('hidden'); btn.classList.add('has-messages'); }
+      else { badge.classList.add('hidden'); btn.classList.remove('has-messages'); }
+    }
+
+    function filterMessages(q) {
+      const filtered = conversations.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.lastMessage.toLowerCase().includes(q.toLowerCase()));
+      const container = document.getElementById('msgConversationList');
+      if (filtered.length === 0) { container.innerHTML = '<div class="msg-empty-state" style="display:flex"><div class="msg-empty-icon">🔍</div><div class="msg-empty-text">No matches</div></div>'; return; }
+      container.innerHTML = filtered.map(c => `<div class="msg-conversation-item" onclick="openConversation('${c.id}')"><div class="msg-conv-avatar ${c.avatarType}">${c.avatar}</div><div class="msg-conv-info"><div class="msg-conv-name">${c.name}</div><div class="msg-conv-preview">${truncateText(c.lastMessage, 40)}</div></div></div>`).join('');
+    }
+
+    function formatMsgTime(d) { if (!d) return ''; const diff = Date.now() - new Date(d); const m = Math.floor(diff/60000); if (m < 1) return 'now'; if (m < 60) return m+'m'; const h = Math.floor(diff/3600000); if (h < 24) return h+'h'; return Math.floor(diff/86400000)+'d'; }
+    function truncateText(t, l) { return t?.length > l ? t.substring(0, l) + '...' : t || ''; }
+    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
+    async function getAccessToken() { try { const s = window._sgSupabaseClient; if (!s) return null; const { data: { session } } = await s.auth.getSession(); return session?.access_token; } catch { return null; } }
+
+    // Real-time listener
+    document.addEventListener('DOMContentLoaded', function() {
+      const supabase = window._sgSupabaseClient;
+      if (supabase) {
+        supabase.channel('msg-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'design_chat_messages' }, (payload) => {
+          if (msgPanelOpen) { loadConversations(); if (currentConversation?.designId === payload.new.design_id) loadMessages(currentConversation); }
+          updateMsgBadge();
+          if (payload.new.user_id !== currentUser?.id) showMsgToast(payload.new);
+        }).subscribe();
+      }
+    });
+
+    function showMsgToast(msg) {
+      const t = document.createElement('div'); t.className = 'comment-notification-toast';
+      t.innerHTML = `<div class="comment-notification-icon">💬</div><div class="comment-notification-content"><div class="comment-notification-title">${msg.user_name || 'Someone'}</div><div class="comment-notification-message">${truncateText(msg.message, 50)}</div></div><button class="comment-notification-action" onclick="this.parentElement.remove();openMessagingPanel();">View</button>`;
+      document.body.appendChild(t); setTimeout(() => t.classList.add('show'), 100);
+      setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 500); }, 5000);
+    }
+  </script>
+
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>
