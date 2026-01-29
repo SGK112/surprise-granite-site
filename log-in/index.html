@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Log In | Remodely</title>
-  <meta name="description" content="Log in to your Remodely account. Access AI-powered design tools, manage projects, and collaborate with pros."/>
+  <title>Log In | Surprise Granite</title>
+  <meta name="description" content="Log in to your Surprise Granite account. Access your dashboard, manage projects, and more."/>
   <meta name="robots" content="noindex, nofollow"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <link rel="canonical" href="https://remodely.ai/log-in/"/>
-  <link href="/remodely-platform/assets/remodely-icon.svg" rel="shortcut icon" type="image/svg+xml"/>
+  <link rel="canonical" href="https://surprisegranite.com/log-in/"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="/js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
@@ -22,20 +22,16 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website"/>
-  <meta property:og:url" content="https://remodely.ai/log-in/"/>
-  <meta property="og:title" content="Log In | Remodely"/>
-  <meta property="og:description" content="Log in to your Remodely account."/>
-  <meta property="og:image" content="https://www.surprisegranite.com/remodely-platform/assets/remodely-logo.svg"/>
+  <meta property="og:url" content="https://surprisegranite.com/log-in/"/>
+  <meta property="og:title" content="Log In | Surprise Granite"/>
+  <meta property="og:description" content="Log in to your Surprise Granite account."/>
+  <meta property="og:image" content="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg"/>
 
   <style>
     :root {
-      --remodely-blue: #4285F4;
-      --remodely-red: #EA4335;
-      --remodely-yellow: #FBBC05;
-      --remodely-green: #34A853;
-      --gold-primary: #4285F4;
-      --gold-dark: #1a73e8;
-      --gold-glow: rgba(66, 133, 244, 0.3);
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --gold-glow: rgba(249, 203, 0, 0.35);
       --dark-primary: #1a1a2e;
       --dark-deep: #0f0f1a;
       --dark-surface: #16161f;
@@ -45,7 +41,8 @@
       --text-muted: rgba(255, 255, 255, 0.5);
       --border-subtle: rgba(255, 255, 255, 0.1);
       --error: #ff6b6b;
-      --success: #4dff82;
+      --success: #22c55e;
+      --accent-blue: #3b82f6;
     }
 
     * {
@@ -143,8 +140,8 @@
 
     .form-group input:focus {
       outline: none;
-      border-color: var(--remodely-blue);
-      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 0 3px var(--gold-glow);
     }
 
     .form-group input::placeholder {
@@ -175,7 +172,7 @@
 
     .forgot-link {
       font-size: 13px;
-      color: var(--remodely-blue);
+      color: var(--gold-primary);
       text-decoration: none;
     }
 
@@ -186,10 +183,10 @@
     .btn-primary {
       width: 100%;
       padding: 16px;
-      background: linear-gradient(135deg, var(--remodely-blue) 0%, var(--remodely-green) 100%);
+      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
       border: none;
       border-radius: 12px;
-      color: #fff;
+      color: var(--dark-primary);
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
@@ -199,6 +196,7 @@
       justify-content: center;
       gap: 8px;
       min-height: 52px;
+      box-shadow: 0 4px 16px var(--gold-glow);
     }
 
     .btn-primary:hover {
@@ -281,7 +279,7 @@
     }
 
     .auth-footer a {
-      color: var(--remodely-blue);
+      color: var(--gold-primary);
       text-decoration: none;
       font-weight: 600;
     }
@@ -334,7 +332,7 @@
     .spinner {
       width: 20px;
       height: 20px;
-      border: 2px solid transparent;
+      border: 2px solid rgba(0,0,0,0.2);
       border-top-color: var(--dark-primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -397,8 +395,8 @@
 
     /* SSO Styles */
     .sso-notice {
-      background: rgba(66, 133, 244, 0.1);
-      border: 1px solid rgba(66, 133, 244, 0.3);
+      background: rgba(249, 203, 0, 0.1);
+      border: 1px solid rgba(249, 203, 0, 0.3);
       border-radius: 10px;
       padding: 12px 16px;
       margin-bottom: 20px;
@@ -410,7 +408,7 @@
     }
 
     .sso-notice p {
-      color: var(--remodely-blue);
+      color: var(--gold-primary);
       font-size: 13px;
       margin: 0;
       display: flex;
@@ -491,19 +489,7 @@
 
   <header class="header">
     <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" width="36" height="36">
-        <defs>
-          <linearGradient id="remodelyGradLogin" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#4285F4"/>
-            <stop offset="33%" stop-color="#EA4335"/>
-            <stop offset="66%" stop-color="#FBBC05"/>
-            <stop offset="100%" stop-color="#34A853"/>
-          </linearGradient>
-        </defs>
-        <path d="M8 38V22l16-12 16 12v16" stroke="url(#remodelyGradLogin)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M40 38h-12" stroke="#34A853" stroke-width="3.5" stroke-linecap="round"/>
-      </svg>
-      <span style="font-size: 1.4rem; font-weight: 700; color: #ffffff;">Remodely</span>
+      <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb255e1fbad54_surprise-granite-gold.svg" alt="Surprise Granite" height="36"/>
     </a>
   </header>
 
@@ -655,13 +641,20 @@
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
-        // Already logged in, redirect to stored destination or account
+        // Already logged in - use smart routing
         const storedRedirect = sessionStorage.getItem('auth_redirect');
-        if (storedRedirect) {
+        if (storedRedirect && storedRedirect !== '/account/') {
           sessionStorage.removeItem('auth_redirect');
           window.location.href = storedRedirect;
         } else {
-          window.location.href = '/account/';
+          sessionStorage.removeItem('auth_redirect');
+          // Wait for SgAuth to initialize for smart routing
+          if (window.SgAuth) {
+            await window.SgAuth.init();
+            window.location.href = window.SgAuth.getDashboardUrl();
+          } else {
+            window.location.href = '/account/';
+          }
         }
         return;
       }
@@ -826,10 +819,26 @@
           return false;
         }
 
-        // Success - redirect
-        const redirect = sessionStorage.getItem('auth_redirect') || '/account/';
+        // Success - use smart routing
+        const storedRedirect = sessionStorage.getItem('auth_redirect');
         sessionStorage.removeItem('auth_redirect');
-        window.location.href = redirect;
+
+        // If there's a specific redirect stored, use it
+        if (storedRedirect && storedRedirect !== '/account/') {
+          window.location.href = storedRedirect;
+          return false;
+        }
+
+        // Otherwise, use smart routing based on account type
+        // Wait for SgAuth to initialize and load profile
+        if (window.SgAuth) {
+          await window.SgAuth.init();
+          const dashboardUrl = window.SgAuth.getDashboardUrl();
+          window.location.href = dashboardUrl;
+        } else {
+          // Fallback to account if SgAuth not available
+          window.location.href = '/account/';
+        }
 
       } catch (err) {
         showError('An unexpected error occurred. Please try again.');
@@ -844,10 +853,14 @@
       hideMessages();
 
       try {
+        // Check for stored redirect or use smart routing callback
+        const storedRedirect = sessionStorage.getItem('auth_redirect');
+        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
+
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + '/account/'
+            redirectTo: redirectTo
           }
         });
 
@@ -864,8 +877,9 @@
       hideMessages();
 
       try {
-        const redirectTo = sessionStorage.getItem('auth_redirect') ||
-                          window.location.origin + '/distributor/dashboard/';
+        // Use auth callback for smart routing
+        const storedRedirect = sessionStorage.getItem('auth_redirect');
+        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
 
         const options = {
           provider: 'google',
@@ -898,8 +912,9 @@
       hideMessages();
 
       try {
-        const redirectTo = sessionStorage.getItem('auth_redirect') ||
-                          window.location.origin + '/distributor/dashboard/';
+        // Use auth callback for smart routing
+        const storedRedirect = sessionStorage.getItem('auth_redirect');
+        const redirectTo = storedRedirect || window.location.origin + '/auth/callback/';
 
         const options = {
           provider: 'azure',

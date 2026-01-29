@@ -1002,6 +1002,95 @@
     init();
   }
 
+  // ============ Smart Dashboard Routing ============
+
+  /**
+   * Get the appropriate dashboard URL based on user's account type
+   * @returns {string} Dashboard URL for the user's role
+   */
+  function getDashboardUrl() {
+    const profile = userProfile;
+    const accountType = profile?.account_type || 'homeowner';
+
+    // Check for distributor profile (they have a separate dashboard)
+    if (accountType === 'distributor') {
+      return '/distributor/dashboard/';
+    }
+
+    // Admin and super admin get main account with admin access
+    if (accountType === 'admin' || accountType === 'super_admin') {
+      return '/account/';
+    }
+
+    // Pro users (designers, contractors with pro tier)
+    if (accountType === 'pro' || accountType === 'designer') {
+      return '/account/pro-dashboard/';
+    }
+
+    // Business and enterprise tiers
+    if (accountType === 'business' || accountType === 'enterprise') {
+      return '/account/';
+    }
+
+    // Fabricators have their own workflow
+    if (accountType === 'fabricator') {
+      return '/account/';
+    }
+
+    // Default for homeowners, customers, etc.
+    return '/account/';
+  }
+
+  /**
+   * Redirect to the appropriate dashboard based on user role
+   * @param {string} fallbackUrl - URL to use if no user is logged in
+   */
+  function redirectToDashboard(fallbackUrl = '/log-in/') {
+    if (!currentUser) {
+      window.location.href = fallbackUrl;
+      return;
+    }
+
+    const dashboardUrl = getDashboardUrl();
+    window.location.href = dashboardUrl;
+  }
+
+  /**
+   * Check if user has a specific role/account type
+   * @param {string|string[]} roles - Role(s) to check
+   * @returns {boolean}
+   */
+  function hasRole(roles) {
+    if (!userProfile) return false;
+
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    return rolesArray.includes(userProfile.account_type);
+  }
+
+  /**
+   * Check if user is an admin (admin or super_admin)
+   * @returns {boolean}
+   */
+  function isAdmin() {
+    return hasRole(['admin', 'super_admin']);
+  }
+
+  /**
+   * Check if user is a distributor
+   * @returns {boolean}
+   */
+  function isDistributor() {
+    return hasRole('distributor');
+  }
+
+  /**
+   * Check if user is a pro user (pro, designer, business, enterprise)
+   * @returns {boolean}
+   */
+  function isPro() {
+    return hasRole(['pro', 'designer', 'business', 'enterprise']);
+  }
+
   // Expose global API
   window.SgAuth = {
     init,
@@ -1038,7 +1127,14 @@
     getShopifyCustomer,
     getOrderHistory,
     getRecentOrders,
-    linkShopifyCustomerByEmail
+    linkShopifyCustomerByEmail,
+    // Smart routing
+    getDashboardUrl,
+    redirectToDashboard,
+    hasRole,
+    isAdmin,
+    isDistributor,
+    isPro
   };
 
 })();

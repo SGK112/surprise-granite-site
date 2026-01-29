@@ -1104,11 +1104,11 @@
           </div>
           <h2 class="success-title">Welcome to the Marketplace!</h2>
           <p class="success-text">
-            Your distributor account has been created. Check your email to verify your account, then start adding your inventory.
+            Your distributor account has been created. Please check your email to verify your account, then log in to access your dashboard.
           </p>
 
-          <a href="/distributor/dashboard/" class="btn btn-primary" style="max-width: 300px; margin: 0 auto;">
-            Go to Dashboard
+          <a href="/log-in/?redirect=/distributor/dashboard/" class="btn btn-primary" style="max-width: 300px; margin: 0 auto;">
+            Log In to Dashboard
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
@@ -1118,19 +1118,19 @@
             <h4>Next Steps:</h4>
             <div class="next-step-item">
               <span class="step-number">1</span>
-              <span>Verify your email address</span>
+              <span>Verify your email address (check your inbox)</span>
             </div>
             <div class="next-step-item">
               <span class="step-number">2</span>
-              <span>Add your first slab or upload inventory CSV</span>
+              <span>Log in to your dashboard</span>
             </div>
             <div class="next-step-item">
               <span class="step-number">3</span>
-              <span>Connect Stripe to receive payments</span>
+              <span>Add your first slab or upload inventory CSV</span>
             </div>
             <div class="next-step-item">
               <span class="step-number">4</span>
-              <span>Set up API integration for live inventory sync</span>
+              <span>Connect Stripe to receive payments</span>
             </div>
           </div>
         </div>
@@ -1138,7 +1138,7 @@
     </div>
 
     <div class="login-link">
-      Already have an account? <a href="/log-in/">Log in</a>
+      Already have an account? <a href="/log-in/?redirect=/distributor/dashboard/">Log in</a>
     </div>
   </div>
 
@@ -1390,6 +1390,9 @@
 
         if (authError) throw authError;
 
+        // Check if we have a session (email confirmation may be disabled)
+        const hasSession = authData.session !== null;
+
         // 2. Create distributor profile
         const { data: profileData, error: profileError } = await supabaseClient
           .from('distributor_profiles')
@@ -1443,7 +1446,14 @@
           company_name: formData.company_name
         }));
 
-        // Show success
+        // 5. If we have a session, redirect directly to dashboard
+        if (hasSession) {
+          // User is logged in, redirect to dashboard
+          window.location.href = '/distributor/dashboard/';
+          return;
+        }
+
+        // 6. If no session (email confirmation required), show success and prompt login
         document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
         document.querySelector('.form-step[data-step="success"]').classList.add('active');
         document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));

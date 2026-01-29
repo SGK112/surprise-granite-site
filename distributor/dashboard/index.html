@@ -746,7 +746,15 @@
     // Check auth on load
     async function init() {
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      // First check for existing session
+      let { data: { session } } = await supabaseClient.auth.getSession();
+
+      // If no session, try to refresh (in case of page reload)
+      if (!session) {
+        const { data: refreshData } = await supabaseClient.auth.refreshSession();
+        session = refreshData?.session;
+      }
 
       if (!session) {
         if (isLocalhost) {
@@ -755,6 +763,8 @@
           showDemoState();
           return;
         }
+        // Store redirect destination for after login
+        sessionStorage.setItem('auth_redirect', '/distributor/dashboard/');
         window.location.href = '/log-in/?redirect=/distributor/dashboard/';
         return;
       }
