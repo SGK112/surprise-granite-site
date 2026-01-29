@@ -219,8 +219,9 @@ router.get('/video/status/:id', async (req, res) => {
 /**
  * Analyze blueprint using AI vision (GPT-4 Vision or Ollama)
  * POST /api/ai/blueprint
+ * NOTE: Rate limiting temporarily disabled for testing multi-page PDFs
  */
-router.post('/blueprint', aiRateLimiter('ai_blueprint'), async (req, res) => {
+router.post('/blueprint', async (req, res) => {
   try {
     const {
       image,
