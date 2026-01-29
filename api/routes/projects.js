@@ -1,23 +1,27 @@
 /**
- * SURPRISE GRANITE - PROJECTS CRUD API
- * Full project management: create, list, update, delete, stats
+ * SURPRISE GRANITE - UNIFIED PROJECTS API
+ * Full project management with consolidated jobs, contractors, materials, calendar
  */
 
 const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const logger = require('../utils/logger');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validateBody } = require('../middleware/validator');
+const { createProjectService } = require('../services/projectService');
 
 // Initialize Supabase with service role for admin operations
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 let supabase = null;
+let projectService = null;
 if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  projectService = createProjectService(supabase);
 } else {
   console.warn('Projects: Supabase credentials not configured - routes will be disabled');
 }
@@ -26,7 +30,12 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
 // VALIDATION SCHEMAS
 // ============================================================
 
-const STATUS_VALUES = ['lead', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled', 'on_hold'];
+// Extended status values for unified project lifecycle
+const STATUS_VALUES = [
+  'lead', 'contacted', 'qualified', 'approved', 'deposit_paid',
+  'material_ordered', 'material_received', 'scheduled',
+  'in_progress', 'completed', 'on_hold', 'cancelled'
+];
 const PRIORITY_VALUES = ['low', 'medium', 'high', 'urgent'];
 
 const schemas = {
@@ -80,6 +89,75 @@ const schemas = {
 
   updateStatus: Joi.object({
     status: Joi.string().valid(...STATUS_VALUES).required()
+  }),
+
+  // Contractor assignment
+  assignContractor: Joi.object({
+    contractor_id: Joi.string().uuid().required(),
+    role: Joi.string().valid('installer', 'fabricator', 'measurer', 'helper', 'subcontractor').default('installer'),
+    agreed_rate: Joi.number().precision(2).min(0),
+    rate_type: Joi.string().valid('flat', 'hourly', 'sqft', 'daily').default('flat'),
+    send_invite: Joi.boolean().default(true),
+    notes: Joi.string().max(1000).allow('', null)
+  }),
+
+  // Contractor response (public)
+  contractorResponse: Joi.object({
+    token: Joi.string().uuid().required(),
+    action: Joi.string().valid('accept', 'decline').required(),
+    decline_reason: Joi.string().max(500).allow('', null)
+  }),
+
+  // Material order
+  createMaterialOrder: Joi.object({
+    vendor_name: Joi.string().max(200).required(),
+    vendor_id: Joi.string().uuid().allow(null),
+    items: Joi.array().items(Joi.object({
+      name: Joi.string().max(200).required(),
+      color: Joi.string().max(100).allow('', null),
+      thickness: Joi.string().max(50).allow('', null),
+      quantity: Joi.number().min(0).required(),
+      unit: Joi.string().max(20).default('slab'),
+      unit_cost: Joi.number().precision(2).min(0),
+      total: Joi.number().precision(2).min(0)
+    })).default([]),
+    expected_delivery: Joi.date().iso().allow(null),
+    total_amount: Joi.number().precision(2).min(0),
+    notes: Joi.string().max(2000).allow('', null)
+  }),
+
+  updateMaterialOrder: Joi.object({
+    status: Joi.string().valid('pending', 'ordered', 'confirmed', 'shipped', 'received', 'inspected', 'issue', 'cancelled'),
+    tracking_number: Joi.string().max(100).allow('', null),
+    confirmation_number: Joi.string().max(100).allow('', null),
+    received_at: Joi.date().iso().allow(null),
+    notes: Joi.string().max(2000).allow('', null)
+  }),
+
+  // File upload
+  uploadFile: Joi.object({
+    file_name: Joi.string().max(255).required(),
+    file_url: Joi.string().uri().max(1000).required(),
+    file_type: Joi.string().max(50).default('document'),
+    category: Joi.string().valid('photo', 'drawing', 'contract', 'receipt', 'specification', 'general').default('general'),
+    description: Joi.string().max(500).allow('', null),
+    visible_to_customer: Joi.boolean().default(false),
+    visible_to_contractor: Joi.boolean().default(false)
+  }),
+
+  // Schedule event
+  scheduleEvent: Joi.object({
+    event_type: Joi.string().valid('appointment', 'measurement', 'installation', 'delivery', 'meeting', 'follow_up', 'consultation', 'site_visit').required(),
+    title: Joi.string().max(200).allow('', null),
+    start_time: Joi.date().iso().required(),
+    end_time: Joi.date().iso().required(),
+    location: Joi.string().max(200).allow('', null),
+    participants: Joi.array().items(Joi.object({
+      email: Joi.string().email().required(),
+      name: Joi.string().max(200).allow('', null),
+      phone: Joi.string().max(50).allow('', null),
+      type: Joi.string().valid('organizer', 'attendee', 'optional').default('attendee')
+    })).default([])
   })
 };
 
@@ -340,6 +418,479 @@ router.delete('/:id', verifyUser, asyncHandler(async (req, res) => {
   logger.info('Project deleted', { projectId: id, userId: req.user.id });
 
   res.json({ success: true });
+}));
+
+// ============================================================
+// POST /from-lead/:leadId - Convert lead to project
+// ============================================================
+
+router.post('/from-lead/:leadId', verifyUser, asyncHandler(async (req, res) => {
+  if (!projectService) {
+    return res.status(503).json({ error: 'Service not configured' });
+  }
+
+  const { leadId } = req.params;
+
+  const result = await projectService.createFromLead(leadId, req.user.id);
+
+  logger.info('Lead converted to project', { leadId, projectId: result.project.id, created: result.created });
+
+  res.status(result.created ? 201 : 200).json({
+    success: true,
+    project: result.project,
+    created: result.created,
+    message: result.created ? 'Project created from lead' : 'Project already exists for this lead'
+  });
+}));
+
+// ============================================================
+// GET /:id/full - Get project with all related data
+// ============================================================
+
+router.get('/:id/full', verifyUser, asyncHandler(async (req, res) => {
+  if (!projectService) {
+    return res.status(503).json({ error: 'Service not configured' });
+  }
+
+  const { id } = req.params;
+
+  const data = await projectService.getProjectWithRelations(id, req.user.id);
+
+  res.json({ success: true, ...data });
+}));
+
+// ============================================================
+// CONTRACTOR MANAGEMENT
+// ============================================================
+
+/**
+ * POST /:id/contractors - Assign contractor to project
+ */
+router.post('/:id/contractors',
+  verifyUser,
+  validateBody(schemas.assignContractor),
+  asyncHandler(async (req, res) => {
+    if (!projectService) {
+      return res.status(503).json({ error: 'Service not configured' });
+    }
+
+    const { id } = req.params;
+    const { contractor_id, role, agreed_rate, rate_type, send_invite, notes } = req.body;
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized to assign contractors' });
+    }
+
+    const result = await projectService.assignContractor(id, contractor_id, req.user.id, {
+      role, agreed_rate, rate_type, send_invite
+    });
+
+    logger.info('Contractor assigned to project', { projectId: id, contractorId: contractor_id });
+
+    res.json({
+      success: true,
+      assignment: result.assignment,
+      contractor: result.contractor,
+      invite_token: result.invite_token
+    });
+  })
+);
+
+/**
+ * POST /contractor/respond - Public endpoint for contractor response
+ */
+router.post('/contractor/respond',
+  validateBody(schemas.contractorResponse),
+  asyncHandler(async (req, res) => {
+    if (!projectService) {
+      return res.status(503).json({ error: 'Service not configured' });
+    }
+
+    const { token, action, decline_reason } = req.body;
+
+    const result = await projectService.handleContractorResponse(token, action, decline_reason);
+
+    res.json(result);
+  })
+);
+
+/**
+ * GET /:id/contractors - List contractors assigned to project
+ */
+router.get('/:id/contractors', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Verify access
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const contractors = await projectService.getProjectContractors(id);
+
+  res.json({ success: true, contractors });
+}));
+
+// ============================================================
+// MATERIAL ORDERS
+// ============================================================
+
+/**
+ * POST /:id/material-orders - Create material order
+ */
+router.post('/:id/material-orders',
+  verifyUser,
+  validateBody(schemas.createMaterialOrder),
+  asyncHandler(async (req, res) => {
+    if (!projectService) {
+      return res.status(503).json({ error: 'Service not configured' });
+    }
+
+    const { id } = req.params;
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const order = await projectService.createMaterialOrder(id, req.user.id, req.body);
+
+    res.status(201).json({ success: true, order });
+  })
+);
+
+/**
+ * PATCH /material-orders/:orderId - Update material order
+ */
+router.patch('/material-orders/:orderId',
+  verifyUser,
+  validateBody(schemas.updateMaterialOrder),
+  asyncHandler(async (req, res) => {
+    if (!projectService) {
+      return res.status(503).json({ error: 'Service not configured' });
+    }
+
+    const { orderId } = req.params;
+
+    // Verify ownership
+    const { data: order } = await supabase
+      .from('project_material_orders')
+      .select('user_id, project_id')
+      .eq('id', orderId)
+      .single();
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const updated = await projectService.updateMaterialOrderStatus(
+      orderId,
+      req.body.status,
+      req.user.id,
+      req.body.notes
+    );
+
+    res.json({ success: true, order: updated });
+  })
+);
+
+/**
+ * GET /:id/material-orders - List material orders for project
+ */
+router.get('/:id/material-orders', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Verify access
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const orders = await projectService.getProjectMaterialOrders(id);
+
+  res.json({ success: true, orders });
+}));
+
+// ============================================================
+// FILE MANAGEMENT
+// ============================================================
+
+/**
+ * POST /:id/files - Upload file to project
+ */
+router.post('/:id/files',
+  verifyUser,
+  validateBody(schemas.uploadFile),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { file_name, file_url, file_type, category, description, visible_to_customer, visible_to_contractor } = req.body;
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const { data: file, error } = await supabase
+      .from('project_files')
+      .insert({
+        project_id: id,
+        name: file_name,
+        file_url,
+        file_type,
+        category,
+        description,
+        visible_to_customer,
+        uploaded_by: req.profile.full_name || req.profile.email
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('File uploaded to project', { projectId: id, fileId: file.id });
+
+    res.status(201).json({ success: true, file });
+  })
+);
+
+// ============================================================
+// CALENDAR INTEGRATION
+// ============================================================
+
+/**
+ * POST /:id/schedule - Schedule calendar event for project
+ */
+router.post('/:id/schedule',
+  verifyUser,
+  validateBody(schemas.scheduleEvent),
+  asyncHandler(async (req, res) => {
+    if (!projectService) {
+      return res.status(503).json({ error: 'Service not configured' });
+    }
+
+    const { id } = req.params;
+
+    // Verify project ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const event = await projectService.scheduleEvent(id, req.user.id, req.body);
+
+    res.status(201).json({ success: true, event });
+  })
+);
+
+/**
+ * GET /:id/events - Get calendar events for project
+ */
+router.get('/:id/events', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Verify access
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    // Check collaborator access
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('id')
+      .eq('project_id', id)
+      .eq('user_id', req.user.id)
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (!collab) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+  }
+
+  const events = await projectService.getProjectEvents(id);
+
+  res.json({ success: true, events });
+}));
+
+// ============================================================
+// CUSTOMER PORTAL
+// ============================================================
+
+/**
+ * GET /portal/:token - Public endpoint for customer portal view
+ */
+router.get('/portal/:token', asyncHandler(async (req, res) => {
+  if (!projectService) {
+    return res.status(503).json({ error: 'Service not configured' });
+  }
+
+  const { token } = req.params;
+
+  try {
+    const portalData = await projectService.getPortalView(token);
+    res.json({ success: true, ...portalData });
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+}));
+
+/**
+ * POST /:id/portal/enable - Enable/disable portal access
+ */
+router.post('/:id/portal/enable', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { enabled = true, regenerate = false } = req.body;
+
+  // Verify project ownership
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id, portal_token')
+    .eq('id', id)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  const updateData = { portal_enabled: enabled };
+
+  if (regenerate || !project.portal_token) {
+    const { token, pin, url } = await projectService.generatePortalAccess(id);
+    res.json({
+      success: true,
+      portal_enabled: enabled,
+      portal_token: token,
+      portal_pin: pin,
+      portal_url: url
+    });
+    return;
+  }
+
+  const { data: updated, error } = await supabase
+    .from('projects')
+    .update(updateData)
+    .eq('id', id)
+    .select('portal_enabled, portal_token')
+    .single();
+
+  if (error) throw error;
+
+  res.json({
+    success: true,
+    portal_enabled: updated.portal_enabled,
+    portal_url: `https://www.surprisegranite.com/portal/?token=${updated.portal_token}`
+  });
+}));
+
+// ============================================================
+// COLLABORATION INTEGRATION
+// ============================================================
+
+/**
+ * POST /:id/add-customer-collaborator - Add customer as project collaborator
+ */
+router.post('/:id/add-customer-collaborator', verifyUser, asyncHandler(async (req, res) => {
+  if (!projectService) {
+    return res.status(503).json({ error: 'Service not configured' });
+  }
+
+  const { id } = req.params;
+
+  // Verify project ownership
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  const collaborator = await projectService.addCustomerAsCollaborator(id, req.user.id);
+
+  if (!collaborator) {
+    return res.status(400).json({ error: 'Could not add customer - no email on project' });
+  }
+
+  res.json({ success: true, collaborator });
 }));
 
 module.exports = router;

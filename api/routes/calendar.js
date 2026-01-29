@@ -1020,4 +1020,285 @@ router.get('/busy-times', verifyUser, asyncHandler(async (req, res) => {
   res.json({ success: true, events: events || [] });
 }));
 
+// ============================================================
+// PROJECT-SPECIFIC CALENDAR INTEGRATION
+// ============================================================
+
+/**
+ * POST /api/calendar/project/:projectId/schedule
+ * Create a calendar event for a project with auto-population
+ */
+router.post('/project/:projectId/schedule',
+  verifyUser,
+  validateBody(schemas.createEvent),
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const eventData = req.body;
+
+    // Fetch project for auto-population
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError || !project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    // Verify ownership
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    // Auto-populate from project
+    const { participants = [], ...eventFields } = eventData;
+
+    // Set project_id and auto-fill location if not provided
+    eventFields.project_id = projectId;
+    eventFields.customer_id = project.customer_id;
+    if (!eventFields.location && (project.job_address || project.address)) {
+      eventFields.location = project.job_address || project.address;
+      eventFields.location_address = [
+        project.job_address || project.address,
+        project.job_city || project.city,
+        project.job_state || project.state,
+        project.job_zip || project.zip
+      ].filter(Boolean).join(', ');
+    }
+
+    // Create event
+    const { data: event, error: eventError } = await supabase
+      .from('calendar_events')
+      .insert({
+        ...eventFields,
+        created_by: req.user.id
+      })
+      .select()
+      .single();
+
+    if (eventError) throw eventError;
+
+    // Add creator as organizer
+    const participantsToAdd = [
+      {
+        event_id: event.id,
+        email: req.profile.email,
+        name: req.profile.full_name,
+        phone: req.profile.phone,
+        user_id: req.user.id,
+        participant_type: 'organizer',
+        response_status: 'accepted'
+      }
+    ];
+
+    // Auto-add customer as participant
+    if (project.customer_email) {
+      participantsToAdd.push({
+        event_id: event.id,
+        email: project.customer_email.toLowerCase(),
+        name: project.customer_name,
+        phone: project.customer_phone,
+        participant_type: 'attendee',
+        response_status: 'pending'
+      });
+    }
+
+    // Add any additional participants
+    for (const p of participants) {
+      // Skip if already added (customer or organizer)
+      const alreadyAdded = participantsToAdd.some(
+        existing => existing.email.toLowerCase() === p.email.toLowerCase()
+      );
+      if (alreadyAdded) continue;
+
+      participantsToAdd.push({
+        event_id: event.id,
+        email: p.email.toLowerCase(),
+        name: p.name,
+        phone: p.phone,
+        role: p.role,
+        participant_type: p.participant_type || 'attendee',
+        response_status: 'pending'
+      });
+    }
+
+    // Insert participants
+    const { data: createdParticipants } = await supabase
+      .from('calendar_event_participants')
+      .insert(participantsToAdd)
+      .select();
+
+    // Update project with scheduled date based on event type
+    const projectUpdate = {};
+    if (eventData.event_type === 'measurement' || eventData.event_type === 'site_visit') {
+      projectUpdate.field_measure_date = eventData.start_time;
+    } else if (eventData.event_type === 'installation') {
+      projectUpdate.install_date = eventData.start_time;
+      projectUpdate.status = 'scheduled';
+    }
+
+    if (Object.keys(projectUpdate).length > 0) {
+      await supabase
+        .from('projects')
+        .update(projectUpdate)
+        .eq('id', projectId);
+    }
+
+    // Log activity
+    await supabase
+      .from('project_activity')
+      .insert({
+        project_id: projectId,
+        user_id: req.user.id,
+        action: 'event_scheduled',
+        description: `${eventData.event_type} scheduled for ${new Date(eventData.start_time).toLocaleDateString()}`
+      });
+
+    logger.info('Calendar event created for project', {
+      projectId, eventId: event.id, eventType: eventData.event_type
+    });
+
+    res.status(201).json({
+      success: true,
+      event,
+      participants: createdParticipants || []
+    });
+  })
+);
+
+/**
+ * GET /api/calendar/project/:projectId/events
+ * Get all calendar events for a project
+ */
+router.get('/project/:projectId/events', verifyUser, asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const { include_cancelled = false } = req.query;
+
+  // Verify access
+  const { data: project } = await supabase
+    .from('projects')
+    .select('user_id')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  // Check ownership or collaborator access
+  if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('user_id', req.user.id)
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (!collab) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+  }
+
+  let query = supabase
+    .from('calendar_events')
+    .select(`
+      *,
+      participants:calendar_event_participants(*)
+    `)
+    .eq('project_id', projectId)
+    .order('start_time', { ascending: true });
+
+  if (include_cancelled !== 'true') {
+    query = query.neq('status', 'cancelled');
+  }
+
+  const { data: events, error } = await query;
+
+  if (error) throw error;
+
+  res.json({ success: true, events: events || [] });
+}));
+
+/**
+ * Helper: Auto-create event when project status changes
+ * This can be called from a webhook or trigger
+ */
+async function autoCreateProjectEvent(supabaseClient, projectId, eventType, userId) {
+  try {
+    const { data: project } = await supabaseClient
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) return null;
+
+    // Determine event details based on type
+    let title, startTime, duration;
+    switch (eventType) {
+      case 'measurement':
+        title = `Field Measure - ${project.customer_name}`;
+        startTime = project.field_measure_date || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        duration = 60; // 1 hour
+        break;
+      case 'installation':
+        title = `Installation - ${project.customer_name}`;
+        startTime = project.install_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        duration = 240; // 4 hours
+        break;
+      default:
+        title = `${eventType} - ${project.customer_name}`;
+        startTime = new Date();
+        duration = 60;
+    }
+
+    const startDate = new Date(startTime);
+    const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+
+    const { data: event } = await supabaseClient
+      .from('calendar_events')
+      .insert({
+        created_by: userId,
+        project_id: projectId,
+        customer_id: project.customer_id,
+        title,
+        event_type: eventType,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        location: project.job_address || project.address,
+        location_address: [
+          project.job_address || project.address,
+          project.city, project.state, project.zip
+        ].filter(Boolean).join(', '),
+        status: 'scheduled'
+      })
+      .select()
+      .single();
+
+    // Add participants
+    if (event && project.customer_email) {
+      await supabaseClient
+        .from('calendar_event_participants')
+        .insert({
+          event_id: event.id,
+          email: project.customer_email,
+          name: project.customer_name,
+          phone: project.customer_phone,
+          participant_type: 'attendee',
+          response_status: 'pending'
+        });
+    }
+
+    return event;
+  } catch (err) {
+    logger.apiError(err, { context: 'Auto-create project event failed' });
+    return null;
+  }
+}
+
+// Export helper for use in other modules
+router.autoCreateProjectEvent = autoCreateProjectEvent;
+
 module.exports = router;

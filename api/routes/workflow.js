@@ -1,7 +1,7 @@
 /**
  * Workflow Routes
- * Handles conversions: Lead → Customer, Estimate → Invoice, Invoice → Job
- * Maintains complete data chain with proper linkage
+ * Handles conversions: Lead → Project, Estimate → Invoice, Invoice → Project
+ * Unified project-centric workflow with complete data chain
  */
 
 const express = require('express');
@@ -13,6 +13,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { validateBody, validateParams } = require('../middleware/validator');
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
+const { createProjectService } = require('../services/projectService');
 
 // ============================================================
 // VALIDATION SCHEMAS
@@ -25,6 +26,21 @@ const schemas = {
       city: Joi.string().max(100).trim(),
       state: Joi.string().max(50).trim().default('AZ')
     }).default({})
+  }),
+
+  leadToProject: Joi.object({
+    user_id: Joi.string().uuid().required(),
+    create_customer: Joi.boolean().default(true),
+    additional_data: Joi.object({
+      city: Joi.string().max(100).trim(),
+      state: Joi.string().max(50).trim().default('AZ')
+    }).default({})
+  }),
+
+  invoiceToProject: Joi.object({
+    user_id: Joi.string().uuid().required(),
+    scheduled_date: Joi.date().iso(),
+    notes: Joi.string().max(2000).trim().allow('')
   }),
 
   estimateToInvoice: Joi.object({
@@ -174,6 +190,120 @@ router.post('/lead-to-customer/:leadId',
 }));
 
 // ============================================================
+// LEAD → PROJECT CONVERSION (NEW UNIFIED APPROACH)
+// ============================================================
+
+/**
+ * Convert a lead directly to a project
+ * POST /api/workflow/lead-to-project/:leadId
+ *
+ * Creates a project with status='lead' and optionally a customer record
+ */
+router.post('/lead-to-project/:leadId',
+  validateBody(schemas.leadToProject),
+  asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const projectService = createProjectService(supabase);
+  const { leadId } = req.params;
+  const { user_id, create_customer, additional_data } = req.body;
+
+  // Create project from lead using the service
+  const result = await projectService.createFromLead(leadId, user_id);
+
+  // Optionally create customer record as well
+  let customer = null;
+  if (create_customer) {
+    // Fetch the lead for customer data
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('id', leadId)
+      .single();
+
+    if (lead) {
+      // Check if customer already exists
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('email', lead.homeowner_email)
+        .eq('user_id', user_id)
+        .single();
+
+      if (existingCustomer) {
+        customer = existingCustomer;
+        // Link customer to project
+        await supabase
+          .from('projects')
+          .update({ customer_id: existingCustomer.id })
+          .eq('id', result.project.id);
+      } else {
+        // Parse name into first/last
+        const nameParts = (lead.homeowner_name || '').trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const { data: newCustomer } = await supabase
+          .from('customers')
+          .insert({
+            user_id,
+            first_name: firstName,
+            last_name: lastName,
+            email: lead.homeowner_email,
+            phone: lead.homeowner_phone,
+            address: lead.project_address || '',
+            city: additional_data.city || '',
+            state: additional_data.state || 'AZ',
+            zip: lead.project_zip || '',
+            notes: lead.project_details || '',
+            source: lead.source || 'lead_conversion',
+            lead_id: leadId
+          })
+          .select()
+          .single();
+
+        if (newCustomer) {
+          customer = newCustomer;
+          // Link customer to project
+          await supabase
+            .from('projects')
+            .update({ customer_id: newCustomer.id })
+            .eq('id', result.project.id);
+        }
+      }
+    }
+  }
+
+  // Add customer as collaborator for portal access
+  if (result.project.customer_email) {
+    await projectService.addCustomerAsCollaborator(result.project.id, user_id);
+  }
+
+  logger.info('Lead converted to project', {
+    leadId,
+    projectId: result.project.id,
+    customerId: customer?.id,
+    created: result.created
+  });
+
+  res.json({
+    success: true,
+    message: result.created ? 'Lead converted to project' : 'Project already exists for this lead',
+    data: {
+      project: result.project,
+      customer,
+      lead_id: leadId,
+      portal_url: result.project.portal_token
+        ? `https://www.surprisegranite.com/portal/?token=${result.project.portal_token}`
+        : null
+    }
+  });
+}));
+
+// ============================================================
 // ESTIMATE → INVOICE CONVERSION
 // ============================================================
 
@@ -299,14 +429,91 @@ router.post('/estimate-to-invoice/:estimateId',
 }));
 
 // ============================================================
-// INVOICE PAID → JOB CREATION
+// INVOICE PAID → PROJECT UPDATE (UNIFIED APPROACH)
 // ============================================================
 
 /**
- * Create a job from a paid invoice
+ * Update/create project from paid invoice
+ * POST /api/workflow/invoice-to-project/:invoiceId
+ *
+ * Creates or updates a project when invoice is paid
+ */
+router.post('/invoice-to-project/:invoiceId',
+  validateBody(schemas.invoiceToProject),
+  asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const projectService = createProjectService(supabase);
+  const { invoiceId } = req.params;
+  const { user_id, scheduled_date, notes } = req.body;
+
+  // Use the project service to handle the conversion
+  const result = await projectService.convertFromInvoice(invoiceId, user_id, {
+    scheduled_date,
+    notes
+  });
+
+  // Add customer as collaborator
+  if (result.project.customer_email) {
+    await projectService.addCustomerAsCollaborator(result.project.id, user_id);
+  }
+
+  // Send notification to customer
+  if (result.project.customer_email && emailService.isConfigured()) {
+    try {
+      const email = {
+        subject: `Your Project Has Been Confirmed - Surprise Granite`,
+        html: emailService.wrapEmailTemplate(`
+          <h2>Thank You for Your Payment!</h2>
+          <p>Your project "${result.project.name}" has been confirmed and is now in our system.</p>
+          <p>You can track your project status anytime using the customer portal:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="https://www.surprisegranite.com/portal/?token=${result.project.portal_token}"
+               style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              View Project Status
+            </a>
+          </div>
+          <p>We'll be in touch soon to schedule your installation.</p>
+        `, { headerText: 'Project Confirmed' })
+      };
+      await emailService.sendNotification(result.project.customer_email, email.subject, email.html);
+    } catch (emailErr) {
+      logger.apiError(emailErr, { context: 'Project confirmation email failed' });
+    }
+  }
+
+  logger.info('Project created/updated from invoice', {
+    invoiceId,
+    projectId: result.project.id,
+    created: result.created
+  });
+
+  res.json({
+    success: true,
+    message: result.created ? 'Project created from invoice' : 'Project updated with payment',
+    data: {
+      project: result.project,
+      invoice_id: invoiceId,
+      portal_url: result.project.portal_token
+        ? `https://www.surprisegranite.com/portal/?token=${result.project.portal_token}`
+        : null
+    }
+  });
+}));
+
+// ============================================================
+// INVOICE PAID → JOB CREATION (LEGACY - redirects to project)
+// ============================================================
+
+/**
+ * Create a job from a paid invoice (Legacy endpoint)
  * POST /api/workflow/invoice-to-job/:invoiceId
  *
- * Automatically creates a job when invoice is marked as paid
+ * @deprecated Use /invoice-to-project/:invoiceId instead
+ * This now creates a project instead of a job
  */
 router.post('/invoice-to-job/:invoiceId',
   validateBody(schemas.invoiceToJob),
@@ -316,97 +523,80 @@ router.post('/invoice-to-job/:invoiceId',
     return res.status(500).json({ error: 'Database not configured' });
   }
 
+  const projectService = createProjectService(supabase);
   const { invoiceId } = req.params;
   const { user_id, scheduled_date, notes } = req.body;
 
-  // Fetch the invoice
-  const { data: invoice, error: invoiceError } = await supabase
-    .from('invoices')
-    .select('*')
-    .eq('id', invoiceId)
-    .single();
+  // Use the unified project approach
+  const result = await projectService.convertFromInvoice(invoiceId, user_id, {
+    scheduled_date,
+    notes
+  });
 
-  if (invoiceError || !invoice) {
-    return res.status(404).json({ error: 'Invoice not found' });
-  }
-
-  // Check if job already exists for this invoice
+  // For backwards compatibility, also create a job record if needed
   const { data: existingJob } = await supabase
     .from('jobs')
-    .select('id, title')
+    .select('id')
     .eq('invoice_id', invoiceId)
     .single();
 
-  if (existingJob) {
-    return res.status(400).json({
-      error: 'Job already exists for this invoice',
-      job_id: existingJob.id,
-      job_title: existingJob.title
-    });
-  }
+  let job = existingJob;
+  if (!existingJob) {
+    // Fetch invoice for job data
+    const { data: invoice } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('id', invoiceId)
+      .single();
 
-  // Generate job title
-  const customerName = invoice.customer_name || 'Customer';
-  const jobTitle = `Installation - ${customerName}`;
+    if (invoice) {
+      const { data: newJob } = await supabase
+        .from('jobs')
+        .insert({
+          user_id,
+          customer_id: invoice.customer_id,
+          lead_id: invoice.lead_id,
+          estimate_id: invoice.estimate_id,
+          invoice_id: invoiceId,
+          job_number: result.project.job_number,
+          title: result.project.name,
+          description: notes || invoice.notes,
+          status: 'new',
+          priority: 'medium',
+          scheduled_date: scheduled_date || null,
+          customer_address: invoice.customer_address,
+          customer_name: invoice.customer_name,
+          customer_email: invoice.customer_email,
+          customer_phone: invoice.customer_phone,
+          contract_amount: invoice.total
+        })
+        .select()
+        .single();
 
-  // Create job
-  const jobData = {
-    user_id,
-    customer_id: invoice.customer_id,
-    lead_id: invoice.lead_id,       // Preserve lead linkage
-    estimate_id: invoice.estimate_id, // Preserve estimate linkage
-    invoice_id: invoiceId,           // Link to invoice
-    title: jobTitle,
-    description: invoice.notes || notes,
-    status: 'new',
-    priority: 'medium',
-    scheduled_date: scheduled_date || null,
-    address: invoice.customer_address,
-    customer_name: invoice.customer_name,
-    customer_email: invoice.customer_email,
-    customer_phone: invoice.customer_phone,
-    total_value: invoice.total
-  };
+      job = newJob;
 
-  const { data: newJob, error: jobError } = await supabase
-    .from('jobs')
-    .insert([jobData])
-    .select()
-    .single();
-
-  if (jobError) {
-    return handleApiError(res, jobError, 'Create job');
-  }
-
-  // Update invoice with job_id
-  await supabase
-    .from('invoices')
-    .update({
-      job_id: newJob.id,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', invoiceId);
-
-  logger.info('Job created from invoice', {
-    invoiceId,
-    jobId: newJob.id
-  });
-
-  // Send notification to customer about job creation
-  if (invoice.customer_email && emailService.isConfigured()) {
-    try {
-      const email = emailService.generateJobStatusEmail(newJob, 'new');
-      await emailService.sendNotification(invoice.customer_email, email.subject, email.html);
-    } catch (emailErr) {
-      logger.apiError(emailErr, { context: 'Job creation email failed' });
+      // Link job to project
+      if (newJob) {
+        await supabase
+          .from('projects')
+          .update({ legacy_job_id: newJob.id })
+          .eq('id', result.project.id);
+      }
     }
   }
 
+  logger.info('Job/Project created from invoice', {
+    invoiceId,
+    projectId: result.project.id,
+    jobId: job?.id
+  });
+
   res.json({
     success: true,
-    message: 'Job successfully created from invoice',
+    message: 'Project and job created from invoice',
     data: {
-      job: newJob,
+      project: result.project,
+      job,
       invoice_id: invoiceId
     }
   });

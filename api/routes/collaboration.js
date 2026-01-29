@@ -30,10 +30,13 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
 // VALIDATION SCHEMAS
 // ============================================================
 
+// Supported collaborator roles (now includes customer)
+const COLLABORATOR_ROLES = ['designer', 'fabricator', 'contractor', 'installer', 'viewer', 'customer'];
+
 const schemas = {
   inviteCollaborator: Joi.object({
     user_id: Joi.string().uuid().required(),
-    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer').required(),
+    role: Joi.string().valid(...COLLABORATOR_ROLES).required(),
     access_level: Joi.string().valid('read', 'write', 'admin').default('read'),
     notes: Joi.string().max(500).trim().allow('')
   }),
@@ -41,8 +44,19 @@ const schemas = {
   updateCollaborator: Joi.object({
     invitation_status: Joi.string().valid('accepted', 'declined', 'removed'),
     access_level: Joi.string().valid('read', 'write', 'admin'),
-    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer'),
+    role: Joi.string().valid(...COLLABORATOR_ROLES),
     notes: Joi.string().max(500).trim().allow('')
+  }),
+
+  addCustomerCollaborator: Joi.object({
+    customer_email: Joi.string().email().max(254).lowercase().trim(),
+    customer_name: Joi.string().max(200).trim(),
+    customer_phone: Joi.string().max(20).allow('', null),
+    portal_access: Joi.boolean().default(true),
+    can_view_files: Joi.boolean().default(true),
+    can_view_schedule: Joi.boolean().default(true),
+    can_view_handoff: Joi.boolean().default(true),
+    can_send_messages: Joi.boolean().default(true)
   }),
 
   createHandoff: Joi.object({
@@ -56,7 +70,7 @@ const schemas = {
 
   inviteByEmail: Joi.object({
     email: Joi.string().email().max(254).lowercase().trim().required(),
-    role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'viewer').required(),
+    role: Joi.string().valid(...COLLABORATOR_ROLES).required(),
     access_level: Joi.string().valid('read', 'write', 'admin').default('read'),
     notes: Joi.string().max(500).trim().allow('')
   }),
@@ -2322,6 +2336,355 @@ router.get('/network/verify/:token', asyncHandler(async (req, res) => {
       expiresAt: invitation.token_expires_at
     }
   });
+}));
+
+// ============================================================
+// CUSTOMER COLLABORATION (Project-Specific)
+// ============================================================
+
+/**
+ * POST /api/collaboration/projects/:projectId/add-customer
+ * Add project customer as a collaborator with portal access
+ */
+router.post('/projects/:projectId/add-customer',
+  verifyProOrDesigner,
+  validateBody(schemas.addCustomerCollaborator),
+  asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const {
+      customer_email,
+      customer_name,
+      customer_phone,
+      portal_access = true,
+      can_view_files = true,
+      can_view_schedule = true,
+      can_view_handoff = true,
+      can_send_messages = true
+    } = req.body;
+
+    // Verify project exists and get customer info
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, user_id, customer_name, customer_email, customer_phone')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.user_id !== req.user.id && req.profile.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only project owner can add customer collaborator' });
+    }
+
+    // Use provided data or fall back to project data
+    const email = (customer_email || project.customer_email || '').toLowerCase().trim();
+    const name = customer_name || project.customer_name;
+    const phone = customer_phone || project.customer_phone;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Customer email is required' });
+    }
+
+    // Check if customer already added as collaborator
+    const { data: existing } = await supabase
+      .from('project_collaborators')
+      .select('id, invitation_status, role')
+      .eq('project_id', projectId)
+      .eq('email', email)
+      .single();
+
+    if (existing && existing.invitation_status !== 'removed') {
+      // Update existing collaborator with customer permissions
+      const { data: updated, error } = await supabase
+        .from('project_collaborators')
+        .update({
+          role: 'customer',
+          portal_access,
+          can_view_files,
+          can_view_schedule,
+          can_view_handoff,
+          can_send_messages,
+          invitation_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return res.json({
+        success: true,
+        collaborator: updated,
+        message: 'Customer collaborator updated'
+      });
+    }
+
+    // Check if user has an account
+    const { data: existingUser } = await supabase
+      .from('sg_users')
+      .select('id, full_name')
+      .eq('email', email)
+      .single();
+
+    // Create new customer collaborator
+    const collaboratorData = {
+      project_id: projectId,
+      email,
+      user_id: existingUser?.id || null,
+      role: 'customer',
+      access_level: 'read',
+      invitation_status: 'accepted', // Auto-accept for customers
+      accepted_at: new Date().toISOString(),
+      invited_by: req.user.id,
+      notes: `Customer: ${name}`,
+      portal_access,
+      can_view_files,
+      can_view_schedule,
+      can_view_handoff,
+      can_send_messages
+    };
+
+    const { data: collaborator, error } = await supabase
+      .from('project_collaborators')
+      .insert(collaboratorData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Log activity
+    await supabase
+      .from('project_activity')
+      .insert({
+        project_id: projectId,
+        user_id: req.user.id,
+        action: 'customer_added',
+        description: `Customer ${name} added as collaborator`
+      });
+
+    logger.info('Customer added as collaborator', { projectId, email });
+
+    res.json({
+      success: true,
+      collaborator,
+      message: 'Customer added as collaborator'
+    });
+  })
+);
+
+/**
+ * GET /api/collaboration/projects/:projectId/customer-view
+ * Get project data visible to customer (no auth required, uses portal token)
+ */
+router.get('/projects/:projectId/customer-view', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { projectId } = req.params;
+  const { token, email } = req.query;
+
+  if (!token && !email) {
+    return res.status(400).json({ error: 'Portal token or email required' });
+  }
+
+  // Find project and verify access
+  let project;
+  if (token) {
+    const { data } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .eq('portal_token', token)
+      .eq('portal_enabled', true)
+      .single();
+    project = data;
+  }
+
+  if (!project && email) {
+    // Verify email is a customer collaborator
+    const { data: collab } = await supabase
+      .from('project_collaborators')
+      .select('id, can_view_files, can_view_schedule, can_view_handoff')
+      .eq('project_id', projectId)
+      .eq('email', email.toLowerCase())
+      .eq('role', 'customer')
+      .eq('invitation_status', 'accepted')
+      .single();
+
+    if (collab) {
+      const { data } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+      project = data;
+      project._permissions = collab;
+    }
+  }
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found or access denied' });
+  }
+
+  const permissions = project._permissions || {
+    can_view_files: true,
+    can_view_schedule: true,
+    can_view_handoff: true
+  };
+
+  // Build customer-visible data
+  const customerView = {
+    project: {
+      id: project.id,
+      name: project.name,
+      status: project.status,
+      progress: project.progress,
+      address: project.job_address || project.address,
+      city: project.job_city || project.city,
+      state: project.job_state || project.state,
+      zip: project.job_zip || project.zip,
+      scheduled_dates: {
+        measure: project.field_measure_date,
+        install: project.install_date
+      },
+      materials: {
+        name: project.material_name,
+        status: project.material_status
+      },
+      customer_notes: project.customer_notes
+    },
+    financials: {
+      total: project.value || project.contract_amount,
+      paid: project.total_paid,
+      due: project.balance_due
+    }
+  };
+
+  // Get files visible to customer
+  if (permissions.can_view_files) {
+    const { data: files } = await supabase
+      .from('project_files')
+      .select('id, name, file_type, file_url, description, created_at')
+      .eq('project_id', projectId)
+      .eq('visible_to_customer', true)
+      .order('created_at', { ascending: false });
+
+    customerView.files = files || [];
+  }
+
+  // Get calendar events
+  if (permissions.can_view_schedule) {
+    const { data: events } = await supabase
+      .from('calendar_events')
+      .select('id, title, event_type, start_time, end_time, location, status')
+      .eq('project_id', projectId)
+      .neq('status', 'cancelled')
+      .order('start_time', { ascending: true });
+
+    customerView.calendar_events = events || [];
+  }
+
+  // Get design handoff status
+  if (permissions.can_view_handoff) {
+    const { data: handoffs } = await supabase
+      .from('design_handoffs')
+      .select('id, title, stage, created_at, updated_at')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (handoffs && handoffs.length > 0) {
+      const handoff = handoffs[0];
+      // Map stage to customer-friendly progress
+      const stageOrder = [
+        'design_created', 'design_review', 'design_approved',
+        'fabrication_quote_requested', 'fabrication_quote_received', 'fabrication_approved',
+        'materials_ordered', 'fabrication_in_progress', 'fabrication_complete',
+        'install_scheduled', 'install_in_progress', 'install_complete', 'final_review'
+      ];
+      const currentIndex = stageOrder.indexOf(handoff.stage);
+
+      customerView.handoff = {
+        id: handoff.id,
+        title: handoff.title,
+        stage: handoff.stage,
+        stage_label: handoff.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        progress: Math.round((currentIndex + 1) / stageOrder.length * 100),
+        updated_at: handoff.updated_at
+      };
+    }
+  }
+
+  res.json({ success: true, ...customerView });
+}));
+
+/**
+ * GET /api/collaboration/projects/:projectId/handoff-status
+ * Get design handoff status for customer (simplified view)
+ */
+router.get('/projects/:projectId/handoff-status', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { projectId } = req.params;
+  const { token } = req.query;
+
+  // Verify access via portal token
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, portal_token, portal_enabled')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  // Verify token if portal is enabled
+  if (project.portal_enabled && token !== project.portal_token) {
+    return res.status(403).json({ error: 'Invalid portal token' });
+  }
+
+  // Get handoffs
+  const { data: handoffs, error } = await supabase
+    .from('design_handoffs')
+    .select('id, title, stage, description, created_at, updated_at')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Map to customer-friendly format
+  const stageDescriptions = {
+    'design_created': 'Your design has been created',
+    'design_review': 'Design is under review',
+    'design_approved': 'Design has been approved',
+    'fabrication_quote_requested': 'Requesting fabrication quote',
+    'fabrication_quote_received': 'Quote received from fabricator',
+    'fabrication_approved': 'Fabrication approved and scheduled',
+    'materials_ordered': 'Materials have been ordered',
+    'fabrication_in_progress': 'Your countertops are being fabricated',
+    'fabrication_complete': 'Fabrication complete - ready for installation',
+    'install_scheduled': 'Installation has been scheduled',
+    'install_in_progress': 'Installation in progress',
+    'install_complete': 'Installation complete',
+    'final_review': 'Final review and completion'
+  };
+
+  const customerHandoffs = (handoffs || []).map(h => ({
+    id: h.id,
+    title: h.title,
+    stage: h.stage,
+    stage_label: h.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    description: stageDescriptions[h.stage] || h.description,
+    updated_at: h.updated_at
+  }));
+
+  res.json({ success: true, handoffs: customerHandoffs });
 }));
 
 module.exports = router;
