@@ -382,6 +382,239 @@
     });
   }
 
+  // === QUICK MEASUREMENT OVERLAY ===
+  let measurementOverlay = null;
+
+  window.showMeasurementOverlay = function(element) {
+    if (!element || !element.width || !element.height) return;
+    hideMeasurementOverlay();
+
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+    const container = canvas.parentElement;
+
+    measurementOverlay = document.createElement('div');
+    measurementOverlay.className = 'measurement-overlay';
+    measurementOverlay.innerHTML = `
+      <div class="measure-dimension measure-width" style="left:${element.x}px;top:${element.y - 20}px;width:${element.width}px">
+        <span>${formatDimension(element.width)}</span>
+      </div>
+      <div class="measure-dimension measure-height" style="left:${element.x + element.width + 5}px;top:${element.y}px;height:${element.height}px">
+        <span>${formatDimension(element.height)}</span>
+      </div>
+    `;
+    container.appendChild(measurementOverlay);
+  };
+
+  window.hideMeasurementOverlay = function() {
+    if (measurementOverlay) {
+      measurementOverlay.remove();
+      measurementOverlay = null;
+    }
+  };
+
+  function formatDimension(pixels) {
+    // Convert pixels to feet-inches at 12px per inch
+    const ppi = window.pixelsPerInch || 12;
+    const inches = pixels / ppi;
+    const feet = Math.floor(inches / 12);
+    const remainingInches = Math.round((inches % 12) * 16) / 16;
+    if (feet === 0) return `${remainingInches}"`;
+    if (remainingInches === 0) return `${feet}'`;
+    return `${feet}'-${remainingInches}"`;
+  }
+
+  // === DESIGN TEMPLATES ===
+  const TEMPLATES_KEY = 'sg_designer_templates';
+  let customTemplates = [];
+
+  window.initTemplates = function() {
+    try {
+      const stored = localStorage.getItem(TEMPLATES_KEY);
+      if (stored) customTemplates = JSON.parse(stored);
+    } catch (e) {}
+  };
+
+  window.saveAsTemplate = function(name) {
+    if (!window.elements || window.elements.length === 0) {
+      if (typeof showToast === 'function') showToast('Nothing to save as template', 'warning');
+      return;
+    }
+    if (!name) name = prompt('Template name:');
+    if (!name) return;
+
+    const template = {
+      id: 'template_' + Date.now(),
+      name: name,
+      elements: JSON.parse(JSON.stringify(window.elements)),
+      roomWidth: window.roomWidth || 240,
+      roomDepth: window.roomDepth || 180,
+      createdAt: new Date().toISOString()
+    };
+    customTemplates.push(template);
+    try { localStorage.setItem(TEMPLATES_KEY, JSON.stringify(customTemplates)); } catch (e) {}
+    if (typeof showToast === 'function') showToast(`Template "${name}" saved`, 'success');
+  };
+
+  window.loadTemplate = function(templateId) {
+    const template = customTemplates.find(t => t.id === templateId);
+    if (!template) return;
+
+    if (window.elements && window.elements.length > 0) {
+      if (!confirm('Replace current design with template?')) return;
+    }
+
+    window.elements = JSON.parse(JSON.stringify(template.elements));
+    if (template.roomWidth) window.roomWidth = template.roomWidth;
+    if (template.roomDepth) window.roomDepth = template.roomDepth;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast(`Loaded "${template.name}"`, 'success');
+  };
+
+  window.getCustomTemplates = function() {
+    return customTemplates;
+  };
+
+  window.deleteTemplate = function(templateId) {
+    if (!confirm('Delete this template?')) return;
+    customTemplates = customTemplates.filter(t => t.id !== templateId);
+    try { localStorage.setItem(TEMPLATES_KEY, JSON.stringify(customTemplates)); } catch (e) {}
+    if (typeof showToast === 'function') showToast('Template deleted', 'info');
+  };
+
+  // === QUICK DUPLICATE WITH OFFSET ===
+  window.duplicateWithOffset = function(element, offsetX = 20, offsetY = 20) {
+    if (!element) {
+      element = window.selectedElement;
+    }
+    if (!element) {
+      if (typeof showToast === 'function') showToast('Select an element first', 'warning');
+      return null;
+    }
+
+    const newElement = JSON.parse(JSON.stringify(element));
+    newElement.id = element.type + '_' + Date.now();
+    newElement.x = (newElement.x || 0) + offsetX;
+    newElement.y = (newElement.y || 0) + offsetY;
+
+    if (window.elements) {
+      window.elements.push(newElement);
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast('Element duplicated', 'success');
+    }
+    return newElement;
+  };
+
+  // === ALIGNMENT TOOLS ===
+  window.alignElements = function(alignment) {
+    if (!window.selectedElements || window.selectedElements.length < 2) {
+      if (typeof showToast === 'function') showToast('Select 2+ elements to align', 'warning');
+      return;
+    }
+
+    const els = window.selectedElements;
+    let ref;
+
+    switch (alignment) {
+      case 'left':
+        ref = Math.min(...els.map(e => e.x));
+        els.forEach(e => e.x = ref);
+        break;
+      case 'right':
+        ref = Math.max(...els.map(e => e.x + (e.width || 0)));
+        els.forEach(e => e.x = ref - (e.width || 0));
+        break;
+      case 'top':
+        ref = Math.min(...els.map(e => e.y));
+        els.forEach(e => e.y = ref);
+        break;
+      case 'bottom':
+        ref = Math.max(...els.map(e => e.y + (e.height || 0)));
+        els.forEach(e => e.y = ref - (e.height || 0));
+        break;
+      case 'centerH':
+        ref = els.reduce((sum, e) => sum + e.x + (e.width || 0) / 2, 0) / els.length;
+        els.forEach(e => e.x = ref - (e.width || 0) / 2);
+        break;
+      case 'centerV':
+        ref = els.reduce((sum, e) => sum + e.y + (e.height || 0) / 2, 0) / els.length;
+        els.forEach(e => e.y = ref - (e.height || 0) / 2);
+        break;
+    }
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('Elements aligned', 'success');
+  };
+
+  // === DISTRIBUTE EVENLY ===
+  window.distributeElements = function(direction) {
+    if (!window.selectedElements || window.selectedElements.length < 3) {
+      if (typeof showToast === 'function') showToast('Select 3+ elements to distribute', 'warning');
+      return;
+    }
+
+    const els = [...window.selectedElements];
+
+    if (direction === 'horizontal') {
+      els.sort((a, b) => a.x - b.x);
+      const first = els[0].x;
+      const last = els[els.length - 1].x + (els[els.length - 1].width || 0);
+      const totalWidth = els.reduce((sum, e) => sum + (e.width || 0), 0);
+      const gap = (last - first - totalWidth) / (els.length - 1);
+      let currentX = first;
+      els.forEach((e, i) => {
+        if (i > 0) e.x = currentX;
+        currentX += (e.width || 0) + gap;
+      });
+    } else {
+      els.sort((a, b) => a.y - b.y);
+      const first = els[0].y;
+      const last = els[els.length - 1].y + (els[els.length - 1].height || 0);
+      const totalHeight = els.reduce((sum, e) => sum + (e.height || 0), 0);
+      const gap = (last - first - totalHeight) / (els.length - 1);
+      let currentY = first;
+      els.forEach((e, i) => {
+        if (i > 0) e.y = currentY;
+        currentY += (e.height || 0) + gap;
+      });
+    }
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('Elements distributed', 'success');
+  };
+
+  // === QUICK ACTIONS TOOLBAR ===
+  window.showQuickActions = function(element, x, y) {
+    hideQuickActions();
+    if (!element) return;
+
+    const toolbar = document.createElement('div');
+    toolbar.id = 'quickActionsToolbar';
+    toolbar.className = 'quick-actions-toolbar';
+    toolbar.style.cssText = `left:${x}px;top:${y}px`;
+    toolbar.innerHTML = `
+      <button onclick="duplicateWithOffset()" title="Duplicate (Ctrl+D)">📋</button>
+      <button onclick="window.selectedElement && addToFavorites({type:'element',id:window.selectedElement.type+'_fav',name:window.selectedElement.name||window.selectedElement.type,icon:getElementIcon(window.selectedElement.type),data:window.selectedElement})" title="Add to Favorites">⭐</button>
+      <button onclick="deleteSelectedElement()" title="Delete (Del)">🗑️</button>
+      <button onclick="hideQuickActions()" title="Close">✕</button>
+    `;
+    document.body.appendChild(toolbar);
+  };
+
+  window.hideQuickActions = function() {
+    const toolbar = document.getElementById('quickActionsToolbar');
+    if (toolbar) toolbar.remove();
+  };
+
+  // === UNDO/REDO HISTORY DISPLAY ===
+  window.getUndoHistoryCount = function() {
+    return window.undoHistory ? window.undoHistory.length : 0;
+  };
+
+  window.getRedoHistoryCount = function() {
+    return window.redoHistory ? window.redoHistory.length : 0;
+  };
+
   // === KEYBOARD SHORTCUTS ===
   document.addEventListener('keydown', function(e) {
     // Ctrl/Cmd + G = Group selected
@@ -399,9 +632,20 @@
       e.preventDefault();
       noteMode ? window.disableNoteMode() : window.enableNoteMode();
     }
-    // Escape = Cancel note mode
-    if (e.key === 'Escape' && noteMode) {
-      window.disableNoteMode();
+    // Escape = Cancel note mode or hide quick actions
+    if (e.key === 'Escape') {
+      if (noteMode) window.disableNoteMode();
+      window.hideQuickActions();
+    }
+    // Ctrl/Cmd + D = Duplicate
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      window.duplicateWithOffset();
+    }
+    // Ctrl/Cmd + Shift + S = Save as template
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      e.preventDefault();
+      window.saveAsTemplate();
     }
   });
 

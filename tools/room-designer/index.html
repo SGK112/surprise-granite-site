@@ -1026,6 +1026,31 @@
       border-radius: 3px;
     }
 
+    /* Measurement Overlay */
+    .measurement-overlay { position: absolute; pointer-events: none; z-index: 100; }
+    .measure-dimension { position: absolute; display: flex; align-items: center; justify-content: center; }
+    .measure-dimension.measure-width { height: 1px; background: var(--gold-primary); }
+    .measure-dimension.measure-width::before, .measure-dimension.measure-width::after { content: ''; position: absolute; width: 1px; height: 8px; background: var(--gold-primary); }
+    .measure-dimension.measure-width::before { left: 0; }
+    .measure-dimension.measure-width::after { right: 0; }
+    .measure-dimension.measure-height { width: 1px; background: var(--gold-primary); flex-direction: column; }
+    .measure-dimension.measure-height::before, .measure-dimension.measure-height::after { content: ''; position: absolute; height: 1px; width: 8px; background: var(--gold-primary); }
+    .measure-dimension.measure-height::before { top: 0; }
+    .measure-dimension.measure-height::after { bottom: 0; }
+    .measure-dimension span { position: absolute; background: var(--dark-surface); color: var(--gold-primary); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+    .measure-dimension.measure-width span { top: -18px; }
+    .measure-dimension.measure-height span { left: 8px; top: 50%; transform: translateY(-50%); }
+
+    /* Quick Actions Toolbar */
+    .quick-actions-toolbar { position: fixed; display: flex; gap: 4px; padding: 6px; background: var(--dark-surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); z-index: 1000; }
+    .quick-actions-toolbar button { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid transparent; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .quick-actions-toolbar button:hover { background: var(--gold-primary); border-color: var(--gold-primary); }
+
+    /* Alignment Toolbar */
+    .alignment-toolbar { display: flex; gap: 4px; padding: 8px; background: var(--dark-elevated); border-radius: 8px; }
+    .alignment-toolbar button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .alignment-toolbar button:hover { background: var(--gold-primary); color: var(--dark-primary); }
+
     /* =============================================
        UPGRADED TOOL GRID - Enhanced UX
        ============================================= */
@@ -20909,8 +20934,15 @@
       }
     }
 
-    function resetCanvas() {
-      if (!confirm('RESET ENTIRE PROJECT?\n\nThis will:\n• Delete all elements\n• Clear room settings\n• Erase saved progress\n\nThis cannot be undone!')) return;
+    async function resetCanvas() {
+      const confirmed = await showConfirmDialog({
+        title: 'Reset Entire Project?',
+        message: 'This will delete all elements, clear room settings, and erase saved progress.\n\nThis cannot be undone!',
+        confirmText: 'Reset Project',
+        cancelText: 'Cancel',
+        dangerous: true
+      });
+      if (!confirmed) return;
 
       // Clear everything
       elements = [];
@@ -50000,7 +50032,7 @@
       console.log('Template exported:', templateCode);
     }
 
-    function loadRoomTemplate(templateId) {
+    async function loadRoomTemplate(templateId) {
       const template = ROOM_TEMPLATES[templateId];
       if (!template) {
         showToast('Template not found', 'error');
@@ -50009,9 +50041,13 @@
 
       // Confirm before clearing
       if (elements.length > 0) {
-        if (!confirm(`Load "${template.name}" template? This will replace your current design.`)) {
-          return;
-        }
+        const confirmed = await showConfirmDialog({
+          title: 'Load Template?',
+          message: `Load "${template.name}" template?\n\nThis will replace your current design.`,
+          confirmText: 'Load Template',
+          cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
       }
 
       // Clear current elements
@@ -56375,8 +56411,14 @@
     }
 
     // Reset labor rates to defaults
-    function resetLaborRates() {
-      if (!confirm('Reset all labor rates to default values?')) return;
+    async function resetLaborRates() {
+      const confirmed = await showConfirmDialog({
+        title: 'Reset Labor Rates?',
+        message: 'Reset all labor rates to their default values?\n\nYour custom rates will be lost.',
+        confirmText: 'Reset to Defaults',
+        cancelText: 'Keep Custom Rates'
+      });
+      if (!confirmed) return;
 
       userLaborRates = JSON.parse(JSON.stringify(LABOR_RATES));
       localStorage.removeItem('sg_labor_rates');
@@ -56654,13 +56696,20 @@
     }
 
     // Delete room
-    function deleteRoom(roomId) {
+    async function deleteRoom(roomId) {
       if (roomId === 'default') return;
 
       const room = projectRooms.find(r => r.id === roomId);
       if (!room) return;
 
-      if (!confirm(`Delete room "${room.name}"? Elements in this room will be moved to Default Room.`)) return;
+      const confirmed = await showConfirmDialog({
+        title: 'Delete Room?',
+        message: `Delete room "${room.name}"?\n\nElements in this room will be moved to Default Room.`,
+        confirmText: 'Delete Room',
+        cancelText: 'Cancel',
+        dangerous: true
+      });
+      if (!confirmed) return;
 
       // Move elements to default room
       elements.forEach(el => {
@@ -59797,11 +59846,16 @@
       const rejected = elements.filter(el => el.status === 'rejected').length;
       const pending = elements.filter(el => el.status === 'pending').length;
 
-      const summary = `Review Summary:\n\n✓ Approved: ${approved}\n✗ Rejected: ${rejected}\n○ Pending: ${pending}\n\nSubmit this review?`;
+      const confirmed = await showConfirmDialog({
+        title: 'Submit Review',
+        message: `Review Summary:\n\n✓ Approved: ${approved}\n✗ Rejected: ${rejected}\n○ Pending: ${pending}`,
+        confirmText: 'Submit Review',
+        cancelText: 'Continue Reviewing'
+      });
 
-      if (confirm(summary)) {
+      if (confirmed) {
         await saveReviewState();
-        alert('Review submitted! The design owner will be notified.');
+        showToast('Review submitted! The design owner will be notified.', 'success');
       }
     }
 
@@ -60089,7 +60143,14 @@
     }
 
     async function revokeShare(shareId) {
-      if (!confirm('Revoke this share link? Anyone with this link will no longer be able to access.')) return;
+      const confirmed = await showConfirmDialog({
+        title: 'Revoke Share Link?',
+        message: 'Revoke this share link?\n\nAnyone with this link will no longer be able to access.',
+        confirmText: 'Revoke Access',
+        cancelText: 'Keep Shared',
+        dangerous: true
+      });
+      if (!confirmed) return;
 
       try {
         const supabase = getSupabaseClient();
@@ -60366,8 +60427,14 @@
       }
     }
 
-    function clearCanvas() {
-      if (!confirm('Clear all elements from canvas?\n\nRoom settings will be preserved.\nYour progress will still be auto-saved.')) return;
+    async function clearCanvas() {
+      const confirmed = await showConfirmDialog({
+        title: 'Clear Canvas?',
+        message: 'This will remove all elements from the canvas.\n\nRoom settings will be preserved and your progress will still be auto-saved.',
+        confirmText: 'Clear Canvas',
+        cancelText: 'Keep Elements'
+      });
+      if (!confirmed) return;
 
       elements = [];
       elementListDirty = true;
@@ -60386,14 +60453,18 @@
     }
 
     // Create a completely fresh new design
-    function createNewDesign() {
+    async function createNewDesign() {
       // Check if there are unsaved changes
       const hasContent = elements.length > 0 || walls.length > 0;
 
       if (hasContent) {
-        if (!confirm('Start a new design?\n\nYour current work will be saved automatically.\nYou can access it later from "My Designs".')) {
-          return;
-        }
+        const confirmed = await showConfirmDialog({
+          title: 'Start New Design?',
+          message: 'Your current work will be saved automatically.\n\nYou can access it later from "My Designs".',
+          confirmText: 'Start New',
+          cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
         // Trigger a save of current work before starting new
         saveToCloud();
       }
@@ -60979,7 +61050,12 @@
 
           // Offer to create a project from this design
           if (user && designId) {
-            var createProj = confirm('Design saved! Would you like to create a project from this design?');
+            const createProj = await showConfirmDialog({
+              title: 'Create Project?',
+              message: 'Design saved! Would you like to create a project from this design?',
+              confirmText: 'Create Project',
+              cancelText: 'Not Now'
+            });
             if (createProj) {
               sessionStorage.setItem('sg_design_for_project', JSON.stringify({
                 design_id: designId,
@@ -61404,9 +61480,14 @@
       const design = (allDesigns[currentDesignsTab] || []).find(d => d.id === designId);
       const designName = design?.name || 'this design';
 
-      if (!confirm(`Are you sure you want to delete "${designName}"?\n\nThis action cannot be undone.`)) {
-        return;
-      }
+      const confirmed = await showConfirmDialog({
+        title: 'Delete Design?',
+        message: `Are you sure you want to delete "${designName}"?\n\nThis action cannot be undone.`,
+        confirmText: 'Delete Design',
+        cancelText: 'Keep Design',
+        dangerous: true
+      });
+      if (!confirmed) return;
 
       try {
         if (isLocal) {
