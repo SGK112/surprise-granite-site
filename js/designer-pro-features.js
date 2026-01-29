@@ -6184,79 +6184,86 @@
         layoutType: room.layoutType || 'unknown'
       };
 
-      // Track positions for each wall
-      const wallPositions = {
-        top: 0.5,      // X position along top wall
-        bottom: 0.5,   // X position along bottom wall
-        left: 0.5,     // Y position along left wall
-        right: 0.5,    // Y position along right wall
-        'top-upper': 0.5  // Upper cabinets on top wall
-      };
-      const gapFeet = 0.25;
+      // SIMPLE LINEAR LAYOUT - Place all cabinets in a row along top wall
+      // This ensures they don't overlap and are easy to rearrange
+      const gapFeet = 0.25; // 3" gap between cabinets
+      const startX = 0.5;   // Start 6" from left edge
+      const baseY = 0;      // Base cabinets at top wall (y=0)
+      const upperY = 0;     // Upper cabinets also at y=0 (they'll be above in 3D)
 
-      room.cabinets.forEach((cab, cabIndex) => {
+      // Separate base and upper cabinets
+      const baseCabinets = [];
+      const upperCabinets = [];
+      const otherCabinets = [];
+
+      room.cabinets.forEach((cab, idx) => {
         const elementType = cab.type || getElementTypeFromName(cab.name);
+        cab._elementType = elementType;
+        cab._index = idx;
+
+        if (elementType === 'wall-cabinet' || (cab.wall && cab.wall.includes('upper'))) {
+          upperCabinets.push(cab);
+        } else if (elementType === 'island') {
+          otherCabinets.push(cab);
+        } else {
+          baseCabinets.push(cab);
+        }
+      });
+
+      // Position tracking
+      let baseX = startX;
+      let upperX = startX;
+
+      // Place base cabinets along top wall
+      baseCabinets.forEach((cab, cabIndex) => {
+        const elementType = cab._elementType;
         const widthFeet = (cab.width || 36) / 12;
-        const depthFeet = Math.min((cab.depth || 24) / 12, 2);
-        const wall = cab.wall || 'top';
+        const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
 
-        let xFt, yFt, rotation = 0;
-
-        // Position based on wall
-        switch (wall) {
-          case 'top':
-          case 'top-upper':
-            // Along top wall (y = 0)
-            xFt = wallPositions[wall];
-            yFt = wall === 'top-upper' ? 2.5 : 0; // Upper cabs offset down
-            wallPositions[wall] += widthFeet + gapFeet;
-            break;
-
-          case 'bottom':
-            // Along bottom wall (y = roomDepth - depth)
-            xFt = wallPositions.bottom;
-            yFt = roomDepth - depthFeet;
-            wallPositions.bottom += widthFeet + gapFeet;
-            rotation = 180;
-            break;
-
-          case 'left':
-            // Along left wall (x = 0), rotated 90°
-            xFt = 0;
-            yFt = wallPositions.left;
-            wallPositions.left += widthFeet + gapFeet;
-            rotation = 270;
-            break;
-
-          case 'right':
-            // Along right wall (x = roomWidth - depth), rotated 90°
-            xFt = roomWidth - depthFeet;
-            yFt = wallPositions.right;
-            wallPositions.right += widthFeet + gapFeet;
-            rotation = 90;
-            break;
-
-          case 'island':
-            // Center of room
-            xFt = (roomWidth - widthFeet) / 2;
-            yFt = (roomDepth - depthFeet) / 2;
-            break;
-
-          case 'top-right':
-          case 'corner':
-            // Corner position
-            xFt = roomWidth - widthFeet - 0.5;
-            yFt = 0;
-            break;
-
-          default:
-            // Default: add to top wall
-            xFt = wallPositions.top;
-            yFt = 0;
-            wallPositions.top += widthFeet + gapFeet;
+        // Check if we need to wrap to next row
+        if (baseX + widthFeet > roomWidth - 0.5) {
+          baseX = startX;
+          // Move to opposite wall or create new row - for now just continue
         }
 
-        // Get the actual 3D height based on cabinet type
+        const xFt = baseX;
+        const yFt = baseY;
+        baseX += widthFeet + gapFeet;
+
+        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
+      });
+
+      // Place upper cabinets in second row (offset down by 3 feet in 2D view)
+      upperCabinets.forEach((cab, cabIndex) => {
+        const elementType = cab._elementType;
+        const widthFeet = (cab.width || 36) / 12;
+        const depthFeet = Math.min((cab.depth || 12) / 12, 1.5);
+
+        if (upperX + widthFeet > roomWidth - 0.5) {
+          upperX = startX;
+        }
+
+        const xFt = upperX;
+        const yFt = 3; // Offset down so they don't overlap base in 2D view
+        upperX += widthFeet + gapFeet;
+
+        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
+      });
+
+      // Place islands in center
+      otherCabinets.forEach((cab) => {
+        const elementType = cab._elementType;
+        const widthFeet = (cab.width || 48) / 12;
+        const depthFeet = Math.min((cab.depth || 36) / 12, 3);
+
+        const xFt = (roomWidth - widthFeet) / 2;
+        const yFt = (roomDepth - depthFeet) / 2;
+
+        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'island');
+      });
+
+      // Helper function to create cabinet element
+      function createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, rotation, wall) {
         const defaultHeights = {
           'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
           'wall-cabinet': 30, 'tall-cabinet': 84, 'pantry': 84,
@@ -6265,7 +6272,7 @@
         const actualHeight = cab.height || defaultHeights[elementType] || 34.5;
 
         newRoom.elements.push({
-          id: `imp_r${roomIndex}_c${cabIndex}_${Date.now()}`,
+          id: `imp_r${roomIndex}_c${cab._index}_${Date.now()}`,
           type: elementType,
           subType: elementType,
           label: `#${cab.number} ${cab.name}`,
@@ -6291,7 +6298,7 @@
           importedFrom: 'blueprint',
           originalNumber: cab.number
         });
-      });
+      }
 
       if (window.rooms) {
         window.rooms.push(newRoom);
