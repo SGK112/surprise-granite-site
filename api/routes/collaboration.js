@@ -1534,13 +1534,17 @@ router.delete('/projects/:projectId/pending-invitations/:invitationId',
 const generalCollaboratorSchema = Joi.object({
   email: Joi.string().email().max(254).lowercase().trim().allow('', null),
   phone: Joi.string().max(20).trim().allow('', null),
-  name: Joi.string().max(200).trim().required(),
-  role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'vendor', 'partner').required(),
+  name: Joi.string().max(200).trim().allow('', null),
+  role: Joi.string().valid('designer', 'fabricator', 'contractor', 'installer', 'vendor', 'partner').default('partner'),
   notes: Joi.string().max(500).trim().allow('')
 }).custom((value, helpers) => {
   // Require at least email or phone
   if (!value.email && !value.phone) {
     return helpers.error('any.custom', { message: 'Either email or phone is required' });
+  }
+  // Default name from email if not provided
+  if (!value.name && value.email) {
+    value.name = value.email.split('@')[0];
   }
   return value;
 });
