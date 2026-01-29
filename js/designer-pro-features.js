@@ -3101,4 +3101,884 @@
   });
 
   console.log('Room Designer Pro Features v5.0 loaded');
+
+  // ============================================================
+  // PRO FEATURES V6.0 - PROFESSIONAL DESIGN TOOLS
+  // ============================================================
+
+  // === ANNOTATION SYSTEM ===
+  const ANNOTATIONS_KEY = 'sg_designer_annotations';
+  let annotations = [];
+  let annotationMode = null; // 'arrow', 'callout', 'dimension', 'area'
+
+  window.initAnnotations = function() {
+    try {
+      const stored = localStorage.getItem(ANNOTATIONS_KEY);
+      if (stored) {
+        annotations = JSON.parse(stored);
+        renderAnnotations();
+      }
+    } catch (e) {}
+  };
+
+  function saveAnnotations() {
+    try { localStorage.setItem(ANNOTATIONS_KEY, JSON.stringify(annotations)); } catch (e) {}
+  }
+
+  window.setAnnotationMode = function(mode) {
+    annotationMode = annotationMode === mode ? null : mode;
+    document.body.style.cursor = annotationMode ? 'crosshair' : '';
+
+    // Update UI
+    document.querySelectorAll('.annotation-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === annotationMode);
+    });
+
+    if (annotationMode && typeof showToast === 'function') {
+      const messages = {
+        arrow: 'Click start point, then end point',
+        callout: 'Click to place callout',
+        dimension: 'Click two points to measure',
+        area: 'Click corners to define area'
+      };
+      showToast(messages[mode] || 'Click to annotate', 'info');
+    }
+  };
+
+  let annotationStart = null;
+  let areaPoints = [];
+
+  window.handleAnnotationClick = function(x, y) {
+    if (!annotationMode) return false;
+
+    if (annotationMode === 'callout') {
+      const text = prompt('Enter callout text:');
+      if (!text) {
+        window.setAnnotationMode(null);
+        return true;
+      }
+      annotations.push({
+        id: 'annot_' + Date.now(),
+        type: 'callout',
+        x, y, text,
+        color: '#f9cb00',
+        createdAt: new Date().toISOString()
+      });
+      saveAnnotations();
+      renderAnnotations();
+      window.setAnnotationMode(null);
+      return true;
+    }
+
+    if (annotationMode === 'arrow') {
+      if (!annotationStart) {
+        annotationStart = { x, y };
+        return true;
+      }
+      annotations.push({
+        id: 'annot_' + Date.now(),
+        type: 'arrow',
+        x1: annotationStart.x, y1: annotationStart.y,
+        x2: x, y2: y,
+        color: '#f9cb00',
+        createdAt: new Date().toISOString()
+      });
+      annotationStart = null;
+      saveAnnotations();
+      renderAnnotations();
+      window.setAnnotationMode(null);
+      return true;
+    }
+
+    if (annotationMode === 'dimension') {
+      if (!annotationStart) {
+        annotationStart = { x, y };
+        return true;
+      }
+
+      const ppi = window.pixelsPerInch || 12;
+      const dx = x - annotationStart.x;
+      const dy = y - annotationStart.y;
+      const distPx = Math.sqrt(dx * dx + dy * dy);
+      const inches = distPx / ppi;
+      const feet = Math.floor(inches / 12);
+      const remainingInches = Math.round((inches % 12) * 16) / 16;
+
+      let label = '';
+      if (feet > 0) label += `${feet}'`;
+      if (remainingInches > 0 || feet === 0) label += `${remainingInches}"`;
+
+      annotations.push({
+        id: 'annot_' + Date.now(),
+        type: 'dimension',
+        x1: annotationStart.x, y1: annotationStart.y,
+        x2: x, y2: y,
+        label,
+        color: '#22c55e',
+        createdAt: new Date().toISOString()
+      });
+      annotationStart = null;
+      saveAnnotations();
+      renderAnnotations();
+      window.setAnnotationMode(null);
+      return true;
+    }
+
+    if (annotationMode === 'area') {
+      areaPoints.push({ x, y });
+      renderTempArea();
+
+      if (areaPoints.length >= 3) {
+        // Check if clicking near first point to close
+        const first = areaPoints[0];
+        const dist = Math.sqrt((x - first.x) ** 2 + (y - first.y) ** 2);
+        if (dist < 20 && areaPoints.length > 3) {
+          areaPoints.pop(); // Remove duplicate closing point
+
+          // Calculate area
+          const ppi = window.pixelsPerInch || 12;
+          let areaPixels = 0;
+          for (let i = 0; i < areaPoints.length; i++) {
+            const j = (i + 1) % areaPoints.length;
+            areaPixels += areaPoints[i].x * areaPoints[j].y;
+            areaPixels -= areaPoints[j].x * areaPoints[i].y;
+          }
+          areaPixels = Math.abs(areaPixels / 2);
+          const areaSqFt = areaPixels / (ppi * ppi * 144);
+
+          annotations.push({
+            id: 'annot_' + Date.now(),
+            type: 'area',
+            points: [...areaPoints],
+            areaSqFt: Math.round(areaSqFt * 10) / 10,
+            color: 'rgba(249, 203, 0, 0.2)',
+            createdAt: new Date().toISOString()
+          });
+
+          areaPoints = [];
+          clearTempArea();
+          saveAnnotations();
+          renderAnnotations();
+          window.setAnnotationMode(null);
+          if (typeof showToast === 'function') showToast(`Area: ${annotations[annotations.length-1].areaSqFt} sq ft`, 'success');
+        }
+      }
+      return true;
+    }
+
+    return false;
+  };
+
+  function renderTempArea() {
+    clearTempArea();
+    if (areaPoints.length < 2) return;
+
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'tempAreaSvg';
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100';
+
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', areaPoints.map(p => `${p.x},${p.y}`).join(' '));
+    polygon.setAttribute('fill', 'rgba(249, 203, 0, 0.1)');
+    polygon.setAttribute('stroke', '#f9cb00');
+    polygon.setAttribute('stroke-width', '2');
+    polygon.setAttribute('stroke-dasharray', '5,5');
+
+    svg.appendChild(polygon);
+    canvas.parentElement.appendChild(svg);
+  }
+
+  function clearTempArea() {
+    document.getElementById('tempAreaSvg')?.remove();
+  }
+
+  function renderAnnotations() {
+    document.querySelectorAll('.design-annotation').forEach(a => a.remove());
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    annotations.forEach(a => {
+      if (a.type === 'callout') {
+        const callout = document.createElement('div');
+        callout.className = 'design-annotation callout';
+        callout.dataset.annotId = a.id;
+        callout.style.cssText = `left:${a.x}px;top:${a.y}px`;
+        callout.innerHTML = `
+          <div class="callout-content" style="border-color:${a.color}">${a.text}</div>
+          <button class="annot-delete" onclick="deleteAnnotation('${a.id}')">&times;</button>
+        `;
+        canvas.parentElement.appendChild(callout);
+      }
+
+      if (a.type === 'arrow') {
+        const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1) * 180 / Math.PI;
+        const length = Math.sqrt((a.x2 - a.x1) ** 2 + (a.y2 - a.y1) ** 2);
+
+        const arrow = document.createElement('div');
+        arrow.className = 'design-annotation arrow';
+        arrow.dataset.annotId = a.id;
+        arrow.style.cssText = `left:${a.x1}px;top:${a.y1}px;width:${length}px;transform:rotate(${angle}deg);background:${a.color}`;
+        arrow.innerHTML = `<div class="arrow-head" style="border-left-color:${a.color}"></div>`;
+        canvas.parentElement.appendChild(arrow);
+      }
+
+      if (a.type === 'dimension') {
+        const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1) * 180 / Math.PI;
+        const length = Math.sqrt((a.x2 - a.x1) ** 2 + (a.y2 - a.y1) ** 2);
+        const midX = (a.x1 + a.x2) / 2;
+        const midY = (a.y1 + a.y2) / 2;
+
+        const dim = document.createElement('div');
+        dim.className = 'design-annotation dimension';
+        dim.dataset.annotId = a.id;
+        dim.innerHTML = `
+          <div class="dim-line" style="left:${a.x1}px;top:${a.y1}px;width:${length}px;transform:rotate(${angle}deg);background:${a.color}"></div>
+          <div class="dim-label" style="left:${midX}px;top:${midY - 12}px">${a.label}</div>
+          <div class="dim-end" style="left:${a.x1 - 1}px;top:${a.y1 - 6}px"></div>
+          <div class="dim-end" style="left:${a.x2 - 1}px;top:${a.y2 - 6}px"></div>
+        `;
+        canvas.parentElement.appendChild(dim);
+      }
+
+      if (a.type === 'area') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.className = 'design-annotation area-annotation';
+        svg.dataset.annotId = a.id;
+        svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none';
+
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', a.points.map(p => `${p.x},${p.y}`).join(' '));
+        polygon.setAttribute('fill', a.color);
+        polygon.setAttribute('stroke', '#f9cb00');
+        polygon.setAttribute('stroke-width', '1');
+
+        // Calculate centroid for label
+        let cx = 0, cy = 0;
+        a.points.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= a.points.length;
+        cy /= a.points.length;
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', cx);
+        text.setAttribute('y', cy);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#f9cb00');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('font-weight', '600');
+        text.textContent = `${a.areaSqFt} sf`;
+
+        svg.appendChild(polygon);
+        svg.appendChild(text);
+        canvas.parentElement.appendChild(svg);
+      }
+    });
+  }
+
+  window.deleteAnnotation = function(id) {
+    annotations = annotations.filter(a => a.id !== id);
+    saveAnnotations();
+    renderAnnotations();
+  };
+
+  window.clearAllAnnotations = function() {
+    if (!confirm('Clear all annotations?')) return;
+    annotations = [];
+    saveAnnotations();
+    renderAnnotations();
+    if (typeof showToast === 'function') showToast('Annotations cleared', 'info');
+  };
+
+  window.getAnnotations = function() { return annotations; };
+
+  // === SEAM PLANNER ===
+  const SEAMS_KEY = 'sg_designer_seams';
+  let plannedSeams = [];
+
+  window.initSeamPlanner = function() {
+    try {
+      const stored = localStorage.getItem(SEAMS_KEY);
+      if (stored) {
+        plannedSeams = JSON.parse(stored);
+        renderSeams();
+      }
+    } catch (e) {}
+  };
+
+  window.addSeam = function(x, y, orientation = 'vertical') {
+    plannedSeams.push({
+      id: 'seam_' + Date.now(),
+      x, y,
+      orientation,
+      length: 100,
+      createdAt: new Date().toISOString()
+    });
+    try { localStorage.setItem(SEAMS_KEY, JSON.stringify(plannedSeams)); } catch (e) {}
+    renderSeams();
+  };
+
+  window.removeSeam = function(id) {
+    plannedSeams = plannedSeams.filter(s => s.id !== id);
+    try { localStorage.setItem(SEAMS_KEY, JSON.stringify(plannedSeams)); } catch (e) {}
+    renderSeams();
+  };
+
+  function renderSeams() {
+    document.querySelectorAll('.planned-seam').forEach(s => s.remove());
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    plannedSeams.forEach(seam => {
+      const seamEl = document.createElement('div');
+      seamEl.className = `planned-seam ${seam.orientation}`;
+      seamEl.dataset.seamId = seam.id;
+      seamEl.style.cssText = `left:${seam.x}px;top:${seam.y}px;`;
+      if (seam.orientation === 'vertical') {
+        seamEl.style.height = seam.length + 'px';
+      } else {
+        seamEl.style.width = seam.length + 'px';
+      }
+      seamEl.innerHTML = `<button class="seam-delete" onclick="removeSeam('${seam.id}')">&times;</button>`;
+      canvas.parentElement.appendChild(seamEl);
+    });
+  }
+
+  window.showSeamPlanner = function() {
+    if (!window.elements) return;
+
+    const counters = window.elements.filter(e => e.type === 'counter');
+    if (counters.length === 0) {
+      if (typeof showToast === 'function') showToast('No counters to plan seams for', 'info');
+      return;
+    }
+
+    const ppi = window.pixelsPerInch || 12;
+    const maxSlabWidth = 120 * ppi; // 10 feet max slab length
+
+    // Auto-suggest seams for long counters
+    const suggestions = [];
+    counters.forEach(counter => {
+      if (counter.width > maxSlabWidth) {
+        // Suggest vertical seams
+        const numSeams = Math.ceil(counter.width / maxSlabWidth) - 1;
+        const segmentWidth = counter.width / (numSeams + 1);
+        for (let i = 1; i <= numSeams; i++) {
+          suggestions.push({
+            x: counter.x + segmentWidth * i,
+            y: counter.y,
+            orientation: 'vertical',
+            length: counter.height,
+            counter: counter.name || counter.id
+          });
+        }
+      }
+      if (counter.height > maxSlabWidth) {
+        const numSeams = Math.ceil(counter.height / maxSlabWidth) - 1;
+        const segmentHeight = counter.height / (numSeams + 1);
+        for (let i = 1; i <= numSeams; i++) {
+          suggestions.push({
+            x: counter.x,
+            y: counter.y + segmentHeight * i,
+            orientation: 'horizontal',
+            length: counter.width,
+            counter: counter.name || counter.id
+          });
+        }
+      }
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'seam-planner-modal';
+    modal.innerHTML = `
+      <div class="seam-planner-content">
+        <div class="seam-planner-header">
+          <h3>✂️ Seam Planner</h3>
+          <button onclick="this.closest('.seam-planner-modal').remove()">&times;</button>
+        </div>
+        <div class="seam-planner-body">
+          <div class="seam-info">
+            <p>Seams are typically needed where countertop exceeds slab dimensions (usually ~10 ft).</p>
+          </div>
+          ${suggestions.length > 0 ? `
+            <div class="seam-suggestions">
+              <h4>Suggested Seams</h4>
+              ${suggestions.map((s, i) => `
+                <div class="seam-suggestion">
+                  <span>${s.counter}: ${s.orientation} seam</span>
+                  <button onclick="addSeam(${s.x}, ${s.y}, '${s.orientation}'); this.disabled=true; this.textContent='Added'">Add</button>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p class="no-seams">No seams needed - all counters fit within slab dimensions.</p>'}
+          <div class="seam-current">
+            <h4>Current Seams (${plannedSeams.length})</h4>
+            ${plannedSeams.length > 0 ?
+              plannedSeams.map(s => `
+                <div class="seam-item">
+                  <span>${s.orientation} at (${Math.round(s.x)}, ${Math.round(s.y)})</span>
+                  <button onclick="removeSeam('${s.id}')">Remove</button>
+                </div>
+              `).join('') :
+              '<p class="no-seams">No seams placed yet</p>'
+            }
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === BACKSPLASH DESIGNER ===
+  const TILE_PATTERNS = [
+    { id: 'subway', name: 'Subway', offset: 0.5, icon: '▭▭' },
+    { id: 'brick', name: 'Brick', offset: 0.33, icon: '▬▬' },
+    { id: 'stack', name: 'Stack Bond', offset: 0, icon: '□□' },
+    { id: 'herringbone', name: 'Herringbone', offset: 'diagonal', icon: '⋰⋱' },
+    { id: 'chevron', name: 'Chevron', offset: 'v', icon: '\\/' }
+  ];
+
+  const TILE_SIZES = [
+    { width: 3, height: 6, name: '3x6 Subway' },
+    { width: 4, height: 12, name: '4x12 Long' },
+    { width: 4, height: 4, name: '4x4 Square' },
+    { width: 2, height: 2, name: '2x2 Mosaic' },
+    { width: 6, height: 6, name: '6x6 Large' }
+  ];
+
+  window.showBacksplashDesigner = function() {
+    const modal = document.createElement('div');
+    modal.className = 'backsplash-modal';
+    modal.innerHTML = `
+      <div class="backsplash-content">
+        <div class="backsplash-header">
+          <h3>🧱 Backsplash Designer</h3>
+          <button onclick="this.closest('.backsplash-modal').remove()">&times;</button>
+        </div>
+        <div class="backsplash-body">
+          <div class="backsplash-section">
+            <h4>Tile Pattern</h4>
+            <div class="pattern-grid">
+              ${TILE_PATTERNS.map(p => `
+                <div class="pattern-option" data-pattern="${p.id}" onclick="selectTilePattern('${p.id}')">
+                  <span class="pattern-icon">${p.icon}</span>
+                  <span class="pattern-name">${p.name}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="backsplash-section">
+            <h4>Tile Size</h4>
+            <div class="size-grid">
+              ${TILE_SIZES.map(s => `
+                <div class="size-option" data-size="${s.width}x${s.height}" onclick="selectTileSize(${s.width}, ${s.height})">
+                  <span class="size-preview" style="width:${s.width * 5}px;height:${s.height * 5}px"></span>
+                  <span class="size-name">${s.name}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="backsplash-section">
+            <h4>Coverage Calculator</h4>
+            <div class="coverage-inputs">
+              <div class="input-group">
+                <label>Width (ft)</label>
+                <input type="number" id="bsWidth" value="10" min="1" max="50">
+              </div>
+              <div class="input-group">
+                <label>Height (in)</label>
+                <input type="number" id="bsHeight" value="18" min="4" max="48">
+              </div>
+              <button class="calc-btn" onclick="calculateBacksplash()">Calculate</button>
+            </div>
+            <div id="backsplashResult" class="coverage-result"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.selectTilePattern = function(patternId) {
+    document.querySelectorAll('.pattern-option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`.pattern-option[data-pattern="${patternId}"]`)?.classList.add('selected');
+  };
+
+  window.selectTileSize = function(width, height) {
+    document.querySelectorAll('.size-option').forEach(o => o.classList.remove('selected'));
+    document.querySelector(`.size-option[data-size="${width}x${height}"]`)?.classList.add('selected');
+  };
+
+  window.calculateBacksplash = function() {
+    const width = parseFloat(document.getElementById('bsWidth')?.value) || 10;
+    const height = parseFloat(document.getElementById('bsHeight')?.value) || 18;
+
+    const sqFt = (width * height) / 12;
+    const withWaste = sqFt * 1.15; // 15% waste factor
+    const boxes = Math.ceil(withWaste / 10); // Assume 10 sq ft per box
+
+    const resultEl = document.getElementById('backsplashResult');
+    if (resultEl) {
+      resultEl.innerHTML = `
+        <div class="result-row"><span>Total Area</span><strong>${sqFt.toFixed(1)} sq ft</strong></div>
+        <div class="result-row"><span>With 15% Waste</span><strong>${withWaste.toFixed(1)} sq ft</strong></div>
+        <div class="result-row"><span>Boxes Needed</span><strong>${boxes} boxes</strong></div>
+      `;
+    }
+  };
+
+  // === LIGHTING PLAN ===
+  const LIGHTING_TYPES = [
+    { id: 'recessed', name: 'Recessed Can', icon: '◉', wattage: 12 },
+    { id: 'pendant', name: 'Pendant', icon: '⬇', wattage: 40 },
+    { id: 'under-cabinet', name: 'Under-Cabinet', icon: '▃', wattage: 8 },
+    { id: 'chandelier', name: 'Chandelier', icon: '✧', wattage: 60 },
+    { id: 'track', name: 'Track Light', icon: '═◉═', wattage: 25 },
+    { id: 'sconce', name: 'Wall Sconce', icon: '◐', wattage: 15 }
+  ];
+
+  const LIGHTING_KEY = 'sg_designer_lighting';
+  let lightingPlan = [];
+
+  window.initLightingPlan = function() {
+    try {
+      const stored = localStorage.getItem(LIGHTING_KEY);
+      if (stored) {
+        lightingPlan = JSON.parse(stored);
+        renderLightingPlan();
+      }
+    } catch (e) {}
+  };
+
+  window.addLight = function(type, x, y) {
+    const lightType = LIGHTING_TYPES.find(t => t.id === type);
+    if (!lightType) return;
+
+    lightingPlan.push({
+      id: 'light_' + Date.now(),
+      type,
+      name: lightType.name,
+      icon: lightType.icon,
+      wattage: lightType.wattage,
+      x, y,
+      createdAt: new Date().toISOString()
+    });
+    try { localStorage.setItem(LIGHTING_KEY, JSON.stringify(lightingPlan)); } catch (e) {}
+    renderLightingPlan();
+  };
+
+  window.removeLight = function(id) {
+    lightingPlan = lightingPlan.filter(l => l.id !== id);
+    try { localStorage.setItem(LIGHTING_KEY, JSON.stringify(lightingPlan)); } catch (e) {}
+    renderLightingPlan();
+  };
+
+  function renderLightingPlan() {
+    document.querySelectorAll('.lighting-fixture').forEach(l => l.remove());
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    lightingPlan.forEach(light => {
+      const fixture = document.createElement('div');
+      fixture.className = `lighting-fixture ${light.type}`;
+      fixture.dataset.lightId = light.id;
+      fixture.style.cssText = `left:${light.x - 12}px;top:${light.y - 12}px`;
+      fixture.innerHTML = `
+        <span class="fixture-icon">${light.icon}</span>
+        <button class="fixture-delete" onclick="removeLight('${light.id}')">&times;</button>
+      `;
+      fixture.title = `${light.name} (${light.wattage}W)`;
+      canvas.parentElement.appendChild(fixture);
+    });
+  }
+
+  window.showLightingPlanner = function() {
+    const totalWattage = lightingPlan.reduce((sum, l) => sum + (l.wattage || 0), 0);
+    const byType = {};
+    lightingPlan.forEach(l => {
+      byType[l.name] = (byType[l.name] || 0) + 1;
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'lighting-modal';
+    modal.innerHTML = `
+      <div class="lighting-content">
+        <div class="lighting-header">
+          <h3>💡 Lighting Planner</h3>
+          <button onclick="this.closest('.lighting-modal').remove()">&times;</button>
+        </div>
+        <div class="lighting-body">
+          <div class="lighting-section">
+            <h4>Add Fixtures</h4>
+            <div class="fixture-grid">
+              ${LIGHTING_TYPES.map(t => `
+                <button class="fixture-btn" onclick="enableLightPlacement('${t.id}')" title="${t.name}">
+                  <span class="fixture-type-icon">${t.icon}</span>
+                  <span class="fixture-type-name">${t.name}</span>
+                  <span class="fixture-wattage">${t.wattage}W</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="lighting-section">
+            <h4>Summary</h4>
+            <div class="lighting-summary">
+              <div class="summary-stat">
+                <span class="stat-value">${lightingPlan.length}</span>
+                <span class="stat-label">Fixtures</span>
+              </div>
+              <div class="summary-stat">
+                <span class="stat-value">${totalWattage}W</span>
+                <span class="stat-label">Total Load</span>
+              </div>
+            </div>
+            ${Object.keys(byType).length > 0 ? `
+              <div class="fixture-breakdown">
+                ${Object.entries(byType).map(([name, count]) => `
+                  <div class="breakdown-row"><span>${name}</span><strong>${count}</strong></div>
+                `).join('')}
+              </div>
+            ` : '<p class="no-lights">No fixtures placed yet</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  let pendingLightType = null;
+
+  window.enableLightPlacement = function(type) {
+    pendingLightType = type;
+    document.body.style.cursor = 'crosshair';
+    document.querySelector('.lighting-modal')?.remove();
+    if (typeof showToast === 'function') showToast('Click to place fixture', 'info');
+  };
+
+  window.handleLightPlacement = function(x, y) {
+    if (!pendingLightType) return false;
+    window.addLight(pendingLightType, x, y);
+    pendingLightType = null;
+    document.body.style.cursor = '';
+    return true;
+  };
+
+  // === MATERIAL TAKEOFF REPORT ===
+  window.generateMaterialTakeoff = function() {
+    if (!window.elements || window.elements.length === 0) {
+      if (typeof showToast === 'function') showToast('No design to generate report', 'info');
+      return null;
+    }
+
+    const ppi = window.pixelsPerInch || 12;
+    const info = projectInfo;
+    const stats = window.getDesignStats();
+    const costs = window.calculateMaterialCosts();
+    const triangle = window.validateWorkTriangle();
+    const clearances = window.checkClearances();
+    const slabs = window.calculateSlabRequirements();
+
+    // Compile comprehensive report
+    const report = {
+      project: {
+        name: info.name,
+        client: info.client,
+        address: info.address,
+        generatedAt: new Date().toISOString()
+      },
+      room: {
+        width: (window.roomWidth || 240),
+        depth: (window.roomDepth || 180),
+        sqFt: Math.round(((window.roomWidth || 240) * (window.roomDepth || 180)) / 144 * 10) / 10
+      },
+      elements: {
+        total: stats?.totalElements || 0,
+        byType: stats?.byType || {},
+        countertopSqFt: stats?.countertopArea || 0,
+        cabinets: stats?.cabinetCount || 0,
+        appliances: stats?.applianceCount || 0
+      },
+      materials: costs,
+      slabRequirements: slabs,
+      workTriangle: triangle,
+      clearances: clearances,
+      lighting: {
+        fixtureCount: lightingPlan.length,
+        totalWattage: lightingPlan.reduce((sum, l) => sum + (l.wattage || 0), 0)
+      },
+      annotations: annotations.length,
+      seams: plannedSeams.length
+    };
+
+    return report;
+  };
+
+  window.showMaterialTakeoff = function() {
+    const report = window.generateMaterialTakeoff();
+    if (!report) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'takeoff-modal';
+    modal.innerHTML = `
+      <div class="takeoff-content">
+        <div class="takeoff-header">
+          <h3>📋 Material Takeoff Report</h3>
+          <div class="takeoff-actions">
+            <button onclick="exportTakeoffPDF()">Export PDF</button>
+            <button onclick="this.closest('.takeoff-modal').remove()">&times;</button>
+          </div>
+        </div>
+        <div class="takeoff-body">
+          <div class="takeoff-section">
+            <h4>Project Information</h4>
+            <div class="info-grid">
+              <div><span>Project</span><strong>${report.project.name || 'Untitled'}</strong></div>
+              <div><span>Client</span><strong>${report.project.client || 'N/A'}</strong></div>
+              <div><span>Room Size</span><strong>${report.room.sqFt} sq ft</strong></div>
+              <div><span>Elements</span><strong>${report.elements.total}</strong></div>
+            </div>
+          </div>
+          <div class="takeoff-section">
+            <h4>Countertops</h4>
+            <div class="info-grid">
+              <div><span>Total Area</span><strong>${report.elements.countertopSqFt} sq ft</strong></div>
+              <div><span>Slabs Needed</span><strong>${report.slabRequirements?.slabsNeeded || 0}</strong></div>
+              <div><span>With Waste</span><strong>${report.slabRequirements?.withWaste || 0} sq ft</strong></div>
+              <div><span>Seams</span><strong>${report.seams}</strong></div>
+            </div>
+          </div>
+          <div class="takeoff-section">
+            <h4>Cabinets & Fixtures</h4>
+            <div class="info-grid">
+              <div><span>Cabinets</span><strong>${report.elements.cabinets}</strong></div>
+              <div><span>Appliances</span><strong>${report.elements.appliances}</strong></div>
+              <div><span>Light Fixtures</span><strong>${report.lighting.fixtureCount}</strong></div>
+              <div><span>Electrical Load</span><strong>${report.lighting.totalWattage}W</strong></div>
+            </div>
+          </div>
+          <div class="takeoff-section">
+            <h4>Cost Summary</h4>
+            <div class="cost-grid">
+              <div><span>Materials</span><strong>$${(report.materials?.materialTotal || 0).toLocaleString()}</strong></div>
+              <div><span>Labor</span><strong>$${(report.materials?.laborTotal || 0).toLocaleString()}</strong></div>
+              <div class="total"><span>Total Estimate</span><strong>$${(report.materials?.grandTotal || 0).toLocaleString()}</strong></div>
+            </div>
+          </div>
+          <div class="takeoff-section">
+            <h4>Design Validation</h4>
+            <div class="validation-list">
+              <div class="validation-item ${report.workTriangle?.valid ? 'pass' : 'warn'}">
+                <span>${report.workTriangle?.valid ? '✅' : '⚠️'}</span>
+                <span>Work Triangle: ${report.workTriangle?.message || 'N/A'}</span>
+              </div>
+              <div class="validation-item ${report.clearances?.valid ? 'pass' : 'warn'}">
+                <span>${report.clearances?.valid ? '✅' : '⚠️'}</span>
+                <span>Clearances: ${report.clearances?.issues?.length || 0} issues</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.exportTakeoffPDF = function() {
+    // Generate a printable version
+    const report = window.generateMaterialTakeoff();
+    if (!report) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Material Takeoff - ${report.project.name || 'Design'}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto; }
+          h1 { border-bottom: 2px solid #f9cb00; padding-bottom: 10px; }
+          h2 { color: #555; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 24px; }
+          .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .total { background: #f9f9f9; font-weight: bold; }
+          .footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>📋 Material Takeoff Report</h1>
+        <p><strong>Project:</strong> ${report.project.name || 'Untitled'} | <strong>Client:</strong> ${report.project.client || 'N/A'}</p>
+        <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+
+        <h2>Room Specifications</h2>
+        <div class="info-row"><span>Room Size</span><span>${report.room.sqFt} sq ft</span></div>
+        <div class="info-row"><span>Total Elements</span><span>${report.elements.total}</span></div>
+
+        <h2>Countertops</h2>
+        <div class="info-row"><span>Countertop Area</span><span>${report.elements.countertopSqFt} sq ft</span></div>
+        <div class="info-row"><span>Slabs Required</span><span>${report.slabRequirements?.slabsNeeded || 0}</span></div>
+        <div class="info-row"><span>Material with Waste (20%)</span><span>${report.slabRequirements?.withWaste || 0} sq ft</span></div>
+        <div class="info-row"><span>Planned Seams</span><span>${report.seams}</span></div>
+
+        <h2>Cabinets & Appliances</h2>
+        <div class="info-row"><span>Cabinet Count</span><span>${report.elements.cabinets}</span></div>
+        <div class="info-row"><span>Appliances</span><span>${report.elements.appliances}</span></div>
+
+        <h2>Electrical</h2>
+        <div class="info-row"><span>Light Fixtures</span><span>${report.lighting.fixtureCount}</span></div>
+        <div class="info-row"><span>Total Wattage</span><span>${report.lighting.totalWattage}W</span></div>
+
+        <h2>Cost Estimate</h2>
+        <div class="info-row"><span>Materials</span><span>$${(report.materials?.materialTotal || 0).toLocaleString()}</span></div>
+        <div class="info-row"><span>Labor</span><span>$${(report.materials?.laborTotal || 0).toLocaleString()}</span></div>
+        <div class="info-row total"><span>TOTAL</span><span>$${(report.materials?.grandTotal || 0).toLocaleString()}</span></div>
+
+        <div class="footer">Generated by Surprise Granite Room Designer</div>
+
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // === ADDITIONAL V6 KEYBOARD SHORTCUTS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isInput) return;
+
+    // B = Backsplash designer
+    if (e.key === 'b' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showBacksplashDesigner();
+    }
+    // Shift+L = Lighting planner
+    if (e.key === 'L' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showLightingPlanner();
+    }
+    // Shift+S = Seam planner
+    if (e.key === 'S' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showSeamPlanner();
+    }
+    // Shift+M = Material takeoff
+    if (e.key === 'M' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showMaterialTakeoff();
+    }
+  });
+
+  // === INIT V6 FEATURES ===
+  document.addEventListener('DOMContentLoaded', function() {
+    window.initAnnotations();
+    window.initSeamPlanner();
+    window.initLightingPlan();
+  });
+
+  console.log('Room Designer Pro Features v6.0 loaded');
 })();

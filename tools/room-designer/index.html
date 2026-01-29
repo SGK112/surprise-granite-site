@@ -1376,6 +1376,123 @@
     .slab-note { font-size: 11px; color: var(--text-muted); margin-top: 16px; text-align: center; font-style: italic; }
 
     /* =============================================
+       PRO FEATURES V6.0 - Professional Design Tools
+       ============================================= */
+
+    /* Annotation System */
+    .design-annotation { position: absolute; z-index: 150; }
+    .design-annotation.callout { display: flex; align-items: flex-start; gap: 4px; }
+    .callout-content { background: var(--dark-surface); border: 2px solid; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--text); max-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .annot-delete { width: 18px; height: 18px; background: rgba(239,68,68,0.2); border: none; border-radius: 50%; color: #ef4444; cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.2s; }
+    .design-annotation:hover .annot-delete { opacity: 1; }
+    .design-annotation.arrow { height: 2px; transform-origin: left center; }
+    .arrow-head { position: absolute; right: -6px; top: -4px; border: 5px solid transparent; border-left-width: 8px; }
+    .design-annotation.dimension .dim-line { position: absolute; height: 1px; transform-origin: left center; }
+    .design-annotation.dimension .dim-label { position: absolute; background: var(--dark-surface); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #22c55e; font-weight: 600; transform: translateX(-50%); white-space: nowrap; }
+    .design-annotation.dimension .dim-end { position: absolute; width: 2px; height: 12px; background: #22c55e; }
+    .area-annotation { pointer-events: none; }
+
+    /* Seam Planner */
+    .planned-seam { position: absolute; background: repeating-linear-gradient(90deg, #ef4444 0, #ef4444 4px, transparent 4px, transparent 8px); z-index: 140; }
+    .planned-seam.vertical { width: 2px; cursor: col-resize; }
+    .planned-seam.horizontal { height: 2px; cursor: row-resize; }
+    .seam-delete { position: absolute; top: -10px; right: -10px; width: 18px; height: 18px; background: #ef4444; border: none; border-radius: 50%; color: white; cursor: pointer; font-size: 10px; opacity: 0; transition: opacity 0.2s; }
+    .planned-seam:hover .seam-delete { opacity: 1; }
+    .seam-planner-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+    .seam-planner-content { background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 450px; width: 90%; }
+    .seam-planner-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .seam-planner-header h3 { margin: 0; font-size: 16px; }
+    .seam-planner-header button { width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+    .seam-planner-body { padding: 20px; }
+    .seam-info { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .seam-info p { margin: 0; }
+    .seam-suggestions, .seam-current { margin-top: 16px; }
+    .seam-suggestions h4, .seam-current h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; text-transform: uppercase; }
+    .seam-suggestion, .seam-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+    .seam-suggestion button, .seam-item button { padding: 4px 10px; background: var(--primary); border: none; border-radius: 4px; color: var(--dark-deep); cursor: pointer; font-size: 11px; font-weight: 600; }
+    .seam-item button { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .no-seams { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+    /* Backsplash Designer */
+    .backsplash-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+    .backsplash-content { background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 500px; width: 90%; }
+    .backsplash-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .backsplash-header h3 { margin: 0; font-size: 16px; }
+    .backsplash-header button { width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+    .backsplash-body { padding: 20px; }
+    .backsplash-section { margin-bottom: 20px; }
+    .backsplash-section h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; text-transform: uppercase; }
+    .pattern-grid, .size-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+    .pattern-option, .size-option { background: var(--dark-elevated); border: 2px solid var(--border); border-radius: 8px; padding: 12px 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .pattern-option:hover, .size-option:hover { border-color: var(--primary); }
+    .pattern-option.selected, .size-option.selected { border-color: var(--primary); background: rgba(249,203,0,0.1); }
+    .pattern-icon { font-size: 18px; display: block; margin-bottom: 4px; font-family: monospace; }
+    .pattern-name, .size-name { font-size: 10px; color: var(--text-muted); }
+    .size-preview { display: inline-block; background: var(--primary); margin-bottom: 6px; }
+    .coverage-inputs { display: flex; gap: 12px; align-items: flex-end; }
+    .coverage-inputs .input-group { flex: 1; }
+    .coverage-inputs label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .coverage-inputs input { width: 100%; padding: 8px; background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; }
+    .coverage-inputs .calc-btn { padding: 8px 16px; background: var(--primary); border: none; border-radius: 6px; color: var(--dark-deep); font-weight: 600; cursor: pointer; }
+    .coverage-result { margin-top: 16px; background: var(--dark-elevated); border-radius: 8px; padding: 12px; }
+    .coverage-result .result-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+    .coverage-result .result-row span { color: var(--text-muted); }
+    .coverage-result .result-row strong { color: var(--text); }
+
+    /* Lighting Planner */
+    .lighting-fixture { position: absolute; width: 24px; height: 24px; background: rgba(249,203,0,0.2); border: 2px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: move; z-index: 145; }
+    .fixture-icon { font-size: 12px; }
+    .fixture-delete { position: absolute; top: -8px; right: -8px; width: 16px; height: 16px; background: #ef4444; border: none; border-radius: 50%; color: white; cursor: pointer; font-size: 10px; opacity: 0; transition: opacity 0.2s; }
+    .lighting-fixture:hover .fixture-delete { opacity: 1; }
+    .lighting-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+    .lighting-content { background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 500px; width: 90%; }
+    .lighting-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .lighting-header h3 { margin: 0; font-size: 16px; }
+    .lighting-header button { width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+    .lighting-body { padding: 20px; }
+    .lighting-section { margin-bottom: 20px; }
+    .lighting-section h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; text-transform: uppercase; }
+    .fixture-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .fixture-btn { background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .fixture-btn:hover { border-color: var(--primary); background: rgba(249,203,0,0.1); }
+    .fixture-type-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .fixture-type-name { font-size: 11px; color: var(--text); display: block; }
+    .fixture-wattage { font-size: 10px; color: var(--text-muted); }
+    .lighting-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .lighting-summary .summary-stat { background: var(--dark-elevated); border-radius: 10px; padding: 16px; text-align: center; }
+    .lighting-summary .stat-value { font-size: 24px; font-weight: 700; color: var(--primary); display: block; }
+    .lighting-summary .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .fixture-breakdown { background: var(--dark-elevated); border-radius: 8px; padding: 12px; }
+    .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .breakdown-row:last-child { border-bottom: none; }
+    .no-lights { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+    /* Material Takeoff Report */
+    .takeoff-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; overflow-y: auto; padding: 20px; }
+    .takeoff-content { background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 600px; width: 100%; }
+    .takeoff-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .takeoff-header h3 { margin: 0; font-size: 16px; }
+    .takeoff-actions { display: flex; gap: 8px; }
+    .takeoff-actions button { padding: 6px 12px; background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 12px; }
+    .takeoff-actions button:first-child { background: var(--primary); border-color: var(--primary); color: var(--dark-deep); font-weight: 600; }
+    .takeoff-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+    .takeoff-section { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .takeoff-section:last-child { border-bottom: none; margin-bottom: 0; }
+    .takeoff-section h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; text-transform: uppercase; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .info-grid > div { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--dark-elevated); border-radius: 6px; font-size: 13px; }
+    .info-grid span { color: var(--text-muted); }
+    .info-grid strong { color: var(--text); }
+    .cost-grid { display: grid; gap: 8px; }
+    .cost-grid > div { display: flex; justify-content: space-between; padding: 10px 12px; background: var(--dark-elevated); border-radius: 6px; font-size: 13px; }
+    .cost-grid > div.total { background: var(--primary); }
+    .cost-grid > div.total span, .cost-grid > div.total strong { color: var(--dark-deep); }
+    .validation-list { display: grid; gap: 8px; }
+    .validation-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--dark-elevated); border-radius: 6px; font-size: 13px; }
+    .validation-item.pass { border-left: 3px solid #22c55e; }
+    .validation-item.warn { border-left: 3px solid #f59e0b; }
+
+    /* =============================================
        UPGRADED TOOL GRID - Enhanced UX
        ============================================= */
     .tool-grid {
