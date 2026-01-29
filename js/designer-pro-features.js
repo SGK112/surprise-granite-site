@@ -4520,34 +4520,61 @@
     modal.innerHTML = `
       <div class="pdf-importer-content">
         <div class="pdf-importer-header">
-          <h3>📄 Import Cabinet Drawings</h3>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; background:linear-gradient(135deg, var(--primary), #8b5cf6); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+              <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:17px;">Import Cabinet Drawings</h3>
+              <p style="margin:0; font-size:12px; color:var(--text-muted);">AI-powered blueprint analysis</p>
+            </div>
+          </div>
           <button onclick="this.closest('.pdf-importer-modal').remove()">&times;</button>
         </div>
         <div class="pdf-importer-body">
           <div class="import-dropzone" id="pdfDropzone">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14,2 14,8 20,8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
-            <p>Drag & drop PDF or image here, or click to browse</p>
-            <p style="font-size:12px; opacity:0.7; margin-top:4px;">AI Vision will analyze your blueprint drawings</p>
+            <div style="width:64px; height:64px; margin:0 auto 16px; background:rgba(99,102,241,0.1); border-radius:16px; display:flex; align-items:center; justify-content:center;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p style="font-size:15px; font-weight:500; color:var(--text); margin:0 0 4px;">Drop your blueprint here</p>
+            <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">or click to browse • PDF, PNG, JPG supported</p>
             <input type="file" id="pdfFileInput" accept=".pdf,image/*" onchange="handlePDFUpload(event)" style="display:none">
-            <button onclick="document.getElementById('pdfFileInput').click()">Select PDF</button>
+            <button onclick="document.getElementById('pdfFileInput').click()" style="display:inline-flex; align-items:center; gap:8px;">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              Select File
+            </button>
+            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+              <p style="font-size:11px; color:var(--text-muted); margin:0;">
+                <strong>Tip:</strong> For best results, use clear cabinet schedules or elevation drawings
+              </p>
+            </div>
           </div>
           <div id="pdfParseResults" class="pdf-parse-results" style="display:none">
-            <h4>Extracted Data</h4>
             <div id="extractedRooms"></div>
           </div>
           <div class="manual-entry-section">
-            <h4>Or Enter Cabinet Data Manually</h4>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+              <span style="font-size:12px; color:var(--text-muted);">OR</span>
+              <div style="flex:1; height:1px; background:var(--border);"></div>
+            </div>
+            <h4 style="display:flex; align-items:center; gap:8px;">
+              <svg width="16" height="16" fill="var(--text-muted)" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              Enter Cabinet Data Manually
+            </h4>
             <p class="help-text">Paste a cut list or cabinet schedule:</p>
-            <textarea id="manualCabinetData" rows="6" placeholder="Example:
-B36 - Base 36&quot; x 24&quot; x 34.5&quot;
-W3030 - Wall 30&quot; x 12&quot; x 30&quot;
-SB36 - Sink Base 36&quot;"></textarea>
-            <button onclick="parseManualCabinetData()">Parse & Import</button>
+            <textarea id="manualCabinetData" rows="5" placeholder="Example:
+1 - Base 36&quot; x 24&quot; x 34.5&quot;
+2 - Wall Cabinet 30&quot; x 12&quot; x 30&quot;
+3 - Sink Base 36&quot; x 24&quot; x 34.5&quot;"></textarea>
+            <button onclick="parseManualCabinetData()" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              Parse & Import
+            </button>
           </div>
         </div>
       </div>
@@ -4589,13 +4616,19 @@ SB36 - Sink Base 36&quot;"></textarea>
       return;
     }
 
-    // Show loading state
+    // Show loading state with enhanced UI
     document.getElementById('pdfParseResults').style.display = 'block';
     document.getElementById('extractedRooms').innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        <div class="spinner" style="margin:0 auto 16px;"></div>
-        <p>${isPDF ? 'Converting PDF to image...' : 'Analyzing blueprint with AI Vision...'}</p>
-        <p style="font-size:12px; opacity:0.7;">This may take 15-30 seconds</p>
+      <div style="text-align:center; padding:32px 20px;">
+        <div class="ai-spinner"></div>
+        <h4 style="margin:0 0 8px; font-size:16px;">${isPDF ? 'Processing PDF' : 'Analyzing Blueprint'}</h4>
+        <p class="ai-pulse" style="margin:0 0 16px; color:var(--text-muted); font-size:14px;">
+          ${isPDF ? 'Converting pages to images...' : 'AI Vision is reading your drawing...'}
+        </p>
+        <div class="ai-progress-bar">
+          <div class="ai-progress-fill" style="width:30%"></div>
+        </div>
+        <p style="margin:16px 0 0; font-size:12px; color:var(--text-muted);">This typically takes 15-30 seconds</p>
       </div>
     `;
 
@@ -4618,12 +4651,18 @@ SB36 - Sink Base 36&quot;"></textarea>
         });
       }
 
-      // Update loading message
+      // Update loading message with enhanced UI
       document.getElementById('extractedRooms').innerHTML = `
-        <div style="text-align:center; padding:20px;">
-          <div class="spinner" style="margin:0 auto 16px;"></div>
-          <p>Analyzing blueprint with AI Vision...</p>
-          <p style="font-size:12px; opacity:0.7;">This may take 15-30 seconds</p>
+        <div style="text-align:center; padding:32px 20px;">
+          <div class="ai-spinner"></div>
+          <h4 style="margin:0 0 8px; font-size:16px;">Reading Cabinet Drawings</h4>
+          <p class="ai-pulse" style="margin:0 0 16px; color:var(--text-muted); font-size:14px;">
+            AI is extracting cabinet schedules and dimensions...
+          </p>
+          <div class="ai-progress-bar">
+            <div class="ai-progress-fill" style="width:60%"></div>
+          </div>
+          <p style="margin:16px 0 0; font-size:12px; color:var(--text-muted);">Looking for room names, cabinet numbers, and measurements</p>
         </div>
       `;
 
@@ -4665,39 +4704,73 @@ SB36 - Sink Base 36&quot;"></textarea>
 
     // Multi-page - show page thumbnails with "Analyze All" option
     document.getElementById('extractedRooms').innerHTML = `
-      <div style="margin-bottom:16px;">
-        <h4 style="margin:0 0 8px;">PDF has ${numPages} pages</h4>
-        <p style="font-size:13px; opacity:0.7; margin-bottom:12px;">Analyze all pages or select individual pages</p>
-        <button onclick="analyzeAllPDFPages()" class="btn-primary" style="width:100%; margin-bottom:12px;">
-          Analyze All ${numPages} Pages
-        </button>
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; background:linear-gradient(135deg, var(--primary), #8b5cf6); border-radius:12px; margin-bottom:12px;">
+          <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+        </div>
+        <h4 style="margin:0 0 4px; font-size:17px;">Multi-Page PDF Detected</h4>
+        <p style="margin:0; font-size:14px; color:var(--text-muted);">${numPages} pages found</p>
       </div>
-      <div id="pdfPageThumbnails" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:12px; max-height:300px; overflow-y:auto;"></div>
+
+      <button onclick="analyzeAllPDFPages()" class="btn-ai-primary" style="margin-bottom:16px;">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Analyze All ${numPages} Pages
+      </button>
+
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+        <span style="font-size:11px; color:var(--text-muted);">OR SELECT INDIVIDUAL PAGES</span>
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+      </div>
+
+      <div id="pdfPageThumbnails" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px; max-height:280px; overflow-y:auto; padding:4px;"></div>
     `;
 
     const thumbnailContainer = document.getElementById('pdfPageThumbnails');
 
-    // Generate thumbnails for first 10 pages (or all if less)
-    const pagesToShow = Math.min(numPages, 10);
+    // Generate thumbnails for first 12 pages (or all if less)
+    const pagesToShow = Math.min(numPages, 12);
     for (let i = 1; i <= pagesToShow; i++) {
-      const thumbBase64 = await renderPDFPage(pdf, i, 0.3);
+      const thumbBase64 = await renderPDFPage(pdf, i, 0.35);
       const thumb = document.createElement('div');
       thumb.className = 'pdf-page-thumb';
-      thumb.style.cssText = 'cursor:pointer; border:2px solid rgba(255,255,255,0.2); border-radius:8px; overflow:hidden; transition:all 0.2s;';
+      thumb.style.cssText = `
+        cursor: pointer;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        background: var(--dark-elevated);
+      `;
       thumb.innerHTML = `
-        <img src="${thumbBase64}" style="width:100%; display:block;" alt="Page ${i}"/>
-        <div style="text-align:center; padding:4px; font-size:12px; background:rgba(0,0,0,0.5);">Page ${i}</div>
+        <div style="position:relative;">
+          <img src="${thumbBase64}" style="width:100%; display:block;" alt="Page ${i}"/>
+          <div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600;">
+            ${i}
+          </div>
+        </div>
+        <div style="padding:8px; text-align:center;">
+          <span style="font-size:11px; color:var(--text-secondary);">Page ${i}</span>
+        </div>
       `;
       thumb.onclick = () => analyzePDFPage(i);
-      thumb.onmouseenter = () => thumb.style.borderColor = '#f9cb00';
-      thumb.onmouseleave = () => thumb.style.borderColor = 'rgba(255,255,255,0.2)';
+      thumb.onmouseenter = () => {
+        thumb.style.borderColor = 'var(--primary)';
+        thumb.style.transform = 'translateY(-2px)';
+        thumb.style.boxShadow = '0 4px 12px rgba(99,102,241,0.2)';
+      };
+      thumb.onmouseleave = () => {
+        thumb.style.borderColor = 'rgba(255,255,255,0.1)';
+        thumb.style.transform = 'translateY(0)';
+        thumb.style.boxShadow = 'none';
+      };
       thumbnailContainer.appendChild(thumb);
     }
 
-    if (numPages > 10) {
+    if (numPages > 12) {
       const moreMsg = document.createElement('div');
-      moreMsg.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; font-size:13px; opacity:0.7;';
-      moreMsg.textContent = `Showing first 10 of ${numPages} pages. Click "Analyze All" to process all.`;
+      moreMsg.style.cssText = 'grid-column:1/-1; text-align:center; padding:12px; font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.03); border-radius:8px; margin-top:4px;';
+      moreMsg.innerHTML = `<strong>+${numPages - 12} more pages</strong> • Use "Analyze All" to process everything`;
       thumbnailContainer.appendChild(moreMsg);
     }
 
@@ -4716,19 +4789,42 @@ SB36 - Sink Base 36&quot;"></textarea>
     let failedPages = [];
 
     document.getElementById('extractedRooms').innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        <div class="spinner" style="margin:0 auto 16px;"></div>
-        <p>Analyzing all ${numPages} pages with AI Vision...</p>
-        <p id="batchProgress" style="font-size:14px; color:#f9cb00;">Page 0 of ${numPages}</p>
-        <p id="batchStats" style="font-size:12px; opacity:0.7;">Rooms found: 0 | Cabinets: 0</p>
-        <div id="pageResults" style="margin-top:12px; font-size:11px; text-align:left; max-height:100px; overflow-y:auto;"></div>
+      <div style="text-align:center; padding:24px;">
+        <div class="ai-spinner"></div>
+        <h4 style="margin:0 0 8px; font-size:16px;">Analyzing ${numPages} Pages</h4>
+        <p id="batchProgress" class="ai-pulse" style="font-size:14px; color:var(--primary); margin:0 0 16px;">Preparing analysis...</p>
+
+        <div class="ai-progress-bar">
+          <div class="ai-progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+
+        <div class="ai-stats-grid" style="margin:20px 0;">
+          <div class="ai-stat-card">
+            <div class="ai-stat-value" id="statPages">0</div>
+            <div class="ai-stat-label">Pages Done</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-value" id="statRooms">0</div>
+            <div class="ai-stat-label">Rooms Found</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-value" id="statCabinets">0</div>
+            <div class="ai-stat-label">Cabinets</div>
+          </div>
+        </div>
+
+        <div class="page-results-list" id="pageResults"></div>
       </div>
     `;
 
     // Process pages sequentially to avoid overwhelming the API
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       try {
-        document.getElementById('batchProgress').textContent = `Analyzing page ${pageNum} of ${numPages}...`;
+        // Update progress UI
+        const progressPct = Math.round((pageNum / numPages) * 100);
+        document.getElementById('batchProgress').textContent = `Processing page ${pageNum} of ${numPages}...`;
+        document.getElementById('progressFill').style.width = `${progressPct}%`;
+        document.getElementById('statPages').textContent = pageNum - 1;
 
         // Use higher resolution (2.0) for better cabinet schedule reading
         const base64 = await renderPDFPage(pdf, pageNum, 2.0);
@@ -4759,27 +4855,30 @@ SB36 - Sink Base 36&quot;"></textarea>
             // Update live stats
             const totalRooms = allResults.reduce((s, r) => s + (r.rooms?.length || 0), 0);
             const totalCabs = allResults.reduce((s, r) => s + r.rooms.reduce((rs, rm) => rs + (rm.cabinets?.length || 0), 0), 0);
-            document.getElementById('batchStats').textContent = `Rooms found: ${totalRooms} | Cabinets: ${totalCabs}`;
+            document.getElementById('statRooms').textContent = totalRooms;
+            document.getElementById('statCabinets').textContent = totalCabs;
 
             // Show page result
             const pageResultsEl = document.getElementById('pageResults');
             const roomNames = data.rooms.map(r => r.name).join(', ');
             const cabCount = data.rooms.reduce((s, rm) => s + (rm.cabinets?.length || 0), 0);
-            pageResultsEl.innerHTML += `<div style="color:#22c55e;">✓ Page ${pageNum}: ${roomNames} (${cabCount} cabinets)</div>`;
+            pageResultsEl.innerHTML += `<div class="page-result success"><span class="page-result-icon">✓</span> Page ${pageNum}: ${roomNames} (${cabCount} cabs)</div>`;
+            pageResultsEl.scrollTop = pageResultsEl.scrollHeight;
           } else {
             failedPages.push({ page: pageNum, reason: 'No cabinets detected' });
-            document.getElementById('pageResults').innerHTML += `<div style="color:#f59e0b;">○ Page ${pageNum}: No cabinet data found</div>`;
+            document.getElementById('pageResults').innerHTML += `<div class="page-result warning"><span class="page-result-icon">○</span> Page ${pageNum}: No cabinet data</div>`;
           }
         } else {
           failedPages.push({ page: pageNum, reason: `API error ${response.status}` });
-          document.getElementById('pageResults').innerHTML += `<div style="color:#ef4444;">✗ Page ${pageNum}: API error</div>`;
+          document.getElementById('pageResults').innerHTML += `<div class="page-result error"><span class="page-result-icon">✗</span> Page ${pageNum}: API error</div>`;
         }
 
         processedCount++;
+        document.getElementById('statPages').textContent = processedCount;
       } catch (error) {
         console.error(`Error analyzing page ${pageNum}:`, error);
         failedPages.push({ page: pageNum, reason: error.message });
-        document.getElementById('pageResults').innerHTML += `<div style="color:#ef4444;">✗ Page ${pageNum}: ${error.message}</div>`;
+        document.getElementById('pageResults').innerHTML += `<div class="page-result error"><span class="page-result-icon">✗</span> Page ${pageNum}: Error</div>`;
       }
 
       // Small delay between pages to avoid rate limiting
@@ -5116,71 +5215,162 @@ SB36 - Sink Base 36&quot;"></textarea>
         }
       });
 
-      // Show detailed results with cabinet list
+      // Show detailed results with enhanced UI
       document.getElementById('extractedRooms').innerHTML = `
-        <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:16px; margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:start;">
-            <div>
-              <h4 style="color:#22c55e; margin:0 0 8px;">AI Analysis Complete</h4>
-              <p style="margin:0; font-size:14px;">Detected ${parsedRooms.length} room(s) with ${totalCabinets} cabinet(s)</p>
-            </div>
-            <div style="text-align:right;">
-              <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; background:${confidenceColor}22; color:${confidenceColor}; border:1px solid ${confidenceColor}44;">
-                ${confidence.toUpperCase()} confidence
-              </span>
-              ${pageType !== 'unknown' ? `<div style="font-size:11px; opacity:0.7; margin-top:4px;">Page type: ${pageType}</div>` : ''}
-            </div>
+        <div style="text-align:center; margin-bottom:20px;">
+          <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; background:linear-gradient(135deg, #22c55e, #16a34a); border-radius:50%; margin-bottom:12px;">
+            <svg width="28" height="28" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           </div>
-          ${aiData.pageTitle ? `<p style="margin:8px 0 0; font-size:13px; opacity:0.8;">📄 ${aiData.pageTitle}</p>` : ''}
-          ${aiData.pagesAnalyzed ? `<p style="margin:4px 0 0; font-size:12px; opacity:0.7;">Analyzed ${aiData.successfulPages || aiData.pagesAnalyzed}/${aiData.totalPages} pages</p>` : ''}
+          <h3 style="margin:0 0 4px; font-size:20px;">Analysis Complete</h3>
+          <p style="margin:0; color:var(--text-muted); font-size:14px;">Found ${totalCabinets} cabinets across ${parsedRooms.length} room${parsedRooms.length > 1 ? 's' : ''}</p>
+        </div>
+
+        <div class="ai-stats-grid" style="margin-bottom:20px;">
+          <div class="ai-stat-card">
+            <div class="ai-stat-value">${parsedRooms.length}</div>
+            <div class="ai-stat-label">Rooms</div>
+          </div>
+          <div class="ai-stat-card">
+            <div class="ai-stat-value">${totalCabinets}</div>
+            <div class="ai-stat-label">Cabinets</div>
+          </div>
+          <div class="ai-stat-card">
+            <div style="display:flex; justify-content:center;">
+              <span class="confidence-badge ${confidence}">${confidence}</span>
+            </div>
+            <div class="ai-stat-label">Confidence</div>
+          </div>
         </div>
 
         ${warnings.length > 0 ? `
-          <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:12px; margin-bottom:12px;">
-            <div style="font-size:12px; color:#f59e0b;">
-              <strong>⚠️ Review needed:</strong>
-              ${warnings.map(w => `<div style="margin-top:4px;">• ${w}</div>`).join('')}
+          <div style="background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:10px; padding:14px; margin-bottom:16px;">
+            <div style="display:flex; align-items:start; gap:10px;">
+              <span style="font-size:18px;">⚠️</span>
+              <div style="font-size:13px; color:#f59e0b;">
+                <strong style="display:block; margin-bottom:4px;">Review Recommended</strong>
+                ${warnings.map(w => `<div style="opacity:0.9; margin-top:2px;">• ${w}</div>`).join('')}
+              </div>
             </div>
           </div>
         ` : ''}
 
         ${parsedRooms.map((room, i) => `
-          <div class="parsed-room" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; margin-bottom:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <div>
-                <strong>${room.name}</strong>
-                <span style="opacity:0.7; margin-left:8px;">${room.width || '?'}' x ${room.depth || '?'}'</span>
-                ${room.sourcePages?.length > 1 ? `<span style="font-size:10px; color:#22c55e; margin-left:8px;">merged</span>` : ''}
-              </div>
-              <button onclick="importParsedRoom(${i})" class="btn-small">Import</button>
+          <div class="room-preview-card">
+            <div class="room-preview-header">
+              <h4>
+                <span style="opacity:0.5;">#${i + 1}</span>
+                ${room.name}
+                ${room.sourcePages?.length > 1 ? '<span class="room-badge">merged</span>' : ''}
+              </h4>
+              <span style="font-size:12px; color:var(--text-muted);">${room.width || '?'}' × ${room.depth || '?'}'</span>
             </div>
-            <div style="font-size:11px; opacity:0.9; max-height:120px; overflow-y:auto; font-family:monospace;">
-              <div style="display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:4px; font-weight:bold;">
-                <span>#</span><span>Type</span><span>W x D x H</span>
-              </div>
-              ${room.cabinets.slice(0, 15).map(c =>
-                `<div style="display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; padding:2px 0;">
-                  <span style="color:#f9cb00;">${c.number}</span>
-                  <span>${c.name}</span>
-                  <span>${c.width}" x ${c.depth}" x ${c.height}"</span>
-                </div>`
-              ).join('')}
-              ${room.cabinets.length > 15 ? `<div style="color:#f9cb00; padding:4px 0;">...and ${room.cabinets.length - 15} more cabinets</div>` : ''}
+            <div class="room-preview-body">
+              ${room.cabinets.slice(0, 8).map(c => `
+                <div class="cabinet-card">
+                  <div class="cab-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span class="cab-number">${c.number}</span>
+                      <span class="cab-type">${c.name}</span>
+                    </div>
+                    <span class="cab-wall">${c.wall || 'top'}</span>
+                  </div>
+                  <div class="cab-dims">${c.width}" W × ${c.depth}" D × ${c.height}" H</div>
+                </div>
+              `).join('')}
+              ${room.cabinets.length > 8 ? `
+                <div style="text-align:center; padding:8px; color:var(--text-muted); font-size:12px;">
+                  + ${room.cabinets.length - 8} more cabinets
+                </div>
+              ` : ''}
+            </div>
+            <div class="room-preview-footer">
+              <button onclick="importParsedRoom(${i})" class="btn-ai-secondary" style="flex:1;">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Import Room
+              </button>
+              <button onclick="previewRoom(${i})" class="btn-ai-secondary" style="flex:0;">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </button>
             </div>
           </div>
         `).join('')}
 
-        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">
-          Import All ${totalCabinets} Cabinets to Designer
+        <button onclick="importAllParsedRooms()" class="btn-ai-primary" style="margin-top:16px;">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Import All ${totalCabinets} Cabinets
         </button>
-        <button onclick="showManualSupplementForm()" class="btn-secondary" style="margin-top:8px; width:100%;">Add Missing Details</button>
-        <button onclick="showRawAIData()" class="btn-secondary" style="margin-top:8px; width:100%; font-size:12px;">Debug: View Raw AI Response</button>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button onclick="showManualSupplementForm()" class="btn-ai-secondary">
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            Add Details
+          </button>
+          <button onclick="showRawAIData()" class="btn-ai-secondary">
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+            View JSON
+          </button>
+        </div>
       `;
     } else {
       // Show partial data if available, with manual entry option
       showPartialResultsWithManualEntry(aiData, fileName);
     }
   }
+
+  // Preview room in a popup
+  window.previewRoom = function(index) {
+    const room = window._parsedRooms?.[index];
+    if (!room) return;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="background:var(--dark-surface); border-radius:16px; width:100%; max-width:700px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
+        <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:18px;">${room.name}</h3>
+          <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:20px; overflow-y:auto; flex:1;">
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:20px;">
+            <div class="ai-stat-card">
+              <div class="ai-stat-value">${room.cabinets.length}</div>
+              <div class="ai-stat-label">Cabinets</div>
+            </div>
+            <div class="ai-stat-card">
+              <div class="ai-stat-value">${room.width || '?'}' × ${room.depth || '?'}'</div>
+              <div class="ai-stat-label">Dimensions</div>
+            </div>
+          </div>
+
+          <h4 style="margin:0 0 12px; font-size:14px; color:var(--text-muted);">All Cabinets</h4>
+          <div style="display:grid; gap:8px;">
+            ${room.cabinets.map(c => `
+              <div class="cabinet-card">
+                <div class="cab-header">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="cab-number">${c.number}</span>
+                    <span class="cab-type">${c.name}</span>
+                  </div>
+                  <span class="cab-wall">${c.wall || 'top'}</span>
+                </div>
+                <div class="cab-dims">${c.width}" W × ${c.depth}" D × ${c.height}" H</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div style="padding:16px 20px; border-top:1px solid var(--border);">
+          <button onclick="importParsedRoom(${index}); this.closest('div[style*=fixed]').remove();" class="btn-ai-primary">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Import This Room
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  };
 
   // Debug: Show raw AI response in a modal
   window.showRawAIData = function() {
