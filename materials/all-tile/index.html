@@ -749,8 +749,8 @@
 
       .tile-card {
         border-radius: 8px;
-        /* Prevent content shift during scroll */
-        contain: layout style paint;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       }
 
       .tile-card:active {
@@ -760,19 +760,30 @@
 
       .tile-image-wrapper {
         border-radius: 8px 8px 0 0;
+        /* Smaller aspect ratio on mobile for better scrolling */
+        aspect-ratio: 4/3;
       }
 
       .tile-info {
         padding: 10px;
+        /* Ensure info is always visible */
+        min-height: 50px;
       }
 
       .tile-name {
         font-size: 13px;
         line-height: 1.3;
+        /* Allow 2 lines before truncating */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        white-space: normal;
       }
 
       .tile-meta {
         font-size: 11px;
+        margin-top: 2px;
       }
 
       /* Show swipe mode button - position above safe area */
@@ -878,10 +889,10 @@
   </button>
 
   <!-- Unified Navigation Script -->
-  <script src="/js/unified-nav.js?v=20260121"></script>
+  <script src="/js/unified-nav.js?v=20260129"></script>
 
   <!-- Swipe Cards Script (Mobile) -->
-  <script src="/js/swipe-cards-universal.js?v=20260121"></script>
+  <script src="/js/swipe-cards-universal.js?v=20260129"></script>
 
   <script>
     /**
@@ -1182,17 +1193,11 @@
 
       // Activate Swipe Mode (global function for mobile)
       window.activateSwipeMode = function() {
-        if (typeof SwipeCardsUniversal !== 'undefined' && SwipeCardsUniversal.init) {
-          SwipeCardsUniversal.init({
-            items: filteredTiles.map(tile => ({
-              name: tile.name,
-              image: tile.primaryImage || '/images/placeholder-tile.jpg',
-              url: '/tiles/' + tile.slug + '/',
-              brand: tile.brand === 'bravo-tile' ? 'Bravo Tile' : tile.brand === 'msi' ? 'MSI' : tile.brand
-            }))
-          });
+        // The swipe-cards-universal.js auto-initializes and exposes window.startSwipeMode()
+        if (typeof window.startSwipeMode === 'function') {
+          window.startSwipeMode();
         } else {
-          console.warn('SwipeCardsUniversal not available');
+          console.warn('Swipe mode not available - ensure swipe-cards-universal.js is loaded');
         }
       };
 
