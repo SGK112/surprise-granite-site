@@ -21193,6 +21193,16 @@
       updateElementList();
     }
 
+    // Throttled draw using requestAnimationFrame - prevents excessive redraws during drag
+    function drawThrottled() {
+      if (drawPending) return;
+      drawPending = true;
+      requestAnimationFrame(() => {
+        drawPending = false;
+        draw();
+      });
+    }
+
     // Draw snap guides when dragging cabinets near walls
     function drawSnapGuides() {
       if (!isDragging || !selectedElement) return;
