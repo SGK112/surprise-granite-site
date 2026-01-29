@@ -914,16 +914,29 @@
     { key: 'P', action: 'Pan tool' },
     { key: 'S', action: 'Slab layout tool' },
     { key: 'N', action: 'Add note' },
+    { key: 'I', action: 'Project info' },
+    { key: 'T', action: 'Work triangle' },
+    { key: 'A', action: 'Appliance library' },
+    { key: 'E', action: 'Edge profiles' },
+    { key: 'K', action: 'Clearance check' },
+    { key: 'L', action: 'Lock/unlock element' },
+    { key: 'R', action: 'Rotate 90°' },
+    { key: 'H', action: 'Flip horizontal' },
+    { key: 'G', action: 'Toggle grid' },
     { key: 'Delete/Backspace', action: 'Delete selected' },
     { key: 'Ctrl+D', action: 'Duplicate' },
     { key: 'Ctrl+G', action: 'Group elements' },
     { key: 'Ctrl+Shift+G', action: 'Ungroup' },
+    { key: 'Ctrl+P', action: 'Print settings' },
     { key: 'Ctrl+Z', action: 'Undo' },
     { key: 'Ctrl+Y', action: 'Redo' },
     { key: 'Ctrl+S', action: 'Save design' },
     { key: 'Ctrl+Shift+S', action: 'Save as template' },
     { key: 'Ctrl+F', action: 'Search elements' },
     { key: 'Ctrl+E', action: 'Export' },
+    { key: '[ / ]', action: 'Layer up/down' },
+    { key: '+/-', action: 'Zoom in/out' },
+    { key: '0', action: 'Zoom to fit' },
     { key: 'Space', action: 'Toggle 3D view' },
     { key: 'Escape', action: 'Cancel / Deselect' },
     { key: 'Arrow keys', action: 'Nudge selected' },
@@ -2145,4 +2158,947 @@
   });
 
   console.log('Room Designer Pro Features v4.0 loaded');
+
+  // ============================================================
+  // PRO FEATURES V5.0 - ADVANCED CAPABILITIES
+  // ============================================================
+
+  // === PRINT LAYOUT SYSTEM ===
+  const printSettings = {
+    scale: 'fit',
+    orientation: 'landscape',
+    showGrid: true,
+    showDimensions: true,
+    showMaterials: true,
+    showNotes: true,
+    paperSize: 'letter',
+    margins: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 }
+  };
+
+  window.showPrintSettings = function() {
+    const existing = document.getElementById('printSettingsModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'printSettingsModal';
+    modal.className = 'print-settings-modal';
+    modal.innerHTML = `
+      <div class="print-settings-content">
+        <div class="print-settings-header">
+          <h3>🖨️ Print Settings</h3>
+          <button onclick="this.closest('.print-settings-modal').remove()">&times;</button>
+        </div>
+        <div class="print-settings-body">
+          <div class="form-group">
+            <label>Paper Size</label>
+            <select id="printPaperSize">
+              <option value="letter" ${printSettings.paperSize === 'letter' ? 'selected' : ''}>Letter (8.5" x 11")</option>
+              <option value="legal" ${printSettings.paperSize === 'legal' ? 'selected' : ''}>Legal (8.5" x 14")</option>
+              <option value="tabloid" ${printSettings.paperSize === 'tabloid' ? 'selected' : ''}>Tabloid (11" x 17")</option>
+              <option value="a4" ${printSettings.paperSize === 'a4' ? 'selected' : ''}>A4 (210mm x 297mm)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Orientation</label>
+            <select id="printOrientation">
+              <option value="landscape" ${printSettings.orientation === 'landscape' ? 'selected' : ''}>Landscape</option>
+              <option value="portrait" ${printSettings.orientation === 'portrait' ? 'selected' : ''}>Portrait</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Scale</label>
+            <select id="printScale">
+              <option value="fit" ${printSettings.scale === 'fit' ? 'selected' : ''}>Fit to Page</option>
+              <option value="1:48" ${printSettings.scale === '1:48' ? 'selected' : ''}>1/4" = 1' (1:48)</option>
+              <option value="1:24" ${printSettings.scale === '1:24' ? 'selected' : ''}>1/2" = 1' (1:24)</option>
+              <option value="1:12" ${printSettings.scale === '1:12' ? 'selected' : ''}>1" = 1' (1:12)</option>
+            </select>
+          </div>
+          <div class="form-group-row">
+            <label><input type="checkbox" id="printShowGrid" ${printSettings.showGrid ? 'checked' : ''}> Show Grid</label>
+            <label><input type="checkbox" id="printShowDims" ${printSettings.showDimensions ? 'checked' : ''}> Show Dimensions</label>
+          </div>
+          <div class="form-group-row">
+            <label><input type="checkbox" id="printShowMaterials" ${printSettings.showMaterials ? 'checked' : ''}> Show Materials List</label>
+            <label><input type="checkbox" id="printShowNotes" ${printSettings.showNotes ? 'checked' : ''}> Show Notes</label>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" onclick="this.closest('.print-settings-modal').remove()">Cancel</button>
+            <button class="btn-secondary" onclick="previewPrint()">Preview</button>
+            <button class="btn-primary" onclick="executePrint()">Print</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.previewPrint = function() {
+    updatePrintSettings();
+    generatePrintLayout(true);
+  };
+
+  window.executePrint = function() {
+    updatePrintSettings();
+    generatePrintLayout(false);
+  };
+
+  function updatePrintSettings() {
+    printSettings.paperSize = document.getElementById('printPaperSize')?.value || 'letter';
+    printSettings.orientation = document.getElementById('printOrientation')?.value || 'landscape';
+    printSettings.scale = document.getElementById('printScale')?.value || 'fit';
+    printSettings.showGrid = document.getElementById('printShowGrid')?.checked ?? true;
+    printSettings.showDimensions = document.getElementById('printShowDims')?.checked ?? true;
+    printSettings.showMaterials = document.getElementById('printShowMaterials')?.checked ?? true;
+    printSettings.showNotes = document.getElementById('printShowNotes')?.checked ?? true;
+  }
+
+  function generatePrintLayout(preview = false) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      if (typeof showToast === 'function') showToast('Please allow popups', 'warning');
+      return;
+    }
+
+    const info = projectInfo;
+    const stats = window.getDesignStats();
+    const costs = window.calculateMaterialCosts();
+    const ppi = window.pixelsPerInch || 12;
+    const roomWidthFt = (window.roomWidth || 240) / 12;
+    const roomDepthFt = (window.roomDepth || 180) / 12;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${info.name || 'Design'} - Print</title>
+        <style>
+          @page { size: ${printSettings.paperSize} ${printSettings.orientation}; margin: 0.5in; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+          .print-header { display: flex; justify-content: space-between; border-bottom: 2px solid #f9cb00; padding-bottom: 10px; margin-bottom: 20px; }
+          .print-title { font-size: 24px; font-weight: bold; }
+          .print-subtitle { color: #666; }
+          .print-client { text-align: right; }
+          .print-canvas { border: 1px solid #ccc; margin: 20px 0; background: #f5f5f5; }
+          .print-section { margin: 20px 0; }
+          .print-section h3 { border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+          .print-table { width: 100%; border-collapse: collapse; }
+          .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .print-table th { background: #f5f5f5; }
+          .print-footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+          .print-dimensions { background: #fffbe6; padding: 10px; border-radius: 4px; }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <div>
+            <div class="print-title">${info.name || 'Room Design'}</div>
+            <div class="print-subtitle">Room: ${roomWidthFt}' x ${roomDepthFt}'</div>
+          </div>
+          <div class="print-client">
+            ${info.client ? `<div><strong>${info.client}</strong></div>` : ''}
+            ${info.address ? `<div>${info.address}</div>` : ''}
+            ${info.phone ? `<div>${info.phone}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="print-canvas" id="printCanvas" style="height: 400px;">
+          <canvas id="printRoomCanvas"></canvas>
+        </div>
+
+        ${printSettings.showDimensions && stats ? `
+        <div class="print-section">
+          <h3>Design Summary</h3>
+          <div class="print-dimensions">
+            <strong>Elements:</strong> ${stats.totalElements} |
+            <strong>Countertop:</strong> ${stats.countertopArea} sq ft |
+            <strong>Cabinets:</strong> ${stats.cabinetCount}
+          </div>
+        </div>
+        ` : ''}
+
+        ${printSettings.showMaterials && costs.items.length > 0 ? `
+        <div class="print-section">
+          <h3>Materials & Cost Estimate</h3>
+          <table class="print-table">
+            <thead><tr><th>Item</th><th>Qty</th><th>Material</th><th>Labor</th><th>Total</th></tr></thead>
+            <tbody>
+              ${costs.items.map(i => `<tr><td>${i.name}</td><td>${i.quantity} ${i.unit}</td><td>$${i.materialCost}</td><td>$${i.laborCost}</td><td>$${i.total}</td></tr>`).join('')}
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4"><strong>Grand Total</strong></td><td><strong>$${costs.grandTotal}</strong></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        ` : ''}
+
+        ${printSettings.showNotes && designNotes.length > 0 ? `
+        <div class="print-section">
+          <h3>Design Notes</h3>
+          <ul>
+            ${designNotes.map(n => `<li>${n.text}</li>`).join('')}
+          </ul>
+        </div>
+        ` : ''}
+
+        <div class="print-footer">
+          Generated on ${new Date().toLocaleDateString()} by Surprise Granite Room Designer
+        </div>
+
+        <script>
+          ${!preview ? 'window.onload = function() { window.print(); };' : ''}
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    document.getElementById('printSettingsModal')?.remove();
+  }
+
+  // === EDGE PROFILE LIBRARY ===
+  const EDGE_PROFILES = [
+    { id: 'straight', name: 'Straight/Eased', icon: '▬', description: 'Simple flat edge with slight bevel' },
+    { id: 'bevel', name: 'Beveled', icon: '◢', description: '45-degree angled edge' },
+    { id: 'bullnose', name: 'Full Bullnose', icon: '◯', description: 'Fully rounded edge' },
+    { id: 'half-bullnose', name: 'Half Bullnose', icon: '◠', description: 'Half-round top edge' },
+    { id: 'ogee', name: 'Ogee', icon: '∿', description: 'S-curve decorative edge' },
+    { id: 'dupont', name: 'DuPont', icon: '⌐', description: 'Step-down decorative edge' },
+    { id: 'waterfall', name: 'Waterfall', icon: '⌒', description: 'Curved waterfall edge' },
+    { id: 'mitered', name: 'Mitered', icon: '◤', description: 'Angled to appear thicker' },
+    { id: 'chiseled', name: 'Chiseled', icon: '▭', description: 'Rough natural stone look' },
+    { id: 'laminated', name: 'Laminated', icon: '═', description: 'Double-thick appearance' }
+  ];
+
+  window.showEdgeProfileSelector = function(callback) {
+    const existing = document.getElementById('edgeProfileModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'edgeProfileModal';
+    modal.className = 'edge-profile-modal';
+    modal.innerHTML = `
+      <div class="edge-profile-content">
+        <div class="edge-profile-header">
+          <h3>Edge Profiles</h3>
+          <button onclick="this.closest('.edge-profile-modal').remove()">&times;</button>
+        </div>
+        <div class="edge-profile-grid">
+          ${EDGE_PROFILES.map(p => `
+            <div class="edge-profile-item" onclick="selectEdgeProfile('${p.id}')" data-profile="${p.id}">
+              <div class="edge-profile-icon">${p.icon}</div>
+              <div class="edge-profile-name">${p.name}</div>
+              <div class="edge-profile-desc">${p.description}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    window._edgeProfileCallback = callback;
+  };
+
+  window.selectEdgeProfile = function(profileId) {
+    const profile = EDGE_PROFILES.find(p => p.id === profileId);
+    if (!profile) return;
+
+    if (window.selectedElement && window.selectedElement.type === 'counter') {
+      window.selectedElement.edgeProfile = profileId;
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    }
+
+    if (window._edgeProfileCallback) {
+      window._edgeProfileCallback(profile);
+      window._edgeProfileCallback = null;
+    }
+
+    document.getElementById('edgeProfileModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Edge: ${profile.name}`, 'success');
+  };
+
+  window.getEdgeProfiles = function() { return EDGE_PROFILES; };
+
+  // === APPLIANCE LIBRARY ===
+  const APPLIANCE_LIBRARY = {
+    refrigerators: [
+      { id: 'fridge-std', name: 'Standard (36")', width: 36, depth: 30, height: 70, icon: '❄️' },
+      { id: 'fridge-counter', name: 'Counter-Depth (36")', width: 36, depth: 24, height: 70, icon: '❄️' },
+      { id: 'fridge-french', name: 'French Door (36")', width: 36, depth: 30, height: 70, icon: '❄️' },
+      { id: 'fridge-compact', name: 'Compact (24")', width: 24, depth: 24, height: 34, icon: '❄️' }
+    ],
+    ranges: [
+      { id: 'range-30', name: 'Standard (30")', width: 30, depth: 26, height: 36, icon: '🔥' },
+      { id: 'range-36', name: 'Professional (36")', width: 36, depth: 26, height: 36, icon: '🔥' },
+      { id: 'range-48', name: 'Pro Commercial (48")', width: 48, depth: 28, height: 36, icon: '🔥' },
+      { id: 'cooktop-30', name: 'Cooktop (30")', width: 30, depth: 21, height: 5, icon: '🔥' }
+    ],
+    dishwashers: [
+      { id: 'dw-std', name: 'Standard (24")', width: 24, depth: 24, height: 34, icon: '🫧' },
+      { id: 'dw-compact', name: 'Compact (18")', width: 18, depth: 24, height: 34, icon: '🫧' },
+      { id: 'dw-drawer', name: 'Drawer (24")', width: 24, depth: 24, height: 17, icon: '🫧' }
+    ],
+    sinks: [
+      { id: 'sink-single', name: 'Single Bowl (25")', width: 25, depth: 22, height: 8, icon: '🚰' },
+      { id: 'sink-double', name: 'Double Bowl (33")', width: 33, depth: 22, height: 8, icon: '🚰' },
+      { id: 'sink-farmhouse', name: 'Farmhouse (33")', width: 33, depth: 21, height: 10, icon: '🚰' },
+      { id: 'sink-bar', name: 'Bar Sink (15")', width: 15, depth: 15, height: 6, icon: '🚰' }
+    ],
+    ovens: [
+      { id: 'oven-wall', name: 'Wall Oven (30")', width: 30, depth: 24, height: 29, icon: '♨️' },
+      { id: 'oven-double', name: 'Double Wall Oven', width: 30, depth: 24, height: 52, icon: '♨️' },
+      { id: 'microwave-otc', name: 'Over-Counter Micro', width: 30, depth: 16, height: 17, icon: '📻' }
+    ]
+  };
+
+  window.showApplianceLibrary = function() {
+    const existing = document.getElementById('applianceLibraryModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'applianceLibraryModal';
+    modal.className = 'appliance-library-modal';
+
+    let content = '<div class="appliance-library-content"><div class="appliance-library-header"><h3>📦 Appliance Library</h3><button onclick="this.closest(\'.appliance-library-modal\').remove()">&times;</button></div><div class="appliance-library-body">';
+
+    Object.entries(APPLIANCE_LIBRARY).forEach(([category, items]) => {
+      content += `<div class="appliance-category"><h4>${category.charAt(0).toUpperCase() + category.slice(1)}</h4><div class="appliance-grid">`;
+      items.forEach(item => {
+        content += `
+          <div class="appliance-item" onclick="addApplianceToDesign('${category}', '${item.id}')">
+            <span class="appliance-icon">${item.icon}</span>
+            <span class="appliance-name">${item.name}</span>
+            <span class="appliance-size">${item.width}"W x ${item.depth}"D</span>
+          </div>
+        `;
+      });
+      content += '</div></div>';
+    });
+
+    content += '</div></div>';
+    modal.innerHTML = content;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.addApplianceToDesign = function(category, itemId) {
+    const items = APPLIANCE_LIBRARY[category];
+    if (!items) return;
+
+    const appliance = items.find(i => i.id === itemId);
+    if (!appliance) return;
+
+    const ppi = window.pixelsPerInch || 12;
+    const newElement = {
+      id: appliance.id + '_' + Date.now(),
+      type: category === 'refrigerators' ? 'refrigerator' :
+            category === 'ranges' ? 'stove' :
+            category === 'dishwashers' ? 'dishwasher' :
+            category === 'sinks' ? 'sink' : 'appliance',
+      name: appliance.name,
+      width: appliance.width * ppi,
+      height: appliance.depth * ppi,
+      depth: appliance.height,
+      x: 100,
+      y: 100
+    };
+
+    if (window.elements) {
+      window.elements.push(newElement);
+      window.selectedElement = newElement;
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    }
+
+    document.getElementById('applianceLibraryModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Added ${appliance.name}`, 'success');
+  };
+
+  // === ROOM TEMPLATES GALLERY ===
+  const ROOM_TEMPLATES = [
+    {
+      id: 'galley',
+      name: 'Galley Kitchen',
+      description: 'Efficient two-wall layout',
+      roomWidth: 10,
+      roomDepth: 20,
+      icon: '║║',
+      elements: [
+        { type: 'cabinet', x: 0, y: 0, width: 120, height: 24 },
+        { type: 'counter', x: 0, y: 24, width: 120, height: 2 },
+        { type: 'cabinet', x: 0, y: 180, width: 120, height: 24 },
+        { type: 'sink', x: 48, y: 0, width: 24, height: 24 },
+        { type: 'stove', x: 48, y: 180, width: 30, height: 24 }
+      ]
+    },
+    {
+      id: 'lshape',
+      name: 'L-Shaped Kitchen',
+      description: 'Corner layout with open space',
+      roomWidth: 15,
+      roomDepth: 12,
+      icon: '└─',
+      elements: [
+        { type: 'cabinet', x: 0, y: 0, width: 144, height: 24 },
+        { type: 'cabinet', x: 0, y: 24, width: 24, height: 96 },
+        { type: 'sink', x: 60, y: 0, width: 33, height: 24 },
+        { type: 'refrigerator', x: 0, y: 96, width: 36, height: 30 },
+        { type: 'stove', x: 108, y: 0, width: 30, height: 24 }
+      ]
+    },
+    {
+      id: 'ushape',
+      name: 'U-Shaped Kitchen',
+      description: 'Three-wall wraparound',
+      roomWidth: 14,
+      roomDepth: 12,
+      icon: '╔═╗',
+      elements: [
+        { type: 'cabinet', x: 0, y: 0, width: 168, height: 24 },
+        { type: 'cabinet', x: 0, y: 24, width: 24, height: 96 },
+        { type: 'cabinet', x: 144, y: 24, width: 24, height: 96 },
+        { type: 'sink', x: 66, y: 0, width: 36, height: 24 },
+        { type: 'stove', x: 0, y: 72, width: 24, height: 30 },
+        { type: 'refrigerator', x: 144, y: 72, width: 24, height: 36 }
+      ]
+    },
+    {
+      id: 'island',
+      name: 'Kitchen with Island',
+      description: 'Open layout with center island',
+      roomWidth: 16,
+      roomDepth: 14,
+      icon: '▬═',
+      elements: [
+        { type: 'cabinet', x: 0, y: 0, width: 192, height: 24 },
+        { type: 'counter', x: 48, y: 84, width: 96, height: 36 },
+        { type: 'sink', x: 80, y: 0, width: 33, height: 24 },
+        { type: 'stove', x: 132, y: 0, width: 30, height: 24 },
+        { type: 'refrigerator', x: 0, y: 0, width: 36, height: 30 }
+      ]
+    },
+    {
+      id: 'master-bath',
+      name: 'Master Bathroom',
+      description: 'Full bathroom with double vanity',
+      roomWidth: 12,
+      roomDepth: 10,
+      icon: '🛁',
+      elements: [
+        { type: 'vanity', x: 0, y: 0, width: 60, height: 22 },
+        { type: 'toilet', x: 84, y: 0, width: 20, height: 28 },
+        { type: 'tub', x: 0, y: 96, width: 60, height: 32 },
+        { type: 'shower', x: 84, y: 56, width: 48, height: 48 }
+      ]
+    }
+  ];
+
+  window.showRoomTemplatesGallery = function() {
+    const existing = document.getElementById('roomTemplatesModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'roomTemplatesModal';
+    modal.className = 'room-templates-modal';
+    modal.innerHTML = `
+      <div class="room-templates-content">
+        <div class="room-templates-header">
+          <h3>🏠 Room Templates</h3>
+          <button onclick="this.closest('.room-templates-modal').remove()">&times;</button>
+        </div>
+        <div class="room-templates-grid">
+          ${ROOM_TEMPLATES.map(t => `
+            <div class="room-template-card" onclick="applyRoomTemplate('${t.id}')">
+              <div class="template-icon">${t.icon}</div>
+              <div class="template-name">${t.name}</div>
+              <div class="template-desc">${t.description}</div>
+              <div class="template-size">${t.roomWidth}' x ${t.roomDepth}'</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.applyRoomTemplate = function(templateId) {
+    const template = ROOM_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    if (window.elements && window.elements.length > 0) {
+      if (!confirm('Replace current design with this template?')) return;
+    }
+
+    const ppi = window.pixelsPerInch || 12;
+    window.roomWidth = template.roomWidth * 12;
+    window.roomDepth = template.roomDepth * 12;
+
+    window.elements = template.elements.map((el, i) => ({
+      ...el,
+      id: `${el.type}_${Date.now()}_${i}`,
+      x: el.x * ppi,
+      y: el.y * ppi,
+      width: el.width * ppi,
+      height: el.height * ppi
+    }));
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    document.getElementById('roomTemplatesModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Applied: ${template.name}`, 'success');
+  };
+
+  // === TOUCH GESTURE SUPPORT ===
+  let touchState = {
+    startX: 0,
+    startY: 0,
+    startDistance: 0,
+    startZoom: 1,
+    isPanning: false,
+    isPinching: false
+  };
+
+  window.initTouchGestures = function() {
+    const canvas = document.getElementById('roomCanvas');
+    if (!canvas) return;
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+  };
+
+  function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+      touchState.startX = e.touches[0].clientX;
+      touchState.startY = e.touches[0].clientY;
+      touchState.isPanning = true;
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchState.startDistance = Math.sqrt(dx * dx + dy * dy);
+      touchState.startZoom = currentZoom;
+      touchState.isPinching = true;
+      touchState.isPanning = false;
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (touchState.isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const scale = distance / touchState.startDistance;
+      window.setZoom(touchState.startZoom * scale);
+    } else if (touchState.isPanning && e.touches.length === 1) {
+      const deltaX = e.touches[0].clientX - touchState.startX;
+      const deltaY = e.touches[0].clientY - touchState.startY;
+      // Pan canvas (would integrate with canvas pan functionality)
+      if (window.panCanvas) {
+        window.panCanvas(deltaX, deltaY);
+      }
+      touchState.startX = e.touches[0].clientX;
+      touchState.startY = e.touches[0].clientY;
+    }
+  }
+
+  function handleTouchEnd() {
+    touchState.isPanning = false;
+    touchState.isPinching = false;
+  }
+
+  // === QUICK COLOR THEMES ===
+  const COLOR_THEMES = [
+    { id: 'modern-white', name: 'Modern White', cabinet: '#ffffff', counter: '#1a1a1a', accent: '#c4a35a' },
+    { id: 'classic-navy', name: 'Classic Navy', cabinet: '#1e3a5f', counter: '#ffffff', accent: '#c4a35a' },
+    { id: 'warm-wood', name: 'Warm Wood', cabinet: '#8B4513', counter: '#2c2c2c', accent: '#f5f5dc' },
+    { id: 'sage-green', name: 'Sage Green', cabinet: '#9CAF88', counter: '#ffffff', accent: '#d4a373' },
+    { id: 'slate-gray', name: 'Slate Gray', cabinet: '#708090', counter: '#f5f5f5', accent: '#b8860b' },
+    { id: 'charcoal', name: 'Charcoal', cabinet: '#36454f', counter: '#f0f0f0', accent: '#ffd700' }
+  ];
+
+  window.showColorThemes = function() {
+    const existing = document.getElementById('colorThemesModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'colorThemesModal';
+    modal.className = 'color-themes-modal';
+    modal.innerHTML = `
+      <div class="color-themes-content">
+        <div class="color-themes-header">
+          <h3>🎨 Color Themes</h3>
+          <button onclick="this.closest('.color-themes-modal').remove()">&times;</button>
+        </div>
+        <div class="color-themes-grid">
+          ${COLOR_THEMES.map(t => `
+            <div class="color-theme-card" onclick="applyColorTheme('${t.id}')">
+              <div class="theme-preview">
+                <div class="theme-swatch cabinet" style="background:${t.cabinet}"></div>
+                <div class="theme-swatch counter" style="background:${t.counter}"></div>
+                <div class="theme-swatch accent" style="background:${t.accent}"></div>
+              </div>
+              <div class="theme-name">${t.name}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.applyColorTheme = function(themeId) {
+    const theme = COLOR_THEMES.find(t => t.id === themeId);
+    if (!theme || !window.elements) return;
+
+    window.elements.forEach(el => {
+      if (el.type === 'cabinet') el.color = theme.cabinet;
+      if (el.type === 'counter') el.color = theme.counter;
+    });
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    document.getElementById('colorThemesModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Applied: ${theme.name}`, 'success');
+  };
+
+  // === CLEARANCE CHECKER ===
+  const CLEARANCE_STANDARDS = {
+    doorway: 36,           // Min doorway width (inches)
+    walkway: 36,           // Min walkway (inches)
+    workAisle: 42,         // Min work aisle between counters
+    dishwasherClearance: 21, // Clearance in front of dishwasher
+    ovenClearance: 30,     // Clearance in front of oven
+    fridgeClearance: 36,   // Clearance in front of fridge
+    islandClearance: 42    // Min clearance around island
+  };
+
+  window.checkClearances = function() {
+    if (!window.elements) return { valid: true, issues: [] };
+
+    const issues = [];
+    const ppi = window.pixelsPerInch || 12;
+    const roomWidthPx = (window.roomWidth || 240) * ppi;
+    const roomHeightPx = (window.roomDepth || 180) * ppi;
+
+    // Check appliance clearances
+    window.elements.forEach(el => {
+      const clearanceNeeded = {
+        dishwasher: CLEARANCE_STANDARDS.dishwasherClearance * ppi,
+        stove: CLEARANCE_STANDARDS.ovenClearance * ppi,
+        refrigerator: CLEARANCE_STANDARDS.fridgeClearance * ppi
+      }[el.type];
+
+      if (clearanceNeeded) {
+        // Check if there's enough space in front
+        const frontY = el.y + (el.height || 0);
+        const spaceInFront = roomHeightPx - frontY;
+
+        // Check for obstacles
+        window.elements.forEach(other => {
+          if (other.id === el.id) return;
+          const obstructing = other.y >= el.y &&
+                             other.y < frontY + clearanceNeeded &&
+                             other.x < el.x + (el.width || 0) &&
+                             other.x + (other.width || 0) > el.x;
+          if (obstructing) {
+            issues.push({
+              type: 'clearance',
+              element: el.name || el.type,
+              message: `${el.type} blocked by ${other.name || other.type}`,
+              severity: 'warning'
+            });
+          }
+        });
+      }
+    });
+
+    // Check aisle widths between parallel counters
+    const counters = window.elements.filter(e => e.type === 'counter' || e.type === 'cabinet');
+    for (let i = 0; i < counters.length; i++) {
+      for (let j = i + 1; j < counters.length; j++) {
+        const c1 = counters[i];
+        const c2 = counters[j];
+
+        // Check if they're parallel (horizontally aligned)
+        if (Math.abs(c1.y - c2.y) < 10) continue; // Same row
+
+        const gap = Math.abs((c1.y + (c1.height || 0)) - c2.y);
+        const minAisle = CLEARANCE_STANDARDS.workAisle * ppi;
+
+        if (gap < minAisle && gap > 0) {
+          issues.push({
+            type: 'aisle',
+            message: `Aisle between ${c1.name || c1.type} and ${c2.name || c2.type} is ${Math.round(gap / ppi)}" (min ${CLEARANCE_STANDARDS.workAisle}")`,
+            severity: 'warning'
+          });
+        }
+      }
+    }
+
+    return {
+      valid: issues.filter(i => i.severity === 'error').length === 0,
+      issues
+    };
+  };
+
+  window.showClearanceReport = function() {
+    const result = window.checkClearances();
+
+    const modal = document.createElement('div');
+    modal.className = 'clearance-modal';
+    modal.innerHTML = `
+      <div class="clearance-content">
+        <div class="clearance-header">
+          <h3>${result.valid ? '✅' : '⚠️'} Clearance Check</h3>
+          <button onclick="this.closest('.clearance-modal').remove()">&times;</button>
+        </div>
+        <div class="clearance-body">
+          ${result.issues.length === 0 ?
+            '<div class="clearance-ok">All clearances meet standards!</div>' :
+            `<div class="clearance-issues">
+              ${result.issues.map(i => `
+                <div class="clearance-issue ${i.severity}">
+                  <span class="issue-icon">${i.severity === 'error' ? '❌' : '⚠️'}</span>
+                  <span class="issue-text">${i.message}</span>
+                </div>
+              `).join('')}
+            </div>`
+          }
+          <div class="clearance-standards">
+            <h4>Standard Clearances</h4>
+            <ul>
+              <li>Work aisle: ${CLEARANCE_STANDARDS.workAisle}"</li>
+              <li>Doorway: ${CLEARANCE_STANDARDS.doorway}"</li>
+              <li>Dishwasher: ${CLEARANCE_STANDARDS.dishwasherClearance}"</li>
+              <li>Oven: ${CLEARANCE_STANDARDS.ovenClearance}"</li>
+              <li>Refrigerator: ${CLEARANCE_STANDARDS.fridgeClearance}"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === SLAB CALCULATOR ===
+  window.calculateSlabRequirements = function() {
+    if (!window.elements) return null;
+
+    const ppi = window.pixelsPerInch || 12;
+    const counters = window.elements.filter(e => e.type === 'counter');
+
+    if (counters.length === 0) {
+      return { slabs: 0, totalSqFt: 0, pieces: [] };
+    }
+
+    // Standard slab sizes (inches)
+    const SLAB_SIZES = [
+      { name: 'Jumbo', width: 130, height: 65 },
+      { name: 'Standard', width: 120, height: 60 },
+      { name: 'Small', width: 96, height: 54 }
+    ];
+
+    let pieces = [];
+    let totalSqFt = 0;
+
+    counters.forEach(counter => {
+      const widthIn = (counter.width || 0) / ppi;
+      const heightIn = (counter.height || 0) / ppi;
+      const sqFt = (widthIn * heightIn) / 144;
+
+      pieces.push({
+        id: counter.id,
+        name: counter.name || 'Counter',
+        width: Math.round(widthIn * 10) / 10,
+        height: Math.round(heightIn * 10) / 10,
+        sqFt: Math.round(sqFt * 10) / 10
+      });
+
+      totalSqFt += sqFt;
+    });
+
+    // Estimate slab count (with 20% waste factor)
+    const wastedSqFt = totalSqFt * 1.2;
+    const slabSqFt = (SLAB_SIZES[1].width * SLAB_SIZES[1].height) / 144;
+    const slabsNeeded = Math.ceil(wastedSqFt / slabSqFt);
+
+    return {
+      pieces,
+      totalSqFt: Math.round(totalSqFt * 10) / 10,
+      withWaste: Math.round(wastedSqFt * 10) / 10,
+      slabSqFt: Math.round(slabSqFt * 10) / 10,
+      slabsNeeded,
+      slabSize: SLAB_SIZES[1]
+    };
+  };
+
+  window.showSlabCalculator = function() {
+    const result = window.calculateSlabRequirements();
+    if (!result) {
+      if (typeof showToast === 'function') showToast('No counters in design', 'info');
+      return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'slab-calc-modal';
+    modal.innerHTML = `
+      <div class="slab-calc-content">
+        <div class="slab-calc-header">
+          <h3>📐 Slab Requirements</h3>
+          <button onclick="this.closest('.slab-calc-modal').remove()">&times;</button>
+        </div>
+        <div class="slab-calc-body">
+          <div class="slab-summary">
+            <div class="slab-stat">
+              <span class="stat-value">${result.slabsNeeded}</span>
+              <span class="stat-label">Slabs Needed</span>
+            </div>
+            <div class="slab-stat">
+              <span class="stat-value">${result.totalSqFt}</span>
+              <span class="stat-label">Total Sq Ft</span>
+            </div>
+            <div class="slab-stat">
+              <span class="stat-value">${result.withWaste}</span>
+              <span class="stat-label">With Waste (20%)</span>
+            </div>
+          </div>
+          <div class="slab-pieces">
+            <h4>Counter Pieces</h4>
+            <table class="slab-table">
+              <thead><tr><th>Piece</th><th>Size</th><th>Sq Ft</th></tr></thead>
+              <tbody>
+                ${result.pieces.map(p => `
+                  <tr>
+                    <td>${p.name}</td>
+                    <td>${p.width}" x ${p.height}"</td>
+                    <td>${p.sqFt}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="slab-note">
+            Based on ${result.slabSize.width}" x ${result.slabSize.height}" slabs (${result.slabSqFt} sq ft each)
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  // === SHARE DESIGN ===
+  window.generateShareLink = function() {
+    if (!window.elements || window.elements.length === 0) {
+      if (typeof showToast === 'function') showToast('Nothing to share', 'info');
+      return null;
+    }
+
+    // Create a compact representation
+    const data = {
+      v: 1,
+      w: window.roomWidth,
+      h: window.roomDepth,
+      e: window.elements.map(el => ({
+        t: el.type,
+        x: Math.round(el.x),
+        y: Math.round(el.y),
+        w: Math.round(el.width || 0),
+        h: Math.round(el.height || 0)
+      }))
+    };
+
+    try {
+      const encoded = btoa(JSON.stringify(data));
+      const shareUrl = `${window.location.origin}/tools/room-designer/?design=${encoded}`;
+
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        if (typeof showToast === 'function') showToast('Share link copied!', 'success');
+      }).catch(() => {
+        prompt('Copy this share link:', shareUrl);
+      });
+
+      return shareUrl;
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('Could not generate link', 'error');
+      return null;
+    }
+  };
+
+  window.loadSharedDesign = function() {
+    const params = new URLSearchParams(window.location.search);
+    const designData = params.get('design');
+
+    if (!designData) return false;
+
+    try {
+      const data = JSON.parse(atob(designData));
+      if (data.v !== 1) return false;
+
+      const ppi = window.pixelsPerInch || 12;
+      window.roomWidth = data.w || 240;
+      window.roomDepth = data.h || 180;
+      window.elements = (data.e || []).map((el, i) => ({
+        id: `${el.t}_${Date.now()}_${i}`,
+        type: el.t,
+        x: el.x,
+        y: el.y,
+        width: el.w,
+        height: el.h
+      }));
+
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast('Shared design loaded!', 'success');
+
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      return true;
+    } catch (e) {
+      console.error('Failed to load shared design:', e);
+      return false;
+    }
+  };
+
+  // === ADDITIONAL V5 KEYBOARD SHORTCUTS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isInput) return;
+
+    // Ctrl+P = Print settings
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      window.showPrintSettings();
+    }
+    // A = Appliance library
+    if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showApplianceLibrary();
+    }
+    // E = Edge profiles
+    if (e.key === 'e' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showEdgeProfileSelector();
+    }
+    // K = Clearance check
+    if (e.key === 'k' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showClearanceReport();
+    }
+  });
+
+  // === INIT V5 FEATURES ===
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize touch gestures
+    window.initTouchGestures();
+
+    // Check for shared design in URL
+    window.loadSharedDesign();
+  });
+
+  console.log('Room Designer Pro Features v5.0 loaded');
 })();
