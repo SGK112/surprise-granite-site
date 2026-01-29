@@ -427,7 +427,7 @@ function calculateLaborEstimate(analysis, laborRate) {
 }
 
 /**
- * Generate takeoff analysis (demo mode)
+ * Generate takeoff analysis (demo mode) - includes cabinet data for Room Designer
  */
 function generateTakeoffAnalysis(projectType) {
   const analyses = {
@@ -436,11 +436,32 @@ function generateTakeoffAnalysis(projectType) {
       countertopSqft: 45,
       flooringSqft: 120,
       tileSqft: 35,
+      widthFt: 15,
+      depthFt: 12,
       rooms: [
-        { name: 'Kitchen', dimensions: "12' x 15'", sqft: 180, material: 'Flooring + Countertop' },
-        { name: 'Kitchen Island', dimensions: "4' x 8'", sqft: 32, material: 'Countertop' },
-        { name: 'Backsplash', dimensions: "18\" x 12'", sqft: 18, material: 'Tile' }
-      ]
+        {
+          name: 'Kitchen',
+          dimensions: "12' x 15'",
+          sqft: 180,
+          widthFt: 15,
+          depthFt: 12,
+          material: 'Cabinets + Countertop',
+          cabinets: [
+            { label: '1', type: 'base-cabinet', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: '2', type: 'base-cabinet', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: '3', type: 'sink-base', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: '4', type: 'base-cabinet', width: 24, depth: 24, height: 34.5, wall: 'top' },
+            { label: '5', type: 'wall-cabinet', width: 36, depth: 12, height: 30, wall: 'top' },
+            { label: '6', type: 'wall-cabinet', width: 36, depth: 12, height: 30, wall: 'top' },
+            { label: '7', type: 'wall-cabinet', width: 30, depth: 12, height: 30, wall: 'top' }
+          ],
+          appliances: [
+            { type: 'refrigerator', width: 36, wall: 'right' },
+            { type: 'range', width: 30, wall: 'top' }
+          ]
+        }
+      ],
+      confidence: 'demo'
     },
     'bathroom-remodel': {
       totalArea: 85,
@@ -448,10 +469,20 @@ function generateTakeoffAnalysis(projectType) {
       flooringSqft: 0,
       tileSqft: 120,
       rooms: [
-        { name: 'Master Bath Floor', dimensions: "8' x 10'", sqft: 80, material: 'Tile' },
-        { name: 'Shower Walls', dimensions: "3' x 8' x 3 walls", sqft: 72, material: 'Tile' },
-        { name: 'Vanity Top', dimensions: "5' x 2'", sqft: 10, material: 'Countertop' }
-      ]
+        {
+          name: 'Master Bath',
+          dimensions: "8' x 10'",
+          sqft: 80,
+          widthFt: 10,
+          depthFt: 8,
+          material: 'Cabinets + Tile',
+          cabinets: [
+            { label: 'V1', type: 'base-cabinet', width: 36, depth: 21, height: 34.5, wall: 'top' },
+            { label: 'V2', type: 'drawer-base', width: 24, depth: 21, height: 34.5, wall: 'top' }
+          ]
+        }
+      ],
+      confidence: 'demo'
     },
     'full-home': {
       totalArea: 2200,
@@ -459,14 +490,27 @@ function generateTakeoffAnalysis(projectType) {
       flooringSqft: 1800,
       tileSqft: 280,
       rooms: [
-        { name: 'Living Room', dimensions: "20' x 18'", sqft: 360, material: 'Flooring' },
-        { name: 'Kitchen', dimensions: "14' x 16'", sqft: 224, material: 'Flooring + Countertop' },
-        { name: 'Master Bedroom', dimensions: "16' x 14'", sqft: 224, material: 'Flooring' },
-        { name: 'Bedroom 2', dimensions: "12' x 12'", sqft: 144, material: 'Flooring' },
-        { name: 'Bedroom 3', dimensions: "11' x 12'", sqft: 132, material: 'Flooring' },
-        { name: 'Master Bath', dimensions: "10' x 12'", sqft: 120, material: 'Tile' },
-        { name: 'Guest Bath', dimensions: "8' x 8'", sqft: 64, material: 'Tile' }
-      ]
+        {
+          name: 'Kitchen',
+          dimensions: "14' x 16'",
+          sqft: 224,
+          widthFt: 16,
+          depthFt: 14,
+          material: 'Cabinets + Countertop',
+          cabinets: [
+            { label: 'B1', type: 'base-cabinet', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: 'B2', type: 'base-cabinet', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: 'SB', type: 'sink-base', width: 36, depth: 24, height: 34.5, wall: 'top' },
+            { label: 'DB', type: 'drawer-base', width: 24, depth: 24, height: 34.5, wall: 'right' },
+            { label: 'W1', type: 'wall-cabinet', width: 36, depth: 12, height: 30, wall: 'top' },
+            { label: 'W2', type: 'wall-cabinet', width: 30, depth: 12, height: 30, wall: 'top' },
+            { label: 'T1', type: 'tall-cabinet', width: 24, depth: 24, height: 84, wall: 'right' }
+          ]
+        },
+        { name: 'Living Room', dimensions: "20' x 18'", sqft: 360, widthFt: 20, depthFt: 18, material: 'Flooring', cabinets: [] },
+        { name: 'Master Bedroom', dimensions: "16' x 14'", sqft: 224, widthFt: 16, depthFt: 14, material: 'Flooring', cabinets: [] }
+      ],
+      confidence: 'demo'
     },
     'flooring-only': {
       totalArea: 1500,
@@ -474,11 +518,10 @@ function generateTakeoffAnalysis(projectType) {
       flooringSqft: 1500,
       tileSqft: 0,
       rooms: [
-        { name: 'Living Area', dimensions: "25' x 20'", sqft: 500, material: 'LVP Flooring' },
-        { name: 'Kitchen/Dining', dimensions: "20' x 18'", sqft: 360, material: 'LVP Flooring' },
-        { name: 'Master Suite', dimensions: "18' x 16'", sqft: 288, material: 'LVP Flooring' },
-        { name: 'Bedrooms (3)', dimensions: "Various", sqft: 352, material: 'LVP Flooring' }
-      ]
+        { name: 'Living Area', dimensions: "25' x 20'", sqft: 500, widthFt: 25, depthFt: 20, material: 'LVP Flooring', cabinets: [] },
+        { name: 'Kitchen/Dining', dimensions: "20' x 18'", sqft: 360, widthFt: 20, depthFt: 18, material: 'LVP Flooring', cabinets: [] }
+      ],
+      confidence: 'demo'
     },
     'commercial': {
       totalArea: 5000,
@@ -486,15 +529,73 @@ function generateTakeoffAnalysis(projectType) {
       flooringSqft: 4500,
       tileSqft: 400,
       rooms: [
-        { name: 'Main Floor', dimensions: "100' x 45'", sqft: 4500, material: 'Commercial LVT' },
-        { name: 'Reception Counter', dimensions: "12' x 3'", sqft: 36, material: 'Quartz' },
-        { name: 'Break Room', dimensions: "15' x 12'", sqft: 180, material: 'Tile' },
-        { name: 'Restrooms (4)', dimensions: "8' x 10' each", sqft: 320, material: 'Tile' }
-      ]
+        {
+          name: 'Break Room',
+          dimensions: "15' x 12'",
+          sqft: 180,
+          widthFt: 15,
+          depthFt: 12,
+          material: 'Cabinets + Countertop',
+          cabinets: [
+            { label: '1', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: '2', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: '3', type: 'sink-base', width: 30, depth: 24, height: 32, wall: 'top' },
+            { label: '4', type: 'wall-cabinet', width: 36, depth: 12, height: 30, wall: 'top' },
+            { label: '5', type: 'wall-cabinet', width: 30, depth: 12, height: 30, wall: 'top' },
+            { label: '6', type: 'tall-cabinet', width: 24, depth: 24, height: 84, wall: 'right' }
+          ],
+          appliances: [
+            { type: 'refrigerator', width: 36, wall: 'right' },
+            { type: 'microwave', width: 24, wall: 'top' }
+          ]
+        },
+        {
+          name: 'Reception Counter',
+          dimensions: "12' x 3'",
+          sqft: 36,
+          widthFt: 12,
+          depthFt: 6,
+          material: 'Quartz Counter',
+          cabinets: [
+            { label: 'R1', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: 'R2', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: 'R3', type: 'drawer-base', width: 24, depth: 24, height: 32, wall: 'top' }
+          ]
+        }
+      ],
+      confidence: 'demo'
+    },
+    // Commercial cabinets project type - detailed cabinet data
+    'commercial-cabinets': {
+      totalArea: 800,
+      countertopSqft: 80,
+      rooms: [
+        {
+          name: 'Sample Room (Demo)',
+          dimensions: "20' x 14'",
+          sqft: 280,
+          widthFt: 20,
+          depthFt: 14,
+          material: 'Cabinets',
+          cabinets: [
+            { label: '1', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: '2', type: 'base-cabinet', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: '3', type: 'base-cabinet', width: 24, depth: 24, height: 32, wall: 'top' },
+            { label: '4', type: 'sink-base', width: 36, depth: 24, height: 32, wall: 'top' },
+            { label: '5', type: 'drawer-base', width: 18, depth: 24, height: 32, wall: 'top' },
+            { label: '6', type: 'wall-cabinet', width: 36, depth: 12, height: 30, wall: 'top' },
+            { label: '7', type: 'wall-cabinet', width: 30, depth: 12, height: 30, wall: 'top' },
+            { label: '8', type: 'wall-cabinet', width: 24, depth: 12, height: 30, wall: 'top' }
+          ],
+          notes: 'Demo data - upload a blueprint for AI analysis'
+        }
+      ],
+      confidence: 'demo',
+      notes: ['This is demo data. Configure OPENAI_API_KEY for actual blueprint analysis.']
     }
   };
 
-  return analyses[projectType] || analyses['kitchen-remodel'];
+  return analyses[projectType] || analyses['commercial-cabinets'];
 }
 
 /**

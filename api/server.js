@@ -18,16 +18,21 @@ const rateLimitStore = new Map();
 
 const RATE_LIMITS = {
   free: {
-    ai_blueprint: { perHour: 3, perDay: 5 },
-    ai_chat: { perHour: 5, perDay: 10 },
-    ai_vision: { perHour: 3, perDay: 5 }
+    ai_blueprint: { perHour: 15, perDay: 30 }, // Increased for multi-page PDFs
+    ai_chat: { perHour: 10, perDay: 25 },
+    ai_vision: { perHour: 10, perDay: 20 }
   },
   pro: {
-    ai_blueprint: { perHour: 20, perDay: 50 },
-    ai_chat: { perHour: 30, perDay: 100 },
-    ai_vision: { perHour: 20, perDay: 50 }
+    ai_blueprint: { perHour: 50, perDay: 150 }, // Increased for batch processing
+    ai_chat: { perHour: 50, perDay: 200 },
+    ai_vision: { perHour: 40, perDay: 100 }
   },
   enterprise: {
+    ai_blueprint: { perHour: -1, perDay: -1 }, // unlimited
+    ai_chat: { perHour: -1, perDay: -1 },
+    ai_vision: { perHour: -1, perDay: -1 }
+  },
+  super_admin: {
     ai_blueprint: { perHour: -1, perDay: -1 }, // unlimited
     ai_chat: { perHour: -1, perDay: -1 },
     ai_vision: { perHour: -1, perDay: -1 }
@@ -84,7 +89,16 @@ function recordUsage(key, feature) {
 function aiRateLimiter(feature) {
   return (req, res, next) => {
     const key = getRateLimitKey(req);
-    const plan = req.headers['x-user-plan'] || 'free';
+    // Check multiple headers for plan/account type - support super_admin
+    let plan = req.headers['x-user-plan'] || req.headers['x-account-type'] || 'free';
+    // Map account types to rate limit tiers
+    if (plan === 'super_admin' || plan === 'admin') {
+      plan = 'super_admin';
+    } else if (plan === 'pro' || plan === 'premium') {
+      plan = 'pro';
+    } else if (plan === 'enterprise' || plan === 'business') {
+      plan = 'enterprise';
+    }
     const check = checkRateLimit(key, feature, plan);
 
     if (!check.allowed) {

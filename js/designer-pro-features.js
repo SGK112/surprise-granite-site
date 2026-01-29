@@ -4817,60 +4817,96 @@
       </div>
     `;
 
-    // Process pages sequentially to avoid overwhelming the API
+    // Helper function to call API with retry logic for rate limiting
+    async function callAPIWithRetry(base64, pageNum, maxRetries = 3) {
+      let lastError = null;
+      const accountType = getUserAccountType();
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Account-Type': accountType
+            },
+            body: JSON.stringify({
+              image: base64,
+              projectType: 'commercial-cabinets'
+            })
+          });
+
+          if (response.status === 429) {
+            // Rate limited - wait with exponential backoff
+            const waitTime = Math.min(5000 * Math.pow(2, attempt - 1), 30000);
+            console.log(`Page ${pageNum}: Rate limited (429), waiting ${waitTime/1000}s before retry ${attempt}/${maxRetries}`);
+            document.getElementById('batchProgress').textContent = `Rate limited - waiting ${Math.round(waitTime/1000)}s... (Page ${pageNum})`;
+            await new Promise(r => setTimeout(r, waitTime));
+            continue;
+          }
+
+          if (!response.ok) {
+            throw new Error(`API error ${response.status}`);
+          }
+
+          return await response.json();
+        } catch (error) {
+          lastError = error;
+          if (attempt < maxRetries) {
+            const waitTime = 2000 * attempt;
+            console.log(`Page ${pageNum}: Error, retrying in ${waitTime/1000}s...`, error.message);
+            await new Promise(r => setTimeout(r, waitTime));
+          }
+        }
+      }
+      throw lastError || new Error('Max retries exceeded');
+    }
+
+    // Process pages sequentially with longer delays to avoid rate limiting
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       try {
         // Update progress UI
         const progressPct = Math.round((pageNum / numPages) * 100);
-        document.getElementById('batchProgress').textContent = `Processing page ${pageNum} of ${numPages}...`;
+        document.getElementById('batchProgress').textContent = `Analyzing page ${pageNum} of ${numPages}...`;
         document.getElementById('progressFill').style.width = `${progressPct}%`;
         document.getElementById('statPages').textContent = pageNum - 1;
 
         // Use higher resolution (2.0) for better cabinet schedule reading
         const base64 = await renderPDFPage(pdf, pageNum, 2.0);
 
-        const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: base64,
-            projectType: 'commercial-cabinets'
-          })
-        });
+        // Call API with retry logic
+        const data = await callAPIWithRetry(base64, pageNum);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.rooms && data.rooms.length > 0) {
-            // Tag rooms with page number for reference
-            data.rooms.forEach(room => {
-              room.sourcePage = pageNum;
-              // Only add page number to name if room name is generic
-              if (!room.name || room.name === 'Unknown Room' || room.name === 'Kitchen') {
-                room.name = `Room (Page ${pageNum})`;
-              }
-            });
-            allResults.push(data);
-            successCount++;
+        if (data.rooms && data.rooms.length > 0) {
+          // Tag rooms with page number for reference
+          data.rooms.forEach(room => {
+            room.sourcePage = pageNum;
+            // Only add page number to name if room name is generic
+            if (!room.name || room.name === 'Unknown Room' || room.name === 'Kitchen') {
+              room.name = `Room (Page ${pageNum})`;
+            }
+          });
+          allResults.push(data);
+          successCount++;
 
-            // Update live stats
-            const totalRooms = allResults.reduce((s, r) => s + (r.rooms?.length || 0), 0);
-            const totalCabs = allResults.reduce((s, r) => s + r.rooms.reduce((rs, rm) => rs + (rm.cabinets?.length || 0), 0), 0);
-            document.getElementById('statRooms').textContent = totalRooms;
-            document.getElementById('statCabinets').textContent = totalCabs;
+          // Update live stats
+          const totalRooms = allResults.reduce((s, r) => s + (r.rooms?.length || 0), 0);
+          const totalCabs = allResults.reduce((s, r) => s + r.rooms.reduce((rs, rm) => rs + (rm.cabinets?.length || 0), 0), 0);
+          document.getElementById('statRooms').textContent = totalRooms;
+          document.getElementById('statCabinets').textContent = totalCabs;
 
-            // Show page result
-            const pageResultsEl = document.getElementById('pageResults');
-            const roomNames = data.rooms.map(r => r.name).join(', ');
-            const cabCount = data.rooms.reduce((s, rm) => s + (rm.cabinets?.length || 0), 0);
-            pageResultsEl.innerHTML += `<div class="page-result success"><span class="page-result-icon">✓</span> Page ${pageNum}: ${roomNames} (${cabCount} cabs)</div>`;
-            pageResultsEl.scrollTop = pageResultsEl.scrollHeight;
-          } else {
-            failedPages.push({ page: pageNum, reason: 'No cabinets detected' });
-            document.getElementById('pageResults').innerHTML += `<div class="page-result warning"><span class="page-result-icon">○</span> Page ${pageNum}: No cabinet data</div>`;
-          }
+          // Show page result
+          const pageResultsEl = document.getElementById('pageResults');
+          const roomNames = data.rooms.map(r => r.name).join(', ');
+          const cabCount = data.rooms.reduce((s, rm) => s + (rm.cabinets?.length || 0), 0);
+          pageResultsEl.innerHTML += `<div class="page-result success"><span class="page-result-icon">✓</span> Page ${pageNum}: ${roomNames} (${cabCount} cabs)</div>`;
+          pageResultsEl.scrollTop = pageResultsEl.scrollHeight;
+        } else if (data.mode === 'demo') {
+          // Demo mode - API key not configured
+          failedPages.push({ page: pageNum, reason: 'Demo mode - no API key' });
+          document.getElementById('pageResults').innerHTML += `<div class="page-result warning"><span class="page-result-icon">○</span> Page ${pageNum}: Demo mode</div>`;
         } else {
-          failedPages.push({ page: pageNum, reason: `API error ${response.status}` });
-          document.getElementById('pageResults').innerHTML += `<div class="page-result error"><span class="page-result-icon">✗</span> Page ${pageNum}: API error</div>`;
+          failedPages.push({ page: pageNum, reason: 'No cabinets detected' });
+          document.getElementById('pageResults').innerHTML += `<div class="page-result warning"><span class="page-result-icon">○</span> Page ${pageNum}: No cabinet data</div>`;
         }
 
         processedCount++;
@@ -4878,12 +4914,13 @@
       } catch (error) {
         console.error(`Error analyzing page ${pageNum}:`, error);
         failedPages.push({ page: pageNum, reason: error.message });
-        document.getElementById('pageResults').innerHTML += `<div class="page-result error"><span class="page-result-icon">✗</span> Page ${pageNum}: Error</div>`;
+        document.getElementById('pageResults').innerHTML += `<div class="page-result error"><span class="page-result-icon">✗</span> Page ${pageNum}: ${error.message}</div>`;
+        processedCount++;
       }
 
-      // Small delay between pages to avoid rate limiting
+      // Longer delay between pages to avoid rate limiting (2.5 seconds)
       if (pageNum < numPages) {
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 2500));
       }
     }
 
@@ -5024,11 +5061,32 @@
   // Analyze blueprint with AI Vision API (uses production endpoint)
   const AI_API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
+  // Get user's account type for rate limiting
+  function getUserAccountType() {
+    try {
+      // Check window.sgAuth first (SG Auth system)
+      if (window.sgAuth?.profile?.account_type) {
+        return window.sgAuth.profile.account_type;
+      }
+      // Fallback to stored profile
+      const stored = localStorage.getItem('sg_user_profile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        return profile.account_type || 'free';
+      }
+    } catch (e) {}
+    return 'free';
+  }
+
   async function analyzeWithAIVision(imageBase64, fileName) {
     try {
+      const accountType = getUserAccountType();
       const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Account-Type': accountType
+        },
         body: JSON.stringify({
           image: imageBase64,
           projectType: 'commercial'
