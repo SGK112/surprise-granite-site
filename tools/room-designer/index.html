@@ -1847,6 +1847,70 @@
       box-shadow: 0 0 6px rgba(249, 203, 0, 0.4);
     }
 
+    /* Help Button in Canvas Info */
+    .help-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .help-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+
+    /* Save Status Indicator */
+    .save-status {
+      cursor: default;
+      transition: all 0.3s ease;
+    }
+    .save-status::before {
+      display: none !important; /* Override the dot */
+    }
+    .save-status .save-icon {
+      flex-shrink: 0;
+    }
+    .save-status .save-text {
+      font-size: 10px;
+    }
+    .save-status.saved {
+      color: #22c55e;
+    }
+    .save-status.saved .save-icon {
+      stroke: #22c55e;
+    }
+    .save-status.saving {
+      color: #f59e0b;
+    }
+    .save-status.saving .save-icon {
+      stroke: #f59e0b;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    .save-status.unsaved {
+      color: #ef4444;
+    }
+    .save-status.unsaved .save-icon {
+      stroke: #ef4444;
+    }
+    .save-status.error {
+      color: #ef4444;
+    }
+    .save-status.error .save-icon {
+      stroke: #ef4444;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     /* Tooltip Enhancement */
     [data-tooltip] {
       position: relative;
@@ -3861,6 +3925,44 @@
     .modal-close:hover {
       background: var(--dark-hover);
       color: var(--text);
+    }
+
+    /* Keyboard Shortcuts Modal */
+    .shortcut-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .shortcut-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .shortcut-item span {
+      flex: 1;
+    }
+    .shortcut-item kbd,
+    .modal-body kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+      border: 1px solid #4a4a4a;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: #fff;
+      box-shadow: 0 2px 0 #1a1a1a, inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .modal-title {
+      display: flex;
+      align-items: center;
     }
 
     /* Hide close button on required modals */
@@ -7697,6 +7799,57 @@
       }
     }
 
+    /* Undo Toast */
+    .undo-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .undo-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .undo-toast span {
+      flex: 1;
+    }
+    .undo-toast button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .undo-toast button:hover {
+      background: #2563eb;
+    }
+    .undo-toast button.dismiss {
+      background: transparent;
+      color: #9ca3af;
+      padding: 4px 8px;
+      font-size: 16px;
+    }
+    .undo-toast button.dismiss:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     /* Toast Notifications */
     .toast-container {
       position: fixed;
@@ -8520,6 +8673,44 @@
       border-radius: 50%;
       margin-top: 6px;
       margin-left: auto;
+    }
+
+    .msg-conv-unread-badge {
+      min-width: 18px;
+      height: 18px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      margin-top: 4px;
+    }
+
+    .msg-sender-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gold-primary);
+      margin-bottom: 4px;
+    }
+
+    .msg-message-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .msg-read-receipt {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .msg-message-row.outbound .msg-read-receipt {
+      color: var(--gold-primary);
     }
 
     /* Chat View */
@@ -10336,6 +10527,21 @@
           <div class="canvas-info">
             <span id="canvasSize">12' × 10'</span>
             <span id="elementCount">0 elements</span>
+            <span id="saveStatus" class="save-status" title="Auto-save status">
+              <svg class="save-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <span class="save-text">Saved</span>
+            </span>
+            <button class="help-btn" onclick="openModal('shortcutsModal')" title="Keyboard shortcuts (?)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="canvas-wrapper" id="canvasWrapper">
@@ -12307,6 +12513,81 @@
           Save Current
         </button>
         <button class="btn btn-secondary" onclick="closeModal('myDesignsModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div class="modal-overlay" id="shortcutsModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M6 16h8"/>
+          </svg>
+          Keyboard Shortcuts
+        </h3>
+        <button class="modal-close" onclick="closeModal('shortcutsModal')">×</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- Tools Column -->
+          <div>
+            <h4 style="color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Tools</h4>
+            <div class="shortcut-list">
+              <div class="shortcut-item"><kbd>V</kbd><span>Select Tool</span></div>
+              <div class="shortcut-item"><kbd>W</kbd><span>Wall Tool</span></div>
+              <div class="shortcut-item"><kbd>C</kbd><span>Countertop Tool</span></div>
+              <div class="shortcut-item"><kbd>L</kbd><span>Layout Tool</span></div>
+              <div class="shortcut-item"><kbd>M</kbd><span>Measure Tool</span></div>
+              <div class="shortcut-item"><kbd>Space</kbd><span>Pan (hold)</span></div>
+            </div>
+          </div>
+
+          <!-- Actions Column -->
+          <div>
+            <h4 style="color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Actions</h4>
+            <div class="shortcut-list">
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd><span>New Design</span></div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd><span>Undo</span></div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Y</kbd><span>Redo</span></div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>D</kbd><span>Duplicate</span></div>
+              <div class="shortcut-item"><kbd>Delete</kbd><span>Delete Selected</span></div>
+              <div class="shortcut-item"><kbd>Esc</kbd><span>Deselect / Cancel</span></div>
+            </div>
+          </div>
+
+          <!-- View Column -->
+          <div>
+            <h4 style="color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">View</h4>
+            <div class="shortcut-list">
+              <div class="shortcut-item"><kbd>F</kbd><span>Fit to Screen</span></div>
+              <div class="shortcut-item"><kbd>2</kbd><span>2D View</span></div>
+              <div class="shortcut-item"><kbd>3</kbd><span>3D View</span></div>
+              <div class="shortcut-item"><kbd>+</kbd><span>Zoom In</span></div>
+              <div class="shortcut-item"><kbd>-</kbd><span>Zoom Out</span></div>
+              <div class="shortcut-item"><kbd>G</kbd><span>Toggle Grid</span></div>
+            </div>
+          </div>
+
+          <!-- Element Column -->
+          <div>
+            <h4 style="color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Elements</h4>
+            <div class="shortcut-list">
+              <div class="shortcut-item"><kbd>R</kbd><span>Rotate 90°</span></div>
+              <div class="shortcut-item"><kbd>Shift</kbd>+<kbd>R</kbd><span>Rotate -90°</span></div>
+              <div class="shortcut-item"><kbd>↑↓←→</kbd><span>Nudge Element</span></div>
+              <div class="shortcut-item"><kbd>Shift</kbd>+<kbd>Drag</kbd><span>Free Place (no snap)</span></div>
+              <div class="shortcut-item"><kbd>[</kbd><span>Send Backward</span></div>
+              <div class="shortcut-item"><kbd>]</kbd><span>Bring Forward</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted); font-size: 12px;">
+          Press <kbd>?</kbd> or <kbd>F1</kbd> anytime to show this help
+        </div>
       </div>
     </div>
   </div>
@@ -19315,6 +19596,11 @@
           e.preventDefault();
           createNewDesign();
         }
+        // ? or F1 for keyboard shortcuts help
+        if (e.key === '?' || e.key === 'F1') {
+          e.preventDefault();
+          openModal('shortcutsModal');
+        }
       });
 
       // Auto-hide keyboard shortcuts bar after 5 seconds
@@ -19402,6 +19688,7 @@
 
     function autoSaveDesign(immediate = false) {
       hasUnsavedChanges = true;
+      updateSaveStatus('unsaved');
 
       // CRITICAL: Never auto-save for view-only shared viewers
       // But allow full_collab shared viewers to save (they have edit permission)
@@ -19414,6 +19701,7 @@
       if (autosaveTimeout) clearTimeout(autosaveTimeout);
 
       const doSave = async () => {
+        updateSaveStatus('saving');
         try {
           // SAFETY: Don't overwrite existing non-empty save with empty state
           if (elements.length === 0) {
@@ -19522,6 +19810,7 @@
           }
         } catch (e) {
           console.warn('Auto-save failed:', e);
+          updateSaveStatus('error', 'Save failed');
         }
       };
 
@@ -28126,10 +28415,7 @@
         case 'delete':
         case 'backspace':
           if (selectedElement && !selectedElement.locked) {
-            elements = elements.filter(el => el !== selectedElement);
-            selectedElement = null;
-            updateProperties();
-            draw();
+            deleteElementWithUndo(selectedElement);
           }
           break;
         case 'r':
@@ -29781,17 +30067,105 @@
       }
     }
 
+    // Delete with undo toast - allows quick undo without confirmation dialog
+    let lastDeletedElement = null;
+    let deleteUndoTimeout = null;
+
+    function deleteElementWithUndo(element) {
+      if (!element || element.locked) return;
+
+      // Store element for potential undo
+      lastDeletedElement = JSON.parse(JSON.stringify(element));
+      lastDeletedElement._originalIndex = elements.indexOf(element);
+
+      // Remove element
+      elements = elements.filter(el => el !== element);
+      elementListDirty = true;
+      selectedElement = null;
+      updateProperties();
+      calculateQuote();
+      saveUndoState();
+      draw();
+      update3DScene();
+
+      // Show undo toast
+      showUndoToast(element.label || formatElementType(element.type));
+    }
+
+    function showUndoToast(itemName) {
+      // Remove existing undo toast
+      const existingToast = document.getElementById('undoToast');
+      if (existingToast) existingToast.remove();
+
+      // Clear existing timeout
+      if (deleteUndoTimeout) clearTimeout(deleteUndoTimeout);
+
+      const toast = document.createElement('div');
+      toast.id = 'undoToast';
+      toast.className = 'undo-toast';
+      toast.innerHTML = `
+        <span>Deleted "${itemName}"</span>
+        <button onclick="undoLastDelete()">Undo</button>
+        <button class="dismiss" onclick="dismissUndoToast()">×</button>
+      `;
+      document.body.appendChild(toast);
+
+      // Auto-dismiss after 5 seconds
+      deleteUndoTimeout = setTimeout(() => {
+        dismissUndoToast();
+        lastDeletedElement = null;
+      }, 5000);
+
+      // Animate in
+      requestAnimationFrame(() => toast.classList.add('show'));
+    }
+
+    function undoLastDelete() {
+      if (!lastDeletedElement) return;
+
+      // Restore element
+      const restoredEl = {
+        ...lastDeletedElement,
+        id: Date.now() + Math.random() // New ID
+      };
+      delete restoredEl._originalIndex;
+
+      // Insert at original position or at end
+      const index = lastDeletedElement._originalIndex;
+      if (index !== undefined && index >= 0 && index <= elements.length) {
+        elements.splice(index, 0, restoredEl);
+      } else {
+        elements.push(restoredEl);
+      }
+
+      elementListDirty = true;
+      selectedElement = restoredEl;
+      updateProperties();
+      calculateQuote();
+      saveUndoState();
+      draw();
+      update3DScene();
+
+      dismissUndoToast();
+      showToast('Element restored', 'success');
+      lastDeletedElement = null;
+    }
+
+    function dismissUndoToast() {
+      const toast = document.getElementById('undoToast');
+      if (toast) {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }
+      if (deleteUndoTimeout) {
+        clearTimeout(deleteUndoTimeout);
+        deleteUndoTimeout = null;
+      }
+    }
+
     function deleteSelectedElement() {
       if (selectedElement && !selectedElement.locked) {
-        elements = elements.filter(el => el !== selectedElement);
-        elementListDirty = true;
-        selectedElement = null;
-        updateProperties();
-        calculateQuote();
-        saveUndoState();
-        draw();
-        update3DScene();
-        showSnapFeedback('Element deleted');
+        deleteElementWithUndo(selectedElement);
       }
     }
 
@@ -62954,9 +63328,46 @@
 
     // ===== AUTO-SAVE INDICATOR =====
     let autoSaveIndicatorTimeout = null;
+    let saveStatusResetTimeout = null;
+
+    // Update the save status indicator in the toolbar
+    function updateSaveStatus(status, text = null) {
+      const statusEl = document.getElementById('saveStatus');
+      if (!statusEl) return;
+
+      const textEl = statusEl.querySelector('.save-text');
+
+      // Remove all status classes
+      statusEl.classList.remove('saved', 'saving', 'unsaved', 'error');
+
+      // Add new status class and update text
+      statusEl.classList.add(status);
+
+      const statusTexts = {
+        saved: 'Saved',
+        saving: 'Saving...',
+        unsaved: 'Unsaved',
+        error: 'Error'
+      };
+
+      if (textEl) {
+        textEl.textContent = text || statusTexts[status] || status;
+      }
+
+      // Reset to "saved" after showing error
+      if (status === 'error') {
+        if (saveStatusResetTimeout) clearTimeout(saveStatusResetTimeout);
+        saveStatusResetTimeout = setTimeout(() => {
+          updateSaveStatus('unsaved');
+        }, 3000);
+      }
+    }
 
     function showAutoSaveIndicator() {
-      // Create indicator if it doesn't exist
+      // Update toolbar save status
+      updateSaveStatus('saved');
+
+      // Create floating indicator if it doesn't exist
       let indicator = document.getElementById('autosaveIndicator');
       if (!indicator) {
         indicator = document.createElement('div');
@@ -63203,9 +63614,15 @@
 
   <script>
     // ========== UNIFIED MESSAGING SYSTEM ==========
+    // Connects: Notification Hub, CRM (customer_messages), Team Chat (design_chat_messages)
+    // Features: Real-time sync, read receipts, email/collaborator chats, CRM integration
     let msgPanelOpen = false;
     let currentConversation = null;
     let conversations = [];
+    let typingTimeout = null;
+    let unreadMsgCount = 0;
+    let msgSyncInterval = null;
+    let msgSubscriptions = [];
 
     function toggleMessagingPanel() {
       msgPanelOpen ? closeMessagingPanel() : openMessagingPanel();
@@ -63216,6 +63633,10 @@
       document.getElementById('msgPanel').classList.add('open');
       document.getElementById('msgPanelOverlay').classList.add('open');
       loadConversations();
+      // Start periodic sync when panel is open
+      if (!msgSyncInterval) {
+        msgSyncInterval = setInterval(syncMessages, 30000);
+      }
     }
 
     function closeMessagingPanel() {
@@ -63224,28 +63645,107 @@
       document.getElementById('msgPanelOverlay').classList.remove('open');
       closeChatView();
       closeNewChatModal();
+      if (msgSyncInterval) {
+        clearInterval(msgSyncInterval);
+        msgSyncInterval = null;
+      }
     }
 
+    // Periodic sync for real-time feel
+    async function syncMessages() {
+      if (!msgPanelOpen || !currentUser) return;
+      await loadConversations();
+      if (currentConversation) {
+        await loadMessages(currentConversation);
+      }
+    }
+
+    // Sync with notification hub for unified badge counts
+    function syncWithNotificationHub() {
+      if (typeof NOTIFICATION_HUB !== 'undefined' && typeof updateHubBadge === 'function') {
+        updateHubBadge();
+      }
+    }
+
+    // Unified conversation loader - pulls from design_chat_messages AND customer_messages
     async function loadConversations() {
       if (!currentUser) { showMsgEmptyState('Sign in to view messages'); return; }
       try {
         const supabase = window._sgSupabaseClient;
         if (!supabase) return;
-        const { data: designChats } = await supabase.from('design_chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
         conversations = [];
+
+        // 1. Load design chat messages (team/collaborator chats)
+        const { data: designChats } = await supabase.from('design_chat_messages').select('*').order('created_at', { ascending: false }).limit(100);
         if (designChats?.length > 0) {
           const groups = {};
           designChats.forEach(msg => { if (!groups[msg.design_id]) groups[msg.design_id] = []; groups[msg.design_id].push(msg); });
           Object.entries(groups).forEach(([designId, msgs]) => {
             const latest = msgs[0];
             const other = msgs.find(m => m.user_id !== currentUser.id);
-            conversations.push({ id: `design_${designId}`, type: 'design', designId, name: other?.user_name || 'Design Chat', avatar: (other?.user_name || 'D').charAt(0).toUpperCase(), avatarType: 'collaborator', lastMessage: latest.message, lastMessageTime: latest.created_at, unread: false });
+            const unreadCount = msgs.filter(m => m.user_id !== currentUser.id && !m.read_at).length;
+            conversations.push({
+              id: `design_${designId}`,
+              type: 'design',
+              designId,
+              name: other?.user_name || 'Design Chat',
+              avatar: (other?.user_name || 'D').charAt(0).toUpperCase(),
+              avatarType: 'collaborator',
+              lastMessage: latest.message,
+              lastMessageTime: latest.created_at,
+              unread: unreadCount > 0,
+              unreadCount,
+              participants: [...new Set(msgs.map(m => m.user_name).filter(Boolean))]
+            });
           });
         }
+
+        // 2. Load customer messages (CRM/client chats)
+        const { data: customerChats } = await supabase
+          .from('customer_messages')
+          .select('*')
+          .or(`customer_id.eq.${currentUser.id},metadata->>designer_id.eq.${currentUser.id}`)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (customerChats?.length > 0) {
+          const crmGroups = {};
+          customerChats.forEach(msg => {
+            const key = msg.thread_id || msg.customer_id || msg.metadata?.customer_email || msg.id;
+            if (!crmGroups[key]) crmGroups[key] = [];
+            crmGroups[key].push(msg);
+          });
+          Object.entries(crmGroups).forEach(([threadId, msgs]) => {
+            const latest = msgs[0];
+            const customerName = latest.metadata?.customer_name || latest.metadata?.author || 'Client';
+            const customerEmail = latest.customer_email || latest.metadata?.customer_email;
+            const unreadCount = msgs.filter(m => m.direction === 'inbound' && !m.read_at).length;
+            if (conversations.find(c => c.email === customerEmail && c.type === 'customer')) return;
+            conversations.push({
+              id: `customer_${threadId}`,
+              type: 'customer',
+              threadId,
+              customerId: latest.customer_id,
+              email: customerEmail,
+              name: customerName,
+              avatar: customerName.charAt(0).toUpperCase(),
+              avatarType: 'customer',
+              lastMessage: latest.message,
+              lastMessageTime: latest.created_at,
+              unread: unreadCount > 0,
+              unreadCount,
+              channel: latest.channel || 'direct'
+            });
+          });
+        }
+
+        // Sort by most recent and calculate total unread
         conversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+        unreadMsgCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
         renderConversations();
         updateMsgBadge();
-      } catch (err) { console.error('Error loading conversations:', err); }
+        syncWithNotificationHub();
+      } catch (err) { console.error('Error loading conversations:', err); showMsgEmptyState('Error loading messages'); }
     }
 
     function renderConversations() {
@@ -63256,8 +63756,14 @@
       container.innerHTML = conversations.map(c => `
         <div class="msg-conversation-item ${c.unread ? 'unread' : ''}" onclick="openConversation('${c.id}')">
           <div class="msg-conv-avatar ${c.avatarType}">${c.avatar}</div>
-          <div class="msg-conv-info"><div class="msg-conv-name">${c.name}<span class="role-tag">${c.type === 'customer' ? 'Client' : 'Team'}</span></div><div class="msg-conv-preview">${truncateText(c.lastMessage, 40)}</div></div>
-          <div class="msg-conv-meta"><div class="msg-conv-time">${formatMsgTime(c.lastMessageTime)}</div>${c.unread ? '<div class="msg-conv-unread"></div>' : ''}</div>
+          <div class="msg-conv-info">
+            <div class="msg-conv-name">${escapeHtml(c.name)}<span class="role-tag">${c.type === 'customer' ? 'Client' : c.type === 'design' ? 'Team' : 'Contact'}</span></div>
+            <div class="msg-conv-preview">${truncateText(c.lastMessage, 40)}</div>
+          </div>
+          <div class="msg-conv-meta">
+            <div class="msg-conv-time">${formatMsgTime(c.lastMessageTime)}</div>
+            ${c.unreadCount > 0 ? `<div class="msg-conv-unread-badge">${c.unreadCount > 9 ? '9+' : c.unreadCount}</div>` : ''}
+          </div>
         </div>`).join('');
     }
 
@@ -63279,17 +63785,88 @@
       container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>';
       try {
         const supabase = window._sgSupabaseClient;
-        if (!supabase || conv.type !== 'design') return;
-        const { data } = await supabase.from('design_chat_messages').select('*').eq('design_id', conv.designId).order('created_at', { ascending: true });
-        const messages = (data || []).map(m => ({ id: m.id, text: m.message, time: m.created_at, isOutbound: m.user_id === currentUser?.id }));
+        if (!supabase) return;
+        let messages = [];
+
+        if (conv.type === 'design') {
+          const { data } = await supabase.from('design_chat_messages').select('*').eq('design_id', conv.designId).order('created_at', { ascending: true });
+          messages = (data || []).map(m => ({
+            id: m.id,
+            text: m.message,
+            time: m.created_at,
+            isOutbound: m.user_id === currentUser?.id,
+            senderName: m.user_name,
+            read: !!m.read_at
+          }));
+        } else if (conv.type === 'customer') {
+          const { data } = await supabase
+            .from('customer_messages')
+            .select('*')
+            .or(`thread_id.eq.${conv.threadId},customer_id.eq.${conv.customerId}`)
+            .order('created_at', { ascending: true });
+          messages = (data || []).map(m => ({
+            id: m.id,
+            text: m.message,
+            time: m.created_at,
+            isOutbound: m.direction === 'outbound',
+            senderName: m.direction === 'outbound' ? 'You' : (m.metadata?.author || 'Client'),
+            read: !!m.read_at
+          }));
+        } else if (conv.type === 'email' || conv.type === 'collaborator') {
+          // For new email/collaborator chats, check localStorage for cached messages
+          const threadKey = `msg_thread_${conv.id}`;
+          const stored = localStorage.getItem(threadKey);
+          if (stored) {
+            messages = JSON.parse(stored);
+          }
+        }
+
         renderMessages(messages);
-      } catch (err) { container.innerHTML = '<div style="text-align:center;padding:20px">Error loading</div>'; }
+        // Mark messages as read when conversation is opened
+        markConversationRead(conv);
+      } catch (err) { container.innerHTML = '<div style="text-align:center;padding:20px">Error loading messages</div>'; }
+    }
+
+    // Mark conversation as read
+    async function markConversationRead(conv) {
+      try {
+        const supabase = window._sgSupabaseClient;
+        if (!supabase || !conv) return;
+        const now = new Date().toISOString();
+
+        if (conv.type === 'design') {
+          await supabase.from('design_chat_messages').update({ read_at: now }).eq('design_id', conv.designId).neq('user_id', currentUser?.id).is('read_at', null);
+        } else if (conv.type === 'customer') {
+          await supabase.from('customer_messages').update({ read_at: now }).eq('direction', 'inbound').or(`thread_id.eq.${conv.threadId},customer_id.eq.${conv.customerId}`).is('read_at', null);
+        }
+
+        // Update local state
+        conv.unread = false;
+        conv.unreadCount = 0;
+        unreadMsgCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+        updateMsgBadge();
+        syncWithNotificationHub();
+      } catch (err) { console.log('Mark read error:', err.message); }
     }
 
     function renderMessages(messages) {
       const container = document.getElementById('msgChatMessages');
-      if (messages.length === 0) { container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:12px">👋</div>Start the conversation!</div>'; return; }
-      container.innerHTML = messages.map(m => `<div class="msg-message-row ${m.isOutbound ? 'outbound' : 'inbound'}"><div class="msg-message-bubble">${escapeHtml(m.text)}<div class="msg-message-time">${formatMsgTime(m.time)}</div></div></div>`).join('');
+      if (messages.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:32px;margin-bottom:12px">👋</div>Start the conversation!</div>';
+        return;
+      }
+      const showSenderNames = messages.filter(x => !x.isOutbound).length > 1;
+      container.innerHTML = messages.map(m => `
+        <div class="msg-message-row ${m.isOutbound ? 'outbound' : 'inbound'}">
+          <div class="msg-message-bubble">
+            ${!m.isOutbound && showSenderNames && m.senderName ? `<div class="msg-sender-name">${escapeHtml(m.senderName)}</div>` : ''}
+            ${escapeHtml(m.text)}
+            <div class="msg-message-meta">
+              <span class="msg-message-time">${formatMsgTime(m.time)}</span>
+              ${m.isOutbound ? `<span class="msg-read-receipt">${m.read ? '✓✓' : '✓'}</span>` : ''}
+            </div>
+          </div>
+        </div>`).join('');
       container.scrollTop = container.scrollHeight;
     }
 
@@ -63298,14 +63875,79 @@
       const message = input.value.trim();
       if (!message || !currentConversation || !currentUser) return;
       input.value = '';
+
+      const senderName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'You';
+
       try {
         const supabase = window._sgSupabaseClient;
-        if (supabase && currentConversation.type === 'design') {
-          await supabase.from('design_chat_messages').insert({ design_id: currentConversation.designId, user_id: currentUser.id, user_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'You', message });
+
+        if (currentConversation.type === 'design' && supabase) {
+          await supabase.from('design_chat_messages').insert({
+            design_id: currentConversation.designId,
+            user_id: currentUser.id,
+            user_name: senderName,
+            message
+          });
           await loadMessages(currentConversation);
-          notifyRecipient(currentConversation, message);
+
+        } else if (currentConversation.type === 'customer' && supabase) {
+          await supabase.from('customer_messages').insert({
+            customer_id: currentConversation.customerId,
+            thread_id: currentConversation.threadId,
+            customer_email: currentConversation.email,
+            channel: 'direct',
+            direction: 'outbound',
+            message,
+            metadata: { designer_id: currentUser.id, designer_name: senderName }
+          });
+          await loadMessages(currentConversation);
+
+        } else if (currentConversation.type === 'email' || currentConversation.type === 'collaborator') {
+          // Save to customer_messages for persistence
+          if (supabase) {
+            const { data: inserted } = await supabase.from('customer_messages').insert({
+              customer_email: currentConversation.email,
+              channel: 'direct',
+              direction: 'outbound',
+              message,
+              metadata: { designer_id: currentUser.id, designer_name: senderName, customer_name: currentConversation.name, source: 'room_designer' }
+            }).select().single();
+            if (inserted) {
+              currentConversation.type = 'customer';
+              currentConversation.threadId = inserted.id;
+            }
+          }
+          // Cache locally for immediate display
+          const threadKey = `msg_thread_${currentConversation.id}`;
+          let stored = JSON.parse(localStorage.getItem(threadKey) || '[]');
+          stored.push({ id: Date.now(), text: message, time: new Date().toISOString(), isOutbound: true, senderName });
+          localStorage.setItem(threadKey, JSON.stringify(stored));
+          await loadMessages(currentConversation);
         }
-      } catch (err) { console.error('Send error:', err); showToast('Failed to send', 'error'); }
+
+        // Send email notification to recipient
+        notifyRecipient(currentConversation, message);
+        // Push to notification hub
+        pushToNotificationHub(currentConversation, message, 'outbound');
+
+      } catch (err) { console.error('Send error:', err); showToast('Failed to send message', 'error'); }
+    }
+
+    // Push message to notification hub for unified tracking
+    function pushToNotificationHub(conv, message, direction) {
+      if (typeof NOTIFICATION_HUB !== 'undefined' && direction === 'inbound') {
+        NOTIFICATION_HUB.notifications.unshift({
+          id: `msg_${Date.now()}`,
+          type: conv.type === 'customer' ? 'chat' : 'team',
+          source: conv.name,
+          message: message,
+          author: conv.name,
+          time: new Date().toISOString(),
+          read: false
+        });
+        if (typeof renderNotificationHub === 'function') renderNotificationHub();
+        if (typeof updateHubBadge === 'function') updateHubBadge();
+      }
     }
 
     async function notifyRecipient(conv, message) {
@@ -63351,11 +63993,17 @@
     }
 
     function updateMsgBadge() {
-      const count = conversations.filter(c => c.unread).length;
+      const count = unreadMsgCount || conversations.filter(c => c.unread).length;
       const badge = document.getElementById('msgBadge');
       const btn = document.getElementById('msgHubBtn');
-      if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.classList.remove('hidden'); btn.classList.add('has-messages'); }
-      else { badge.classList.add('hidden'); btn.classList.remove('has-messages'); }
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.classList.remove('hidden');
+        btn.classList.add('has-messages');
+      } else {
+        badge.classList.add('hidden');
+        btn.classList.remove('has-messages');
+      }
     }
 
     function filterMessages(q) {
@@ -63370,24 +64018,86 @@
     function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
     async function getAccessToken() { try { const s = window._sgSupabaseClient; if (!s) return null; const { data: { session } } = await s.auth.getSession(); return session?.access_token; } catch { return null; } }
 
-    // Real-time listener
+    // Real-time listeners for both message tables
     document.addEventListener('DOMContentLoaded', function() {
       const supabase = window._sgSupabaseClient;
-      if (supabase) {
-        supabase.channel('msg-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'design_chat_messages' }, (payload) => {
-          if (msgPanelOpen) { loadConversations(); if (currentConversation?.designId === payload.new.design_id) loadMessages(currentConversation); }
-          updateMsgBadge();
-          if (payload.new.user_id !== currentUser?.id) showMsgToast(payload.new);
-        }).subscribe();
-      }
+      if (!supabase) return;
+
+      // Listen to design_chat_messages
+      const designChannel = supabase.channel('msg-design-updates')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'design_chat_messages' }, (payload) => {
+          handleNewMessage(payload.new, 'design');
+        })
+        .subscribe();
+      msgSubscriptions.push(designChannel);
+
+      // Listen to customer_messages
+      const customerChannel = supabase.channel('msg-customer-updates')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'customer_messages' }, (payload) => {
+          if (payload.new.direction === 'inbound') {
+            handleNewMessage(payload.new, 'customer');
+          }
+        })
+        .subscribe();
+      msgSubscriptions.push(customerChannel);
     });
 
-    function showMsgToast(msg) {
-      const t = document.createElement('div'); t.className = 'comment-notification-toast';
-      t.innerHTML = `<div class="comment-notification-icon">💬</div><div class="comment-notification-content"><div class="comment-notification-title">${msg.user_name || 'Someone'}</div><div class="comment-notification-message">${truncateText(msg.message, 50)}</div></div><button class="comment-notification-action" onclick="this.parentElement.remove();openMessagingPanel();">View</button>`;
-      document.body.appendChild(t); setTimeout(() => t.classList.add('show'), 100);
-      setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 500); }, 5000);
+    function handleNewMessage(msg, type) {
+      // Reload conversations if panel is open
+      if (msgPanelOpen) {
+        loadConversations();
+        // Reload current chat if it matches
+        if (currentConversation) {
+          if (type === 'design' && currentConversation.designId === msg.design_id) {
+            loadMessages(currentConversation);
+          } else if (type === 'customer' && (currentConversation.threadId === msg.thread_id || currentConversation.customerId === msg.customer_id)) {
+            loadMessages(currentConversation);
+          }
+        }
+      }
+
+      // Update unread count
+      unreadMsgCount++;
+      updateMsgBadge();
+
+      // Show toast for incoming messages (not from current user)
+      const isFromMe = type === 'design' ? msg.user_id === currentUser?.id : msg.direction === 'outbound';
+      if (!isFromMe) {
+        showMsgToast(msg, type);
+        pushToNotificationHub({ name: msg.user_name || msg.metadata?.author || 'Someone' }, msg.message, 'inbound');
+      }
     }
+
+    function showMsgToast(msg, type) {
+      const senderName = type === 'design' ? (msg.user_name || 'Team Member') : (msg.metadata?.author || 'Client');
+      const messageText = msg.message || '';
+
+      const t = document.createElement('div');
+      t.className = 'comment-notification-toast';
+      t.innerHTML = `
+        <div class="comment-notification-icon">💬</div>
+        <div class="comment-notification-content">
+          <div class="comment-notification-title">${escapeHtml(senderName)}</div>
+          <div class="comment-notification-message">${truncateText(messageText, 50)}</div>
+        </div>
+        <button class="comment-notification-action" onclick="this.parentElement.remove();openMessagingPanel();">View</button>
+      `;
+      document.body.appendChild(t);
+      setTimeout(() => t.classList.add('show'), 100);
+      setTimeout(() => {
+        t.classList.add('fade-out');
+        setTimeout(() => t.remove(), 500);
+      }, 5000);
+    }
+
+    // Initialize messaging unread count on page load
+    window.addEventListener('load', function() {
+      if (currentUser) {
+        loadConversations().then(() => {
+          updateMsgBadge();
+        }).catch(() => {});
+      }
+    });
   </script>
 
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
