@@ -5002,26 +5002,33 @@ SB36 - Sink Base 36&quot;"></textarea>
       // Store for import functions
       window._parsedRooms = parsedRooms;
 
-      // Show results
+      // Show detailed results with cabinet list
       document.getElementById('extractedRooms').innerHTML = `
         <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:16px; margin-bottom:16px;">
           <h4 style="color:#22c55e; margin:0 0 8px;">AI Analysis Complete</h4>
           <p style="margin:0; font-size:14px;">Detected ${parsedRooms.length} room(s) with ${parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} cabinet(s)</p>
-          ${aiData.countertopSqft ? `<p style="margin:4px 0 0; font-size:13px; opacity:0.8;">Countertop: ${aiData.countertopSqft} sqft | Flooring: ${aiData.flooringSqft || 0} sqft</p>` : ''}
+          ${aiData.pageTitle ? `<p style="margin:4px 0 0; font-size:13px; opacity:0.8;">Page: ${aiData.pageTitle}</p>` : ''}
         </div>
         ${parsedRooms.map((room, i) => `
           <div class="parsed-room" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; margin-bottom:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <div>
                 <strong>${room.name}</strong>
-                <span style="opacity:0.7; margin-left:8px;">${room.cabinets.length} cabinets</span>
+                <span style="opacity:0.7; margin-left:8px;">${room.width || '?'}' x ${room.depth || '?'}'</span>
               </div>
-              <button onclick="importParsedRoom(${i})" class="btn-small">Import This Room</button>
+              <button onclick="importParsedRoom(${i})" class="btn-small">Import</button>
+            </div>
+            <div style="font-size:11px; opacity:0.8; max-height:100px; overflow-y:auto;">
+              ${room.cabinets.slice(0, 10).map(c =>
+                `<div style="padding:2px 0;">#${c.number} ${c.name}: ${c.width}"W x ${c.depth}"D x ${c.height}"H (${c.wall})</div>`
+              ).join('')}
+              ${room.cabinets.length > 10 ? `<div style="color:#f9cb00;">...and ${room.cabinets.length - 10} more</div>` : ''}
             </div>
           </div>
         `).join('')}
-        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">Import All Rooms</button>
-        <button onclick="showManualSupplementForm()" class="btn-secondary" style="margin-top:8px; width:100%;">Add Missing Details Manually</button>
+        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">Import All ${parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} Cabinets</button>
+        <button onclick="showManualSupplementForm()" class="btn-secondary" style="margin-top:8px; width:100%;">Add Missing Details</button>
+        <button onclick="console.log(window._aiAnalysisData); alert('Check browser console for raw AI data')" class="btn-secondary" style="margin-top:8px; width:100%; font-size:12px;">Debug: View Raw AI Response</button>
       `;
     } else {
       // Show partial data if available, with manual entry option

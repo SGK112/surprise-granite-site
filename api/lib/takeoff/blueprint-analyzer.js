@@ -72,79 +72,64 @@ const CONFIG = {
  * @returns {Promise<Object>} Takeoff analysis results
  */
 async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey) {
-  const systemPrompt = `You are an expert kitchen designer and cabinet specialist.
-Analyze the provided blueprint/floor plan image and extract DETAILED cabinet and room information for creating a virtual 3D room layout.
+  const systemPrompt = `You are an expert at reading architectural cabinet drawings and shop drawings.
 
-CRITICAL: Extract EVERY individual cabinet with specific dimensions. This data will be used to create an accurate virtual room.
+YOUR TASK: Extract EVERY cabinet from this drawing with its EXACT dimensions as shown.
 
-For each room, provide:
-1. Room dimensions (width x depth in FEET)
-2. Room layout type (L-shape, U-shape, galley, single-wall, island)
-3. EACH INDIVIDUAL CABINET with:
-   - Type: base-cabinet, wall-cabinet, tall-cabinet, sink-base, corner-cabinet, drawer-base, pantry, island
-   - Width in INCHES (common: 12, 15, 18, 21, 24, 27, 30, 33, 36, 42, 48)
-   - Depth in INCHES (base: 24, wall: 12, tall: 24)
-   - Height in INCHES (base: 34.5, wall: 30 or 42, tall: 84 or 96)
-   - Wall position: top, bottom, left, right, island
-   - Label or number if visible
+LOOK FOR THESE ELEMENTS:
+1. **CABINET SCHEDULE/LEGEND** - A table listing cabinet numbers with Width x Depth x Height
+2. **CABINET TAGS/NUMBERS** - Numbers like "1", "2", "42", "B1", "W1" labeling each cabinet
+3. **DIMENSION STRINGS** - Measurements like 36", 24", 18" next to cabinets
+4. **ROOM/AREA NAME** - Title block or label like "Teammate Lounge", "Wet Bar", "Kitchen"
+5. **ELEVATION VIEWS** - Side views showing cabinet heights and arrangements
 
-4. Appliances with positions:
-   - Refrigerator, range/stove, dishwasher, microwave
-   - Width and wall position
+READ THE ACTUAL DIMENSIONS from the drawing. Do NOT guess or use defaults.
 
-5. Countertop areas (sqft)
-6. Island dimensions if present
+For EACH cabinet you see numbered or labeled:
+- Read its WIDTH from the dimension (e.g., 36", 18", 24")
+- Read its DEPTH from the dimension (e.g., 24", 30.5", 12")
+- Read its HEIGHT from the dimension (e.g., 32", 34.5", 30")
+- Note the cabinet NUMBER/LABEL exactly as shown
+- Identify TYPE: base, upper/wall, tall, sink base, drawer base, TV niche, microwave cabinet
 
-Return your analysis in this EXACT JSON format:
+RETURN THIS EXACT JSON FORMAT:
 {
   "rooms": [
     {
-      "name": "Kitchen",
-      "widthFt": 14,
+      "name": "EXACT ROOM NAME FROM DRAWING",
+      "widthFt": 20,
       "depthFt": 12,
-      "sqft": 168,
-      "layoutType": "L-shape",
       "cabinets": [
-        { "type": "base-cabinet", "width": 36, "depth": 24, "height": 34, "wall": "top", "label": "B1" },
-        { "type": "sink-base", "width": 36, "depth": 24, "height": 34, "wall": "top", "label": "SB1" },
-        { "type": "wall-cabinet", "width": 36, "depth": 12, "height": 30, "wall": "top", "label": "W1" },
-        { "type": "corner-cabinet", "width": 36, "depth": 24, "height": 34, "wall": "top-right", "label": "BC1" },
-        { "type": "tall-cabinet", "width": 30, "depth": 24, "height": 84, "wall": "right", "label": "T1" }
+        { "label": "1", "type": "base-cabinet", "width": 18, "depth": 30.5, "height": 32, "wall": "top" },
+        { "label": "2", "type": "base-cabinet", "width": 36, "depth": 24, "height": 32, "wall": "top" },
+        { "label": "3", "type": "sink-base", "width": 36, "depth": 24, "height": 32, "wall": "top" },
+        { "label": "8", "type": "tv-niche", "width": 59, "depth": 0.75, "height": 36, "wall": "right" },
+        { "label": "20", "type": "microwave", "width": 24, "depth": 18, "height": 18, "wall": "top" }
       ],
-      "appliances": [
-        { "type": "refrigerator", "width": 36, "wall": "right" },
-        { "type": "range", "width": 30, "wall": "top" },
-        { "type": "dishwasher", "width": 24, "wall": "top" }
-      ],
-      "island": { "widthIn": 48, "depthIn": 36, "hasCabinets": true, "hasSink": false },
-      "countertops": { "sqft": 45, "materialNote": "" },
-      "materials": {
-        "countertops": { "sqft": 45, "linearFt": 22 },
-        "flooring": { "sqft": 168 },
-        "tile": { "sqft": 30, "linearFt": 15 },
-        "cabinets": { "upperLF": 12, "lowerLF": 18 },
-        "plumbing": { "sinks": 1, "dishwasher": 1 }
-      }
+      "appliances": [],
+      "notes": "Description of what you see"
     }
   ],
-  "totals": {
-    "cabinetCount": 0,
-    "countertops": { "sqft": 0 },
-    "flooring": { "sqft": 0 }
-  },
-  "notes": ["observations about the drawing"]
+  "pageTitle": "Title from the drawing if visible",
+  "notes": ["Any observations about the drawing quality or missing information"]
 }
 
-IMPORTANT:
-- List EVERY cabinet you can see, even if dimensions must be estimated
-- Use standard cabinet sizes if exact dimensions aren't marked
-- Identify cabinet TYPES accurately (sink base has no drawer, corner cabinets are diagonal or L-shaped)
-- Note which WALL each cabinet is on (top=back wall, bottom=front/open, left, right)
-- If you see numbers/labels on cabinets, include them`;
+CRITICAL RULES:
+- Use the EXACT cabinet numbers from the drawing (1, 2, 3... or 42, 43, 44... etc)
+- Use the EXACT dimensions shown, not standard sizes
+- Each page may show a DIFFERENT room/area - read the title
+- TV niches, microwave cabinets, and other specialty items ARE cabinets - include them
+- If a cabinet schedule table is visible, extract ALL cabinets from it
+- Wall position: top=back wall, right=right wall, left=left wall, bottom=front`;
 
-  const userPrompt = `Analyze this ${projectType} blueprint and provide a detailed construction takeoff.
-Extract all measurable quantities for countertops, flooring, tile, cabinets, and plumbing fixtures.
-If dimensions are not clearly marked, estimate based on typical room sizes and the drawing scale.`;
+  const userPrompt = `Read this cabinet/millwork drawing carefully.
+
+1. Find the ROOM NAME or AREA NAME (check title block, headers)
+2. Find ALL cabinet numbers and their EXACT dimensions
+3. Look for a cabinet schedule table if present
+4. Extract every cabinet with its real measurements
+
+This is a ${projectType} project. Return accurate data for creating a virtual room layout.`;
 
   try {
     const response = await fetch(CONFIG.openai.apiUrl, {
