@@ -58,32 +58,69 @@
     { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
 
-  // Mobile menu items (expanded with all key pages)
+  // Mobile menu - simplified with collapsible categories
+  const MOBILE_MENU_CATEGORIES = [
+    {
+      label: 'Materials',
+      icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>',
+      items: [
+        { label: 'All Countertops', href: '/materials/all-countertops' },
+        { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
+        { label: 'Granite', href: '/materials/countertops/granite-countertops' },
+        { label: 'Marble', href: '/materials/countertops/marble-countertops' },
+        { label: 'Tile', href: '/materials/all-tile' },
+        { label: 'Flooring', href: '/materials/flooring' }
+      ]
+    },
+    {
+      label: 'Services',
+      icon: '<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>',
+      items: [
+        { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
+        { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
+        { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' }
+      ]
+    },
+    {
+      label: 'Shop & Tools',
+      icon: '<svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>',
+      items: [
+        { label: 'Shop Products', href: '/shop' },
+        { label: 'Room Designer', href: '/tools/room-designer/' },
+        { label: 'Style Quiz', href: '/quiz/' }
+      ]
+    },
+    {
+      label: 'Company',
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>',
+      items: [
+        { label: 'Project Gallery', href: '/company/project-gallery' },
+        { label: 'Reviews', href: '/company/reviews' },
+        { label: 'About Us', href: '/company/about-us' },
+        { label: 'Contact', href: '/contact-us' }
+      ]
+    }
+  ];
+
+  // Quick action items (always visible at top)
+  const MOBILE_QUICK_ACTIONS = [
+    { label: 'Book Free Estimate', href: '/book/', isBook: true },
+    { label: 'My Account', href: '/account' }
+  ];
+
+  // Legacy flat menu for backwards compatibility
   const MOBILE_MENU_ITEMS = [
     { label: 'Home', href: '/' },
     { label: 'Countertops', href: '/materials/all-countertops' },
-    { label: 'Quartz Countertops', href: '/materials/countertops/quartz-countertops' },
-    { label: 'Granite Countertops', href: '/materials/countertops/granite-countertops' },
-    { label: 'Marble Countertops', href: '/materials/countertops/marble-countertops' },
-    { label: 'Porcelain Countertops', href: '/materials/countertops/porcelain-countertops' },
     { label: 'Tile', href: '/materials/all-tile' },
     { label: 'Flooring', href: '/materials/flooring' },
-    { label: 'Cabinets', href: '/materials/all-cabinets' },
     { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
     { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
     { label: 'Shop', href: '/shop' },
-    { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
-    { label: 'Vendors', href: '/company/vendors-list' },
-    { label: 'About Us', href: '/company/about-us' },
-    { label: 'Reviews', href: '/company/reviews' },
-    { label: 'FAQ', href: '/company/faq-center' },
     { label: 'Contact', href: '/contact-us' },
-    { label: 'Financing', href: '/services/home-remodeling-financing-options-in-arizona' },
     { label: 'My Account', href: '/account' },
-    { label: 'Book Free Estimate', href: '/book/', isBook: true },
-    { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
-    { label: 'For Pros - Join Now', href: '/vendor/signup', isPro: true }
+    { label: 'Book Free Estimate', href: '/book/', isBook: true }
   ];
 
   // Product data for mega menus
@@ -162,8 +199,51 @@
     }).join('');
   }
 
-  // Create mobile drawer links
+  // Create mobile drawer links - now with collapsible categories
   function createDrawerLinks() {
+    // Quick actions at top
+    let html = '<div class="unified-nav-drawer-quick">';
+    html += `<a href="/" class="unified-nav-drawer-home">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>`;
+    MOBILE_QUICK_ACTIONS.forEach(item => {
+      let extraClass = item.isBook ? ' unified-nav-drawer-book' : '';
+      html += `<a href="${item.href}" class="unified-nav-drawer-quick-item${extraClass}">
+        <span>${item.label}</span>
+      </a>`;
+    });
+    html += '</div>';
+
+    // Categorized sections
+    html += '<div class="unified-nav-drawer-categories">';
+    MOBILE_MENU_CATEGORIES.forEach((cat, idx) => {
+      const isExpanded = idx === 0 ? ' expanded' : '';
+      html += `
+        <div class="unified-nav-drawer-category${isExpanded}" data-category="${cat.label.toLowerCase()}">
+          <button class="unified-nav-drawer-category-header">
+            <span class="unified-nav-drawer-category-icon">${cat.icon}</span>
+            <span class="unified-nav-drawer-category-label">${cat.label}</span>
+            <svg class="unified-nav-drawer-category-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div class="unified-nav-drawer-category-items">
+            ${cat.items.map(item => `
+              <a href="${item.href}" class="unified-nav-drawer-item">
+                <span>${item.label}</span>
+                <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+
+    return html;
+  }
+
+  // Legacy flat drawer links (fallback)
+  function createDrawerLinksFlat() {
     return MOBILE_MENU_ITEMS.map(item => {
       let extraClass = '';
       if (item.isPro) extraClass = ' unified-nav-drawer-pro';
@@ -545,6 +625,30 @@
         handleSearch(drawerSearch.value);
         closeDrawer();
       }
+    });
+
+    // ===== CATEGORIZED MENU TOGGLE =====
+    // Set up category accordion behavior
+    document.querySelectorAll('.unified-nav-drawer-category-header').forEach(header => {
+      header.addEventListener('click', function(e) {
+        e.preventDefault();
+        const category = this.closest('.unified-nav-drawer-category');
+        if (category) {
+          // Close other categories (accordion behavior)
+          document.querySelectorAll('.unified-nav-drawer-category.expanded').forEach(cat => {
+            if (cat !== category) cat.classList.remove('expanded');
+          });
+          // Toggle this category
+          category.classList.toggle('expanded');
+        }
+      });
+    });
+
+    // Close drawer when clicking category items
+    document.querySelectorAll('.unified-nav-drawer-category-items .unified-nav-drawer-item').forEach(item => {
+      item.addEventListener('click', () => {
+        setTimeout(closeDrawer, 100);
+      });
     });
 
     // Update cart badge

@@ -3981,4 +3981,2131 @@
   });
 
   console.log('Room Designer Pro Features v6.0 loaded');
+
+  // ============================================================
+  // PRO FEATURES V7.0 - COMMERCIAL PROJECT SUITE
+  // ============================================================
+
+  // === 1. CABINET LIBRARY ===
+  const CABINET_LIBRARY = {
+    base: [
+      { id: 'B12', name: 'Base 12"', width: 12, depth: 24, height: 34.5, type: 'base', doors: 1, shelves: 1 },
+      { id: 'B15', name: 'Base 15"', width: 15, depth: 24, height: 34.5, type: 'base', doors: 1, shelves: 1 },
+      { id: 'B18', name: 'Base 18"', width: 18, depth: 24, height: 34.5, type: 'base', doors: 1, shelves: 1 },
+      { id: 'B21', name: 'Base 21"', width: 21, depth: 24, height: 34.5, type: 'base', doors: 1, shelves: 1 },
+      { id: 'B24', name: 'Base 24"', width: 24, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B27', name: 'Base 27"', width: 27, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B30', name: 'Base 30"', width: 30, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B33', name: 'Base 33"', width: 33, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B36', name: 'Base 36"', width: 36, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B42', name: 'Base 42"', width: 42, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'B48', name: 'Base 48"', width: 48, depth: 24, height: 34.5, type: 'base', doors: 2, shelves: 1 },
+      { id: 'SB36', name: 'Sink Base 36"', width: 36, depth: 24, height: 34.5, type: 'sink-base', doors: 2, shelves: 0 },
+      { id: 'DB15', name: 'Drawer Base 15"', width: 15, depth: 24, height: 34.5, type: 'drawer-base', drawers: 4 },
+      { id: 'DB18', name: 'Drawer Base 18"', width: 18, depth: 24, height: 34.5, type: 'drawer-base', drawers: 4 },
+      { id: 'DB24', name: 'Drawer Base 24"', width: 24, depth: 24, height: 34.5, type: 'drawer-base', drawers: 4 },
+    ],
+    wall: [
+      { id: 'W1230', name: 'Wall 12x30"', width: 12, depth: 12, height: 30, type: 'wall', doors: 1, shelves: 2 },
+      { id: 'W1530', name: 'Wall 15x30"', width: 15, depth: 12, height: 30, type: 'wall', doors: 1, shelves: 2 },
+      { id: 'W1830', name: 'Wall 18x30"', width: 18, depth: 12, height: 30, type: 'wall', doors: 1, shelves: 2 },
+      { id: 'W2430', name: 'Wall 24x30"', width: 24, depth: 12, height: 30, type: 'wall', doors: 2, shelves: 2 },
+      { id: 'W3030', name: 'Wall 30x30"', width: 30, depth: 12, height: 30, type: 'wall', doors: 2, shelves: 2 },
+      { id: 'W3630', name: 'Wall 36x30"', width: 36, depth: 12, height: 30, type: 'wall', doors: 2, shelves: 2 },
+      { id: 'W1236', name: 'Wall 12x36"', width: 12, depth: 12, height: 36, type: 'wall', doors: 1, shelves: 2 },
+      { id: 'W1836', name: 'Wall 18x36"', width: 18, depth: 12, height: 36, type: 'wall', doors: 1, shelves: 2 },
+      { id: 'W2436', name: 'Wall 24x36"', width: 24, depth: 12, height: 36, type: 'wall', doors: 2, shelves: 2 },
+      { id: 'W3036', name: 'Wall 30x36"', width: 30, depth: 12, height: 36, type: 'wall', doors: 2, shelves: 2 },
+      { id: 'W3636', name: 'Wall 36x36"', width: 36, depth: 12, height: 36, type: 'wall', doors: 2, shelves: 2 },
+    ],
+    tall: [
+      { id: 'T1884', name: 'Tall 18x84"', width: 18, depth: 24, height: 84, type: 'tall', doors: 2, shelves: 4 },
+      { id: 'T2484', name: 'Tall 24x84"', width: 24, depth: 24, height: 84, type: 'tall', doors: 2, shelves: 4 },
+      { id: 'T3084', name: 'Tall 30x84"', width: 30, depth: 24, height: 84, type: 'tall', doors: 2, shelves: 4 },
+      { id: 'T3684', name: 'Tall 36x84"', width: 36, depth: 24, height: 84, type: 'tall', doors: 2, shelves: 4 },
+      { id: 'T1896', name: 'Tall 18x96"', width: 18, depth: 24, height: 96, type: 'tall', doors: 2, shelves: 5 },
+      { id: 'T2496', name: 'Tall 24x96"', width: 24, depth: 24, height: 96, type: 'tall', doors: 2, shelves: 5 },
+    ],
+    specialty: [
+      { id: 'MW24', name: 'Microwave 24"', width: 24, depth: 18, height: 18, type: 'microwave', lamInterior: true },
+      { id: 'MW30', name: 'Microwave 30"', width: 30, depth: 18, height: 18, type: 'microwave', lamInterior: true },
+      { id: 'TVN48', name: 'TV Niche 48"', width: 48, depth: 4, height: 36, type: 'tv-niche' },
+      { id: 'TVN60', name: 'TV Niche 60"', width: 60, depth: 4, height: 36, type: 'tv-niche' },
+      { id: 'FP3', name: 'Filler Panel 3"', width: 3, depth: 0.75, height: 34.5, type: 'filler' },
+      { id: 'FP6', name: 'Filler Panel 6"', width: 6, depth: 0.75, height: 34.5, type: 'filler' },
+      { id: 'EP', name: 'End Panel', width: 0.75, depth: 24, height: 34.5, type: 'end-panel' },
+    ]
+  };
+
+  window.showCabinetLibrary = function() {
+    const existing = document.getElementById('cabinetLibraryModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'cabinetLibraryModal';
+    modal.className = 'cabinet-library-modal';
+
+    let content = `
+      <div class="cabinet-library-content">
+        <div class="cabinet-library-header">
+          <h3>📦 Cabinet Library</h3>
+          <div class="cabinet-library-tabs">
+            <button class="cab-tab active" onclick="showCabinetCategory('base')">Base</button>
+            <button class="cab-tab" onclick="showCabinetCategory('wall')">Wall</button>
+            <button class="cab-tab" onclick="showCabinetCategory('tall')">Tall</button>
+            <button class="cab-tab" onclick="showCabinetCategory('specialty')">Specialty</button>
+          </div>
+          <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
+        </div>
+        <div class="cabinet-library-body">
+          <div class="cabinet-search">
+            <input type="text" id="cabinetSearchInput" placeholder="Search cabinets..." oninput="filterCabinetLibrary(this.value)">
+          </div>
+          <div id="cabinetLibraryGrid" class="cabinet-library-grid">
+            ${renderCabinetCategory('base')}
+          </div>
+        </div>
+        <div class="cabinet-library-footer">
+          <div class="custom-cabinet-form">
+            <h4>Custom Cabinet</h4>
+            <div class="custom-cab-inputs">
+              <input type="number" id="customCabWidth" placeholder="W" min="6" max="60">
+              <input type="number" id="customCabDepth" placeholder="D" min="12" max="30">
+              <input type="number" id="customCabHeight" placeholder="H" min="12" max="96">
+              <button onclick="addCustomCabinet()">Add Custom</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.innerHTML = content;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  function renderCabinetCategory(category) {
+    const cabinets = CABINET_LIBRARY[category] || [];
+    return cabinets.map(cab => `
+      <div class="cabinet-lib-item" onclick="addCabinetFromLibrary('${category}', '${cab.id}')">
+        <div class="cab-lib-icon">${getCabinetIcon(cab.type)}</div>
+        <div class="cab-lib-name">${cab.name}</div>
+        <div class="cab-lib-dims">${cab.width}"W x ${cab.depth}"D x ${cab.height}"H</div>
+      </div>
+    `).join('');
+  }
+
+  function getCabinetIcon(type) {
+    const icons = {
+      'base': '▭',
+      'sink-base': '◇',
+      'drawer-base': '☰',
+      'wall': '▯',
+      'tall': '▮',
+      'microwave': '◻',
+      'tv-niche': '📺',
+      'filler': '│',
+      'end-panel': '▏'
+    };
+    return icons[type] || '▭';
+  }
+
+  window.showCabinetCategory = function(category) {
+    document.querySelectorAll('.cab-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('cabinetLibraryGrid').innerHTML = renderCabinetCategory(category);
+  };
+
+  window.filterCabinetLibrary = function(query) {
+    if (!query) {
+      document.getElementById('cabinetLibraryGrid').innerHTML = renderCabinetCategory('base');
+      return;
+    }
+    query = query.toLowerCase();
+    const allCabinets = [...CABINET_LIBRARY.base, ...CABINET_LIBRARY.wall, ...CABINET_LIBRARY.tall, ...CABINET_LIBRARY.specialty];
+    const filtered = allCabinets.filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query));
+    document.getElementById('cabinetLibraryGrid').innerHTML = filtered.map(cab => `
+      <div class="cabinet-lib-item" onclick="addCabinetFromLibraryDirect('${JSON.stringify(cab).replace(/"/g, '&quot;')}')">
+        <div class="cab-lib-icon">${getCabinetIcon(cab.type)}</div>
+        <div class="cab-lib-name">${cab.name}</div>
+        <div class="cab-lib-dims">${cab.width}"W x ${cab.depth}"D x ${cab.height}"H</div>
+      </div>
+    `).join('');
+  };
+
+  window.addCabinetFromLibrary = function(category, cabId) {
+    const cabinet = CABINET_LIBRARY[category]?.find(c => c.id === cabId);
+    if (!cabinet) return;
+    addCabinetToCanvas(cabinet);
+  };
+
+  window.addCabinetFromLibraryDirect = function(cabJson) {
+    const cabinet = JSON.parse(cabJson.replace(/&quot;/g, '"'));
+    addCabinetToCanvas(cabinet);
+  };
+
+  function addCabinetToCanvas(cabinet) {
+    const ppi = window.pixelsPerInch || 12;
+    const newElement = {
+      id: `cab_${cabinet.id}_${Date.now()}`,
+      type: 'cabinet',
+      subType: cabinet.type,
+      name: cabinet.name,
+      cabinetId: cabinet.id,
+      width: cabinet.width * ppi,
+      height: cabinet.depth * ppi, // In 2D, depth becomes height
+      actualHeight: cabinet.height,
+      actualWidth: cabinet.width,
+      actualDepth: cabinet.depth,
+      doors: cabinet.doors || 0,
+      drawers: cabinet.drawers || 0,
+      shelves: cabinet.shelves || 0,
+      lamInterior: cabinet.lamInterior || false,
+      x: 100,
+      y: 100
+    };
+
+    if (window.elements) {
+      window.elements.push(newElement);
+      window.selectedElement = newElement;
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    }
+
+    document.getElementById('cabinetLibraryModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Added ${cabinet.name}`, 'success');
+  }
+
+  window.addCustomCabinet = function() {
+    const w = parseFloat(document.getElementById('customCabWidth')?.value);
+    const d = parseFloat(document.getElementById('customCabDepth')?.value);
+    const h = parseFloat(document.getElementById('customCabHeight')?.value);
+
+    if (!w || !d || !h) {
+      if (typeof showToast === 'function') showToast('Enter width, depth, and height', 'warning');
+      return;
+    }
+
+    const cabinet = {
+      id: 'CUSTOM',
+      name: `Custom ${w}"x${d}"x${h}"`,
+      width: w,
+      depth: d,
+      height: h,
+      type: 'base',
+      doors: w >= 24 ? 2 : 1,
+      shelves: 1
+    };
+
+    addCabinetToCanvas(cabinet);
+  };
+
+  // === 2. COMMERCIAL PROJECT MODE (Multi-Room) ===
+  const COMMERCIAL_PROJECT_KEY = 'sg_commercial_project';
+  let commercialProject = null;
+
+  // Preserve the original room system's switchToRoom function
+  // (defined in index.html before this file loads)
+  if (window.switchToRoom && !window._originalSwitchToRoom) {
+    window._originalSwitchToRoom = window.switchToRoom;
+  }
+
+  window.initCommercialProject = function(projectName = 'New Commercial Project') {
+    commercialProject = {
+      id: 'proj_' + Date.now(),
+      name: projectName,
+      client: '',
+      location: '',
+      rooms: [],
+      currentRoomIndex: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'draft',
+      approvals: []
+    };
+    saveCommercialProject();
+    return commercialProject;
+  };
+
+  window.loadCommercialProject = function() {
+    try {
+      const stored = localStorage.getItem(COMMERCIAL_PROJECT_KEY);
+      if (stored) {
+        commercialProject = JSON.parse(stored);
+        return commercialProject;
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  function saveCommercialProject() {
+    if (!commercialProject) return;
+    commercialProject.updatedAt = new Date().toISOString();
+    try {
+      localStorage.setItem(COMMERCIAL_PROJECT_KEY, JSON.stringify(commercialProject));
+    } catch (e) {}
+  }
+
+  window.showCommercialProjectManager = function() {
+    const existing = document.getElementById('commercialProjectModal');
+    if (existing) existing.remove();
+
+    if (!commercialProject) {
+      window.loadCommercialProject();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'commercialProjectModal';
+    modal.className = 'commercial-project-modal';
+
+    const hasProject = !!commercialProject;
+    const rooms = commercialProject?.rooms || [];
+
+    modal.innerHTML = `
+      <div class="commercial-project-content">
+        <div class="commercial-project-header">
+          <h3>🏢 Commercial Project Manager</h3>
+          <button onclick="this.closest('.commercial-project-modal').remove()">&times;</button>
+        </div>
+        <div class="commercial-project-body">
+          ${!hasProject ? `
+            <div class="new-project-form">
+              <h4>Start New Commercial Project</h4>
+              <div class="form-group">
+                <label>Project Name</label>
+                <input type="text" id="newProjectName" placeholder="e.g., State Farm Stadium Cabinets">
+              </div>
+              <div class="form-group">
+                <label>Client</label>
+                <input type="text" id="newProjectClient" placeholder="e.g., Arizona Cardinals">
+              </div>
+              <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="newProjectLocation" placeholder="e.g., 1 Cardinals Drive, Glendale, AZ">
+              </div>
+              <button class="btn-primary" onclick="createCommercialProject()">Create Project</button>
+            </div>
+          ` : `
+            <div class="project-info">
+              <div class="project-header-info">
+                <h4>${commercialProject.name}</h4>
+                <span class="project-status ${commercialProject.status}">${commercialProject.status.toUpperCase()}</span>
+              </div>
+              <p><strong>Client:</strong> ${commercialProject.client || 'Not set'}</p>
+              <p><strong>Location:</strong> ${commercialProject.location || 'Not set'}</p>
+              <p><strong>Rooms:</strong> ${rooms.length}</p>
+            </div>
+            <div class="rooms-section">
+              <div class="rooms-header">
+                <h4>Rooms</h4>
+                <button onclick="addRoomToProject()">+ Add Room</button>
+              </div>
+              <div class="rooms-list" id="roomsList">
+                ${rooms.length === 0 ? '<p class="no-rooms">No rooms yet. Add your first room.</p>' : rooms.map((room, i) => `
+                  <div class="room-item ${i === commercialProject.currentRoomIndex ? 'active' : ''}" onclick="switchToProjectRoom(${i})">
+                    <div class="room-item-info">
+                      <span class="room-name">${room.name}</span>
+                      <span class="room-meta">${room.elements?.length || 0} elements • ${room.width}'x${room.depth}'</span>
+                    </div>
+                    <div class="room-item-actions">
+                      <button onclick="event.stopPropagation(); editRoom(${i})" title="Edit">✏️</button>
+                      <button onclick="event.stopPropagation(); duplicateRoom(${i})" title="Duplicate">📋</button>
+                      <button onclick="event.stopPropagation(); deleteRoom(${i})" title="Delete">🗑️</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="project-actions">
+              <button class="btn-secondary" onclick="exportCommercialProject()">Export All</button>
+              <button class="btn-secondary" onclick="generateProjectReport()">Generate Report</button>
+              <button class="btn-primary" onclick="sendForApproval()">Send for Approval</button>
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.createCommercialProject = function() {
+    const name = document.getElementById('newProjectName')?.value || 'New Project';
+    const client = document.getElementById('newProjectClient')?.value || '';
+    const location = document.getElementById('newProjectLocation')?.value || '';
+
+    commercialProject = {
+      id: 'proj_' + Date.now(),
+      name,
+      client,
+      location,
+      rooms: [],
+      currentRoomIndex: -1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'draft',
+      approvals: []
+    };
+
+    saveCommercialProject();
+    window.showCommercialProjectManager();
+    if (typeof showToast === 'function') showToast('Project created!', 'success');
+  };
+
+  window.addRoomToProject = function() {
+    if (!commercialProject) return;
+
+    const roomName = prompt('Room name:', `Room ${commercialProject.rooms.length + 1}`);
+    if (!roomName) return;
+
+    // Save current room state first
+    saveCurrentRoomToProject();
+
+    const newRoom = {
+      id: 'room_' + Date.now(),
+      name: roomName,
+      width: 20, // feet
+      depth: 15, // feet
+      elements: [],
+      walls: [],
+      countertops: [],
+      notes: [],
+      createdAt: new Date().toISOString()
+    };
+
+    commercialProject.rooms.push(newRoom);
+    commercialProject.currentRoomIndex = commercialProject.rooms.length - 1;
+    saveCommercialProject();
+
+    // Clear canvas for new room
+    if (window.elements) window.elements.length = 0;
+    if (window.walls) window.walls.length = 0;
+    window.roomWidth = newRoom.width * 12;
+    window.roomDepth = newRoom.depth * 12;
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    window.showCommercialProjectManager();
+    if (typeof showToast === 'function') showToast(`Added room: ${roomName}`, 'success');
+  };
+
+  // Switch room using the existing room system (preferred method)
+  // This syncs with the main Room Designer's room tabs
+  window.switchToProjectRoom = function(index) {
+    // If we have synced to the existing room system, use that
+    if (window.rooms && window.rooms.length > index) {
+      const room = window.rooms[index];
+      if (room && room.id) {
+        // Use the existing room system's switchToRoom
+        const originalSwitch = window._originalSwitchToRoom || window.switchToRoom;
+        if (typeof originalSwitch === 'function') {
+          originalSwitch(room.id);
+        }
+        document.getElementById('commercialProjectModal')?.remove();
+        return;
+      }
+    }
+
+    // Fallback: Use commercial project directly if no sync
+    if (!commercialProject || !commercialProject.rooms[index]) {
+      console.error('Cannot switch room - no project or invalid index:', index);
+      return;
+    }
+
+    commercialProject.currentRoomIndex = index;
+    const room = commercialProject.rooms[index];
+
+    // Load elements into canvas
+    if (window.elements) {
+      window.elements.length = 0;
+      (room.elements || []).forEach(el => window.elements.push({...el}));
+    }
+
+    if (window.walls) {
+      window.walls.length = 0;
+      (room.walls || []).forEach(w => window.walls.push({...w}));
+    }
+
+    // Update room dimensions
+    if (typeof window.roomWidth !== 'undefined') {
+      window.roomWidth = room.width || 20;
+    }
+    if (typeof window.roomDepth !== 'undefined') {
+      window.roomDepth = room.depth || 15;
+    }
+
+    const projectName = document.getElementById('projectName');
+    if (projectName) {
+      projectName.value = `${commercialProject.name} - ${room.name}`;
+    }
+
+    saveCommercialProject();
+
+    if (typeof window.fitToScreen === 'function') {
+      window.fitToScreen();
+    }
+    if (typeof window.draw === 'function') {
+      window.draw();
+    }
+
+    document.getElementById('commercialProjectModal')?.remove();
+    if (typeof showToast === 'function') {
+      showToast(`Switched to: ${room.name}`, 'info');
+    }
+  };
+
+  function saveCurrentRoomToProject() {
+    if (!commercialProject || commercialProject.currentRoomIndex < 0) return;
+
+    const room = commercialProject.rooms[commercialProject.currentRoomIndex];
+    if (!room) return;
+
+    room.elements = (window.elements || []).map(el => ({ ...el }));
+    room.walls = (window.walls || []).map(w => ({ ...w }));
+    // roomWidth and roomDepth are already in feet in the main designer
+    room.width = window.roomWidth || 20;
+    room.depth = window.roomDepth || 15;
+    room.updatedAt = new Date().toISOString();
+
+    saveCommercialProject();
+  }
+
+  window.duplicateRoom = function(index) {
+    if (!commercialProject || !commercialProject.rooms[index]) return;
+
+    const original = commercialProject.rooms[index];
+    const copy = JSON.parse(JSON.stringify(original));
+    copy.id = 'room_' + Date.now();
+    copy.name = original.name + ' (Copy)';
+    copy.createdAt = new Date().toISOString();
+
+    commercialProject.rooms.push(copy);
+    saveCommercialProject();
+    window.showCommercialProjectManager();
+    if (typeof showToast === 'function') showToast('Room duplicated', 'success');
+  };
+
+  window.deleteRoom = function(index) {
+    if (!commercialProject || !commercialProject.rooms[index]) return;
+    if (!confirm(`Delete "${commercialProject.rooms[index].name}"?`)) return;
+
+    commercialProject.rooms.splice(index, 1);
+    if (commercialProject.currentRoomIndex >= commercialProject.rooms.length) {
+      commercialProject.currentRoomIndex = commercialProject.rooms.length - 1;
+    }
+    saveCommercialProject();
+    window.showCommercialProjectManager();
+    if (typeof showToast === 'function') showToast('Room deleted', 'success');
+  };
+
+  window.editRoom = function(index) {
+    if (!commercialProject || !commercialProject.rooms[index]) return;
+    const room = commercialProject.rooms[index];
+
+    const newName = prompt('Room name:', room.name);
+    if (newName && newName !== room.name) {
+      room.name = newName;
+      saveCommercialProject();
+      window.showCommercialProjectManager();
+    }
+  };
+
+  // === 3. PDF IMPORT PARSER ===
+  window.showPDFImporter = function() {
+    const existing = document.getElementById('pdfImporterModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'pdfImporterModal';
+    modal.className = 'pdf-importer-modal';
+    modal.innerHTML = `
+      <div class="pdf-importer-content">
+        <div class="pdf-importer-header">
+          <h3>📄 Import Cabinet Drawings</h3>
+          <button onclick="this.closest('.pdf-importer-modal').remove()">&times;</button>
+        </div>
+        <div class="pdf-importer-body">
+          <div class="import-dropzone" id="pdfDropzone">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <p>Drag & drop PDF here or click to browse</p>
+            <input type="file" id="pdfFileInput" accept=".pdf" onchange="handlePDFUpload(event)" style="display:none">
+            <button onclick="document.getElementById('pdfFileInput').click()">Select PDF</button>
+          </div>
+          <div id="pdfParseResults" class="pdf-parse-results" style="display:none">
+            <h4>Extracted Data</h4>
+            <div id="extractedRooms"></div>
+          </div>
+          <div class="manual-entry-section">
+            <h4>Or Enter Cabinet Data Manually</h4>
+            <p class="help-text">Paste a cut list or cabinet schedule:</p>
+            <textarea id="manualCabinetData" rows="6" placeholder="Example:
+B36 - Base 36&quot; x 24&quot; x 34.5&quot;
+W3030 - Wall 30&quot; x 12&quot; x 30&quot;
+SB36 - Sink Base 36&quot;"></textarea>
+            <button onclick="parseManualCabinetData()">Parse & Import</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Setup drag and drop
+    const dropzone = document.getElementById('pdfDropzone');
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handlePDFFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.handlePDFUpload = function(event) {
+    const file = event.target.files[0];
+    if (file) handlePDFFile(file);
+  };
+
+  function handlePDFFile(file) {
+    if (file.type !== 'application/pdf') {
+      if (typeof showToast === 'function') showToast('Please select a PDF file', 'warning');
+      return;
+    }
+
+    if (typeof showToast === 'function') showToast('PDF parsing is manual - please use the manual entry below', 'info');
+
+    // Show manual entry section
+    document.getElementById('pdfParseResults').style.display = 'block';
+    document.getElementById('extractedRooms').innerHTML = `
+      <p>PDF uploaded: <strong>${file.name}</strong></p>
+      <p>Please manually enter the cabinet dimensions from the PDF using the text area below, or use our pre-built State Farm Stadium data:</p>
+      <button onclick="loadStateFarmStadiumData()" class="btn-primary">Load State Farm Stadium Data</button>
+    `;
+  }
+
+  window.loadStateFarmStadiumData = function() {
+    // Clear any existing commercial project
+    commercialProject = null;
+    localStorage.removeItem('sg_commercial_project');
+
+    // Map cabinet names to proper element types
+    function getElementType(cabinetName) {
+      const name = cabinetName.toLowerCase();
+      if (name.includes('tv niche')) return 'tv-niche';
+      if (name.includes('microwave')) return 'microwave';
+      if (name.includes('upper')) return 'wall-cabinet';
+      if (name.includes('sink')) return 'sink-base';
+      if (name.includes('drawer')) return 'drawer-base';
+      if (name.includes('tall') || name.includes('pantry')) return 'tall-cabinet';
+      if (name.includes('filler')) return 'base-cabinet'; // Thin filler piece
+      return 'base-cabinet';
+    }
+
+    // Get color based on element type
+    function getElementColor(type) {
+      const colors = {
+        'base-cabinet': '#8B7355',
+        'wall-cabinet': '#A0522D',
+        'tall-cabinet': '#6B4423',
+        'sink-base': '#4682B4',
+        'drawer-base': '#9370DB',
+        'tv-niche': '#2F4F4F',
+        'microwave': '#708090'
+      };
+      return colors[type] || '#8B7355';
+    }
+
+    // State Farm Stadium cabinet data with wall layout info
+    const stateFarmRooms = [
+      {
+        name: 'Teammate Lounge - Wall 1',
+        roomType: 'other',
+        width: 22, // Room width in feet
+        depth: 12,
+        walls: [
+          {
+            position: 'top', // Cabinets along top wall
+            cabinets: [
+              { number: '1', name: 'Base', width: 18, depth: 30.5, height: 32 },
+              { number: '2', name: 'Base', width: 18, depth: 30.5, height: 32 },
+              { number: '3', name: 'Base', width: 36, depth: 30.5, height: 32 },
+              { number: '4', name: 'Base', width: 36, depth: 30.5, height: 32 },
+              { number: '5', name: 'Base', width: 36, depth: 30.5, height: 32 },
+              { number: '6', name: 'Base', width: 36, depth: 30.5, height: 32 },
+              { number: '7', name: 'Base', width: 36, depth: 30.5, height: 32 }
+            ]
+          },
+          {
+            position: 'right', // TV niches on right wall
+            cabinets: [
+              { number: '8', name: 'TV Niche', width: 59, depth: 0.75, height: 36 },
+              { number: '9', name: 'TV Niche', width: 59, depth: 0.75, height: 36 }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Wet Lounge - Wall 2',
+        roomType: 'other',
+        width: 18,
+        depth: 12,
+        walls: [
+          {
+            position: 'top',
+            cabinets: [
+              { number: '42', name: 'Base', width: 36.75, depth: 24, height: 32 },
+              { number: '43', name: 'Base', width: 36, depth: 24, height: 32 },
+              { number: '44', name: 'Filler', width: 0.75, depth: 24.875, height: 32 },
+              { number: '50', name: 'Base', width: 36.75, depth: 24, height: 32 },
+              { number: '52', name: 'Filler', width: 0.75, depth: 24.875, height: 32 }
+            ]
+          },
+          {
+            position: 'top-upper', // Upper cabinets above base
+            yOffset: 3, // 3 feet up from base
+            cabinets: [
+              { number: '45', name: 'Upper', width: 36.75, depth: 12, height: 30 },
+              { number: '53', name: 'Upper', width: 36.75, depth: 12, height: 30 }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Wet Lounge - Wall 3',
+        roomType: 'other',
+        width: 14,
+        depth: 12,
+        walls: [
+          {
+            position: 'top',
+            cabinets: [
+              { number: '51', name: 'Base', width: 36.75, depth: 24, height: 32 },
+              { number: '55', name: 'Drawer Base', width: 18, depth: 24, height: 32 },
+              { number: '59', name: 'Base', width: 36, depth: 24, height: 32 },
+              { number: '60', name: 'Base', width: 36, depth: 24, height: 32 }
+            ]
+          },
+          {
+            position: 'top-upper',
+            yOffset: 3,
+            cabinets: [
+              { number: '46', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true },
+              { number: '47', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true },
+              { number: '48', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true },
+              { number: '49', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'Breakroom Option 1',
+        roomType: 'kitchen',
+        width: 12,
+        depth: 10,
+        walls: [
+          {
+            position: 'top',
+            cabinets: [
+              { number: '13', name: 'Sink Base', width: 24, depth: 24, height: 32 },
+              { number: '14', name: 'Drawer Base', width: 18, depth: 24, height: 32 },
+              { number: '16', name: 'Base', width: 30.25, depth: 24, height: 32 },
+              { number: '17', name: 'Base', width: 30.25, depth: 24, height: 32 }
+            ]
+          },
+          {
+            position: 'top-upper',
+            yOffset: 3,
+            cabinets: [
+              { number: '20', name: 'Microwave', width: 24.75, depth: 18, height: 18, lamInterior: true },
+              { number: '21', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true },
+              { number: '22', name: 'Microwave', width: 24, depth: 18, height: 18, lamInterior: true }
+            ]
+          },
+          {
+            position: 'right',
+            cabinets: [
+              { number: '23', name: 'Tall Pantry', width: 30.625, depth: 12, height: 92 }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // Use existing room system - clear existing rooms first
+    if (window.rooms) {
+      window.rooms.length = 0;
+    }
+    if (window.elements) {
+      window.elements.length = 0;
+    }
+
+    const ppf = window.pixelsPerFoot || 40;
+
+    // Create rooms using the existing room system
+    stateFarmRooms.forEach((roomData, roomIndex) => {
+      // Create room using existing system
+      const newRoom = {
+        id: 'room-sf-' + Date.now() + '-' + roomIndex,
+        name: roomData.name,
+        type: roomData.roomType || 'other',
+        width: roomData.width,
+        depth: roomData.depth,
+        offsetX: 0,
+        offsetY: 0,
+        elements: [],
+        walls: [],
+        floorPlan: 'empty'
+      };
+
+      // Process each wall section
+      roomData.walls.forEach(wallSection => {
+        let xStart = 0;
+        let yStart = 0;
+        const cabinetDepthFeet = 2; // Standard 24" depth
+
+        // Position based on wall
+        if (wallSection.position === 'top' || wallSection.position === 'top-upper') {
+          xStart = 0.5 * ppf; // Start 6" from edge
+          yStart = wallSection.yOffset ? (wallSection.yOffset * ppf) : 0;
+        } else if (wallSection.position === 'right') {
+          xStart = (roomData.width - 3) * ppf; // Near right wall
+          yStart = 0.5 * ppf;
+        } else if (wallSection.position === 'left') {
+          xStart = 0;
+          yStart = 0.5 * ppf;
+        } else if (wallSection.position === 'bottom') {
+          xStart = 0.5 * ppf;
+          yStart = (roomData.depth - cabinetDepthFeet) * ppf;
+        }
+
+        let currentX = xStart;
+        let currentY = yStart;
+
+        wallSection.cabinets.forEach((cab, cabIndex) => {
+          const elementType = getElementType(cab.name);
+          const widthFeet = cab.width / 12;
+          const depthFeet = Math.min(cab.depth / 12, 2.5); // Cap depth at 2.5ft for display
+
+          // For vertical walls (left/right), swap width/height and stack vertically
+          const isVerticalWall = wallSection.position === 'left' || wallSection.position === 'right';
+
+          const element = {
+            id: `sf_${roomIndex}_${cabIndex}_${Date.now()}`,
+            type: elementType,
+            x: currentX,
+            y: currentY,
+            width: isVerticalWall ? depthFeet : widthFeet,
+            height: isVerticalWall ? widthFeet : depthFeet,
+            color: getElementColor(elementType),
+            label: `#${cab.number} ${cab.name}`,
+            rotation: 0,
+            locked: false,
+            // Store actual dimensions for reference
+            actualWidth: cab.width,
+            actualDepth: cab.depth,
+            actualHeight: cab.height,
+            lamInterior: cab.lamInterior || false
+          };
+
+          newRoom.elements.push(element);
+
+          // Move to next position
+          if (isVerticalWall) {
+            currentY += (widthFeet * ppf) + 4; // Stack vertically
+          } else {
+            currentX += (widthFeet * ppf) + 4; // Arrange horizontally
+          }
+        });
+      });
+
+      // Add room to existing system
+      if (window.rooms) {
+        window.rooms.push(newRoom);
+      }
+
+      console.log(`Created room: ${newRoom.name} with ${newRoom.elements.length} elements`);
+    });
+
+    // Close import modal
+    document.getElementById('pdfImporterModal')?.remove();
+
+    // Switch to first room using existing room system
+    if (window.rooms && window.rooms.length > 0) {
+      const firstRoom = window.rooms[0];
+
+      // Load first room's elements into canvas
+      if (window.elements) {
+        window.elements.length = 0;
+        firstRoom.elements.forEach(el => window.elements.push({...el}));
+      }
+
+      // Set room dimensions
+      if (typeof window.roomWidth !== 'undefined') {
+        window.roomWidth = firstRoom.width;
+      }
+      if (typeof window.roomDepth !== 'undefined') {
+        window.roomDepth = firstRoom.depth;
+      }
+
+      // Set current room
+      if (typeof window.currentRoomId !== 'undefined') {
+        window.currentRoomId = firstRoom.id;
+      }
+
+      // Update room list UI
+      if (typeof window.updateRoomList === 'function') {
+        window.updateRoomList();
+      }
+
+      // Fit to screen and redraw
+      if (typeof window.fitToScreen === 'function') {
+        window.fitToScreen();
+      }
+      if (typeof window.draw === 'function') {
+        window.draw();
+      }
+    }
+
+    // Update project name
+    const projectNameInput = document.getElementById('projectName');
+    if (projectNameInput) {
+      projectNameInput.value = 'State Farm Stadium Cabinets';
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Loaded ${stateFarmRooms.length} rooms with ${stateFarmRooms.reduce((sum, r) => r.walls.reduce((s, w) => s + w.cabinets.length, 0) + sum, 0)} cabinets - use Room tabs to switch`, 'success');
+    }
+  };
+
+  window.parseManualCabinetData = function() {
+    const text = document.getElementById('manualCabinetData')?.value;
+    if (!text) {
+      if (typeof showToast === 'function') showToast('Enter cabinet data first', 'warning');
+      return;
+    }
+
+    const lines = text.split('\n').filter(l => l.trim());
+    const rooms = [];
+    let currentRoom = null;
+
+    lines.forEach(line => {
+      // Check if it's a room header
+      if (line.toLowerCase().includes('room')) {
+        if (currentRoom) rooms.push(currentRoom);
+        currentRoom = {
+          name: line.split('-')[0]?.trim() || line.trim(),
+          fullName: line.trim(),
+          cabinets: []
+        };
+        return;
+      }
+
+      // Parse cabinet line: "1: Base 18" x 30.5" x 32""
+      const match = line.match(/(\d+):\s*(.+?)\s*([\d.]+)["\s]*x\s*([\d.]+)/i);
+      if (match) {
+        const cabinet = {
+          number: match[1],
+          name: match[2].trim(),
+          width: parseFloat(match[3]),
+          depth: parseFloat(match[4]),
+          height: 32 // default
+        };
+
+        // Try to get height
+        const heightMatch = line.match(/x\s*([\d.]+)["\s]*$/);
+        if (heightMatch) {
+          cabinet.height = parseFloat(heightMatch[1]);
+        }
+
+        // Check for laminate interior
+        cabinet.lamInterior = line.toLowerCase().includes('lam');
+
+        if (currentRoom) {
+          currentRoom.cabinets.push(cabinet);
+        }
+      }
+    });
+
+    if (currentRoom) rooms.push(currentRoom);
+
+    if (rooms.length === 0) {
+      if (typeof showToast === 'function') showToast('Could not parse any rooms', 'warning');
+      return;
+    }
+
+    // Show results
+    document.getElementById('pdfParseResults').style.display = 'block';
+    document.getElementById('extractedRooms').innerHTML = `
+      <p><strong>Found ${rooms.length} room(s):</strong></p>
+      ${rooms.map((room, i) => `
+        <div class="parsed-room">
+          <div class="parsed-room-header">
+            <strong>${room.name}</strong>
+            <span>${room.cabinets.length} cabinets</span>
+          </div>
+          <button onclick="importParsedRoom(${i})">Import This Room</button>
+        </div>
+      `).join('')}
+      <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px;">Import All Rooms</button>
+    `;
+
+    window._parsedRooms = rooms;
+  };
+
+  // Helper function to map cabinet names to proper element types
+  function getElementTypeFromName(cabinetName) {
+    const name = (cabinetName || '').toLowerCase();
+    if (name.includes('tv niche') || name.includes('tv-niche')) return 'tv-niche';
+    if (name.includes('niche')) return 'wall-niche';
+    if (name.includes('microwave')) return 'microwave';
+    if (name.includes('upper') || name.includes('wall cab')) return 'wall-cabinet';
+    if (name.includes('sink')) return 'sink-base';
+    if (name.includes('drawer')) return 'drawer-base';
+    if (name.includes('tall') || name.includes('pantry')) return 'tall-cabinet';
+    if (name.includes('corner')) return 'corner-cabinet';
+    if (name.includes('island')) return 'island';
+    if (name.includes('filler')) return 'base-cabinet';
+    return 'base-cabinet';
+  }
+
+  // Helper to get color based on element type
+  function getColorForElementType(type) {
+    const colors = {
+      'base-cabinet': '#8B7355',
+      'wall-cabinet': '#A0522D',
+      'tall-cabinet': '#6B4423',
+      'sink-base': '#4682B4',
+      'drawer-base': '#9370DB',
+      'corner-cabinet': '#CD853F',
+      'tv-niche': '#2F4F4F',
+      'wall-niche': '#3D5A5A',
+      'microwave': '#708090',
+      'island': '#5D4037'
+    };
+    return colors[type] || '#8B7355';
+  }
+
+  // Import single parsed room to current canvas
+  window.importParsedRoom = function(index) {
+    const room = window._parsedRooms?.[index];
+    if (!room) return;
+
+    const ppf = window.pixelsPerFoot || 40;
+    let xPos = 20; // Start position in pixels
+    let yPos = 0;  // Along top wall
+
+    room.cabinets.forEach((cab, i) => {
+      const elementType = getElementTypeFromName(cab.name);
+      const widthFeet = cab.width / 12;
+      const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
+
+      const newElement = {
+        id: `imp_${cab.number}_${Date.now()}_${i}`,
+        type: elementType,
+        label: `#${cab.number} ${cab.name}`,
+        x: xPos,
+        y: yPos,
+        width: widthFeet,
+        height: depthFeet,
+        color: getColorForElementType(elementType),
+        rotation: 0,
+        locked: false,
+        actualWidth: cab.width,
+        actualDepth: cab.depth,
+        actualHeight: cab.height,
+        lamInterior: cab.lamInterior || false
+      };
+
+      if (window.elements) {
+        window.elements.push(newElement);
+      }
+
+      xPos += (widthFeet * ppf) + 4;
+
+      // Wrap to next row if too wide
+      if (xPos > (window.roomWidth || 20) * ppf - 100) {
+        xPos = 20;
+        yPos += 3 * ppf; // Move down 3 feet
+      }
+    });
+
+    if (typeof window.draw === 'function') window.draw();
+    document.getElementById('pdfImporterModal')?.remove();
+    if (typeof showToast === 'function') showToast(`Imported ${room.cabinets.length} cabinets from ${room.name}`, 'success');
+  };
+
+  // Import all parsed rooms into the existing room system
+  window.importAllParsedRooms = function() {
+    const parsedRooms = window._parsedRooms;
+    if (!parsedRooms || parsedRooms.length === 0) return;
+
+    const ppf = window.pixelsPerFoot || 40;
+
+    // Clear existing rooms and use the existing room system
+    if (window.rooms) {
+      window.rooms.length = 0;
+    }
+    if (window.elements) {
+      window.elements.length = 0;
+    }
+
+    parsedRooms.forEach((room, roomIndex) => {
+      // Calculate room size based on total cabinet width
+      const totalWidth = room.cabinets.reduce((sum, c) => sum + (c.width || 24), 0);
+      const roomWidth = Math.max(Math.ceil(totalWidth / 12) + 4, 12);
+
+      const newRoom = {
+        id: 'room-' + Date.now() + '-' + roomIndex,
+        name: room.fullName || room.name || `Room ${roomIndex + 1}`,
+        type: 'other',
+        width: roomWidth,
+        depth: 12,
+        offsetX: 0,
+        offsetY: 0,
+        elements: [],
+        walls: [],
+        floorPlan: 'empty'
+      };
+
+      let xPos = 20;
+      let yPos = 0;
+
+      room.cabinets.forEach((cab, cabIndex) => {
+        const elementType = getElementTypeFromName(cab.name);
+        const widthFeet = cab.width / 12;
+        const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
+
+        newRoom.elements.push({
+          id: `imp_r${roomIndex}_c${cabIndex}_${Date.now()}`,
+          type: elementType,
+          label: `#${cab.number} ${cab.name}`,
+          x: xPos,
+          y: yPos,
+          width: widthFeet,
+          height: depthFeet,
+          color: getColorForElementType(elementType),
+          rotation: 0,
+          locked: false,
+          actualWidth: cab.width,
+          actualDepth: cab.depth,
+          actualHeight: cab.height || 32,
+          lamInterior: cab.lamInterior || false
+        });
+
+        xPos += (widthFeet * ppf) + 4;
+
+        // Wrap to next row if too wide
+        if (xPos > (roomWidth - 2) * ppf) {
+          xPos = 20;
+          yPos += 3 * ppf;
+        }
+      });
+
+      // Add to existing room system
+      if (window.rooms) {
+        window.rooms.push(newRoom);
+      }
+
+      console.log(`Imported room: ${newRoom.name} with ${newRoom.elements.length} elements`);
+    });
+
+    // Close modal
+    document.getElementById('pdfImporterModal')?.remove();
+
+    // Switch to first room using existing room system
+    if (window.rooms && window.rooms.length > 0) {
+      const firstRoom = window.rooms[0];
+
+      // Load first room's elements
+      if (window.elements) {
+        window.elements.length = 0;
+        firstRoom.elements.forEach(el => window.elements.push({...el}));
+      }
+
+      // Set room dimensions
+      if (typeof window.roomWidth !== 'undefined') {
+        window.roomWidth = firstRoom.width;
+      }
+      if (typeof window.roomDepth !== 'undefined') {
+        window.roomDepth = firstRoom.depth;
+      }
+
+      // Update current room
+      window.currentRoomId = firstRoom.id;
+
+      // Update UI
+      if (typeof window.updateRoomList === 'function') {
+        window.updateRoomList();
+      }
+      if (typeof window.fitToScreen === 'function') {
+        window.fitToScreen();
+      }
+      if (typeof window.draw === 'function') {
+        window.draw();
+      }
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`Imported ${parsedRooms.length} rooms - use Room tabs to switch between them`, 'success');
+    }
+  };
+
+  // === 4. APPROVAL WORKFLOW ===
+  window.sendForApproval = function() {
+    if (!commercialProject) {
+      if (typeof showToast === 'function') showToast('No project to send', 'warning');
+      return;
+    }
+
+    // Save current state
+    saveCurrentRoomToProject();
+
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.id = 'approvalModal';
+    modal.innerHTML = `
+      <div class="approval-content">
+        <div class="approval-header">
+          <h3>📨 Send for Approval</h3>
+          <button onclick="this.closest('.approval-modal').remove()">&times;</button>
+        </div>
+        <div class="approval-body">
+          <div class="approval-summary">
+            <h4>${commercialProject.name}</h4>
+            <p><strong>Client:</strong> ${commercialProject.client || 'Not set'}</p>
+            <p><strong>Rooms:</strong> ${commercialProject.rooms.length}</p>
+            <p><strong>Total Cabinets:</strong> ${commercialProject.rooms.reduce((sum, r) => sum + (r.elements?.length || 0), 0)}</p>
+          </div>
+          <div class="form-group">
+            <label>Recipient Email</label>
+            <input type="email" id="approvalEmail" placeholder="client@statefarmstadium.com">
+          </div>
+          <div class="form-group">
+            <label>Recipient Name</label>
+            <input type="text" id="approvalName" placeholder="Project Manager">
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea id="approvalMessage" rows="4" placeholder="Please review the attached cabinet drawings for State Farm Stadium..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="approvalNotify" checked>
+              Notify me when they respond
+            </label>
+          </div>
+          <div class="approval-options">
+            <label><input type="checkbox" id="includeReport" checked> Include PDF Report</label>
+            <label><input type="checkbox" id="includeCutList" checked> Include Cut List</label>
+            <label><input type="checkbox" id="allowComments" checked> Allow Comments</label>
+            <label><input type="checkbox" id="allowEdits"> Allow Edits</label>
+          </div>
+        </div>
+        <div class="approval-footer">
+          <button class="btn-secondary" onclick="this.closest('.approval-modal').remove()">Cancel</button>
+          <button class="btn-secondary" onclick="generateApprovalLink()">Generate Link Only</button>
+          <button class="btn-primary" onclick="sendApprovalRequest()">Send Request</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.generateApprovalLink = function() {
+    if (!commercialProject) return;
+
+    // Save current room state first
+    saveCurrentRoomToProject();
+
+    // Create approval record
+    const approval = {
+      id: 'appr_' + Date.now(),
+      projectId: commercialProject.id,
+      token: generateApprovalToken(),
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      status: 'pending',
+      allowComments: document.getElementById('allowComments')?.checked ?? true,
+      allowEdits: document.getElementById('allowEdits')?.checked ?? false
+    };
+
+    commercialProject.approvals = commercialProject.approvals || [];
+    commercialProject.approvals.push(approval);
+    saveCommercialProject();
+
+    // IMPORTANT: Save full project data with the token so it can be retrieved
+    const approvalData = {
+      ...commercialProject,
+      approvalToken: approval.token,
+      sharedAt: new Date().toISOString()
+    };
+    localStorage.setItem('sg_approval_' + approval.token, JSON.stringify(approvalData));
+
+    // Generate link
+    const link = `${window.location.origin}/tools/room-designer/?approval=${approval.token}`;
+
+    // Show link in modal
+    showGeneratedLinkModal(link, approval.token);
+  };
+
+  function showGeneratedLinkModal(link, token) {
+    // Remove existing approval modal
+    document.getElementById('approvalModal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.id = 'approvalLinkModal';
+    modal.innerHTML = `
+      <div class="approval-content" style="max-width: 500px;">
+        <div class="approval-header">
+          <h3>✅ Approval Link Generated</h3>
+          <button onclick="this.closest('.approval-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;">&times;</button>
+        </div>
+        <div class="approval-body">
+          <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #22c55e; margin: 0 0 12px; font-weight: 600;">🔗 Share this link with your client:</p>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="generatedLinkInput" value="${link}" readonly
+                style="flex: 1; padding: 12px; background: var(--dark-surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; font-family: monospace;">
+              <button onclick="copyApprovalLink()" id="copyLinkBtn"
+                style="padding: 12px 20px; background: #22c55e; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                Copy Link
+              </button>
+            </div>
+          </div>
+          <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
+            <h4 style="margin: 0 0 12px; font-size: 13px; color: var(--text-muted);">WHAT HAPPENS NEXT:</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+              <li>Send this link to your client via email or message</li>
+              <li>They can view the full project with all rooms</li>
+              <li>They can approve or request changes</li>
+              <li>Link expires in 30 days</li>
+            </ul>
+          </div>
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+              <strong>Token:</strong> ${token}
+            </p>
+          </div>
+        </div>
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+          <button onclick="this.closest('.approval-modal').remove()"
+            style="padding: 12px 24px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+            Done
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    // Auto-select the link text
+    setTimeout(() => {
+      document.getElementById('generatedLinkInput')?.select();
+    }, 100);
+  }
+
+  window.copyApprovalLink = function() {
+    const input = document.getElementById('generatedLinkInput');
+    const btn = document.getElementById('copyLinkBtn');
+    if (input) {
+      navigator.clipboard.writeText(input.value).then(() => {
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#16a34a';
+        if (typeof showToast === 'function') showToast('Link copied to clipboard!', 'success');
+        setTimeout(() => {
+          btn.textContent = 'Copy Link';
+          btn.style.background = '#22c55e';
+        }, 2000);
+      }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        btn.textContent = '✓ Copied!';
+      });
+    }
+  };
+
+  window.sendApprovalRequest = async function() {
+    const email = document.getElementById('approvalEmail')?.value;
+    const name = document.getElementById('approvalName')?.value;
+    const message = document.getElementById('approvalMessage')?.value;
+
+    if (!email) {
+      if (typeof showToast === 'function') showToast('Please enter recipient email', 'warning');
+      return;
+    }
+
+    // Save current room state first
+    saveCurrentRoomToProject();
+
+    // Create approval record
+    const approval = {
+      id: 'appr_' + Date.now(),
+      projectId: commercialProject.id,
+      token: generateApprovalToken(),
+      recipientEmail: email,
+      recipientName: name,
+      message: message,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'pending',
+      allowComments: document.getElementById('allowComments')?.checked ?? true,
+      allowEdits: document.getElementById('allowEdits')?.checked ?? false,
+      includeReport: document.getElementById('includeReport')?.checked ?? true,
+      includeCutList: document.getElementById('includeCutList')?.checked ?? true
+    };
+
+    commercialProject.approvals = commercialProject.approvals || [];
+    commercialProject.approvals.push(approval);
+    commercialProject.status = 'pending_approval';
+    saveCommercialProject();
+
+    // IMPORTANT: Save full project data with the token so it can be retrieved
+    const approvalData = {
+      ...commercialProject,
+      approvalToken: approval.token,
+      recipientEmail: email,
+      recipientName: name,
+      sharedAt: new Date().toISOString()
+    };
+    localStorage.setItem('sg_approval_' + approval.token, JSON.stringify(approvalData));
+
+    const link = `${window.location.origin}/tools/room-designer/?approval=${approval.token}`;
+
+    // Try to save to Supabase
+    try {
+      const supabase = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+      if (supabase) {
+        await supabase.from('design_approvals').insert({
+          project_id: commercialProject.id,
+          project_name: commercialProject.name,
+          project_data: commercialProject,
+          token: approval.token,
+          recipient_email: email,
+          recipient_name: name,
+          message: message,
+          status: 'pending',
+          expires_at: approval.expiresAt
+        });
+      }
+    } catch (err) {
+      console.error('Error saving approval to database:', err);
+    }
+
+    // Always show the link modal (email sending would need a backend service)
+    showGeneratedLinkModal(link, approval.token);
+
+    if (typeof showToast === 'function') {
+      showToast(`Link generated for ${email} - send it manually via email`, 'success');
+    }
+  };
+
+  function generateApprovalToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 24; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  }
+
+  window.generateProjectReport = function() {
+    if (!commercialProject) return;
+
+    saveCurrentRoomToProject();
+
+    const report = {
+      project: commercialProject.name,
+      client: commercialProject.client,
+      location: commercialProject.location,
+      generatedAt: new Date().toISOString(),
+      rooms: commercialProject.rooms.map(room => ({
+        name: room.name,
+        dimensions: `${room.width}' x ${room.depth}'`,
+        elementCount: room.elements?.length || 0,
+        elements: (room.elements || []).map(el => ({
+          name: el.name,
+          width: el.actualWidth || Math.round(el.width / 12),
+          depth: el.actualDepth || Math.round(el.height / 12),
+          height: el.actualHeight || 34.5,
+          type: el.subType || el.type
+        }))
+      }))
+    };
+
+    // Calculate totals
+    let totalCabinets = 0;
+    let totalCountertopSqFt = 0;
+
+    report.rooms.forEach(room => {
+      totalCabinets += room.elementCount;
+      // Estimate countertop from room width
+      const roomWidthFt = parseFloat(room.dimensions.split('x')[0]) || 0;
+      totalCountertopSqFt += roomWidthFt * 2.5; // Estimate 2.5 ft deep counters
+    });
+
+    report.totals = {
+      rooms: report.rooms.length,
+      cabinets: totalCabinets,
+      estimatedCountertop: Math.round(totalCountertopSqFt) + ' sq ft'
+    };
+
+    // Open print window
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${report.project} - Project Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+          h1 { color: #1a1a2e; border-bottom: 3px solid #f9cb00; padding-bottom: 10px; }
+          h2 { color: #333; margin-top: 30px; }
+          .header-info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+          .header-info p { margin: 5px 0; }
+          .room-section { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+          .room-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background: #f9cb00; color: #1a1a2e; }
+          .totals { background: #1a1a2e; color: white; padding: 15px; border-radius: 8px; margin-top: 20px; }
+          .totals h3 { margin-top: 0; color: #f9cb00; }
+          .footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>📋 ${report.project}</h1>
+        <div class="header-info">
+          <p><strong>Client:</strong> ${report.client || 'N/A'}</p>
+          <p><strong>Location:</strong> ${report.location || 'N/A'}</p>
+          <p><strong>Generated:</strong> ${new Date(report.generatedAt).toLocaleString()}</p>
+        </div>
+
+        ${report.rooms.map(room => `
+          <div class="room-section">
+            <div class="room-header">
+              <h2>${room.name}</h2>
+              <span>${room.dimensions} • ${room.elementCount} elements</span>
+            </div>
+            ${room.elements.length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Width</th>
+                    <th>Depth</th>
+                    <th>Height</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${room.elements.map((el, i) => `
+                    <tr>
+                      <td>${i + 1}</td>
+                      <td>${el.name}</td>
+                      <td>${el.width}"</td>
+                      <td>${el.depth}"</td>
+                      <td>${el.height}"</td>
+                      <td>${el.type}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : '<p>No elements in this room</p>'}
+          </div>
+        `).join('')}
+
+        <div class="totals">
+          <h3>Project Totals</h3>
+          <p><strong>Total Rooms:</strong> ${report.totals.rooms}</p>
+          <p><strong>Total Cabinets:</strong> ${report.totals.cabinets}</p>
+          <p><strong>Estimated Countertop:</strong> ${report.totals.estimatedCountertop}</p>
+        </div>
+
+        <div class="footer">
+          Generated by Surprise Granite Room Designer • ${window.location.origin}
+        </div>
+
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  window.exportCommercialProject = function() {
+    if (!commercialProject) return;
+    saveCurrentRoomToProject();
+
+    const data = JSON.stringify(commercialProject, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${commercialProject.name.replace(/[^a-z0-9]/gi, '_')}_project.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+    if (typeof showToast === 'function') showToast('Project exported', 'success');
+  };
+
+  // === V7 KEYBOARD SHORTCUTS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isInput) return;
+
+    // Shift+C = Cabinet library
+    if (e.key === 'C' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showCabinetLibrary();
+    }
+    // Shift+P = Commercial project manager
+    if (e.key === 'P' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showCommercialProjectManager();
+    }
+    // Shift+I = PDF importer
+    if (e.key === 'I' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.showPDFImporter();
+    }
+  });
+
+  // === INIT V7 FEATURES ===
+  document.addEventListener('DOMContentLoaded', function() {
+    // Load commercial project if exists
+    window.loadCommercialProject();
+
+    // Check for approval token in URL
+    const params = new URLSearchParams(window.location.search);
+    const approvalToken = params.get('approval');
+    if (approvalToken) {
+      window.loadApprovalView(approvalToken);
+    }
+  });
+
+  window.loadApprovalView = function(token) {
+    // Load project data from localStorage using the token
+    const approvalData = localStorage.getItem('sg_approval_' + token);
+
+    if (!approvalData) {
+      // Try to load from Supabase if available
+      loadApprovalFromServer(token);
+      return;
+    }
+
+    try {
+      const data = JSON.parse(approvalData);
+      showApprovalReviewMode(data, token);
+    } catch (err) {
+      console.error('Error loading approval data:', err);
+      if (typeof showToast === 'function') showToast('Invalid approval link', 'error');
+    }
+  };
+
+  async function loadApprovalFromServer(token) {
+    try {
+      const supabase = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('design_approvals')
+          .select('*')
+          .eq('token', token)
+          .single();
+
+        if (data && data.project_data) {
+          showApprovalReviewMode(data.project_data, token);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching from server:', err);
+    }
+
+    if (typeof showToast === 'function') showToast('Approval link not found or expired', 'error');
+  }
+
+  function showApprovalReviewMode(projectData, token) {
+    // Add approval mode class to body
+    document.body.classList.add('approval-review-mode');
+
+    // Create approval banner
+    const banner = document.createElement('div');
+    banner.id = 'approvalBanner';
+    banner.className = 'approval-banner';
+    banner.innerHTML = `
+      <div class="approval-banner-content">
+        <div class="approval-banner-info">
+          <span class="approval-badge">📋 APPROVAL REQUEST</span>
+          <h2>${projectData.name || 'Design Review'}</h2>
+          <p>From: ${projectData.client || 'Surprise Granite'} • ${projectData.rooms?.length || 1} Room(s)</p>
+        </div>
+        <div class="approval-banner-actions">
+          <button class="btn-approve" onclick="submitApprovalDecision('${token}', 'approved')">
+            ✓ Approve Design
+          </button>
+          <button class="btn-request-changes" onclick="showRequestChangesModal('${token}')">
+            ✎ Request Changes
+          </button>
+          <button class="btn-reject" onclick="submitApprovalDecision('${token}', 'rejected')">
+            ✕ Reject
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.insertBefore(banner, document.body.firstChild);
+
+    // Load the project data
+    commercialProject = projectData;
+    saveCommercialProject();
+
+    // If there are rooms, load the first one
+    if (projectData.rooms && projectData.rooms.length > 0) {
+      window.switchToRoom(0);
+
+      // Show room selector if multiple rooms
+      if (projectData.rooms.length > 1) {
+        showApprovalRoomSelector(projectData.rooms);
+      }
+    }
+
+    // Disable editing tools
+    disableEditingForApproval();
+
+    if (typeof showToast === 'function') {
+      showToast(`Viewing: ${projectData.name} - ${projectData.rooms?.length || 0} rooms`, 'info');
+    }
+  }
+
+  function showApprovalRoomSelector(rooms) {
+    const selector = document.createElement('div');
+    selector.id = 'approvalRoomSelector';
+    selector.className = 'approval-room-selector';
+    selector.innerHTML = `
+      <h4>Project Rooms (${rooms.length})</h4>
+      <div class="approval-room-list">
+        ${rooms.map((room, i) => `
+          <button class="approval-room-btn ${i === 0 ? 'active' : ''}" onclick="switchToApprovalRoom(${i})">
+            <span class="room-number">${i + 1}</span>
+            <span class="room-name">${room.name}</span>
+            <span class="room-count">${room.elements?.length || 0} items</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    // Insert after the banner
+    const banner = document.getElementById('approvalBanner');
+    if (banner) {
+      banner.after(selector);
+    }
+  }
+
+  window.switchToApprovalRoom = function(index) {
+    window.switchToRoom(index);
+
+    // Update active state
+    document.querySelectorAll('.approval-room-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i === index);
+    });
+  };
+
+  function disableEditingForApproval() {
+    // Hide editing controls
+    const style = document.createElement('style');
+    style.id = 'approvalModeStyles';
+    style.textContent = `
+      .approval-review-mode .tool-panel,
+      .approval-review-mode .properties-panel .property-group:not(.readonly),
+      .approval-review-mode #saveDesignBtn,
+      .approval-review-mode .pro-tools-dropdown,
+      .approval-review-mode .export-dropdown {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+
+      .approval-banner {
+        background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%);
+        border-bottom: 2px solid var(--primary);
+        padding: 16px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+      }
+
+      .approval-banner-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .approval-badge {
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      .approval-banner-info h2 {
+        margin: 0;
+        font-size: 20px;
+        color: var(--text);
+      }
+
+      .approval-banner-info p {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .approval-banner-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .approval-banner-actions button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-approve {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+      }
+
+      .btn-approve:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+      }
+
+      .btn-request-changes {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+      }
+
+      .btn-request-changes:hover {
+        transform: scale(1.02);
+      }
+
+      .btn-reject {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      .btn-reject:hover {
+        background: #ef4444;
+        color: white;
+      }
+
+      .approval-room-selector {
+        background: var(--dark-surface);
+        border-bottom: 1px solid var(--border);
+        padding: 12px 24px;
+      }
+
+      .approval-room-selector h4 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      .approval-room-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .approval-room-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--dark-elevated);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .approval-room-btn:hover {
+        border-color: var(--primary);
+        color: var(--text);
+      }
+
+      .approval-room-btn.active {
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        border-color: var(--primary);
+        color: white;
+      }
+
+      .approval-room-btn .room-number {
+        width: 20px;
+        height: 20px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .approval-room-btn .room-name {
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .approval-room-btn .room-count {
+        font-size: 11px;
+        opacity: 0.7;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.submitApprovalDecision = function(token, decision) {
+    const approvalData = localStorage.getItem('sg_approval_' + token);
+    if (approvalData) {
+      const data = JSON.parse(approvalData);
+      data.status = decision;
+      data.decidedAt = new Date().toISOString();
+      localStorage.setItem('sg_approval_' + token, JSON.stringify(data));
+    }
+
+    // Show confirmation
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.innerHTML = `
+      <div class="approval-content" style="max-width: 400px; text-align: center;">
+        <div class="approval-body" style="padding: 40px;">
+          <div style="font-size: 64px; margin-bottom: 20px;">
+            ${decision === 'approved' ? '✅' : '❌'}
+          </div>
+          <h3 style="margin: 0 0 12px; font-size: 24px;">
+            ${decision === 'approved' ? 'Design Approved!' : 'Design Rejected'}
+          </h3>
+          <p style="color: var(--text-muted); margin: 0 0 24px;">
+            ${decision === 'approved'
+              ? 'Thank you! The team has been notified of your approval.'
+              : 'The team has been notified. They will reach out to discuss alternatives.'}
+          </p>
+          <button onclick="this.closest('.approval-modal').remove()"
+            style="padding: 12px 32px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Try to update server
+    updateApprovalOnServer(token, decision);
+  };
+
+  window.showRequestChangesModal = function(token) {
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.innerHTML = `
+      <div class="approval-content" style="max-width: 500px;">
+        <div class="approval-header">
+          <h3>✎ Request Changes</h3>
+          <button onclick="this.closest('.approval-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;">&times;</button>
+        </div>
+        <div class="approval-body">
+          <p style="color: var(--text-secondary); margin: 0 0 16px;">Please describe the changes you'd like to see:</p>
+          <textarea id="changeRequestText" rows="6" placeholder="e.g., Please adjust the cabinet dimensions on Wall 2..."
+            style="width: 100%; padding: 12px; background: var(--dark-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; resize: vertical;"></textarea>
+        </div>
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="this.closest('.approval-modal').remove()"
+            style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer;">
+            Cancel
+          </button>
+          <button onclick="submitChangeRequest('${token}')"
+            style="padding: 12px 24px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+            Submit Request
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.submitChangeRequest = function(token) {
+    const text = document.getElementById('changeRequestText')?.value;
+    if (!text?.trim()) {
+      if (typeof showToast === 'function') showToast('Please describe the changes needed', 'warning');
+      return;
+    }
+
+    const approvalData = localStorage.getItem('sg_approval_' + token);
+    if (approvalData) {
+      const data = JSON.parse(approvalData);
+      data.status = 'changes_requested';
+      data.changeRequest = text;
+      data.decidedAt = new Date().toISOString();
+      localStorage.setItem('sg_approval_' + token, JSON.stringify(data));
+    }
+
+    document.querySelector('.approval-modal')?.remove();
+
+    // Show confirmation
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.innerHTML = `
+      <div class="approval-content" style="max-width: 400px; text-align: center;">
+        <div class="approval-body" style="padding: 40px;">
+          <div style="font-size: 64px; margin-bottom: 20px;">📝</div>
+          <h3 style="margin: 0 0 12px; font-size: 24px;">Changes Requested</h3>
+          <p style="color: var(--text-muted); margin: 0 0 24px;">
+            Your feedback has been sent to the team. They will revise the design and send you an updated version.
+          </p>
+          <button onclick="this.closest('.approval-modal').remove()"
+            style="padding: 12px 32px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    updateApprovalOnServer(token, 'changes_requested', text);
+  };
+
+  async function updateApprovalOnServer(token, status, changeRequest = null) {
+    try {
+      const supabase = typeof getSupabaseClient === 'function' ? getSupabaseClient() : null;
+      if (supabase) {
+        await supabase
+          .from('design_approvals')
+          .update({
+            status: status,
+            change_request: changeRequest,
+            decided_at: new Date().toISOString()
+          })
+          .eq('token', token);
+      }
+    } catch (err) {
+      console.error('Error updating approval on server:', err);
+    }
+  }
+
+  // Universal approval workflow - works for both commercial projects and single designs
+  window.showApprovalWorkflow = function() {
+    // If there's a commercial project, use sendForApproval
+    if (commercialProject && commercialProject.rooms && commercialProject.rooms.length > 0) {
+      window.sendForApproval();
+      return;
+    }
+
+    // Otherwise show single design approval modal
+    const projectName = document.getElementById('projectName')?.value || 'My Design';
+    const roomType = document.getElementById('roomType')?.value || 'Kitchen';
+    const total = document.getElementById('quoteTotal')?.textContent || '$0';
+
+    const modal = document.createElement('div');
+    modal.className = 'approval-modal';
+    modal.id = 'approvalModal';
+    modal.innerHTML = `
+      <div class="approval-content">
+        <div class="approval-header">
+          <h3>📨 Send for Approval</h3>
+          <button onclick="this.closest('.approval-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button>
+        </div>
+        <div class="approval-body">
+          <div class="approval-preview">
+            <h4>${projectName}</h4>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">${roomType}</p>
+            <div class="approval-preview-stats">
+              <div class="approval-stat">
+                <span class="approval-stat-value">${total}</span>
+                <span class="approval-stat-label">Estimated</span>
+              </div>
+            </div>
+          </div>
+          <div class="recipient-input">
+            <label>Recipient Email</label>
+            <input type="email" id="approvalEmail" placeholder="client@example.com">
+          </div>
+          <div class="recipient-input">
+            <label>Personal Message (Optional)</label>
+            <textarea id="approvalMessage" placeholder="Please review this design..." style="width:100%;padding:14px 16px;background:var(--dark-elevated);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:vertical;min-height:80px;"></textarea>
+          </div>
+          <div id="approvalLinkSection" class="approval-link-section">
+            <h5>✓ Approval Link Generated</h5>
+            <div class="approval-link-box">
+              <input type="text" id="approvalLinkInput" readonly>
+              <button class="copy-link-btn" onclick="navigator.clipboard.writeText(document.getElementById('approvalLinkInput').value); this.textContent='Copied!';">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="approval-actions">
+          <button class="cancel-approval-btn" onclick="this.closest('.approval-modal').remove()">Cancel</button>
+          <button class="send-approval-btn" onclick="generateSingleDesignApprovalLink()">Generate Link</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
+
+  window.generateSingleDesignApprovalLink = function() {
+    const token = 'appr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const link = `${window.location.origin}/tools/room-designer/?share=${token}`;
+
+    document.getElementById('approvalLinkInput').value = link;
+    document.getElementById('approvalLinkSection').classList.add('show');
+
+    // Store for later retrieval
+    const approvals = JSON.parse(localStorage.getItem('sg_design_approvals') || '[]');
+    approvals.push({
+      token: token,
+      designId: window.currentDesignId || null,
+      createdAt: new Date().toISOString(),
+      email: document.getElementById('approvalEmail')?.value || '',
+      status: 'pending'
+    });
+    localStorage.setItem('sg_design_approvals', JSON.stringify(approvals));
+
+    if (typeof showToast === 'function') showToast('Approval link generated!', 'success');
+  };
+
+  console.log('Room Designer Pro Features v7.0 loaded');
 })();

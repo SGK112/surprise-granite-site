@@ -55,6 +55,7 @@
       --gold: #f9cb00;
       --gold-dark: #d4ab00;
       --dark: #0f0f1a;
+      --dark-deep: #0a0a14;
       --dark-surface: #1a1a2e;
       --dark-elevated: #252540;
       --dark-hover: #2d2d4a;
@@ -10442,6 +10443,1034 @@
       color: white;
       animation: badgePulse 2s infinite;
     }
+
+    /* =============================================
+       v7.0 - Cabinet Library Modal
+       ============================================= */
+    .cabinet-library-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .cabinet-library-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cabinet-library-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--dark-elevated);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .cabinet-library-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .cabinet-library-header .cabinet-library-tabs {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .cabinet-library-header > button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .cabinet-library-header > button:hover {
+      color: var(--text);
+    }
+
+    .cab-tab {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .cab-tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .cab-tab.active {
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      color: white;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .cabinet-library-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .cabinet-search {
+      margin-bottom: 16px;
+    }
+
+    .cabinet-search input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .cabinet-search input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .cabinet-search input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .cabinet-library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .cabinet-lib-item {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .cabinet-lib-item:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .cab-lib-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .cab-lib-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .cab-lib-dims {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .cabinet-library-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--dark-elevated);
+    }
+
+    .custom-cabinet-form h4 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .custom-cab-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .custom-cab-inputs input {
+      width: 70px;
+      padding: 10px 12px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .custom-cab-inputs input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .custom-cab-inputs input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .custom-cab-inputs button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+
+    .custom-cab-inputs button:hover {
+      transform: scale(1.02);
+    }
+
+    /* =============================================
+       v7.0 - Commercial Project Modal
+       ============================================= */
+    .commercial-project-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .commercial-project-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .commercial-project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--dark-elevated);
+    }
+
+    .commercial-project-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .commercial-project-header > button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .commercial-project-header > button:hover {
+      color: var(--text);
+    }
+
+    .commercial-project-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* New Project Form */
+    .new-project-form {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .new-project-form h4 {
+      margin: 0 0 20px;
+      font-size: 16px;
+      text-align: center;
+      color: var(--text);
+    }
+
+    .new-project-form .form-group {
+      margin-bottom: 16px;
+    }
+
+    .new-project-form .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .new-project-form .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .new-project-form .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .new-project-form .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .new-project-form .btn-primary {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    /* Project Info */
+    .project-info {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .project-header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .project-header-info h4 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--primary);
+    }
+
+    .project-status {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .project-status.draft {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+    }
+
+    .project-status.active {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .project-status.completed {
+      background: rgba(99, 102, 241, 0.2);
+      color: #6366f1;
+    }
+
+    .project-info p {
+      margin: 6px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .project-info p strong {
+      color: var(--text);
+    }
+
+    /* Rooms Section */
+    .rooms-section {
+      margin-bottom: 20px;
+    }
+
+    .rooms-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .rooms-header h4 {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .rooms-header button {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .rooms-header button:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--dark-deep);
+    }
+
+    .rooms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .no-rooms {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    .room-item {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .room-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .room-item.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .room-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .room-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .room-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .room-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .room-item-actions button {
+      width: 28px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .room-item-actions button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Project Actions */
+    .project-actions {
+      display: flex;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .project-actions .btn-secondary {
+      flex: 1;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .project-actions .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .project-actions .btn-primary {
+      flex: 1.2;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .project-actions .btn-primary:hover {
+      transform: scale(1.02);
+    }
+
+    /* =============================================
+       v7.0 - PDF Import Modal
+       ============================================= */
+    .pdf-importer-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .pdf-importer-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 550px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pdf-importer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--dark-elevated);
+    }
+
+    .pdf-importer-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .pdf-importer-header > button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .pdf-importer-header > button:hover {
+      color: var(--text);
+    }
+
+    .pdf-importer-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .import-dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .import-dropzone:hover,
+    .import-dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .import-dropzone svg {
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .import-dropzone p {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .import-dropzone button {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .import-dropzone button:hover {
+      transform: scale(1.02);
+    }
+
+    .pdf-parse-results {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .pdf-parse-results h4 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .pdf-parse-results p {
+      margin: 8px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .pdf-parse-results .btn-primary {
+      margin-top: 12px;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .pdf-parse-results .btn-primary:hover {
+      transform: scale(1.01);
+    }
+
+    .manual-entry-section {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    .manual-entry-section h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .manual-entry-section .help-text {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .manual-entry-section textarea {
+      width: 100%;
+      padding: 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: monospace;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+
+    .manual-entry-section textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .manual-entry-section textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .manual-entry-section button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .manual-entry-section button:hover {
+      transform: scale(1.01);
+    }
+
+    /* =============================================
+       v7.0 - Approval Workflow Modal
+       ============================================= */
+    .approval-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .approval-content {
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 550px;
+    }
+
+    .approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .approval-header h3 {
+      margin: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .approval-body {
+      padding: 24px;
+    }
+
+    .approval-preview {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .approval-preview h4 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .approval-preview-stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .approval-stat {
+      text-align: center;
+    }
+
+    .approval-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+    }
+
+    .approval-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .recipient-input {
+      margin-bottom: 20px;
+    }
+
+    .recipient-input label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .recipient-input input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .recipient-input input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .approval-link-section {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .approval-link-section.show {
+      display: block;
+    }
+
+    .approval-link-section h5 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .approval-link-box {
+      display: flex;
+      gap: 8px;
+    }
+
+    .approval-link-box input {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .copy-link-btn {
+      padding: 10px 16px;
+      background: #22c55e;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .approval-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .approval-actions button {
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .send-approval-btn {
+      background: linear-gradient(135deg, var(--primary), #b8860b);
+      border: none;
+      color: var(--dark-deep);
+    }
+
+    .send-approval-btn:hover {
+      transform: scale(1.02);
+    }
+
+    .cancel-approval-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .cancel-approval-btn:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    /* Approval Status Badge */
+    .approval-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .approval-status-badge.pending {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+    }
+
+    .approval-status-badge.approved {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .approval-status-badge.rejected {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    /* Commercial Project Approval Extras */
+    .approval-summary {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .approval-summary h4 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    .approval-summary p {
+      margin: 6px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .approval-summary p strong {
+      color: var(--text);
+    }
+
+    .approval-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .approval-options label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .approval-options input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+
+    .approval-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .approval-footer button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .approval-footer .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #b8860b);
+      border: none;
+      color: var(--dark-deep);
+    }
+
+    .approval-footer .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .approval-footer .btn-primary:hover {
+      transform: scale(1.02);
+    }
+
+    .approval-footer .btn-secondary:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -10667,6 +11696,53 @@
           </svg>
           Share
         </button>
+
+        <!-- Pro Tools Dropdown -->
+        <div class="export-dropdown pro-tools-dropdown">
+          <button class="btn btn-secondary" onclick="toggleProToolsMenu()" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border-color: #8b5cf6; color: white;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Pro Tools
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="export-menu" id="proToolsMenu" style="min-width: 200px;">
+            <button onclick="showCabinetLibrary(); closeProToolsMenu();">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="12" y1="9" x2="12" y2="21"/>
+              </svg>
+              Cabinet Library
+            </button>
+            <button onclick="showCommercialProjectManager(); closeProToolsMenu();">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              Commercial Projects
+            </button>
+            <button onclick="showPDFImporter(); closeProToolsMenu();">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              Import Data
+            </button>
+            <div class="dropdown-divider"></div>
+            <button onclick="showApprovalWorkflow(); closeProToolsMenu();">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Send for Approval
+            </button>
+          </div>
+        </div>
 
         <div class="export-dropdown">
           <button class="btn btn-secondary" onclick="toggleExportMenu()">
@@ -19592,6 +20668,11 @@
     let elementListDirty = true; // Flag to track when element list needs updating
     let lastSelectedElementId = null; // Track selection changes
     let currentDesignId = null; // Current design ID for messaging/collaboration
+
+    // Expose key variables globally for pro features module
+    window.elements = elements;
+    window.walls = walls;
+    // Note: draw() function is exposed later after it's defined
     let isDragging = false;
     let dragOffset = { x: 0, y: 0 };
     let autoRotationApplied = false; // Track if auto-rotation was applied during this drag
@@ -19873,12 +20954,14 @@
       addNewRoom(name, type, width, depth);
     }
 
-    // Make functions globally accessible
+    // Make functions and variables globally accessible
     window.switchToRoom = switchToRoom;
     window.addNewRoom = addNewRoom;
     window.deleteRoomLegacy = deleteRoomLegacy;
     window.showAddRoomModal = showAddRoomModal;
     window.updateRoomList = updateRoomList;
+    window.rooms = rooms;
+    window.currentRoomId = currentRoomId;
 
     // View all rooms in 3D (multi-room layout)
     let viewingAllRooms = false;
@@ -20473,17 +21556,19 @@
       setupDragDrop();
       fitToScreen();
 
-      // Try to load auto-saved design FIRST (before initializing rooms)
-      // This ensures we restore the saved room structure
+      // Check for special URL parameters (share links, approval links)
       const urlParams = new URLSearchParams(window.location.search);
       const shareToken = urlParams.get('share') || urlParams.get('p');
+      const approvalToken = urlParams.get('approval');
       let autoSaveLoaded = false;
-      if (!shareToken) {
-        autoSaveLoaded = loadAutoSavedDesign();
-        if (autoSaveLoaded) {
-          console.log('Restored auto-saved design with', elements.length, 'elements and', rooms.length, 'rooms');
-        }
+
+      // Only auto-load if explicitly coming from a share/approval link
+      // Otherwise always start fresh - users can load designs from "My Designs"
+      if (shareToken || approvalToken) {
+        // Let the share/approval handlers load the appropriate design
+        autoSaveLoaded = false;
       }
+      // Designer always opens with fresh canvas - no auto-restore
 
       // Initialize multi-room system (only creates new room if no rooms exist from autosave)
       initializeRooms();
@@ -23177,6 +24262,12 @@
         draw();
       });
     }
+
+    // Expose draw function globally for pro features module
+    window.draw = draw;
+    window.pixelsPerInch = pixelsPerFoot / 12;
+    window.fitToScreen = fitToScreen;
+    window.pixelsPerFoot = pixelsPerFoot;
 
     // Draw snap guides when dragging cabinets near walls
     function drawSnapGuides() {
@@ -60967,7 +62058,7 @@
       showToast('Canvas cleared', 'info');
     }
 
-    // Create a completely fresh new design
+    // Create a completely fresh new design - stays in designer, just clears canvas
     async function createNewDesign() {
       // Check if there are unsaved changes
       const hasContent = elements.length > 0 || walls.length > 0;
@@ -60975,21 +62066,29 @@
       if (hasContent) {
         const confirmed = await showConfirmDialog({
           title: 'Start New Design?',
-          message: 'Your current work will be saved automatically.\n\nYou can access it later from "My Designs".',
-          confirmText: 'Start New',
+          message: 'Your current work will be saved before clearing.\n\nYou can access it later from "My Designs".',
+          confirmText: 'Save & Start New',
           cancelText: 'Cancel'
         });
         if (!confirmed) return;
-        // Trigger a save of current work before starting new
-        saveToCloud();
+
+        // Save current work silently (don't redirect or show project creation dialogs)
+        try {
+          await saveDesignToCloud(true); // true = silent mode, no popups
+        } catch (err) {
+          console.log('Save before new failed, continuing anyway');
+          saveDesignLocally(); // At least save locally
+        }
       }
 
       // Clear all shared/viewing state
-      SHARE_STATE.isSharedView = false;
-      SHARE_STATE.designId = null;
-      SHARE_STATE.designToken = null;
-      SHARE_STATE.ownerEmail = null;
-      SHARE_STATE.allowedActions = {};
+      if (typeof SHARE_STATE !== 'undefined') {
+        SHARE_STATE.isSharedView = false;
+        SHARE_STATE.designId = null;
+        SHARE_STATE.designToken = null;
+        SHARE_STATE.ownerEmail = null;
+        SHARE_STATE.allowedActions = {};
+      }
 
       // Reset current design ID (will get new ID on next save)
       currentDesignId = null;
@@ -60999,6 +62098,7 @@
       elementListDirty = true;
       walls = [];
       selectedElement = null;
+      selectedElements = [];
       undoStack = [];
       redoStack = [];
 
@@ -61006,9 +62106,12 @@
       roomWidth = 12;
       roomDepth = 10;
       roomHeight = 8;
-      document.getElementById('roomWidth').value = 12;
-      document.getElementById('roomDepth').value = 10;
-      document.getElementById('roomType').value = 'kitchen';
+      const widthInput = document.getElementById('roomWidth');
+      const depthInput = document.getElementById('roomDepth');
+      const typeInput = document.getElementById('roomType');
+      if (widthInput) widthInput.value = 12;
+      if (depthInput) depthInput.value = 10;
+      if (typeInput) typeInput.value = 'kitchen';
 
       // Reset project name
       const projectNameInput = document.getElementById('projectName');
@@ -61017,26 +62120,40 @@
       }
 
       // Clear URL parameters (in case viewing shared design)
-      history.pushState({}, '', window.location.pathname);
+      history.replaceState({}, '', window.location.pathname);
 
-      // Remove any viewer mode badges
-      const viewerBadge = document.getElementById('viewerModeBadge');
-      if (viewerBadge) viewerBadge.remove();
+      // Remove any viewer mode badges or approval banners
+      document.getElementById('viewerModeBadge')?.remove();
+      document.getElementById('approvalBanner')?.remove();
+      document.getElementById('approvalRoomSelector')?.remove();
+      document.body.classList.remove('approval-review-mode');
 
-      // Update UI
+      // Clear autosave for fresh start
+      try {
+        localStorage.removeItem('room_designer_autosave');
+      } catch (e) {}
+
+      // Reset multi-room state
+      if (typeof rooms !== 'undefined') {
+        rooms.length = 0;
+        currentRoomIndex = 0;
+      }
+
+      // Update UI - stay in the designer
       fitToScreen();
-      updateProperties();
-      updateElementSelector();
-      updateItemPicker();
-      calculateQuote();
-      draw();
+      if (typeof updateProperties === 'function') updateProperties();
+      if (typeof updateElementSelector === 'function') updateElementSelector();
+      if (typeof updateItemPicker === 'function') updateItemPicker();
+      if (typeof calculateQuote === 'function') calculateQuote();
+      if (typeof draw === 'function') draw();
+      if (typeof updateRoomList === 'function') updateRoomList();
 
       // Reset 3D if in 3D view
-      if (currentView === '3d') {
+      if (currentView === '3d' && typeof init3D === 'function') {
         init3D();
       }
 
-      showToast('New design created', 'success');
+      showToast('Ready for new design', 'success');
     }
 
     // ===== EXPORT FUNCTIONALITY =====
@@ -61055,6 +62172,28 @@
       setTimeout(() => {
         document.addEventListener('click', closeHandler);
       }, 0);
+    }
+
+    // ===== PRO TOOLS MENU =====
+    function toggleProToolsMenu() {
+      const menu = document.getElementById('proToolsMenu');
+      menu.classList.toggle('show');
+
+      // Close when clicking outside
+      const closeHandler = (e) => {
+        if (!e.target.closest('.pro-tools-dropdown')) {
+          menu.classList.remove('show');
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+
+      setTimeout(() => {
+        document.addEventListener('click', closeHandler);
+      }, 0);
+    }
+
+    function closeProToolsMenu() {
+      document.getElementById('proToolsMenu').classList.remove('show');
     }
 
     function exportToPDF() {
@@ -61429,68 +62568,13 @@
       return design;
     }
 
-    // Create a new blank design (saves existing work first)
-    async function createNewDesign() {
-      // If there's existing work, save it first
-      if (elements.length > 0) {
-        showToast('Saving current design...', 'info');
-
-        try {
-          // Save to cloud or locally
-          await saveDesignToCloud();
-          showToast('Design saved! Creating new design...', 'success');
-        } catch (err) {
-          console.error('Error saving before new:', err);
-          // Continue anyway - autosave should have it
-        }
-
-        // Small delay so user sees the save confirmation
-        await new Promise(r => setTimeout(r, 500));
-      }
-
-      // Clear all elements
-      elements.length = 0;
-      selectedElement = null;
-      selectedElements = [];
-
-      // Reset project name
-      const projectInput = document.getElementById('projectName');
-      if (projectInput) {
-        projectInput.value = 'Untitled Project';
-      }
-
-      // Reset share state - this is a NEW design, not the old one
-      if (typeof SHARE_STATE !== 'undefined') {
-        SHARE_STATE.designId = null;
-        SHARE_STATE.isSharedView = false;
-        SHARE_STATE.shareCode = null;
-      }
-
-      // Clear URL parameters
-      window.history.replaceState({}, '', window.location.pathname);
-
-      // Reset room dimensions to default
-      if (typeof roomWidth !== 'undefined') roomWidth = 240;
-      if (typeof roomDepth !== 'undefined') roomDepth = 180;
-
-      // Clear local autosave for the NEW design
-      try {
-        localStorage.removeItem('room_designer_autosave');
-      } catch (e) {}
-
-      // Re-render canvas
-      if (typeof renderCanvas === 'function') renderCanvas();
-      if (typeof render3D === 'function' && typeof scene !== 'undefined') render3D();
-
-      // Update save status
-      if (typeof updateSaveStatus === 'function') updateSaveStatus('unsaved');
-
-      showToast('New design created', 'success');
-    }
+    // NOTE: createNewDesign() is defined earlier in the file (around line 62047)
+    // Do not duplicate it here
 
     // Save design to cloud (Supabase) or locally
-    async function saveDesignToCloud() {
-      console.log('saveDesignToCloud called');
+    // silentMode = true means no popups/redirects (used when saving before creating new design)
+    async function saveDesignToCloud(silentMode = false) {
+      console.log('saveDesignToCloud called, silentMode:', silentMode);
       const saveBtn = document.getElementById('saveDesignBtn');
       const saveText = document.getElementById('saveDesignText');
 
@@ -61620,24 +62704,26 @@
           // Check for customer shares to enable messaging
           await setupDesignerCommentNotifications(designId);
 
-          showToast('Design saved to cloud!', 'success');
+          if (!silentMode) {
+            showToast('Design saved to cloud!', 'success');
 
-          // Offer to create a project from this design
-          if (user && designId) {
-            const createProj = await showConfirmDialog({
-              title: 'Create Project?',
-              message: 'Design saved! Would you like to create a project from this design?',
-              confirmText: 'Create Project',
-              cancelText: 'Not Now'
-            });
-            if (createProj) {
-              sessionStorage.setItem('sg_design_for_project', JSON.stringify({
-                design_id: designId,
-                name: projectName || 'Room Design',
-                room_type: roomType || '',
-                quote_total: quoteTotal || 0
-              }));
-              window.location.href = '/account/#projects&from_design=1';
+            // Offer to create a project from this design (only if not in silent mode)
+            if (user && designId) {
+              const createProj = await showConfirmDialog({
+                title: 'Create Project?',
+                message: 'Design saved! Would you like to create a project from this design?',
+                confirmText: 'Create Project',
+                cancelText: 'Not Now'
+              });
+              if (createProj) {
+                sessionStorage.setItem('sg_design_for_project', JSON.stringify({
+                  design_id: designId,
+                  name: projectName || 'Room Design',
+                  room_type: roomType || '',
+                  quote_total: quoteTotal || 0
+                }));
+                window.location.href = '/account/#projects&from_design=1';
+              }
             }
           }
         } else {
