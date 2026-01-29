@@ -61409,13 +61409,23 @@
       return design;
     }
 
-    // Create a new blank design
-    function createNewDesign() {
-      // Check for unsaved changes
+    // Create a new blank design (saves existing work first)
+    async function createNewDesign() {
+      // If there's existing work, save it first
       if (elements.length > 0) {
-        if (!confirm('Create a new design? Any unsaved changes will be lost.')) {
-          return;
+        showToast('Saving current design...', 'info');
+
+        try {
+          // Save to cloud or locally
+          await saveDesignToCloud();
+          showToast('Design saved! Creating new design...', 'success');
+        } catch (err) {
+          console.error('Error saving before new:', err);
+          // Continue anyway - autosave should have it
         }
+
+        // Small delay so user sees the save confirmation
+        await new Promise(r => setTimeout(r, 500));
       }
 
       // Clear all elements
@@ -61429,7 +61439,7 @@
         projectInput.value = 'Untitled Project';
       }
 
-      // Reset share state
+      // Reset share state - this is a NEW design, not the old one
       if (typeof SHARE_STATE !== 'undefined') {
         SHARE_STATE.designId = null;
         SHARE_STATE.isSharedView = false;
@@ -61443,7 +61453,7 @@
       if (typeof roomWidth !== 'undefined') roomWidth = 240;
       if (typeof roomDepth !== 'undefined') roomDepth = 180;
 
-      // Clear local autosave
+      // Clear local autosave for the NEW design
       try {
         localStorage.removeItem('room_designer_autosave');
       } catch (e) {}
