@@ -4663,11 +4663,14 @@ SB36 - Sink Base 36&quot;"></textarea>
       return base64;
     }
 
-    // Multi-page - show page thumbnails
+    // Multi-page - show page thumbnails with "Analyze All" option
     document.getElementById('extractedRooms').innerHTML = `
       <div style="margin-bottom:16px;">
-        <h4 style="margin:0 0 8px;">Select a page to analyze (${numPages} pages)</h4>
-        <p style="font-size:13px; opacity:0.7;">Click on a page thumbnail to analyze it with AI Vision</p>
+        <h4 style="margin:0 0 8px;">PDF has ${numPages} pages</h4>
+        <p style="font-size:13px; opacity:0.7; margin-bottom:12px;">Analyze all pages or select individual pages</p>
+        <button onclick="analyzeAllPDFPages()" class="btn-primary" style="width:100%; margin-bottom:12px;">
+          Analyze All ${numPages} Pages
+        </button>
       </div>
       <div id="pdfPageThumbnails" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:12px; max-height:300px; overflow-y:auto;"></div>
     `;
@@ -4694,12 +4697,89 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (numPages > 10) {
       const moreMsg = document.createElement('div');
       moreMsg.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; font-size:13px; opacity:0.7;';
-      moreMsg.textContent = `Showing first 10 of ${numPages} pages`;
+      moreMsg.textContent = `Showing first 10 of ${numPages} pages. Click "Analyze All" to process all.`;
       thumbnailContainer.appendChild(moreMsg);
     }
 
     return null; // Signal that we're showing page selector
   }
+
+  // Analyze ALL PDF pages and combine results
+  window.analyzeAllPDFPages = async function() {
+    if (!window._currentPDF) return;
+
+    const pdf = window._currentPDF;
+    const numPages = pdf.numPages;
+    const allResults = [];
+    let processedCount = 0;
+
+    document.getElementById('extractedRooms').innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        <div class="spinner" style="margin:0 auto 16px;"></div>
+        <p>Analyzing all ${numPages} pages...</p>
+        <p id="batchProgress" style="font-size:14px; color:#f9cb00;">Page 0 of ${numPages}</p>
+        <p style="font-size:12px; opacity:0.7;">This may take a few minutes</p>
+      </div>
+    `;
+
+    // Process pages sequentially to avoid overwhelming the API
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      try {
+        document.getElementById('batchProgress').textContent = `Page ${pageNum} of ${numPages}`;
+
+        const base64 = await renderPDFPage(pdf, pageNum, 1.5); // Slightly lower quality for batch
+
+        const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: base64,
+            projectType: 'commercial'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.rooms && data.rooms.length > 0) {
+            // Tag rooms with page number
+            data.rooms.forEach(room => {
+              room.name = `${room.name} (Page ${pageNum})`;
+              room.pageNumber = pageNum;
+            });
+            allResults.push(data);
+          }
+        }
+
+        processedCount++;
+      } catch (error) {
+        console.error(`Error analyzing page ${pageNum}:`, error);
+      }
+
+      // Small delay between pages to avoid rate limiting
+      if (pageNum < numPages) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    // Combine all results
+    if (allResults.length > 0) {
+      const combinedData = {
+        rooms: allResults.flatMap(r => r.rooms || []),
+        totalArea: allResults.reduce((sum, r) => sum + (r.totalArea || 0), 0),
+        countertopSqft: allResults.reduce((sum, r) => sum + (r.countertopSqft || 0), 0),
+        flooringSqft: allResults.reduce((sum, r) => sum + (r.flooringSqft || 0), 0),
+        tileSqft: allResults.reduce((sum, r) => sum + (r.tileSqft || 0), 0),
+        mode: allResults[0]?.mode || 'ai',
+        pagesAnalyzed: processedCount,
+        totalPages: numPages
+      };
+
+      console.log('Combined AI Analysis:', combinedData);
+      convertAIResultsToRooms(combinedData, `${window._currentPDFName} (${processedCount} pages)`);
+    } else {
+      showPartialResultsWithManualEntry({ pagesAnalyzed: processedCount }, window._currentPDFName);
+    }
+  };
 
   // Analyze specific PDF page
   window.analyzePDFPage = async function(pageNum) {
@@ -6568,5 +6648,5 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (typeof showToast === 'function') showToast('Approval link generated!', 'success');
   };
 
-  console.log('Room Designer Pro Features v7.3 loaded - AI Vision + Manual Entry Fallback');
+  console.log('Room Designer Pro Features v7.4 loaded - Batch PDF Analysis');
 })();
