@@ -9677,8 +9677,8 @@
           </a>
         </div>
 
-        <!-- GOD MODE Section (joshb@surprisegranite.com ONLY) -->
-        <div class="nav-section hidden" id="god-mode-nav" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; margin: 8px; padding: 8px;">
+        <!-- GOD MODE Section (GOD_MODE_EMAILS ONLY) -->
+        <div class="nav-section hidden" id="god-mode-nav" style="display: none; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; margin: 8px; padding: 8px;">
           <div class="nav-section-title" style="color: #a855f7; font-weight: bold;">
             <span style="margin-right: 6px;">⚡</span> GOD MODE
           </div>
@@ -9770,9 +9770,11 @@
             <select id="role-select" onchange="switchRole(this.value)" style="padding: 8px 12px; border-radius: 6px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); color: var(--text-primary); font-size: 13px; cursor: pointer;" aria-label="Switch user role">
               <option value="homeowner">Homeowner View</option>
               <option value="customer">Customer View</option>
+              <option value="pro">Pro View</option>
               <option value="contractor">Contractor View</option>
               <option value="fabricator">Fabricator View</option>
               <option value="vendor">Vendor View</option>
+              <option value="distributor">Distributor/Stone Yard View</option>
               <option value="admin">Admin View (GOD)</option>
             </select>
           </div>
@@ -15525,6 +15527,10 @@
         nav: ['dashboard', 'profile', 'favorites', 'listings', 'calendar', 'messages'],
         features: ['view_own_jobs', 'view_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews']
       },
+      pro: {
+        nav: ['dashboard', 'profile', 'favorites', 'my-designs', 'listings', 'leads', 'customers', 'estimates', 'jobs', 'collaborators', 'calendar', 'wallet', 'messages'],
+        features: ['view_own_jobs', 'create_jobs', 'view_estimates', 'send_estimates', 'message_team', 'view_calendar', 'upload_files', 'view_collaborators', 'manage_customers', 'view_leads', 'ai_tools', 'analytics']
+      },
       contractor: {
         nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'collaborators', 'calendar', 'wallet', 'products', 'orders', 'messages'],
         features: ['view_own_jobs', 'create_jobs', 'view_estimates', 'send_estimates', 'approve_estimates', 'pay_invoices', 'message_team', 'view_calendar', 'upload_files', 'leave_reviews', 'view_collaborators', 'manage_customers', 'view_leads', 'hire_subcollaborators', 'ai_tools', 'analytics']
@@ -15536,6 +15542,11 @@
       vendor: {
         nav: ['dashboard', 'profile', 'products', 'orders', 'customers', 'messages', 'calendar', 'wallet'],
         features: ['list_products', 'receive_orders', 'view_analytics', 'message_team', 'manage_inventory', 'connect_collaborators']
+      },
+      distributor: {
+        nav: ['dashboard', 'profile', 'products', 'orders', 'customers', 'messages', 'calendar', 'wallet', 'inventory', 'slabs'],
+        features: ['list_products', 'receive_orders', 'view_analytics', 'message_team', 'manage_inventory', 'slab_management', 'connect_collaborators'],
+        redirectTo: '/distributor/dashboard/'
       },
       admin: {
         nav: ['dashboard', 'profile', 'favorites', 'listings', 'leads', 'customers', 'estimates', 'invoices', 'jobs', 'collaborators', 'calendar', 'wallet', 'admin-users', 'products', 'orders', 'messages', 'inventory', 'slabs', 'analytics', 'settings'],
@@ -15604,11 +15615,13 @@
         console.log('Vendor nav:', showVendorNav ? 'visible' : 'hidden');
       }
 
-      // GOD MODE section - visible ONLY to joshb@surprisegranite.com
+      // GOD MODE section - visible ONLY to GOD_MODE_EMAILS
       const godModeNavEl = document.getElementById('god-mode-nav');
       if (godModeNavEl) {
         const showGodMode = isGodMode();
         godModeNavEl.classList.toggle('hidden', !showGodMode);
+        // Also set inline display to ensure it's hidden
+        godModeNavEl.style.display = showGodMode ? 'block' : 'none';
         console.log('GOD MODE nav:', showGodMode ? 'visible (⚡ ENABLED)' : 'hidden');
 
         // Add special body class for GOD MODE users
@@ -15635,6 +15648,14 @@
     function switchRole(newRole) {
       if (!ROLE_PERMISSIONS[newRole]) return;
 
+      // Check if role has a redirect (like distributor)
+      const roleConfig = ROLE_PERMISSIONS[newRole];
+      if (roleConfig.redirectTo) {
+        showToast(`Redirecting to ${newRole} dashboard...`);
+        window.location.href = roleConfig.redirectTo;
+        return;
+      }
+
       userRole = newRole;
 
       // Update role flags based on new role
@@ -15645,7 +15666,7 @@
 
       // Update role display
       const roleEl = document.getElementById('user-role');
-      const roleLabels = { homeowner: 'Homeowner', customer: 'Customer', contractor: 'Contractor', vendor: 'Vendor', pro: 'Pro', fabricator: 'Fabricator', admin: 'Admin' };
+      const roleLabels = { homeowner: 'Homeowner', customer: 'Customer', contractor: 'Contractor', vendor: 'Vendor', pro: 'Pro', fabricator: 'Fabricator', distributor: 'Distributor', admin: 'Admin' };
       if (roleEl) roleEl.textContent = roleLabels[newRole] || 'Customer';
 
       // Show notification
@@ -15660,8 +15681,7 @@
     }
 
     // GOD mode emails - EXCLUSIVE access to developer tools and role switcher
-    // Only joshb@surprisegranite.com has GOD MODE access
-    const GOD_MODE_EMAILS = ['joshb@surprisegranite.com'];
+    const GOD_MODE_EMAILS = ['joshb@surprisegranite.com', 'sgk112@gmail.com'];
 
     // Check if current user has GOD MODE access
     function isGodMode() {
