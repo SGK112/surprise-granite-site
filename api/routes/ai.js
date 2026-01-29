@@ -318,6 +318,7 @@ router.post('/blueprint', aiRateLimiter('ai_blueprint'), async (req, res) => {
 
 /**
  * Convert AI result format to legacy frontend format
+ * Preserves new cabinet-specific fields for Room Designer
  */
 function convertAIResultToLegacy(aiResult, projectType) {
   if (!aiResult || !aiResult.takeoff) {
@@ -328,6 +329,42 @@ function convertAIResultToLegacy(aiResult, projectType) {
   const totals = takeoff.totals || {};
   const rooms = takeoff.rooms || [];
 
+  // Check if this is the new cabinet-specific format (has cabinets array)
+  const hasNewFormat = rooms.some(r => Array.isArray(r.cabinets) && r.cabinets.length > 0);
+
+  if (hasNewFormat) {
+    // New format: pass through cabinet data directly for Room Designer
+    return {
+      totalArea: totals.totalSF || rooms.reduce((sum, r) => sum + (r.sqft || 0), 0),
+      countertopSqft: totals.countertops?.sqft || 0,
+      flooringSqft: totals.flooring?.sqft || 0,
+      tileSqft: totals.tile?.sqft || 0,
+      // Preserve full room data including cabinets
+      rooms: rooms.map(room => ({
+        name: room.name || 'Unknown Room',
+        dimensions: room.dimensions || 'N/A',
+        sqft: room.sqft || 0,
+        widthFt: room.widthFt || null,
+        depthFt: room.depthFt || null,
+        material: getMaterialTypes(room.materials),
+        materials: room.materials || null,
+        // NEW: Pass through cabinet-specific data
+        cabinets: room.cabinets || [],
+        appliances: room.appliances || [],
+        island: room.island || null,
+        layoutType: room.layoutType || null,
+        notes: room.notes || null
+      })),
+      costs: aiResult.costs || null,
+      // NEW: Pass through metadata
+      pageType: takeoff.pageType || null,
+      pageTitle: takeoff.pageTitle || null,
+      confidence: takeoff.confidence || 'medium',
+      notes: takeoff.notes || []
+    };
+  }
+
+  // Legacy format: traditional takeoff data
   return {
     totalArea: totals.totalSF || rooms.reduce((sum, r) => sum + (r.sqft || 0), 0),
     countertopSqft: totals.countertops?.sqft || 0,
@@ -337,7 +374,8 @@ function convertAIResultToLegacy(aiResult, projectType) {
       name: room.name || 'Unknown Room',
       dimensions: room.dimensions || 'N/A',
       sqft: room.sqft || 0,
-      material: getMaterialTypes(room.materials)
+      material: getMaterialTypes(room.materials),
+      materials: room.materials || null
     })),
     costs: aiResult.costs || null
   };

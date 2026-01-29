@@ -72,64 +72,78 @@ const CONFIG = {
  * @returns {Promise<Object>} Takeoff analysis results
  */
 async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey) {
-  const systemPrompt = `You are an expert at reading architectural cabinet drawings and shop drawings.
+  const systemPrompt = `You are an expert millwork/cabinet shop drawing reader. Your job is to extract EXACT cabinet data from commercial architectural drawings.
 
-YOUR TASK: Extract EVERY cabinet from this drawing with its EXACT dimensions as shown.
+STEP 1 - IDENTIFY THE PAGE TYPE:
+- CABINET SCHEDULE: A table/legend listing cabinets with dimensions
+- ELEVATION VIEW: Side view showing cabinets arranged along a wall
+- PLAN VIEW: Top-down floor plan showing cabinet footprints
+- DETAIL VIEW: Closeup of specific cabinet construction
 
-LOOK FOR THESE ELEMENTS:
-1. **CABINET SCHEDULE/LEGEND** - A table listing cabinet numbers with Width x Depth x Height
-2. **CABINET TAGS/NUMBERS** - Numbers like "1", "2", "42", "B1", "W1" labeling each cabinet
-3. **DIMENSION STRINGS** - Measurements like 36", 24", 18" next to cabinets
-4. **ROOM/AREA NAME** - Title block or label like "Teammate Lounge", "Wet Bar", "Kitchen"
-5. **ELEVATION VIEWS** - Side views showing cabinet heights and arrangements
+STEP 2 - FIND THE ROOM/AREA NAME:
+Look for text in title blocks, headers, or labels like:
+- "Teammate Lounge", "Wet Bar", "Kitchen", "Reception"
+- May include wall numbers like "Wall 1", "Wall 2"
 
-READ THE ACTUAL DIMENSIONS from the drawing. Do NOT guess or use defaults.
+STEP 3 - EXTRACT CABINET DATA:
 
-For EACH cabinet you see numbered or labeled:
-- Read its WIDTH from the dimension (e.g., 36", 18", 24")
-- Read its DEPTH from the dimension (e.g., 24", 30.5", 12")
-- Read its HEIGHT from the dimension (e.g., 32", 34.5", 30")
-- Note the cabinet NUMBER/LABEL exactly as shown
-- Identify TYPE: base, upper/wall, tall, sink base, drawer base, TV niche, microwave cabinet
+For CABINET SCHEDULES (tables):
+- Read each row: Cabinet # | Width | Depth | Height
+- Dimensions are typically in INCHES (e.g., 36", 24", 32")
+- Include ALL rows, even if some data is missing
 
-RETURN THIS EXACT JSON FORMAT:
+For ELEVATION VIEWS:
+- Read dimension strings above/below/beside each cabinet
+- Cabinet numbers are usually in circles or tags
+- Upper cabinets are typically above the counter line
+- Base cabinets are below
+
+For EACH CABINET found:
+- "label": EXACT number shown (1, 2, 42, B1, W1, etc.)
+- "type": base-cabinet, wall-cabinet, sink-base, drawer-base, tall-cabinet, tv-niche, microwave, filler
+- "width": in INCHES as shown (NOT feet)
+- "depth": in INCHES as shown
+- "height": in INCHES as shown
+- "wall": top, bottom, left, right, island (based on position in drawing)
+
+RETURN FORMAT:
 {
   "rooms": [
     {
-      "name": "EXACT ROOM NAME FROM DRAWING",
+      "name": "EXACT ROOM NAME",
       "widthFt": 20,
       "depthFt": 12,
       "cabinets": [
         { "label": "1", "type": "base-cabinet", "width": 18, "depth": 30.5, "height": 32, "wall": "top" },
-        { "label": "2", "type": "base-cabinet", "width": 36, "depth": 24, "height": 32, "wall": "top" },
-        { "label": "3", "type": "sink-base", "width": 36, "depth": 24, "height": 32, "wall": "top" },
-        { "label": "8", "type": "tv-niche", "width": 59, "depth": 0.75, "height": 36, "wall": "right" },
-        { "label": "20", "type": "microwave", "width": 24, "depth": 18, "height": 18, "wall": "top" }
+        { "label": "2", "type": "base-cabinet", "width": 36, "depth": 24, "height": 32, "wall": "top" }
       ],
-      "appliances": [],
-      "notes": "Description of what you see"
+      "notes": "Brief description of what this page shows"
     }
   ],
-  "pageTitle": "Title from the drawing if visible",
-  "notes": ["Any observations about the drawing quality or missing information"]
+  "pageType": "schedule|elevation|plan|detail",
+  "pageTitle": "Title if visible",
+  "confidence": "high|medium|low",
+  "notes": ["Any issues reading the drawing"]
 }
 
 CRITICAL RULES:
-- Use the EXACT cabinet numbers from the drawing (1, 2, 3... or 42, 43, 44... etc)
-- Use the EXACT dimensions shown, not standard sizes
-- Each page may show a DIFFERENT room/area - read the title
-- TV niches, microwave cabinets, and other specialty items ARE cabinets - include them
-- If a cabinet schedule table is visible, extract ALL cabinets from it
-- Wall position: top=back wall, right=right wall, left=left wall, bottom=front`;
+1. Use EXACT numbers from drawing - if it says "42", use "42" not "1"
+2. Use EXACT dimensions - if drawing shows 36.75", use 36.75 not 36
+3. ALL dimensions in INCHES (standard for cabinet drawings)
+4. Include EVERY cabinet visible, even fillers and specialty items
+5. If dimension is unclear, note it but provide best estimate
+6. TV niches, microwave cabinets, panels = include as cabinets
+7. Do NOT make up data - only report what you can read`;
 
-  const userPrompt = `Read this cabinet/millwork drawing carefully.
+  const userPrompt = `Analyze this ${projectType || 'commercial cabinet'} drawing.
 
-1. Find the ROOM NAME or AREA NAME (check title block, headers)
-2. Find ALL cabinet numbers and their EXACT dimensions
-3. Look for a cabinet schedule table if present
-4. Extract every cabinet with its real measurements
+INSTRUCTIONS:
+1. What type of page is this? (schedule, elevation, plan, detail)
+2. What is the room/area name shown?
+3. List EVERY cabinet with its EXACT label and dimensions
+4. Note which wall each cabinet is on if you can tell
 
-This is a ${projectType} project. Return accurate data for creating a virtual room layout.`;
+Be thorough - extract ALL cabinets visible. Include exact dimensions in inches.`;
 
   try {
     const response = await fetch(CONFIG.openai.apiUrl, {
@@ -169,16 +183,46 @@ This is a ${projectType} project. Return accurate data for creating a virtual ro
 
     // Parse the JSON response from GPT-4
     const content = data.choices[0].message.content;
+    console.log('GPT-4 Vision raw response length:', content.length);
 
     // Extract JSON from the response (might be wrapped in markdown)
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        // Log summary for debugging
+        const roomCount = parsed.rooms?.length || 0;
+        const cabinetCount = parsed.rooms?.reduce((sum, r) => sum + (r.cabinets?.length || 0), 0) || 0;
+        console.log(`GPT-4 Vision parsed: ${roomCount} rooms, ${cabinetCount} cabinets, confidence: ${parsed.confidence || 'unknown'}`);
+
+        // Validate response has expected structure
+        if (!parsed.rooms || !Array.isArray(parsed.rooms)) {
+          console.warn('GPT-4 response missing rooms array, wrapping content');
+          return {
+            rooms: [{ name: 'Unknown', cabinets: [], notes: content }],
+            pageType: 'unknown',
+            confidence: 'low',
+            notes: ['Response did not contain expected room structure']
+          };
+        }
+
+        return parsed;
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError.message);
+        console.log('Failed JSON snippet:', jsonMatch[0].substring(0, 500));
+        return {
+          error: 'JSON parse error',
+          rawResponse: content,
+          parseError: parseError.message
+        };
+      }
     }
 
     // If no JSON found, return structured error
+    console.warn('No JSON found in GPT-4 response');
     return {
-      error: 'Could not parse blueprint analysis',
+      error: 'Could not parse blueprint analysis - no JSON in response',
       rawResponse: content
     };
 

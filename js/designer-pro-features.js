@@ -4712,74 +4712,170 @@ SB36 - Sink Base 36&quot;"></textarea>
     const numPages = pdf.numPages;
     const allResults = [];
     let processedCount = 0;
+    let successCount = 0;
+    let failedPages = [];
 
     document.getElementById('extractedRooms').innerHTML = `
       <div style="text-align:center; padding:20px;">
         <div class="spinner" style="margin:0 auto 16px;"></div>
-        <p>Analyzing all ${numPages} pages...</p>
+        <p>Analyzing all ${numPages} pages with AI Vision...</p>
         <p id="batchProgress" style="font-size:14px; color:#f9cb00;">Page 0 of ${numPages}</p>
-        <p style="font-size:12px; opacity:0.7;">This may take a few minutes</p>
+        <p id="batchStats" style="font-size:12px; opacity:0.7;">Rooms found: 0 | Cabinets: 0</p>
+        <div id="pageResults" style="margin-top:12px; font-size:11px; text-align:left; max-height:100px; overflow-y:auto;"></div>
       </div>
     `;
 
     // Process pages sequentially to avoid overwhelming the API
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       try {
-        document.getElementById('batchProgress').textContent = `Page ${pageNum} of ${numPages}`;
+        document.getElementById('batchProgress').textContent = `Analyzing page ${pageNum} of ${numPages}...`;
 
-        const base64 = await renderPDFPage(pdf, pageNum, 1.5); // Slightly lower quality for batch
+        // Use higher resolution (2.0) for better cabinet schedule reading
+        const base64 = await renderPDFPage(pdf, pageNum, 2.0);
 
         const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             image: base64,
-            projectType: 'commercial'
+            projectType: 'commercial-cabinets'
           })
         });
 
         if (response.ok) {
           const data = await response.json();
           if (data.rooms && data.rooms.length > 0) {
-            // Tag rooms with page number
+            // Tag rooms with page number for reference
             data.rooms.forEach(room => {
-              room.name = `${room.name} (Page ${pageNum})`;
-              room.pageNumber = pageNum;
+              room.sourcePage = pageNum;
+              // Only add page number to name if room name is generic
+              if (!room.name || room.name === 'Unknown Room' || room.name === 'Kitchen') {
+                room.name = `Room (Page ${pageNum})`;
+              }
             });
             allResults.push(data);
+            successCount++;
+
+            // Update live stats
+            const totalRooms = allResults.reduce((s, r) => s + (r.rooms?.length || 0), 0);
+            const totalCabs = allResults.reduce((s, r) => s + r.rooms.reduce((rs, rm) => rs + (rm.cabinets?.length || 0), 0), 0);
+            document.getElementById('batchStats').textContent = `Rooms found: ${totalRooms} | Cabinets: ${totalCabs}`;
+
+            // Show page result
+            const pageResultsEl = document.getElementById('pageResults');
+            const roomNames = data.rooms.map(r => r.name).join(', ');
+            const cabCount = data.rooms.reduce((s, rm) => s + (rm.cabinets?.length || 0), 0);
+            pageResultsEl.innerHTML += `<div style="color:#22c55e;">✓ Page ${pageNum}: ${roomNames} (${cabCount} cabinets)</div>`;
+          } else {
+            failedPages.push({ page: pageNum, reason: 'No cabinets detected' });
+            document.getElementById('pageResults').innerHTML += `<div style="color:#f59e0b;">○ Page ${pageNum}: No cabinet data found</div>`;
           }
+        } else {
+          failedPages.push({ page: pageNum, reason: `API error ${response.status}` });
+          document.getElementById('pageResults').innerHTML += `<div style="color:#ef4444;">✗ Page ${pageNum}: API error</div>`;
         }
 
         processedCount++;
       } catch (error) {
         console.error(`Error analyzing page ${pageNum}:`, error);
+        failedPages.push({ page: pageNum, reason: error.message });
+        document.getElementById('pageResults').innerHTML += `<div style="color:#ef4444;">✗ Page ${pageNum}: ${error.message}</div>`;
       }
 
       // Small delay between pages to avoid rate limiting
       if (pageNum < numPages) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 800));
       }
     }
 
-    // Combine all results
+    // Combine and deduplicate results
     if (allResults.length > 0) {
+      const allRooms = allResults.flatMap(r => r.rooms || []);
+
+      // Smart deduplication: merge rooms with similar names
+      const deduplicatedRooms = deduplicateRooms(allRooms);
+
       const combinedData = {
-        rooms: allResults.flatMap(r => r.rooms || []),
+        rooms: deduplicatedRooms,
         totalArea: allResults.reduce((sum, r) => sum + (r.totalArea || 0), 0),
         countertopSqft: allResults.reduce((sum, r) => sum + (r.countertopSqft || 0), 0),
         flooringSqft: allResults.reduce((sum, r) => sum + (r.flooringSqft || 0), 0),
         tileSqft: allResults.reduce((sum, r) => sum + (r.tileSqft || 0), 0),
-        mode: allResults[0]?.mode || 'ai',
+        mode: 'ai',
         pagesAnalyzed: processedCount,
+        successfulPages: successCount,
+        failedPages: failedPages,
         totalPages: numPages
       };
 
       console.log('Combined AI Analysis:', combinedData);
-      convertAIResultsToRooms(combinedData, `${window._currentPDFName} (${processedCount} pages)`);
+      convertAIResultsToRooms(combinedData, `${window._currentPDFName} (${successCount}/${numPages} pages)`);
     } else {
-      showPartialResultsWithManualEntry({ pagesAnalyzed: processedCount }, window._currentPDFName);
+      showPartialResultsWithManualEntry({
+        pagesAnalyzed: processedCount,
+        failedPages: failedPages
+      }, window._currentPDFName);
     }
   };
+
+  // Deduplicate rooms by merging similar room names
+  function deduplicateRooms(rooms) {
+    const roomMap = new Map();
+
+    rooms.forEach(room => {
+      // Normalize room name for comparison (remove page numbers, trim, lowercase)
+      const baseName = (room.name || 'Unknown')
+        .replace(/\s*\(Page \d+\)\s*/gi, '')
+        .replace(/\s*-\s*Part\s*\d+/gi, '')
+        .replace(/\s*Wall\s*\d+/gi, '')
+        .trim();
+
+      const key = baseName.toLowerCase();
+
+      if (roomMap.has(key)) {
+        // Merge cabinets from duplicate room
+        const existing = roomMap.get(key);
+
+        // Add cabinets that don't already exist (by label/number)
+        const existingLabels = new Set(existing.cabinets.map(c => c.label || c.number));
+
+        (room.cabinets || []).forEach(cab => {
+          const cabLabel = cab.label || cab.number;
+          if (!existingLabels.has(cabLabel)) {
+            existing.cabinets.push(cab);
+            existingLabels.add(cabLabel);
+          }
+        });
+
+        // Update room dimensions if the new one has larger values
+        if (room.widthFt && room.widthFt > (existing.widthFt || 0)) {
+          existing.widthFt = room.widthFt;
+        }
+        if (room.depthFt && room.depthFt > (existing.depthFt || 0)) {
+          existing.depthFt = room.depthFt;
+        }
+
+        // Track source pages
+        existing.sourcePages = existing.sourcePages || [existing.sourcePage];
+        if (room.sourcePage && !existing.sourcePages.includes(room.sourcePage)) {
+          existing.sourcePages.push(room.sourcePage);
+        }
+      } else {
+        // New room
+        room.sourcePages = [room.sourcePage];
+        roomMap.set(key, room);
+      }
+    });
+
+    // Convert map back to array and update names
+    return Array.from(roomMap.values()).map(room => {
+      // If room was merged from multiple pages, note it
+      if (room.sourcePages && room.sourcePages.length > 1) {
+        room.name = `${room.name} (${room.sourcePages.length} views merged)`;
+      }
+      return room;
+    });
+  }
 
   // Analyze specific PDF page
   window.analyzePDFPage = async function(pageNum) {
@@ -4883,14 +4979,17 @@ SB36 - Sink Base 36&quot;"></textarea>
       // NEW FORMAT: Individual cabinets with wall positions
       if (room.cabinets && Array.isArray(room.cabinets) && room.cabinets.length > 0) {
         room.cabinets.forEach((cab, cabIndex) => {
+          // Validate and sanitize dimensions
+          const validatedCab = validateCabinetDimensions(cab, cabIndex);
+
           roomData.cabinets.push({
-            number: cab.label || String(cabIndex + 1),
+            number: cab.label || cab.number || String(cabIndex + 1),
             name: formatCabinetType(cab.type),
             type: cab.type || 'base-cabinet',
-            width: cab.width || 36,
-            depth: cab.depth || 24,
-            height: cab.height || 34,
-            wall: cab.wall || 'top'  // Which wall: top, bottom, left, right, island
+            width: validatedCab.width,
+            depth: validatedCab.depth,
+            height: validatedCab.height,
+            wall: inferWallPosition(cab, cabIndex, room.cabinets.length)
           });
         });
 
@@ -5002,39 +5101,121 @@ SB36 - Sink Base 36&quot;"></textarea>
       // Store for import functions
       window._parsedRooms = parsedRooms;
 
+      // Get confidence and page type from AI response
+      const confidence = aiData.confidence || 'medium';
+      const pageType = aiData.pageType || 'unknown';
+      const confidenceColor = confidence === 'high' ? '#22c55e' : confidence === 'medium' ? '#f9cb00' : '#ef4444';
+      const totalCabinets = parsedRooms.reduce((s,r) => s + r.cabinets.length, 0);
+
+      // Check for potential issues
+      const warnings = [];
+      parsedRooms.forEach(room => {
+        const defaultCount = room.cabinets.filter(c => c.width === 36 && c.depth === 24).length;
+        if (defaultCount > room.cabinets.length * 0.5) {
+          warnings.push(`${room.name}: Many cabinets have default dimensions - verify accuracy`);
+        }
+      });
+
       // Show detailed results with cabinet list
       document.getElementById('extractedRooms').innerHTML = `
         <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:16px; margin-bottom:16px;">
-          <h4 style="color:#22c55e; margin:0 0 8px;">AI Analysis Complete</h4>
-          <p style="margin:0; font-size:14px;">Detected ${parsedRooms.length} room(s) with ${parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} cabinet(s)</p>
-          ${aiData.pageTitle ? `<p style="margin:4px 0 0; font-size:13px; opacity:0.8;">Page: ${aiData.pageTitle}</p>` : ''}
+          <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div>
+              <h4 style="color:#22c55e; margin:0 0 8px;">AI Analysis Complete</h4>
+              <p style="margin:0; font-size:14px;">Detected ${parsedRooms.length} room(s) with ${totalCabinets} cabinet(s)</p>
+            </div>
+            <div style="text-align:right;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; background:${confidenceColor}22; color:${confidenceColor}; border:1px solid ${confidenceColor}44;">
+                ${confidence.toUpperCase()} confidence
+              </span>
+              ${pageType !== 'unknown' ? `<div style="font-size:11px; opacity:0.7; margin-top:4px;">Page type: ${pageType}</div>` : ''}
+            </div>
+          </div>
+          ${aiData.pageTitle ? `<p style="margin:8px 0 0; font-size:13px; opacity:0.8;">📄 ${aiData.pageTitle}</p>` : ''}
+          ${aiData.pagesAnalyzed ? `<p style="margin:4px 0 0; font-size:12px; opacity:0.7;">Analyzed ${aiData.successfulPages || aiData.pagesAnalyzed}/${aiData.totalPages} pages</p>` : ''}
         </div>
+
+        ${warnings.length > 0 ? `
+          <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:12px; margin-bottom:12px;">
+            <div style="font-size:12px; color:#f59e0b;">
+              <strong>⚠️ Review needed:</strong>
+              ${warnings.map(w => `<div style="margin-top:4px;">• ${w}</div>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         ${parsedRooms.map((room, i) => `
           <div class="parsed-room" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; margin-bottom:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <div>
                 <strong>${room.name}</strong>
                 <span style="opacity:0.7; margin-left:8px;">${room.width || '?'}' x ${room.depth || '?'}'</span>
+                ${room.sourcePages?.length > 1 ? `<span style="font-size:10px; color:#22c55e; margin-left:8px;">merged</span>` : ''}
               </div>
               <button onclick="importParsedRoom(${i})" class="btn-small">Import</button>
             </div>
-            <div style="font-size:11px; opacity:0.8; max-height:100px; overflow-y:auto;">
-              ${room.cabinets.slice(0, 10).map(c =>
-                `<div style="padding:2px 0;">#${c.number} ${c.name}: ${c.width}"W x ${c.depth}"D x ${c.height}"H (${c.wall})</div>`
+            <div style="font-size:11px; opacity:0.9; max-height:120px; overflow-y:auto; font-family:monospace;">
+              <div style="display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:4px; font-weight:bold;">
+                <span>#</span><span>Type</span><span>W x D x H</span>
+              </div>
+              ${room.cabinets.slice(0, 15).map(c =>
+                `<div style="display:grid; grid-template-columns:auto 1fr auto; gap:4px 12px; padding:2px 0;">
+                  <span style="color:#f9cb00;">${c.number}</span>
+                  <span>${c.name}</span>
+                  <span>${c.width}" x ${c.depth}" x ${c.height}"</span>
+                </div>`
               ).join('')}
-              ${room.cabinets.length > 10 ? `<div style="color:#f9cb00;">...and ${room.cabinets.length - 10} more</div>` : ''}
+              ${room.cabinets.length > 15 ? `<div style="color:#f9cb00; padding:4px 0;">...and ${room.cabinets.length - 15} more cabinets</div>` : ''}
             </div>
           </div>
         `).join('')}
-        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">Import All ${parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} Cabinets</button>
+
+        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">
+          Import All ${totalCabinets} Cabinets to Designer
+        </button>
         <button onclick="showManualSupplementForm()" class="btn-secondary" style="margin-top:8px; width:100%;">Add Missing Details</button>
-        <button onclick="console.log(window._aiAnalysisData); alert('Check browser console for raw AI data')" class="btn-secondary" style="margin-top:8px; width:100%; font-size:12px;">Debug: View Raw AI Response</button>
+        <button onclick="showRawAIData()" class="btn-secondary" style="margin-top:8px; width:100%; font-size:12px;">Debug: View Raw AI Response</button>
       `;
     } else {
       // Show partial data if available, with manual entry option
       showPartialResultsWithManualEntry(aiData, fileName);
     }
   }
+
+  // Debug: Show raw AI response in a modal
+  window.showRawAIData = function() {
+    const aiData = window._aiAnalysisData;
+    if (!aiData) {
+      alert('No AI data available');
+      return;
+    }
+
+    console.log('Raw AI Analysis Data:', aiData);
+
+    // Create modal with formatted JSON
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const content = document.createElement('div');
+    content.style.cssText = 'background:#1a1a2e; border-radius:12px; max-width:800px; max-height:80vh; overflow:auto; padding:20px; color:white;';
+    content.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">Raw AI Response</h3>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <button onclick="navigator.clipboard.writeText(JSON.stringify(window._aiAnalysisData, null, 2)); this.textContent='Copied!'"
+          style="padding:8px 16px; background:#22c55e; border:none; border-radius:6px; color:white; cursor:pointer;">
+          Copy JSON
+        </button>
+      </div>
+      <pre style="background:#0d0d1a; padding:16px; border-radius:8px; overflow:auto; font-size:12px; line-height:1.4; white-space:pre-wrap; word-wrap:break-word;">${JSON.stringify(aiData, null, 2)}</pre>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+  };
 
   // Show partial AI results with option to add missing data manually
   function showPartialResultsWithManualEntry(aiData, fileName) {
@@ -5668,6 +5849,74 @@ SB36 - Sink Base 36&quot;"></textarea>
     document.getElementById('pdfImporterModal')?.remove();
     if (typeof showToast === 'function') showToast(`Imported ${room.cabinets.length} cabinets from ${room.name}`, 'success');
   };
+
+  // Helper: Validate and sanitize cabinet dimensions
+  function validateCabinetDimensions(cab, index) {
+    // Default dimensions by cabinet type
+    const defaults = {
+      'base-cabinet': { width: 36, depth: 24, height: 34.5 },
+      'wall-cabinet': { width: 36, depth: 12, height: 30 },
+      'tall-cabinet': { width: 24, depth: 24, height: 84 },
+      'sink-base': { width: 36, depth: 24, height: 34.5 },
+      'drawer-base': { width: 18, depth: 24, height: 34.5 },
+      'tv-niche': { width: 60, depth: 4, height: 36 },
+      'microwave': { width: 24, depth: 18, height: 18 },
+      'island': { width: 48, depth: 36, height: 36 }
+    };
+
+    const type = cab.type || 'base-cabinet';
+    const typeDefaults = defaults[type] || defaults['base-cabinet'];
+
+    // Parse dimensions - they might be strings or numbers
+    let width = parseFloat(cab.width) || typeDefaults.width;
+    let depth = parseFloat(cab.depth) || typeDefaults.depth;
+    let height = parseFloat(cab.height) || typeDefaults.height;
+
+    // Sanity checks - catch obviously wrong values
+    // Width: typical range 6" to 120" (fillers to large islands)
+    if (width < 0.5 || width > 120) {
+      console.warn(`Cabinet ${index}: invalid width ${width}, using default`);
+      width = typeDefaults.width;
+    }
+
+    // Depth: typical range 0.5" (panels) to 36" (deep islands)
+    if (depth < 0.25 || depth > 48) {
+      console.warn(`Cabinet ${index}: invalid depth ${depth}, using default`);
+      depth = typeDefaults.depth;
+    }
+
+    // Height: typical range 6" (drawer faces) to 96" (tall pantries)
+    if (height < 4 || height > 108) {
+      console.warn(`Cabinet ${index}: invalid height ${height}, using default`);
+      height = typeDefaults.height;
+    }
+
+    return { width, depth, height };
+  }
+
+  // Helper: Infer wall position based on cabinet type and index
+  function inferWallPosition(cab, index, totalCabinets) {
+    // If wall is already specified and valid, use it
+    const validWalls = ['top', 'bottom', 'left', 'right', 'island', 'top-upper', 'corner'];
+    if (cab.wall && validWalls.includes(cab.wall.toLowerCase())) {
+      return cab.wall.toLowerCase();
+    }
+
+    // Infer based on cabinet type
+    const type = (cab.type || '').toLowerCase();
+
+    if (type.includes('island')) return 'island';
+    if (type.includes('upper') || type.includes('wall')) return 'top-upper';
+    if (type.includes('corner')) return 'corner';
+
+    // For TV niches and similar, put on side walls
+    if (type.includes('tv') || type.includes('niche')) {
+      return index % 2 === 0 ? 'right' : 'left';
+    }
+
+    // Default: distribute along top wall (most common for commercial drawings)
+    return 'top';
+  }
 
   // Helper: Format cabinet type for display
   function formatCabinetType(type) {
