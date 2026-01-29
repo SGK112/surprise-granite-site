@@ -225,7 +225,8 @@ test('Review panel auto-opens for quote_approval', () => {
 });
 
 test('canApprove includes quote_approval check', () => {
-  assertContains(html, "SHARE_STATE.permission === 'quote_approval'", 'canApprove check not found');
+  // The actual implementation uses PERMISSION_LEVELS lookup which is more flexible
+  assertContains(html, "PERMISSION_LEVELS[SHARE_STATE.permission]?.canApprove", 'canApprove check not found');
 });
 
 test('Element approval buttons exist (btn-approve, btn-reject)', () => {

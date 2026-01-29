@@ -20785,6 +20785,12 @@
 
     // Save current room state before switching
     function saveCurrentRoomState() {
+      // Check if external code requested to skip this save (e.g., when loading new project data)
+      if (window._skipNextRoomSave) {
+        window._skipNextRoomSave = false;
+        return;
+      }
+
       const room = getCurrentRoom();
       if (room) {
         room.width = roomWidth;

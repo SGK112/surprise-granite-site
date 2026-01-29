@@ -4531,8 +4531,9 @@
               <line x1="12" y1="18" x2="12" y2="12"/>
               <line x1="9" y1="15" x2="15" y2="15"/>
             </svg>
-            <p>Drag & drop PDF here or click to browse</p>
-            <input type="file" id="pdfFileInput" accept=".pdf" onchange="handlePDFUpload(event)" style="display:none">
+            <p>Drag & drop PDF or image here, or click to browse</p>
+            <p style="font-size:12px; opacity:0.7; margin-top:4px;">AI Vision will analyze your blueprint drawings</p>
+            <input type="file" id="pdfFileInput" accept=".pdf,image/*" onchange="handlePDFUpload(event)" style="display:none">
             <button onclick="document.getElementById('pdfFileInput').click()">Select PDF</button>
           </div>
           <div id="pdfParseResults" class="pdf-parse-results" style="display:none">
@@ -4579,21 +4580,525 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (file) handlePDFFile(file);
   };
 
-  function handlePDFFile(file) {
-    if (file.type !== 'application/pdf') {
-      if (typeof showToast === 'function') showToast('Please select a PDF file', 'warning');
+  async function handlePDFFile(file) {
+    const isImage = file.type.startsWith('image/');
+    const isPDF = file.type === 'application/pdf';
+
+    if (!isImage && !isPDF) {
+      if (typeof showToast === 'function') showToast('Please select a PDF or image file', 'warning');
       return;
     }
 
-    if (typeof showToast === 'function') showToast('PDF parsing is manual - please use the manual entry below', 'info');
-
-    // Show manual entry section
+    // Show loading state
     document.getElementById('pdfParseResults').style.display = 'block';
     document.getElementById('extractedRooms').innerHTML = `
-      <p>PDF uploaded: <strong>${file.name}</strong></p>
-      <p>Please manually enter the cabinet dimensions from the PDF using the text area below, or use our pre-built State Farm Stadium data:</p>
-      <button onclick="loadStateFarmStadiumData()" class="btn-primary">Load State Farm Stadium Data</button>
+      <div style="text-align:center; padding:20px;">
+        <div class="spinner" style="margin:0 auto 16px;"></div>
+        <p>${isPDF ? 'Converting PDF to image...' : 'Analyzing blueprint with AI Vision...'}</p>
+        <p style="font-size:12px; opacity:0.7;">This may take 15-30 seconds</p>
+      </div>
     `;
+
+    try {
+      let base64Data;
+
+      if (isPDF) {
+        // Convert PDF to image (handles multi-page selection)
+        base64Data = await convertPDFToImage(file);
+
+        // If null, user is selecting a page from multi-page PDF
+        if (!base64Data) return;
+      } else {
+        // Read image as base64
+        base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Update loading message
+      document.getElementById('extractedRooms').innerHTML = `
+        <div style="text-align:center; padding:20px;">
+          <div class="spinner" style="margin:0 auto 16px;"></div>
+          <p>Analyzing blueprint with AI Vision...</p>
+          <p style="font-size:12px; opacity:0.7;">This may take 15-30 seconds</p>
+        </div>
+      `;
+
+      await analyzeWithAIVision(base64Data, file.name);
+    } catch (error) {
+      console.error('File processing failed:', error);
+      showManualEntryFallback(file.name, error.message);
+    }
+  }
+
+  // Load PDF.js library
+  async function loadPDFJS() {
+    if (!window.pdfjsLib) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      document.head.appendChild(script);
+      await new Promise(resolve => script.onload = resolve);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  }
+
+  // Handle multi-page PDF - show page selector
+  async function handleMultiPagePDF(file) {
+    await loadPDFJS();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const numPages = pdf.numPages;
+
+    // Store PDF for later use
+    window._currentPDF = pdf;
+    window._currentPDFName = file.name;
+
+    if (numPages === 1) {
+      // Single page - analyze directly
+      const base64 = await renderPDFPage(pdf, 1, 2.0);
+      return base64;
+    }
+
+    // Multi-page - show page thumbnails
+    document.getElementById('extractedRooms').innerHTML = `
+      <div style="margin-bottom:16px;">
+        <h4 style="margin:0 0 8px;">Select a page to analyze (${numPages} pages)</h4>
+        <p style="font-size:13px; opacity:0.7;">Click on a page thumbnail to analyze it with AI Vision</p>
+      </div>
+      <div id="pdfPageThumbnails" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:12px; max-height:300px; overflow-y:auto;"></div>
+    `;
+
+    const thumbnailContainer = document.getElementById('pdfPageThumbnails');
+
+    // Generate thumbnails for first 10 pages (or all if less)
+    const pagesToShow = Math.min(numPages, 10);
+    for (let i = 1; i <= pagesToShow; i++) {
+      const thumbBase64 = await renderPDFPage(pdf, i, 0.3);
+      const thumb = document.createElement('div');
+      thumb.className = 'pdf-page-thumb';
+      thumb.style.cssText = 'cursor:pointer; border:2px solid rgba(255,255,255,0.2); border-radius:8px; overflow:hidden; transition:all 0.2s;';
+      thumb.innerHTML = `
+        <img src="${thumbBase64}" style="width:100%; display:block;" alt="Page ${i}"/>
+        <div style="text-align:center; padding:4px; font-size:12px; background:rgba(0,0,0,0.5);">Page ${i}</div>
+      `;
+      thumb.onclick = () => analyzePDFPage(i);
+      thumb.onmouseenter = () => thumb.style.borderColor = '#f9cb00';
+      thumb.onmouseleave = () => thumb.style.borderColor = 'rgba(255,255,255,0.2)';
+      thumbnailContainer.appendChild(thumb);
+    }
+
+    if (numPages > 10) {
+      const moreMsg = document.createElement('div');
+      moreMsg.style.cssText = 'grid-column:1/-1; text-align:center; padding:8px; font-size:13px; opacity:0.7;';
+      moreMsg.textContent = `Showing first 10 of ${numPages} pages`;
+      thumbnailContainer.appendChild(moreMsg);
+    }
+
+    return null; // Signal that we're showing page selector
+  }
+
+  // Analyze specific PDF page
+  window.analyzePDFPage = async function(pageNum) {
+    if (!window._currentPDF) return;
+
+    document.getElementById('extractedRooms').innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        <div class="spinner" style="margin:0 auto 16px;"></div>
+        <p>Analyzing page ${pageNum} with AI Vision...</p>
+        <p style="font-size:12px; opacity:0.7;">This may take 15-30 seconds</p>
+      </div>
+    `;
+
+    try {
+      const base64 = await renderPDFPage(window._currentPDF, pageNum, 2.0);
+      await analyzeWithAIVision(base64, `${window._currentPDFName} (Page ${pageNum})`);
+    } catch (error) {
+      console.error('PDF page analysis failed:', error);
+      showManualEntryFallback(window._currentPDFName, error.message);
+    }
+  };
+
+  // Render a PDF page to base64 image
+  async function renderPDFPage(pdf, pageNum, scale) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+
+    return canvas.toDataURL('image/png');
+  }
+
+  // Convert PDF first page to base64 image using PDF.js (legacy single-page)
+  async function convertPDFToImage(file) {
+    const result = await handleMultiPagePDF(file);
+    return result; // null if showing page selector, base64 if single page
+  }
+
+  // Analyze blueprint with AI Vision API (uses production endpoint)
+  const AI_API_BASE = 'https://surprise-granite-email-api.onrender.com';
+
+  async function analyzeWithAIVision(imageBase64, fileName) {
+    try {
+      const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: imageBase64,
+          projectType: 'commercial'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('AI Blueprint Analysis:', data);
+
+      if (data.rooms && data.rooms.length > 0) {
+        // Convert AI results to room format
+        convertAIResultsToRooms(data, fileName);
+      } else {
+        showManualEntryFallback(fileName, 'No rooms detected in the image');
+      }
+
+    } catch (error) {
+      console.error('AI Vision API error:', error);
+      showManualEntryFallback(fileName, error.message);
+    }
+  }
+
+  // Convert AI analysis results to room/cabinet format
+  function convertAIResultsToRooms(aiData, fileName) {
+    const parsedRooms = [];
+
+    aiData.rooms.forEach((room, index) => {
+      const roomData = {
+        name: room.name || `Room ${index + 1}`,
+        fullName: room.name || `Room ${index + 1} from ${fileName}`,
+        cabinets: [],
+        width: room.sqft ? Math.ceil(Math.sqrt(room.sqft) * 1.2) : 16,  // Estimate room width
+        depth: room.sqft ? Math.ceil(Math.sqrt(room.sqft) / 1.2) : 12   // Estimate room depth
+      };
+
+      // Extract cabinet data from room materials
+      if (room.materials) {
+        const mats = room.materials;
+
+        // Create cabinet entries based on detected materials
+        if (mats.cabinets) {
+          const upperLF = mats.cabinets.upperLF || 0;
+          const lowerLF = mats.cabinets.lowerLF || 0;
+
+          // Convert linear feet to cabinet items (assume 3ft per cabinet)
+          const numUpper = Math.ceil(upperLF / 3);
+          const numLower = Math.ceil(lowerLF / 3);
+
+          for (let i = 0; i < numLower; i++) {
+            roomData.cabinets.push({
+              number: String(roomData.cabinets.length + 1),
+              name: 'Base Cabinet',
+              width: 36,
+              depth: 24,
+              height: 32
+            });
+          }
+
+          for (let i = 0; i < numUpper; i++) {
+            roomData.cabinets.push({
+              number: String(roomData.cabinets.length + 1),
+              name: 'Upper Cabinet',
+              width: 36,
+              depth: 12,
+              height: 30
+            });
+          }
+        }
+
+        // Add countertop as island if significant
+        if (mats.countertops && mats.countertops.sqft > 30) {
+          roomData.cabinets.push({
+            number: String(roomData.cabinets.length + 1),
+            name: 'Island',
+            width: 48,
+            depth: 36,
+            height: 36
+          });
+        }
+      } else if (room.material && room.material.includes('Cabinet')) {
+        // Fallback: if no detailed materials but "Cabinets" mentioned in material string
+        // Create some placeholder cabinets based on room size
+        const estimatedCabinets = Math.max(2, Math.ceil((room.sqft || 100) / 40));
+        for (let i = 0; i < estimatedCabinets; i++) {
+          roomData.cabinets.push({
+            number: String(roomData.cabinets.length + 1),
+            name: i % 2 === 0 ? 'Base Cabinet' : 'Upper Cabinet',
+            width: 36,
+            depth: i % 2 === 0 ? 24 : 12,
+            height: i % 2 === 0 ? 32 : 30
+          });
+        }
+      }
+
+      // Only add rooms that have cabinets
+      if (roomData.cabinets.length > 0) {
+        parsedRooms.push(roomData);
+      }
+    });
+
+    // Store raw AI data for reference
+    window._aiAnalysisData = aiData;
+
+    if (parsedRooms.length > 0) {
+      // Store for import functions
+      window._parsedRooms = parsedRooms;
+
+      // Show results
+      document.getElementById('extractedRooms').innerHTML = `
+        <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:16px; margin-bottom:16px;">
+          <h4 style="color:#22c55e; margin:0 0 8px;">AI Analysis Complete</h4>
+          <p style="margin:0; font-size:14px;">Detected ${parsedRooms.length} room(s) with ${parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} cabinet(s)</p>
+          ${aiData.countertopSqft ? `<p style="margin:4px 0 0; font-size:13px; opacity:0.8;">Countertop: ${aiData.countertopSqft} sqft | Flooring: ${aiData.flooringSqft || 0} sqft</p>` : ''}
+        </div>
+        ${parsedRooms.map((room, i) => `
+          <div class="parsed-room" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>${room.name}</strong>
+                <span style="opacity:0.7; margin-left:8px;">${room.cabinets.length} cabinets</span>
+              </div>
+              <button onclick="importParsedRoom(${i})" class="btn-small">Import This Room</button>
+            </div>
+          </div>
+        `).join('')}
+        <button onclick="importAllParsedRooms()" class="btn-primary" style="margin-top:12px; width:100%;">Import All Rooms</button>
+        <button onclick="showManualSupplementForm()" class="btn-secondary" style="margin-top:8px; width:100%;">Add Missing Details Manually</button>
+      `;
+    } else {
+      // Show partial data if available, with manual entry option
+      showPartialResultsWithManualEntry(aiData, fileName);
+    }
+  }
+
+  // Show partial AI results with option to add missing data manually
+  function showPartialResultsWithManualEntry(aiData, fileName) {
+    const hasAnyData = aiData && (aiData.totalArea > 0 || aiData.countertopSqft > 0 || aiData.rooms?.length > 0);
+
+    document.getElementById('extractedRooms').innerHTML = `
+      <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:16px; margin-bottom:16px;">
+        <h4 style="color:#f59e0b; margin:0 0 8px;">Partial Analysis</h4>
+        <p style="margin:0; font-size:13px; opacity:0.8;">
+          ${hasAnyData ? 'Some data detected but no cabinet details found.' : 'Could not extract cabinet data from this image.'}
+        </p>
+      </div>
+
+      ${hasAnyData ? `
+        <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:12px; margin-bottom:16px;">
+          <h5 style="margin:0 0 8px;">Detected Information:</h5>
+          <ul style="margin:0; padding-left:20px; font-size:13px;">
+            ${aiData.totalArea ? `<li>Total Area: ${aiData.totalArea} sqft</li>` : ''}
+            ${aiData.countertopSqft ? `<li>Countertop: ${aiData.countertopSqft} sqft</li>` : ''}
+            ${aiData.flooringSqft ? `<li>Flooring: ${aiData.flooringSqft} sqft</li>` : ''}
+            ${aiData.tileSqft ? `<li>Tile: ${aiData.tileSqft} sqft</li>` : ''}
+            ${aiData.rooms?.length ? `<li>Rooms identified: ${aiData.rooms.map(r => r.name).join(', ')}</li>` : ''}
+          </ul>
+        </div>
+      ` : ''}
+
+      <p style="font-size:14px; margin-bottom:12px;">Enter cabinet details manually:</p>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:13px; margin-bottom:4px;">Room Name:</label>
+        <input type="text" id="manualRoomName" value="${aiData?.rooms?.[0]?.name || 'Kitchen'}"
+          style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div>
+          <label style="display:block; font-size:13px; margin-bottom:4px;">Room Width (ft):</label>
+          <input type="number" id="manualRoomWidth" value="${aiData?.totalArea ? Math.ceil(Math.sqrt(aiData.totalArea) * 1.2) : 16}"
+            style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+        </div>
+        <div>
+          <label style="display:block; font-size:13px; margin-bottom:4px;">Room Depth (ft):</label>
+          <input type="number" id="manualRoomDepth" value="${aiData?.totalArea ? Math.ceil(Math.sqrt(aiData.totalArea) / 1.2) : 12}"
+            style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div>
+          <label style="display:block; font-size:13px; margin-bottom:4px;">Base Cabinets (qty):</label>
+          <input type="number" id="manualBaseCabinets" value="4" min="0"
+            style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+        </div>
+        <div>
+          <label style="display:block; font-size:13px; margin-bottom:4px;">Upper Cabinets (qty):</label>
+          <input type="number" id="manualUpperCabinets" value="4" min="0"
+            style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+          <input type="checkbox" id="manualHasIsland"> Include Island
+        </label>
+      </div>
+
+      <button onclick="createRoomFromManualEntry()" class="btn-primary" style="width:100%;">Create Room</button>
+
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1);">
+        <p style="font-size:12px; opacity:0.7; margin-bottom:8px;">Or load sample data:</p>
+        <button onclick="loadStateFarmStadiumData()" class="btn-secondary" style="width:100%;">Load State Farm Stadium Data</button>
+      </div>
+    `;
+  }
+
+  // Create room from manual entry form
+  window.createRoomFromManualEntry = function() {
+    const roomName = document.getElementById('manualRoomName')?.value || 'Kitchen';
+    const roomWidth = parseInt(document.getElementById('manualRoomWidth')?.value) || 16;
+    const roomDepth = parseInt(document.getElementById('manualRoomDepth')?.value) || 12;
+    const baseCabinets = parseInt(document.getElementById('manualBaseCabinets')?.value) || 0;
+    const upperCabinets = parseInt(document.getElementById('manualUpperCabinets')?.value) || 0;
+    const hasIsland = document.getElementById('manualHasIsland')?.checked || false;
+
+    const cabinets = [];
+
+    for (let i = 0; i < baseCabinets; i++) {
+      cabinets.push({ number: String(cabinets.length + 1), name: 'Base Cabinet', width: 36, depth: 24, height: 32 });
+    }
+    for (let i = 0; i < upperCabinets; i++) {
+      cabinets.push({ number: String(cabinets.length + 1), name: 'Upper Cabinet', width: 36, depth: 12, height: 30 });
+    }
+    if (hasIsland) {
+      cabinets.push({ number: String(cabinets.length + 1), name: 'Island', width: 48, depth: 36, height: 36 });
+    }
+
+    if (cabinets.length === 0) {
+      if (typeof showToast === 'function') showToast('Add at least one cabinet', 'warning');
+      return;
+    }
+
+    window._parsedRooms = [{
+      name: roomName,
+      fullName: roomName,
+      width: roomWidth,
+      depth: roomDepth,
+      cabinets: cabinets
+    }];
+
+    window.importAllParsedRooms();
+  };
+
+  // Show manual supplement form for adding to existing parsed rooms
+  window.showManualSupplementForm = function() {
+    const container = document.getElementById('extractedRooms');
+    const existingContent = container.innerHTML;
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <button onclick="document.getElementById('extractedRooms').innerHTML = window._savedExtractedContent" class="btn-small" style="margin-bottom:12px;">← Back to Results</button>
+
+        <h4 style="margin:0 0 12px;">Add Additional Room/Cabinets</h4>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:13px; margin-bottom:4px;">Room Name:</label>
+          <input type="text" id="supplementRoomName" value="Additional Room"
+            style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:13px; margin-bottom:4px;">Width (ft):</label>
+            <input type="number" id="supplementRoomWidth" value="14"
+              style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; margin-bottom:4px;">Depth (ft):</label>
+            <input type="number" id="supplementRoomDepth" value="10"
+              style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:13px; margin-bottom:4px;">Base Cabinets:</label>
+            <input type="number" id="supplementBaseCabinets" value="3" min="0"
+              style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; margin-bottom:4px;">Upper Cabinets:</label>
+            <input type="number" id="supplementUpperCabinets" value="3" min="0"
+              style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white;">
+          </div>
+        </div>
+
+        <button onclick="addSupplementRoom()" class="btn-primary" style="width:100%;">Add Room to Import List</button>
+      </div>
+    `;
+
+    window._savedExtractedContent = existingContent;
+  };
+
+  // Add supplemental room to parsed rooms
+  window.addSupplementRoom = function() {
+    const roomName = document.getElementById('supplementRoomName')?.value || 'Additional Room';
+    const roomWidth = parseInt(document.getElementById('supplementRoomWidth')?.value) || 14;
+    const roomDepth = parseInt(document.getElementById('supplementRoomDepth')?.value) || 10;
+    const baseCabinets = parseInt(document.getElementById('supplementBaseCabinets')?.value) || 0;
+    const upperCabinets = parseInt(document.getElementById('supplementUpperCabinets')?.value) || 0;
+
+    const cabinets = [];
+    for (let i = 0; i < baseCabinets; i++) {
+      cabinets.push({ number: String(cabinets.length + 1), name: 'Base Cabinet', width: 36, depth: 24, height: 32 });
+    }
+    for (let i = 0; i < upperCabinets; i++) {
+      cabinets.push({ number: String(cabinets.length + 1), name: 'Upper Cabinet', width: 36, depth: 12, height: 30 });
+    }
+
+    if (cabinets.length === 0) {
+      if (typeof showToast === 'function') showToast('Add at least one cabinet', 'warning');
+      return;
+    }
+
+    if (!window._parsedRooms) window._parsedRooms = [];
+
+    window._parsedRooms.push({
+      name: roomName,
+      fullName: roomName,
+      width: roomWidth,
+      depth: roomDepth,
+      cabinets: cabinets
+    });
+
+    if (typeof showToast === 'function') showToast(`Added ${roomName} with ${cabinets.length} cabinets`, 'success');
+
+    // Go back and show updated results
+    document.getElementById('extractedRooms').innerHTML = window._savedExtractedContent;
+
+    // Update the count in the header
+    const header = document.querySelector('#extractedRooms h4');
+    if (header) {
+      header.nextElementSibling.textContent = `Detected ${window._parsedRooms.length} room(s) with ${window._parsedRooms.reduce((s,r) => s + r.cabinets.length, 0)} cabinet(s)`;
+    }
+  };
+
+  // Fallback to manual entry (legacy)
+  function showManualEntryFallback(fileName, errorMsg) {
+    showPartialResultsWithManualEntry(window._aiAnalysisData || {}, fileName);
   }
 
   window.loadStateFarmStadiumData = function() {
@@ -4752,11 +5257,9 @@ SB36 - Sink Base 36&quot;"></textarea>
       window.elements.length = 0;
     }
 
-    const ppf = window.pixelsPerFoot || 40;
-
-    // Create rooms using the existing room system
+    // Create rooms using FEET-based positions (xFt, yFt)
+    // Room Designer converts these to pixels using current pixelsPerFoot
     stateFarmRooms.forEach((roomData, roomIndex) => {
-      // Create room using existing system
       const newRoom = {
         id: 'room-sf-' + Date.now() + '-' + roomIndex,
         name: roomData.name,
@@ -4767,68 +5270,63 @@ SB36 - Sink Base 36&quot;"></textarea>
         offsetY: 0,
         elements: [],
         walls: [],
-        floorPlan: 'empty'
+        floorPlan: 'empty',
+        pixelsPerFoot: 40 // Store scale for proper deserialization
       };
 
-      // Process each wall section
+      // Flatten all cabinets from wall sections
+      const allCabinets = [];
       roomData.walls.forEach(wallSection => {
-        let xStart = 0;
-        let yStart = 0;
-        const cabinetDepthFeet = 2; // Standard 24" depth
+        wallSection.cabinets.forEach(cab => {
+          allCabinets.push({
+            ...cab,
+            wallPosition: wallSection.position,
+            yOffset: wallSection.yOffset || 0
+          });
+        });
+      });
 
-        // Position based on wall
-        if (wallSection.position === 'top' || wallSection.position === 'top-upper') {
-          xStart = 0.5 * ppf; // Start 6" from edge
-          yStart = wallSection.yOffset ? (wallSection.yOffset * ppf) : 0;
-        } else if (wallSection.position === 'right') {
-          xStart = (roomData.width - 3) * ppf; // Near right wall
-          yStart = 0.5 * ppf;
-        } else if (wallSection.position === 'left') {
-          xStart = 0;
-          yStart = 0.5 * ppf;
-        } else if (wallSection.position === 'bottom') {
-          xStart = 0.5 * ppf;
-          yStart = (roomData.depth - cabinetDepthFeet) * ppf;
+      // Position cabinets - ALL POSITIONS IN FEET
+      let xFeet = 0.5; // Start 6" from left edge
+      let yFeet = 0;   // Start at top wall
+      const gapFeet = 0.25; // 3" gap between cabinets
+
+      allCabinets.forEach((cab, cabIndex) => {
+        const elementType = getElementType(cab.name);
+        const widthFeet = cab.width / 12;  // Convert inches to feet
+        const depthFeet = Math.min((cab.depth || 24) / 12, 2); // Standard 2ft depth max
+
+        // Check if this is on a different row (upper cabinets)
+        if (cab.yOffset && cab.yOffset > 0 && yFeet !== cab.yOffset) {
+          xFeet = 0.5; // Reset X
+          yFeet = cab.yOffset;
         }
 
-        let currentX = xStart;
-        let currentY = yStart;
+        // Wrap to next row if exceeding room width
+        if (xFeet + widthFeet > roomData.width - 0.5) {
+          xFeet = 0.5;
+          yFeet += 3; // Move down 3 feet for next row
+        }
 
-        wallSection.cabinets.forEach((cab, cabIndex) => {
-          const elementType = getElementType(cab.name);
-          const widthFeet = cab.width / 12;
-          const depthFeet = Math.min(cab.depth / 12, 2.5); // Cap depth at 2.5ft for display
+        // Create element with FEET-based positions
+        const element = {
+          id: `sf_r${roomIndex}_c${cabIndex}_${Date.now()}`,
+          type: elementType,
+          // CRITICAL: Use xFt and yFt (feet), NOT x and y (pixels)
+          xFt: xFeet,
+          yFt: yFeet,
+          width: widthFeet,
+          height: depthFeet,
+          color: getElementColor(elementType),
+          label: `#${cab.number} ${cab.name}`,
+          rotation: 0,
+          locked: false
+        };
 
-          // For vertical walls (left/right), swap width/height and stack vertically
-          const isVerticalWall = wallSection.position === 'left' || wallSection.position === 'right';
+        newRoom.elements.push(element);
 
-          const element = {
-            id: `sf_${roomIndex}_${cabIndex}_${Date.now()}`,
-            type: elementType,
-            x: currentX,
-            y: currentY,
-            width: isVerticalWall ? depthFeet : widthFeet,
-            height: isVerticalWall ? widthFeet : depthFeet,
-            color: getElementColor(elementType),
-            label: `#${cab.number} ${cab.name}`,
-            rotation: 0,
-            locked: false,
-            // Store actual dimensions for reference
-            actualWidth: cab.width,
-            actualDepth: cab.depth,
-            actualHeight: cab.height,
-            lamInterior: cab.lamInterior || false
-          };
-
-          newRoom.elements.push(element);
-
-          // Move to next position
-          if (isVerticalWall) {
-            currentY += (widthFeet * ppf) + 4; // Stack vertically
-          } else {
-            currentX += (widthFeet * ppf) + 4; // Arrange horizontally
-          }
-        });
+        // Move to next position (in feet)
+        xFeet += widthFeet + gapFeet;
       });
 
       // Add room to existing system
@@ -4842,40 +5340,20 @@ SB36 - Sink Base 36&quot;"></textarea>
     // Close import modal
     document.getElementById('pdfImporterModal')?.remove();
 
-    // Switch to first room using existing room system
+    // Load first room - use switchToRoom but skip its save logic
     if (window.rooms && window.rooms.length > 0) {
-      const firstRoom = window.rooms[0];
-
-      // Load first room's elements into canvas
-      if (window.elements) {
-        window.elements.length = 0;
-        firstRoom.elements.forEach(el => window.elements.push({...el}));
-      }
-
-      // Set room dimensions
-      if (typeof window.roomWidth !== 'undefined') {
-        window.roomWidth = firstRoom.width;
-      }
-      if (typeof window.roomDepth !== 'undefined') {
-        window.roomDepth = firstRoom.depth;
-      }
-
-      // Set current room
-      if (typeof window.currentRoomId !== 'undefined') {
-        window.currentRoomId = firstRoom.id;
-      }
-
-      // Update room list UI
+      // Update room list UI first
       if (typeof window.updateRoomList === 'function') {
         window.updateRoomList();
       }
 
-      // Fit to screen and redraw
-      if (typeof window.fitToScreen === 'function') {
-        window.fitToScreen();
-      }
-      if (typeof window.draw === 'function') {
-        window.draw();
+      // Flag to skip save on next switchToRoom call
+      window._skipNextRoomSave = true;
+
+      // Use original switchToRoom which deserializes xFt/yFt properly
+      const switchFn = window._originalSwitchToRoom || window.switchToRoom;
+      if (typeof switchFn === 'function') {
+        switchFn(window.rooms[0].id);
       }
     }
 
@@ -4998,48 +5476,48 @@ SB36 - Sink Base 36&quot;"></textarea>
     return colors[type] || '#8B7355';
   }
 
-  // Import single parsed room to current canvas
+  // Import single parsed room to current canvas (adds to existing elements)
   window.importParsedRoom = function(index) {
     const room = window._parsedRooms?.[index];
     if (!room) return;
 
     const ppf = window.pixelsPerFoot || 40;
-    let xPos = 20; // Start position in pixels
-    let yPos = 0;  // Along top wall
+    // For adding to current canvas, use PIXELS for x/y
+    let xFeet = 0.5; // Start 6" from edge
+    let yFeet = 0;   // Top wall
+    const gapFeet = 0.25;
+    const roomWidthFeet = window.roomWidth || 20;
 
     room.cabinets.forEach((cab, i) => {
       const elementType = getElementTypeFromName(cab.name);
       const widthFeet = cab.width / 12;
-      const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
+      const depthFeet = Math.min((cab.depth || 24) / 12, 2);
 
+      // Wrap if needed
+      if (xFeet + widthFeet > roomWidthFeet - 0.5) {
+        xFeet = 0.5;
+        yFeet += 3;
+      }
+
+      // Convert feet to pixels for direct canvas placement
       const newElement = {
         id: `imp_${cab.number}_${Date.now()}_${i}`,
         type: elementType,
         label: `#${cab.number} ${cab.name}`,
-        x: xPos,
-        y: yPos,
+        x: xFeet * ppf,
+        y: yFeet * ppf,
         width: widthFeet,
         height: depthFeet,
         color: getColorForElementType(elementType),
         rotation: 0,
-        locked: false,
-        actualWidth: cab.width,
-        actualDepth: cab.depth,
-        actualHeight: cab.height,
-        lamInterior: cab.lamInterior || false
+        locked: false
       };
 
       if (window.elements) {
         window.elements.push(newElement);
       }
 
-      xPos += (widthFeet * ppf) + 4;
-
-      // Wrap to next row if too wide
-      if (xPos > (window.roomWidth || 20) * ppf - 100) {
-        xPos = 20;
-        yPos += 3 * ppf; // Move down 3 feet
-      }
+      xFeet += widthFeet + gapFeet;
     });
 
     if (typeof window.draw === 'function') window.draw();
@@ -5063,58 +5541,59 @@ SB36 - Sink Base 36&quot;"></textarea>
     }
 
     parsedRooms.forEach((room, roomIndex) => {
-      // Calculate room size based on total cabinet width
+      // Use AI-detected room size or calculate from cabinet widths
       const totalWidth = room.cabinets.reduce((sum, c) => sum + (c.width || 24), 0);
-      const roomWidth = Math.max(Math.ceil(totalWidth / 12) + 4, 12);
+      const calculatedWidth = Math.max(Math.ceil(totalWidth / 12) + 4, 12);
+      const roomWidth = room.width || calculatedWidth;
+      const roomDepth = room.depth || 12;
 
       const newRoom = {
         id: 'room-' + Date.now() + '-' + roomIndex,
         name: room.fullName || room.name || `Room ${roomIndex + 1}`,
         type: 'other',
         width: roomWidth,
-        depth: 12,
+        depth: roomDepth,
         offsetX: 0,
         offsetY: 0,
         elements: [],
         walls: [],
-        floorPlan: 'empty'
+        floorPlan: 'empty',
+        pixelsPerFoot: 40 // Store scale for deserialization
       };
 
-      let xPos = 20;
-      let yPos = 0;
+      // Use FEET for positions (xFt, yFt)
+      let xFeet = 0.5;
+      let yFeet = 0;
+      const gapFeet = 0.25;
 
       room.cabinets.forEach((cab, cabIndex) => {
         const elementType = getElementTypeFromName(cab.name);
         const widthFeet = cab.width / 12;
-        const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
+        const depthFeet = Math.min((cab.depth || 24) / 12, 2);
+
+        // Wrap to next row if too wide
+        if (xFeet + widthFeet > roomWidth - 0.5) {
+          xFeet = 0.5;
+          yFeet += 3;
+        }
 
         newRoom.elements.push({
           id: `imp_r${roomIndex}_c${cabIndex}_${Date.now()}`,
           type: elementType,
           label: `#${cab.number} ${cab.name}`,
-          x: xPos,
-          y: yPos,
+          // FEET-based positions
+          xFt: xFeet,
+          yFt: yFeet,
           width: widthFeet,
           height: depthFeet,
           color: getColorForElementType(elementType),
           rotation: 0,
-          locked: false,
-          actualWidth: cab.width,
-          actualDepth: cab.depth,
-          actualHeight: cab.height || 32,
-          lamInterior: cab.lamInterior || false
+          locked: false
         });
 
-        xPos += (widthFeet * ppf) + 4;
-
-        // Wrap to next row if too wide
-        if (xPos > (roomWidth - 2) * ppf) {
-          xPos = 20;
-          yPos += 3 * ppf;
-        }
+        xFeet += widthFeet + gapFeet;
       });
 
-      // Add to existing room system
       if (window.rooms) {
         window.rooms.push(newRoom);
       }
@@ -5125,41 +5604,23 @@ SB36 - Sink Base 36&quot;"></textarea>
     // Close modal
     document.getElementById('pdfImporterModal')?.remove();
 
-    // Switch to first room using existing room system
+    // Switch to first room using original switchToRoom (handles deserialization)
     if (window.rooms && window.rooms.length > 0) {
-      const firstRoom = window.rooms[0];
-
-      // Load first room's elements
-      if (window.elements) {
-        window.elements.length = 0;
-        firstRoom.elements.forEach(el => window.elements.push({...el}));
-      }
-
-      // Set room dimensions
-      if (typeof window.roomWidth !== 'undefined') {
-        window.roomWidth = firstRoom.width;
-      }
-      if (typeof window.roomDepth !== 'undefined') {
-        window.roomDepth = firstRoom.depth;
-      }
-
-      // Update current room
-      window.currentRoomId = firstRoom.id;
-
-      // Update UI
       if (typeof window.updateRoomList === 'function') {
         window.updateRoomList();
       }
-      if (typeof window.fitToScreen === 'function') {
-        window.fitToScreen();
-      }
-      if (typeof window.draw === 'function') {
-        window.draw();
+
+      // Flag to skip save on next switchToRoom call (prevents overwriting new data)
+      window._skipNextRoomSave = true;
+
+      const switchFn = window._originalSwitchToRoom || window.switchToRoom;
+      if (typeof switchFn === 'function') {
+        switchFn(window.rooms[0].id);
       }
     }
 
     if (typeof showToast === 'function') {
-      showToast(`Imported ${parsedRooms.length} rooms - use Room tabs to switch between them`, 'success');
+      showToast(`Imported ${parsedRooms.length} rooms - use Room tabs to switch`, 'success');
     }
   };
 
@@ -6107,5 +6568,5 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (typeof showToast === 'function') showToast('Approval link generated!', 'success');
   };
 
-  console.log('Room Designer Pro Features v7.0 loaded');
+  console.log('Room Designer Pro Features v7.3 loaded - AI Vision + Manual Entry Fallback');
 })();
