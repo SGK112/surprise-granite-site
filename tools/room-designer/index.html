@@ -756,6 +756,277 @@
     }
 
     /* =============================================
+       FAVORITES SECTION
+       ============================================= */
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      min-height: 60px;
+    }
+
+    .favorites-empty, .notes-empty {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 11px;
+      gap: 4px;
+    }
+
+    .favorite-item {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .favorite-item:hover {
+      background: var(--dark-hover);
+      border-color: var(--gold);
+      transform: scale(1.05);
+    }
+
+    .favorite-item .fav-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .favorite-item .fav-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .favorite-item .fav-remove {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      background: #ef4444;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .favorite-item:hover .fav-remove {
+      display: flex;
+    }
+
+    /* =============================================
+       NOTES SECTION
+       ============================================= */
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .note-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .note-item:hover {
+      background: var(--dark-hover);
+      border-color: var(--gold);
+    }
+
+    .note-item.selected {
+      border-color: var(--gold);
+      background: rgba(249, 203, 0, 0.1);
+    }
+
+    .note-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .note-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .note-text {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .note-meta {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .note-item:hover .note-actions {
+      opacity: 1;
+    }
+
+    .note-action-btn {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .note-action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--text);
+    }
+
+    /* Note Pin on Canvas */
+    .canvas-note-pin {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: var(--gold);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      transition: transform 0.2s;
+    }
+
+    .canvas-note-pin:hover {
+      transform: rotate(-45deg) scale(1.1);
+    }
+
+    .canvas-note-pin::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 8px;
+      height: 8px;
+      background: var(--dark-primary);
+      border-radius: 50%;
+    }
+
+    .canvas-note-pin.red { background: #ef4444; }
+    .canvas-note-pin.blue { background: #3b82f6; }
+    .canvas-note-pin.green { background: #22c55e; }
+    .canvas-note-pin.purple { background: #a855f7; }
+    .canvas-note-pin.orange { background: #f97316; }
+
+    /* Note Tooltip */
+    .note-tooltip {
+      position: absolute;
+      background: var(--dark-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      max-width: 200px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 101;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .note-tooltip.show {
+      opacity: 1;
+    }
+
+    /* Smart Guides */
+    .smart-guide {
+      position: absolute;
+      background: rgba(99, 102, 241, 0.8);
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .smart-guide.horizontal {
+      height: 1px;
+      width: 100%;
+    }
+
+    .smart-guide.vertical {
+      width: 1px;
+      height: 100%;
+    }
+
+    .smart-guide-label {
+      position: absolute;
+      background: rgba(99, 102, 241, 0.9);
+      color: white;
+      font-size: 9px;
+      padding: 2px 4px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    /* Element Grouping Indicator */
+    .group-indicator {
+      position: absolute;
+      border: 2px dashed var(--gold);
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 45;
+    }
+
+    .group-badge {
+      position: absolute;
+      top: -10px;
+      left: 4px;
+      background: var(--gold);
+      color: var(--dark-primary);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* =============================================
        UPGRADED TOOL GRID - Enhanced UX
        ============================================= */
     .tool-grid {
@@ -9991,6 +10262,48 @@
           </div>
         </div>
 
+        <!-- Quick Favorites -->
+        <div class="sidebar-section" id="favoritesSection">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Your favorite elements and materials">
+            <span class="sidebar-title">⭐ Favorites</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div id="favoritesList" class="favorites-grid">
+              <div class="favorites-empty" id="favoritesEmpty">
+                <span style="font-size: 20px;">⭐</span>
+                <span>No favorites yet</span>
+                <span style="font-size: 10px; color: var(--text-muted);">Right-click elements to add</span>
+              </div>
+            </div>
+            <div class="favorites-actions" style="display: none;" id="favoritesActions">
+              <button class="btn btn-secondary btn-sm" onclick="clearFavorites()" style="width: 100%; font-size: 10px;">
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Design Notes -->
+        <div class="sidebar-section" id="notesSection">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Add notes and annotations">
+            <span class="sidebar-title">📝 Notes</span>
+            <span class="sidebar-toggle">▼</span>
+          </div>
+          <div class="sidebar-content">
+            <div id="notesList" class="notes-list">
+              <div class="notes-empty" id="notesEmpty">
+                <span style="font-size: 20px;">📝</span>
+                <span>No notes yet</span>
+                <span style="font-size: 10px; color: var(--text-muted);">Click canvas to add a note</span>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="enableNoteMode()" id="addNoteBtn" style="width: 100%; margin-top: 8px;">
+              + Add Note
+            </button>
+          </div>
+        </div>
+
         <!-- Floor Plans -->
         <div class="sidebar-section">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Choose a room layout">
@@ -13491,6 +13804,126 @@
         'wall': 0
       }
     };
+
+    // ===== ELEMENT TYPE CATEGORIES =====
+    // Standardized type checking to avoid inconsistent OR chains
+    const ELEMENT_CATEGORIES = {
+      countertops: ['countertop', 'countertop-l', 'countertop-u', 'countertop-corner', 'island-countertop'],
+      baseCabinets: ['base-cabinet', 'sink-base', 'drawer-base', 'corner-cabinet', 'lazy-susan', 'blind-corner', 'island'],
+      wallCabinets: ['wall-cabinet', 'microwave-cabinet', 'above-microwave-cabinet', 'glass-cabinet'],
+      tallCabinets: ['tall-cabinet', 'pantry', 'fridge-cabinet', 'single-oven-cabinet', 'tall-oven', 'double-oven-cabinet', 'linen-closet'],
+      appliances: ['refrigerator', 'range', 'oven', 'microwave', 'range-hood', 'cooktop', 'dishwasher', 'washer', 'dryer'],
+      plumbing: ['sink', 'toilet', 'bathtub', 'bathtub-freestanding', 'shower-pan', 'pedestal-sink'],
+      fixtures: ['faucet', 'mirror', 'towel-bar', 'toilet-paper', 'shower-niche', 'shower-curb'],
+      walls: ['wall', 'wall-block', 'wall-concrete', 'wall-framed', 'pony-wall', 'knee-wall', 'shower-wall'],
+      doors: ['door', 'door-entry', 'door-sliding', 'door-french', 'door-pocket'],
+      windows: ['window', 'window-large', 'window-small', 'skylight']
+    };
+
+    // Utility function to check element category
+    function isElementCategory(type, category) {
+      const types = ELEMENT_CATEGORIES[category];
+      if (!types) return false;
+      return types.includes(type) || types.some(t => type.startsWith(t + '-'));
+    }
+
+    // Check if element is any type of cabinet
+    function isCabinetType(type) {
+      return isElementCategory(type, 'baseCabinets') ||
+             isElementCategory(type, 'wallCabinets') ||
+             isElementCategory(type, 'tallCabinets');
+    }
+
+    // Check if element is stone/countertop
+    function isCountertopType(type) {
+      return isElementCategory(type, 'countertops') || type.startsWith('countertop');
+    }
+
+    // ===== UTILITY FUNCTIONS =====
+    // Centralized click-outside handler for dropdowns/modals
+    function setupClickOutsideHandler(triggerEl, dropdownEl, options = {}) {
+      const handler = (e) => {
+        const clickedInside = triggerEl?.contains(e.target) || dropdownEl?.contains(e.target);
+        if (!clickedInside) {
+          if (options.removeClass) dropdownEl.classList.remove(options.removeClass);
+          if (options.setDisplay) dropdownEl.style.display = options.setDisplay;
+          if (options.remove) dropdownEl.remove();
+          if (options.callback) options.callback();
+          document.removeEventListener('click', handler);
+        }
+      };
+      // Delay to prevent immediate trigger
+      setTimeout(() => document.addEventListener('click', handler), 0);
+      return handler;
+    }
+
+    // Debug logging utility (disabled in production)
+    const DEBUG_MODE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    function debugLog(category, message, data = null) {
+      if (!DEBUG_MODE) return;
+      const prefix = `[${category}]`;
+      if (data !== null) {
+        console.log(prefix, message, data);
+      } else {
+        console.log(prefix, message);
+      }
+    }
+
+    // Safe JSON parse with fallback
+    function safeJSONParse(str, fallback = null) {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        debugLog('JSON', 'Parse failed:', e.message);
+        return fallback;
+      }
+    }
+
+    // Safe localStorage operations
+    function safeLocalStorageGet(key, fallback = null) {
+      try {
+        const value = localStorage.getItem(key);
+        return value ? safeJSONParse(value, fallback) : fallback;
+      } catch (e) {
+        debugLog('Storage', `Failed to get ${key}:`, e.message);
+        return fallback;
+      }
+    }
+
+    function safeLocalStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (e) {
+        debugLog('Storage', `Failed to set ${key}:`, e.message);
+        return false;
+      }
+    }
+
+    // Debounce utility for performance
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Throttle utility for frequent events
+    function throttle(func, limit) {
+      let inThrottle;
+      return function(...args) {
+        if (!inThrottle) {
+          func.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      };
+    }
 
     // ===== PRICING & SHARING STATE =====
     const PRICING_STATE = {
@@ -21919,6 +22352,9 @@
     let touchStartPos = null;
     let pinchStartDistance = null;
     let pinchStartZoom = null;
+    let longPressTimeout = null;
+    let isLongPress = false;
+    let twoFingerPanStart = null;
 
     function getTouchPos(touch) {
       const rect = canvas.getBoundingClientRect();
@@ -21930,32 +22366,69 @@
       };
     }
 
+    function getTwoFingerCenter(touches) {
+      return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+      };
+    }
+
     function onTouchStart(e) {
       e.preventDefault();
+      cancelLongPress();
 
       if (e.touches.length === 2) {
-        // Pinch zoom start
+        // Two finger gesture - could be pinch zoom or pan
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         pinchStartDistance = Math.sqrt(dx * dx + dy * dy);
         pinchStartZoom = pixelsPerFoot;
+        twoFingerPanStart = {
+          center: getTwoFingerCenter(e.touches),
+          panX: panX,
+          panY: panY
+        };
         return;
       }
 
       if (e.touches.length === 1) {
         const touch = e.touches[0];
         const touchPos = getTouchPos(touch);
-        touchStartPos = { x: touchPos.offsetX, y: touchPos.offsetY };
+        touchStartPos = { x: touchPos.offsetX, y: touchPos.offsetY, time: Date.now() };
 
         // Detect double-tap
         const now = Date.now();
         if (now - lastTouchTime < 300) {
-          // Double tap - trigger double click handler
-          onDoubleClick({ offsetX: touchPos.offsetX, offsetY: touchPos.offsetY, preventDefault: () => {} });
+          // Double tap - zoom in at touch point
+          const worldX = (touchPos.offsetX - panX) / pixelsPerFoot;
+          const worldY = (touchPos.offsetY - panY) / pixelsPerFoot;
+          const newZoom = Math.min(CONFIG.MAX_PIXELS_PER_FOOT, pixelsPerFoot * 1.5);
+          pixelsPerFoot = newZoom;
+          panX = touchPos.offsetX - worldX * pixelsPerFoot;
+          panY = touchPos.offsetY - worldY * pixelsPerFoot;
+          updateZoomDisplay();
+          draw();
           lastTouchTime = 0;
           return;
         }
         lastTouchTime = now;
+
+        // Start long-press timer for context menu
+        longPressTimeout = setTimeout(() => {
+          isLongPress = true;
+          // Find element at touch position
+          const { x, y } = screenToWorld(touchPos.offsetX, touchPos.offsetY);
+          const touchedElement = [...elements].reverse().find(el => isPointInElement(x, y, el));
+          if (touchedElement) {
+            selectedElement = touchedElement;
+            updateProperties();
+            draw();
+            // Show context menu at touch position
+            showContextMenu(touchPos.clientX, touchPos.clientY, touchedElement);
+            // Vibrate for haptic feedback if supported
+            if (navigator.vibrate) navigator.vibrate(50);
+          }
+        }, 500);
 
         // Simulate mousedown
         onMouseDown({
@@ -21970,35 +22443,60 @@
     function onTouchMove(e) {
       e.preventDefault();
 
-      if (e.touches.length === 2 && pinchStartDistance) {
-        // Pinch zoom
+      // Cancel long press if finger moved
+      if (touchStartPos) {
+        const touch = e.touches[0];
+        if (touch) {
+          const touchPos = getTouchPos(touch);
+          const moveDistance = Math.sqrt(
+            Math.pow(touchPos.offsetX - touchStartPos.x, 2) +
+            Math.pow(touchPos.offsetY - touchStartPos.y, 2)
+          );
+          if (moveDistance > 10) {
+            cancelLongPress();
+          }
+        }
+      }
+
+      if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const scale = distance / pinchStartDistance;
 
-        // Calculate zoom center
-        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const rect = canvas.getBoundingClientRect();
-        const canvasCenterX = centerX - rect.left;
-        const canvasCenterY = centerY - rect.top;
+        // Pinch zoom
+        if (pinchStartDistance) {
+          const scale = distance / pinchStartDistance;
+          const rect = canvas.getBoundingClientRect();
+          const center = getTwoFingerCenter(e.touches);
+          const canvasCenterX = center.x - rect.left;
+          const canvasCenterY = center.y - rect.top;
 
-        // Apply zoom
-        const newZoom = Math.max(15, Math.min(100, pinchStartZoom * scale));
-        if (newZoom !== pixelsPerFoot) {
-          const worldX = (canvasCenterX - panX) / pixelsPerFoot;
-          const worldY = (canvasCenterY - panY) / pixelsPerFoot;
-          pixelsPerFoot = newZoom;
-          panX = canvasCenterX - worldX * pixelsPerFoot;
-          panY = canvasCenterY - worldY * pixelsPerFoot;
-          updateZoomDisplay();
-          draw();
+          // Apply zoom
+          const newZoom = Math.max(CONFIG.MIN_PIXELS_PER_FOOT, Math.min(CONFIG.MAX_PIXELS_PER_FOOT, pinchStartZoom * scale));
+          if (newZoom !== pixelsPerFoot) {
+            const worldX = (canvasCenterX - panX) / pixelsPerFoot;
+            const worldY = (canvasCenterY - panY) / pixelsPerFoot;
+            pixelsPerFoot = newZoom;
+            panX = canvasCenterX - worldX * pixelsPerFoot;
+            panY = canvasCenterY - worldY * pixelsPerFoot;
+            updateZoomDisplay();
+          }
         }
+
+        // Two-finger pan
+        if (twoFingerPanStart) {
+          const currentCenter = getTwoFingerCenter(e.touches);
+          const panDeltaX = currentCenter.x - twoFingerPanStart.center.x;
+          const panDeltaY = currentCenter.y - twoFingerPanStart.center.y;
+          panX = twoFingerPanStart.panX + panDeltaX;
+          panY = twoFingerPanStart.panY + panDeltaY;
+        }
+
+        drawThrottled();
         return;
       }
 
-      if (e.touches.length === 1) {
+      if (e.touches.length === 1 && !isLongPress) {
         const touch = e.touches[0];
         const touchPos = getTouchPos(touch);
 
@@ -22006,6 +22504,7 @@
         onMouseMove({
           ...touchPos,
           buttons: 1,
+          shiftKey: false,
           preventDefault: () => {},
           stopPropagation: () => {}
         });
@@ -22014,8 +22513,33 @@
 
     function onTouchEnd(e) {
       e.preventDefault();
+      cancelLongPress();
       pinchStartDistance = null;
       pinchStartZoom = null;
+      twoFingerPanStart = null;
+
+      // Check for tap (quick touch without much movement)
+      if (touchStartPos && !isLongPress) {
+        const duration = Date.now() - touchStartPos.time;
+        if (duration < 200 && !isDragging) {
+          // Quick tap - could be selection
+          const { x, y } = screenToWorld(touchStartPos.x, touchStartPos.y);
+          const tappedElement = [...elements].reverse().find(el => isPointInElement(x, y, el));
+          if (tappedElement) {
+            selectedElement = tappedElement;
+            updateProperties();
+            draw();
+          } else if (!isPointInRoom(x, y)) {
+            // Tapped outside room - deselect
+            selectedElement = null;
+            updateProperties();
+            draw();
+          }
+        }
+      }
+
+      touchStartPos = null;
+      isLongPress = false;
 
       // Simulate mouseup
       onMouseUp({
@@ -22023,6 +22547,18 @@
         preventDefault: () => {},
         stopPropagation: () => {}
       });
+    }
+
+    function cancelLongPress() {
+      if (longPressTimeout) {
+        clearTimeout(longPressTimeout);
+        longPressTimeout = null;
+      }
+    }
+
+    // Check if point is inside the room bounds
+    function isPointInRoom(x, y) {
+      return x >= 0 && x <= roomWidth * pixelsPerFoot && y >= 0 && y <= roomDepth * pixelsPerFoot;
     }
 
     function setupDragDrop() {
@@ -57750,6 +58286,75 @@
       setTimeout(updateAuthUI, 500);
     }
 
+    // ===== CONFIRMATION DIALOG =====
+    // Modern confirmation dialog to replace browser confirm()
+    function showConfirmDialog(options) {
+      return new Promise((resolve) => {
+        const {
+          title = 'Confirm',
+          message = 'Are you sure?',
+          confirmText = 'Confirm',
+          cancelText = 'Cancel',
+          confirmClass = 'primary',
+          dangerous = false
+        } = options;
+
+        // Remove existing dialog
+        const existing = document.getElementById('confirmDialog');
+        if (existing) existing.remove();
+
+        const dialog = document.createElement('div');
+        dialog.id = 'confirmDialog';
+        dialog.className = 'modal-overlay';
+        dialog.style.cssText = 'display: flex; align-items: center; justify-content: center; z-index: 100001;';
+        dialog.innerHTML = `
+          <div class="modal" style="max-width: 400px; padding: 24px;">
+            <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600;">${title}</h3>
+            <p style="margin: 0 0 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.5;">${message}</p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button class="btn btn-secondary" id="confirmDialogCancel">${cancelText}</button>
+              <button class="btn ${dangerous ? 'btn-danger' : 'btn-' + confirmClass}" id="confirmDialogConfirm" style="${dangerous ? 'background: #ef4444;' : ''}">${confirmText}</button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(dialog);
+
+        // Animate in
+        requestAnimationFrame(() => dialog.classList.add('active'));
+
+        // Handle buttons
+        const confirmBtn = document.getElementById('confirmDialogConfirm');
+        const cancelBtn = document.getElementById('confirmDialogCancel');
+
+        const cleanup = (result) => {
+          dialog.classList.remove('active');
+          setTimeout(() => dialog.remove(), 200);
+          resolve(result);
+        };
+
+        confirmBtn.onclick = () => cleanup(true);
+        cancelBtn.onclick = () => cleanup(false);
+
+        // Click outside to cancel
+        dialog.onclick = (e) => {
+          if (e.target === dialog) cleanup(false);
+        };
+
+        // Escape key to cancel
+        const escHandler = (e) => {
+          if (e.key === 'Escape') {
+            document.removeEventListener('keydown', escHandler);
+            cleanup(false);
+          }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        // Focus confirm button
+        confirmBtn.focus();
+      });
+    }
+
     // ===== TOAST NOTIFICATIONS =====
     function showToast(message, type = 'info', duration = 3000) {
       let container = document.getElementById('toastContainer');
@@ -64100,6 +64705,7 @@
     });
   </script>
 
+<script defer src="/js/designer-pro-features.js?v=20260129"></script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
 </body>
 </html>
