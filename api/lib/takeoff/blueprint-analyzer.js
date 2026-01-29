@@ -72,54 +72,75 @@ const CONFIG = {
  * @returns {Promise<Object>} Takeoff analysis results
  */
 async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey) {
-  const systemPrompt = `You are an expert construction estimator and quantity surveyor.
-Analyze the provided blueprint/floor plan image and extract detailed takeoff information.
+  const systemPrompt = `You are an expert kitchen designer and cabinet specialist.
+Analyze the provided blueprint/floor plan image and extract DETAILED cabinet and room information for creating a virtual 3D room layout.
 
-For each room or area you identify, provide:
-1. Room name and dimensions (length x width in feet)
-2. Square footage calculation
-3. Materials needed by trade:
-   - COUNTERTOPS: Linear feet and square feet (use 25.5" depth for standard)
-   - FLOORING: Square footage by room
-   - TILE: Square footage for floors and walls, linear feet for trim
-   - CABINETS: Linear feet of upper and lower cabinets
-   - PLUMBING: Count of fixtures (sinks, toilets, showers, etc.)
+CRITICAL: Extract EVERY individual cabinet with specific dimensions. This data will be used to create an accurate virtual room.
 
-Look for:
-- Scale indicators on the drawing
-- Dimension callouts and annotations
-- Room labels
-- Fixture symbols (sinks, toilets, appliances)
-- Cabinet layouts
-- Counter/island shapes
+For each room, provide:
+1. Room dimensions (width x depth in FEET)
+2. Room layout type (L-shape, U-shape, galley, single-wall, island)
+3. EACH INDIVIDUAL CABINET with:
+   - Type: base-cabinet, wall-cabinet, tall-cabinet, sink-base, corner-cabinet, drawer-base, pantry, island
+   - Width in INCHES (common: 12, 15, 18, 21, 24, 27, 30, 33, 36, 42, 48)
+   - Depth in INCHES (base: 24, wall: 12, tall: 24)
+   - Height in INCHES (base: 34.5, wall: 30 or 42, tall: 84 or 96)
+   - Wall position: top, bottom, left, right, island
+   - Label or number if visible
 
-Return your analysis in this exact JSON format:
+4. Appliances with positions:
+   - Refrigerator, range/stove, dishwasher, microwave
+   - Width and wall position
+
+5. Countertop areas (sqft)
+6. Island dimensions if present
+
+Return your analysis in this EXACT JSON format:
 {
-  "scale": "1/4\" = 1'-0\"",
-  "totalArea": 0,
   "rooms": [
     {
       "name": "Kitchen",
-      "dimensions": "12' x 15'",
-      "sqft": 180,
+      "widthFt": 14,
+      "depthFt": 12,
+      "sqft": 168,
+      "layoutType": "L-shape",
+      "cabinets": [
+        { "type": "base-cabinet", "width": 36, "depth": 24, "height": 34, "wall": "top", "label": "B1" },
+        { "type": "sink-base", "width": 36, "depth": 24, "height": 34, "wall": "top", "label": "SB1" },
+        { "type": "wall-cabinet", "width": 36, "depth": 12, "height": 30, "wall": "top", "label": "W1" },
+        { "type": "corner-cabinet", "width": 36, "depth": 24, "height": 34, "wall": "top-right", "label": "BC1" },
+        { "type": "tall-cabinet", "width": 30, "depth": 24, "height": 84, "wall": "right", "label": "T1" }
+      ],
+      "appliances": [
+        { "type": "refrigerator", "width": 36, "wall": "right" },
+        { "type": "range", "width": 30, "wall": "top" },
+        { "type": "dishwasher", "width": 24, "wall": "top" }
+      ],
+      "island": { "widthIn": 48, "depthIn": 36, "hasCabinets": true, "hasSink": false },
+      "countertops": { "sqft": 45, "materialNote": "" },
       "materials": {
         "countertops": { "sqft": 45, "linearFt": 22 },
-        "flooring": { "sqft": 180 },
+        "flooring": { "sqft": 168 },
         "tile": { "sqft": 30, "linearFt": 15 },
-        "cabinets": { "upperLF": 18, "lowerLF": 24 },
+        "cabinets": { "upperLF": 12, "lowerLF": 18 },
         "plumbing": { "sinks": 1, "dishwasher": 1 }
       }
     }
   ],
   "totals": {
-    "countertops": { "sqft": 0, "linearFt": 0 },
-    "flooring": { "sqft": 0 },
-    "tile": { "sqft": 0, "linearFt": 0 },
-    "cabinets": { "upperLF": 0, "lowerLF": 0 },
-    "plumbing": { "fixtures": 0 }
+    "cabinetCount": 0,
+    "countertops": { "sqft": 0 },
+    "flooring": { "sqft": 0 }
   },
-  "notes": ["Any observations about the drawing quality or missing information"]
-}`;
+  "notes": ["observations about the drawing"]
+}
+
+IMPORTANT:
+- List EVERY cabinet you can see, even if dimensions must be estimated
+- Use standard cabinet sizes if exact dimensions aren't marked
+- Identify cabinet TYPES accurately (sink base has no drawer, corner cabinets are diagonal or L-shaped)
+- Note which WALL each cabinet is on (top=back wall, bottom=front/open, left, right)
+- If you see numbers/labels on cabinets, include them`;
 
   const userPrompt = `Analyze this ${projectType} blueprint and provide a detailed construction takeoff.
 Extract all measurable quantities for countertops, flooring, tile, cabinets, and plumbing fixtures.

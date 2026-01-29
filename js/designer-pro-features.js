@@ -4860,29 +4860,78 @@ SB36 - Sink Base 36&quot;"></textarea>
     }
   }
 
-  // Convert AI analysis results to room/cabinet format
+  // Convert AI analysis results to room/cabinet format with wall positioning
   function convertAIResultsToRooms(aiData, fileName) {
     const parsedRooms = [];
 
     aiData.rooms.forEach((room, index) => {
+      // Use new detailed format if available
+      const roomWidth = room.widthFt || (room.sqft ? Math.ceil(Math.sqrt(room.sqft) * 1.2) : 16);
+      const roomDepth = room.depthFt || (room.sqft ? Math.ceil(Math.sqrt(room.sqft) / 1.2) : 12);
+
       const roomData = {
         name: room.name || `Room ${index + 1}`,
         fullName: room.name || `Room ${index + 1} from ${fileName}`,
         cabinets: [],
-        width: room.sqft ? Math.ceil(Math.sqrt(room.sqft) * 1.2) : 16,  // Estimate room width
-        depth: room.sqft ? Math.ceil(Math.sqrt(room.sqft) / 1.2) : 12   // Estimate room depth
+        width: roomWidth,
+        depth: roomDepth,
+        layoutType: room.layoutType || 'unknown',
+        island: room.island || null,
+        appliances: room.appliances || []
       };
 
-      // Extract cabinet data from room materials
-      if (room.materials) {
+      // NEW FORMAT: Individual cabinets with wall positions
+      if (room.cabinets && Array.isArray(room.cabinets) && room.cabinets.length > 0) {
+        room.cabinets.forEach((cab, cabIndex) => {
+          roomData.cabinets.push({
+            number: cab.label || String(cabIndex + 1),
+            name: formatCabinetType(cab.type),
+            type: cab.type || 'base-cabinet',
+            width: cab.width || 36,
+            depth: cab.depth || 24,
+            height: cab.height || 34,
+            wall: cab.wall || 'top'  // Which wall: top, bottom, left, right, island
+          });
+        });
+
+        // Add appliances as elements too
+        if (room.appliances && Array.isArray(room.appliances)) {
+          room.appliances.forEach((app, appIndex) => {
+            roomData.cabinets.push({
+              number: `A${appIndex + 1}`,
+              name: formatApplianceType(app.type),
+              type: app.type || 'appliance',
+              width: app.width || 30,
+              depth: 24,
+              height: 34,
+              wall: app.wall || 'top',
+              isAppliance: true
+            });
+          });
+        }
+
+        // Add island if present
+        if (room.island && (room.island.widthIn || room.island.width)) {
+          roomData.cabinets.push({
+            number: 'ISL',
+            name: 'Island',
+            type: 'island',
+            width: room.island.widthIn || room.island.width || 48,
+            depth: room.island.depthIn || room.island.depth || 36,
+            height: 36,
+            wall: 'island',
+            hasSink: room.island.hasSink || false
+          });
+        }
+      }
+      // LEGACY FORMAT: Linear feet conversion
+      else if (room.materials) {
         const mats = room.materials;
 
-        // Create cabinet entries based on detected materials
         if (mats.cabinets) {
           const upperLF = mats.cabinets.upperLF || 0;
           const lowerLF = mats.cabinets.lowerLF || 0;
 
-          // Convert linear feet to cabinet items (assume 3ft per cabinet)
           const numUpper = Math.ceil(upperLF / 3);
           const numLower = Math.ceil(lowerLF / 3);
 
@@ -4890,44 +4939,52 @@ SB36 - Sink Base 36&quot;"></textarea>
             roomData.cabinets.push({
               number: String(roomData.cabinets.length + 1),
               name: 'Base Cabinet',
+              type: 'base-cabinet',
               width: 36,
               depth: 24,
-              height: 32
+              height: 34,
+              wall: 'top'
             });
           }
 
           for (let i = 0; i < numUpper; i++) {
             roomData.cabinets.push({
               number: String(roomData.cabinets.length + 1),
-              name: 'Upper Cabinet',
+              name: 'Wall Cabinet',
+              type: 'wall-cabinet',
               width: 36,
               depth: 12,
-              height: 30
+              height: 30,
+              wall: 'top'
             });
           }
         }
 
-        // Add countertop as island if significant
         if (mats.countertops && mats.countertops.sqft > 30) {
           roomData.cabinets.push({
-            number: String(roomData.cabinets.length + 1),
+            number: 'ISL',
             name: 'Island',
+            type: 'island',
             width: 48,
             depth: 36,
-            height: 36
+            height: 36,
+            wall: 'island'
           });
         }
-      } else if (room.material && room.material.includes('Cabinet')) {
-        // Fallback: if no detailed materials but "Cabinets" mentioned in material string
-        // Create some placeholder cabinets based on room size
+      }
+      // MINIMAL FORMAT: Just "Cabinet" mentioned
+      else if (room.material && room.material.includes('Cabinet')) {
         const estimatedCabinets = Math.max(2, Math.ceil((room.sqft || 100) / 40));
         for (let i = 0; i < estimatedCabinets; i++) {
+          const isBase = i % 2 === 0;
           roomData.cabinets.push({
             number: String(roomData.cabinets.length + 1),
-            name: i % 2 === 0 ? 'Base Cabinet' : 'Upper Cabinet',
+            name: isBase ? 'Base Cabinet' : 'Wall Cabinet',
+            type: isBase ? 'base-cabinet' : 'wall-cabinet',
             width: 36,
-            depth: i % 2 === 0 ? 24 : 12,
-            height: i % 2 === 0 ? 32 : 30
+            depth: isBase ? 24 : 12,
+            height: isBase ? 34 : 30,
+            wall: 'top'
           });
         }
       }
@@ -5605,12 +5662,38 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (typeof showToast === 'function') showToast(`Imported ${room.cabinets.length} cabinets from ${room.name}`, 'success');
   };
 
-  // Import all parsed rooms into the existing room system
+  // Helper: Format cabinet type for display
+  function formatCabinetType(type) {
+    const names = {
+      'base-cabinet': 'Base Cabinet',
+      'wall-cabinet': 'Wall Cabinet',
+      'tall-cabinet': 'Tall Cabinet',
+      'sink-base': 'Sink Base',
+      'corner-cabinet': 'Corner Cabinet',
+      'drawer-base': 'Drawer Base',
+      'pantry': 'Pantry',
+      'island': 'Island'
+    };
+    return names[type] || type || 'Cabinet';
+  }
+
+  // Helper: Format appliance type for display
+  function formatApplianceType(type) {
+    const names = {
+      'refrigerator': 'Refrigerator',
+      'range': 'Range/Stove',
+      'stove': 'Range/Stove',
+      'dishwasher': 'Dishwasher',
+      'microwave': 'Microwave',
+      'oven': 'Wall Oven'
+    };
+    return names[type] || type || 'Appliance';
+  }
+
+  // Import all parsed rooms into the existing room system with WALL POSITIONING
   window.importAllParsedRooms = function() {
     const parsedRooms = window._parsedRooms;
     if (!parsedRooms || parsedRooms.length === 0) return;
-
-    const ppf = window.pixelsPerFoot || 40;
 
     // Clear existing rooms and use the existing room system
     if (window.rooms) {
@@ -5621,7 +5704,6 @@ SB36 - Sink Base 36&quot;"></textarea>
     }
 
     parsedRooms.forEach((room, roomIndex) => {
-      // Use AI-detected room size or calculate from cabinet widths
       const totalWidth = room.cabinets.reduce((sum, c) => sum + (c.width || 24), 0);
       const calculatedWidth = Math.max(Math.ceil(totalWidth / 12) + 4, 12);
       const roomWidth = room.width || calculatedWidth;
@@ -5630,7 +5712,7 @@ SB36 - Sink Base 36&quot;"></textarea>
       const newRoom = {
         id: 'room-' + Date.now() + '-' + roomIndex,
         name: room.fullName || room.name || `Room ${roomIndex + 1}`,
-        type: 'other',
+        type: 'kitchen',
         width: roomWidth,
         depth: roomDepth,
         offsetX: 0,
@@ -5638,40 +5720,96 @@ SB36 - Sink Base 36&quot;"></textarea>
         elements: [],
         walls: [],
         floorPlan: 'empty',
-        pixelsPerFoot: 40 // Store scale for deserialization
+        pixelsPerFoot: 40,
+        layoutType: room.layoutType || 'unknown'
       };
 
-      // Use FEET for positions (xFt, yFt)
-      let xFeet = 0.5;
-      let yFeet = 0;
+      // Track positions for each wall
+      const wallPositions = {
+        top: 0.5,      // X position along top wall
+        bottom: 0.5,   // X position along bottom wall
+        left: 0.5,     // Y position along left wall
+        right: 0.5,    // Y position along right wall
+        'top-upper': 0.5  // Upper cabinets on top wall
+      };
       const gapFeet = 0.25;
 
       room.cabinets.forEach((cab, cabIndex) => {
-        const elementType = getElementTypeFromName(cab.name);
-        const widthFeet = cab.width / 12;
+        const elementType = cab.type || getElementTypeFromName(cab.name);
+        const widthFeet = (cab.width || 36) / 12;
         const depthFeet = Math.min((cab.depth || 24) / 12, 2);
+        const wall = cab.wall || 'top';
 
-        // Wrap to next row if too wide
-        if (xFeet + widthFeet > roomWidth - 0.5) {
-          xFeet = 0.5;
-          yFeet += 3;
+        let xFt, yFt, rotation = 0;
+
+        // Position based on wall
+        switch (wall) {
+          case 'top':
+          case 'top-upper':
+            // Along top wall (y = 0)
+            xFt = wallPositions[wall];
+            yFt = wall === 'top-upper' ? 2.5 : 0; // Upper cabs offset down
+            wallPositions[wall] += widthFeet + gapFeet;
+            break;
+
+          case 'bottom':
+            // Along bottom wall (y = roomDepth - depth)
+            xFt = wallPositions.bottom;
+            yFt = roomDepth - depthFeet;
+            wallPositions.bottom += widthFeet + gapFeet;
+            rotation = 180;
+            break;
+
+          case 'left':
+            // Along left wall (x = 0), rotated 90°
+            xFt = 0;
+            yFt = wallPositions.left;
+            wallPositions.left += widthFeet + gapFeet;
+            rotation = 270;
+            break;
+
+          case 'right':
+            // Along right wall (x = roomWidth - depth), rotated 90°
+            xFt = roomWidth - depthFeet;
+            yFt = wallPositions.right;
+            wallPositions.right += widthFeet + gapFeet;
+            rotation = 90;
+            break;
+
+          case 'island':
+            // Center of room
+            xFt = (roomWidth - widthFeet) / 2;
+            yFt = (roomDepth - depthFeet) / 2;
+            break;
+
+          case 'top-right':
+          case 'corner':
+            // Corner position
+            xFt = roomWidth - widthFeet - 0.5;
+            yFt = 0;
+            break;
+
+          default:
+            // Default: add to top wall
+            xFt = wallPositions.top;
+            yFt = 0;
+            wallPositions.top += widthFeet + gapFeet;
         }
 
         newRoom.elements.push({
           id: `imp_r${roomIndex}_c${cabIndex}_${Date.now()}`,
           type: elementType,
           label: `#${cab.number} ${cab.name}`,
-          // FEET-based positions
-          xFt: xFeet,
-          yFt: yFeet,
+          xFt: xFt,
+          yFt: yFt,
           width: widthFeet,
           height: depthFeet,
           color: getColorForElementType(elementType),
-          rotation: 0,
-          locked: false
+          rotation: rotation,
+          locked: false,
+          wall: wall,
+          isAppliance: cab.isAppliance || false
         });
-
-        xFeet += widthFeet + gapFeet;
       });
 
       if (window.rooms) {
@@ -6648,5 +6786,5 @@ SB36 - Sink Base 36&quot;"></textarea>
     if (typeof showToast === 'function') showToast('Approval link generated!', 'success');
   };
 
-  console.log('Room Designer Pro Features v7.4 loaded - Batch PDF Analysis');
+  console.log('Room Designer Pro Features v8.0 loaded - Smart Room Layout from Blueprints');
 })();
