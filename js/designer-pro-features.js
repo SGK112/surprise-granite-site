@@ -1175,13 +1175,387 @@
     }
   });
 
+  // === LAYER MANAGEMENT ===
+  window.bringToFront = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element || !window.elements) return;
+
+    const index = window.elements.indexOf(element);
+    if (index > -1) {
+      window.elements.splice(index, 1);
+      window.elements.push(element);
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast('Brought to front', 'info');
+    }
+  };
+
+  window.sendToBack = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element || !window.elements) return;
+
+    const index = window.elements.indexOf(element);
+    if (index > -1) {
+      window.elements.splice(index, 1);
+      window.elements.unshift(element);
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+      if (typeof showToast === 'function') showToast('Sent to back', 'info');
+    }
+  };
+
+  window.moveLayerUp = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element || !window.elements) return;
+
+    const index = window.elements.indexOf(element);
+    if (index > -1 && index < window.elements.length - 1) {
+      window.elements.splice(index, 1);
+      window.elements.splice(index + 1, 0, element);
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    }
+  };
+
+  window.moveLayerDown = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element || !window.elements) return;
+
+    const index = window.elements.indexOf(element);
+    if (index > 0) {
+      window.elements.splice(index, 1);
+      window.elements.splice(index - 1, 0, element);
+      if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    }
+  };
+
+  // === ZOOM CONTROLS ===
+  let currentZoom = 1;
+  const MIN_ZOOM = 0.25;
+  const MAX_ZOOM = 4;
+
+  window.getZoom = function() { return currentZoom; };
+
+  window.setZoom = function(zoom) {
+    currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+    const canvas = document.getElementById('roomCanvas');
+    if (canvas) {
+      canvas.style.transform = `scale(${currentZoom})`;
+      canvas.style.transformOrigin = 'center center';
+    }
+    updateZoomDisplay();
+    return currentZoom;
+  };
+
+  window.zoomIn = function() {
+    return window.setZoom(currentZoom * 1.25);
+  };
+
+  window.zoomOut = function() {
+    return window.setZoom(currentZoom / 1.25);
+  };
+
+  window.zoomToFit = function() {
+    const canvas = document.getElementById('roomCanvas');
+    const container = canvas?.parentElement;
+    if (!canvas || !container) return;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const canvasWidth = canvas.width || 800;
+    const canvasHeight = canvas.height || 600;
+
+    const scaleX = containerWidth / canvasWidth;
+    const scaleY = containerHeight / canvasHeight;
+    const scale = Math.min(scaleX, scaleY, 1) * 0.9;
+
+    return window.setZoom(scale);
+  };
+
+  window.zoomToSelection = function() {
+    if (!window.selectedElement && (!window.selectedElements || window.selectedElements.length === 0)) {
+      if (typeof showToast === 'function') showToast('Select an element first', 'info');
+      return;
+    }
+
+    const elements = window.selectedElements?.length > 0 ? window.selectedElements : [window.selectedElement];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    elements.forEach(el => {
+      minX = Math.min(minX, el.x);
+      minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + (el.width || 0));
+      maxY = Math.max(maxY, el.y + (el.height || 0));
+    });
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const container = document.getElementById('roomCanvas')?.parentElement;
+    if (!container) return;
+
+    const scaleX = container.clientWidth / (width + 100);
+    const scaleY = container.clientHeight / (height + 100);
+    const scale = Math.min(scaleX, scaleY, 2);
+
+    window.setZoom(scale);
+  };
+
+  function updateZoomDisplay() {
+    const display = document.getElementById('zoomDisplay');
+    if (display) display.textContent = Math.round(currentZoom * 100) + '%';
+  }
+
+  // === AUTO-LAYOUT HELPERS ===
+  window.autoArrangeCabinets = function(direction = 'horizontal') {
+    const cabinets = window.elements?.filter(el => el.type === 'cabinet') || [];
+    if (cabinets.length < 2) {
+      if (typeof showToast === 'function') showToast('Need 2+ cabinets to arrange', 'warning');
+      return;
+    }
+
+    const gap = 0; // No gap between cabinets
+    let currentPos = cabinets[0].x;
+
+    if (direction === 'horizontal') {
+      cabinets.sort((a, b) => a.x - b.x);
+      currentPos = cabinets[0].x;
+      cabinets.forEach((cab, i) => {
+        if (i > 0) {
+          cab.x = currentPos;
+          cab.y = cabinets[0].y; // Align to first cabinet's Y
+        }
+        currentPos += (cab.width || 24) + gap;
+      });
+    } else {
+      cabinets.sort((a, b) => a.y - b.y);
+      currentPos = cabinets[0].y;
+      cabinets.forEach((cab, i) => {
+        if (i > 0) {
+          cab.y = currentPos;
+          cab.x = cabinets[0].x; // Align to first cabinet's X
+        }
+        currentPos += (cab.height || 24) + gap;
+      });
+    }
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('Cabinets arranged', 'success');
+  };
+
+  window.centerInRoom = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    const roomWidth = window.roomWidth || 240;
+    const roomHeight = window.roomDepth || 180;
+    const ppi = window.pixelsPerInch || 12;
+
+    element.x = (roomWidth * ppi - (element.width || 0)) / 2;
+    element.y = (roomHeight * ppi - (element.height || 0)) / 2;
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('Centered in room', 'info');
+  };
+
+  window.snapToWall = function(element, wall = 'top') {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    const roomWidth = window.roomWidth || 240;
+    const roomHeight = window.roomDepth || 180;
+    const ppi = window.pixelsPerInch || 12;
+    const margin = 0;
+
+    switch (wall) {
+      case 'top':
+        element.y = margin;
+        break;
+      case 'bottom':
+        element.y = roomHeight * ppi - (element.height || 0) - margin;
+        break;
+      case 'left':
+        element.x = margin;
+        break;
+      case 'right':
+        element.x = roomWidth * ppi - (element.width || 0) - margin;
+        break;
+    }
+
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast(`Snapped to ${wall} wall`, 'info');
+  };
+
+  // === ELEMENT LOCK/UNLOCK ===
+  window.toggleElementLock = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    element.locked = !element.locked;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast(element.locked ? 'Element locked' : 'Element unlocked', 'info');
+  };
+
+  window.lockAllElements = function() {
+    if (!window.elements) return;
+    window.elements.forEach(el => el.locked = true);
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('All elements locked', 'info');
+  };
+
+  window.unlockAllElements = function() {
+    if (!window.elements) return;
+    window.elements.forEach(el => el.locked = false);
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+    if (typeof showToast === 'function') showToast('All elements unlocked', 'info');
+  };
+
+  // === FLIP/ROTATE HELPERS ===
+  window.flipHorizontal = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    element.flippedX = !element.flippedX;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+  };
+
+  window.flipVertical = function(element) {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    element.flippedY = !element.flippedY;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+  };
+
+  window.rotateElement = function(element, degrees = 90) {
+    if (!element) element = window.selectedElement;
+    if (!element) return;
+
+    element.rotation = ((element.rotation || 0) + degrees) % 360;
+    if (typeof window.renderCanvas === 'function') window.renderCanvas();
+  };
+
+  // === EXPORT HELPERS ===
+  window.exportAsJSON = function() {
+    if (!window.elements) return;
+
+    const data = {
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      roomWidth: window.roomWidth,
+      roomDepth: window.roomDepth,
+      elements: window.elements,
+      notes: designNotes,
+      groups: elementGroups
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `design_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    if (typeof showToast === 'function') showToast('Design exported', 'success');
+  };
+
+  window.importFromJSON = function(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.elements) {
+          window.elements = data.elements;
+          if (data.roomWidth) window.roomWidth = data.roomWidth;
+          if (data.roomDepth) window.roomDepth = data.roomDepth;
+          if (data.notes) designNotes = data.notes;
+          if (data.groups) elementGroups = data.groups;
+
+          if (typeof window.renderCanvas === 'function') window.renderCanvas();
+          renderNotes();
+          renderNotePins();
+          renderGroupIndicators();
+
+          if (typeof showToast === 'function') showToast('Design imported', 'success');
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast('Invalid file format', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // === ADDITIONAL KEYBOARD SHORTCUTS ===
+  document.addEventListener('keydown', function(e) {
+    const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isInput) return;
+
+    // [ and ] = Layer up/down
+    if (e.key === ']' && !e.ctrlKey) {
+      e.preventDefault();
+      window.moveLayerUp();
+    }
+    if (e.key === '[' && !e.ctrlKey) {
+      e.preventDefault();
+      window.moveLayerDown();
+    }
+    // Ctrl+] and Ctrl+[ = Bring to front/send to back
+    if (e.key === ']' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      window.bringToFront();
+    }
+    if (e.key === '[' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      window.sendToBack();
+    }
+    // + and - = Zoom
+    if ((e.key === '=' || e.key === '+') && !e.ctrlKey) {
+      e.preventDefault();
+      window.zoomIn();
+    }
+    if (e.key === '-' && !e.ctrlKey) {
+      e.preventDefault();
+      window.zoomOut();
+    }
+    // 0 = Zoom to fit
+    if (e.key === '0' && !e.ctrlKey) {
+      e.preventDefault();
+      window.zoomToFit();
+    }
+    // L = Toggle lock
+    if (e.key === 'l' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      window.toggleElementLock();
+    }
+    // H = Flip horizontal
+    if (e.key === 'h' && !e.ctrlKey && !e.metaKey) {
+      window.flipHorizontal();
+    }
+    // R = Rotate 90
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+      window.rotateElement();
+    }
+  });
+
   // === INIT ON LOAD ===
   document.addEventListener('DOMContentLoaded', function() {
     window.initFavorites();
     window.initNotes();
     window.initTemplates();
     window.initHistory();
+
+    // Add zoom controls if not present
+    const canvas = document.getElementById('roomCanvas');
+    if (canvas && !document.getElementById('zoomControls')) {
+      const controls = document.createElement('div');
+      controls.id = 'zoomControls';
+      controls.className = 'zoom-controls';
+      controls.innerHTML = `
+        <button onclick="zoomOut()" title="Zoom Out (-)">−</button>
+        <span id="zoomDisplay">100%</span>
+        <button onclick="zoomIn()" title="Zoom In (+)">+</button>
+        <button onclick="zoomToFit()" title="Fit (0)">⊡</button>
+      `;
+      canvas.parentElement?.appendChild(controls);
+    }
   });
 
-  console.log('Room Designer Pro Features v2.0 loaded');
+  console.log('Room Designer Pro Features v3.0 loaded');
 })();
