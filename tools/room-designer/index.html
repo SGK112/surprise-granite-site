@@ -12329,7 +12329,7 @@
               </svg>
               Commercial Projects
             </button>
-            <button onclick="showPDFImporter(); closeProToolsMenu();">
+            <button onclick="showAIImporter(); closeProToolsMenu();">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
@@ -16771,6 +16771,62 @@
         updatePricingVisibility();
         return false;
       }
+    }
+
+    // GOD ACCESS - Super admin only features (AI tools, etc.)
+    function hasGodAccess() {
+      const user = window.SgAuth?.getUser();
+      if (!user) return false;
+      const SUPER_ADMIN_EMAILS = ['joshb@surprisegranite.com', 'info@surprisegranite.com'];
+      return SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+    }
+
+    // Wrapper for AI PDF Importer - checks GOD access
+    function showAIImporter() {
+      if (hasGodAccess()) {
+        // GOD access - show full AI importer
+        if (typeof window.showPDFImporter === 'function') {
+          window.showPDFImporter();
+        } else {
+          showToast('AI Importer loading...', 'info');
+        }
+      } else {
+        // Regular users - show coming soon
+        showComingSoonModal('AI Blueprint Analyzer', 'Our AI-powered blueprint analysis tool is coming soon! This feature will automatically extract cabinet layouts from your drawings.');
+      }
+    }
+
+    // Generic coming soon modal for restricted features
+    function showComingSoonModal(featureName, description) {
+      const existing = document.getElementById('comingSoonModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'comingSoonModal';
+      modal.className = 'cabinet-library-modal';
+      modal.innerHTML = `
+        <div class="cabinet-library-content" style="max-width: 450px;">
+          <div class="cabinet-library-header">
+            <h3>🚀 ${featureName}</h3>
+            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
+          </div>
+          <div class="cabinet-library-body" style="text-align: center; padding: 40px;">
+            <div style="font-size: 64px; margin-bottom: 20px;">🔮</div>
+            <h4 style="margin: 0 0 12px; color: var(--primary);">Coming Soon!</h4>
+            <p style="color: var(--text-muted); margin: 0; line-height: 1.6;">
+              ${description}
+            </p>
+            <div style="margin-top: 24px; padding: 16px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+              <p style="margin: 0; font-size: 13px; color: var(--text-muted);">
+                Want early access? Contact us at<br>
+                <a href="mailto:info@surprisegranite.com" style="color: var(--primary);">info@surprisegranite.com</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     }
 
     // Update UI to show/hide pricing based on access
@@ -21287,6 +21343,12 @@
     // Element locking (simple grouping)
     let nextGroupId = 1;
 
+    // Generate unique IDs for elements
+    function generateId() {
+      return 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    window.generateId = generateId;
+
     // Element cycling state - for cycling through overlapping elements
     let lastClickPos = { x: 0, y: 0 };
     let lastClickTime = 0;
@@ -22267,33 +22329,6 @@
 
       // Save initial undo state AFTER loading any saved design
       saveUndoState();
-
-      // Warn before closing/navigating away with unsaved work
-      window.addEventListener('beforeunload', function(e) {
-        if (hasUnsavedChanges && elements.length > 0) {
-          // Force a final auto-save before leaving
-          try {
-            if (!SHARE_STATE.isSharedView) {
-              const emergencySave = {
-                elements: elements.map(el => serializeElement(el)),
-                walls: walls.map(w => serializeWall(w)),
-                roomWidth, roomDepth, roomHeight,
-                roomType: document.getElementById('roomType')?.value || 'kitchen',
-                projectName: document.getElementById('projectName')?.value || 'Untitled',
-                timestamp: Date.now(),
-                version: 4,
-                pixelsPerFoot,
-                rooms: rooms.map(r => ({...r, elements: (r.elements||[]).map(el => el.xFt !== undefined ? {...el, textureImg:null} : serializeElement(el)), walls: (r.walls||[]).map(w => w.x1Ft !== undefined ? {...w} : serializeWall(w))})),
-                currentRoomId, currentRoom, projectRooms
-              };
-              localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(emergencySave));
-              console.log('Emergency save before page unload:', elements.length, 'elements');
-            }
-          } catch (e) { /* best effort */ }
-          e.preventDefault();
-          e.returnValue = '';
-        }
-      });
 
       // Initialize element selector dropdown and item picker
       updateElementSelector();
@@ -62807,6 +62842,582 @@
       document.getElementById('proToolsMenu').classList.remove('show');
     }
 
+    // =============================================
+    // PRO TOOLS - Cabinet Library with Custom Upload
+    // =============================================
+    function showCabinetLibrary() {
+      // Remove existing modal if any
+      const existing = document.getElementById('cabinetLibraryModal');
+      if (existing) existing.remove();
+
+      // Load custom cabinets from localStorage
+      const customCabinets = JSON.parse(localStorage.getItem('customCabinetLibrary') || '[]');
+
+      // Cabinet library data organized by category
+      const CABINET_LIBRARY = {
+        base: [
+          { type: 'base-cabinet', label: 'Base Cabinet', width: 3, height: 2, icon: '🗄️', dims: '36" × 24"' },
+          { type: 'base-cabinet-12', label: 'Base 12"', width: 1, height: 2, icon: '🗄️', dims: '12" × 24"' },
+          { type: 'base-cabinet-15', label: 'Base 15"', width: 1.25, height: 2, icon: '🗄️', dims: '15" × 24"' },
+          { type: 'base-cabinet-18', label: 'Base 18"', width: 1.5, height: 2, icon: '🗄️', dims: '18" × 24"' },
+          { type: 'base-cabinet-24', label: 'Base 24"', width: 2, height: 2, icon: '🗄️', dims: '24" × 24"' },
+          { type: 'base-cabinet-30', label: 'Base 30"', width: 2.5, height: 2, icon: '🗄️', dims: '30" × 24"' },
+          { type: 'drawer-base', label: 'Drawer Base', width: 3, height: 2, icon: '🗃️', dims: '36" × 24"' },
+          { type: 'sink-base', label: 'Sink Base', width: 3, height: 2, icon: '🚰', dims: '36" × 24"' },
+          { type: 'corner-cabinet', label: 'Corner Base', width: 3, height: 3, icon: '📐', dims: '36" × 36"' },
+          { type: 'lazy-susan', label: 'Lazy Susan', width: 3, height: 3, icon: '🔄', dims: '36" × 36"' },
+          { type: 'blind-corner', label: 'Blind Corner', width: 4, height: 2, icon: '📦', dims: '48" × 24"' }
+        ],
+        wall: [
+          { type: 'wall-cabinet', label: 'Wall Cabinet', width: 3, height: 1, icon: '🗄️', dims: '36" × 12"' },
+          { type: 'wall-cabinet', label: 'Wall 30"', width: 2.5, height: 1, icon: '🗄️', dims: '30" × 12"', customWidth: 2.5 },
+          { type: 'wall-cabinet', label: 'Wall 24"', width: 2, height: 1, icon: '🗄️', dims: '24" × 12"', customWidth: 2 },
+          { type: 'wall-cabinet', label: 'Wall 18"', width: 1.5, height: 1, icon: '🗄️', dims: '18" × 12"', customWidth: 1.5 },
+          { type: 'wall-cabinet', label: 'Wall 12"', width: 1, height: 1, icon: '🗄️', dims: '12" × 12"', customWidth: 1 },
+          { type: 'microwave-cabinet', label: 'Microwave Cab', width: 2.5, height: 1.5, icon: '📺', dims: '30" × 18"' },
+          { type: 'above-microwave-cabinet', label: 'Above Micro', width: 2.5, height: 1, icon: '🗄️', dims: '30" × 12"' }
+        ],
+        tall: [
+          { type: 'tall-cabinet', label: 'Pantry 24"', width: 2, height: 2, icon: '🗄️', dims: '24" × 24" × 84"' },
+          { type: 'tall-cabinet', label: 'Pantry 36"', width: 3, height: 2, icon: '🗄️', dims: '36" × 24" × 84"', customWidth: 3 },
+          { type: 'tall-oven', label: 'Oven Cabinet', width: 2.5, height: 2, icon: '🍳', dims: '30" × 24" × 84"' },
+          { type: 'double-oven-cabinet', label: 'Double Oven', width: 2.5, height: 2, icon: '🍳', dims: '30" × 24" × 84"' },
+          { type: 'fridge-cabinet', label: 'Fridge Cabinet', width: 3, height: 2, icon: '🧊', dims: '36" × 24" × 84"' }
+        ],
+        specialty: [
+          { type: 'island', label: 'Island', width: 6, height: 3, icon: '🏝️', dims: '72" × 36"' },
+          { type: 'linen-closet', label: 'Linen Closet', width: 1.5, height: 2, icon: '🧺', dims: '18" × 24"' },
+          { type: 'linen-tower', label: 'Linen Tower', width: 2, height: 2, icon: '🧺', dims: '24" × 21"' }
+        ],
+        custom: customCabinets  // User's uploaded cabinet library
+      };
+
+      let currentCategory = 'base';
+      let searchTerm = '';
+
+      const customCount = customCabinets.length;
+
+      const modal = document.createElement('div');
+      modal.id = 'cabinetLibraryModal';
+      modal.className = 'cabinet-library-modal';
+      modal.innerHTML = `
+        <div class="cabinet-library-content">
+          <div class="cabinet-library-header">
+            <h3>📦 Cabinet Library</h3>
+            <div class="cabinet-library-tabs">
+              <button class="cab-tab active" data-cat="base">Base</button>
+              <button class="cab-tab" data-cat="wall">Wall</button>
+              <button class="cab-tab" data-cat="tall">Tall</button>
+              <button class="cab-tab" data-cat="specialty">Specialty</button>
+              <button class="cab-tab" data-cat="custom" style="background: linear-gradient(135deg, #10b981, #059669);">
+                📁 My Library ${customCount > 0 ? `(${customCount})` : ''}
+              </button>
+            </div>
+            <button onclick="document.getElementById('cabinetLibraryModal').remove()">&times;</button>
+          </div>
+          <div class="cabinet-library-body">
+            <div class="cabinet-search" style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="cabinetSearchInput" placeholder="Search cabinets..." style="flex: 1;" />
+              <button onclick="showCabinetUploadPanel()" class="btn btn-secondary" style="padding: 10px 16px; white-space: nowrap;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import Catalog
+              </button>
+            </div>
+            <div id="cabinetUploadPanel" style="display: none; margin-bottom: 16px; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px;">
+              <h4 style="margin: 0 0 12px; font-size: 14px; color: #10b981;">📁 Import Cabinet Catalog</h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">
+                Upload a CSV or JSON file with your cabinet catalog. Required columns: name/label, width, depth, height (in inches).
+              </p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <input type="file" id="cabinetCatalogFile" accept=".csv,.json" style="display: none;" onchange="handleCabinetCatalogUpload(event)" />
+                <button onclick="document.getElementById('cabinetCatalogFile').click()" class="btn btn-primary" style="flex: 1;">
+                  Select File (CSV/JSON)
+                </button>
+                <button onclick="downloadCabinetTemplate()" class="btn btn-secondary" style="flex: 1;">
+                  Download Template
+                </button>
+              </div>
+              <div id="catalogUploadStatus" style="margin-top: 12px; display: none;"></div>
+            </div>
+            <div class="cabinet-library-grid" id="cabinetLibraryGrid"></div>
+          </div>
+          <div class="cabinet-library-footer">
+            <div class="custom-cabinet-form">
+              <h4>Custom Size Cabinet</h4>
+              <div class="custom-cab-inputs">
+                <input type="number" id="customCabWidth" placeholder="W" min="6" max="60" value="36" /> ×
+                <input type="number" id="customCabDepth" placeholder="D" min="6" max="36" value="24" /> ×
+                <input type="number" id="customCabHeight" placeholder="H" min="12" max="96" value="34" />
+                <span style="color: var(--text-muted); font-size: 12px;">inches</span>
+                <button class="btn btn-primary" onclick="addCustomCabinet()">Add Custom</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Render cabinet grid
+      function renderCabinetGrid() {
+        const grid = document.getElementById('cabinetLibraryGrid');
+
+        // Reload custom cabinets from localStorage in case they were updated
+        if (currentCategory === 'custom') {
+          CABINET_LIBRARY.custom = JSON.parse(localStorage.getItem('customCabinetLibrary') || '[]');
+        }
+
+        const cabinets = CABINET_LIBRARY[currentCategory] || [];
+        const filtered = searchTerm
+          ? cabinets.filter(c => (c.label || c.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
+          : cabinets;
+
+        // Show empty state for custom category if no cabinets
+        if (currentCategory === 'custom' && filtered.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px 20px;">
+              <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📁</div>
+              <h4 style="margin: 0 0 8px; color: var(--text);">No Custom Cabinets Yet</h4>
+              <p style="margin: 0 0 16px; color: var(--text-muted); font-size: 13px;">
+                Import your manufacturer's cabinet catalog using the "Import Catalog" button above.
+              </p>
+              <button onclick="showCabinetUploadPanel()" class="btn btn-primary">
+                Import Catalog
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = filtered.map((cab, idx) => `
+          <div class="cabinet-lib-item" data-idx="${idx}" data-type="${cab.type}" data-width="${cab.customWidth || cab.width}" data-custom="${currentCategory === 'custom' ? 'true' : 'false'}">
+            ${currentCategory === 'custom' ? `<button class="delete-custom-cab" data-idx="${idx}" style="position:absolute; top:4px; right:4px; background:#ef4444; border:none; color:white; width:18px; height:18px; border-radius:50%; font-size:10px; cursor:pointer; line-height:1;">×</button>` : ''}
+            <div class="cab-lib-icon">${cab.icon}</div>
+            <div class="cab-lib-name">${cab.label || cab.name}</div>
+            <div class="cab-lib-dims">${cab.dims}</div>
+            ${cab.sku ? `<div style="font-size:10px; color:var(--text-muted); margin-top:4px;">${cab.sku}</div>` : ''}
+            ${cab.price ? `<div style="font-size:11px; color:#10b981; margin-top:2px;">$${cab.price}</div>` : ''}
+          </div>
+        `).join('');
+
+        // Add click handlers
+        grid.querySelectorAll('.cabinet-lib-item').forEach((item, idx) => {
+          item.onclick = (e) => {
+            // Ignore if clicking delete button
+            if (e.target.classList.contains('delete-custom-cab')) return;
+
+            const type = item.dataset.type;
+            const customWidth = parseFloat(item.dataset.width);
+
+            if (currentCategory === 'custom') {
+              // For custom cabinets, use the full cabinet data
+              addCustomCabinetFromLibrary(filtered[idx]);
+            } else {
+              addCabinetFromLibrary(type, customWidth);
+            }
+          };
+        });
+
+        // Add delete handlers for custom cabinets
+        grid.querySelectorAll('.delete-custom-cab').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.idx);
+            deleteCustomCabinet(idx);
+          };
+        });
+      }
+
+      // Delete a single custom cabinet
+      function deleteCustomCabinet(idx) {
+        const cabinets = JSON.parse(localStorage.getItem('customCabinetLibrary') || '[]');
+        cabinets.splice(idx, 1);
+        localStorage.setItem('customCabinetLibrary', JSON.stringify(cabinets));
+        renderCabinetGrid();
+        showToast('Cabinet removed from library', 'success');
+      }
+
+      // Tab switching
+      modal.querySelectorAll('.cab-tab').forEach(tab => {
+        tab.onclick = () => {
+          modal.querySelectorAll('.cab-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentCategory = tab.dataset.cat;
+          renderCabinetGrid();
+        };
+      });
+
+      // Search
+      document.getElementById('cabinetSearchInput').oninput = (e) => {
+        searchTerm = e.target.value;
+        renderCabinetGrid();
+      };
+
+      // Close on backdrop click
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+      };
+
+      // Prevent keyboard events from affecting canvas
+      modal.onkeydown = (e) => e.stopPropagation();
+      modal.onkeyup = (e) => e.stopPropagation();
+
+      renderCabinetGrid();
+    }
+
+    // Add cabinet from library to canvas
+    function addCabinetFromLibrary(type, customWidth) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      createElement(type, centerX, centerY);
+
+      // If custom width specified, update the element
+      if (customWidth && selectedElement) {
+        selectedElement.width = customWidth;
+        draw();
+      }
+
+      document.getElementById('cabinetLibraryModal')?.remove();
+      showToast('Cabinet added to canvas', 'success');
+    }
+
+    // Add custom cabinet with user-specified dimensions
+    function addCustomCabinet() {
+      const widthIn = parseFloat(document.getElementById('customCabWidth').value) || 36;
+      const depthIn = parseFloat(document.getElementById('customCabDepth').value) || 24;
+      const heightIn = parseFloat(document.getElementById('customCabHeight').value) || 34;
+
+      const widthFt = widthIn / 12;
+      const depthFt = depthIn / 12;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      createElement('base-cabinet', centerX, centerY);
+
+      if (selectedElement) {
+        selectedElement.width = widthFt;
+        selectedElement.height = depthFt;
+        selectedElement.label = `Custom ${widthIn}"×${depthIn}"`;
+        selectedElement.actualHeight = heightIn / 12; // Store height in feet
+        draw();
+        updateProperties();
+      }
+
+      document.getElementById('cabinetLibraryModal')?.remove();
+      showToast(`Added custom cabinet ${widthIn}" × ${depthIn}" × ${heightIn}"`, 'success');
+    }
+
+    // =============================================
+    // Custom Cabinet Library Upload Functions
+    // =============================================
+
+    // Show/hide the upload panel
+    function showCabinetUploadPanel() {
+      const panel = document.getElementById('cabinetUploadPanel');
+      if (panel) {
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    // Download template CSV for cabinet catalog
+    function downloadCabinetTemplate() {
+      const template = `name,sku,type,width,depth,height,price
+Base Cabinet 36,B36,base-cabinet,36,24,34.5,250
+Wall Cabinet 30,W3030,wall-cabinet,30,12,30,180
+Drawer Base 24,DB24,drawer-base,24,24,34.5,320
+Sink Base 36,SB36,sink-base,36,24,34.5,280
+Tall Pantry 24,TP2496,tall-cabinet,24,24,96,450
+Corner Base,BCR36,corner-cabinet,36,36,34.5,380
+Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
+
+      const blob = new Blob([template], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cabinet-catalog-template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showToast('Template downloaded! Fill in your cabinets and re-upload.', 'success');
+    }
+
+    // Handle cabinet catalog file upload
+    async function handleCabinetCatalogUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('catalogUploadStatus');
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = '<span style="color: var(--primary);">Processing file...</span>';
+
+      try {
+        const text = await file.text();
+        let cabinets = [];
+
+        if (file.name.endsWith('.json')) {
+          // Parse JSON
+          const data = JSON.parse(text);
+          cabinets = Array.isArray(data) ? data : (data.cabinets || data.items || []);
+        } else {
+          // Parse CSV
+          cabinets = parseCSVCabinets(text);
+        }
+
+        if (cabinets.length === 0) {
+          throw new Error('No valid cabinets found in file');
+        }
+
+        // Normalize and validate cabinet data
+        const normalizedCabinets = cabinets.map((cab, idx) => {
+          const widthIn = parseFloat(cab.width) || 36;
+          const depthIn = parseFloat(cab.depth) || 24;
+          const heightIn = parseFloat(cab.height) || 34.5;
+
+          // Determine cabinet type from name or type field
+          let type = cab.type || 'base-cabinet';
+          const name = (cab.name || cab.label || cab.sku || `Cabinet ${idx + 1}`).toLowerCase();
+
+          if (name.includes('wall') || name.startsWith('w')) type = 'wall-cabinet';
+          else if (name.includes('tall') || name.includes('pantry') || name.startsWith('t')) type = 'tall-cabinet';
+          else if (name.includes('sink') || name.startsWith('sb')) type = 'sink-base';
+          else if (name.includes('drawer') || name.startsWith('db')) type = 'drawer-base';
+          else if (name.includes('corner') || name.includes('bcr')) type = 'corner-cabinet';
+          else if (name.includes('lazy') || name.includes('susan')) type = 'lazy-susan';
+          else if (name.includes('island')) type = 'island';
+
+          // Determine icon based on type
+          const icons = {
+            'base-cabinet': '🗄️',
+            'wall-cabinet': '🗄️',
+            'tall-cabinet': '📦',
+            'sink-base': '🚰',
+            'drawer-base': '🗃️',
+            'corner-cabinet': '📐',
+            'lazy-susan': '🔄',
+            'island': '🏝️'
+          };
+
+          return {
+            id: `custom-${Date.now()}-${idx}`,
+            label: cab.name || cab.label || cab.sku || `Cabinet ${idx + 1}`,
+            sku: cab.sku || cab.code || '',
+            type: type,
+            width: widthIn / 12,  // Convert to feet for canvas
+            height: depthIn / 12, // Depth in feet (used as height in 2D)
+            actualHeight: heightIn,
+            icon: icons[type] || '🗄️',
+            dims: `${widthIn}" × ${depthIn}" × ${heightIn}"`,
+            price: parseFloat(cab.price) || null,
+            customWidth: widthIn / 12
+          };
+        });
+
+        // Save to localStorage
+        const existing = JSON.parse(localStorage.getItem('customCabinetLibrary') || '[]');
+        const merged = [...existing, ...normalizedCabinets];
+        localStorage.setItem('customCabinetLibrary', JSON.stringify(merged));
+
+        statusEl.innerHTML = `
+          <span style="color: #10b981;">✓ Imported ${normalizedCabinets.length} cabinets!</span>
+          <button onclick="clearCustomCabinetLibrary()" style="margin-left: 12px; padding: 4px 8px; font-size: 11px;" class="btn btn-secondary">
+            Clear Library
+          </button>
+        `;
+
+        // Refresh the modal to show new cabinets
+        showToast(`Imported ${normalizedCabinets.length} cabinets to your library!`, 'success');
+
+        // Switch to custom tab
+        document.querySelector('.cab-tab[data-cat="custom"]')?.click();
+
+      } catch (err) {
+        console.error('Cabinet catalog upload error:', err);
+        statusEl.innerHTML = `<span style="color: #ef4444;">Error: ${err.message}</span>`;
+        showToast('Failed to import catalog: ' + err.message, 'error');
+      }
+
+      // Reset file input
+      event.target.value = '';
+    }
+
+    // Parse CSV into cabinet objects
+    function parseCSVCabinets(csvText) {
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) return [];
+
+      // Parse header
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+      // Find column indices
+      const nameIdx = headers.findIndex(h => ['name', 'label', 'description', 'sku', 'code'].includes(h));
+      const skuIdx = headers.findIndex(h => ['sku', 'code', 'part', 'item'].includes(h));
+      const typeIdx = headers.findIndex(h => ['type', 'category', 'kind'].includes(h));
+      const widthIdx = headers.findIndex(h => ['width', 'w'].includes(h));
+      const depthIdx = headers.findIndex(h => ['depth', 'd'].includes(h));
+      const heightIdx = headers.findIndex(h => ['height', 'h'].includes(h));
+      const priceIdx = headers.findIndex(h => ['price', 'cost', 'msrp'].includes(h));
+
+      // Parse data rows
+      const cabinets = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length < 3) continue; // Skip invalid rows
+
+        cabinets.push({
+          name: nameIdx >= 0 ? values[nameIdx] : values[0],
+          sku: skuIdx >= 0 ? values[skuIdx] : '',
+          type: typeIdx >= 0 ? values[typeIdx] : '',
+          width: widthIdx >= 0 ? values[widthIdx] : values[1] || '36',
+          depth: depthIdx >= 0 ? values[depthIdx] : values[2] || '24',
+          height: heightIdx >= 0 ? values[heightIdx] : values[3] || '34.5',
+          price: priceIdx >= 0 ? values[priceIdx] : ''
+        });
+      }
+
+      return cabinets;
+    }
+
+    // Clear custom cabinet library
+    function clearCustomCabinetLibrary() {
+      if (confirm('Are you sure you want to clear your custom cabinet library?')) {
+        localStorage.removeItem('customCabinetLibrary');
+        showToast('Custom cabinet library cleared', 'success');
+
+        // Refresh modal
+        document.getElementById('cabinetLibraryModal')?.remove();
+        showCabinetLibrary();
+      }
+    }
+
+    // Add custom cabinet from library (with full dimensions)
+    function addCustomCabinetFromLibrary(cabinet) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      createElement(cabinet.type || 'base-cabinet', centerX, centerY);
+
+      if (selectedElement) {
+        selectedElement.width = cabinet.width || cabinet.customWidth || 3;
+        selectedElement.height = cabinet.height || 2;
+        selectedElement.label = cabinet.label || cabinet.name;
+        selectedElement.actualHeight = cabinet.actualHeight || 34.5;
+        if (cabinet.price) selectedElement.priceOverride = cabinet.price;
+        draw();
+        updateProperties();
+      }
+
+      document.getElementById('cabinetLibraryModal')?.remove();
+      showToast(`Added ${cabinet.label} to canvas`, 'success');
+    }
+
+    // =============================================
+    // PRO TOOLS - Commercial Project Manager
+    // =============================================
+    // Full implementation is in designer-pro-features.js (window.showCommercialProjectManager)
+
+    // =============================================
+    // PRO TOOLS - Approval Workflow
+    // =============================================
+    function showApprovalWorkflow() {
+      // Check if design is saved first
+      if (!currentDesignId) {
+        showToast('Please save your design first before sending for approval', 'warning');
+        return;
+      }
+
+      const existing = document.getElementById('approvalWorkflowModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'approvalWorkflowModal';
+      modal.className = 'cabinet-library-modal';
+      modal.innerHTML = `
+        <div class="cabinet-library-content" style="max-width: 500px;">
+          <div class="cabinet-library-header">
+            <h3>✅ Send for Approval</h3>
+            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
+          </div>
+          <div class="cabinet-library-body">
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px; font-weight: 500;">Recipient Email</label>
+              <input type="email" id="approvalEmail" placeholder="customer@example.com"
+                style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--dark-elevated); color: var(--text);" />
+            </div>
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px; font-weight: 500;">Message (optional)</label>
+              <textarea id="approvalMessage" rows="3" placeholder="Please review this design and let me know your thoughts..."
+                style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--dark-elevated); color: var(--text); resize: vertical;"></textarea>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn btn-secondary" onclick="this.closest('.cabinet-library-modal').remove()" style="flex: 1;">Cancel</button>
+              <button class="btn btn-primary" onclick="sendForApproval()" style="flex: 1;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      modal.onkeydown = (e) => e.stopPropagation();
+
+      // Focus email input
+      setTimeout(() => document.getElementById('approvalEmail')?.focus(), 100);
+    }
+
+    async function sendForApproval() {
+      const email = document.getElementById('approvalEmail')?.value?.trim();
+      const message = document.getElementById('approvalMessage')?.value?.trim();
+
+      if (!email) {
+        showToast('Please enter an email address', 'warning');
+        return;
+      }
+
+      // Basic email validation
+      if (!email.includes('@') || !email.includes('.')) {
+        showToast('Please enter a valid email address', 'warning');
+        return;
+      }
+
+      try {
+        // Generate share link if not already shared
+        let shareUrl = window.location.origin + '/tools/room-designer/share/?token=' + currentDesignId;
+
+        // Send approval request email via API
+        const response = await fetch('/api/email/send-approval-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email,
+            designId: currentDesignId,
+            shareUrl: shareUrl,
+            message: message,
+            projectName: document.getElementById('projectName')?.value || 'Room Design'
+          })
+        });
+
+        if (response.ok) {
+          showToast('Approval request sent successfully!', 'success');
+          document.getElementById('approvalWorkflowModal')?.remove();
+        } else {
+          throw new Error('Failed to send email');
+        }
+      } catch (err) {
+        console.error('Approval send error:', err);
+        showToast('Failed to send approval request. Please try again.', 'error');
+      }
+    }
+
     function exportToPDF() {
       document.getElementById('exportMenu').classList.remove('show');
 
@@ -64650,8 +65261,13 @@
             .limit(20);
 
           if (clientMessages) {
+            // Get list of cleared/dismissed notification IDs from localStorage
+            const clearedNotifications = JSON.parse(localStorage.getItem('clearedNotificationIds') || '[]');
+
             const filtered = clientMessages.filter(m => {
               const designId = m.metadata?.design_id;
+              // Skip if this notification was cleared/dismissed by user
+              if (clearedNotifications.includes(m.id)) return false;
               return designId && designIds.includes(designId);
             });
 
@@ -64680,6 +65296,9 @@
           console.log('Shares with comments:', shares?.length || 0);
 
           if (shares) {
+            // Get list of cleared/read share comment IDs from localStorage
+            const clearedShareComments = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
+
             shares.forEach(share => {
               const design = NOTIFICATION_HUB.designMap[share.design_id];
               const comments = share.comments || [];
@@ -64688,20 +65307,25 @@
                 // Skip outbound (designer) messages
                 if (c.direction === 'outbound') return;
 
+                const commentId = `share-comment-${share.id}-${idx}`;
+
                 // Check for duplicates
                 const isDupe = NOTIFICATION_HUB.notifications.some(n =>
                   n.message === c.text && n.time === c.timestamp
                 );
                 if (isDupe) return;
 
+                // Check if this comment was previously cleared/read
+                const wasCleared = clearedShareComments.includes(commentId);
+
                 NOTIFICATION_HUB.notifications.push({
-                  id: `share-comment-${share.id}-${idx}`,
+                  id: commentId,
                   type: 'chat',
                   source: design?.name || 'Untitled Design',
                   message: c.text,
                   author: c.author || 'Customer',
                   time: c.timestamp,
-                  read: false,
+                  read: wasCleared,  // Respect cleared status from localStorage
                   designId: share.design_id,
                   shareToken: design?.share_token || share.share_token,
                   shareId: share.id
@@ -64758,8 +65382,19 @@
           const newComments = payload.new.comments || [];
 
           // Find new comments that aren't already in notifications
+          // Also check cleared localStorage to avoid re-adding cleared notifications
+          const clearedShareComments = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
+
           newComments.forEach((c, idx) => {
             if (c.direction === 'outbound') return;
+
+            // Check if this comment was previously cleared
+            const commentIdBase = `share-comment-${payload.new.id}-${idx}`;
+            const wasCleared = clearedShareComments.some(id => id.startsWith(commentIdBase));
+            if (wasCleared) {
+              console.log('Skipping cleared notification:', commentIdBase);
+              return;
+            }
 
             const isDupe = NOTIFICATION_HUB.notifications.some(n =>
               n.message === c.text && n.time === c.timestamp
@@ -64859,6 +65494,13 @@
         }, (payload) => {
           const designId = payload.new.metadata?.design_id;
           if (designId && designIds.includes(designId) && payload.new.direction === 'inbound') {
+            // Check if this notification was previously cleared
+            const clearedNotifications = JSON.parse(localStorage.getItem('clearedNotificationIds') || '[]');
+            if (clearedNotifications.includes(payload.new.id)) {
+              console.log('Skipping cleared notification:', payload.new.id);
+              return;
+            }
+
             const design = NOTIFICATION_HUB.designMap[designId];
             const notif = {
               id: payload.new.id,
@@ -65086,24 +65728,120 @@
       }
     }
 
-    // Mark all as read
-    function markAllNotificationsRead() {
+    // Mark all as read - updates memory, database, AND localStorage for share comments
+    async function markAllNotificationsRead() {
+      // Separate database IDs from share comment IDs
+      const dbIds = NOTIFICATION_HUB.notifications
+        .filter(n => !n.read && n.id && !String(n.id).startsWith('share-comment-'))
+        .map(n => n.id);
+
+      const shareCommentIds = NOTIFICATION_HUB.notifications
+        .filter(n => !n.read && n.id && String(n.id).startsWith('share-comment-'))
+        .map(n => n.id);
+
+      // Update memory immediately for responsive UI
       NOTIFICATION_HUB.notifications.forEach(n => n.read = true);
       renderNotificationHub();
       updateHubBadge();
+
+      // Persist share comment read status to localStorage
+      if (shareCommentIds.length > 0) {
+        const cleared = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
+        const updated = [...new Set([...cleared, ...shareCommentIds])];
+        localStorage.setItem('clearedShareComments', JSON.stringify(updated));
+        console.log('Saved', shareCommentIds.length, 'share comments as read to localStorage');
+      }
+
+      // Persist database notifications to database
+      if (dbIds.length > 0 && typeof supabase !== 'undefined') {
+        try {
+          const now = new Date().toISOString();
+          const supabaseClient = getSupabaseClient();
+          if (supabaseClient) {
+            await supabaseClient
+              .from('customer_messages')
+              .update({ read_at: now })
+              .in('id', dbIds);
+            console.log('Marked', dbIds.length, 'notifications as read in database');
+          }
+        } catch (err) {
+          console.error('Failed to persist read status:', err);
+        }
+      }
+
       showToast('All notifications marked as read', 'success');
     }
 
-    // Clear all notifications
-    function clearAllNotifications() {
+    // Clear all notifications - updates memory, database, AND localStorage
+    async function clearAllNotifications() {
+      // Separate database IDs from share comment IDs
+      const dbIds = NOTIFICATION_HUB.notifications
+        .filter(n => n.id && !String(n.id).startsWith('share-comment-'))
+        .map(n => n.id);
+
+      const shareCommentIds = NOTIFICATION_HUB.notifications
+        .filter(n => n.id && String(n.id).startsWith('share-comment-'))
+        .map(n => n.id);
+
+      // Clear memory immediately
       NOTIFICATION_HUB.notifications = [];
       renderNotificationHub();
       updateHubBadge();
+
+      // Save ALL cleared notification IDs to localStorage so they don't reload
+      if (dbIds.length > 0) {
+        const clearedDbIds = JSON.parse(localStorage.getItem('clearedNotificationIds') || '[]');
+        const updatedDbIds = [...new Set([...clearedDbIds, ...dbIds])];
+        localStorage.setItem('clearedNotificationIds', JSON.stringify(updatedDbIds));
+        console.log('Saved', dbIds.length, 'notification IDs as cleared to localStorage');
+      }
+
+      // Persist share comment cleared status to localStorage
+      if (shareCommentIds.length > 0) {
+        const cleared = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
+        const updated = [...new Set([...cleared, ...shareCommentIds])];
+        localStorage.setItem('clearedShareComments', JSON.stringify(updated));
+        console.log('Saved', shareCommentIds.length, 'share comments as cleared to localStorage');
+      }
+
+      // Also mark as read in database
+      if (dbIds.length > 0 && typeof supabase !== 'undefined') {
+        try {
+          const now = new Date().toISOString();
+          const supabaseClient = getSupabaseClient();
+          if (supabaseClient) {
+            await supabaseClient
+              .from('customer_messages')
+              .update({ read_at: now })
+              .in('id', dbIds);
+            console.log('Cleared', dbIds.length, 'notifications in database');
+          }
+        } catch (err) {
+          console.error('Failed to persist clear status:', err);
+        }
+      }
+
       showToast('All notifications cleared', 'success');
     }
 
     // Clear a single notification
     function clearNotification(notificationId) {
+      // Save to appropriate localStorage based on ID type
+      if (String(notificationId).startsWith('share-comment-')) {
+        const cleared = JSON.parse(localStorage.getItem('clearedShareComments') || '[]');
+        if (!cleared.includes(notificationId)) {
+          cleared.push(notificationId);
+          localStorage.setItem('clearedShareComments', JSON.stringify(cleared));
+        }
+      } else {
+        // Database notification - save ID to cleared list
+        const clearedDbIds = JSON.parse(localStorage.getItem('clearedNotificationIds') || '[]');
+        if (!clearedDbIds.includes(notificationId)) {
+          clearedDbIds.push(notificationId);
+          localStorage.setItem('clearedNotificationIds', JSON.stringify(clearedDbIds));
+        }
+      }
+
       NOTIFICATION_HUB.notifications = NOTIFICATION_HUB.notifications.filter(n => n.id !== notificationId);
       renderNotificationHub();
       updateHubBadge();
@@ -66255,26 +66993,7 @@
       document.getElementById('notificationToast').classList.remove('show');
     }
 
-    function playNotificationSound() {
-      // Create a simple notification beep
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.value = 0.1;
-
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 100);
-      } catch (e) {
-        // Audio not available
-      }
-    }
+    // Note: playNotificationSound() is defined earlier in the notification hub section
 
     // Helper function for consistent color from string
     function stringToColor(str) {

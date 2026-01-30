@@ -230,7 +230,8 @@ router.post('/blueprint', async (req, res) => {
       baxFile,
       useOllama = false,
       laborRate,
-      materialPricing
+      materialPricing,
+      userContext = '' // User-provided context to help AI understand the drawing
     } = req.body;
 
     if (!image && !blueprintUrl && !baxFile) {
@@ -278,7 +279,8 @@ router.post('/blueprint', async (req, res) => {
             provider: provider,
             apiKey: process.env.OPENAI_API_KEY,
             rates: materialPricing,
-            wasteFactor: 0.10
+            wasteFactor: 0.10,
+            userContext: userContext // Pass user-provided context to enhance AI understanding
           });
 
           analysisResults = convertAIResultToLegacy(aiResult, projectType);

@@ -61,20 +61,392 @@ const CONFIG = {
 };
 
 // ============================================
-// GPT-4 VISION ANALYSIS
+// FABRIC-STYLE PATTERNS FOR CABINET ANALYSIS
+// Multi-step structured prompts for accurate extraction
 // ============================================
 
 /**
- * Analyze blueprint image using GPT-4 Vision
+ * PATTERN 1: identify_drawing_type
+ * Determines what type of drawing we're analyzing
+ */
+const PATTERN_IDENTIFY_DRAWING = {
+  identity: `You are an expert at identifying cabinet and kitchen drawing types from 2020 Design, Cabinet Vision, KCD, and similar CAD software.`,
+
+  task: `Analyze this image and identify EXACTLY what type of drawing it is. This is critical for correct cabinet extraction.`,
+
+  output_format: `Return ONLY valid JSON:
+{
+  "drawingType": "elevation|plan|schedule|perspective|mixed",
+  "wallShown": "top|bottom|left|right|multiple|unknown",
+  "wallLabel": "Original label if visible (e.g., 'Wall A', 'North Wall', 'Wall 1')",
+  "roomName": "Room name if visible",
+  "layoutType": "L-shape|U-shape|galley|single-wall|island|unknown",
+  "cabinetCount": approximate number of cabinets visible,
+  "hasWallCabinets": true/false,
+  "hasBaseCabinets": true/false,
+  "hasTallCabinets": true/false,
+  "confidence": "high|medium|low",
+  "notes": "Any relevant observations"
+}`,
+
+  rules: `
+CRITICAL RULES FOR DRAWING TYPE:
+
+1. ELEVATION VIEW (side/front view of ONE wall):
+   - You see cabinets from the FRONT, doors/drawers facing you
+   - Base cabinets at BOTTOM, wall cabinets at TOP
+   - ALL cabinets are on the SAME WALL
+   - Often labeled "Wall A", "Wall 1", "North Wall", etc.
+   - Set wallShown to the wall being viewed
+
+2. PLAN VIEW (top-down/bird's eye):
+   - You see cabinets from ABOVE
+   - Cabinets appear as rectangles along room edges
+   - Can see multiple walls
+   - Set wallShown to "multiple"
+
+3. CABINET SCHEDULE (table/list):
+   - Text-based list of cabinets with specs
+   - Usually has columns: Qty, Description, Size
+   - Set wallShown to "unknown" (need to infer)
+
+4. PERSPECTIVE/3D VIEW:
+   - 3D rendered view of the room
+   - Can see depth and multiple walls
+   - Set wallShown to "multiple"
+
+5. MIXED (multiple views on one page):
+   - Contains both elevation and plan views
+   - Set drawingType to "mixed"
+`
+};
+
+/**
+ * PATTERN 2: extract_cabinets
+ * Extracts cabinet data using context from Pattern 1
+ */
+const PATTERN_EXTRACT_CABINETS = {
+  identity: `You are an expert cabinet data extractor specializing in 2020 Design and CAD software output.`,
+
+  getTask: (drawingContext) => `
+Extract ALL cabinet data from this ${drawingContext.drawingType} view.
+
+CRITICAL CONTEXT FROM STEP 1:
+- Drawing Type: ${drawingContext.drawingType}
+- Wall Shown: ${drawingContext.wallShown}
+- Wall Label: ${drawingContext.wallLabel || 'Not specified'}
+- Room: ${drawingContext.roomName || 'Unknown'}
+- Layout: ${drawingContext.layoutType}
+
+${drawingContext.drawingType === 'elevation' ? `
+⚠️ THIS IS AN ELEVATION VIEW - ALL CABINETS GO ON THE "${drawingContext.wallShown.toUpperCase()}" WALL
+Do NOT assign cabinets to different walls. Every cabinet in this view is on wall: "${drawingContext.wallShown}"
+` : ''}
+
+${drawingContext.drawingType === 'schedule' ? `
+⚠️ THIS IS A CABINET SCHEDULE - Infer wall positions from cabinet names/notes if possible.
+If a cabinet says "Wall A" or "North", map it: Wall A/North = "top", Wall B/South = "bottom", Wall C/East = "right", Wall D/West = "left"
+` : ''}
+`,
+
+  output_format: `Return ONLY valid JSON:
+{
+  "rooms": [{
+    "name": "Room name",
+    "widthFt": estimated room width in feet,
+    "depthFt": estimated room depth in feet,
+    "layoutType": "L-shape|U-shape|galley|single-wall|island",
+    "cabinets": [
+      {
+        "label": "Cabinet code (B36, W3030, etc.)",
+        "type": "base-cabinet|wall-cabinet|tall-cabinet|sink-base|corner-cabinet|island|drawer-base",
+        "width": width in inches,
+        "depth": depth in inches,
+        "height": height in inches,
+        "wall": "top|bottom|left|right|island"
+      }
+    ],
+    "appliances": [
+      {"type": "refrigerator|range|dishwasher|microwave", "width": inches, "wall": "position"}
+    ],
+    "island": {"width": inches, "depth": inches} or null
+  }],
+  "confidence": "high|medium|low"
+}`,
+
+  rules: `
+EXTRACTION RULES:
+
+1. DIMENSIONS - Be precise:
+   - Read dimensions EXACTLY as shown
+   - Standard base: 24" deep, 34.5" tall
+   - Standard wall: 12" deep, 30/36/42" tall
+   - Standard tall: 24" deep, 84/90/96" tall
+
+2. CABINET TYPES - Identify correctly:
+   - "B" prefix = base cabinet
+   - "W" prefix = wall cabinet
+   - "SB" = sink base
+   - "DB" = drawer base
+   - "TB" or "TP" = tall pantry
+   - Numbers after = width (B36 = 36" base)
+
+3. WALL ASSIGNMENT - Follow drawing context:
+   - ELEVATION: All cabinets → same wall from context
+   - PLAN: Assign based on position in drawing
+   - SCHEDULE: Use notes/labels to determine wall
+
+4. CABINET SEQUENCE - Maintain order:
+   - Extract cabinets left-to-right as they appear
+   - This preserves the layout sequence
+`
+};
+
+/**
+ * PATTERN 3: validate_layout
+ * Validates and corrects the extracted data
+ */
+const PATTERN_VALIDATE_LAYOUT = {
+  identity: `You are a cabinet layout validator ensuring extracted data is logically correct.`,
+
+  getTask: (extractedData, drawingContext) => `
+Validate this cabinet extraction and FIX any issues:
+
+Drawing Type: ${drawingContext.drawingType}
+Wall Shown: ${drawingContext.wallShown}
+
+Extracted Data:
+${JSON.stringify(extractedData, null, 2)}
+`,
+
+  rules: `
+VALIDATION RULES:
+
+1. If drawingType is "elevation" - ALL cabinets must be on the SAME wall
+   - If cabinets are on different walls, FIX by setting all to wallShown value
+
+2. Wall cabinets should align with base cabinets below them
+   - Same wall position for paired base/wall cabinets
+
+3. Typical layouts:
+   - L-shape: cabinets on 2 adjacent walls (top+left OR top+right)
+   - U-shape: cabinets on 3 walls (top+left+right)
+   - Galley: cabinets on 2 parallel walls (top+bottom)
+   - Single-wall: all on one wall
+
+4. Fix any dimension anomalies:
+   - Base cabinet depth > 30" → set to 24"
+   - Wall cabinet depth > 15" → set to 12"
+   - Width < 6" or > 60" → likely error
+`,
+
+  output_format: `Return the CORRECTED JSON with same structure as input, fixing any issues found.`
+};
+
+// ============================================
+// GPT-4 VISION ANALYSIS WITH FABRIC PATTERNS
+// ============================================
+
+/**
+ * Analyze blueprint image using GPT-4 Vision with Fabric-style multi-step patterns
  * @param {string} imageBase64 - Base64 encoded image or URL
  * @param {string} projectType - Type of project (kitchen, bathroom, etc.)
  * @param {string} apiKey - OpenAI API key
+ * @param {string} userContext - User-provided context about the drawing
  * @returns {Promise<Object>} Takeoff analysis results
  */
-async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey) {
+async function analyzeWithGPT4Vision(imageBase64, projectType, apiKey, userContext = '') {
+
+  console.log('=== FABRIC PATTERN ANALYSIS START ===');
+
+  // ============================================
+  // STEP 1: Identify Drawing Type
+  // ============================================
+  console.log('Step 1: Identifying drawing type...');
+
+  const step1Prompt = `${PATTERN_IDENTIFY_DRAWING.task}
+
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+
+${PATTERN_IDENTIFY_DRAWING.rules}
+
+${PATTERN_IDENTIFY_DRAWING.output_format}`;
+
+  let drawingContext;
+  try {
+    const step1Response = await callGPT4Vision(apiKey, PATTERN_IDENTIFY_DRAWING.identity, step1Prompt, imageBase64);
+    drawingContext = parseJSONResponse(step1Response);
+    console.log('Drawing type identified:', drawingContext.drawingType, '| Wall:', drawingContext.wallShown);
+  } catch (err) {
+    console.warn('Step 1 failed, using defaults:', err.message);
+    drawingContext = {
+      drawingType: 'elevation',
+      wallShown: 'top',
+      layoutType: 'unknown',
+      confidence: 'low'
+    };
+  }
+
+  // Apply user context overrides
+  if (userContext) {
+    const ctx = userContext.toLowerCase();
+    if (ctx.includes('wall 1') || ctx.includes('wall a') || ctx.includes('north') || ctx.includes('top wall')) {
+      drawingContext.wallShown = 'top';
+    } else if (ctx.includes('wall 2') || ctx.includes('wall b') || ctx.includes('south') || ctx.includes('bottom wall')) {
+      drawingContext.wallShown = 'bottom';
+    } else if (ctx.includes('wall 3') || ctx.includes('wall c') || ctx.includes('east') || ctx.includes('right wall')) {
+      drawingContext.wallShown = 'right';
+    } else if (ctx.includes('wall 4') || ctx.includes('wall d') || ctx.includes('west') || ctx.includes('left wall')) {
+      drawingContext.wallShown = 'left';
+    }
+
+    if (ctx.includes('l-shape') || ctx.includes('l shape')) drawingContext.layoutType = 'L-shape';
+    if (ctx.includes('u-shape') || ctx.includes('u shape')) drawingContext.layoutType = 'U-shape';
+    if (ctx.includes('galley')) drawingContext.layoutType = 'galley';
+    if (ctx.includes('single wall') || ctx.includes('one wall')) drawingContext.layoutType = 'single-wall';
+  }
+
+  // ============================================
+  // STEP 2: Extract Cabinets with Context
+  // ============================================
+  console.log('Step 2: Extracting cabinets with context...');
+
+  const step2Prompt = `${PATTERN_EXTRACT_CABINETS.getTask(drawingContext)}
+
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+
+${PATTERN_EXTRACT_CABINETS.rules}
+
+${PATTERN_EXTRACT_CABINETS.output_format}`;
+
+  let extractedData;
+  try {
+    const step2Response = await callGPT4Vision(apiKey, PATTERN_EXTRACT_CABINETS.identity, step2Prompt, imageBase64);
+    extractedData = parseJSONResponse(step2Response);
+    console.log('Cabinets extracted:', extractedData.rooms?.[0]?.cabinets?.length || 0);
+  } catch (err) {
+    console.error('Step 2 failed:', err.message);
+    throw new Error('Failed to extract cabinet data: ' + err.message);
+  }
+
+  // ============================================
+  // STEP 3: Validate and Correct
+  // ============================================
+  console.log('Step 3: Validating layout...');
+
+  // Quick validation without another API call
+  if (extractedData.rooms) {
+    extractedData.rooms.forEach(room => {
+      // If elevation view, force all cabinets to same wall
+      if (drawingContext.drawingType === 'elevation' && drawingContext.wallShown !== 'multiple') {
+        const targetWall = drawingContext.wallShown || 'top';
+        console.log(`Elevation view detected - forcing all cabinets to "${targetWall}" wall`);
+
+        room.cabinets?.forEach(cab => {
+          if (cab.wall !== 'island') {
+            cab.wall = targetWall;
+          }
+        });
+
+        room.appliances?.forEach(app => {
+          if (app.wall !== 'island') {
+            app.wall = targetWall;
+          }
+        });
+      }
+
+      // Validate dimensions
+      room.cabinets?.forEach(cab => {
+        // Fix unrealistic depths
+        if (cab.depth > 30 && cab.type !== 'tall-cabinet') cab.depth = 24;
+        if (cab.type === 'wall-cabinet' && cab.depth > 15) cab.depth = 12;
+
+        // Fix unrealistic widths
+        if (cab.width < 6) cab.width = 12;
+        if (cab.width > 60) cab.width = 48;
+
+        // Ensure wall is valid
+        if (!['top', 'bottom', 'left', 'right', 'island'].includes(cab.wall)) {
+          cab.wall = drawingContext.wallShown || 'top';
+        }
+      });
+
+      // Set layout type from context if not specified
+      if (!room.layoutType || room.layoutType === 'unknown') {
+        room.layoutType = drawingContext.layoutType || 'single-wall';
+      }
+    });
+  }
+
+  console.log('=== FABRIC PATTERN ANALYSIS COMPLETE ===');
+
+  return extractedData;
+}
+
+/**
+ * Helper: Call GPT-4 Vision API
+ */
+async function callGPT4Vision(apiKey, systemPrompt, userPrompt, imageBase64) {
+  const response = await fetch(CONFIG.openai.apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: CONFIG.openai.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: userPrompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageBase64.startsWith('http') ? imageBase64 : imageBase64,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: CONFIG.openai.maxTokens,
+      temperature: 0.1  // Lower temperature for more consistent extraction
+    })
+  });
+
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message);
+  }
+
+  return data.choices[0].message.content;
+}
+
+/**
+ * Helper: Parse JSON from GPT response (handles markdown wrapping)
+ */
+function parseJSONResponse(content) {
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  throw new Error('No valid JSON found in response');
+}
+
+// ============================================
+// LEGACY SINGLE-PROMPT ANALYSIS (kept for reference)
+// ============================================
+
+/**
+ * Legacy single-prompt analysis - kept for fallback
+ */
+async function analyzeWithGPT4VisionLegacy(imageBase64, projectType, apiKey, userContext = '') {
   const systemPrompt = `You are an expert at reading cabinet shop drawings, especially from 2020 Design software and similar CAD programs.
 
-YOUR MISSION: Extract PRECISE cabinet data to create an accurate 3D virtual room.
+YOUR MISSION: Extract PRECISE cabinet data with CORRECT WALL POSITIONS to create an accurate 3D virtual room.
 
 COMMON SOFTWARE FORMATS TO RECOGNIZE:
 - 2020 Design: Cabinet schedules with SKU codes (B36, W3030, SB36, etc.)
@@ -84,16 +456,43 @@ COMMON SOFTWARE FORMATS TO RECOGNIZE:
 
 STEP 1 - IDENTIFY DRAWING TYPE:
 - CABINET SCHEDULE/LEGEND: Table listing all cabinets with dimensions
-- ELEVATION VIEW: Front view of wall showing cabinet arrangement
-- PLAN VIEW: Bird's eye view showing cabinet layout
+- ELEVATION VIEW: Front view of ONE wall showing cabinet arrangement (cabinets appear flat, stacked vertically with base below and wall cabinets above)
+- PLAN VIEW (TOP-DOWN): Bird's eye view showing cabinet layout along room perimeter
 - PERSPECTIVE/3D VIEW: 3D rendering of the space
 
-STEP 2 - EXTRACT ROOM INFO:
-- Room/Area name from title block or header
-- Wall identification (Wall A, Wall 1, North Wall, etc.)
-- Overall room dimensions if shown
+STEP 2 - UNDERSTAND MULTI-VIEW DRAWINGS:
+2020 Design and similar CAD programs typically show multiple views:
 
-STEP 3 - READ EACH CABINET PRECISELY:
+A) PLAN VIEW (top-down, looking DOWN at the floor):
+   - Cabinets appear as rectangles along room walls
+   - You see cabinet WIDTHS and DEPTHS
+   - Use this to determine which wall each cabinet is on:
+     * Cabinets at TOP of drawing = "top" wall
+     * Cabinets at BOTTOM of drawing = "bottom" wall
+     * Cabinets on LEFT side = "left" wall
+     * Cabinets on RIGHT side = "right" wall
+     * Cabinets in CENTER (not touching walls) = "island"
+
+B) ELEVATION VIEWS (front view of a single wall):
+   - Title usually says "Wall 1", "Wall A", "North Elevation", etc.
+   - You see cabinet WIDTHS and HEIGHTS (not depths)
+   - Base cabinets at bottom, wall/upper cabinets at top
+   - MAP the wall name to position:
+     * "Wall 1" or "Wall A" or "North" → "top"
+     * "Wall 2" or "Wall B" or "South" → "bottom"
+     * "Wall 3" or "Wall C" or "East" → "right"
+     * "Wall 4" or "Wall D" or "West" → "left"
+
+C) CABINET SCHEDULE/LEGEND:
+   - Lists all cabinets with SKU, dimensions, sometimes wall assignment
+   - Cross-reference with plan or elevation to get wall positions
+
+STEP 3 - EXTRACT ROOM INFO:
+- Room/Area name from title block or header
+- Overall room dimensions if shown (width x depth in feet)
+- Identify all walls that have cabinets
+
+STEP 4 - READ EACH CABINET PRECISELY:
 
 For 2020 Design SKU CODES:
 - B = Base cabinet (B36 = Base 36")
@@ -117,7 +516,16 @@ For EACH CABINET, extract:
 - "width": Width in INCHES (e.g., 36, 18, 24)
 - "depth": Depth in INCHES (e.g., 24 for base, 12 for wall)
 - "height": Height in INCHES (e.g., 34.5 for base, 30 or 42 for wall, 84-96 for tall)
-- "wall": Which wall it's on (top, bottom, left, right, island)
+- "wall": CRITICAL - Which wall: "top", "bottom", "left", "right", or "island"
+
+WALL POSITION IS CRITICAL FOR 3D LAYOUT:
+- Analyze the drawing to determine which wall each cabinet belongs to
+- If viewing an elevation, identify which wall it represents
+- If viewing a plan, position based on which edge cabinets are near
+- L-shaped layouts: Cabinets typically on "top" AND "left" OR "top" AND "right"
+- U-shaped layouts: Cabinets on "top", "left", AND "right"
+- Galley layouts: Cabinets on "top" AND "bottom" (parallel walls)
+- Peninsula: "top" wall cabinets with island extending into room
 
 RETURN THIS JSON:
 {
@@ -126,16 +534,24 @@ RETURN THIS JSON:
       "name": "EXACT ROOM/AREA NAME",
       "widthFt": 14,
       "depthFt": 12,
+      "layoutType": "L-shape|U-shape|galley|single-wall|island",
       "cabinets": [
         { "label": "B36", "type": "base-cabinet", "width": 36, "depth": 24, "height": 34.5, "wall": "top" },
         { "label": "SB36", "type": "sink-base", "width": 36, "depth": 24, "height": 34.5, "wall": "top" },
-        { "label": "W3030", "type": "wall-cabinet", "width": 30, "depth": 12, "height": 30, "wall": "top" }
+        { "label": "W3030", "type": "wall-cabinet", "width": 30, "depth": 12, "height": 30, "wall": "top" },
+        { "label": "B24-L", "type": "base-cabinet", "width": 24, "depth": 24, "height": 34.5, "wall": "left" }
       ],
       "appliances": [
-        { "type": "refrigerator", "width": 36, "location": "right" },
-        { "type": "range", "width": 30, "location": "top" }
+        { "type": "refrigerator", "width": 36, "wall": "right" },
+        { "type": "range", "width": 30, "wall": "top" },
+        { "type": "dishwasher", "width": 24, "wall": "top" }
       ],
-      "notes": "Wall 1 elevation showing base and wall cabinet run"
+      "island": {
+        "width": 48,
+        "depth": 36,
+        "hasSink": false
+      },
+      "notes": "L-shaped kitchen with cabinets on top and left walls"
     }
   ],
   "pageType": "schedule|elevation|plan|perspective",
@@ -148,14 +564,38 @@ CRITICAL ACCURACY RULES:
 1. READ dimensions EXACTLY - 36.75" means 36.75, not 36 or 37
 2. Use the EXACT label/number shown on drawing
 3. All dimensions must be in INCHES
-4. Base cabinets: typically 24" deep, 34.5" tall
-5. Wall cabinets: typically 12" deep, 30" or 36" or 42" tall
-6. Tall cabinets: typically 24" deep, 84" or 90" or 96" tall
-7. Include ALL cabinets - fillers, panels, appliance garages, etc.
-8. Note appliance locations (fridge, range, dishwasher, microwave)
-9. If you can't read a dimension clearly, use type-appropriate defaults but note low confidence`;
+4. ALWAYS specify wall position - never leave it blank or default everything to "top"
+5. Base cabinets: typically 24" deep, 34.5" tall
+6. Wall cabinets: typically 12" deep, 30" or 36" or 42" tall
+7. Tall cabinets: typically 24" deep, 84" or 90" or 96" tall
+8. Corner cabinets go at wall intersections - assign to the primary wall
+9. Include ALL cabinets - fillers, panels, appliance garages, etc.
+10. Note appliance locations with their wall position
+11. If you can't read a dimension clearly, use type-appropriate defaults but note low confidence
+12. If viewing only ONE elevation, still try to infer layout from title or notes`;
 
-  const userPrompt = `Analyze this ${projectType || 'cabinet'} drawing for 3D room creation.
+  // Build user prompt with optional user context
+  let userPromptText = `Analyze this ${projectType || 'cabinet'} drawing for 3D room creation.
+
+IMPORTANT: I need ACCURATE WALL POSITIONS for each cabinet to build a correct 3D layout.`;
+
+  // Add user context if provided - this helps the AI understand specific details about the drawing
+  if (userContext && userContext.trim()) {
+    userPromptText += `
+
+=== USER-PROVIDED CONTEXT ===
+The user has provided the following additional information about this drawing:
+"${userContext.trim()}"
+
+Please use this context to guide your analysis. For example:
+- If the user says "this is Wall 3 (right wall)", assign all cabinets to the "right" wall
+- If the user says "L-shaped kitchen", expect cabinets on two adjacent walls
+- If the user says "focus on base cabinets only", prioritize base cabinet extraction
+- If the user specifies a room type like "wet bar", use that as the room name
+=== END USER CONTEXT ===`;
+  }
+
+  userPromptText += `
 
 EXTRACT ALL DATA NEEDED TO BUILD AN ACCURATE 3D MODEL:
 
@@ -163,27 +603,37 @@ EXTRACT ALL DATA NEEDED TO BUILD AN ACCURATE 3D MODEL:
 
 2. ROOM IDENTIFICATION:
    - What room/area is this? (Kitchen, Wet Bar, Pantry, etc.)
-   - Which wall is shown? (Wall 1, Wall A, North Wall, etc.)
+   - If elevation view: Which wall is shown? (Wall 1 = top, Wall 2 = bottom, Wall 3 = right, Wall 4 = left)
+   - What is the overall layout? (L-shape, U-shape, galley, single-wall, island)
 
-3. CABINET INVENTORY - For EVERY cabinet visible:
+3. ROOM DIMENSIONS:
+   - If visible, what are the room dimensions in feet?
+   - Estimate from cabinet run lengths if not explicitly shown
+
+4. CABINET INVENTORY - For EVERY cabinet visible:
    - Cabinet label/number (B36, 1, W3030, etc.)
    - EXACT width in inches
    - EXACT depth in inches
    - EXACT height in inches
    - Cabinet type (base, wall, sink, drawer, tall, corner, etc.)
-   - Wall position
+   - WALL POSITION: "top", "bottom", "left", "right", or "island"
 
-4. APPLIANCES - Note any:
-   - Refrigerator location and width
-   - Range/cooktop location and width
-   - Dishwasher, microwave, hood locations
+5. APPLIANCES - Note with wall positions:
+   - Refrigerator location, width, and WALL
+   - Range/cooktop location, width, and WALL
+   - Dishwasher, microwave, hood with WALL positions
 
-5. SPECIAL ITEMS:
-   - Fillers, panels, moldings
-   - TV niches, wine racks
-   - Appliance garages
+6. ISLAND (if present):
+   - Width and depth in inches
+   - Whether it has a sink or cooktop
 
-Return complete JSON with all cabinets and their PRECISE dimensions for 3D rendering.`;
+7. SPECIAL ITEMS:
+   - Fillers, panels, moldings (with wall positions)
+   - TV niches, wine racks, appliance garages
+
+Return complete JSON with all cabinets, their PRECISE dimensions, and CORRECT WALL POSITIONS for 3D rendering.`;
+
+  const userPrompt = userPromptText;
 
   try {
     const response = await fetch(CONFIG.openai.apiUrl, {
@@ -536,7 +986,8 @@ async function analyzeBlueprint(options) {
     provider = 'openai', // 'openai', 'ollama', 'demo'
     apiKey,
     rates,
-    wasteFactor = 0.10
+    wasteFactor = 0.10,
+    userContext = '' // User-provided context to help AI understand the drawing
   } = options;
 
   let takeoffData;
@@ -552,7 +1003,7 @@ async function analyzeBlueprint(options) {
     switch (provider) {
       case 'openai':
         if (!apiKey) throw new Error('OpenAI API key required');
-        takeoffData = await analyzeWithGPT4Vision(imageData, projectType, apiKey);
+        takeoffData = await analyzeWithGPT4Vision(imageData, projectType, apiKey, userContext);
         break;
 
       case 'ollama':

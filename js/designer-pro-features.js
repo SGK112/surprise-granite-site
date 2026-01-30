@@ -4553,6 +4553,7 @@
               </p>
             </div>
           </div>
+
           <div id="pdfParseResults" class="pdf-parse-results" style="display:none">
             <div id="extractedRooms"></div>
           </div>
@@ -4581,6 +4582,11 @@
     `;
 
     document.body.appendChild(modal);
+
+    // Prevent keyboard events from bubbling to canvas/room designer tools
+    modal.addEventListener('keydown', e => e.stopPropagation());
+    modal.addEventListener('keyup', e => e.stopPropagation());
+    modal.addEventListener('keypress', e => e.stopPropagation());
 
     // Setup drag and drop
     const dropzone = document.getElementById('pdfDropzone');
@@ -4666,7 +4672,9 @@
         </div>
       `;
 
-      await analyzeWithAIVision(base64Data, file.name);
+      // Get user context if provided
+      const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
+      await analyzeWithAIVision(base64Data, file.name, userContext);
     } catch (error) {
       console.error('File processing failed:', error);
       showManualEntryFallback(file.name, error.message);
@@ -4712,21 +4720,42 @@
         <p style="margin:0; font-size:14px; color:var(--text-muted);">${numPages} pages found</p>
       </div>
 
-      <button onclick="analyzeAllPDFPages()" class="btn-ai-primary" style="margin-bottom:16px;">
-        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-        Analyze All ${numPages} Pages
-      </button>
-
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
         <div style="flex:1; height:1px; background:var(--border);"></div>
-        <span style="font-size:11px; color:var(--text-muted);">OR SELECT INDIVIDUAL PAGES</span>
+        <span style="font-size:11px; color:var(--text-muted);">SELECT PAGES TO ANALYZE</span>
         <div style="flex:1; height:1px; background:var(--border);"></div>
       </div>
 
       <div id="pdfPageThumbnails" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px; max-height:280px; overflow-y:auto; padding:4px;"></div>
+
+      <div style="margin-top:16px; padding:16px; background:rgba(99,102,241,0.05); border-radius:12px; border:1px solid rgba(99,102,241,0.15);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <svg width="16" height="16" fill="var(--primary)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span style="font-size:13px; font-weight:600; color:var(--text);">Help AI Understand Your Drawing</span>
+          <span style="font-size:11px; color:var(--text-muted);">(Optional)</span>
+        </div>
+        <textarea id="userBlueprintContext" rows="3" style="width:100%; box-sizing:border-box; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--dark-elevated); color:var(--text); resize:vertical; font-family:inherit; white-space:pre-wrap; word-wrap:break-word;" placeholder="Examples: This is a 2020 Design cabinet schedule for a wet bar, or L-shaped kitchen with cabinets on top and left walls"></textarea>
+        <p style="margin:8px 0 0; font-size:11px; color:var(--text-muted);">
+          Describe the layout type, which walls have cabinets, or any special instructions.
+        </p>
+      </div>
+
+      <button onclick="analyzeAllPDFPages()" class="btn-ai-primary" style="margin-top:16px; width:100%;">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Analyze All ${numPages} Pages
+      </button>
     `;
 
     const thumbnailContainer = document.getElementById('pdfPageThumbnails');
+
+    // Prevent keyboard events from bubbling to canvas/tools
+    const contextTextarea = document.getElementById('userBlueprintContext');
+    if (contextTextarea) {
+      contextTextarea.addEventListener('keydown', e => e.stopPropagation());
+      contextTextarea.addEventListener('keyup', e => e.stopPropagation());
+      contextTextarea.addEventListener('keypress', e => e.stopPropagation());
+      contextTextarea.addEventListener('input', e => e.stopPropagation());
+    }
 
     // Generate thumbnails for first 12 pages (or all if less)
     const pagesToShow = Math.min(numPages, 12);
@@ -4817,6 +4846,9 @@
       </div>
     `;
 
+    // Get user context once before processing all pages
+    const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
+
     // Helper function to call API with retry logic for rate limiting
     async function callAPIWithRetry(base64, pageNum, maxRetries = 3) {
       let lastError = null;
@@ -4831,7 +4863,8 @@
             body: JSON.stringify({
               image: base64,
               projectType: 'commercial-cabinets',
-              accountType: accountType // Pass in body to avoid CORS issues
+              accountType: accountType, // Pass in body to avoid CORS issues
+              userContext: userContext  // Pass user-provided context to help AI
             })
           });
 
@@ -5027,7 +5060,8 @@
 
     try {
       const base64 = await renderPDFPage(window._currentPDF, pageNum, 2.0);
-      await analyzeWithAIVision(base64, `${window._currentPDFName} (Page ${pageNum})`);
+      const userContext = document.getElementById('userBlueprintContext')?.value?.trim() || '';
+      await analyzeWithAIVision(base64, `${window._currentPDFName} (Page ${pageNum})`, userContext);
     } catch (error) {
       console.error('PDF page analysis failed:', error);
       showManualEntryFallback(window._currentPDFName, error.message);
@@ -5078,7 +5112,7 @@
     return 'free';
   }
 
-  async function analyzeWithAIVision(imageBase64, fileName) {
+  async function analyzeWithAIVision(imageBase64, fileName, userContext = '') {
     try {
       const accountType = getUserAccountType();
       const response = await fetch(`${AI_API_BASE}/api/ai/blueprint`, {
@@ -5089,7 +5123,8 @@
         body: JSON.stringify({
           image: imageBase64,
           projectType: 'commercial',
-          accountType: accountType // Pass in body instead of header to avoid CORS
+          accountType: accountType, // Pass in body instead of header to avoid CORS
+          userContext: userContext  // Pass user-provided context to help AI understand the drawing
         })
       });
 
@@ -6041,75 +6076,227 @@
       'sink-base': '#4682B4',
       'drawer-base': '#9370DB',
       'corner-cabinet': '#CD853F',
+      'lazy-susan': '#CD853F',
+      'blind-corner': '#CD853F',
       'tv-niche': '#2F4F4F',
       'wall-niche': '#3D5A5A',
       'microwave': '#708090',
-      'island': '#5D4037'
+      'microwave-cabinet': '#708090',
+      'above-microwave-cabinet': '#A0522D',
+      'island': '#5D4037',
+      'pantry': '#6B4423',
+      'tall-oven': '#6B4423',
+      'double-oven-cabinet': '#6B4423',
+      'fridge-cabinet': '#6B4423',
+      'linen-closet': '#8B7355',
+      'linen-tower': '#8B7355',
+      'countertop': '#708090',
+      'appliance': '#4A5568'
     };
     return colors[type] || '#8B7355';
   }
 
-  // Import single parsed room to current canvas (adds to existing elements)
+  // Import single parsed room to current canvas with SMART WALL POSITIONING
+  // v2.0 - Uses AI wall positions, generates countertops, proper rotations
   window.importParsedRoom = function(index) {
     const room = window._parsedRooms?.[index];
     if (!room) return;
 
     const ppf = window.pixelsPerFoot || 40;
-    // For adding to current canvas, use PIXELS for x/y
-    let xFeet = 0.5; // Start 6" from edge
-    let yFeet = 0;   // Top wall
-    const gapFeet = 0.25;
     const roomWidthFeet = window.roomWidth || 20;
+    const roomDepthFeet = window.roomDepth || 16;
 
-    room.cabinets.forEach((cab, i) => {
-      const elementType = getElementTypeFromName(cab.name);
-      const widthFeet = cab.width / 12;
-      const depthFeet = Math.min((cab.depth || 24) / 12, 2);
+    // Constants
+    const GAP_FEET = 0.25;
+    const WALL_OFFSET = 0;
+    const COUNTER_OVERHANG = 1.5 / 12;
+    const BASE_DEPTH_FT = 2;
+    const WALL_CAB_DEPTH_FT = 1;
 
-      // Wrap if needed
-      if (xFeet + widthFeet > roomWidthFeet - 0.5) {
-        xFeet = 0.5;
-        yFeet += 3;
+    // Group cabinets by wall
+    const wallGroups = {
+      top: { base: [], wall: [] },
+      bottom: { base: [], wall: [] },
+      left: { base: [], wall: [] },
+      right: { base: [], wall: [] },
+      island: []
+    };
+
+    room.cabinets.forEach((cab, idx) => {
+      const elementType = cab.type || getElementTypeFromName(cab.name);
+      cab._elementType = elementType;
+      cab._index = idx;
+      cab._widthFt = (cab.width || 36) / 12;
+      cab._depthFt = (cab.depth || 24) / 12;
+
+      let wall = (cab.wall || 'top').toLowerCase();
+      if (wall.includes('upper')) wall = wall.replace('-upper', '').replace('upper', 'top');
+      if (!['top', 'bottom', 'left', 'right', 'island'].includes(wall)) wall = 'top';
+
+      if (elementType === 'island' || wall === 'island') {
+        wallGroups.island.push(cab);
+      } else if (elementType === 'wall-cabinet') {
+        if (wallGroups[wall]) wallGroups[wall].wall.push(cab);
+        else wallGroups.top.wall.push(cab);
+      } else {
+        if (wallGroups[wall]) wallGroups[wall].base.push(cab);
+        else wallGroups.top.base.push(cab);
       }
+    });
 
-      // Convert feet to pixels for direct canvas placement
-      // Store ACTUAL dimensions in inches for accurate 3D rendering
+    // Track countertop runs
+    const countertopRuns = {
+      top: { startX: null, endX: null, y: 0 },
+      bottom: { startX: null, endX: null, y: 0 },
+      left: { startY: null, endY: null, x: 0 },
+      right: { startY: null, endY: null, x: 0 },
+      island: null
+    };
+
+    // Helper: Add element to canvas
+    function addElement(type, xFt, yFt, widthFt, depthFt, rotation, wall, cab, isCountertop) {
+      const isWallCab = type === 'wall-cabinet';
+      const defaultHeights = {
+        'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
+        'wall-cabinet': 30, 'tall-cabinet': 84, 'island': 36, 'countertop': 1.5
+      };
+      const actualHeight = cab?.height || defaultHeights[type] || 34.5;
+
       const newElement = {
-        id: `imp_${cab.number}_${Date.now()}_${i}`,
-        type: elementType,
-        subType: elementType,
-        label: `#${cab.number} ${cab.name}`,
-        x: xFeet * ppf,
-        y: yFeet * ppf,
-        width: widthFeet,
-        height: depthFeet,
-        color: getColorForElementType(elementType),
-        rotation: 0,
+        id: `imp_${isCountertop ? 'ct' : cab?.number || 'x'}_${Date.now()}_${Math.random().toString(36).substr(2,5)}`,
+        type: type,
+        subType: type,
+        label: isCountertop ? `Countertop (${wall})` : `#${cab?.number} ${cab?.name || type}`,
+        x: xFt * ppf,
+        y: yFt * ppf,
+        width: widthFt,
+        height: depthFt,
+        color: isCountertop ? '#708090' : getColorForElementType(type),
+        rotation: rotation,
         locked: false,
-        // CRITICAL: Store actual dimensions in inches for 3D rendering
-        actualWidth: cab.width || 36,
-        actualDepth: cab.depth || 24,
-        actualHeight: cab.height || (elementType === 'wall-cabinet' ? 30 : 34.5),
-        // Cabinet-specific properties for 3D
+        wall: wall,
+        mountHeight: isWallCab ? 4.5 : (isCountertop ? 3 : 0),
+        isWallMounted: isWallCab,
+        actualWidth: isCountertop ? widthFt * 12 : (cab?.width || 36),
+        actualDepth: isCountertop ? depthFt * 12 : (cab?.depth || 24),
+        actualHeight: actualHeight,
+        actualHeightFt: actualHeight / 12,
         doorStyle: 'shaker',
         construction: 'frameless',
         doorOverlay: 'full',
         cabinetFinish: 'wood-grain',
-        // Source tracking
         importedFrom: 'blueprint',
-        originalNumber: cab.number
+        originalNumber: cab?.number || null
       };
 
       if (window.elements) {
         window.elements.push(newElement);
       }
+    }
 
-      xFeet += widthFeet + gapFeet;
+    // Place TOP wall cabinets
+    let topX = GAP_FEET;
+    wallGroups.top.base.forEach((cab) => {
+      const widthFt = cab._widthFt;
+      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
+      if (topX + widthFt > roomWidthFeet - GAP_FEET) topX = GAP_FEET;
+      addElement(cab._elementType, topX, WALL_OFFSET, widthFt, depthFt, 0, 'top', cab, false);
+      if (countertopRuns.top.startX === null) countertopRuns.top.startX = topX;
+      countertopRuns.top.endX = topX + widthFt;
+      topX += widthFt + GAP_FEET;
     });
+
+    let topUpperX = GAP_FEET;
+    wallGroups.top.wall.forEach((cab) => {
+      const widthFt = cab._widthFt;
+      const depthFt = Math.min(cab._depthFt, WALL_CAB_DEPTH_FT);
+      if (topUpperX + widthFt > roomWidthFeet - GAP_FEET) topUpperX = GAP_FEET;
+      addElement(cab._elementType, topUpperX, WALL_OFFSET, widthFt, depthFt, 0, 'top', cab, false);
+      topUpperX += widthFt + GAP_FEET;
+    });
+
+    // Place BOTTOM wall cabinets
+    let bottomX = GAP_FEET;
+    wallGroups.bottom.base.forEach((cab) => {
+      const widthFt = cab._widthFt;
+      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
+      if (bottomX + widthFt > roomWidthFeet - GAP_FEET) bottomX = GAP_FEET;
+      const yPos = roomDepthFeet - depthFt;
+      addElement(cab._elementType, bottomX, yPos, widthFt, depthFt, 180, 'bottom', cab, false);
+      if (countertopRuns.bottom.startX === null) countertopRuns.bottom.startX = bottomX;
+      countertopRuns.bottom.endX = bottomX + widthFt;
+      countertopRuns.bottom.y = yPos;
+      bottomX += widthFt + GAP_FEET;
+    });
+
+    // Place LEFT wall cabinets
+    let leftY = GAP_FEET;
+    wallGroups.left.base.forEach((cab) => {
+      const widthFt = cab._widthFt;
+      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
+      if (leftY + widthFt > roomDepthFeet - GAP_FEET) leftY = GAP_FEET;
+      addElement(cab._elementType, WALL_OFFSET, leftY, depthFt, widthFt, 90, 'left', cab, false);
+      if (countertopRuns.left.startY === null) countertopRuns.left.startY = leftY;
+      countertopRuns.left.endY = leftY + widthFt;
+      leftY += widthFt + GAP_FEET;
+    });
+
+    // Place RIGHT wall cabinets
+    let rightY = GAP_FEET;
+    wallGroups.right.base.forEach((cab) => {
+      const widthFt = cab._widthFt;
+      const depthFt = Math.min(cab._depthFt, BASE_DEPTH_FT);
+      if (rightY + widthFt > roomDepthFeet - GAP_FEET) rightY = GAP_FEET;
+      const xPos = roomWidthFeet - depthFt;
+      addElement(cab._elementType, xPos, rightY, depthFt, widthFt, 270, 'right', cab, false);
+      if (countertopRuns.right.startY === null) countertopRuns.right.startY = rightY;
+      countertopRuns.right.endY = rightY + widthFt;
+      countertopRuns.right.x = xPos;
+      rightY += widthFt + GAP_FEET;
+    });
+
+    // Place ISLANDS
+    wallGroups.island.forEach((cab, idx) => {
+      const widthFt = cab._widthFt || 4;
+      const depthFt = Math.min(cab._depthFt || 3, 4);
+      const xFt = (roomWidthFeet - widthFt) / 2 + idx * 0.5;
+      const yFt = (roomDepthFeet - depthFt) / 2;
+      addElement('island', xFt, yFt, widthFt, depthFt, 0, 'island', cab, false);
+      countertopRuns.island = { x: xFt, y: yFt, width: widthFt, depth: depthFt };
+    });
+
+    // Generate COUNTERTOPS
+    if (countertopRuns.top.startX !== null && wallGroups.top.base.length > 0) {
+      const ctWidth = countertopRuns.top.endX - countertopRuns.top.startX;
+      addElement('countertop', countertopRuns.top.startX - COUNTER_OVERHANG/2, 0, ctWidth + COUNTER_OVERHANG, BASE_DEPTH_FT + COUNTER_OVERHANG, 0, 'top', null, true);
+    }
+
+    if (countertopRuns.bottom.startX !== null && wallGroups.bottom.base.length > 0) {
+      const ctWidth = countertopRuns.bottom.endX - countertopRuns.bottom.startX;
+      addElement('countertop', countertopRuns.bottom.startX - COUNTER_OVERHANG/2, countertopRuns.bottom.y - COUNTER_OVERHANG, ctWidth + COUNTER_OVERHANG, BASE_DEPTH_FT + COUNTER_OVERHANG, 0, 'bottom', null, true);
+    }
+
+    if (countertopRuns.left.startY !== null && wallGroups.left.base.length > 0) {
+      const ctLength = countertopRuns.left.endY - countertopRuns.left.startY;
+      addElement('countertop', 0, countertopRuns.left.startY - COUNTER_OVERHANG/2, BASE_DEPTH_FT + COUNTER_OVERHANG, ctLength + COUNTER_OVERHANG, 0, 'left', null, true);
+    }
+
+    if (countertopRuns.right.startY !== null && wallGroups.right.base.length > 0) {
+      const ctLength = countertopRuns.right.endY - countertopRuns.right.startY;
+      addElement('countertop', countertopRuns.right.x - COUNTER_OVERHANG, countertopRuns.right.startY - COUNTER_OVERHANG/2, BASE_DEPTH_FT + COUNTER_OVERHANG, ctLength + COUNTER_OVERHANG, 0, 'right', null, true);
+    }
+
+    if (countertopRuns.island) {
+      const isl = countertopRuns.island;
+      addElement('countertop', isl.x - COUNTER_OVERHANG, isl.y - COUNTER_OVERHANG, isl.width + COUNTER_OVERHANG * 2, isl.depth + COUNTER_OVERHANG * 2, 0, 'island', null, true);
+    }
 
     if (typeof window.draw === 'function') window.draw();
     document.getElementById('pdfImporterModal')?.remove();
-    if (typeof showToast === 'function') showToast(`Imported ${room.cabinets.length} cabinets from ${room.name}`, 'success');
+
+    const cabinetCount = room.cabinets.length;
+    const countertopCount = Object.values(countertopRuns).filter(r => r && (r.startX !== null || r.startY !== null || r.x !== undefined)).length;
+    if (typeof showToast === 'function') showToast(`Imported ${cabinetCount} cabinets + ${countertopCount} countertops from ${room.name}`, 'success');
   };
 
   // Helper: Validate and sanitize cabinet dimensions
@@ -6208,7 +6395,8 @@
     return names[type] || type || 'Appliance';
   }
 
-  // Import all parsed rooms into the existing room system with WALL POSITIONING
+  // Import all parsed rooms into the existing room system with SMART LAYOUT GENERATION
+  // v3.0 - Creates sensible room layouts based on cabinet inventory, not literal AI positions
   window.importAllParsedRooms = function() {
     const parsedRooms = window._parsedRooms;
     if (!parsedRooms || parsedRooms.length === 0) return;
@@ -6222,10 +6410,85 @@
     }
 
     parsedRooms.forEach((room, roomIndex) => {
-      const totalWidth = room.cabinets.reduce((sum, c) => sum + (c.width || 24), 0);
-      const calculatedWidth = Math.max(Math.ceil(totalWidth / 12) + 4, 12);
-      const roomWidth = room.width || calculatedWidth;
-      const roomDepth = room.depth || 12;
+      // ============================================
+      // STEP 1: Categorize all cabinets by type
+      // ============================================
+      const baseCabinets = [];
+      const wallCabinets = [];
+      const tallCabinets = [];
+      const islands = [];
+      const appliances = room.appliances || [];
+
+      room.cabinets.forEach((cab, idx) => {
+        const type = cab.type || getElementTypeFromName(cab.name || cab.label);
+        const widthFt = (cab.width || 36) / 12;
+        const depthFt = (cab.depth || 24) / 12;
+        const heightIn = cab.height || 34.5;
+
+        const normalizedCab = {
+          ...cab,
+          _type: type,
+          _index: idx,
+          _widthFt: widthFt,
+          _depthFt: depthFt,
+          _heightIn: heightIn,
+          label: cab.label || cab.name || `${type}-${idx}`
+        };
+
+        if (type === 'island') {
+          islands.push(normalizedCab);
+        } else if (type === 'wall-cabinet' || type === 'microwave-cabinet' || type === 'above-microwave-cabinet') {
+          wallCabinets.push(normalizedCab);
+        } else if (type === 'tall-cabinet' || type === 'tall-oven' || type === 'double-oven-cabinet' || type === 'fridge-cabinet') {
+          tallCabinets.push(normalizedCab);
+        } else {
+          baseCabinets.push(normalizedCab);
+        }
+      });
+
+      // ============================================
+      // STEP 2: Calculate smart room dimensions
+      // ============================================
+      const totalBaseWidth = baseCabinets.reduce((sum, c) => sum + c._widthFt, 0);
+      const totalWallWidth = wallCabinets.reduce((sum, c) => sum + c._widthFt, 0);
+      const totalTallWidth = tallCabinets.reduce((sum, c) => sum + c._widthFt, 0);
+      const longestRun = Math.max(totalBaseWidth, totalWallWidth);
+
+      // Determine layout type based on cabinet count and AI hints
+      let layoutType = room.layoutType || 'single-wall';
+      const totalCabinets = baseCabinets.length + wallCabinets.length + tallCabinets.length;
+
+      if (layoutType === 'unknown' || layoutType === 'single-wall') {
+        if (totalCabinets > 15) layoutType = 'U-shape';
+        else if (totalCabinets > 8) layoutType = 'L-shape';
+        else layoutType = 'single-wall';
+      }
+
+      // Calculate room size - generous sizing for usable kitchen
+      // Minimum 10x10, scale up based on cabinets
+      const minRoomSize = 10;
+      let roomWidth, roomDepth;
+
+      if (layoutType === 'U-shape') {
+        roomWidth = Math.max(minRoomSize + 4, Math.ceil(longestRun / 2) + 6);
+        roomDepth = Math.max(minRoomSize + 2, Math.ceil(longestRun / 3) + 6);
+      } else if (layoutType === 'L-shape') {
+        roomWidth = Math.max(minRoomSize + 2, Math.ceil(longestRun / 2) + 4);
+        roomDepth = Math.max(minRoomSize, Math.ceil(longestRun / 2) + 4);
+      } else if (layoutType === 'galley') {
+        roomWidth = Math.max(minRoomSize, Math.ceil(longestRun) + 2);
+        roomDepth = Math.max(8, 10); // Galley is narrower
+      } else {
+        // Single wall
+        roomWidth = Math.max(minRoomSize, Math.ceil(longestRun) + 4);
+        roomDepth = Math.max(minRoomSize, 12);
+      }
+
+      // Apply AI-provided dimensions if they seem reasonable
+      if (room.widthFt && room.widthFt >= 8 && room.widthFt <= 30) roomWidth = room.widthFt;
+      if (room.depthFt && room.depthFt >= 8 && room.depthFt <= 30) roomDepth = room.depthFt;
+
+      console.log(`Room "${room.name}": ${layoutType} layout, ${roomWidth}'x${roomDepth}', ${totalCabinets} cabinets`);
 
       const newRoom = {
         id: 'room-' + Date.now() + '-' + roomIndex,
@@ -6239,153 +6502,265 @@
         walls: [],
         floorPlan: 'empty',
         pixelsPerFoot: 40,
-        layoutType: room.layoutType || 'unknown'
+        layoutType: layoutType
       };
 
-      // SIMPLE LINEAR LAYOUT - Place all cabinets in a row along top wall
-      // This ensures they don't overlap and are easy to rearrange
-      const gapFeet = 0.25; // 3" gap between cabinets
-      const startX = 0.5;   // Start 6" from left edge
-      const baseY = 0;      // Base cabinets at top wall (y=0)
-      const upperY = 0;     // Upper cabinets also at y=0 (they'll be above in 3D)
+      // ============================================
+      // STEP 3: Layout constants
+      // ============================================
+      const GAP = 0;              // No gap between cabinets (they're flush)
+      const BASE_DEPTH = 2;       // 24" base cabinet depth
+      const WALL_CAB_DEPTH = 1;   // 12" wall cabinet depth
+      const TALL_DEPTH = 2;       // 24" tall cabinet depth
+      const WALL_INSET = 0;       // Cabinets flush to wall edge
+      const COUNTER_OVERHANG = 1.5 / 12;
 
-      // Separate base and upper cabinets
-      const baseCabinets = [];
-      const upperCabinets = [];
-      const otherCabinets = [];
+      // ============================================
+      // STEP 4: Distribute cabinets to walls based on layout
+      // ============================================
+      const wallAssignments = {
+        top: { base: [], wall: [], tall: [] },
+        left: { base: [], wall: [], tall: [] },
+        right: { base: [], wall: [], tall: [] },
+        bottom: { base: [], wall: [], tall: [] }
+      };
 
-      room.cabinets.forEach((cab, idx) => {
-        const elementType = cab.type || getElementTypeFromName(cab.name);
-        cab._elementType = elementType;
-        cab._index = idx;
+      if (layoutType === 'U-shape') {
+        // U-shape: cabinets on top, left, and right walls
+        const third = Math.ceil(baseCabinets.length / 3);
+        wallAssignments.left.base = baseCabinets.slice(0, third);
+        wallAssignments.top.base = baseCabinets.slice(third, third * 2);
+        wallAssignments.right.base = baseCabinets.slice(third * 2);
 
-        if (elementType === 'wall-cabinet' || (cab.wall && cab.wall.includes('upper'))) {
-          upperCabinets.push(cab);
-        } else if (elementType === 'island') {
-          otherCabinets.push(cab);
-        } else {
-          baseCabinets.push(cab);
-        }
-      });
+        const wallThird = Math.ceil(wallCabinets.length / 3);
+        wallAssignments.left.wall = wallCabinets.slice(0, wallThird);
+        wallAssignments.top.wall = wallCabinets.slice(wallThird, wallThird * 2);
+        wallAssignments.right.wall = wallCabinets.slice(wallThird * 2);
 
-      // Position tracking
-      let baseX = startX;
-      let upperX = startX;
+        // Tall cabinets at ends
+        if (tallCabinets.length > 0) wallAssignments.left.tall = [tallCabinets[0]];
+        if (tallCabinets.length > 1) wallAssignments.right.tall = [tallCabinets[1]];
 
-      // Place base cabinets along top wall
-      baseCabinets.forEach((cab, cabIndex) => {
-        const elementType = cab._elementType;
-        const widthFeet = (cab.width || 36) / 12;
-        const depthFeet = Math.min((cab.depth || 24) / 12, 2.5);
+      } else if (layoutType === 'L-shape') {
+        // L-shape: cabinets on top and left (or right) walls
+        const half = Math.ceil(baseCabinets.length / 2);
+        wallAssignments.top.base = baseCabinets.slice(0, half);
+        wallAssignments.left.base = baseCabinets.slice(half);
 
-        // Check if we need to wrap to next row
-        if (baseX + widthFeet > roomWidth - 0.5) {
-          baseX = startX;
-          // Move to opposite wall or create new row - for now just continue
-        }
+        const wallHalf = Math.ceil(wallCabinets.length / 2);
+        wallAssignments.top.wall = wallCabinets.slice(0, wallHalf);
+        wallAssignments.left.wall = wallCabinets.slice(wallHalf);
 
-        const xFt = baseX;
-        const yFt = baseY;
-        baseX += widthFeet + gapFeet;
+        // Tall cabinets at corner
+        wallAssignments.left.tall = tallCabinets;
 
-        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
-      });
+      } else if (layoutType === 'galley') {
+        // Galley: cabinets on top and bottom (parallel walls)
+        const half = Math.ceil(baseCabinets.length / 2);
+        wallAssignments.top.base = baseCabinets.slice(0, half);
+        wallAssignments.bottom.base = baseCabinets.slice(half);
 
-      // Place upper/wall cabinets ABOVE base cabinets (same X position, same wall)
-      // In 2D they appear on the wall (y=0), but mountHeight positions them in 3D
-      upperCabinets.forEach((cab, cabIndex) => {
-        const elementType = cab._elementType;
-        const widthFeet = (cab.width || 36) / 12;
-        const depthFeet = Math.min((cab.depth || 12) / 12, 1.5);
+        const wallHalf = Math.ceil(wallCabinets.length / 2);
+        wallAssignments.top.wall = wallCabinets.slice(0, wallHalf);
+        wallAssignments.bottom.wall = wallCabinets.slice(wallHalf);
 
-        if (upperX + widthFeet > roomWidth - 0.5) {
-          upperX = startX;
-        }
+        wallAssignments.top.tall = tallCabinets;
 
-        const xFt = upperX;
-        const yFt = 0; // Same wall as base cabinets (y=0 is the wall)
-        upperX += widthFeet + gapFeet;
+      } else {
+        // Single wall: all on top wall
+        wallAssignments.top.base = baseCabinets;
+        wallAssignments.top.wall = wallCabinets;
+        wallAssignments.top.tall = tallCabinets;
+      }
 
-        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
-      });
+      // ============================================
+      // STEP 5: Place cabinets on each wall
+      // ============================================
 
-      // Place islands in center
-      otherCabinets.forEach((cab) => {
-        const elementType = cab._elementType;
-        const widthFeet = (cab.width || 48) / 12;
-        const depthFeet = Math.min((cab.depth || 36) / 12, 3);
-
-        const xFt = (roomWidth - widthFeet) / 2;
-        const yFt = (roomDepth - depthFeet) / 2;
-
-        createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'island');
-      });
-
-      // Helper function to create cabinet element with proper 3D positioning
-      function createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, rotation, wall) {
-        const defaultHeights = {
-          'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
-          'wall-cabinet': 30, 'tall-cabinet': 84, 'pantry': 84,
-          'island': 36, 'microwave': 18, 'tv-niche': 36, 'corner-cabinet': 34.5
-        };
-        const actualHeight = cab.height || defaultHeights[elementType] || 34.5;
-        const actualHeightFt = actualHeight / 12;
-
-        // Calculate 3D mount height based on cabinet type
-        // Base cabinets: floor level (0)
-        // Wall cabinets: 54" from floor (4.5 ft) - standard 18" above 36" counter
-        // Tall cabinets: floor level (0)
-        // Island: floor level (0)
-        let mountHeight = 0; // Default: floor level
-        let isWallMounted = false;
-
-        if (elementType === 'wall-cabinet' || elementType.includes('wall-cabinet')) {
-          mountHeight = 4.5; // 54 inches from floor
-          isWallMounted = true;
-        } else if (elementType === 'microwave') {
-          mountHeight = 4.5; // Above counter
-          isWallMounted = true;
-        }
-
+      // Helper to create element
+      function createElement(cab, x, y, width, depth, rotation, wall) {
         newRoom.elements.push({
-          id: `imp_r${roomIndex}_c${cab._index}_${Date.now()}`,
-          type: elementType,
-          subType: elementType,
-          label: `#${cab.number} ${cab.name}`,
-          xFt: xFt,
-          yFt: yFt,
-          width: widthFeet,
-          height: depthFeet,
-          color: getColorForElementType(elementType),
+          id: Date.now() + Math.random(),
+          type: cab._type,
+          x: x,
+          y: y,
+          width: width,
+          height: depth,
           rotation: rotation,
-          locked: false,
+          label: cab.label,
+          color: getColorForElementType(cab._type),
+          actualHeight: cab._heightIn / 12,
+          mountHeight: cab._type === 'wall-cabinet' ? 4.5 : 0, // 54" mount height for wall cabs
           wall: wall,
-          isAppliance: cab.isAppliance || false,
-          // CRITICAL for 3D: Mount height from floor (in feet)
-          mountHeight: mountHeight,
-          isWallMounted: isWallMounted,
-          // CRITICAL: Store actual dimensions in inches for accurate 3D rendering
-          actualWidth: cab.width || 36,
-          actualDepth: cab.depth || 24,
-          actualHeight: actualHeight,
-          // Height in feet for 3D rendering
-          actualHeightFt: actualHeightFt,
-          // Cabinet-specific properties for 3D
-          doorStyle: 'shaker',
-          construction: 'frameless',
-          doorOverlay: 'full',
-          cabinetFinish: 'wood-grain',
-          // Source tracking
-          importedFrom: 'blueprint',
-          originalNumber: cab.number
+          locked: false
         });
       }
 
+      // Place TOP wall (rotation 0 - faces down into room)
+      let topX = 1; // Start 1 foot from left edge
+      // Place tall cabinets first on left
+      wallAssignments.top.tall.forEach(cab => {
+        createElement(cab, topX, WALL_INSET, cab._widthFt, TALL_DEPTH, 0, 'top');
+        topX += cab._widthFt + GAP;
+      });
+      // Then base cabinets
+      const topBaseStartX = topX;
+      wallAssignments.top.base.forEach(cab => {
+        createElement(cab, topX, WALL_INSET, cab._widthFt, BASE_DEPTH, 0, 'top');
+        topX += cab._widthFt + GAP;
+      });
+      // Wall cabinets above base cabinets (same X positions)
+      let topWallX = topBaseStartX;
+      wallAssignments.top.wall.forEach(cab => {
+        createElement(cab, topWallX, WALL_INSET, cab._widthFt, WALL_CAB_DEPTH, 0, 'top');
+        topWallX += cab._widthFt + GAP;
+      });
+
+      // Place LEFT wall (rotation 90 - faces right into room)
+      let leftY = 1;
+      wallAssignments.left.tall.forEach(cab => {
+        createElement(cab, WALL_INSET, leftY, TALL_DEPTH, cab._widthFt, 90, 'left');
+        leftY += cab._widthFt + GAP;
+      });
+      const leftBaseStartY = leftY;
+      wallAssignments.left.base.forEach(cab => {
+        createElement(cab, WALL_INSET, leftY, BASE_DEPTH, cab._widthFt, 90, 'left');
+        leftY += cab._widthFt + GAP;
+      });
+      let leftWallY = leftBaseStartY;
+      wallAssignments.left.wall.forEach(cab => {
+        createElement(cab, WALL_INSET, leftWallY, WALL_CAB_DEPTH, cab._widthFt, 90, 'left');
+        leftWallY += cab._widthFt + GAP;
+      });
+
+      // Place RIGHT wall (rotation 270 - faces left into room)
+      let rightY = 1;
+      wallAssignments.right.tall.forEach(cab => {
+        createElement(cab, roomWidth - TALL_DEPTH, rightY, TALL_DEPTH, cab._widthFt, 270, 'right');
+        rightY += cab._widthFt + GAP;
+      });
+      const rightBaseStartY = rightY;
+      wallAssignments.right.base.forEach(cab => {
+        createElement(cab, roomWidth - BASE_DEPTH, rightY, BASE_DEPTH, cab._widthFt, 270, 'right');
+        rightY += cab._widthFt + GAP;
+      });
+      let rightWallY = rightBaseStartY;
+      wallAssignments.right.wall.forEach(cab => {
+        createElement(cab, roomWidth - WALL_CAB_DEPTH, rightWallY, WALL_CAB_DEPTH, cab._widthFt, 270, 'right');
+        rightWallY += cab._widthFt + GAP;
+      });
+
+      // Place BOTTOM wall (rotation 180 - faces up into room)
+      let bottomX = 1;
+      wallAssignments.bottom.tall.forEach(cab => {
+        createElement(cab, bottomX, roomDepth - TALL_DEPTH, cab._widthFt, TALL_DEPTH, 180, 'bottom');
+        bottomX += cab._widthFt + GAP;
+      });
+      const bottomBaseStartX = bottomX;
+      wallAssignments.bottom.base.forEach(cab => {
+        createElement(cab, bottomX, roomDepth - BASE_DEPTH, cab._widthFt, BASE_DEPTH, 180, 'bottom');
+        bottomX += cab._widthFt + GAP;
+      });
+      let bottomWallX = bottomBaseStartX;
+      wallAssignments.bottom.wall.forEach(cab => {
+        createElement(cab, bottomWallX, roomDepth - WALL_CAB_DEPTH, cab._widthFt, WALL_CAB_DEPTH, 180, 'bottom');
+        bottomWallX += cab._widthFt + GAP;
+      });
+
+      // Place islands in center
+      islands.forEach((island, idx) => {
+        const islandX = (roomWidth - island._widthFt) / 2 + (idx * 0.5);
+        const islandY = (roomDepth - island._depthFt) / 2;
+        createElement(island, islandX, islandY, island._widthFt, island._depthFt, 0, 'island');
+      });
+
+      // ============================================
+      // STEP 6: Generate countertops for base cabinet runs
+      // ============================================
+      function addCountertop(startX, startY, width, depth, rotation, wall) {
+        const overhang = COUNTER_OVERHANG;
+        newRoom.elements.push({
+          id: Date.now() + Math.random(),
+          type: 'countertop',
+          x: startX - overhang,
+          y: startY - (wall === 'top' ? 0 : overhang),
+          width: width + overhang * 2,
+          height: depth + overhang,
+          rotation: rotation,
+          label: 'Countertop',
+          color: '#4a5568',
+          material: 'granite',
+          mountHeight: 3, // 36" counter height
+          actualHeight: 0.125, // 1.5" thick
+          wall: wall,
+          locked: false
+        });
+      }
+
+      // Top wall countertop
+      if (wallAssignments.top.base.length > 0) {
+        const width = wallAssignments.top.base.reduce((sum, c) => sum + c._widthFt, 0);
+        addCountertop(topBaseStartX, WALL_INSET, width, BASE_DEPTH, 0, 'top');
+      }
+
+      // Left wall countertop
+      if (wallAssignments.left.base.length > 0) {
+        const width = wallAssignments.left.base.reduce((sum, c) => sum + c._widthFt, 0);
+        addCountertop(WALL_INSET, leftBaseStartY, BASE_DEPTH, width, 90, 'left');
+      }
+
+      // Right wall countertop
+      if (wallAssignments.right.base.length > 0) {
+        const width = wallAssignments.right.base.reduce((sum, c) => sum + c._widthFt, 0);
+        addCountertop(roomWidth - BASE_DEPTH, rightBaseStartY, BASE_DEPTH, width, 270, 'right');
+      }
+
+      // Bottom wall countertop
+      if (wallAssignments.bottom.base.length > 0) {
+        const width = wallAssignments.bottom.base.reduce((sum, c) => sum + c._widthFt, 0);
+        addCountertop(bottomBaseStartX, roomDepth - BASE_DEPTH, width, BASE_DEPTH, 180, 'bottom');
+      }
+
+      // Island countertop
+      if (islands.length > 0) {
+        islands.forEach((island, idx) => {
+          const islandX = (roomWidth - island._widthFt) / 2 + (idx * 0.5);
+          const islandY = (roomDepth - island._depthFt) / 2;
+          addCountertop(islandX, islandY, island._widthFt, island._depthFt, 0, 'island');
+        });
+      }
+
+      // ============================================
+      // STEP 7: Add appliances if specified
+      // ============================================
+      appliances.forEach(app => {
+        const appWidth = (app.width || 30) / 12;
+        const appDepth = 2; // Standard appliance depth
+
+        // Find a spot on the appropriate wall (default to top)
+        newRoom.elements.push({
+          id: Date.now() + Math.random(),
+          type: app.type || 'appliance',
+          x: roomWidth / 2 - appWidth / 2,
+          y: WALL_INSET,
+          width: appWidth,
+          height: appDepth,
+          rotation: 0,
+          label: app.type || 'Appliance',
+          color: '#718096',
+          wall: 'top',
+          locked: false
+        });
+      });
+
+      // Push the completed room to the rooms array
       if (window.rooms) {
         window.rooms.push(newRoom);
       }
 
-      console.log(`Imported room: ${newRoom.name} with ${newRoom.elements.length} elements`);
+      const cabinetCount = newRoom.elements.filter(e => e.type !== 'countertop').length;
+      const countertopCount = newRoom.elements.filter(e => e.type === 'countertop').length;
+      console.log(`Imported room: ${newRoom.name} with ${cabinetCount} cabinets + ${countertopCount} countertops`);
     });
 
     // Close modal
@@ -6407,7 +6782,8 @@
     }
 
     if (typeof showToast === 'function') {
-      showToast(`Imported ${parsedRooms.length} rooms - use Room tabs to switch`, 'success');
+      const totalCabinets = parsedRooms.reduce((s, r) => s + r.cabinets.length, 0);
+      showToast(`Imported ${parsedRooms.length} room(s) with ${totalCabinets} cabinets + countertops`, 'success');
     }
   };
 
