@@ -36074,7 +36074,7 @@
     // Get proper 3D height for element types
     // Can accept element object to use custom heights
     function get3DHeight(typeOrElement) {
-      const type = typeof typeOrElement === 'string' ? typeOrElement : typeOrElement?.type;
+      let type = typeof typeOrElement === 'string' ? typeOrElement : typeOrElement?.type;
       const el = typeof typeOrElement === 'object' ? typeOrElement : null;
 
       // Validate input
@@ -36087,6 +36087,18 @@
       if (el?.height3D !== undefined) {
         return el.height3D;
       }
+
+      // Normalize sized cabinet types to base types (e.g., base-cabinet-12 -> base-cabinet)
+      const normalizeTypeFor3DHeight = (t) => {
+        if (t.startsWith('base-cabinet-')) return 'base-cabinet';
+        if (t.startsWith('wall-cabinet-')) return 'wall-cabinet';
+        if (t.startsWith('tall-cabinet-')) return 'tall-cabinet';
+        if (t.startsWith('drawer-base-')) return 'drawer-base';
+        if (t.startsWith('sink-base-')) return 'sink-base';
+        if (t.startsWith('corner-cabinet-')) return 'corner-cabinet';
+        return t;
+      };
+      type = normalizeTypeFor3DHeight(type);
 
       // Window-specific height override
       if (el?.windowHeight !== undefined && (type === 'window' || type === 'window-large' || type === 'window-bay' || type === 'bay-window' || type === 'picture-window')) {
@@ -36262,7 +36274,14 @@
 
       // Proper stacking heights for kitchen elements
       // All heights in feet, Y = center of object
-      const type = el.type;
+      // Normalize sized cabinet types to base types for proper positioning
+      let type = el.type;
+      if (type.startsWith('base-cabinet-')) type = 'base-cabinet';
+      else if (type.startsWith('wall-cabinet-')) type = 'wall-cabinet';
+      else if (type.startsWith('tall-cabinet-')) type = 'tall-cabinet';
+      else if (type.startsWith('drawer-base-')) type = 'drawer-base';
+      else if (type.startsWith('sink-base-')) type = 'sink-base';
+      else if (type.startsWith('corner-cabinet-')) type = 'corner-cabinet';
 
       switch(type) {
         // Ground level surfaces (slightly above floor to prevent Z-fighting)
