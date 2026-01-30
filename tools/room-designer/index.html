@@ -1674,6 +1674,28 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 6px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    /* Scrollbar styling for element grid */
+    .element-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .element-grid::-webkit-scrollbar-track {
+      background: var(--dark-elevated);
+      border-radius: 3px;
+    }
+
+    .element-grid::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .element-grid::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
     }
 
     .element-item {
@@ -13650,8 +13672,13 @@
             </div>
             <div class="property-row">
               <span class="property-label">Depth</span>
-              <input type="text" class="property-input" id="propHeight" placeholder="e.g. 2'-0&quot; or 2" onchange="updateSelectedElement()" title="Enter feet-inches (2'-0&quot;) or decimal feet (2)">
-              <span class="dimension-display" id="propHeightDisplay"></span>
+              <input type="text" class="property-input" id="propDepth" placeholder="e.g. 2'-0&quot; or 2" onchange="updateSelectedElement()" title="Enter feet-inches (2'-0&quot;) or decimal feet (2)">
+              <span class="dimension-display" id="propDepthDisplay"></span>
+            </div>
+            <div class="property-row" id="prop3DHeightRow">
+              <span class="property-label">Height</span>
+              <input type="text" class="property-input" id="prop3DHeight" placeholder="e.g. 2'-10.5&quot; or 2.875" onchange="updateSelectedElement()" title="3D vertical height - feet-inches or decimal feet">
+              <span class="dimension-display" id="prop3DHeightDisplay"></span>
             </div>
             <div class="property-row" id="standardSizeRow" style="display: none;">
               <span class="property-label">Standard</span>
@@ -24510,24 +24537,78 @@
       // Clear existing walls
       walls = [];
 
-      // Add walls based on floor plan
-      if (plan && plan.walls) {
-        plan.walls.forEach(w => {
-          if (w.type === 'full') {
-            // Full room walls
-            addWall(0, 0, roomWidth * pixelsPerFoot, CONFIG.WALL_THICKNESS);
-            addWall(0, 0, CONFIG.WALL_THICKNESS, roomDepth * pixelsPerFoot);
-            addWall(0, roomDepth * pixelsPerFoot - CONFIG.WALL_THICKNESS, roomWidth * pixelsPerFoot, CONFIG.WALL_THICKNESS);
-            addWall(roomWidth * pixelsPerFoot - CONFIG.WALL_THICKNESS, 0, CONFIG.WALL_THICKNESS, roomDepth * pixelsPerFoot);
-          } else if (w.type === 'rect') {
-            const x = w.x * roomWidth * pixelsPerFoot;
-            const y = w.y * roomDepth * pixelsPerFoot;
-            const width = w.w * roomWidth * pixelsPerFoot;
-            const height = w.h * roomDepth * pixelsPerFoot;
-            // Add as a filled area indicator
-            walls.push({ x, y, width, height, type: 'area' });
-          }
-        });
+      const rW = roomWidth * pixelsPerFoot;
+      const rD = roomDepth * pixelsPerFoot;
+      const wallT = CONFIG.WALL_THICKNESS;
+
+      // Create walls based on floor plan type
+      if (id === 'empty') {
+        // No walls for empty room
+      } else if (id === 'square') {
+        // Standard rectangular room - 4 perimeter walls
+        addWall(0, 0, rW, wallT);                    // Top wall
+        addWall(0, 0, wallT, rD);                    // Left wall
+        addWall(0, rD - wallT, rW, wallT);           // Bottom wall
+        addWall(rW - wallT, 0, wallT, rD);           // Right wall
+      } else if (id === 'l-shape') {
+        // L-shaped room - perimeter + inner corner walls
+        // L opens at bottom-right corner (60% width, 50% height cutout)
+        const cutW = rW * 0.4;  // Right side cutout width
+        const cutH = rD * 0.5;  // Bottom cutout height
+
+        // Outer perimeter
+        addWall(0, 0, rW, wallT);                    // Top wall (full width)
+        addWall(0, 0, wallT, rD);                    // Left wall (full height)
+        addWall(0, rD - wallT, rW - cutW, wallT);   // Bottom wall (partial - up to cutout)
+        addWall(rW - wallT, 0, wallT, rD - cutH);    // Right wall (partial - up to cutout)
+
+        // Inner L corner walls
+        addWall(rW - cutW - wallT, rD - cutH, wallT, cutH);  // Vertical inner wall
+        addWall(rW - cutW, rD - cutH - wallT, cutW, wallT);  // Horizontal inner wall
+      } else if (id === 'u-shape') {
+        // U-shaped room - open at bottom center
+        const sideW = rW * 0.3;   // Side sections width (30% each)
+        const openH = rD * 0.3;   // Bottom open section height
+
+        // Outer perimeter
+        addWall(0, 0, rW, wallT);                    // Top wall (full)
+        addWall(0, 0, wallT, rD);                    // Left wall (full)
+        addWall(rW - wallT, 0, wallT, rD);           // Right wall (full)
+
+        // Bottom walls (left and right sections)
+        addWall(0, rD - wallT, sideW, wallT);        // Bottom left wall
+        addWall(rW - sideW, rD - wallT, sideW, wallT); // Bottom right wall
+
+        // Inner U walls (vertical portions going up from bottom sections)
+        addWall(sideW - wallT, rD - openH, wallT, openH);      // Left inner vertical
+        addWall(rW - sideW, rD - openH, wallT, openH);         // Right inner vertical
+        addWall(sideW, rD - openH - wallT, rW - sideW * 2, wallT); // Inner horizontal (connecting)
+      } else if (id === 'galley') {
+        // Galley kitchen - parallel walls on left and right sides
+        const sideW = rW * 0.2;   // Side wall sections width
+
+        // All 4 outer perimeter walls
+        addWall(0, 0, rW, wallT);                    // Top wall
+        addWall(0, 0, wallT, rD);                    // Left outer wall
+        addWall(0, rD - wallT, rW, wallT);           // Bottom wall
+        addWall(rW - wallT, 0, wallT, rD);           // Right outer wall
+
+        // Inner galley walls (create the corridor)
+        addWall(sideW - wallT, 0, wallT, rD);        // Left inner wall
+        addWall(rW - sideW, 0, wallT, rD);           // Right inner wall
+      } else if (id === 'open') {
+        // Open plan - only partial walls at bottom-left corner
+        const areaW = rW * 0.4;
+        const areaH = rD * 0.3;
+
+        // Just the outer perimeter
+        addWall(0, 0, rW, wallT);                    // Top wall
+        addWall(0, 0, wallT, rD);                    // Left wall
+        addWall(0, rD - wallT, rW, wallT);           // Bottom wall
+        addWall(rW - wallT, 0, wallT, rD);           // Right wall
+
+        // Peninsula or partial wall in bottom-left area
+        addWall(0, rD - areaH, areaW, wallT);        // Partial horizontal wall
       }
 
       renderFloorPlans();
@@ -36076,6 +36157,9 @@
       }
 
       // Check for custom 3D height override on the element
+      if (el?.actualHeight !== undefined && el.actualHeight > 0) {
+        return el.actualHeight;
+      }
       if (el?.height3D !== undefined) {
         return el.height3D;
       }
@@ -39429,7 +39513,7 @@
             bumpScale: ccWoodTexture ? 0.002 : 0
           });
           const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
-          const handleMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.2 });
+          const shelfMat = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.5 }); // Wood colored shelves
           const doorMat = new THREE.MeshStandardMaterial({
             color: color,
             map: ccWoodTexture,
@@ -39437,7 +39521,6 @@
             metalness: ccBaseMetalness,
             bumpScale: ccWoodTexture ? 0.002 : 0
           });
-          const frameMat = new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -15), roughness: 0.45 });
 
           // Cabinet dimensions
           const toeKickHeight = 0.33; // 4" toe kick
@@ -39472,10 +39555,10 @@
 
           const cabinetBody = new THREE.Mesh(lGeometry, cabinetMat);
           cabinetBody.position.y = bodyYOffset;
+          cabinetBody.castShadow = true;
           group.add(cabinetBody);
 
           // Dark interior back panels (visible through diagonal opening)
-          // Back panel
           const backPanel = new THREE.Mesh(
             new THREE.BoxGeometry(w - armDepth - 0.1, cabinetBodyHeight - 0.1, panelThickness),
             bodyMat
@@ -39491,75 +39574,140 @@
           sidePanel.position.set(-w/2 + armDepth - panelThickness/2, bodyYOffset, armDepth/2);
           group.add(sidePanel);
 
-          // DIAGONAL DOOR - angled at 45° across the open corner
-          // Door spans from inside corner to the front edges of both arms
-          const diagP1 = { x: -w/2 + armDepth, z: d/2 };  // End of left arm (front-left)
-          const diagP2 = { x: w/2, z: -d/2 + armDepth };  // End of back arm (back-right)
+          // INTERIOR SHELVES - triangular/pie-shaped shelves visible through door
+          const shelfRadius = Math.min(w, d) * 0.4;
+          const shelfCenterX = 0;
+          const shelfCenterZ = 0;
+          const numShelves = 2;
 
-          // Door dimensions
+          for (let s = 0; s < numShelves; s++) {
+            const shelfY = bodyYOffset - cabinetBodyHeight/2 + 0.4 + s * (cabinetBodyHeight * 0.35);
+
+            // Create pie-shaped shelf (270 degrees, open toward diagonal door)
+            const pieShape = new THREE.Shape();
+            const pieAngleStart = Math.PI * 0.75;  // Start at back-left
+            const pieAngleEnd = Math.PI * 2.25;    // 270 degrees
+            const segments = 24;
+
+            pieShape.moveTo(0, 0);
+            for (let i = 0; i <= segments; i++) {
+              const angle = pieAngleStart + (pieAngleEnd - pieAngleStart) * (i / segments);
+              pieShape.lineTo(Math.cos(angle) * shelfRadius, Math.sin(angle) * shelfRadius);
+            }
+            pieShape.lineTo(0, 0);
+
+            const shelfGeom = new THREE.ExtrudeGeometry(pieShape, { depth: 0.02, bevelEnabled: false });
+            shelfGeom.rotateX(-Math.PI / 2);
+
+            const shelf = new THREE.Mesh(shelfGeom, shelfMat);
+            shelf.position.set(shelfCenterX, shelfY, shelfCenterZ);
+            shelf.rotation.y = Math.PI / 4; // Rotate to face diagonal opening
+            shelf.castShadow = true;
+            group.add(shelf);
+          }
+
+          // DIAGONAL DOOR - angled at 45° across the open corner with bi-fold style
+          const diagP1 = { x: -w/2 + armDepth, z: d/2 };  // End of left arm
+          const diagP2 = { x: w/2, z: -d/2 + armDepth };  // End of back arm
+
           const diagDoorWidth = Math.sqrt(Math.pow(diagP2.x - diagP1.x, 2) + Math.pow(diagP1.z - diagP2.z, 2));
           const doorHeight = cabinetBodyHeight - 0.15;
+          const halfDoorWidth = (diagDoorWidth - 0.12) / 2;
 
-          // Create door with shaker-style panel
-          const doorGroup = new THREE.Group();
-
-          // Door frame/face
-          const doorFace = new THREE.Mesh(
-            new THREE.BoxGeometry(diagDoorWidth - 0.08, doorHeight, panelThickness),
-            doorMat
-          );
-          doorGroup.add(doorFace);
-
-          // Shaker inset panel (recessed center)
-          const insetWidth = diagDoorWidth - 0.35;
-          const insetHeight = doorHeight - 0.25;
-          const inset = new THREE.Mesh(
-            new THREE.BoxGeometry(insetWidth, insetHeight, 0.02),
-            new THREE.MeshStandardMaterial({ color: adjustColorBrightness(color, -8), roughness: 0.5 })
-          );
-          inset.position.z = panelThickness/2 + 0.01;
-          doorGroup.add(inset);
-
-          // Shaker frame lines (grooves)
-          const grooveMat = new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.15 });
-          const grooveDepth = 0.005;
-          // Top groove
-          const topGroove = new THREE.Mesh(new THREE.BoxGeometry(insetWidth + 0.02, 0.02, grooveDepth), grooveMat);
-          topGroove.position.set(0, insetHeight/2 + 0.01, panelThickness/2 + 0.015);
-          doorGroup.add(topGroove);
-          // Bottom groove
-          const botGroove = new THREE.Mesh(new THREE.BoxGeometry(insetWidth + 0.02, 0.02, grooveDepth), grooveMat);
-          botGroove.position.set(0, -insetHeight/2 - 0.01, panelThickness/2 + 0.015);
-          doorGroup.add(botGroove);
-          // Left groove
-          const leftGroove = new THREE.Mesh(new THREE.BoxGeometry(0.02, insetHeight + 0.02, grooveDepth), grooveMat);
-          leftGroove.position.set(-insetWidth/2 - 0.01, 0, panelThickness/2 + 0.015);
-          doorGroup.add(leftGroove);
-          // Right groove
-          const rightGroove = new THREE.Mesh(new THREE.BoxGeometry(0.02, insetHeight + 0.02, grooveDepth), grooveMat);
-          rightGroove.position.set(insetWidth/2 + 0.01, 0, panelThickness/2 + 0.015);
-          doorGroup.add(rightGroove);
-
-          // Modern bar handle with standoffs
-          const cornerHandleLen = 0.22;
-          const cornerHandleFinish = el.handleFinish || 'brushed-nickel';
-          const handle = createModernBarHandle(cornerHandleLen, cornerHandleFinish);
-          handle.position.set(diagDoorWidth/2 - 0.18, 0, panelThickness/2 + 0.05);
-          handle.rotation.z = Math.PI / 2; // Vertical orientation
-          doorGroup.add(handle);
-
-          // Position and rotate door group
           const diagCenterX = (diagP1.x + diagP2.x) / 2;
           const diagCenterZ = (diagP1.z + diagP2.z) / 2;
-          doorGroup.rotation.y = Math.PI / 4; // 45 degree angle (door faces front-right)
-          doorGroup.position.set(diagCenterX, bodyYOffset, diagCenterZ);
-          group.add(doorGroup);
+
+          // Create two bi-fold doors
+          for (let doorIdx = 0; doorIdx < 2; doorIdx++) {
+            const doorGroup = new THREE.Group();
+
+            // Door panel with proper thickness
+            const doorPanel = new THREE.Mesh(
+              new THREE.BoxGeometry(halfDoorWidth, doorHeight, panelThickness),
+              doorMat
+            );
+            doorPanel.castShadow = true;
+            doorGroup.add(doorPanel);
+
+            // Shaker inset panel
+            const insetW = halfDoorWidth - 0.18;
+            const insetH = doorHeight - 0.22;
+            const insetMat = new THREE.MeshStandardMaterial({
+              color: adjustColorBrightness(color, -10),
+              roughness: 0.5,
+              map: ccWoodTexture
+            });
+            const inset = new THREE.Mesh(
+              new THREE.BoxGeometry(insetW, insetH, 0.025),
+              insetMat
+            );
+            inset.position.z = panelThickness/2 + 0.012;
+            doorGroup.add(inset);
+
+            // Shaker frame grooves (more visible)
+            const grooveMat = new THREE.MeshStandardMaterial({
+              color: adjustColorBrightness(color, -30),
+              roughness: 0.7
+            });
+            const grooveThick = 0.015;
+
+            // Top frame
+            const topFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(insetW + 0.04, grooveThick, 0.008),
+              grooveMat
+            );
+            topFrame.position.set(0, insetH/2 + 0.02, panelThickness/2 + 0.02);
+            doorGroup.add(topFrame);
+
+            // Bottom frame
+            const botFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(insetW + 0.04, grooveThick, 0.008),
+              grooveMat
+            );
+            botFrame.position.set(0, -insetH/2 - 0.02, panelThickness/2 + 0.02);
+            doorGroup.add(botFrame);
+
+            // Left frame
+            const leftFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(grooveThick, insetH + 0.04, 0.008),
+              grooveMat
+            );
+            leftFrame.position.set(-insetW/2 - 0.02, 0, panelThickness/2 + 0.02);
+            doorGroup.add(leftFrame);
+
+            // Right frame
+            const rightFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(grooveThick, insetH + 0.04, 0.008),
+              grooveMat
+            );
+            rightFrame.position.set(insetW/2 + 0.02, 0, panelThickness/2 + 0.02);
+            doorGroup.add(rightFrame);
+
+            // Modern bar handle
+            const handleLen = Math.min(doorHeight * 0.25, 0.18);
+            const ccHandleFinish = el.handleFinish || 'brushed-nickel';
+            const handle = createModernBarHandle(handleLen, ccHandleFinish);
+            const handleXPos = doorIdx === 0 ? halfDoorWidth/2 - 0.12 : -halfDoorWidth/2 + 0.12;
+            handle.position.set(handleXPos, 0, panelThickness/2 + 0.045);
+            handle.rotation.z = Math.PI / 2; // Vertical
+            doorGroup.add(handle);
+
+            // Position each door half
+            doorGroup.rotation.y = Math.PI / 4;
+            const offsetDir = doorIdx === 0 ? -1 : 1;
+            const offsetAmount = halfDoorWidth/2 + 0.03;
+            doorGroup.position.set(
+              diagCenterX + offsetDir * offsetAmount * Math.cos(Math.PI/4) * 0.5,
+              bodyYOffset,
+              diagCenterZ + offsetDir * offsetAmount * Math.sin(Math.PI/4) * 0.5
+            );
+            group.add(doorGroup);
+          }
 
           // TOE KICK - L-shaped recessed base
           const tkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.95 });
           const tkHeight = toeKickHeight - 0.02;
 
-          // Create L-shaped toe kick (same orientation as body, inset by recess)
           const tkShape = new THREE.Shape();
           tkShape.moveTo(-w/2 + toeKickRecess, d/2 - toeKickRecess);
           tkShape.lineTo(-w/2 + toeKickRecess, -d/2 + toeKickRecess);
@@ -39577,7 +39725,7 @@
           const toeKick = new THREE.Mesh(tkGeometry, tkMat);
           group.add(toeKick);
 
-          // Floor under toe kick (visible shadow catcher)
+          // Floor shadow
           const tkFloor = new THREE.Mesh(
             new THREE.PlaneGeometry(w, d),
             new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1 })
@@ -50313,9 +50461,10 @@
         const isWallPanel = wallPanelTypes.includes(el.type);
 
         // Cabinets and appliances that should auto-rotate when against side/front walls
+        // NOTE: corner-cabinet and lazy-susan are excluded - they have specific L-shaped orientations
         const cabinetApplianceTypes = [
           'base-cabinet', 'wall-cabinet', 'tall-cabinet', 'drawer-base', 'sink-base',
-          'corner-cabinet', 'lazy-susan', 'fridge-cabinet',
+          'fridge-cabinet',
           'refrigerator', 'range', 'stove', 'slide-in-range', 'dishwasher',
           'oven', 'wall-oven-double', 'microwave', 'range-hood', 'cooktop',
           'sink', 'sink-double', 'sink-farmhouse',
@@ -52676,12 +52825,26 @@
         document.getElementById('propType').textContent = selectedElement.label;
         // Show decimal value in input, formatted display beside it
         document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
-        document.getElementById('propHeight').value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+        // Depth (2D height / 3D depth)
+        const depthInput = document.getElementById('propDepth');
+        if (depthInput) depthInput.value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+        // 3D Height (vertical dimension)
+        const height3DInput = document.getElementById('prop3DHeight');
+        if (height3DInput) {
+          // Use custom actualHeight if set, otherwise get default from type
+          const current3DHeight = selectedElement.actualHeight || get3DHeight(selectedElement);
+          height3DInput.value = current3DHeight.toFixed(4).replace(/\.?0+$/, '');
+        }
         // Show formatted feet-inches display
         const widthDisplay = document.getElementById('propWidthDisplay');
-        const heightDisplay = document.getElementById('propHeightDisplay');
+        const depthDisplay = document.getElementById('propDepthDisplay');
+        const height3DDisplay = document.getElementById('prop3DHeightDisplay');
         if (widthDisplay) widthDisplay.textContent = formatDimension(selectedElement.width);
-        if (heightDisplay) heightDisplay.textContent = formatDimension(selectedElement.height);
+        if (depthDisplay) depthDisplay.textContent = formatDimension(selectedElement.height);
+        if (height3DDisplay) {
+          const h3d = selectedElement.actualHeight || get3DHeight(selectedElement);
+          height3DDisplay.textContent = formatDimension(h3d);
+        }
 
         document.getElementById('propColor').value = selectedElement.color;
         document.getElementById('propRotation').textContent = (selectedElement.rotation || 0) + '°';
@@ -53458,12 +53621,22 @@
     function updateSelectedElement() {
       if (!selectedElement || selectedElement.locked) return;
 
-      // Parse dimension input (accepts feet-inches like 3'-6" or decimal 2.5)
+      // Parse dimension inputs (accepts feet-inches like 3'-6" or decimal 2.5)
       const widthInput = document.getElementById('propWidth').value;
-      const heightInput = document.getElementById('propHeight').value;
+      const depthInput = document.getElementById('propDepth');
+      const height3DInput = document.getElementById('prop3DHeight');
 
       selectedElement.width = roundToSixteenth(parseDimension(widthInput)) || 1;
-      selectedElement.height = roundToSixteenth(parseDimension(heightInput)) || 1;
+      if (depthInput) {
+        selectedElement.height = roundToSixteenth(parseDimension(depthInput.value)) || 1;
+      }
+      // 3D Height (vertical dimension) - store as actualHeight
+      if (height3DInput && height3DInput.value) {
+        const parsed3DHeight = parseDimension(height3DInput.value);
+        if (parsed3DHeight > 0) {
+          selectedElement.actualHeight = roundToSixteenth(parsed3DHeight);
+        }
+      }
       selectedElement.color = document.getElementById('propColor').value;
 
       // Mark element as needing 3D update
@@ -54523,7 +54696,8 @@
 
       // Update dimension display in properties panel
       document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
-      document.getElementById('propHeight').value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+      const depthEl = document.getElementById('propDepth');
+      if (depthEl) depthEl.value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
 
       // Validate against fabrication standards
       const thickness = selectedElement.thickness || '3cm';
@@ -54624,7 +54798,8 @@
 
       // Update dimension display
       document.getElementById('propWidth').value = selectedElement.width.toFixed(4).replace(/\.?0+$/, '');
-      document.getElementById('propHeight').value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
+      const depthEl2 = document.getElementById('propDepth');
+      if (depthEl2) depthEl2.value = selectedElement.height.toFixed(4).replace(/\.?0+$/, '');
 
       // Validate and show warnings
       const thickness = selectedElement.thickness || '3cm';
