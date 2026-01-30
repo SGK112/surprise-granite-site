@@ -6291,7 +6291,8 @@
         createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
       });
 
-      // Place upper cabinets in second row (offset down by 3 feet in 2D view)
+      // Place upper/wall cabinets ABOVE base cabinets (same X position, same wall)
+      // In 2D they appear on the wall (y=0), but mountHeight positions them in 3D
       upperCabinets.forEach((cab, cabIndex) => {
         const elementType = cab._elementType;
         const widthFeet = (cab.width || 36) / 12;
@@ -6302,7 +6303,7 @@
         }
 
         const xFt = upperX;
-        const yFt = 3; // Offset down so they don't overlap base in 2D view
+        const yFt = 0; // Same wall as base cabinets (y=0 is the wall)
         upperX += widthFeet + gapFeet;
 
         createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'top');
@@ -6320,7 +6321,7 @@
         createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, 0, 'island');
       });
 
-      // Helper function to create cabinet element
+      // Helper function to create cabinet element with proper 3D positioning
       function createCabinetElement(cab, elementType, xFt, yFt, widthFeet, depthFeet, rotation, wall) {
         const defaultHeights = {
           'base-cabinet': 34.5, 'sink-base': 34.5, 'drawer-base': 34.5,
@@ -6328,6 +6329,23 @@
           'island': 36, 'microwave': 18, 'tv-niche': 36, 'corner-cabinet': 34.5
         };
         const actualHeight = cab.height || defaultHeights[elementType] || 34.5;
+        const actualHeightFt = actualHeight / 12;
+
+        // Calculate 3D mount height based on cabinet type
+        // Base cabinets: floor level (0)
+        // Wall cabinets: 54" from floor (4.5 ft) - standard 18" above 36" counter
+        // Tall cabinets: floor level (0)
+        // Island: floor level (0)
+        let mountHeight = 0; // Default: floor level
+        let isWallMounted = false;
+
+        if (elementType === 'wall-cabinet' || elementType.includes('wall-cabinet')) {
+          mountHeight = 4.5; // 54 inches from floor
+          isWallMounted = true;
+        } else if (elementType === 'microwave') {
+          mountHeight = 4.5; // Above counter
+          isWallMounted = true;
+        }
 
         newRoom.elements.push({
           id: `imp_r${roomIndex}_c${cab._index}_${Date.now()}`,
@@ -6343,10 +6361,15 @@
           locked: false,
           wall: wall,
           isAppliance: cab.isAppliance || false,
+          // CRITICAL for 3D: Mount height from floor (in feet)
+          mountHeight: mountHeight,
+          isWallMounted: isWallMounted,
           // CRITICAL: Store actual dimensions in inches for accurate 3D rendering
           actualWidth: cab.width || 36,
           actualDepth: cab.depth || 24,
           actualHeight: actualHeight,
+          // Height in feet for 3D rendering
+          actualHeightFt: actualHeightFt,
           // Cabinet-specific properties for 3D
           doorStyle: 'shaker',
           construction: 'frameless',
