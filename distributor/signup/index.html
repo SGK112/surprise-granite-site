@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Partner With Us | Surprise Granite Marketplace</title>
-  <meta name="description" content="List your stone inventory on Surprise Granite Marketplace. Reach fabricators, contractors, and homeowners. Free to join - only pay when you sell."/>
+  <title>Join Stone Yards Network | Surprise Granite</title>
+  <meta name="description" content="List your stone inventory on our interactive Stone Yards map. Distributors, fabricators with bone yards, and anyone with slabs can join free and reach thousands of buyers."/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="canonical" href="https://surprisegranite.com/distributor/signup/"/>
+  <meta property="og:title" content="Join the Stone Yards Network | Surprise Granite"/>
+  <meta property="og:description" content="Get featured on our interactive map. Send customers our way for fabrication, we'll send buyers to you for slabs."/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -13,113 +16,392 @@
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
   <script defer src="/js/unified-nav.js?v=20260129"></script>
 
+  <!-- Leaflet for mini map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     :root {
-      --gold-primary: #f9cb00;
-      --gold-dark: #cca600;
+      --gold: #f9cb00;
+      --gold-dark: #d4a900;
       --gold-glow: rgba(249, 203, 0, 0.35);
-      --dark-primary: #1a1a2e;
-      --dark-deep: #0a0a12;
-      --dark-surface: #12121a;
-      --dark-elevated: #1e1e2d;
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255, 255, 255, 0.75);
-      --text-muted: rgba(255, 255, 255, 0.5);
-      --border-subtle: rgba(255, 255, 255, 0.1);
+      --navy: #1a1a2e;
+      --navy-light: #2d2d44;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #1a1a2e;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
       --success: #22c55e;
       --error: #ef4444;
-      --blue-accent: #3b82f6;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--dark-deep);
+      background: var(--bg-secondary);
       min-height: 100vh;
-      color: var(--text-primary);
+      color: var(--text);
       padding-top: 140px;
+      line-height: 1.6;
     }
 
     @media (max-width: 991px) {
-      body { padding-top: 64px; }
+      body { padding-top: 80px; }
     }
 
-    /* Hero Section */
+    /* Hero Section with Map Background */
     .hero-section {
-      background: linear-gradient(135deg, var(--dark-surface) 0%, var(--dark-primary) 100%);
-      border-bottom: 1px solid var(--border-subtle);
+      position: relative;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+      border-bottom: 1px solid var(--border);
       padding: 60px 24px;
-      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero-map-bg {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .hero-map-bg::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--bg) 0%, transparent 50%);
+    }
+
+    #heroMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .hero-map-bg {
+        display: none;
+      }
     }
 
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      padding: 8px 16px;
+      background: var(--navy);
+      color: var(--gold);
+      padding: 10px 20px;
       border-radius: 100px;
       font-size: 13px;
-      font-weight: 600;
-      color: var(--blue-accent);
+      font-weight: 700;
+      letter-spacing: 0.5px;
       margin-bottom: 20px;
     }
 
     .hero-title {
-      font-size: 42px;
+      font-size: clamp(32px, 5vw, 48px);
       font-weight: 800;
       margin-bottom: 16px;
       letter-spacing: -1px;
-      background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      line-height: 1.1;
+      color: var(--navy);
+    }
+
+    .hero-title span {
+      color: var(--gold-dark);
     }
 
     .hero-subtitle {
       font-size: 18px;
       color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 32px;
-      line-height: 1.6;
+      margin-bottom: 32px;
+      line-height: 1.7;
     }
 
-    /* Stats Bar */
-    .stats-bar {
+    /* Stats */
+    .hero-stats {
       display: flex;
-      justify-content: center;
-      gap: 48px;
+      gap: 32px;
       flex-wrap: wrap;
     }
 
-    .stat-item {
-      text-align: center;
+    @media (max-width: 900px) {
+      .hero-stats {
+        justify-content: center;
+      }
     }
 
-    .stat-value {
-      font-size: 32px;
+    .hero-stat {
+      text-align: left;
+    }
+
+    @media (max-width: 900px) {
+      .hero-stat {
+        text-align: center;
+      }
+    }
+
+    .hero-stat-value {
+      font-size: 36px;
       font-weight: 800;
-      color: var(--gold-primary);
+      color: var(--navy);
+      line-height: 1;
     }
 
-    .stat-label {
+    .hero-stat-label {
       font-size: 13px;
       color: var(--text-muted);
       margin-top: 4px;
     }
 
+    /* Preview Card in Hero */
+    .hero-preview {
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 900px) {
+      .hero-preview {
+        display: none;
+      }
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .preview-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .preview-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .preview-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .preview-map {
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    #previewMapEl {
+      width: 100%;
+      height: 100%;
+    }
+
+    .preview-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .preview-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .preview-feature svg {
+      color: var(--success);
+      flex-shrink: 0;
+    }
+
     /* Main Content */
     .signup-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 48px 24px 80px;
     }
 
+    /* Two Column Layout */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 48px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    /* Benefits Column */
+    .benefits-column {
+      order: 2;
+    }
+
+    @media (max-width: 900px) {
+      .benefits-column {
+        order: 1;
+      }
+    }
+
+    .benefits-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .benefits-title svg {
+      color: var(--gold-dark);
+    }
+
+    .benefit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .benefit-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .benefit-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .benefit-content h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+
+    .benefit-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      margin-top: 32px;
+      padding: 24px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .hiw-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 20px;
+    }
+
+    .hiw-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .hiw-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hiw-number {
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      color: var(--navy);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .hiw-text {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    /* Form Column */
+    .form-column {
+      order: 1;
+    }
+
+    @media (max-width: 900px) {
+      .form-column {
+        order: 2;
+      }
+    }
+
     /* Progress Steps */
     .progress-container {
-      margin-bottom: 40px;
+      margin-bottom: 24px;
     }
 
     .progress-steps {
@@ -131,40 +413,41 @@
     .progress-steps::before {
       content: '';
       position: absolute;
-      top: 20px;
-      left: 60px;
-      right: 60px;
+      top: 16px;
+      left: 50px;
+      right: 50px;
       height: 2px;
-      background: var(--border-subtle);
+      background: var(--border);
     }
 
     .progress-step {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       position: relative;
       z-index: 1;
     }
 
     .step-circle {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: var(--dark-surface);
-      border: 2px solid var(--border-subtle);
+      background: var(--bg);
+      border: 2px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
       transition: all 0.3s ease;
     }
 
     .progress-step.active .step-circle {
-      border-color: var(--gold-primary);
-      background: var(--gold-primary);
-      color: var(--dark-primary);
+      border-color: var(--gold);
+      background: var(--gold);
+      color: var(--navy);
     }
 
     .progress-step.completed .step-circle {
@@ -174,28 +457,28 @@
     }
 
     .step-label {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
       font-weight: 500;
     }
 
     .progress-step.active .step-label,
     .progress-step.completed .step-label {
-      color: var(--text-primary);
+      color: var(--text);
     }
 
     /* Form Card */
     .form-card {
-      background: var(--dark-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 24px;
-      padding: 40px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 500px) {
       .form-card {
-        padding: 24px;
-        border-radius: 16px;
+        padding: 24px 20px;
       }
     }
 
@@ -214,121 +497,30 @@
     }
 
     .step-header {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     .step-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
-      margin-bottom: 8px;
+      color: var(--navy);
+      margin-bottom: 6px;
     }
 
     .step-description {
-      font-size: 15px;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    /* Form Fields */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 14px;
       color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .form-label .required {
-      color: var(--error);
-      margin-left: 2px;
-    }
-
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      padding: 14px 16px;
-      background: var(--dark-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      color: var(--text-primary);
-      font-size: 15px;
-      font-family: inherit;
-      transition: all 0.2s ease;
-    }
-
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      outline: none;
-      border-color: var(--gold-primary);
-      box-shadow: 0 0 0 3px var(--gold-glow);
-    }
-
-    .form-input::placeholder, .form-textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    .form-textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .form-select {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f9cb00' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 16px center;
-      padding-right: 44px;
-    }
-
-    .form-error {
-      font-size: 12px;
-      color: var(--error);
-      margin-top: 6px;
-      display: none;
-    }
-
-    .form-group.has-error .form-error {
-      display: block;
-    }
-
-    .form-group.has-error .form-input,
-    .form-group.has-error .form-select {
-      border-color: var(--error);
     }
 
     /* Company Type Cards */
     .type-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
-    @media (max-width: 700px) {
-      .type-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 480px) {
+    @media (max-width: 400px) {
       .type-grid {
         grid-template-columns: 1fr;
       }
@@ -346,47 +538,112 @@
     }
 
     .type-card-inner {
-      background: var(--dark-elevated);
-      border: 2px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 24px 16px;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 14px;
       text-align: center;
       transition: all 0.2s ease;
     }
 
     .type-card:hover .type-card-inner {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: var(--text-muted);
     }
 
     .type-card input:checked + .type-card-inner {
-      border-color: var(--gold-primary);
+      border-color: var(--gold);
       background: rgba(249, 203, 0, 0.08);
     }
 
     .type-icon {
-      font-size: 36px;
-      margin-bottom: 12px;
+      font-size: 28px;
+      margin-bottom: 8px;
     }
 
     .type-name {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
-      margin-bottom: 4px;
+      color: var(--navy);
+      margin-bottom: 2px;
     }
 
     .type-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
+    }
+
+    /* Form Fields */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 500px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-label .required {
+      color: var(--error);
+      margin-left: 2px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
     }
 
     /* Checkbox Grid */
     .checkbox-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+      gap: 8px;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 500px) {
       .checkbox-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -395,142 +652,81 @@
     .checkbox-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      background: var(--dark-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .checkbox-item:hover {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: var(--text-muted);
     }
 
     .checkbox-item input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--gold-primary);
+      width: 16px;
+      height: 16px;
+      accent-color: var(--gold);
     }
 
     .checkbox-item input:checked + span {
-      color: var(--gold-primary);
+      color: var(--navy);
+      font-weight: 500;
     }
 
     .checkbox-item span {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-secondary);
     }
 
-    /* Benefits Section */
-    .benefits-section {
-      background: rgba(34, 197, 94, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      border-radius: 16px;
-      padding: 24px;
-      margin: 32px 0;
-    }
-
-    .benefits-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .benefits-title svg {
-      width: 20px;
-      height: 20px;
-      stroke: var(--success);
-    }
-
-    .benefits-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (max-width: 600px) {
-      .benefits-list {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .benefit-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .benefit-check {
-      width: 18px;
-      height: 18px;
-      background: var(--success);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .benefit-check svg {
-      width: 10px;
-      height: 10px;
-      stroke: white;
-    }
-
-    /* Commission Info */
+    /* Commission Box */
     .commission-box {
-      background: var(--dark-elevated);
-      border: 1px solid var(--gold-primary);
-      border-radius: 16px;
-      padding: 24px;
-      margin: 24px 0;
+      background: var(--bg-tertiary);
+      border: 2px solid var(--gold);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 20px 0;
       text-align: center;
     }
 
-    .commission-title {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 8px;
+    .commission-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
     }
 
     .commission-value {
-      font-size: 48px;
+      font-size: 40px;
       font-weight: 800;
-      color: var(--gold-primary);
+      color: var(--navy);
     }
 
     .commission-value span {
-      font-size: 24px;
+      font-size: 20px;
     }
 
     .commission-note {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-secondary);
-      margin-top: 8px;
+      margin-top: 4px;
     }
 
     /* Buttons */
     .button-row {
       display: flex;
-      gap: 16px;
-      margin-top: 32px;
+      gap: 12px;
+      margin-top: 24px;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 16px 32px;
-      border-radius: 12px;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
       font-size: 15px;
       font-weight: 700;
       font-family: inherit;
@@ -542,14 +738,14 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
-      color: var(--dark-primary);
-      box-shadow: 0 4px 20px var(--gold-glow);
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: var(--navy);
+      box-shadow: 0 4px 15px var(--gold-glow);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 28px var(--gold-glow);
+      box-shadow: 0 6px 20px var(--gold-glow);
     }
 
     .btn-primary:disabled {
@@ -559,20 +755,20 @@
     }
 
     .btn-secondary {
-      background: var(--dark-elevated);
-      color: var(--text-primary);
-      border: 1px solid var(--border-subtle);
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.1);
+      background: var(--bg-secondary);
     }
 
     /* Loading Spinner */
     .loading-spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--dark-primary);
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--navy);
       border-top-color: transparent;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -585,12 +781,12 @@
     /* Success State */
     .success-state {
       text-align: center;
-      padding: 40px 20px;
+      padding: 32px 16px;
     }
 
     .success-icon {
-      width: 100px;
-      height: 100px;
+      width: 80px;
+      height: 80px;
       background: var(--success);
       border-radius: 50%;
       display: flex;
@@ -600,45 +796,45 @@
     }
 
     .success-icon svg {
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       stroke: white;
     }
 
     .success-title {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
+      color: var(--navy);
       margin-bottom: 12px;
     }
 
     .success-text {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text-secondary);
-      margin-bottom: 32px;
+      margin-bottom: 28px;
       line-height: 1.6;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
     }
 
     .next-steps {
-      background: var(--dark-elevated);
-      border-radius: 16px;
-      padding: 24px;
+      background: var(--bg-secondary);
+      border-radius: 14px;
+      padding: 20px;
       text-align: left;
-      margin-top: 32px;
+      margin-top: 24px;
     }
 
     .next-steps h4 {
-      font-size: 16px;
-      margin-bottom: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 14px;
     }
 
     .next-step-item {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-size: 14px;
       color: var(--text-secondary);
     }
@@ -647,26 +843,26 @@
       margin-bottom: 0;
     }
 
-    .step-number {
-      width: 24px;
-      height: 24px;
-      background: var(--gold-primary);
-      color: var(--dark-primary);
+    .step-number-sm {
+      width: 22px;
+      height: 22px;
+      background: var(--gold);
+      color: var(--navy);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       flex-shrink: 0;
     }
 
     /* Alert */
     .alert {
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-radius: 10px;
       font-size: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: none;
     }
 
@@ -677,19 +873,19 @@
     .alert-error {
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fca5a5;
+      color: #dc2626;
     }
 
     /* Login Link */
     .login-link {
       text-align: center;
-      margin-top: 24px;
+      margin-top: 20px;
       font-size: 14px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
     }
 
     .login-link a {
-      color: var(--gold-primary);
+      color: var(--navy);
       text-decoration: none;
       font-weight: 600;
     }
@@ -703,7 +899,7 @@
       font-size: 12px;
       color: var(--text-muted);
       text-align: center;
-      margin-top: 20px;
+      margin-top: 16px;
       line-height: 1.6;
     }
 
@@ -711,434 +907,469 @@
       color: var(--text-secondary);
       text-decoration: underline;
     }
+
+    /* Leaflet overrides for light theme */
+    .leaflet-container {
+      background: var(--bg-secondary);
+    }
   </style>
 </head>
 
 <body>
   <!-- Hero Section -->
   <section class="hero-section">
-    <div class="hero-badge">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-        <line x1="12" y1="22.08" x2="12" y2="12"/>
-      </svg>
-      Distributor Partnership
+    <div class="hero-map-bg">
+      <div id="heroMap"></div>
     </div>
-    <h1 class="hero-title">Sell Your Inventory to<br/>Thousands of Pros</h1>
-    <p class="hero-subtitle">List your slabs and materials on Surprise Granite Marketplace. Reach fabricators, contractors, designers, and homeowners across Arizona. Free to join.</p>
 
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-value">500+</div>
-        <div class="stat-label">Active Fabricators</div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <div class="hero-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          STONE YARDS NETWORK
+        </div>
+        <h1 class="hero-title">Get Your Stone <span>On the Map</span></h1>
+        <p class="hero-subtitle">Join our interactive Stone Yards directory. Whether you're a distributor, fabricator with a bone yard, or anyone with slabs to sell - get featured and reach thousands of buyers in Arizona.</p>
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-value">10K+</div>
+            <div class="hero-stat-label">Monthly Visitors</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value">Free</div>
+            <div class="hero-stat-label">To Join</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value">5%</div>
+            <div class="hero-stat-label">Commission Only</div>
+          </div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value">10K+</div>
-        <div class="stat-label">Monthly Visitors</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value">$2M+</div>
-        <div class="stat-label">Materials Sold</div>
+
+      <div class="hero-preview">
+        <div class="preview-header">
+          <div class="preview-icon">📍</div>
+          <div>
+            <div class="preview-title">Your Listing Preview</div>
+            <div class="preview-subtitle">How you'll appear on the map</div>
+          </div>
+        </div>
+        <div class="preview-map">
+          <div id="previewMapEl"></div>
+        </div>
+        <div class="preview-features">
+          <div class="preview-feature">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>Pin on interactive map</span>
+          </div>
+          <div class="preview-feature">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>Business profile page</span>
+          </div>
+          <div class="preview-feature">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>Direct customer inquiries</span>
+          </div>
+          <div class="preview-feature">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>Inventory listings</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <div class="signup-container">
-    <!-- Progress Steps -->
-    <div class="progress-container">
-      <div class="progress-steps">
-        <div class="progress-step active" data-step="1">
-          <div class="step-circle">1</div>
-          <span class="step-label">Company</span>
+    <div class="content-grid">
+      <!-- Form Column -->
+      <div class="form-column">
+        <!-- Progress Steps -->
+        <div class="progress-container">
+          <div class="progress-steps">
+            <div class="progress-step active" data-step="1">
+              <div class="step-circle">1</div>
+              <span class="step-label">Business</span>
+            </div>
+            <div class="progress-step" data-step="2">
+              <div class="step-circle">2</div>
+              <span class="step-label">Inventory</span>
+            </div>
+            <div class="progress-step" data-step="3">
+              <div class="step-circle">3</div>
+              <span class="step-label">Location</span>
+            </div>
+            <div class="progress-step" data-step="4">
+              <div class="step-circle">4</div>
+              <span class="step-label">Account</span>
+            </div>
+          </div>
         </div>
-        <div class="progress-step" data-step="2">
-          <div class="step-circle">2</div>
-          <span class="step-label">Products</span>
+
+        <div class="form-card">
+          <div class="alert alert-error" id="errorAlert"></div>
+
+          <!-- Step 1: Business Type -->
+          <div class="form-step active" data-step="1">
+            <div class="step-header">
+              <h2 class="step-title">What describes your business?</h2>
+              <p class="step-description">Select the option that best fits - you can sell stone through any of these.</p>
+            </div>
+
+            <div class="type-grid">
+              <label class="type-card">
+                <input type="radio" name="company_type" value="distributor" required>
+                <div class="type-card-inner">
+                  <div class="type-icon">🏢</div>
+                  <div class="type-name">Distributor</div>
+                  <div class="type-desc">Stone & tile distribution</div>
+                </div>
+              </label>
+
+              <label class="type-card">
+                <input type="radio" name="company_type" value="bone_yard">
+                <div class="type-card-inner">
+                  <div class="type-icon">🦴</div>
+                  <div class="type-name">Bone Yard</div>
+                  <div class="type-desc">Remnants & surplus stone</div>
+                </div>
+              </label>
+
+              <label class="type-card">
+                <input type="radio" name="company_type" value="fabricator_yard">
+                <div class="type-card-inner">
+                  <div class="type-icon">⚙️</div>
+                  <div class="type-name">Fabricator w/ Yard</div>
+                  <div class="type-desc">Fab shop with slab inventory</div>
+                </div>
+              </label>
+
+              <label class="type-card">
+                <input type="radio" name="company_type" value="stone_yard">
+                <div class="type-card-inner">
+                  <div class="type-icon">🪨</div>
+                  <div class="type-name">Stone Yard</div>
+                  <div class="type-desc">Retail stone supplier</div>
+                </div>
+              </label>
+
+              <label class="type-card">
+                <input type="radio" name="company_type" value="wholesaler">
+                <div class="type-card-inner">
+                  <div class="type-icon">📦</div>
+                  <div class="type-name">Wholesaler</div>
+                  <div class="type-desc">Wholesale trade only</div>
+                </div>
+              </label>
+
+              <label class="type-card">
+                <input type="radio" name="company_type" value="importer">
+                <div class="type-card-inner">
+                  <div class="type-icon">🚢</div>
+                  <div class="type-name">Importer / Quarry</div>
+                  <div class="type-desc">Direct from source</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="button-row">
+              <button type="button" class="btn btn-primary" onclick="nextStep(1)">
+                Continue
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Products & Materials -->
+          <div class="form-step" data-step="2">
+            <div class="step-header">
+              <h2 class="step-title">What stone do you carry?</h2>
+              <p class="step-description">Select all materials you have available for sale.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Material Types <span class="required">*</span></label>
+              <div class="checkbox-grid">
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="granite">
+                  <span>Granite</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="quartz">
+                  <span>Quartz</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="marble">
+                  <span>Marble</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="quartzite">
+                  <span>Quartzite</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="porcelain">
+                  <span>Porcelain</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="soapstone">
+                  <span>Soapstone</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="travertine">
+                  <span>Travertine</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="onyx">
+                  <span>Onyx</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="materials" value="other">
+                  <span>Other</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+              <label class="form-label">Approximate Inventory</label>
+              <select class="form-input form-select" id="inventorySize" name="inventory_size">
+                <option value="">Select range...</option>
+                <option value="1-25">1-25 slabs / remnants</option>
+                <option value="25-100">25-100 pieces</option>
+                <option value="100-500">100-500 pieces</option>
+                <option value="500-1000">500-1,000 pieces</option>
+                <option value="1000+">1,000+ pieces</option>
+              </select>
+            </div>
+
+            <div class="button-row">
+              <button type="button" class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+              <button type="button" class="btn btn-primary" onclick="nextStep(2)">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Location -->
+          <div class="form-step" data-step="3">
+            <div class="step-header">
+              <h2 class="step-title">Where is your yard located?</h2>
+              <p class="step-description">This is where customers will visit to view stone.</p>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label class="form-label">Business Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="companyName" name="company_name" placeholder="Your Company Name" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Street Address <span class="required">*</span></label>
+                <input type="text" class="form-input" id="address" name="address" placeholder="123 Stone Way" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">City <span class="required">*</span></label>
+                <input type="text" class="form-input" id="city" name="city" placeholder="Phoenix" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">State</label>
+                <select class="form-input form-select" id="state" name="state">
+                  <option value="AZ" selected>Arizona</option>
+                  <option value="CA">California</option>
+                  <option value="NV">Nevada</option>
+                  <option value="NM">New Mexico</option>
+                  <option value="TX">Texas</option>
+                  <option value="CO">Colorado</option>
+                  <option value="UT">Utah</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ZIP Code <span class="required">*</span></label>
+                <input type="text" class="form-input" id="zipCode" name="zip_code" placeholder="85001" required pattern="[0-9]{5}" inputmode="numeric">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" id="yardPhone" name="yard_phone" placeholder="(602) 555-1234">
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Website</label>
+                <input type="url" class="form-input" id="website" name="website" placeholder="https://www.yourcompany.com">
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button type="button" class="btn btn-secondary" onclick="prevStep(3)">Back</button>
+              <button type="button" class="btn btn-primary" onclick="nextStep(3)">Continue</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Account -->
+          <div class="form-step" data-step="4">
+            <div class="step-header">
+              <h2 class="step-title">Create your account</h2>
+              <p class="step-description">Set up your login to manage your listing.</p>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Contact Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="contactName" name="contact_name" placeholder="John Smith" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Phone <span class="required">*</span></label>
+                <input type="tel" class="form-input" id="phone" name="phone" placeholder="(602) 555-1234" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" class="form-input" id="email" name="email" placeholder="you@company.com" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label class="form-label">Password <span class="required">*</span></label>
+                <input type="password" class="form-input" id="password" name="password" placeholder="Min 8 characters" required minlength="8">
+              </div>
+            </div>
+
+            <div class="commission-box">
+              <div class="commission-label">Marketplace Commission</div>
+              <div class="commission-value">5<span>%</span></div>
+              <div class="commission-note">Only on sales through our platform. No monthly fees.</div>
+            </div>
+
+            <div class="button-row">
+              <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Back</button>
+              <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitSignup()">
+                Create Account
+              </button>
+            </div>
+
+            <p class="terms-text">
+              By creating an account, you agree to our <a href="/legal/terms-of-use/">Terms</a>, <a href="/legal/privacy-policy/">Privacy Policy</a>, and <a href="/legal/distributor-agreement/">Partner Agreement</a>.
+            </p>
+          </div>
+
+          <!-- Success State -->
+          <div class="form-step" data-step="success">
+            <div class="success-state">
+              <div class="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <h2 class="success-title">You're on the Map!</h2>
+              <p class="success-text">
+                Your Stone Yards listing has been created. Verify your email, then log in to add inventory and customize your profile.
+              </p>
+
+              <a href="/log-in/?redirect=/distributor/dashboard/" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">
+                Log In to Dashboard
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+
+              <div class="next-steps">
+                <h4>Next Steps:</h4>
+                <div class="next-step-item">
+                  <span class="step-number-sm">1</span>
+                  <span>Verify your email (check inbox)</span>
+                </div>
+                <div class="next-step-item">
+                  <span class="step-number-sm">2</span>
+                  <span>Add photos of your yard</span>
+                </div>
+                <div class="next-step-item">
+                  <span class="step-number-sm">3</span>
+                  <span>Upload your slab inventory</span>
+                </div>
+                <div class="next-step-item">
+                  <span class="step-number-sm">4</span>
+                  <span>Set business hours & directions</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="progress-step" data-step="3">
-          <div class="step-circle">3</div>
-          <span class="step-label">Location</span>
-        </div>
-        <div class="progress-step" data-step="4">
-          <div class="step-circle">4</div>
-          <span class="step-label">Account</span>
+
+        <div class="login-link">
+          Already have an account? <a href="/log-in/?redirect=/distributor/dashboard/">Log in</a>
         </div>
       </div>
-    </div>
 
-    <div class="form-card">
-      <div class="alert alert-error" id="errorAlert"></div>
+      <!-- Benefits Column -->
+      <div class="benefits-column">
+        <h3 class="benefits-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          Why Join Stone Yards?
+        </h3>
 
-      <!-- Step 1: Company Type -->
-      <div class="form-step active" data-step="1">
-        <div class="step-header">
-          <h2 class="step-title">What type of company are you?</h2>
-          <p class="step-description">Select the option that best describes your business.</p>
-        </div>
-
-        <div class="type-grid">
-          <label class="type-card">
-            <input type="radio" name="company_type" value="distributor" required>
-            <div class="type-card-inner">
-              <div class="type-icon">🏢</div>
-              <div class="type-name">Distributor</div>
-              <div class="type-desc">Stone & tile distribution</div>
+        <div class="benefit-list">
+          <div class="benefit-item">
+            <div class="benefit-icon">📍</div>
+            <div class="benefit-content">
+              <h4>Featured on Our Map</h4>
+              <p>Your location appears on our interactive Stone Yards map that thousands of buyers browse monthly.</p>
             </div>
-          </label>
-
-          <label class="type-card">
-            <input type="radio" name="company_type" value="manufacturer">
-            <div class="type-card-inner">
-              <div class="type-icon">🏭</div>
-              <div class="type-name">Manufacturer</div>
-              <div class="type-desc">We make our own products</div>
-            </div>
-          </label>
-
-          <label class="type-card">
-            <input type="radio" name="company_type" value="importer">
-            <div class="type-card-inner">
-              <div class="type-icon">🚢</div>
-              <div class="type-name">Importer</div>
-              <div class="type-desc">International stone import</div>
-            </div>
-          </label>
-
-          <label class="type-card">
-            <input type="radio" name="company_type" value="wholesaler">
-            <div class="type-card-inner">
-              <div class="type-icon">📦</div>
-              <div class="type-name">Wholesaler</div>
-              <div class="type-desc">Wholesale to trade only</div>
-            </div>
-          </label>
-
-          <label class="type-card">
-            <input type="radio" name="company_type" value="quarry">
-            <div class="type-card-inner">
-              <div class="type-icon">⛏️</div>
-              <div class="type-name">Quarry</div>
-              <div class="type-desc">Direct from the source</div>
-            </div>
-          </label>
-
-          <label class="type-card">
-            <input type="radio" name="company_type" value="stone_yard">
-            <div class="type-card-inner">
-              <div class="type-icon">🪨</div>
-              <div class="type-name">Stone Yard</div>
-              <div class="type-desc">Retail stone supplier</div>
-            </div>
-          </label>
-        </div>
-
-        <div class="benefits-section">
-          <div class="benefits-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Why Partner With Us
           </div>
-          <div class="benefits-list">
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>Free to list your inventory</span>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">🔄</div>
+            <div class="benefit-content">
+              <h4>Mutual Referral System</h4>
+              <p>Send your customers to us for fabrication - we send our customers to you for slab selection.</p>
             </div>
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>Reach 500+ local fabricators</span>
+          </div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">💰</div>
+            <div class="benefit-content">
+              <h4>Move Remnants Fast</h4>
+              <p>Bone yard pieces, remnants, and surplus slabs find buyers through our marketplace.</p>
             </div>
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>API for live inventory sync</span>
-            </div>
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>Only pay when you sell (5%)</span>
-            </div>
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>Bulk CSV upload support</span>
-            </div>
-            <div class="benefit-item">
-              <div class="benefit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <span>Analytics & reporting dashboard</span>
+          </div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">📊</div>
+            <div class="benefit-content">
+              <h4>Analytics Dashboard</h4>
+              <p>Track views, inquiries, and sales. Know which materials are in demand.</p>
             </div>
           </div>
         </div>
 
-        <div class="button-row">
-          <button type="button" class="btn btn-primary" onclick="nextStep(1)">
-            Continue
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 2: Products & Materials -->
-      <div class="form-step" data-step="2">
-        <div class="step-header">
-          <h2 class="step-title">What products do you carry?</h2>
-          <p class="step-description">Select all material types and brands you offer.</p>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Material Types <span class="required">*</span></label>
-          <div class="checkbox-grid">
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="quartz">
-              <span>Quartz</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="granite">
-              <span>Granite</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="marble">
-              <span>Marble</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="quartzite">
-              <span>Quartzite</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="porcelain">
-              <span>Porcelain</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="soapstone">
-              <span>Soapstone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="travertine">
-              <span>Travertine</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="limestone">
-              <span>Limestone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="materials" value="sintered">
-              <span>Sintered Stone</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top: 28px;">
-          <label class="form-label">Brands You Carry</label>
-          <div class="checkbox-grid">
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="msi">
-              <span>MSI</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="cambria">
-              <span>Cambria</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="caesarstone">
-              <span>Caesarstone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="silestone">
-              <span>Silestone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="dekton">
-              <span>Dekton</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="vicostone">
-              <span>Vicostone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="hanstone">
-              <span>Hanstone</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="lg_viatera">
-              <span>LG Viatera</span>
-            </label>
-            <label class="checkbox-item">
-              <input type="checkbox" name="brands" value="other">
-              <span>Other</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top: 28px;">
-          <label class="form-label">Estimated Slab Inventory Count</label>
-          <select class="form-select" id="inventorySize" name="inventory_size">
-            <option value="">Select range...</option>
-            <option value="1-100">1-100 slabs</option>
-            <option value="100-500">100-500 slabs</option>
-            <option value="500-1000">500-1,000 slabs</option>
-            <option value="1000-5000">1,000-5,000 slabs</option>
-            <option value="5000+">5,000+ slabs</option>
-          </select>
-        </div>
-
-        <div class="button-row">
-          <button type="button" class="btn btn-secondary" onclick="prevStep(2)">Back</button>
-          <button type="button" class="btn btn-primary" onclick="nextStep(2)">Continue</button>
-        </div>
-      </div>
-
-      <!-- Step 3: Location -->
-      <div class="form-step" data-step="3">
-        <div class="step-header">
-          <h2 class="step-title">Where is your primary location?</h2>
-          <p class="step-description">You can add more locations after signup.</p>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group full-width">
-            <label class="form-label">Company Name <span class="required">*</span></label>
-            <input type="text" class="form-input" id="companyName" name="company_name" placeholder="Your Company Name" required>
-          </div>
-
-          <div class="form-group full-width">
-            <label class="form-label">Address <span class="required">*</span></label>
-            <input type="text" class="form-input" id="address" name="address" placeholder="Street address" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">City <span class="required">*</span></label>
-            <input type="text" class="form-input" id="city" name="city" placeholder="Phoenix" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">State <span class="required">*</span></label>
-            <select class="form-select" id="state" name="state" required>
-              <option value="AZ" selected>Arizona</option>
-              <option value="CA">California</option>
-              <option value="NV">Nevada</option>
-              <option value="NM">New Mexico</option>
-              <option value="TX">Texas</option>
-              <option value="CO">Colorado</option>
-              <option value="UT">Utah</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">ZIP Code <span class="required">*</span></label>
-            <input type="text" class="form-input" id="zipCode" name="zip_code" placeholder="85001" required pattern="[0-9]{5}">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Location Type</label>
-            <select class="form-select" id="locationType" name="location_type">
-              <option value="showroom">Showroom</option>
-              <option value="slab_yard">Slab Yard</option>
-              <option value="warehouse">Warehouse</option>
-              <option value="distribution_center">Distribution Center</option>
-              <option value="headquarters">Headquarters</option>
-            </select>
-          </div>
-
-          <div class="form-group full-width">
-            <label class="form-label">Website</label>
-            <input type="url" class="form-input" id="website" name="website" placeholder="https://www.yourcompany.com">
-          </div>
-        </div>
-
-        <div class="button-row">
-          <button type="button" class="btn btn-secondary" onclick="prevStep(3)">Back</button>
-          <button type="button" class="btn btn-primary" onclick="nextStep(3)">Continue</button>
-        </div>
-      </div>
-
-      <!-- Step 4: Account -->
-      <div class="form-step" data-step="4">
-        <div class="step-header">
-          <h2 class="step-title">Create your account</h2>
-          <p class="step-description">Set up your login credentials and accept the partnership terms.</p>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">Contact Name <span class="required">*</span></label>
-            <input type="text" class="form-input" id="contactName" name="contact_name" placeholder="John Smith" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Phone <span class="required">*</span></label>
-            <input type="tel" class="form-input" id="phone" name="phone" placeholder="(602) 555-1234" required>
-          </div>
-
-          <div class="form-group full-width">
-            <label class="form-label">Email <span class="required">*</span></label>
-            <input type="email" class="form-input" id="email" name="email" placeholder="you@company.com" required>
-          </div>
-
-          <div class="form-group full-width">
-            <label class="form-label">Password <span class="required">*</span></label>
-            <input type="password" class="form-input" id="password" name="password" placeholder="Min 8 characters" required minlength="8">
-          </div>
-        </div>
-
-        <div class="commission-box">
-          <div class="commission-title">Platform Commission</div>
-          <div class="commission-value">5<span>%</span></div>
-          <div class="commission-note">Only charged on sales made through our marketplace.<br/>No monthly fees. No listing fees.</div>
-        </div>
-
-        <div class="button-row">
-          <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Back</button>
-          <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitSignup()">
-            Create Partnership Account
-          </button>
-        </div>
-
-        <p class="terms-text">
-          By creating an account, you agree to our <a href="/legal/terms-of-use/">Terms of Service</a>, <a href="/legal/privacy-policy/">Privacy Policy</a>, and <a href="/legal/distributor-agreement/">Distributor Agreement</a>.
-        </p>
-      </div>
-
-      <!-- Success State -->
-      <div class="form-step" data-step="success">
-        <div class="success-state">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-          </div>
-          <h2 class="success-title">Welcome to the Marketplace!</h2>
-          <p class="success-text">
-            Your distributor account has been created. Please check your email to verify your account, then log in to access your dashboard.
-          </p>
-
-          <a href="/log-in/?redirect=/distributor/dashboard/" class="btn btn-primary" style="max-width: 300px; margin: 0 auto;">
-            Log In to Dashboard
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </a>
-
-          <div class="next-steps">
-            <h4>Next Steps:</h4>
-            <div class="next-step-item">
-              <span class="step-number">1</span>
-              <span>Verify your email address (check your inbox)</span>
+        <div class="how-it-works">
+          <h4 class="hiw-title">How It Works</h4>
+          <div class="hiw-steps">
+            <div class="hiw-step">
+              <div class="hiw-number">1</div>
+              <div class="hiw-text">Sign up free and add your location</div>
             </div>
-            <div class="next-step-item">
-              <span class="step-number">2</span>
-              <span>Log in to your dashboard</span>
+            <div class="hiw-step">
+              <div class="hiw-number">2</div>
+              <div class="hiw-text">Upload your slab & remnant inventory</div>
             </div>
-            <div class="next-step-item">
-              <span class="step-number">3</span>
-              <span>Add your first slab or upload inventory CSV</span>
+            <div class="hiw-step">
+              <div class="hiw-number">3</div>
+              <div class="hiw-text">Customers find you on our map</div>
             </div>
-            <div class="next-step-item">
-              <span class="step-number">4</span>
-              <span>Connect Stripe to receive payments</span>
+            <div class="hiw-step">
+              <div class="hiw-number">4</div>
+              <div class="hiw-text">Get direct inquiries & make sales</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="login-link">
-      Already have an account? <a href="/log-in/?redirect=/distributor/dashboard/">Log in</a>
     </div>
   </div>
 
@@ -1152,66 +1383,88 @@
     let formData = {};
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-    // Check for partner=stone-yard parameter and pre-select that option
-    const urlParams = new URLSearchParams(window.location.search);
-    const partnerType = urlParams.get('partner');
+    // Initialize maps
+    document.addEventListener('DOMContentLoaded', function() {
+      // Hero background map (decorative)
+      try {
+        const heroMap = L.map('heroMap', {
+          zoomControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          attributionControl: false
+        }).setView([33.5, -112.0], 9);
 
-    if (partnerType === 'stone-yard') {
-      // Pre-select stone yard option
-      document.addEventListener('DOMContentLoaded', () => {
-        const stoneYardRadio = document.querySelector('input[name="company_type"][value="stone_yard"]');
-        if (stoneYardRadio) {
-          stoneYardRadio.checked = true;
-        }
-        // Update hero text for stone yard partners
-        document.querySelector('.hero-title').innerHTML = 'Partner Stone Yard<br/>Application';
-        document.querySelector('.hero-subtitle').textContent = 'Join our Stone Yards network and get featured on our interactive map. Send your customers to us for fabrication, and we\'ll send our customers to you for slab selection.';
-        document.querySelector('.hero-badge').innerHTML = `
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          Stone Yard Partner
-        `;
-      });
-    }
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19
+        }).addTo(heroMap);
+      } catch(e) {}
 
-    // Check if user is already logged in and redirect to dashboard
-    async function checkExistingAuth() {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        // Check if they have a distributor profile
-        const { data: profile } = await supabaseClient
-          .from('distributor_profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+      // Preview map
+      try {
+        const previewMap = L.map('previewMapEl', {
+          zoomControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          attributionControl: false
+        }).setView([33.45, -112.07], 11);
 
-        if (profile) {
-          window.location.href = '/distributor/dashboard/';
-          return;
-        }
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19
+        }).addTo(previewMap);
+
+        // Add sample pin
+        const goldIcon = L.divIcon({
+          className: 'custom-pin',
+          html: `<div style="
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #f9cb00 0%, #d4a900 100%);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            border: 3px solid white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "><span style="transform: rotate(45deg); font-size: 14px;">📍</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        });
+
+        L.marker([33.45, -112.07], { icon: goldIcon }).addTo(previewMap);
+      } catch(e) {}
+
+      // Check URL params for pre-selection
+      const urlParams = new URLSearchParams(window.location.search);
+      const partnerType = urlParams.get('type') || urlParams.get('partner');
+      if (partnerType) {
+        const typeMap = {
+          'stone-yard': 'stone_yard',
+          'bone-yard': 'bone_yard',
+          'boneyard': 'bone_yard',
+          'fabricator': 'fabricator_yard',
+          'distributor': 'distributor',
+          'wholesaler': 'wholesaler',
+          'importer': 'importer'
+        };
+        const mappedType = typeMap[partnerType.toLowerCase()] || partnerType.replace(/-/g, '_');
+        const radio = document.querySelector(`input[name="company_type"][value="${mappedType}"]`);
+        if (radio) radio.checked = true;
       }
-    }
-
-    // Run auth check on page load (unless in demo mode)
-    if (!isLocalhost) {
-      checkExistingAuth();
-    } else {
-      console.log('Demo mode: Signup will simulate account creation');
-    }
+    });
 
     // Phone formatting
-    document.getElementById('phone').addEventListener('input', function(e) {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length >= 6) {
-        value = '(' + value.substring(0,3) + ') ' + value.substring(3,6) + '-' + value.substring(6,10);
-      } else if (value.length >= 3) {
-        value = '(' + value.substring(0,3) + ') ' + value.substring(3);
-      }
-      e.target.value = value;
+    document.querySelectorAll('input[type="tel"]').forEach(input => {
+      input.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 6) {
+          value = '(' + value.substring(0,3) + ') ' + value.substring(3,6) + '-' + value.substring(6,10);
+        } else if (value.length >= 3) {
+          value = '(' + value.substring(0,3) + ') ' + value.substring(3);
+        }
+        e.target.value = value;
+      });
     });
 
     function showError(message) {
@@ -1225,7 +1478,7 @@
       if (step === 1) {
         const companyType = document.querySelector('input[name="company_type"]:checked');
         if (!companyType) {
-          showError('Please select your company type');
+          showError('Please select your business type');
           return false;
         }
         formData.company_type = companyType.value;
@@ -1234,15 +1487,11 @@
 
       if (step === 2) {
         const materials = Array.from(document.querySelectorAll('input[name="materials"]:checked')).map(cb => cb.value);
-        const brands = Array.from(document.querySelectorAll('input[name="brands"]:checked')).map(cb => cb.value);
-
         if (materials.length === 0) {
           showError('Please select at least one material type');
           return false;
         }
-
         formData.material_types = materials;
-        formData.brands_carried = brands;
         formData.inventory_size = document.getElementById('inventorySize').value;
         return true;
       }
@@ -1255,11 +1504,11 @@
         const zipCode = document.getElementById('zipCode').value.trim();
 
         if (!companyName) {
-          showError('Please enter your company name');
+          showError('Please enter your business name');
           return false;
         }
         if (!address) {
-          showError('Please enter your address');
+          showError('Please enter your street address');
           return false;
         }
         if (!city) {
@@ -1276,7 +1525,7 @@
         formData.city = city;
         formData.state = state;
         formData.zip_code = zipCode;
-        formData.location_type = document.getElementById('locationType').value;
+        formData.yard_phone = document.getElementById('yardPhone').value.trim();
         formData.website = document.getElementById('website').value.trim();
         return true;
       }
@@ -1316,7 +1565,6 @@
 
     function nextStep(fromStep) {
       if (!validateStep(fromStep)) return;
-
       currentStep = fromStep + 1;
       updateStepDisplay();
     }
@@ -1327,18 +1575,15 @@
     }
 
     function updateStepDisplay() {
-      // Hide all steps
       document.querySelectorAll('.form-step').forEach(step => {
         step.classList.remove('active');
       });
 
-      // Show current step
       const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
       if (currentStepEl) {
         currentStepEl.classList.add('active');
       }
 
-      // Update progress
       document.querySelectorAll('.progress-step').forEach(step => {
         const stepNum = parseInt(step.dataset.step);
         step.classList.remove('active', 'completed');
@@ -1349,7 +1594,6 @@
         }
       });
 
-      // Scroll to top of form
       document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -1358,16 +1602,12 @@
 
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<div class="loading-spinner"></div> Creating Account...';
+      submitBtn.innerHTML = '<div class="loading-spinner"></div> Creating...';
 
-      // Demo mode - simulate successful signup without creating real account
+      // Demo mode
       if (isLocalhost) {
-        console.log('Demo mode: Simulating account creation with data:', formData);
-
-        // Simulate delay
+        console.log('Demo mode: Simulating signup with data:', formData);
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Show success
         document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
         document.querySelector('.form-step[data-step="success"]').classList.add('active');
         document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));
@@ -1390,7 +1630,6 @@
 
         if (authError) throw authError;
 
-        // Check if we have a session (email confirmation may be disabled)
         const hasSession = authData.session !== null;
 
         // 2. Create distributor profile
@@ -1405,7 +1644,6 @@
             primary_contact_phone: formData.phone,
             website: formData.website || null,
             material_types: formData.material_types,
-            brands_carried: formData.brands_carried,
             service_regions: [formData.state],
             onboarding_step: 4
           })
@@ -1414,46 +1652,39 @@
 
         if (profileError) {
           console.error('Profile error:', profileError);
-          // Continue anyway - profile can be created later via webhook
         }
 
-        // 3. Create primary location
+        // 3. Create location
         if (profileData) {
-          const { error: locationError } = await supabaseClient
+          await supabaseClient
             .from('distributor_locations')
             .insert({
               distributor_id: profileData.id,
               location_name: formData.company_name + ' - ' + formData.city,
-              location_type: formData.location_type,
+              location_type: 'slab_yard',
               is_primary: true,
               address_line1: formData.address,
               city: formData.city,
               state: formData.state,
               zip_code: formData.zip_code,
-              phone: formData.phone,
+              phone: formData.yard_phone || formData.phone,
               email: formData.email
             });
-
-          if (locationError) {
-            console.error('Location error:', locationError);
-          }
         }
 
-        // 4. Store distributor ID for dashboard
+        // 4. Store for dashboard
         localStorage.setItem('sg_distributor_signup', JSON.stringify({
           distributor_id: profileData?.id || authData.user.id,
           email: formData.email,
           company_name: formData.company_name
         }));
 
-        // 5. If we have a session, redirect directly to dashboard
+        // 5. Redirect or show success
         if (hasSession) {
-          // User is logged in, redirect to dashboard
           window.location.href = '/distributor/dashboard/';
           return;
         }
 
-        // 6. If no session (email confirmation required), show success and prompt login
         document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
         document.querySelector('.form-step[data-step="success"]').classList.add('active');
         document.querySelectorAll('.progress-step').forEach(step => step.classList.add('completed'));
@@ -1462,7 +1693,7 @@
         console.error('Signup error:', error);
         showError(error.message || 'Something went wrong. Please try again.');
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Create Partnership Account';
+        submitBtn.innerHTML = 'Create Account';
       }
     }
   </script>
