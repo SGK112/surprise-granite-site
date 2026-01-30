@@ -3940,38 +3940,72 @@ form.addEventListener('submit', async (e) => {
     </div>
 
     <div class="sy-right">
-      <div class="sy-partners-card">
-        <div class="sy-partners-head">Partner Warehouses</div>
-        <div class="sy-partners-list">
-          <a href="/stone-yards/#msi" class="sy-partner-row">
-            <span class="sy-partner-name">MSI Surfaces</span>
-            <span class="sy-partner-city">Phoenix</span>
-          </a>
-          <a href="/stone-yards/#arizona-tile" class="sy-partner-row">
-            <span class="sy-partner-name">Arizona Tile</span>
-            <span class="sy-partner-city">Tempe</span>
-          </a>
-          <a href="/stone-yards/#cambria" class="sy-partner-row">
-            <span class="sy-partner-name">Cambria Gallery</span>
-            <span class="sy-partner-city">Avondale</span>
-          </a>
-          <a href="/stone-yards/#cosentino" class="sy-partner-row">
-            <span class="sy-partner-name">Cosentino Center</span>
-            <span class="sy-partner-city">Tempe</span>
-          </a>
-          <a href="/stone-yards/#daltile" class="sy-partner-row">
-            <span class="sy-partner-name">Daltile Design Studio</span>
-            <span class="sy-partner-city">Tempe</span>
-          </a>
-          <a href="/stone-yards/#bolder" class="sy-partner-row">
-            <span class="sy-partner-name">Bolder Image Stone</span>
-            <span class="sy-partner-city">Phoenix</span>
-          </a>
+      <div class="sy-map-card">
+        <div class="sy-map-header">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>10 Partner Locations</span>
         </div>
-        <a href="/stone-yards/" class="sy-partners-more">View all 10 locations →</a>
+        <div id="sy-mini-map"></div>
+        <a href="/stone-yards/" class="sy-map-cta">View Full Map & Details →</a>
       </div>
     </div>
   </div>
+
+  <!-- Leaflet Map for Stone Yards Preview -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  (function() {
+    // Partner locations
+    const partners = [
+      { name: 'MSI Surfaces', lat: 33.4583, lng: -112.1407 },
+      { name: 'Arizona Tile', lat: 33.3456, lng: -111.9606 },
+      { name: 'Cactus Stone & Tile', lat: 33.4438, lng: -111.9811 },
+      { name: 'Cosentino Center', lat: 33.3511, lng: -111.9606 },
+      { name: 'Cambria Gallery', lat: 33.4536, lng: -112.3234 },
+      { name: 'Daltile Stone & Slab', lat: 33.4317, lng: -111.9642 },
+      { name: 'Bolder Image Stone', lat: 33.4516, lng: -112.1306 },
+      { name: 'Aracruz Granite', lat: 33.4283, lng: -112.0964 },
+      { name: 'Classic Surfaces', lat: 33.4650, lng: -112.1378 },
+      { name: 'Architectural Surfaces', lat: 33.6114, lng: -111.8867 }
+    ];
+
+    function initMiniMap() {
+      const mapEl = document.getElementById('sy-mini-map');
+      if (!mapEl || typeof L === 'undefined') return;
+
+      const map = L.map('sy-mini-map', {
+        scrollWheelZoom: false,
+        zoomControl: false,
+        dragging: false,
+        doubleClickZoom: false,
+        attributionControl: false
+      }).setView([33.45, -112.05], 10);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      // Gold pin icon
+      const pinIcon = L.divIcon({
+        className: 'sy-pin',
+        html: '<div class="sy-pin-dot"></div>',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+      });
+
+      partners.forEach(p => {
+        L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMiniMap);
+    } else {
+      setTimeout(initMiniMap, 100);
+    }
+  })();
+  </script>
 </section>
 
 <!-- Quick Reviews Strip -->
@@ -4755,71 +4789,67 @@ form.addEventListener('submit', async (e) => {
   border-color: #f9cb00;
   color: #f9cb00;
 }
-/* Right Panel - Partners Card */
+/* Right Panel - Map Card */
 .sy-right {
   display: flex;
   flex-direction: column;
 }
-.sy-partners-card {
-  background: rgba(0, 0, 0, 0.25);
+.sy-map-card {
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   overflow: hidden;
 }
-.sy-partners-head {
+.sy-map-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.05);
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  padding: 16px 24px;
+  color: #f9cb00;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 14px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.sy-partners-list {
-  display: flex;
-  flex-direction: column;
+.sy-map-header svg {
+  flex-shrink: 0;
 }
-.sy-partner-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.2s ease;
+#sy-mini-map {
+  width: 100%;
+  height: 280px;
+  background: #1a1a2e;
 }
-.sy-partner-row:last-child {
-  border-bottom: none;
-}
-.sy-partner-row:hover {
-  background: rgba(249, 203, 0, 0.08);
-}
-.sy-partner-name {
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-}
-.sy-partner-city {
-  color: #64748b;
-  font-size: 13px;
-}
-.sy-partner-row:hover .sy-partner-name {
-  color: #f9cb00;
-}
-.sy-partners-more {
+.sy-map-cta {
   display: block;
   text-align: center;
-  background: rgba(249, 203, 0, 0.1);
-  color: #f9cb00;
+  background: linear-gradient(135deg, #f9cb00 0%, #d4a900 100%);
+  color: #0f172a;
   text-decoration: none;
-  padding: 14px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 700;
   transition: all 0.2s ease;
 }
-.sy-partners-more:hover {
-  background: rgba(249, 203, 0, 0.2);
+.sy-map-cta:hover {
+  filter: brightness(1.1);
+}
+/* Map pin markers */
+.sy-pin {
+  background: transparent !important;
+  border: none !important;
+}
+.sy-pin-dot {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #f9cb00 0%, #fbbf24 100%);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(249, 203, 0, 0.5), 0 0 0 3px rgba(249, 203, 0, 0.2);
+  animation: sy-pulse 2s ease-in-out infinite;
+}
+@keyframes sy-pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(249, 203, 0, 0.5), 0 0 0 3px rgba(249, 203, 0, 0.2); }
+  50% { box-shadow: 0 2px 12px rgba(249, 203, 0, 0.7), 0 0 0 6px rgba(249, 203, 0, 0.1); }
 }
 
 /* Reviews Strip */
