@@ -4479,60 +4479,36 @@ form.addEventListener('submit', async (e) => {
 }
 </style>
 
-<!-- Stone Yards Section - Visit Partner Warehouses -->
+<!-- Stone Yards Section - Map Background -->
 <section class="stone-yards-section">
-  <div class="sy-container">
-    <div class="sy-left">
+  <!-- Full-width Map Background -->
+  <div id="sy-bg-map" class="sy-bg-map"></div>
+
+  <!-- Content Overlay -->
+  <div class="sy-content-overlay">
+    <div class="sy-content-card">
       <span class="sy-label">PHOENIX METRO AREA</span>
       <h2 class="sy-title">Visit Our Partner Stone Yards</h2>
-      <p class="sy-desc">See thousands of full-size slabs in person. Touch the stone, compare colors, and hand-pick the perfect piece for your kitchen or bath project.</p>
+      <p class="sy-desc">See thousands of full-size slabs in person. Touch the stone, compare colors, and hand-pick the perfect piece for your project.</p>
 
-      <div class="sy-stats-bar">
-        <div class="sy-stat-box">
-          <strong>10+</strong>
-          <span>Partner Locations</span>
-        </div>
-        <div class="sy-stat-box">
-          <strong>10,000+</strong>
-          <span>Slabs In Stock</span>
-        </div>
-        <div class="sy-stat-box">
-          <strong>FREE</strong>
-          <span>Yard Visits</span>
-        </div>
+      <div class="sy-stats-row">
+        <div class="sy-stat"><strong>10+</strong><span>Locations</span></div>
+        <div class="sy-stat"><strong>10,000+</strong><span>Slabs</span></div>
+        <div class="sy-stat"><strong>FREE</strong><span>Visits</span></div>
       </div>
-
-      <ul class="sy-checklist">
-        <li><span class="sy-check">✓</span> Interactive map with directions & hours</li>
-        <li><span class="sy-check">✓</span> Granite, quartz, marble, quartzite & porcelain</li>
-        <li><span class="sy-check">✓</span> Take samples home the same day</li>
-        <li><span class="sy-check">✓</span> We handle purchase, template & installation</li>
-      </ul>
 
       <div class="sy-buttons">
-        <a href="/stone-yards/" class="sy-btn-gold">View Stone Yards →</a>
-        <a href="/stone-yards/#map" class="sy-btn-white">Open Map</a>
-      </div>
-    </div>
-
-    <div class="sy-right">
-      <div class="sy-map-card">
-        <div class="sy-map-header">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <span>10 Partner Locations</span>
-        </div>
-        <div id="sy-mini-map"></div>
-        <a href="/stone-yards/" class="sy-map-cta">View Full Map & Details →</a>
+        <a href="/stone-yards/" class="sy-btn-primary">View All Stone Yards →</a>
+        <a href="/stone-yards/#map" class="sy-btn-secondary">Get Directions</a>
       </div>
     </div>
   </div>
 
-  <!-- Leaflet Map for Stone Yards Preview -->
+  <!-- Leaflet Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
   (function() {
-    // Partner locations
     const partners = [
       { name: 'MSI Surfaces', lat: 33.4583, lng: -112.1407 },
       { name: 'Arizona Tile', lat: 33.3456, lng: -111.9606 },
@@ -4546,39 +4522,40 @@ form.addEventListener('submit', async (e) => {
       { name: 'Architectural Surfaces', lat: 33.6114, lng: -111.8867 }
     ];
 
-    function initMiniMap() {
-      const mapEl = document.getElementById('sy-mini-map');
+    function initBgMap() {
+      const mapEl = document.getElementById('sy-bg-map');
       if (!mapEl || typeof L === 'undefined') return;
 
-      const map = L.map('sy-mini-map', {
+      const map = L.map('sy-bg-map', {
         scrollWheelZoom: false,
         zoomControl: false,
-        dragging: false,
+        dragging: true,
         doubleClickZoom: false,
         attributionControl: false
-      }).setView([33.45, -112.05], 10);
+      }).setView([33.48, -112.05], 10);
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(map);
 
-      // Gold pin icon
+      // Custom pin icon
       const pinIcon = L.divIcon({
         className: 'sy-pin',
-        html: '<div class="sy-pin-dot"></div>',
-        iconSize: [12, 12],
-        iconAnchor: [6, 6]
+        html: '<div class="sy-pin-marker"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 24]
       });
 
       partners.forEach(p => {
-        L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+        const marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map);
+        marker.bindPopup(`<strong>${p.name}</strong><br><a href="/stone-yards/" style="color:#f9cb00;">View Details</a>`);
       });
     }
 
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initMiniMap);
+      document.addEventListener('DOMContentLoaded', initBgMap);
     } else {
-      setTimeout(initMiniMap, 100);
+      setTimeout(initBgMap, 100);
     }
   })();
   </script>
@@ -5343,230 +5320,159 @@ form.addEventListener('submit', async (e) => {
 }
 .local-cta:hover { transform: translateY(-2px); }
 
-/* Stone Yards Section - Light Professional Design */
+/* Stone Yards Section - Map Background */
 .stone-yards-section {
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 80px 24px;
   position: relative;
+  min-height: 500px;
+  overflow: hidden;
 }
-.stone-yards-section::before {
-  content: '';
+.sy-bg-map {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #f9cb00, #fbbf24, #f9cb00);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
-.sy-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 60px;
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .sy-container {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-}
-.sy-left {
+.sy-content-overlay {
+  position: relative;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  min-height: 500px;
+  padding: 60px 24px;
+}
+.sy-content-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 480px;
+  margin-left: 5%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+@media (max-width: 768px) {
+  .sy-content-card {
+    margin: 0 auto;
+    max-width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+  }
+  .sy-content-overlay { padding: 40px 16px; }
 }
 .sy-label {
   display: inline-block;
   background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
   color: #f9cb00;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 4px;
-  margin-bottom: 20px;
-  width: fit-content;
+  margin-bottom: 16px;
 }
 .sy-title {
   color: #1a1a2e;
-  font-size: clamp(28px, 4vw, 42px);
+  font-size: clamp(24px, 4vw, 36px);
   font-weight: 800;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   line-height: 1.2;
 }
 .sy-desc {
-  color: #64748b;
-  font-size: 17px;
-  line-height: 1.7;
-  margin: 0 0 32px 0;
-  max-width: 500px;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
 }
-/* Stats Bar */
-.sy-stats-bar {
+.sy-stats-row {
   display: flex;
-  gap: 16px;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 24px;
 }
-.sy-stat-box {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px 24px;
+.sy-stat {
   text-align: center;
-  min-width: 120px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
-.sy-stat-box strong {
+.sy-stat strong {
   display: block;
   color: #1a1a2e;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   line-height: 1;
 }
-.sy-stat-box span {
+.sy-stat span {
   display: block;
   color: #64748b;
   font-size: 11px;
-  margin-top: 6px;
+  margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
 }
-/* Checklist */
-.sy-checklist {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 32px 0;
-}
-.sy-checklist li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #334155;
-  font-size: 15px;
-  padding: 12px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-.sy-checklist li:last-child {
-  border-bottom: none;
-}
-.sy-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-/* Buttons */
 .sy-buttons {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
-.sy-btn-gold {
+.sy-btn-primary {
   display: inline-flex;
   align-items: center;
   background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
   color: #f9cb00;
   text-decoration: none;
-  padding: 16px 28px;
+  padding: 14px 24px;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2);
+  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.25);
 }
-.sy-btn-gold:hover {
+.sy-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(26, 26, 46, 0.3);
+  box-shadow: 0 8px 25px rgba(26, 26, 46, 0.35);
 }
-.sy-btn-white {
+.sy-btn-secondary {
   display: inline-flex;
   align-items: center;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.8);
   color: #1a1a2e;
   text-decoration: none;
-  padding: 16px 28px;
+  padding: 14px 24px;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   border: 2px solid #e2e8f0;
   transition: all 0.3s ease;
 }
-.sy-btn-white:hover {
-  border-color: #1a1a2e;
-  background: #f8fafc;
-}
-/* Right Panel - Map Card */
-.sy-right {
-  display: flex;
-  flex-direction: column;
-}
-.sy-map-card {
+.sy-btn-secondary:hover {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-.sy-map-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  color: #f9cb00;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 14px 20px;
-}
-.sy-map-header svg {
-  flex-shrink: 0;
-}
-#sy-mini-map {
-  width: 100%;
-  height: 300px;
-  background: #e2e8f0;
-}
-.sy-map-cta {
-  display: block;
-  text-align: center;
-  background: linear-gradient(135deg, #f9cb00 0%, #d4a900 100%);
-  color: #1a1a2e;
-  text-decoration: none;
-  padding: 16px;
-  font-size: 15px;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-.sy-map-cta:hover {
-  filter: brightness(1.05);
+  border-color: #1a1a2e;
 }
 /* Map pin markers */
 .sy-pin {
   background: transparent !important;
   border: none !important;
 }
-.sy-pin-dot {
-  width: 14px;
-  height: 14px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  border: 3px solid #f9cb00;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.4);
-  animation: sy-pulse 2s ease-in-out infinite;
+.sy-pin-marker {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(180deg, #f9cb00 0%, #d4a900 100%);
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  animation: sy-bounce 2s ease-in-out infinite;
 }
-@keyframes sy-pulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(26, 26, 46, 0.4), 0 0 0 3px rgba(249, 203, 0, 0.3); }
-  50% { box-shadow: 0 2px 12px rgba(26, 26, 46, 0.5), 0 0 0 6px rgba(249, 203, 0, 0.15); }
+@keyframes sy-bounce {
+  0%, 100% { transform: rotate(-45deg) translateY(0); }
+  50% { transform: rotate(-45deg) translateY(-4px); }
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.leaflet-popup-content {
+  margin: 12px 16px;
+  font-family: inherit;
 }
 
 /* Reviews Strip */
