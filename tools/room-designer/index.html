@@ -62844,7 +62844,66 @@
 
     // =============================================
     // PRO TOOLS - Cabinet Library with Custom Upload
+    // UNIFIED CABINET SYSTEM - Single Source of Truth
     // =============================================
+
+    // Master cabinet specifications - ALL cabinet data flows from here
+    // Dimensions: width/height in FEET for 2D canvas, actualHeight in INCHES for 3D
+    const MASTER_CABINET_SPECS = {
+      // Base Cabinets: 24" deep, 34.5" tall
+      base: {
+        depth: 2,        // 24" in feet (shown as 'height' in 2D top-down view)
+        actualHeight: 34.5,  // Physical height in inches
+        color: '#8B7355',
+        icon: '🗄️',
+        sizes: [9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 42, 48]
+      },
+      // Wall Cabinets: 12" deep, 30-42" tall (we use 30" default)
+      wall: {
+        depth: 1,        // 12" in feet
+        actualHeight: 30,
+        color: '#9B8465',
+        icon: '🗄️',
+        sizes: [9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 42]
+      },
+      // Tall/Pantry: 24" deep, 84-96" tall
+      tall: {
+        depth: 2,        // 24" in feet
+        actualHeight: 84,
+        color: '#8B7355',
+        icon: '📦',
+        sizes: [18, 24, 30, 36]
+      },
+      // Corner: 36"x36" footprint
+      corner: {
+        depth: 3,        // 36" in feet (square)
+        actualHeight: 34.5,
+        color: '#7B6545',
+        icon: '📐'
+      },
+      // Island: variable, default 72"x36"
+      island: {
+        depth: 3,        // 36" in feet
+        actualHeight: 36,
+        color: '#6B5545',
+        icon: '🏝️'
+      }
+    };
+
+    // Generate cabinet from specs
+    function generateCabinetDef(type, widthInches, specs, label) {
+      return {
+        type: type,
+        label: label || `${type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} ${widthInches}"`,
+        width: widthInches / 12,  // Convert to feet
+        height: specs.depth,       // 2D "height" = physical depth
+        actualHeight: specs.actualHeight,
+        color: specs.color,
+        icon: specs.icon,
+        dims: `${widthInches}" × ${specs.depth * 12}"${specs.actualHeight > 36 ? ` × ${specs.actualHeight}"` : ''}`
+      };
+    }
+
     function showCabinetLibrary() {
       // Remove existing modal if any
       const existing = document.getElementById('cabinetLibraryModal');
@@ -62853,43 +62912,87 @@
       // Load custom cabinets from localStorage
       const customCabinets = JSON.parse(localStorage.getItem('customCabinetLibrary') || '[]');
 
-      // Cabinet library data organized by category
+      // Get ProCraft and MSI catalogs
+      const procraftCabinets = CABINET_CATALOGS?.procraft?.cabinets || {};
+      const msiCabinets = CABINET_CATALOGS?.msi?.cabinets || {};
+
+      // UNIFIED Cabinet Library - generated from MASTER_CABINET_SPECS
       const CABINET_LIBRARY = {
         base: [
-          { type: 'base-cabinet', label: 'Base Cabinet', width: 3, height: 2, icon: '🗄️', dims: '36" × 24"' },
-          { type: 'base-cabinet-12', label: 'Base 12"', width: 1, height: 2, icon: '🗄️', dims: '12" × 24"' },
-          { type: 'base-cabinet-15', label: 'Base 15"', width: 1.25, height: 2, icon: '🗄️', dims: '15" × 24"' },
-          { type: 'base-cabinet-18', label: 'Base 18"', width: 1.5, height: 2, icon: '🗄️', dims: '18" × 24"' },
-          { type: 'base-cabinet-24', label: 'Base 24"', width: 2, height: 2, icon: '🗄️', dims: '24" × 24"' },
-          { type: 'base-cabinet-30', label: 'Base 30"', width: 2.5, height: 2, icon: '🗄️', dims: '30" × 24"' },
-          { type: 'drawer-base', label: 'Drawer Base', width: 3, height: 2, icon: '🗃️', dims: '36" × 24"' },
-          { type: 'sink-base', label: 'Sink Base', width: 3, height: 2, icon: '🚰', dims: '36" × 24"' },
-          { type: 'corner-cabinet', label: 'Corner Base', width: 3, height: 3, icon: '📐', dims: '36" × 36"' },
-          { type: 'lazy-susan', label: 'Lazy Susan', width: 3, height: 3, icon: '🔄', dims: '36" × 36"' },
-          { type: 'blind-corner', label: 'Blind Corner', width: 4, height: 2, icon: '📦', dims: '48" × 24"' }
+          // Standard sizes from master specs
+          ...MASTER_CABINET_SPECS.base.sizes.filter(s => [12, 15, 18, 24, 30, 36].includes(s)).map(size =>
+            generateCabinetDef('base-cabinet', size, MASTER_CABINET_SPECS.base, `Base ${size}"`)
+          ),
+          // Specialty base cabinets
+          { type: 'drawer-base', label: 'Drawer Base 18"', width: 1.5, height: 2, actualHeight: 34.5, icon: '🗃️', dims: '18" × 24"', color: '#8B7355' },
+          { type: 'drawer-base', label: 'Drawer Base 24"', width: 2, height: 2, actualHeight: 34.5, icon: '🗃️', dims: '24" × 24"', color: '#8B7355' },
+          { type: 'drawer-base', label: 'Drawer Base 36"', width: 3, height: 2, actualHeight: 34.5, icon: '🗃️', dims: '36" × 24"', color: '#8B7355' },
+          { type: 'sink-base', label: 'Sink Base 30"', width: 2.5, height: 2, actualHeight: 34.5, icon: '🚰', dims: '30" × 24"', color: '#8B7355' },
+          { type: 'sink-base', label: 'Sink Base 36"', width: 3, height: 2, actualHeight: 34.5, icon: '🚰', dims: '36" × 24"', color: '#8B7355' },
+          { type: 'corner-cabinet', label: 'Corner Base', width: 3, height: 3, actualHeight: 34.5, icon: '📐', dims: '36" × 36"', color: '#7B6545' },
+          { type: 'lazy-susan', label: 'Lazy Susan', width: 3, height: 3, actualHeight: 34.5, icon: '🔄', dims: '36" × 36"', color: '#7B6545' },
+          { type: 'blind-corner', label: 'Blind Corner 42"', width: 3.5, height: 2, actualHeight: 34.5, icon: '📦', dims: '42" × 24"', color: '#7B6545' },
+          { type: 'blind-corner', label: 'Blind Corner 48"', width: 4, height: 2, actualHeight: 34.5, icon: '📦', dims: '48" × 24"', color: '#7B6545' }
         ],
         wall: [
-          { type: 'wall-cabinet', label: 'Wall Cabinet', width: 3, height: 1, icon: '🗄️', dims: '36" × 12"' },
-          { type: 'wall-cabinet', label: 'Wall 30"', width: 2.5, height: 1, icon: '🗄️', dims: '30" × 12"', customWidth: 2.5 },
-          { type: 'wall-cabinet', label: 'Wall 24"', width: 2, height: 1, icon: '🗄️', dims: '24" × 12"', customWidth: 2 },
-          { type: 'wall-cabinet', label: 'Wall 18"', width: 1.5, height: 1, icon: '🗄️', dims: '18" × 12"', customWidth: 1.5 },
-          { type: 'wall-cabinet', label: 'Wall 12"', width: 1, height: 1, icon: '🗄️', dims: '12" × 12"', customWidth: 1 },
-          { type: 'microwave-cabinet', label: 'Microwave Cab', width: 2.5, height: 1.5, icon: '📺', dims: '30" × 18"' },
-          { type: 'above-microwave-cabinet', label: 'Above Micro', width: 2.5, height: 1, icon: '🗄️', dims: '30" × 12"' }
+          // Standard wall cabinet sizes
+          ...MASTER_CABINET_SPECS.wall.sizes.filter(s => [12, 15, 18, 24, 30, 36, 42].includes(s)).map(size =>
+            generateCabinetDef('wall-cabinet', size, MASTER_CABINET_SPECS.wall, `Wall ${size}"`)
+          ),
+          // Specialty wall cabinets
+          { type: 'microwave-cabinet', label: 'Microwave Cab 30"', width: 2.5, height: 1.5, actualHeight: 18, icon: '📺', dims: '30" × 18"', color: '#8B7355' },
+          { type: 'above-microwave-cabinet', label: 'Above Microwave', width: 2.5, height: 1, actualHeight: 12, icon: '🗄️', dims: '30" × 12"', color: '#9B8465' }
         ],
         tall: [
-          { type: 'tall-cabinet', label: 'Pantry 24"', width: 2, height: 2, icon: '🗄️', dims: '24" × 24" × 84"' },
-          { type: 'tall-cabinet', label: 'Pantry 36"', width: 3, height: 2, icon: '🗄️', dims: '36" × 24" × 84"', customWidth: 3 },
-          { type: 'tall-oven', label: 'Oven Cabinet', width: 2.5, height: 2, icon: '🍳', dims: '30" × 24" × 84"' },
-          { type: 'double-oven-cabinet', label: 'Double Oven', width: 2.5, height: 2, icon: '🍳', dims: '30" × 24" × 84"' },
-          { type: 'fridge-cabinet', label: 'Fridge Cabinet', width: 3, height: 2, icon: '🧊', dims: '36" × 24" × 84"' }
+          // Pantry cabinets
+          { type: 'tall-cabinet', label: 'Pantry 18"', width: 1.5, height: 2, actualHeight: 84, icon: '📦', dims: '18" × 24" × 84"', color: '#8B7355' },
+          { type: 'tall-cabinet', label: 'Pantry 24"', width: 2, height: 2, actualHeight: 84, icon: '📦', dims: '24" × 24" × 84"', color: '#8B7355' },
+          { type: 'tall-cabinet', label: 'Pantry 36"', width: 3, height: 2, actualHeight: 84, icon: '📦', dims: '36" × 24" × 84"', color: '#8B7355' },
+          // Oven cabinets
+          { type: 'single-oven-cabinet', label: 'Single Oven 30"', width: 2.5, height: 2, actualHeight: 84, icon: '🍳', dims: '30" × 24" × 84"', color: '#8B7355' },
+          { type: 'tall-oven', label: 'Tall Oven 30"', width: 2.5, height: 2, actualHeight: 84, icon: '🍳', dims: '30" × 24" × 84"', color: '#8B7355' },
+          { type: 'double-oven-cabinet', label: 'Double Oven 30"', width: 2.5, height: 2, actualHeight: 84, icon: '🍳', dims: '30" × 24" × 84"', color: '#8B7355' },
+          // Fridge cabinet
+          { type: 'fridge-cabinet', label: 'Fridge Cabinet 36"', width: 3, height: 2, actualHeight: 84, icon: '🧊', dims: '36" × 24" × 84"', color: '#8B7355' }
         ],
         specialty: [
-          { type: 'island', label: 'Island', width: 6, height: 3, icon: '🏝️', dims: '72" × 36"' },
-          { type: 'linen-closet', label: 'Linen Closet', width: 1.5, height: 2, icon: '🧺', dims: '18" × 24"' },
-          { type: 'linen-tower', label: 'Linen Tower', width: 2, height: 2, icon: '🧺', dims: '24" × 21"' }
+          { type: 'island', label: 'Island 48"×36"', width: 4, height: 3, actualHeight: 36, icon: '🏝️', dims: '48" × 36"', color: '#6B5545' },
+          { type: 'island', label: 'Island 60"×36"', width: 5, height: 3, actualHeight: 36, icon: '🏝️', dims: '60" × 36"', color: '#6B5545' },
+          { type: 'island', label: 'Island 72"×36"', width: 6, height: 3, actualHeight: 36, icon: '🏝️', dims: '72" × 36"', color: '#6B5545' },
+          { type: 'island', label: 'Island 96"×42"', width: 8, height: 3.5, actualHeight: 36, icon: '🏝️', dims: '96" × 42"', color: '#6B5545' },
+          { type: 'linen-closet', label: 'Linen Closet 18"', width: 1.5, height: 2, actualHeight: 84, icon: '🧺', dims: '18" × 24" × 84"', color: '#8B7355' },
+          { type: 'linen-tower', label: 'Linen Tower 24"', width: 2, height: 1.75, actualHeight: 84, icon: '🧺', dims: '24" × 21" × 84"', color: '#8B7355' }
         ],
-        custom: customCabinets  // User's uploaded cabinet library
+        // ProCraft manufacturer catalog
+        procraft: Object.values(procraftCabinets).flat().map(cab => ({
+          type: cab.type,
+          label: `${cab.name}`,
+          width: cab.width,
+          height: cab.height || cab.depth || 2,
+          actualHeight: cab.type.includes('tall') || cab.type.includes('pantry') ? 84 : cab.type.includes('wall') ? 30 : 34.5,
+          icon: cab.type.includes('wall') ? '🗄️' : cab.type.includes('tall') || cab.type.includes('pantry') ? '📦' : '🗄️',
+          dims: `${Math.round(cab.width * 12)}" × ${Math.round((cab.depth || 2) * 12)}"`,
+          sku: cab.sku,
+          price: cab.price,
+          color: '#8B7355',
+          catalog: 'procraft'
+        })),
+        // MSI manufacturer catalog
+        msi: Object.values(msiCabinets).flat().map(cab => ({
+          type: cab.type,
+          label: `${cab.name}`,
+          width: cab.width,
+          height: cab.height || cab.depth || 2,
+          actualHeight: cab.type.includes('tall') || cab.type.includes('pantry') ? 84 : cab.type.includes('wall') ? 30 : 34.5,
+          icon: cab.type.includes('wall') ? '🗄️' : cab.type.includes('tall') || cab.type.includes('pantry') ? '📦' : '🗄️',
+          dims: `${Math.round(cab.width * 12)}" × ${Math.round((cab.depth || 2) * 12)}"`,
+          sku: cab.sku,
+          price: cab.price,
+          color: '#8B7355',
+          catalog: 'msi'
+        })),
+        // User's custom uploaded cabinets
+        custom: customCabinets
       };
 
       let currentCategory = 'base';
@@ -62904,11 +63007,17 @@
         <div class="cabinet-library-content">
           <div class="cabinet-library-header">
             <h3>📦 Cabinet Library</h3>
-            <div class="cabinet-library-tabs">
+            <div class="cabinet-library-tabs" style="flex-wrap: wrap; gap: 4px;">
               <button class="cab-tab active" data-cat="base">Base</button>
               <button class="cab-tab" data-cat="wall">Wall</button>
               <button class="cab-tab" data-cat="tall">Tall</button>
               <button class="cab-tab" data-cat="specialty">Specialty</button>
+              <button class="cab-tab" data-cat="procraft" style="background: linear-gradient(135deg, #8B5A2B, #6B3A1B);" title="ProCraft Cabinetry">
+                🏭 ProCraft
+              </button>
+              <button class="cab-tab" data-cat="msi" style="background: linear-gradient(135deg, #1e3a5f, #0d1f33);" title="MSI Cabinetry">
+                🏭 MSI
+              </button>
               <button class="cab-tab" data-cat="custom" style="background: linear-gradient(135deg, #10b981, #059669);">
                 📁 My Library ${customCount > 0 ? `(${customCount})` : ''}
               </button>
@@ -63010,14 +63119,16 @@
             // Ignore if clicking delete button
             if (e.target.classList.contains('delete-custom-cab')) return;
 
-            const type = item.dataset.type;
-            const customWidth = parseFloat(item.dataset.width);
+            const cabinetData = filtered[idx];
+            const type = cabinetData.type;
+            const customWidth = cabinetData.customWidth || cabinetData.width;
 
             if (currentCategory === 'custom') {
               // For custom cabinets, use the full cabinet data
-              addCustomCabinetFromLibrary(filtered[idx]);
+              addCustomCabinetFromLibrary(cabinetData);
             } else {
-              addCabinetFromLibrary(type, customWidth);
+              // Pass full cabinet data for proper 3D height, color, price
+              addCabinetFromLibrary(type, customWidth, cabinetData);
             }
           };
         });
@@ -63070,15 +63181,46 @@
     }
 
     // Add cabinet from library to canvas
-    function addCabinetFromLibrary(type, customWidth) {
+    function addCabinetFromLibrary(type, customWidth, cabinetData) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       createElement(type, centerX, centerY);
 
-      // If custom width specified, update the element
-      if (customWidth && selectedElement) {
-        selectedElement.width = customWidth;
+      // Apply cabinet data from library
+      if (selectedElement) {
+        if (customWidth) {
+          selectedElement.width = customWidth;
+        }
+        if (cabinetData) {
+          // Apply depth (2D height)
+          if (cabinetData.height) {
+            selectedElement.height = cabinetData.height;
+          }
+          // Apply 3D height (convert inches to feet for get3DHeight compatibility)
+          if (cabinetData.actualHeight) {
+            selectedElement.height3D = cabinetData.actualHeight / 12;
+          }
+          // Apply color
+          if (cabinetData.color) {
+            selectedElement.color = cabinetData.color;
+          }
+          // Apply label
+          if (cabinetData.label) {
+            selectedElement.label = cabinetData.label;
+          }
+          // Apply SKU and price for manufacturer cabinets
+          if (cabinetData.sku) {
+            selectedElement.sku = cabinetData.sku;
+          }
+          if (cabinetData.price) {
+            selectedElement.price = cabinetData.price;
+          }
+          if (cabinetData.catalog) {
+            selectedElement.catalog = cabinetData.catalog;
+          }
+        }
         draw();
+        updateProperties();
       }
 
       document.getElementById('cabinetLibraryModal')?.remove();
@@ -63102,8 +63244,8 @@
       if (selectedElement) {
         selectedElement.width = widthFt;
         selectedElement.height = depthFt;
-        selectedElement.label = `Custom ${widthIn}"×${depthIn}"`;
-        selectedElement.actualHeight = heightIn / 12; // Store height in feet
+        selectedElement.label = `Custom ${widthIn}"×${depthIn}"×${heightIn}"`;
+        selectedElement.height3D = heightIn / 12; // Store 3D height in feet for get3DHeight compatibility
         draw();
         updateProperties();
       }
