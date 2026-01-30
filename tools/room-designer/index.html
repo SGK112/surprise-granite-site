@@ -19386,6 +19386,27 @@
       'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>'
     };
 
+    // Map sized cabinet types to base icons (reuse icons for different sizes)
+    const SIZED_CABINET_BASE_ICONS = {
+      // Base cabinet sizes - all use base-cabinet icon
+      'base-cabinet-12': 'base-cabinet', 'base-cabinet-15': 'base-cabinet', 'base-cabinet-18': 'base-cabinet',
+      'base-cabinet-21': 'base-cabinet', 'base-cabinet-24': 'base-cabinet', 'base-cabinet-27': 'base-cabinet',
+      'base-cabinet-30': 'base-cabinet', 'base-cabinet-33': 'base-cabinet', 'base-cabinet-36': 'base-cabinet',
+      'base-cabinet-42': 'base-cabinet', 'base-cabinet-48': 'base-cabinet',
+      // Wall cabinet sizes - all use wall-cabinet icon
+      'wall-cabinet-12': 'wall-cabinet', 'wall-cabinet-15': 'wall-cabinet', 'wall-cabinet-18': 'wall-cabinet',
+      'wall-cabinet-21': 'wall-cabinet', 'wall-cabinet-24': 'wall-cabinet', 'wall-cabinet-27': 'wall-cabinet',
+      'wall-cabinet-30': 'wall-cabinet', 'wall-cabinet-33': 'wall-cabinet', 'wall-cabinet-36': 'wall-cabinet',
+      'wall-cabinet-42': 'wall-cabinet'
+    };
+
+    // Add sized cabinet icons to ELEMENT_ICONS (reference base icons)
+    Object.entries(SIZED_CABINET_BASE_ICONS).forEach(([sizedType, baseType]) => {
+      if (ELEMENT_ICONS[baseType] && !ELEMENT_ICONS[sizedType]) {
+        ELEMENT_ICONS[sizedType] = ELEMENT_ICONS[baseType];
+      }
+    });
+
     // Industry standard cabinet dimensions:
     // Base cabinets: 24" deep (2 ft), 34.5" tall (2.875 ft) - top-down view shows depth as 'height'
     // Wall cabinets: 12" deep (1 ft), 30-42" tall, mounted 54" from floor
