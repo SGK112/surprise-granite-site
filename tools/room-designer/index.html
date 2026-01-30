@@ -19386,8 +19386,8 @@
       'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>'
     };
 
-    // Map sized cabinet types to base icons (reuse icons for different sizes)
-    const SIZED_CABINET_BASE_ICONS = {
+    // Map sized and variant cabinet types to base icons (reuse icons for different sizes)
+    const CABINET_ICON_MAPPINGS = {
       // Base cabinet sizes - all use base-cabinet icon
       'base-cabinet-12': 'base-cabinet', 'base-cabinet-15': 'base-cabinet', 'base-cabinet-18': 'base-cabinet',
       'base-cabinet-21': 'base-cabinet', 'base-cabinet-24': 'base-cabinet', 'base-cabinet-27': 'base-cabinet',
@@ -19397,13 +19397,30 @@
       'wall-cabinet-12': 'wall-cabinet', 'wall-cabinet-15': 'wall-cabinet', 'wall-cabinet-18': 'wall-cabinet',
       'wall-cabinet-21': 'wall-cabinet', 'wall-cabinet-24': 'wall-cabinet', 'wall-cabinet-27': 'wall-cabinet',
       'wall-cabinet-30': 'wall-cabinet', 'wall-cabinet-33': 'wall-cabinet', 'wall-cabinet-36': 'wall-cabinet',
-      'wall-cabinet-42': 'wall-cabinet'
+      'wall-cabinet-42': 'wall-cabinet',
+      // Tall cabinet sizes
+      'tall-cabinet-18': 'tall-cabinet', 'tall-cabinet-24': 'tall-cabinet', 'tall-cabinet-30': 'tall-cabinet',
+      'tall-cabinet-36': 'tall-cabinet',
+      // Oven cabinets - use tall-cabinet icon
+      'single-oven-cabinet': 'tall-cabinet',
+      'tall-oven': 'tall-cabinet',
+      'double-oven-cabinet': 'tall-cabinet',
+      // Corner cabinets variants
+      'blind-corner': 'corner-cabinet',
+      'blind-corner-base': 'corner-cabinet',
+      'blind-corner-wall': 'corner-cabinet',
+      // Drawer base sizes
+      'drawer-base-12': 'drawer-base', 'drawer-base-15': 'drawer-base', 'drawer-base-18': 'drawer-base',
+      'drawer-base-24': 'drawer-base', 'drawer-base-30': 'drawer-base', 'drawer-base-36': 'drawer-base',
+      // Sink base sizes
+      'sink-base-30': 'sink-base', 'sink-base-33': 'sink-base', 'sink-base-36': 'sink-base',
+      'sink-base-42': 'sink-base'
     };
 
-    // Add sized cabinet icons to ELEMENT_ICONS (reference base icons)
-    Object.entries(SIZED_CABINET_BASE_ICONS).forEach(([sizedType, baseType]) => {
-      if (ELEMENT_ICONS[baseType] && !ELEMENT_ICONS[sizedType]) {
-        ELEMENT_ICONS[sizedType] = ELEMENT_ICONS[baseType];
+    // Add cabinet icons to ELEMENT_ICONS (reference base icons)
+    Object.entries(CABINET_ICON_MAPPINGS).forEach(([variantType, baseType]) => {
+      if (ELEMENT_ICONS[baseType] && !ELEMENT_ICONS[variantType]) {
+        ELEMENT_ICONS[variantType] = ELEMENT_ICONS[baseType];
       }
     });
 
@@ -23221,7 +23238,15 @@
 
         grid.innerHTML = ELEMENT_TYPES[category].map(el => {
           // Get the SVG icon for this element type
-          const svgIcon = ELEMENT_ICONS[el.type];
+          // Try direct lookup first, then try base type for sized variants
+          let svgIcon = ELEMENT_ICONS[el.type];
+          if (!svgIcon) {
+            // For sized variants like base-cabinet-12, try the base type
+            const baseType = el.type.replace(/-\d+$/, '');
+            if (baseType !== el.type) {
+              svgIcon = ELEMENT_ICONS[baseType];
+            }
+          }
 
           // Build icon content - prefer SVG, fallback to color
           let iconContent;
@@ -23232,7 +23257,8 @@
             // SVG icon from ELEMENT_ICONS
             iconContent = `<div class="element-icon element-svg">${svgIcon}</div>`;
           } else {
-            // Color fallback
+            // Color fallback - also log for debugging
+            console.warn(`Missing SVG icon for element type: ${el.type}`);
             iconContent = `<div class="element-icon" style="background: ${el.color};"></div>`;
           }
 
@@ -38357,10 +38383,22 @@
       }
 
       // === CREATE DETAILED 3D MODELS ===
-      switch(el.type) {
+      // Normalize cabinet types for 3D rendering (base-cabinet-12 -> base-cabinet, etc.)
+      const normalizeType = (type) => {
+        if (type.startsWith('base-cabinet-')) return 'base-cabinet';
+        if (type.startsWith('wall-cabinet-')) return 'wall-cabinet';
+        if (type.startsWith('tall-cabinet-')) return 'tall-cabinet';
+        if (type.startsWith('drawer-base-')) return 'drawer-base';
+        if (type.startsWith('sink-base-')) return 'sink-base';
+        if (type.startsWith('corner-cabinet-')) return 'corner-cabinet';
+        return type;
+      };
+      const renderType = normalizeType(el.type);
+
+      switch(renderType) {
         case 'base-cabinet':
         case 'wall-cabinet': {
-          const isBaseCab = el.type === 'base-cabinet';
+          const isBaseCab = renderType === 'base-cabinet';
 
           // Toe kick dimensions (4" tall, 3" recessed)
           const toeKickHeight = isBaseCab ? 0.33 : 0;
