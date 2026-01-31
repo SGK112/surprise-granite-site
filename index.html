@@ -80,20 +80,17 @@
 
 <!-- Sygnal Attributes 5 | Forms --> 
 <link rel="stylesheet" href="/css/webflow-form.css">
-<link rel="stylesheet" href="/css/mobile-optimizations.css?v=20260129">
-<link rel="stylesheet" href="/css/landing-page-pro.css">
+<!-- CONSOLIDATED: Mobile-first landing page styles -->
+<link rel="stylesheet" href="/css/mobile-landing.css?v=20260130">
 <!-- Unified Navigation -->
-<link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
-<link rel="stylesheet" href="/css/premium-landing.css">
-<link rel="stylesheet" href="/css/design-system.css?v=20260111c">
-<link rel="stylesheet" href="/css/homepage-enhanced.css?v=20260111c">
-<link rel="stylesheet" href="/css/footer-enhanced.css?v=20260111c">
+<link rel="stylesheet" href="/css/unified-nav.css?v=20260130">
+<link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/nocode/webflow-form.js"></script>
 <script defer src="/js/unified-nav.js?v=20260129"></script>
 
 <script defer src="/js/pro-signup-popup.js"></script>
 <script defer src="/js/cart.js"></script>
-<script defer src="/js/premium-landing.js"></script>
+<!-- premium-landing.js removed - unused on this page -->
 
 <style>  
 body {
@@ -1523,6 +1520,18 @@ setInterval(displayOpeningStatus, 60000);
     <button class="sg-hero__cta-simple" onclick="window.SGWidgets ? SGWidgets.showBookingModal() : window.location.href='/book/'">
       Get Free Estimate
     </button>
+
+    <!-- Mobile Trust Badge -->
+    <div class="sg-hero__trust-mobile">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span>4.9 Rating &bull; 400+ Projects &bull; Free Estimates</span>
+    </div>
+
+    <!-- Mobile Phone Link -->
+    <a href="tel:+16028333189" class="sg-hero__phone-mobile">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+      <span>(602) 833-3189</span>
+    </a>
   </div>
 </section>
 
@@ -2202,160 +2211,151 @@ setInterval(displayOpeningStatus, 60000);
   }
 }
 
-/* Mobile Responsive - Streamlined */
+/* Mobile Responsive - OPTIMIZED for scroll & compact design */
 @media (max-width: 768px) {
   .sg-hero {
-    min-height: auto;
-    min-height: 100svh;
+    min-height: 80vh;
+    min-height: 80dvh;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 24px;
   }
 
-  /* Disable zoom animation on mobile for performance */
+  /* Disable zoom animation on mobile for scroll performance */
   .sg-hero__img {
     animation: none;
     transform: none;
+    object-position: center 35%;
+  }
+
+  .sg-hero__gradient {
+    background: linear-gradient(180deg,
+      rgba(10,10,15,0.2) 0%,
+      rgba(10,10,15,0.4) 50%,
+      rgba(10,10,15,0.9) 85%,
+      rgba(10,10,15,0.98) 100%);
   }
 
   .sg-hero__content {
-    padding: 80px 20px 40px;
-    padding-top: calc(80px + env(safe-area-inset-top));
-    justify-content: center;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    text-align: center;
+    width: 100%;
   }
 
-  /* Hide audience tabs on mobile - show primary content only */
-  .sg-hero__audience {
-    display: none;
-  }
-
-  /* SEO Heading mobile */
-  .sg-hero__seo-heading {
-    margin-bottom: 16px;
-  }
-
-  .sg-hero__seo-heading h1 {
-    font-size: clamp(1.5rem, 7vw, 2.25rem);
-    line-height: 1.2;
-  }
-
-  .sg-hero__headlines {
+  .sg-hero__scenes {
     min-height: auto;
   }
 
-  .sg-hero__headline {
+  .sg-hero__scene {
     position: relative;
-    display: none;
   }
 
-  .sg-hero__headline.active {
-    display: flex;
+  .sg-hero__headline-simple {
+    font-size: 1.85rem;
+    line-height: 1.1;
+    margin-bottom: 6px;
   }
 
-  .sg-hero__tagline {
-    font-size: 12px;
-    padding: 5px 14px;
-    margin-bottom: 12px;
-  }
-
-  .sg-hero__eyebrow {
-    display: none; /* Hide eyebrow on mobile - SEO h1 is enough */
-  }
-
-  .sg-hero__title {
-    font-size: clamp(1.5rem, 7vw, 2rem);
-    margin-bottom: 12px;
-    line-height: 1.15;
-  }
-
-  .sg-hero__desc {
+  .sg-hero__sub-simple {
     font-size: 0.9rem;
-    line-height: 1.5;
     margin-bottom: 20px;
-    padding: 0;
+    opacity: 0.85;
   }
 
-  .sg-hero__ctas {
-    flex-direction: column;
+  .sg-hero__cta-simple {
     width: 100%;
-    gap: 10px;
-    margin-bottom: 0;
-  }
-
-  .sg-hero__btn {
-    width: 100%;
+    max-width: 300px;
     padding: 16px 24px;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 1rem;
     border-radius: 12px;
-    min-height: 52px;
   }
 
-  .sg-hero__btn--primary {
-    box-shadow: 0 4px 20px rgba(249,203,0,0.4);
+  /* New mobile trust badge */
+  .sg-hero__trust-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.65);
   }
 
-  .sg-hero__btn--phone {
-    background: rgba(34,197,94,0.2);
-    font-size: 16px;
-    font-weight: 700;
+  .sg-hero__trust-mobile svg {
+    width: 14px;
+    height: 14px;
+    color: #f9cb00;
+    flex-shrink: 0;
   }
 
-  .sg-hero__trust-compact {
-    gap: 12px;
-    padding-top: 20px;
+  /* New mobile phone link */
+  .sg-hero__phone-mobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
-  .sg-hero__trust-compact span {
-    font-size: 10px;
+  .sg-hero__phone-mobile svg {
+    width: 16px;
+    height: 16px;
+    color: #22c55e;
   }
 
-  /* Hide old stats on mobile for homeowners */
-  .sg-hero__stats {
-    display: none;
-  }
-
-  /* Hide old trust bar on mobile */
-  .sg-hero__trust {
-    display: none;
-  }
-
-  /* Hide scroll indicator on mobile */
-  .sg-hero__scroll {
-    display: none;
+  /* Hide desktop elements */
+  .sg-hero__audience,
+  .sg-hero__stats,
+  .sg-hero__trust,
+  .sg-hero__scroll,
+  .sg-hero__seo-heading,
+  .sg-hero__noise {
+    display: none !important;
   }
 }
 
 /* Small Mobile (< 480px) */
 @media (max-width: 480px) {
+  .sg-hero {
+    min-height: 75vh;
+    min-height: 75dvh;
+  }
+
   .sg-hero__content {
-    padding: 70px 16px 32px;
-    padding-top: calc(70px + env(safe-area-inset-top));
+    padding: 12px;
   }
 
-  .sg-hero__seo-heading h1 {
-    font-size: 1.4rem;
+  .sg-hero__headline-simple {
+    font-size: 1.6rem;
   }
 
-  .sg-hero__tagline {
-    font-size: 11px;
-    padding: 4px 12px;
-  }
-
-  .sg-hero__desc {
+  .sg-hero__sub-simple {
     font-size: 0.85rem;
   }
 
-  .sg-hero__btn {
+  .sg-hero__cta-simple {
     padding: 14px 20px;
-    font-size: 14px;
-    min-height: 48px;
+    font-size: 0.95rem;
   }
 
-  .sg-hero__trust-compact {
-    gap: 8px;
-    padding-top: 16px;
+  .sg-hero__trust-mobile {
+    font-size: 0.7rem;
+    gap: 6px;
   }
 
-  .sg-hero__trust-compact span {
-    font-size: 9px;
+  .sg-hero__trust-mobile svg {
+    width: 12px;
+    height: 12px;
   }
 }
 
