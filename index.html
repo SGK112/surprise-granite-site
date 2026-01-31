@@ -82,7 +82,6 @@
 <link rel="stylesheet" href="/css/webflow-form.css">
 <!-- CONSOLIDATED: Mobile-first landing page styles -->
 <link rel="stylesheet" href="/css/mobile-landing.css?v=20260130">
-<link rel="stylesheet" href="/css/mobile-presentation.css?v=20260130">
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260130">
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
@@ -237,7 +236,10 @@ sf-token="0085c94c5b1df1aca43d5b91411ec3c6"
 sf-domain="surprise-granite.myshopify.com"
 src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 
-<!-- Heavy animation scripts removed for performance -->
+<!-- Hero Animation CSS -->
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3afeb0909ebb62ac35e%2Fbold_hero_animations-2.0.0.js"></script>
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3c1613b6372611b29b3%2Fbold_scroll_animations-2.0.0.js"></script>
+<script defer src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c%2F689e5ba67671442434f3ca35%2F68e5e3cb282ad3bfc564547a%2Fbold_navbar_effect-2.0.0.js"></script>
 
 <!-- Sygnal Attributes 5 | Format --> 
 <link rel="stylesheet" href="/css/webflow-format.css"> 
@@ -399,50 +401,159 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 }
 </script>
 <style>
-/* Simple B2B Preloader - Clean & Fast */
+/* Cloud Preloader */
 .cloud-preloader {
   position: fixed;
   inset: 0;
-  background: #ffffff;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
   z-index: 99999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 .cloud-preloader.loaded {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
-.cloud-container { display: none; }
-.cloud { display: none; }
+.cloud-preloader-logo {
+  width: 180px;
+  margin-bottom: 40px;
+  filter: brightness(0) invert(1);
+  animation: logoFloat 2s ease-in-out infinite;
+}
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.cloud-container {
+  position: relative;
+  width: 200px;
+  height: 80px;
+}
+.cloud {
+  position: absolute;
+  background: #fff;
+  border-radius: 100px;
+  opacity: 0.9;
+}
+.cloud::before, .cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+.cloud-1 {
+  width: 80px;
+  height: 28px;
+  top: 30px;
+  left: 0;
+  animation: cloudMove1 3s ease-in-out infinite;
+}
+.cloud-1::before {
+  width: 36px;
+  height: 36px;
+  top: -20px;
+  left: 12px;
+}
+.cloud-1::after {
+  width: 24px;
+  height: 24px;
+  top: -10px;
+  left: 42px;
+}
+.cloud-2 {
+  width: 100px;
+  height: 32px;
+  top: 20px;
+  right: 0;
+  animation: cloudMove2 3.5s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+.cloud-2::before {
+  width: 44px;
+  height: 44px;
+  top: -24px;
+  left: 18px;
+}
+.cloud-2::after {
+  width: 30px;
+  height: 30px;
+  top: -14px;
+  left: 54px;
+}
+.cloud-3 {
+  width: 60px;
+  height: 22px;
+  top: 50px;
+  left: 70px;
+  animation: cloudMove3 2.5s ease-in-out infinite;
+  animation-delay: 1s;
+  opacity: 0.6;
+}
+.cloud-3::before {
+  width: 28px;
+  height: 28px;
+  top: -16px;
+  left: 8px;
+}
+.cloud-3::after {
+  width: 18px;
+  height: 18px;
+  top: -8px;
+  left: 32px;
+}
+@keyframes cloudMove1 {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(10px) translateY(-5px); }
+}
+@keyframes cloudMove2 {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-10px) translateY(-8px); }
+}
+@keyframes cloudMove3 {
+  0%, 100% { transform: translateX(0) translateY(0); opacity: 0.6; }
+  50% { transform: translateX(5px) translateY(-3px); opacity: 0.8; }
+}
 .preloader-text {
-  margin-top: 20px;
-  color: #666;
+  margin-top: 30px;
+  color: #f9cb00;
   font-size: 14px;
   font-weight: 500;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: opacity 0.3s ease;
+  min-width: 280px;
+  text-align: center;
 }
-.preloader-dots span {
-  display: inline-block;
-  animation: dotPulse 1s ease-in-out infinite;
-}
-.preloader-dots span:nth-child(2) { animation-delay: 0.2s; }
-.preloader-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes dotPulse {
-  0%, 100% { opacity: 0.3; }
+@keyframes textPulse {
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+.preloader-dots {
+  display: inline-block;
+}
+.preloader-dots span {
+  animation: dotBounce 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+.preloader-dots span:nth-child(1) { animation-delay: 0s; }
+.preloader-dots span:nth-child(2) { animation-delay: 0.2s; }
+.preloader-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-4px); }
+}
 </style>
-<!-- Custom Mobile Menu Styles - Clean B2B -->
+<!-- Custom Mobile Menu Styles -->
 <style>
 .sg-mobile-menu-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: #ffffff;
+  background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   z-index: 100000;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -450,24 +561,26 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 }
 .sg-mobile-menu-overlay.open { display: flex; flex-direction: column; }
 
-/* Header - Light Theme */
+/* Header */
 .sg-mobile-menu-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   padding-top: calc(16px + env(safe-area-inset-top));
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   position: sticky;
   top: 0;
-  background: #fff;
+  background: rgba(15,15,26,0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1;
 }
 .sg-mobile-menu-brand { display: flex; align-items: center; }
 .sg-mobile-menu-icon { width: 32px; height: 32px; }
-.sg-mobile-menu-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-left: 10px; letter-spacing: -0.01em; }
+.sg-mobile-menu-title { font-size: 15px; font-weight: 600; color: #f9cb00; margin-left: 10px; letter-spacing: -0.01em; }
 .sg-mobile-menu-close {
-  background: #f5f5f5;
+  background: rgba(255,255,255,0.08);
   border: none;
   padding: 0;
   cursor: pointer;
@@ -479,10 +592,10 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   justify-content: center;
   transition: all 0.2s ease;
 }
-.sg-mobile-menu-close:active { background: #e5e5e5; transform: scale(0.95); }
-.sg-mobile-menu-close svg { width: 20px; height: 20px; color: #333; }
+.sg-mobile-menu-close:active { background: rgba(255,255,255,0.15); transform: scale(0.95); }
+.sg-mobile-menu-close svg { width: 20px; height: 20px; color: rgba(255,255,255,0.8); }
 
-/* Navigation - Light Theme */
+/* Navigation */
 .sg-mobile-menu-nav {
   display: flex;
   flex-direction: column;
@@ -498,7 +611,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   justify-content: center;
   gap: 10px;
   background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
-  color: #1a1a2e !important;
+  color: #0f0f1a !important;
   padding: 16px 24px;
   border-radius: 14px;
   font-size: 16px;
@@ -508,8 +621,8 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   transition: all 0.2s ease;
   margin-bottom: 8px;
 }
-.sg-mobile-cta:active { transform: scale(0.98); }
-.sg-mobile-cta svg { width: 20px; height: 20px; }
+.sg-mobile-cta:active { transform: scale(0.98); box-shadow: 0 2px 12px rgba(249,203,0,0.3); }
+.sg-mobile-cta svg { width: 20px; height: 20px; opacity: 0.9; }
 
 /* Section Groups */
 .sg-mobile-menu-section {
@@ -521,7 +634,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
 .sg-mobile-menu-label {
   font-size: 11px;
   font-weight: 600;
-  color: #999;
+  color: rgba(255,255,255,0.4);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 12px 14px 8px;
@@ -532,7 +645,7 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #333;
+  color: rgba(255,255,255,0.9);
   text-decoration: none;
   padding: 14px;
   font-size: 15px;
@@ -542,12 +655,13 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   min-height: 48px;
 }
 .sg-mobile-menu-nav a:not(.sg-mobile-cta):not(.sg-mobile-menu-phone):active {
-  background: #f5f5f5;
+  background: rgba(255,255,255,0.06);
+  transform: scale(0.99);
 }
 .sg-mobile-menu-nav a:not(.sg-mobile-cta):not(.sg-mobile-menu-phone) svg {
   width: 20px;
   height: 20px;
-  color: #666;
+  color: rgba(255,255,255,0.5);
   flex-shrink: 0;
 }
 
@@ -556,17 +670,17 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: rgba(249,203,0,0.1);
+  border: 1px solid rgba(249,203,0,0.2);
   border-radius: 12px;
   padding: 14px 16px !important;
-  color: #166534 !important;
+  color: #f9cb00 !important;
   font-weight: 600;
   font-size: 16px !important;
   text-decoration: none;
 }
-.sg-mobile-menu-phone:active { background: #dcfce7; }
-.sg-mobile-menu-phone svg { width: 20px; height: 20px; color: #22c55e; flex-shrink: 0; }
+.sg-mobile-menu-phone:active { background: rgba(249,203,0,0.15); }
+.sg-mobile-menu-phone svg { width: 20px; height: 20px; color: #f9cb00; flex-shrink: 0; }
 .sg-mobile-menu-phone span { flex: 1; }
 
 /* Footer */
@@ -575,8 +689,8 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   gap: 8px;
   padding: 16px 20px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  border-top: 1px solid #eee;
-  background: #f9f9f9;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.2);
 }
 .sg-mobile-menu-footer a {
   flex: 1;
@@ -584,35 +698,76 @@ src="https://cdn.shopyflow.io/1.0.6/shopyflow.js" price-decimal="2"></script>
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #666;
+  color: rgba(255,255,255,0.6);
   text-decoration: none;
   padding: 12px 16px;
   font-size: 13px;
   font-weight: 500;
   border-radius: 10px;
-  background: #fff;
-  border: 1px solid #eee;
+  background: rgba(255,255,255,0.05);
   transition: all 0.15s ease;
 }
-.sg-mobile-menu-footer a:active { background: #f5f5f5; }
-.sg-mobile-menu-footer a svg { width: 18px; height: 18px; }
+.sg-mobile-menu-footer a:active { background: rgba(255,255,255,0.08); }
+.sg-mobile-menu-footer a svg { width: 18px; height: 18px; opacity: 0.6; }
 
 @media (min-width: 992px) { .sg-mobile-menu-overlay { display: none !important; } }
 </style>
 
 </head><body>
-<!-- Simple Preloader -->
+<!-- Cloud Preloader -->
 <div class="cloud-preloader" id="cloudPreloader">
-  <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb27beffbb16a_Surprise%20Granite%20Transparent%20Dark%20Wide.svg" alt="Surprise Granite" style="height: 40px; width: auto;">
-  <div class="preloader-text" id="preloaderText">Loading<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  <a href="/" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+      <svg viewBox="0 0 122 125" fill="none" width="40" height="40">
+        <path d="M60.534,9.987l51.884,29.956v76.23H8.65V39.943L60.534,9.987m0-9.987L0,34.95v89.874H121.073V34.95L60.534,0Z" fill="#f9cb00"/>
+        <path d="M122.416,65.093,69.456,34.06,61.3,39.547l52.466,30.539v69.9h8.65Z" transform="translate(-27.288 -15.162)" fill="#f9cb00"/>
+        <path d="M75.038,151.845h-8.65V96.92L13.15,66.182,21.878,60.7l53.16,31.227Z" transform="translate(-5.854 -27.021)" fill="#f9cb00"/>
+        <path d="M48.817,127.171,12.53,106.22v9.987l27.642,15.957v39.943h8.645Z" transform="translate(-5.578 -47.284)" fill="#f9cb00"/>
+      </svg>
+      <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 700; color: #ffffff;">Surprise Granite</span>
+    </a>
+  <div class="cloud-container">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+  </div>
+  <div class="preloader-text" id="preloaderText">Polishing slabs<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span></div>
 </div>
 <script>
-// Simple fast preloader - hide after 300ms
-window.addEventListener('load', function() {
-  setTimeout(function() {
-    document.getElementById('cloudPreloader').classList.add('loaded');
-  }, 300);
-});
+(function() {
+  const quips = [
+    "Polishing slabs",
+    "Measuring twice",
+    "Choosing veins",
+    "Loading samples",
+    "Buffing edges",
+    "Leveling surfaces",
+    "Mixing quartz",
+    "Carving details",
+    "Sealing stone",
+    "Aligning grains",
+    "Inspecting cuts",
+    "Prepping install",
+    "Almost there"
+  ];
+  let quipIndex = 0;
+  const textEl = document.getElementById('preloaderText');
+
+  const quipInterval = setInterval(function() {
+    textEl.style.opacity = '0';
+    setTimeout(function() {
+      quipIndex = (quipIndex + 1) % quips.length;
+      textEl.innerHTML = quips[quipIndex] + '<span class="preloader-dots"><span>.</span><span>.</span><span>.</span></span>';
+      textEl.style.opacity = '1';
+    }, 300);
+  }, 2500);
+
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      clearInterval(quipInterval);
+      document.getElementById('cloudPreloader').classList.add('loaded');
+    }, 800);
+  });
+})();
 </script>
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -1326,8 +1481,7 @@ setInterval(displayOpeningStatus, 60000);
   <!-- Background with Video Support -->
   <div class="sg-hero__bg">
     <!-- Separate Videos for Each Scene -->
-    <video class="sg-hero__video sg-hero__video--active" id="heroVideoKitchen" autoplay muted playsinline loop poster="/images/6456ce4476abb2d7fffbb827_cambria-surprise-granite-clovelly-kitchen-scene.webp">
-      <source src="/videos/hero-ai-generated.mp4" type="video/mp4">
+    <video class="sg-hero__video sg-hero__video--active" id="heroVideoKitchen" autoplay muted playsinline poster="/images/6456ce4476abb2d7fffbb827_cambria-surprise-granite-clovelly-kitchen-scene.webp">
       <source src="/videos/hero-kitchen-real.mp4" type="video/mp4">
     </video>
     <video class="sg-hero__video" id="heroVideoBathroom" muted playsinline preload="auto">
@@ -1380,182 +1534,6 @@ setInterval(displayOpeningStatus, 60000);
     </a>
   </div>
 </section>
-
-<!-- Mobile Presentation Form Card -->
-<div class="sg-form-card" id="sgFormCard">
-  <!-- Mini Preview (visible when collapsed) -->
-  <div class="sg-form-card__preview" onclick="expandFormCard()">
-    <div class="sg-form-card__preview-header">
-      <div>
-        <h3 class="sg-form-card__preview-title">Get Your Free Estimate</h3>
-        <p class="sg-form-card__preview-subtitle">Fast response • No obligation</p>
-      </div>
-      <span class="sg-form-card__preview-badge">FREE</span>
-    </div>
-    <div class="sg-form-card__tap-hint">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
-      Tap to Start
-    </div>
-  </div>
-
-  <!-- Full Form (visible when expanded) -->
-  <div class="sg-form-card__full">
-    <div class="sg-form-card__header">
-      <h2 class="sg-form-card__form-title">Free Estimate</h2>
-      <button class="sg-form-card__close" onclick="collapseFormCard()" aria-label="Close">&times;</button>
-    </div>
-
-    <form class="sg-form-card__body" id="presentationForm" onsubmit="submitPresentationForm(event)">
-      <!-- Project Type -->
-      <div class="sg-form-field">
-        <label>What's your project?</label>
-        <div class="sg-form-card__project-types">
-          <button type="button" class="sg-project-btn" data-value="Kitchen" onclick="selectProject(this)">
-            <div class="sg-project-btn__icon">🍳</div>
-            <div class="sg-project-btn__label">Kitchen</div>
-          </button>
-          <button type="button" class="sg-project-btn" data-value="Bathroom" onclick="selectProject(this)">
-            <div class="sg-project-btn__icon">🚿</div>
-            <div class="sg-project-btn__label">Bathroom</div>
-          </button>
-          <button type="button" class="sg-project-btn" data-value="Flooring" onclick="selectProject(this)">
-            <div class="sg-project-btn__icon">🏠</div>
-            <div class="sg-project-btn__label">Flooring</div>
-          </button>
-          <button type="button" class="sg-project-btn" data-value="Other" onclick="selectProject(this)">
-            <div class="sg-project-btn__icon">✨</div>
-            <div class="sg-project-btn__label">Other</div>
-          </button>
-        </div>
-        <input type="hidden" name="projectType" id="projectTypeInput">
-      </div>
-
-      <!-- Name -->
-      <div class="sg-form-field">
-        <label for="presName">Your Name</label>
-        <input type="text" id="presName" name="name" placeholder="John Smith" required>
-      </div>
-
-      <!-- Phone -->
-      <div class="sg-form-field">
-        <label for="presPhone">Phone Number</label>
-        <input type="tel" id="presPhone" name="phone" placeholder="(602) 555-1234" required>
-      </div>
-
-      <!-- Email -->
-      <div class="sg-form-field">
-        <label for="presEmail">Email</label>
-        <input type="email" id="presEmail" name="email" placeholder="john@email.com" required>
-      </div>
-
-      <!-- Submit -->
-      <button type="submit" class="sg-form-card__submit">Get Free Quote →</button>
-
-      <!-- Phone alternative -->
-      <a href="tel:+16028333189" class="sg-form-card__phone">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-        Or call (602) 833-3189
-      </a>
-
-      <!-- Trust -->
-      <div class="sg-form-card__trust">
-        <span class="sg-form-card__trust-item">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          4.9 Rating
-        </span>
-        <span class="sg-form-card__trust-item">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
-          400+ Projects
-        </span>
-        <span class="sg-form-card__trust-item">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-          Licensed
-        </span>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-// Mobile Presentation Mode - Form Card Expand/Collapse
-(function() {
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-
-  if (isMobile) {
-    document.documentElement.classList.add('presentation-mode');
-  }
-
-  window.expandFormCard = function() {
-    const card = document.getElementById('sgFormCard');
-    if (card) {
-      card.classList.add('expanded');
-      document.body.style.overflow = 'hidden';
-    }
-  };
-
-  window.collapseFormCard = function() {
-    const card = document.getElementById('sgFormCard');
-    if (card) {
-      card.classList.remove('expanded');
-      document.body.style.overflow = '';
-    }
-  };
-
-  window.selectProject = function(btn) {
-    document.querySelectorAll('.sg-project-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    document.getElementById('projectTypeInput').value = btn.dataset.value;
-  };
-
-  window.submitPresentationForm = function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const data = new FormData(form);
-
-    // Show loading state
-    const submitBtn = form.querySelector('.sg-form-card__submit');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Sending...';
-    submitBtn.disabled = true;
-
-    // Submit to your endpoint (Firebase, etc.)
-    fetch('https://us-central1-atomic-drive-178521.cloudfunctions.net/submitLeadForm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: data.get('name'),
-        phone: data.get('phone'),
-        email: data.get('email'),
-        projectType: data.get('projectType'),
-        source: 'mobile-presentation'
-      })
-    })
-    .then(response => {
-      submitBtn.textContent = '✓ Sent!';
-      submitBtn.style.background = '#22c55e';
-      setTimeout(() => {
-        collapseFormCard();
-        // Reset form
-        form.reset();
-        submitBtn.textContent = originalText;
-        submitBtn.style.background = '';
-        submitBtn.disabled = false;
-        document.querySelectorAll('.sg-project-btn').forEach(b => b.classList.remove('selected'));
-      }, 2000);
-    })
-    .catch(err => {
-      submitBtn.textContent = 'Try Again';
-      submitBtn.disabled = false;
-      console.error('Form error:', err);
-    });
-  };
-
-  // Handle back button/gesture
-  window.addEventListener('popstate', function() {
-    collapseFormCard();
-  });
-})();
-</script>
 
 <!-- Hero Video Carousel with Scene Sync -->
 <script>
