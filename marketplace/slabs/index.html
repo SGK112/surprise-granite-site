@@ -1053,6 +1053,190 @@
     // API Base - using the existing API server
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
+    // Sample slabs with real product images and retail pricing
+    const SAMPLE_SLABS = [
+      {
+        id: 'sample-1',
+        product_name: 'Calacatta Laza',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 65,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg'],
+        distributor: { company_name: 'Arizona Tile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-2',
+        product_name: 'Calacatta Miraggio Gold',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 75,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.jpeg'],
+        distributor: { company_name: 'MSI Phoenix' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-3',
+        product_name: 'Calacatta Classique',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 55,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb23c46fbc69d_MSI-surfaces-quartz-surprise-granite-calacatta-delios-slab.jpeg'],
+        distributor: { company_name: 'Arizona Tile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-4',
+        product_name: 'Calacatta Arno',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 58,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2bb6cfbb626_msi-surfaces-surprise-granite-calacatta-arno-quartz-thumbnail-one.png'],
+        distributor: { company_name: 'Daltile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-5',
+        product_name: 'Calacatta Izaro',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 68,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22c17fbc540_msi-surfaces-surpise-quarrtz-calacatta-izaro-quartz-whole%20slab.jpg'],
+        distributor: { company_name: 'MSI Phoenix' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-6',
+        product_name: 'Laurent',
+        brand: 'Cosentino Dekton',
+        material_type: 'porcelain',
+        color_family: 'Brown',
+        price_per_sqft: 85,
+        length_inches: 126,
+        width_inches: 56,
+        thickness_cm: 2,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg'],
+        distributor: { company_name: 'Cosentino' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-7',
+        product_name: 'Alluring',
+        brand: 'Radianz Quartz',
+        material_type: 'quartz',
+        color_family: 'White',
+        price_per_sqft: 52,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2af91fbc4ad_Radianz-quartz-surprise-granite-alluring-close-up.jpeg'],
+        distributor: { company_name: 'Arizona Tile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-8',
+        product_name: 'River White',
+        brand: 'MSI Surfaces',
+        material_type: 'granite',
+        color_family: 'White',
+        price_per_sqft: 45,
+        length_inches: 118,
+        width_inches: 72,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb20fe6fbb48c_msi-surfaces-granite-surprise-granite-river-white-slab-quartz.jpg'],
+        distributor: { company_name: 'MSI Phoenix' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-9',
+        product_name: 'Calacatta Cressa Honed',
+        brand: 'MSI Surfaces',
+        material_type: 'marble',
+        color_family: 'White',
+        price_per_sqft: 95,
+        length_inches: 96,
+        width_inches: 48,
+        thickness_cm: 2,
+        finish: 'Honed',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2294bfbc4f7_msi-surfaces-marble-surprise-granite-calacatta-cressa-honed-slab.jpg'],
+        distributor: { company_name: 'Arizona Tile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-10',
+        product_name: 'New River',
+        brand: 'MSI Surfaces',
+        material_type: 'granite',
+        color_family: 'Gray',
+        price_per_sqft: 42,
+        length_inches: 118,
+        width_inches: 72,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif'],
+        distributor: { company_name: 'Daltile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-11',
+        product_name: 'Super White',
+        brand: 'MSI Surfaces',
+        material_type: 'quartzite',
+        color_family: 'White',
+        price_per_sqft: 125,
+        length_inches: 110,
+        width_inches: 65,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2294bfbc4f9_msi-surfaces-quartzite-surprise-granite-super-white-slab.jpg'],
+        distributor: { company_name: 'Arizona Tile' },
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'sample-12',
+        product_name: 'Midnight Majesty',
+        brand: 'MSI Surfaces',
+        material_type: 'quartz',
+        color_family: 'Black',
+        price_per_sqft: 48,
+        length_inches: 126,
+        width_inches: 63,
+        thickness_cm: 3,
+        finish: 'Polished',
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2bb6cfbb626_msi-surfaces-surprise-granite-calacatta-arno-quartz-thumbnail-one.png'],
+        distributor: { company_name: 'MSI Phoenix' },
+        created_at: new Date().toISOString()
+      }
+    ];
+
     // State
     let slabs = [];
     let filteredSlabs = [];
@@ -1109,21 +1293,31 @@
       showLoading(true);
 
       try {
-        // Check for new schema flag (URL param or config)
-        const urlParams = new URLSearchParams(window.location.search);
-        const useNewSchema = urlParams.get('new_schema') === 'true' ||
-                             (window.SG_CONFIG?.FEATURES?.USE_NEW_PRODUCTS_SCHEMA ?? false);
+        // Start with sample slabs
+        slabs = [...SAMPLE_SLABS];
 
-        const apiUrl = useNewSchema
-          ? `${API_BASE}/api/marketplace/slabs?limit=100&use_new_schema=true`
-          : `${API_BASE}/api/marketplace/slabs?limit=100`;
+        // Try to load additional slabs from API
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const useNewSchema = urlParams.get('new_schema') === 'true' ||
+                               (window.SG_CONFIG?.FEATURES?.USE_NEW_PRODUCTS_SCHEMA ?? false);
 
-        const response = await fetch(apiUrl);
+          const apiUrl = useNewSchema
+            ? `${API_BASE}/api/marketplace/slabs?limit=100&use_new_schema=true`
+            : `${API_BASE}/api/marketplace/slabs?limit=100`;
 
-        if (!response.ok) throw new Error('Failed to load slabs');
+          const response = await fetch(apiUrl);
 
-        const data = await response.json();
-        slabs = data.slabs || [];
+          if (response.ok) {
+            const data = await response.json();
+            if (data.slabs && data.slabs.length > 0) {
+              // Combine API slabs with sample slabs
+              slabs = [...SAMPLE_SLABS, ...data.slabs];
+            }
+          }
+        } catch (apiErr) {
+          console.log('API unavailable, using sample slabs');
+        }
 
         // Update stats
         document.getElementById('statSlabs').textContent = slabs.length.toLocaleString();
