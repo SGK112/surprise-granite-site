@@ -76,9 +76,11 @@
       icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
       items: [
         { label: 'Browse Slabs', href: '/marketplace/slabs/' },
+        { label: 'Tile', href: '/materials/all-tile/' },
+        { label: 'Flooring', href: '/materials/flooring/' },
         { label: 'Remnants', href: '/marketplace/remnants/' },
         { label: 'Stone Yards Map', href: '/stone-yards/' },
-        { label: 'List Your Stone', href: '/distributor/signup/' }
+        { label: 'For Pros', href: '/distributor/signup/' }
       ]
     },
     {
@@ -159,10 +161,12 @@
       { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ],
     marketplace: [
-      { name: 'Browse Slabs', desc: 'Full slabs & inventory', href: '/marketplace/slabs/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Remnants', desc: 'Affordable pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
-      { name: 'Stone Yards', desc: 'Visit in person', href: '/stone-yards/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
-      { name: 'List Your Stone', desc: 'Join our network', href: '/distributor/signup/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
+      { name: 'Browse Slabs', desc: 'Granite, quartz, marble', href: '/marketplace/slabs/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
+      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/materials/flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
+      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Stone Yards', desc: 'Visit distributors', href: '/stone-yards/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
+      { name: 'For Pros', desc: 'List your inventory', href: '/distributor/signup/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ]
   };
 
