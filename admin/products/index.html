@@ -655,10 +655,14 @@
     <!-- Header -->
     <header class="page-header">
       <div>
-        <h1 class="page-title">Product Management</h1>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+          <h1 class="page-title" style="margin-bottom: 0;">Product Management</h1>
+          <span style="background: var(--gold-primary); color: var(--dark-primary); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Admin</span>
+        </div>
         <p class="page-subtitle">Manage your Shopify product catalog - 4,155 products imported</p>
       </div>
       <div class="header-actions">
+        <a href="/admin/orders/" class="btn btn-secondary">Orders</a>
         <button class="btn btn-secondary" onclick="exportProducts()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -673,6 +677,8 @@
           </svg>
           Sync from Shopify
         </button>
+        <a href="/account/" class="btn btn-secondary" style="margin-left: 12px;">← My Account</a>
+        <button class="btn btn-danger" onclick="handleLogout()">Log Out</button>
       </div>
     </header>
 
@@ -1401,6 +1407,27 @@
       setTimeout(() => {
         toast.classList.remove('show');
       }, 3000);
+    }
+
+    // Handle logout
+    async function handleLogout() {
+      try {
+        // Sign out without waiting for redirect (we'll handle it)
+        if (window.SgAuth && typeof window.SgAuth.signOut === 'function') {
+          await window.SgAuth.signOut({ redirect: false });
+        } else if (window._sgSupabaseClient) {
+          await window._sgSupabaseClient.auth.signOut();
+        }
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
+      // Clear any cached auth data
+      try {
+        localStorage.removeItem('sg-auth-token');
+        localStorage.removeItem('sb-ypeypgwsycxcagncgdur-auth-token');
+      } catch (e) {}
+      // Always redirect to home page
+      window.location.href = '/';
     }
   </script>
 </body>

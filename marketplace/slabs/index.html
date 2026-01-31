@@ -714,6 +714,56 @@
       opacity: 0.5;
     }
 
+    /* Stone Yards Cross-Link Bar */
+    .stone-yards-bar {
+      background: linear-gradient(135deg, rgba(26, 43, 60, 0.04) 0%, rgba(26, 43, 60, 0.02) 100%);
+      border: 1px solid rgba(26, 43, 60, 0.1);
+      padding: 16px 24px;
+      text-align: center;
+    }
+
+    .stone-yards-bar-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stone-yards-bar span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .stone-yards-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--dark-primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .stone-yards-link:hover {
+      background: #2d2d4a;
+      transform: translateY(-1px);
+    }
+
+    .stone-yards-link svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .hero-inner { flex-direction: column; text-align: center; }
@@ -730,8 +780,76 @@
       .form-row { grid-template-columns: 1fr; }
       .footer-inner { flex-direction: column; text-align: center; }
       .footer-links { flex-wrap: wrap; justify-content: center; }
+      .stone-yards-bar-inner { flex-direction: column; gap: 12px; }
+    }
+
+    /* Mobile Optimization */
+    @media (max-width: 768px) {
+      /* Touch-friendly targets */
+      .filter-select,
+      .location-btn,
+      .view-btn,
+      .slab-btn,
+      .slab-favorite {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      .search-input {
+        min-height: 48px;
+        font-size: 16px; /* Prevent iOS zoom */
+      }
+
+      .slab-card {
+        margin-bottom: 16px;
+      }
+
+      .modal {
+        max-height: calc(100vh - 40px);
+        margin: 20px;
+      }
+
+      .form-input, .form-textarea {
+        font-size: 16px; /* Prevent iOS zoom */
+        min-height: 48px;
+      }
+    }
+
+    /* Safe area support for notch devices */
+    @supports (padding: max(0px)) {
+      .header {
+        padding-left: max(24px, env(safe-area-inset-left));
+        padding-right: max(24px, env(safe-area-inset-right));
+      }
+
+      .footer {
+        padding-bottom: max(48px, env(safe-area-inset-bottom));
+      }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .slab-card,
+      .slab-btn,
+      .slab-favorite,
+      .header-cta,
+      .stone-yards-link {
+        transition: none;
+      }
+
+      .slab-card:hover {
+        transform: none;
+      }
+
+      .loading-spinner {
+        animation: none;
+      }
     }
   </style>
+
+  <!-- Unified Navigation -->
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
+  <script defer src="/js/unified-nav.js?v=20260129"></script>
 </head>
 
 <body>
@@ -778,6 +896,17 @@
       </div>
     </div>
   </section>
+
+  <!-- Stone Yards Cross-Link -->
+  <div class="stone-yards-bar">
+    <div class="stone-yards-bar-inner">
+      <span>Want to see slabs in person?</span>
+      <a href="/stone-yards/" class="stone-yards-link">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Visit Stone Yards Near You
+      </a>
+    </div>
+  </div>
 
   <!-- Filters -->
   <div class="filters-bar">

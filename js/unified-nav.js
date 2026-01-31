@@ -48,13 +48,12 @@
     { label: 'Tile', href: '/materials/all-tile', hasMenu: true },
     { label: 'Flooring', href: '/materials/flooring', hasMenu: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
+    { label: 'Marketplace', href: '/marketplace/', hasMenu: true },
+    { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
     { label: 'Shop', href: '/shop' },
-    { label: 'Tools', href: '/tools' },
     { label: 'Gallery', href: '/company/project-gallery' },
-    { label: 'Vendors', href: '/company/vendors-list' },
     { label: 'Contact', href: '/contact-us' },
     { label: 'Book Estimate', href: '/book/', isBook: true },
-    { label: 'Style Quiz', href: '/quiz/', isQuiz: true },
     { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
 
@@ -70,6 +69,16 @@
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
         { label: 'Tile', href: '/materials/all-tile' },
         { label: 'Flooring', href: '/materials/flooring' }
+      ]
+    },
+    {
+      label: 'Marketplace',
+      icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      items: [
+        { label: 'Browse Slabs', href: '/marketplace/slabs/' },
+        { label: 'Remnants', href: '/marketplace/remnants/' },
+        { label: 'Stone Yards Map', href: '/stone-yards/' },
+        { label: 'List Your Stone', href: '/distributor/signup/' }
       ]
     },
     {
@@ -148,6 +157,12 @@
       { name: 'Bathroom Remodeling', desc: 'Modern upgrades', href: '/services/home/bathroom-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6531e4b87153315974bccb0a_tub-to-shower-conversions-az_thumb.avif' },
       { name: 'Countertop Install', desc: 'Professional installation', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
       { name: 'Financing', desc: 'Easy payment options', href: '/services/home-remodeling-financing-options-in-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
+    ],
+    marketplace: [
+      { name: 'Browse Slabs', desc: 'Full slabs & inventory', href: '/marketplace/slabs/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Remnants', desc: 'Affordable pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Stone Yards', desc: 'Visit in person', href: '/stone-yards/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
+      { name: 'List Your Stone', desc: 'Join our network', href: '/distributor/signup/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
     ]
   };
 
@@ -189,6 +204,7 @@
       if (item.isPro) linkClass = ' class="unified-nav-pro-link"';
       else if (item.isQuiz) linkClass = ' class="unified-nav-quiz-link"';
       else if (item.isBook) linkClass = ' class="unified-nav-book-link"';
+      else if (item.isStoneYards) linkClass = ' class="unified-nav-stoneyards-link"';
 
       return `
         <li>
@@ -803,14 +819,11 @@
     overrideCustomMenus();
   }
 
-  // Run cleanup again after delays to catch dynamically loaded navbars
+  // Run cleanup once after a delay to catch dynamically loaded navbars
   setTimeout(removeOldNavigation, 500);
-  setTimeout(removeOldNavigation, 1500);
-  setTimeout(removeOldNavigation, 3000);
 
-  // Override custom menus again after delays (in case they're set later)
-  setTimeout(overrideCustomMenus, 100);
-  setTimeout(overrideCustomMenus, 500);
+  // Override custom menus after a short delay
+  setTimeout(overrideCustomMenus, 200);
 
   // Force close and remove Webflow nav menu completely
   function forceCloseWebflowNav() {
@@ -870,17 +883,20 @@
     });
   }, 100);
 
-  // Run force close immediately and periodically
+  // Run force close on initial load only (no need for continuous interval)
   forceCloseWebflowNav();
-  setTimeout(forceCloseWebflowNav, 50);
-  setTimeout(forceCloseWebflowNav, 150);
-  setTimeout(forceCloseWebflowNav, 300);
-  setInterval(forceCloseWebflowNav, 200);
+  setTimeout(forceCloseWebflowNav, 100);
+  setTimeout(forceCloseWebflowNav, 500);
 
-  // Also clean up on any DOM changes
+  // Debounced cleanup on DOM changes (less aggressive than running on every mutation)
+  let cleanupTimeout = null;
   const cleanupObserver = new MutationObserver(() => {
-    removeOldNavigation();
-    forceCloseWebflowNav();
+    if (cleanupTimeout) return;
+    cleanupTimeout = setTimeout(() => {
+      removeOldNavigation();
+      forceCloseWebflowNav();
+      cleanupTimeout = null;
+    }, 100);
   });
 
   // Start observing after DOM is ready

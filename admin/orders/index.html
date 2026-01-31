@@ -391,10 +391,15 @@
 </head>
 <body>
   <header class="header">
-    <h1>Order Management</h1>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <h1>Order Management</h1>
+      <span id="adminBadge" style="background: var(--gold); color: var(--dark); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Admin</span>
+    </div>
     <div class="header-actions">
       <a href="/admin/products/" class="btn btn-secondary">Products</a>
       <button class="btn btn-primary" onclick="exportOrders()">Export CSV</button>
+      <a href="/account/" class="btn btn-secondary" style="margin-left: 16px; border-color: rgba(255,255,255,0.3);">← My Account</a>
+      <button class="btn btn-secondary" onclick="handleLogout()" style="color: #ef4444; border-color: rgba(239,68,68,0.3);">Log Out</button>
     </div>
   </header>
 
@@ -849,6 +854,27 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeModal();
     });
+
+    // Handle logout
+    async function handleLogout() {
+      try {
+        // Sign out without waiting for redirect (we'll handle it)
+        if (window.SgAuth && typeof window.SgAuth.signOut === 'function') {
+          await window.SgAuth.signOut({ redirect: false });
+        } else if (window._sgSupabaseClient) {
+          await window._sgSupabaseClient.auth.signOut();
+        }
+      } catch (e) {
+        console.error('Logout error:', e);
+      }
+      // Clear any cached auth data
+      try {
+        localStorage.removeItem('sg-auth-token');
+        localStorage.removeItem('sb-ypeypgwsycxcagncgdur-auth-token');
+      } catch (e) {}
+      // Always redirect to home page
+      window.location.href = '/';
+    }
   </script>
 </body>
 </html>

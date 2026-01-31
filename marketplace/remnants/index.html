@@ -343,6 +343,114 @@
             .header-nav { display: none; }
             .notify-form { flex-direction: column; width: 100%; }
             .notify-form input { width: 100%; }
+            .stone-yards-bar-inner { flex-direction: column; gap: 12px; }
+        }
+
+        /* Stone Yards Cross-Link Bar */
+        .stone-yards-bar {
+            background: linear-gradient(135deg, rgba(26, 43, 60, 0.04) 0%, rgba(26, 43, 60, 0.02) 100%);
+            border-bottom: 1px solid rgba(26, 43, 60, 0.1);
+            padding: 16px 24px;
+            text-align: center;
+        }
+
+        .stone-yards-bar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stone-yards-bar span {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stone-yards-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #1a1a2e;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .stone-yards-link:hover {
+            background: #2d2d4a;
+            transform: translateY(-1px);
+        }
+
+        .stone-yards-link svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            /* Touch-friendly targets */
+            .filter-btn,
+            .remnant-btn,
+            .cta-btn,
+            .notify-form button,
+            .modal-submit,
+            .modal-close {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .notify-form input,
+            .modal-body input,
+            .modal-body textarea {
+                min-height: 48px;
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+
+            .remnant-card {
+                margin-bottom: 16px;
+            }
+
+            .modal {
+                max-height: calc(100vh - 40px);
+                margin: 20px;
+            }
+        }
+
+        /* Safe area support for notch devices */
+        @supports (padding: max(0px)) {
+            .header {
+                padding-left: max(24px, env(safe-area-inset-left));
+                padding-right: max(24px, env(safe-area-inset-right));
+            }
+
+            .footer {
+                padding-bottom: max(40px, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            .remnant-card,
+            .remnant-btn,
+            .filter-btn,
+            .cta-btn,
+            .stone-yards-link {
+                transition: none;
+            }
+
+            .remnant-card:hover {
+                transform: none;
+            }
         }
     </style>
 <!-- Unified Navigation -->
@@ -377,6 +485,17 @@
                 <input type="email" placeholder="Enter your email" required>
                 <button type="submit">Notify Me</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Stone Yards Cross-Link -->
+    <div class="stone-yards-bar">
+        <div class="stone-yards-bar-inner">
+            <span>Looking for full slabs? Visit distributors near you.</span>
+            <a href="/stone-yards/" class="stone-yards-link">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Find Stone Yards
+            </a>
         </div>
     </div>
 
