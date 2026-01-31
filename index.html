@@ -1608,6 +1608,45 @@ setInterval(displayOpeningStatus, 60000);
 })();
 </script>
 
+<!-- Hero Scroll Expansion Effect -->
+<script>
+(function() {
+  const hero = document.getElementById('sgHero');
+  if (!hero) return;
+
+  let ticking = false;
+  const SCROLL_THRESHOLD = 50; // Pixels to scroll before expansion
+
+  function handleScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY || window.pageYOffset;
+
+        if (scrollY > SCROLL_THRESHOLD) {
+          hero.classList.add('sg-hero--expanded');
+        } else {
+          hero.classList.remove('sg-hero--expanded');
+        }
+
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  // Check initial scroll position
+  handleScroll();
+
+  // Listen for scroll
+  window.addEventListener('scroll', handleScroll, { passive: true });
+
+  // Also expand on any interaction inside hero (touch/click)
+  hero.addEventListener('touchstart', () => {
+    hero.classList.add('sg-hero--expanded');
+  }, { passive: true, once: true });
+})();
+</script>
+
 <!-- Modal Overlay -->
 <div id="formModal" class="form-modal-overlay">
   <div class="form-modal-card">

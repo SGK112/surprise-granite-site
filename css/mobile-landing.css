@@ -51,6 +51,8 @@ body {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+  /* Dark background visible behind hero card */
+  background: var(--sg-darker, #0f0f1a);
 }
 
 /* Prevent horizontal scroll */
@@ -82,7 +84,9 @@ select, textarea {
   font-size: 16px !important;
 }
 
-/* ===== MOBILE HERO - REDESIGNED ===== */
+/* ===== MOBILE HERO - SCROLL EXPANSION EFFECT ===== */
+/* Hero starts as a card, expands to fullscreen on scroll */
+
 .sg-hero {
   position: relative;
   min-height: 85vh;
@@ -92,12 +96,35 @@ select, textarea {
   justify-content: flex-end;
   padding-bottom: var(--spacing-xl);
   overflow: hidden;
+
+  /* Card-like initial state */
+  margin: 12px;
+  border-radius: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+
+  /* Smooth expansion transition */
+  transition:
+    margin 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-radius 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.4s ease,
+    min-height 0.4s ease;
 }
 
-/* Background */
+/* Expanded state - fullscreen immersive */
+.sg-hero--expanded {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Background clips to border-radius */
 .sg-hero__bg {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
   z-index: 0;
 }
 
@@ -111,6 +138,7 @@ select, textarea {
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.8s ease;
+  border-radius: inherit;
 }
 
 .sg-hero__video--active {
@@ -122,11 +150,13 @@ select, textarea {
   height: 100%;
   object-fit: cover;
   object-position: center 40%;
+  border-radius: inherit;
 }
 
 .sg-hero__gradient {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background: linear-gradient(
     180deg,
     rgba(10,10,15,0.3) 0%,
@@ -819,4 +849,19 @@ img:not([src]) {
 
 .w-nav-button {
   display: none !important;
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .sg-hero {
+    transition: none;
+  }
+
+  .sg-hero__video {
+    transition: none;
+  }
+
+  .sg-hero__scene {
+    transition: none;
+  }
 }
