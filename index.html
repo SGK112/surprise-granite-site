@@ -82,6 +82,7 @@
 <link rel="stylesheet" href="/css/webflow-form.css">
 <!-- CONSOLIDATED: Mobile-first landing page styles -->
 <link rel="stylesheet" href="/css/mobile-landing.css?v=20260130">
+<link rel="stylesheet" href="/css/mobile-presentation.css?v=20260130">
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260130">
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
@@ -1325,7 +1326,8 @@ setInterval(displayOpeningStatus, 60000);
   <!-- Background with Video Support -->
   <div class="sg-hero__bg">
     <!-- Separate Videos for Each Scene -->
-    <video class="sg-hero__video sg-hero__video--active" id="heroVideoKitchen" autoplay muted playsinline poster="/images/6456ce4476abb2d7fffbb827_cambria-surprise-granite-clovelly-kitchen-scene.webp">
+    <video class="sg-hero__video sg-hero__video--active" id="heroVideoKitchen" autoplay muted playsinline loop poster="/images/6456ce4476abb2d7fffbb827_cambria-surprise-granite-clovelly-kitchen-scene.webp">
+      <source src="/videos/hero-ai-generated.mp4" type="video/mp4">
       <source src="/videos/hero-kitchen-real.mp4" type="video/mp4">
     </video>
     <video class="sg-hero__video" id="heroVideoBathroom" muted playsinline preload="auto">
@@ -1378,6 +1380,182 @@ setInterval(displayOpeningStatus, 60000);
     </a>
   </div>
 </section>
+
+<!-- Mobile Presentation Form Card -->
+<div class="sg-form-card" id="sgFormCard">
+  <!-- Mini Preview (visible when collapsed) -->
+  <div class="sg-form-card__preview" onclick="expandFormCard()">
+    <div class="sg-form-card__preview-header">
+      <div>
+        <h3 class="sg-form-card__preview-title">Get Your Free Estimate</h3>
+        <p class="sg-form-card__preview-subtitle">Fast response • No obligation</p>
+      </div>
+      <span class="sg-form-card__preview-badge">FREE</span>
+    </div>
+    <div class="sg-form-card__tap-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
+      Tap to Start
+    </div>
+  </div>
+
+  <!-- Full Form (visible when expanded) -->
+  <div class="sg-form-card__full">
+    <div class="sg-form-card__header">
+      <h2 class="sg-form-card__form-title">Free Estimate</h2>
+      <button class="sg-form-card__close" onclick="collapseFormCard()" aria-label="Close">&times;</button>
+    </div>
+
+    <form class="sg-form-card__body" id="presentationForm" onsubmit="submitPresentationForm(event)">
+      <!-- Project Type -->
+      <div class="sg-form-field">
+        <label>What's your project?</label>
+        <div class="sg-form-card__project-types">
+          <button type="button" class="sg-project-btn" data-value="Kitchen" onclick="selectProject(this)">
+            <div class="sg-project-btn__icon">🍳</div>
+            <div class="sg-project-btn__label">Kitchen</div>
+          </button>
+          <button type="button" class="sg-project-btn" data-value="Bathroom" onclick="selectProject(this)">
+            <div class="sg-project-btn__icon">🚿</div>
+            <div class="sg-project-btn__label">Bathroom</div>
+          </button>
+          <button type="button" class="sg-project-btn" data-value="Flooring" onclick="selectProject(this)">
+            <div class="sg-project-btn__icon">🏠</div>
+            <div class="sg-project-btn__label">Flooring</div>
+          </button>
+          <button type="button" class="sg-project-btn" data-value="Other" onclick="selectProject(this)">
+            <div class="sg-project-btn__icon">✨</div>
+            <div class="sg-project-btn__label">Other</div>
+          </button>
+        </div>
+        <input type="hidden" name="projectType" id="projectTypeInput">
+      </div>
+
+      <!-- Name -->
+      <div class="sg-form-field">
+        <label for="presName">Your Name</label>
+        <input type="text" id="presName" name="name" placeholder="John Smith" required>
+      </div>
+
+      <!-- Phone -->
+      <div class="sg-form-field">
+        <label for="presPhone">Phone Number</label>
+        <input type="tel" id="presPhone" name="phone" placeholder="(602) 555-1234" required>
+      </div>
+
+      <!-- Email -->
+      <div class="sg-form-field">
+        <label for="presEmail">Email</label>
+        <input type="email" id="presEmail" name="email" placeholder="john@email.com" required>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="sg-form-card__submit">Get Free Quote →</button>
+
+      <!-- Phone alternative -->
+      <a href="tel:+16028333189" class="sg-form-card__phone">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        Or call (602) 833-3189
+      </a>
+
+      <!-- Trust -->
+      <div class="sg-form-card__trust">
+        <span class="sg-form-card__trust-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          4.9 Rating
+        </span>
+        <span class="sg-form-card__trust-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          400+ Projects
+        </span>
+        <span class="sg-form-card__trust-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          Licensed
+        </span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Mobile Presentation Mode - Form Card Expand/Collapse
+(function() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+  if (isMobile) {
+    document.documentElement.classList.add('presentation-mode');
+  }
+
+  window.expandFormCard = function() {
+    const card = document.getElementById('sgFormCard');
+    if (card) {
+      card.classList.add('expanded');
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
+  window.collapseFormCard = function() {
+    const card = document.getElementById('sgFormCard');
+    if (card) {
+      card.classList.remove('expanded');
+      document.body.style.overflow = '';
+    }
+  };
+
+  window.selectProject = function(btn) {
+    document.querySelectorAll('.sg-project-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('projectTypeInput').value = btn.dataset.value;
+  };
+
+  window.submitPresentationForm = function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+
+    // Show loading state
+    const submitBtn = form.querySelector('.sg-form-card__submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+
+    // Submit to your endpoint (Firebase, etc.)
+    fetch('https://us-central1-atomic-drive-178521.cloudfunctions.net/submitLeadForm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: data.get('name'),
+        phone: data.get('phone'),
+        email: data.get('email'),
+        projectType: data.get('projectType'),
+        source: 'mobile-presentation'
+      })
+    })
+    .then(response => {
+      submitBtn.textContent = '✓ Sent!';
+      submitBtn.style.background = '#22c55e';
+      setTimeout(() => {
+        collapseFormCard();
+        // Reset form
+        form.reset();
+        submitBtn.textContent = originalText;
+        submitBtn.style.background = '';
+        submitBtn.disabled = false;
+        document.querySelectorAll('.sg-project-btn').forEach(b => b.classList.remove('selected'));
+      }, 2000);
+    })
+    .catch(err => {
+      submitBtn.textContent = 'Try Again';
+      submitBtn.disabled = false;
+      console.error('Form error:', err);
+    });
+  };
+
+  // Handle back button/gesture
+  window.addEventListener('popstate', function() {
+    collapseFormCard();
+  });
+})();
+</script>
 
 <!-- Hero Video Carousel with Scene Sync -->
 <script>

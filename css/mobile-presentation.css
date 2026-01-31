@@ -1,0 +1,405 @@
+/**
+ * SURPRISE GRANITE - Mobile Presentation Mode
+ * Single-screen, no-scroll mobile experience
+ * Form card that expands from mini to full
+ */
+
+/* ===== MOBILE PRESENTATION MODE ===== */
+@media (max-width: 768px) {
+  /* Lock the viewport - no scroll */
+  html.presentation-mode,
+  html.presentation-mode body {
+    overflow: hidden;
+    height: 100%;
+    height: 100dvh;
+    position: fixed;
+    width: 100%;
+  }
+
+  /* Hero fills entire screen */
+  .sg-hero {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Top section - logo area */
+  .sg-hero__top {
+    padding: 16px 20px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 20;
+  }
+
+  .sg-hero__logo {
+    height: 28px;
+    width: auto;
+  }
+
+  .sg-hero__menu-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  /* Middle section - headline */
+  .sg-hero__middle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .sg-hero__content {
+    padding: 0;
+    width: 100%;
+  }
+
+  .sg-hero__headline-simple {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 8px 0;
+    line-height: 1.1;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  }
+
+  .sg-hero__sub-simple {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  /* Hide old elements in presentation mode */
+  .sg-hero__trust-mobile,
+  .sg-hero__phone-mobile,
+  .sg-hero__cta-simple,
+  .sg-hero__scenes {
+    display: none !important;
+  }
+
+  /* ===== FORM CARD - MINI STATE ===== */
+  .sg-form-card {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+    transform: translateY(0);
+    transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 180px;
+    overflow: hidden;
+  }
+
+  /* Mini card preview content */
+  .sg-form-card__preview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sg-form-card__preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sg-form-card__preview-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+
+  .sg-form-card__preview-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 4px 0 0 0;
+  }
+
+  .sg-form-card__preview-badge {
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+  }
+
+  .sg-form-card__tap-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+    border-radius: 12px;
+    color: #1a1a2e;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .sg-form-card__tap-hint svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ===== FORM CARD - EXPANDED STATE ===== */
+  .sg-form-card.expanded {
+    max-height: 100vh;
+    max-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sg-form-card.expanded .sg-form-card__preview {
+    display: none;
+  }
+
+  .sg-form-card.expanded .sg-form-card__full {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  /* Full form content - hidden by default */
+  .sg-form-card__full {
+    display: none;
+  }
+
+  /* Full form header */
+  .sg-form-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+  }
+
+  .sg-form-card__close {
+    width: 40px;
+    height: 40px;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 50%;
+    color: #333;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .sg-form-card__close:active {
+    background: #e5e5e5;
+    transform: scale(0.95);
+  }
+
+  .sg-form-card__form-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+
+  /* Form fields */
+  .sg-form-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sg-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sg-form-field label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .sg-form-field input,
+  .sg-form-field select,
+  .sg-form-field textarea {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    background: #fff;
+    color: #333;
+    transition: border-color 0.2s ease;
+  }
+
+  .sg-form-field input:focus,
+  .sg-form-field select:focus,
+  .sg-form-field textarea:focus {
+    outline: none;
+    border-color: #f9cb00;
+  }
+
+  .sg-form-field input::placeholder {
+    color: #999;
+  }
+
+  /* Project type buttons */
+  .sg-form-card__project-types {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .sg-project-btn {
+    padding: 16px 12px;
+    background: #f9f9f9;
+    border: 2px solid #e5e5e5;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .sg-project-btn:active {
+    transform: scale(0.98);
+  }
+
+  .sg-project-btn.selected {
+    background: #fffbeb;
+    border-color: #f9cb00;
+  }
+
+  .sg-project-btn__icon {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+  }
+
+  .sg-project-btn__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  /* Submit button */
+  .sg-form-card__submit {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #f9cb00 0%, #e5b800 100%);
+    border: none;
+    border-radius: 14px;
+    color: #1a1a2e;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: auto;
+    box-shadow: 0 4px 20px rgba(249,203,0,0.3);
+    transition: transform 0.2s ease;
+  }
+
+  .sg-form-card__submit:active {
+    transform: scale(0.98);
+  }
+
+  /* Phone link in form */
+  .sg-form-card__phone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    color: #166534;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+
+  .sg-form-card__phone svg {
+    width: 20px;
+    height: 20px;
+    color: #22c55e;
+  }
+
+  /* Trust badges in form */
+  .sg-form-card__trust {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 0;
+    margin-top: 8px;
+    border-top: 1px solid #eee;
+  }
+
+  .sg-form-card__trust-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  .sg-form-card__trust-item svg {
+    width: 14px;
+    height: 14px;
+    color: #f9cb00;
+  }
+
+  /* Hide main page content in presentation mode */
+  html.presentation-mode .main-wrapper > *:not(.sg-hero):not(.sg-form-card),
+  html.presentation-mode .section_home-hero-header ~ * {
+    display: none !important;
+  }
+}
+
+/* Desktop - normal scrolling experience */
+@media (min-width: 769px) {
+  .sg-form-card {
+    display: none;
+  }
+
+  html.presentation-mode,
+  html.presentation-mode body {
+    overflow: auto;
+    height: auto;
+    position: static;
+  }
+}
