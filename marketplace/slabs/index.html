@@ -1053,6 +1053,12 @@
     // API Base - using the existing API server
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
+    // Fix image URLs - convert old webflow to CDN
+    function fixImageUrl(url) {
+      if (!url) return null;
+      return url.replace('uploads-ssl.webflow.com', 'cdn.prod.website-files.com');
+    }
+
     // Sample slabs with real product images and retail pricing
     const SAMPLE_SLABS = [
       {
@@ -1296,6 +1302,58 @@
         // Start with sample slabs
         slabs = [...SAMPLE_SLABS];
 
+        // Load additional products from marketplace-products.json
+        try {
+          const productsRes = await fetch('/data/marketplace-products.json');
+          if (productsRes.ok) {
+            const productsData = await productsRes.json();
+
+            // Pricing tiers based on material type (retail markup from wholesale)
+            const PRICING = {
+              'Quartz': { min: 45, max: 85 },
+              'Granite': { min: 35, max: 65 },
+              'Marble': { min: 55, max: 120 },
+              'Quartzite': { min: 75, max: 150 },
+              'Dekton': { min: 65, max: 110 },
+              'Porcelain': { min: 40, max: 75 },
+              'default': { min: 45, max: 80 }
+            };
+
+            // Convert products to slab format
+            let slabId = 100;
+            const brands = Object.keys(productsData.by_brand || {});
+
+            for (const brand of brands) {
+              const products = productsData.by_brand[brand] || [];
+
+              // Take first 15 products per brand
+              for (const product of products.slice(0, 15)) {
+                const priceRange = PRICING[product.type] || PRICING.default;
+                const price = Math.floor(priceRange.min + Math.random() * (priceRange.max - priceRange.min));
+
+                slabs.push({
+                  id: `product-${slabId++}`,
+                  product_name: product.name,
+                  brand: brand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                  material_type: (product.type || 'quartz').toLowerCase(),
+                  color_family: product.primaryColor || 'White',
+                  price_per_sqft: price,
+                  length_inches: 126,
+                  width_inches: 63,
+                  thickness_cm: 3,
+                  finish: 'Polished',
+                  images: [fixImageUrl(product.primaryImage)],
+                  distributor: { company_name: brand.includes('msi') ? 'MSI Phoenix' : 'Arizona Tile' },
+                  created_at: new Date().toISOString(),
+                  slug: product.slug
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.log('Could not load marketplace products:', err);
+        }
+
         // Try to load additional slabs from API
         try {
           const urlParams = new URLSearchParams(window.location.search);
@@ -1311,12 +1369,12 @@
           if (response.ok) {
             const data = await response.json();
             if (data.slabs && data.slabs.length > 0) {
-              // Combine API slabs with sample slabs
-              slabs = [...SAMPLE_SLABS, ...data.slabs];
+              // Combine API slabs with existing slabs
+              slabs = [...slabs, ...data.slabs];
             }
           }
         } catch (apiErr) {
-          console.log('API unavailable, using sample slabs');
+          console.log('API unavailable, using local products');
         }
 
         // Update stats
@@ -1416,7 +1474,8 @@
     }
 
     function createSlabCard(slab) {
-      const imageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
+      const rawImageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
+      const imageUrl = fixImageUrl(rawImageUrl) || getPlaceholderImage(slab.material_type);
       const isNew = isNewListing(slab.created_at);
       const price = slab.price_per_sqft ? `$${slab.price_per_sqft.toFixed(2)}` : 'Contact';
 
