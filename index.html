@@ -8102,7 +8102,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/remodely-widgets.js?v=20260113"></script>
 
 <!-- Remodely Tools Hub -->
-<script defer src="/js/remodely-hub.js?v=20260201"></script>
+<script defer src="/js/remodely-hub.js?v=20260201b"></script>
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
@@ -8136,32 +8136,38 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 }
 </style>
 <script>
-// Floating CTA - show after scrolling past hero
+// Floating CTA - show after scrolling past hero + move Remodely widget
 (function() {
   const floatingCta = document.getElementById('floatingCta');
   if (!floatingCta) return;
 
-  let lastScroll = 0;
   const showThreshold = 600; // Show after scrolling 600px
 
-  window.addEventListener('scroll', function() {
+  function updatePositions() {
     const currentScroll = window.pageYOffset;
+    const remodelyHub = document.getElementById('remodely-hub');
 
-    // Only show on mobile
+    // Only apply on mobile
     if (window.innerWidth > 768) {
       floatingCta.style.display = 'none';
+      if (remodelyHub) remodelyHub.style.bottom = '';
       return;
     }
 
-    // Show/hide based on scroll position
+    // Show/hide CTA and move Remodely widget based on scroll position
     if (currentScroll > showThreshold) {
       floatingCta.style.display = 'block';
+      // Move Remodely widget up to make room for floating CTA
+      if (remodelyHub) remodelyHub.style.bottom = '90px';
     } else {
       floatingCta.style.display = 'none';
+      // Reset Remodely widget to normal position
+      if (remodelyHub) remodelyHub.style.bottom = '';
     }
+  }
 
-    lastScroll = currentScroll;
-  }, { passive: true });
+  window.addEventListener('scroll', updatePositions, { passive: true });
+  window.addEventListener('resize', updatePositions, { passive: true });
 
   // Open SwipeForm on click
   floatingCta.addEventListener('click', function(e) {
