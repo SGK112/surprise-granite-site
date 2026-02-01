@@ -53,7 +53,7 @@
     { label: 'Shop', href: '/shop' },
     { label: 'Gallery', href: '/company/project-gallery' },
     { label: 'Contact', href: '/contact-us' },
-    { label: 'Book Estimate', href: '/book/', isBook: true },
+    { label: 'Book Estimate', href: '/book-appointment', isBook: true },
     { label: 'For Pros', href: '/vendor/signup', isPro: true }
   ];
 
@@ -76,11 +76,12 @@
       icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
       items: [
         { label: 'Browse Slabs', href: '/marketplace/slabs/' },
-        { label: 'Tile', href: '/materials/all-tile/' },
-        { label: 'Flooring', href: '/materials/flooring/' },
+        { label: 'Tile', href: '/marketplace/tile/' },
+        { label: 'Flooring', href: '/marketplace/flooring/' },
+        { label: 'Sinks', href: '/marketplace/sinks/' },
+        { label: 'Faucets', href: '/marketplace/faucets/' },
         { label: 'Remnants', href: '/marketplace/remnants/' },
-        { label: 'Stone Yards Map', href: '/stone-yards/' },
-        { label: 'For Pros', href: '/distributor/signup/' }
+        { label: 'Stone Yards', href: '/stone-yards/' }
       ]
     },
     {
@@ -162,11 +163,11 @@
     ],
     marketplace: [
       { name: 'Browse Slabs', desc: 'Granite, quartz, marble', href: '/marketplace/slabs/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
-      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/materials/flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
-      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
-      { name: 'Stone Yards', desc: 'Visit distributors', href: '/stone-yards/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif' },
-      { name: 'For Pros', desc: 'List your inventory', href: '/distributor/signup/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/652324e7840a341086726be1_sink-installation-service-arizona-2.avif' }
+      { name: 'Tile', desc: 'Porcelain, ceramic, mosaic', href: '/marketplace/tile/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif' },
+      { name: 'Flooring', desc: 'LVP, hardwood, laminate', href: '/marketplace/flooring/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20d58fbc941_msi-surfaces-surprise-granite-abingdale-luxury-vinyl-planks-close-up.jpeg' },
+      { name: 'Sinks', desc: 'Kitchen & bathroom sinks', href: '/marketplace/sinks/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/Undermountsink18G50-50-3118.jpg' },
+      { name: 'Faucets', desc: 'Kitchen & bath faucets', href: '/marketplace/faucets/', img: 'https://cdn.shopify.com/s/files/1/0555/4244/8263/products/KKF2015BG-1-1.jpg' },
+      { name: 'Remnants', desc: 'Discounted pieces', href: '/marketplace/remnants/', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' }
     ]
   };
 
@@ -318,9 +319,10 @@
           </div>
 
           <div class="unified-nav-actions">
-            <a href="/shop">
+            <a href="/cart/" class="unified-nav-cart-link">
               <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-              Shop
+              Cart
+              <span class="unified-nav-cart-badge-desktop" id="unifiedNavCartBadgeDesktop" style="display:none;">0</span>
             </a>
             <a href="/get-a-free-estimate" class="unified-nav-estimate">Free Estimate</a>
           </div>

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title id="page-title">Tile | Surprise Granite Marketplace</title>
+  <meta name="description" id="page-description" content="Premium tile from MSI and Bravo Tile"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260131"/>
+  <script defer src="/js/unified-nav.js?v=20260131"></script>
+  <script src="/js/sg-auth.js"></script>
+  <script src="/js/pricing-config.js"></script>
+  <script src="/js/pricing-service.js"></script>
+  <style>
+    :root {
+      --gold: #f9cb00;
+      --gold-dark: #cca600;
+      --navy: #1a2b3c;
+      --text-primary: #1a1a2e;
+      --text-muted: #888;
+      --bg: #ffffff;
+      --bg-light: #f8f9fa;
+      --border: #e5e5e5;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text-primary); line-height: 1.6; }
+
+    .breadcrumb { max-width: 1200px; margin: 0 auto; padding: 100px 24px 16px; font-size: 13px; color: var(--text-muted); }
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--navy); }
+
+    .product-page { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+
+    .gallery { position: sticky; top: 100px; align-self: start; }
+    .main-image { width: 100%; aspect-ratio: 1; background: var(--bg-light); border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .main-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    .product-info h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; }
+    .brand-badge { display: inline-block; background: var(--navy); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 16px; }
+    .price { font-size: 2rem; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+    .price span { font-size: 1rem; font-weight: 500; color: var(--text-muted); }
+    .description { color: var(--text-muted); margin-bottom: 24px; }
+
+    .specs { background: var(--bg-light); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .specs h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .spec-item { font-size: 14px; }
+    .spec-item strong { display: block; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
+
+    /* Tile Calculator */
+    .calculator { background: linear-gradient(135deg, var(--navy) 0%, #0f1a24 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #fff; }
+    .calculator h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .calculator h3 svg { width: 20px; height: 20px; stroke: var(--gold); }
+    .calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .calc-input { display: flex; flex-direction: column; }
+    .calc-input label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
+    .calc-input input { padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; font-size: 16px; font-family: inherit; }
+    .calc-input input:focus { outline: none; border-color: var(--gold); }
+    .calc-input input::placeholder { color: rgba(255,255,255,0.4); }
+    .calc-btn { width: 100%; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .calc-btn:hover { background: var(--gold-dark); }
+    .calc-result { margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px; display: none; }
+    .calc-result.show { display: block; }
+    .calc-result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .calc-result-row:last-child { border: none; font-weight: 700; font-size: 18px; color: var(--gold); }
+    .waste-note { font-size: 11px; opacity: 0.7; margin-top: 8px; }
+
+    /* Actions */
+    .actions { display: flex; flex-direction: column; gap: 12px; }
+    .btn-quote { padding: 16px 32px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-quote:hover { background: var(--gold-dark); }
+    .btn-quote svg { width: 20px; height: 20px; }
+    .btn-secondary { padding: 14px 24px; background: none; color: var(--navy); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
+    .btn-secondary:hover { border-color: var(--navy); }
+
+    .trust-badges { display: flex; gap: 16px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .trust-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+    .trust-badge svg { width: 18px; height: 18px; stroke: var(--success); }
+
+    .footer { background: var(--navy); color: #fff; padding: 48px 24px; margin-top: 48px; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+    .footer-links a { color: #fff; text-decoration: none; opacity: 0.8; }
+
+    /* Quote Modal */
+    .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-backdrop.show { display: flex; }
+    .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 1.25rem; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+    .modal-body { padding: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--gold); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-submit { width: 100%; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+    /* Pricing Tier Comparison */
+    .pricing-tiers { margin: 24px 0; }
+    .pricing-tiers h4 { color: var(--navy); }
+
+    /* Price display enhancements */
+    .price-with-savings { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+    .price-retail-strike { text-decoration: line-through; color: var(--text-muted); font-size: 1.2rem; }
+    .price-current-tier { font-size: 2rem; font-weight: 800; color: var(--navy); }
+    .price-savings-badge {
+      display: inline-block;
+      background: var(--success);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Upgrade prompt */
+    .upgrade-prompt {
+      background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .upgrade-prompt a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .product-page { grid-template-columns: 1fr; gap: 24px; }
+      .gallery { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="breadcrumb">
+    <a href="/">Home</a> / <a href="/marketplace/">Marketplace</a> / <a href="/marketplace/tile/">Tile</a> / <span id="breadcrumb-title">Loading...</span>
+  </div>
+
+  <div class="product-page">
+    <div class="gallery">
+      <div class="main-image">
+        <img id="main-img" src="" alt="Tile"/>
+      </div>
+    </div>
+
+    <div class="product-info">
+      <span class="brand-badge" id="brand-badge">Loading...</span>
+      <h1 id="product-title">Loading...</h1>
+      <div class="price" id="product-price">$0.00 <span>/sq ft</span></div>
+      <div id="price-comparison" style="margin: 8px 0 16px; font-size: 13px; color: #888;"></div>
+      <div id="pricing-tiers-container"></div>
+      <p class="description" id="product-description">Loading product details...</p>
+
+      <div class="specs">
+        <h3>Specifications</h3>
+        <div class="specs-grid" id="specs-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <div class="calculator">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/></svg>
+          Tile Calculator
+        </h3>
+        <div class="calc-row">
+          <div class="calc-input">
+            <label>Room Length (ft)</label>
+            <input type="number" id="calc-length" placeholder="12" step="0.5"/>
+          </div>
+          <div class="calc-input">
+            <label>Room Width (ft)</label>
+            <input type="number" id="calc-width" placeholder="10" step="0.5"/>
+          </div>
+        </div>
+        <div class="calc-input">
+          <label>Waste Factor (%)</label>
+          <input type="number" id="calc-waste" value="10" min="5" max="20"/>
+        </div>
+        <button class="calc-btn" onclick="calculateTile()">Calculate</button>
+        <div class="calc-result" id="calc-result">
+          <div class="calc-result-row">
+            <span>Room Area</span>
+            <span id="result-area">0 sq ft</span>
+          </div>
+          <div class="calc-result-row">
+            <span>+ Waste (<span id="waste-pct">10</span>%)</span>
+            <span id="result-waste">0 sq ft</span>
+          </div>
+          <div class="calc-result-row">
+            <span>Total Needed</span>
+            <span id="result-total">0 sq ft</span>
+          </div>
+          <div class="calc-result-row">
+            <span>Estimated Cost</span>
+            <span id="result-cost">$0.00</span>
+          </div>
+          <p class="waste-note">*We recommend 10% extra for cuts and waste. Complex patterns may need 15-20%.</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-quote" onclick="openQuoteModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Request Quote
+        </button>
+        <a href="tel:+16235846183" class="btn-secondary">Call (623) 584-6183</a>
+      </div>
+
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Professional Installation
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Free Estimates
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quote Modal -->
+  <div class="modal-backdrop" id="quote-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Request a Quote</h3>
+        <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="quote-product-info" style="background: var(--bg-light); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+          <!-- Filled by JS -->
+        </div>
+        <form id="quote-form" onsubmit="submitQuote(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name *</label>
+              <input type="text" id="quote-name" required/>
+            </div>
+            <div class="form-group">
+              <label>Phone *</label>
+              <input type="tel" id="quote-phone" required/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="quote-email" required/>
+          </div>
+          <div class="form-group">
+            <label>Square Footage Needed</label>
+            <input type="text" id="quote-sqft" placeholder="e.g., 150 sq ft"/>
+          </div>
+          <div class="form-group">
+            <label>Project Details</label>
+            <textarea id="quote-details" rows="3" placeholder="Tell us about your project..."></textarea>
+          </div>
+          <button type="submit" class="form-submit">Submit Quote Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/marketplace/">Marketplace</a>
+        <a href="/marketplace/tile/">Tile</a>
+        <a href="/marketplace/slabs/">Slabs</a>
+        <a href="/contact-us/">Contact</a>
+      </div>
+      <p style="opacity: 0.6; font-size: 13px;">&copy; 2025 Surprise Granite. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/js/shopify-cart.js"></script>
+  <script>
+    let currentProduct = null;
+    let shopifyVariantId = null;
+    let pricePerSqFt = 0;
+    let currentTier = 'guest';
+    let currentPricing = null;
+
+    const SHOPIFY_STORE = 'surprise-granite.myshopify.com';
+    const STOREFRONT_TOKEN = '17a4557623df390a5a866c7640ec021a';
+
+    // Initialize pricing service listener
+    function initPricing() {
+      if (window.SG_PRICING) {
+        window.SG_PRICING.onTierChange((tier, user) => {
+          currentTier = tier;
+          if (currentProduct) {
+            updatePricingDisplay();
+          }
+        });
+      }
+    }
+
+    // Update pricing display based on user tier
+    function updatePricingDisplay() {
+      if (!currentProduct || !window.SG_PRICING) {
+        // Fallback to static price
+        document.getElementById('product-price').innerHTML = `$${pricePerSqFt.toFixed(2)} <span>/sq ft</span>`;
+        return;
+      }
+
+      // Calculate dynamic pricing
+      currentPricing = window.SG_PRICING.calculatePrice(currentProduct);
+      pricePerSqFt = currentPricing.yourPrice;
+
+      // Build price HTML with savings
+      let priceHtml = '';
+      if (currentPricing.savings > 0.25) {
+        priceHtml = `
+          <span style="text-decoration: line-through; color: #888; font-size: 1.2rem; margin-right: 8px;">$${currentPricing.retailPrice.toFixed(2)}</span>
+          $${currentPricing.yourPrice.toFixed(2)} <span>/sq ft</span>
+        `;
+      } else {
+        priceHtml = `$${currentPricing.yourPrice.toFixed(2)} <span>/sq ft</span>`;
+      }
+      document.getElementById('product-price').innerHTML = priceHtml;
+
+      // Price comparison/savings message
+      const comparisonEl = document.getElementById('price-comparison');
+      const returnUrl = encodeURIComponent(window.location.href);
+
+      if (currentPricing.savings > 0.25) {
+        const tierInfo = window.SG_PRICING.getTierInfo();
+        comparisonEl.innerHTML = `
+          <span style="color: #22c55e; font-weight: 600;">
+            ✓ You save $${currentPricing.savings.toFixed(2)}/sq ft with ${tierInfo.name} pricing
+          </span>
+        `;
+      } else if (currentTier === 'guest') {
+        // Guest sees retail price - prompt to sign in for discounts
+        comparisonEl.innerHTML = `
+          <a href="/log-in/?redirect=${returnUrl}" style="color: #22c55e; font-weight: 600; text-decoration: none;">
+            🔓 Sign in to unlock member discounts
+          </a>
+          <span style="margin-left: 12px;">
+            <a href="/membership/" style="color: #888; font-size: 13px; text-decoration: underline;">View pricing tiers</a>
+          </span>
+        `;
+      } else if (currentTier === 'homeowner') {
+        comparisonEl.innerHTML = `
+          <a href="/account/?tab=subscription" style="color: #22c55e; font-weight: 600; text-decoration: none;">
+            ⬆️ Upgrade to Pro - Save up to 35%
+          </a>
+        `;
+      } else {
+        comparisonEl.innerHTML = '';
+      }
+
+      // Show tier comparison UI
+      const tiersContainer = document.getElementById('pricing-tiers-container');
+      if (tiersContainer && window.SG_PRICING.createTierComparisonUI) {
+        tiersContainer.innerHTML = window.SG_PRICING.createTierComparisonUI(currentProduct);
+      }
+
+      // Update calculator result if already calculated
+      const resultEl = document.getElementById('calc-result');
+      if (resultEl && resultEl.classList.contains('show')) {
+        const total = parseFloat(document.getElementById('result-total').textContent) || 0;
+        if (total > 0) {
+          const cost = total * pricePerSqFt;
+          document.getElementById('result-cost').textContent = '$' + cost.toFixed(2);
+        }
+      }
+    }
+
+    async function shopifyFetch(query, variables = {}) {
+      const res = await fetch(`https://${SHOPIFY_STORE}/api/2024-01/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': STOREFRONT_TOKEN,
+        },
+        body: JSON.stringify({ query, variables })
+      });
+      return res.json();
+    }
+
+    async function loadProduct() {
+      const params = new URLSearchParams(window.location.search);
+      const handle = params.get('handle');
+
+      if (!handle) {
+        document.getElementById('product-title').textContent = 'Product not found';
+        return;
+      }
+
+      // First try to load from Shopify (for cart functionality)
+      try {
+        const query = `
+          query getProductByHandle($handle: String!) {
+            productByHandle(handle: $handle) {
+              id
+              title
+              description
+              vendor
+              productType
+              images(first: 5) {
+                edges { node { url altText } }
+              }
+              variants(first: 1) {
+                edges {
+                  node {
+                    id
+                    price { amount }
+                    sku
+                  }
+                }
+              }
+            }
+          }
+        `;
+
+        const result = await shopifyFetch(query, { handle });
+        const shopifyProduct = result.data?.productByHandle;
+
+        if (shopifyProduct) {
+          currentProduct = {
+            title: shopifyProduct.title,
+            description: shopifyProduct.description,
+            vendor: shopifyProduct.vendor,
+            brandDisplay: shopifyProduct.vendor,
+            images: shopifyProduct.images.edges.map(e => e.node.url),
+            price: shopifyProduct.variants.edges[0]?.node.price.amount || '0'
+          };
+          shopifyVariantId = shopifyProduct.variants.edges[0]?.node.id;
+          pricePerSqFt = parseFloat(currentProduct.price) || 0;
+
+          updateProductDisplay();
+          showAddToCart();
+          return;
+        }
+      } catch (err) {
+        console.log('Shopify fetch failed, falling back to tile.json:', err);
+      }
+
+      // Fallback to tile.json (for products not yet in Shopify)
+      try {
+        const res = await fetch('/data/tile.json');
+        const tiles = await res.json();
+        const product = tiles.find(t => t.handle === handle);
+
+        if (!product) {
+          document.getElementById('product-title').textContent = 'Tile not found';
+          return;
+        }
+
+        currentProduct = product;
+        pricePerSqFt = parseFloat(product.price) || 0;
+        updateProductDisplay();
+        showQuoteOnly();
+
+      } catch (err) {
+        console.error('Error loading product:', err);
+        document.getElementById('product-title').textContent = 'Error loading product';
+      }
+    }
+
+    function updateProductDisplay() {
+      const product = currentProduct;
+
+      // Update page
+      document.title = product.title + ' | Surprise Granite';
+      document.getElementById('page-title').textContent = product.title + ' | Surprise Granite';
+      document.getElementById('breadcrumb-title').textContent = product.title;
+      document.getElementById('product-title').textContent = product.title;
+      document.getElementById('brand-badge').textContent = product.brandDisplay || product.vendor;
+      document.getElementById('product-description').textContent = product.description || 'Premium quality tile for floors and walls.';
+
+      // Image
+      const img = product.images?.[0] || '';
+      const imgSrc = img.startsWith('/') ? 'https://www.surprisegranite.com' + img : img;
+      document.getElementById('main-img').src = imgSrc;
+      document.getElementById('main-img').alt = product.title;
+
+      // Specs
+      const specs = product.specs || {};
+      const specsHtml = `
+        ${specs.material ? `<div class="spec-item"><strong>Material</strong>${specs.material}</div>` : ''}
+        ${specs.style ? `<div class="spec-item"><strong>Style</strong>${specs.style}</div>` : ''}
+        ${specs.color ? `<div class="spec-item"><strong>Color</strong>${specs.color}</div>` : ''}
+        ${specs.size ? `<div class="spec-item"><strong>Size</strong>${specs.size}</div>` : ''}
+        ${specs.finish ? `<div class="spec-item"><strong>Finish</strong>${specs.finish}</div>` : ''}
+        <div class="spec-item"><strong>Vendor</strong>${product.vendor || product.brandDisplay}</div>
+      `;
+      document.getElementById('specs-grid').innerHTML = specsHtml || '<div class="spec-item"><strong>Type</strong>Tile</div>';
+
+      // Update pricing with tier-based calculation
+      updatePricingDisplay();
+    }
+
+    function showAddToCart() {
+      // Show Add to Cart button instead of just Quote
+      const actionsDiv = document.querySelector('.actions');
+      actionsDiv.innerHTML = `
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+          <label style="font-weight: 600;">Qty (sq ft):</label>
+          <input type="number" id="cart-qty" value="1" min="1" style="width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px;"/>
+        </div>
+        <button class="btn-quote" id="add-to-cart-btn" onclick="addToCart()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Add to Cart
+        </button>
+        <button class="btn-secondary" onclick="openQuoteModal()">Request Quote Instead</button>
+        <a href="tel:+16235846183" class="btn-secondary">Call (623) 584-6183</a>
+      `;
+    }
+
+    function showQuoteOnly() {
+      // Keep quote-only for products not in Shopify
+    }
+
+    async function addToCart() {
+      if (!shopifyVariantId) {
+        alert('This product is not available for online purchase yet. Please request a quote.');
+        return;
+      }
+
+      const qty = parseInt(document.getElementById('cart-qty').value) || 1;
+      const btn = document.getElementById('add-to-cart-btn');
+      const originalText = btn.innerHTML;
+
+      btn.innerHTML = 'Adding...';
+      btn.disabled = true;
+
+      try {
+        const success = await window.ShopifyCart.addItem(shopifyVariantId, qty);
+        if (success) {
+          btn.innerHTML = '✓ Added to Cart!';
+          btn.style.background = '#22c55e';
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          throw new Error('Failed to add to cart');
+        }
+      } catch (err) {
+        console.error('Add to cart error:', err);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Error adding to cart. Please try again or request a quote.');
+      }
+    }
+
+    function calculateTile() {
+      const length = parseFloat(document.getElementById('calc-length').value) || 0;
+      const width = parseFloat(document.getElementById('calc-width').value) || 0;
+      const wastePct = parseFloat(document.getElementById('calc-waste').value) || 10;
+
+      if (length <= 0 || width <= 0) {
+        alert('Please enter room dimensions');
+        return;
+      }
+
+      const area = length * width;
+      const waste = area * (wastePct / 100);
+      const total = Math.ceil(area + waste);
+      const cost = total * pricePerSqFt;
+
+      document.getElementById('result-area').textContent = area.toFixed(1) + ' sq ft';
+      document.getElementById('waste-pct').textContent = wastePct;
+      document.getElementById('result-waste').textContent = waste.toFixed(1) + ' sq ft';
+      document.getElementById('result-total').textContent = total + ' sq ft';
+      document.getElementById('result-cost').textContent = '$' + cost.toFixed(2);
+
+      document.getElementById('calc-result').classList.add('show');
+
+      // Pre-fill quote form
+      document.getElementById('quote-sqft').value = total + ' sq ft';
+    }
+
+    function openQuoteModal() {
+      if (!currentProduct) return;
+
+      const sqft = document.getElementById('result-total')?.textContent || '';
+      const cost = document.getElementById('result-cost')?.textContent || '';
+
+      // Show user's tier pricing in quote
+      let pricingInfo = `$${pricePerSqFt.toFixed(2)}/sq ft`;
+      if (currentPricing && currentPricing.savings > 0.25) {
+        pricingInfo = `<span style="text-decoration: line-through;">$${currentPricing.retailPrice.toFixed(2)}</span> $${currentPricing.yourPrice.toFixed(2)}/sq ft`;
+      }
+
+      document.getElementById('quote-product-info').innerHTML = `
+        <strong>${currentProduct.title}</strong><br>
+        <span style="color: var(--text-muted); font-size: 13px;">
+          ${currentProduct.brandDisplay || currentProduct.vendor} &bull; ${pricingInfo}
+          ${sqft ? ` &bull; ${sqft} needed` : ''}
+          ${cost && cost !== '$0.00' ? ` &bull; Est. ${cost}` : ''}
+        </span>
+      `;
+
+      document.getElementById('quote-modal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeQuoteModal() {
+      document.getElementById('quote-modal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    async function submitQuote(e) {
+      e.preventDefault();
+
+      const data = {
+        product: currentProduct?.title,
+        brand: currentProduct?.brandDisplay || currentProduct?.vendor,
+        price: pricePerSqFt,
+        retailPrice: currentPricing?.retailPrice || pricePerSqFt,
+        userTier: currentTier,
+        savings: currentPricing?.savings || 0,
+        name: document.getElementById('quote-name').value,
+        phone: document.getElementById('quote-phone').value,
+        email: document.getElementById('quote-email').value,
+        sqft: document.getElementById('quote-sqft').value,
+        details: document.getElementById('quote-details').value,
+        timestamp: new Date().toISOString()
+      };
+
+      // For now, just show success (would send to API in production)
+      console.log('Quote request:', data);
+      alert('Thank you! We\'ll contact you within 24 hours with your quote.');
+      closeQuoteModal();
+      document.getElementById('quote-form').reset();
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('quote-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeQuoteModal();
+    });
+
+    // Initialize
+    loadProduct();
+    initPricing();
+  </script>
+</body>
+</html>

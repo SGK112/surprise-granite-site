@@ -146,6 +146,59 @@ const StateManager = (function() {
     }
   }
 
+  // Sync read notifications from Supabase
+  async function syncReadNotifications(supabaseClient, userId) {
+    if (!supabaseClient || !userId) return;
+
+    try {
+      const { data: readNotifs, error } = await supabaseClient
+        .from('pro_notifications')
+        .select('id')
+        .eq('pro_user_id', userId)
+        .eq('read', true);
+
+      // Table may not exist - silently ignore
+      if (error) {
+        console.log('[StateManager] pro_notifications table not available');
+        return;
+      }
+
+      // Add to viewed notifications
+      (readNotifs || []).forEach(notif => {
+        if (!state.viewedNotifications.includes(notif.id)) {
+          state.viewedNotifications.push(notif.id);
+        }
+      });
+
+      // Keep only last 100
+      if (state.viewedNotifications.length > 100) {
+        state.viewedNotifications = state.viewedNotifications.slice(-100);
+      }
+
+      persist();
+      console.log('[StateManager] Synced', readNotifs?.length || 0, 'read notifications');
+
+    } catch (e) {
+      console.warn('[StateManager] Notification sync failed:', e);
+    }
+  }
+
+  // Clean up old data (call periodically)
+  function cleanup() {
+    const now = Date.now();
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+    // Remove old confirmed events (older than 1 week)
+    Object.keys(state.confirmedEvents).forEach(eventId => {
+      const event = state.confirmedEvents[eventId];
+      if (event.confirmedAt && new Date(event.confirmedAt).getTime() < oneWeekAgo) {
+        delete state.confirmedEvents[eventId];
+      }
+    });
+
+    persist();
+  }
+
   // Clear all state (for logout)
   function clear() {
     state = {
@@ -182,6 +235,8 @@ const StateManager = (function() {
     setPreference,
     getPreference,
     syncConfirmedEvents,
+    syncReadNotifications,
+    cleanup,
     clear,
     getState
   };

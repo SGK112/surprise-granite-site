@@ -638,10 +638,17 @@
         return;
       }
 
+      // Check for redirect param FIRST (before session check)
+      const params = new URLSearchParams(window.location.search);
+      const redirectParam = params.get('redirect');
+      if (redirectParam) {
+        sessionStorage.setItem('auth_redirect', redirectParam);
+      }
+
       // Check if already logged in
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
-        // Already logged in - use smart routing
+        // Already logged in - check for redirect URL (from param or stored)
         const storedRedirect = sessionStorage.getItem('auth_redirect');
         if (storedRedirect && storedRedirect !== '/account/') {
           sessionStorage.removeItem('auth_redirect');
@@ -657,13 +664,6 @@
           }
         }
         return;
-      }
-
-      // Check for redirect param (only store if not already set by account page)
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect');
-      if (redirect && !sessionStorage.getItem('auth_redirect')) {
-        sessionStorage.setItem('auth_redirect', redirect);
       }
 
       // Set up email field SSO detection

@@ -457,16 +457,27 @@
 
         <div class="form-group">
           <label class="form-label">Project Type <span class="required">*</span></label>
-          <select class="form-select" name="projectType" required aria-required="true" aria-label="Project Type">
-            <option value="">Select a project type...</option>
-            <option value="countertops">Countertops Only</option>
-            <option value="kitchen">Kitchen Remodel</option>
-            <option value="bathroom">Bathroom Remodel</option>
-            <option value="flooring">Flooring</option>
-            <option value="cabinets">Cabinets</option>
-            <option value="full-remodel">Full Home Remodel</option>
-            <option value="commercial">Commercial Project</option>
-            <option value="other">Other</option>
+          <select class="form-select" name="projectType" id="projectType" required aria-required="true" aria-label="Project Type">
+            <option value="">What service do you need?</option>
+            <optgroup label="Installation Services">
+              <option value="countertop-install">Countertop Installation</option>
+              <option value="tile-install">Tile & Backsplash</option>
+              <option value="flooring-install">Flooring Installation</option>
+              <option value="shower-build">Custom Shower Build</option>
+              <option value="vanity-install">Vanity Installation</option>
+            </optgroup>
+            <optgroup label="Remodeling">
+              <option value="kitchen-remodel">Kitchen Remodeling</option>
+              <option value="bathroom-remodel">Bathroom Remodeling</option>
+              <option value="full-remodel">Full Home Remodel</option>
+            </optgroup>
+            <optgroup label="Other Services">
+              <option value="repair">Countertop Polish & Repair</option>
+              <option value="cabinets">Cabinet Installation</option>
+              <option value="plumbing">Plumbing Services</option>
+              <option value="commercial">Commercial Project</option>
+              <option value="other">Other</option>
+            </optgroup>
           </select>
         </div>
 
@@ -797,6 +808,44 @@
       }
       return images;
     }
+
+    // URL Parameter Pre-population
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const service = params.get('service');
+      const material = params.get('material');
+      const product = params.get('product');
+
+      // Pre-select service type from URL
+      if (service) {
+        const projectSelect = document.getElementById('projectType');
+        if (projectSelect) {
+          // Try to find matching option
+          const options = projectSelect.options;
+          for (let i = 0; i < options.length; i++) {
+            if (options[i].value === service) {
+              projectSelect.value = service;
+              break;
+            }
+          }
+        }
+      }
+
+      // Pre-fill message with product/material info
+      if (material || product) {
+        const messageField = document.querySelector('textarea[name="message"]');
+        if (messageField) {
+          let prefill = '';
+          if (product) {
+            prefill = 'I\'m interested in: ' + decodeURIComponent(product);
+          }
+          if (material) {
+            prefill += (prefill ? '\nMaterial type: ' : 'Material type: ') + decodeURIComponent(material);
+          }
+          messageField.value = prefill;
+        }
+      }
+    });
   </script>
 
   

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Membership & Pricing | Surprise Granite</title>
+  <link rel="canonical" href="https://surprisegranite.com/membership/"/>
+  <meta name="description" content="Join Surprise Granite membership for exclusive pricing on countertops, tile, sinks, and faucets. Save up to 35% as a Pro member or get wholesale rates as a verified fabricator."/>
+  <meta property="og:title" content="Membership & Pricing | Surprise Granite"/>
+  <meta property="og:description" content="Exclusive member pricing on premium stone and tile. Homeowners, pros, contractors, and fabricators welcome."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link rel="stylesheet" href="/css/unified-nav.css?v=20260131b"/>
+  <script defer src="/js/unified-nav.js?v=20260131"></script>
+  <script src="/js/sg-auth.js"></script>
+  <style>
+    :root {
+      --gold: #f9cb00;
+      --gold-dark: #cca600;
+      --navy: #1a2b3c;
+      --text-primary: #1a1a2e;
+      --text-muted: #666;
+      --bg: #ffffff;
+      --border: #e5e5e5;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #ffffff; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: var(--text-primary); line-height: 1.6; }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #0f1a24 100%);
+      padding: 140px 24px 80px;
+      color: #fff;
+      text-align: center;
+    }
+    .hero-inner { max-width: 800px; margin: 0 auto; }
+    .hero h1 { font-size: 2.75rem; font-weight: 800; margin-bottom: 16px; }
+    .hero p { font-size: 1.25rem; opacity: 0.9; margin-bottom: 32px; }
+    .hero-cta {
+      display: inline-block;
+      padding: 16px 32px;
+      background: var(--gold);
+      color: var(--navy);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .hero-cta:hover { background: var(--gold-dark); transform: translateY(-2px); }
+
+    /* Main */
+    .main { max-width: 1200px; margin: 0 auto; padding: 60px 24px; }
+
+    /* Section Headers */
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-header h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--navy);
+    }
+    .section-header p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Tier Cards */
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+    .tier-card {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .tier-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+    }
+    .tier-card.featured {
+      border-color: var(--gold);
+      background: linear-gradient(135deg, #fffef5 0%, #fff 100%);
+    }
+    .tier-card.featured::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: var(--navy);
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tier-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--navy) 0%, #2d4356 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .tier-icon svg { width: 28px; height: 28px; color: var(--gold); }
+    .tier-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+    .tier-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .tier-price span { font-size: 1rem; font-weight: 500; color: var(--text-muted); }
+    .tier-savings {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .tier-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .tier-features {
+      list-style: none;
+      margin-bottom: 24px;
+    }
+    .tier-features li {
+      padding: 8px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .tier-features li::before {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2322c55e' stroke-width='3'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/contain no-repeat;
+      flex-shrink: 0;
+    }
+    .tier-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .tier-btn.primary {
+      background: var(--gold);
+      color: var(--navy);
+    }
+    .tier-btn.primary:hover { background: var(--gold-dark); }
+    .tier-btn.secondary {
+      background: var(--navy);
+      color: #fff;
+    }
+    .tier-btn.secondary:hover { background: #0f1a24; }
+    .tier-btn.outline {
+      background: transparent;
+      color: var(--navy);
+      border: 2px solid var(--border);
+    }
+    .tier-btn.outline:hover { border-color: var(--gold); background: #fffef5; }
+
+    /* How it Works */
+    .how-it-works {
+      background: #f8f9fa;
+      padding: 60px 24px;
+      margin: 60px -24px;
+    }
+    .how-it-works-inner { max-width: 1000px; margin: 0 auto; }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 32px;
+    }
+    .step {
+      text-align: center;
+    }
+    .step-num {
+      width: 48px;
+      height: 48px;
+      background: var(--gold);
+      color: var(--navy);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      margin: 0 auto 16px;
+    }
+    .step h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+    .step p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* FAQ */
+    .faq { margin-top: 60px; }
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    .faq-q {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--navy);
+    }
+    .faq-a {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer { background: var(--navy); color: #fff; padding: 48px 24px; margin-top: 60px; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+    .footer-links a { color: #fff; text-decoration: none; opacity: 0.8; }
+    .footer-copyright { font-size: 13px; opacity: 0.6; }
+
+    @media (max-width: 768px) {
+      .hero { padding: 120px 16px 60px; }
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+      .main { padding: 40px 16px; }
+      .section-header h2 { font-size: 1.5rem; }
+      .tiers-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Member Pricing That Actually Saves You Money</h1>
+      <p>Whether you're a homeowner, designer, contractor, or fabricator - we have pricing designed for you. Join thousands saving on premium stone and tile.</p>
+      <a href="/sign-up/" class="hero-cta">Create Free Account</a>
+    </div>
+  </section>
+
+  <main class="main">
+    <div class="section-header">
+      <h2>Choose Your Membership Level</h2>
+      <p>Everyone gets savings. Professionals get more. All accounts start free with instant access to member pricing.</p>
+    </div>
+
+    <div class="tiers-grid">
+      <!-- Free / Homeowner -->
+      <div class="tier-card">
+        <div class="tier-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+        </div>
+        <div class="tier-name">Homeowner</div>
+        <div class="tier-price">Free <span>forever</span></div>
+        <div class="tier-savings">Save up to 3%</div>
+        <p class="tier-desc">Perfect for DIYers and homeowners planning a renovation. Get started with member pricing at no cost.</p>
+        <ul class="tier-features">
+          <li>Member-only pricing on all products</li>
+          <li>Access to full product catalog</li>
+          <li>Save projects and favorites</li>
+          <li>Order tracking and history</li>
+          <li>Email support</li>
+        </ul>
+        <a href="/sign-up/" class="tier-btn outline">Sign Up Free</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="tier-card featured">
+        <div class="tier-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+          </svg>
+        </div>
+        <div class="tier-name">Pro Member</div>
+        <div class="tier-price">$29 <span>/month</span></div>
+        <div class="tier-savings">Save up to 35%</div>
+        <p class="tier-desc">For serious renovators and small-scale pros. Unlock significant savings that pay for themselves on your first order.</p>
+        <ul class="tier-features">
+          <li>Up to 35% off retail pricing</li>
+          <li>Priority order processing</li>
+          <li>Extended return window</li>
+          <li>Dedicated account manager</li>
+          <li>Phone and chat support</li>
+          <li>Early access to new products</li>
+        </ul>
+        <a href="/sign-up/?plan=pro" class="tier-btn primary">Start Pro - $29/mo</a>
+      </div>
+
+      <!-- Contractor/Designer -->
+      <div class="tier-card">
+        <div class="tier-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <div class="tier-name">Trade Professional</div>
+        <div class="tier-price">Free <span>+ verification</span></div>
+        <div class="tier-savings">Save 25-30%</div>
+        <p class="tier-desc">For licensed contractors, designers, and architects. Requires business verification but no monthly fee.</p>
+        <ul class="tier-features">
+          <li>Trade professional pricing</li>
+          <li>Net-30 payment terms (qualified)</li>
+          <li>Job site delivery options</li>
+          <li>Client showroom access</li>
+          <li>Project management tools</li>
+          <li>Dedicated trade rep</li>
+        </ul>
+        <a href="/sign-up/?type=trade" class="tier-btn secondary">Apply for Trade Account</a>
+      </div>
+
+      <!-- Fabricator -->
+      <div class="tier-card">
+        <div class="tier-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <div class="tier-name">Fabricator Partner</div>
+        <div class="tier-price">$79 <span>/month</span></div>
+        <div class="tier-savings">Wholesale Pricing</div>
+        <p class="tier-desc">For stone fabrication shops. Get the absolute best pricing with wholesale rates direct from distributors.</p>
+        <ul class="tier-features">
+          <li>True wholesale pricing</li>
+          <li>Volume discounts available</li>
+          <li>Container and pallet pricing</li>
+          <li>Direct distributor access</li>
+          <li>White-label quoting tools</li>
+          <li>Dedicated fabricator support line</li>
+        </ul>
+        <a href="/sign-up/?type=fabricator" class="tier-btn secondary">Apply for Fabricator Account</a>
+      </div>
+    </div>
+
+    <!-- How it Works -->
+    <section class="how-it-works">
+      <div class="how-it-works-inner">
+        <div class="section-header">
+          <h2>How It Works</h2>
+          <p>Getting started takes less than 2 minutes</p>
+        </div>
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-num">1</div>
+            <h3>Create Account</h3>
+            <p>Sign up free with email or Google. Instant access to homeowner pricing.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <h3>Choose Your Tier</h3>
+            <p>Upgrade to Pro for bigger savings or apply for trade verification.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <h3>Shop & Save</h3>
+            <p>Browse our full catalog with your personalized pricing automatically applied.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <h3>Track Everything</h3>
+            <p>Manage orders, track deliveries, and reorder favorites from your dashboard.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq">
+      <div class="section-header">
+        <h2>Frequently Asked Questions</h2>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How much can I really save?</div>
+        <div class="faq-a">Savings depend on your membership level and what you buy. Homeowner accounts save up to 3% off retail. Pro members save up to 35%. Trade professionals save 25-30%, and fabricators get true wholesale pricing. On a typical kitchen countertop project, Pro members can save $500-$1500.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can I cancel my Pro membership anytime?</div>
+        <div class="faq-a">Yes, you can cancel your Pro or Fabricator membership at any time. There are no contracts or cancellation fees. Your membership will remain active through the end of your billing period.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What's required for trade verification?</div>
+        <div class="faq-a">For Contractor/Designer accounts, we require proof of business (contractor license, business license, or resale certificate). Verification typically takes 1-2 business days. Once verified, you get trade pricing with no monthly fee.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Do you offer volume discounts?</div>
+        <div class="faq-a">Yes! Fabricator Partners get access to additional volume-based pricing on large orders. Contact your dedicated rep for quotes on container or pallet quantities.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can I upgrade my membership later?</div>
+        <div class="faq-a">Absolutely. You can upgrade from Homeowner to Pro at any time. If you become a licensed contractor or fabricator, you can apply for trade verification to access even better pricing.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is my pricing visible to others?</div>
+        <div class="faq-a">No. Your pricing is completely private. Each account only sees their own tier pricing. We don't display comparison pricing between tiers to protect everyone's margins.</div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div style="text-align: center; margin-top: 60px; padding: 48px; background: linear-gradient(135deg, var(--navy) 0%, #0f1a24 100%); border-radius: 16px;">
+      <h2 style="color: #fff; font-size: 1.75rem; margin-bottom: 12px;">Ready to Start Saving?</h2>
+      <p style="color: rgba(255,255,255,0.8); margin-bottom: 24px;">Create your free account and see your personalized pricing today.</p>
+      <a href="/sign-up/" style="display: inline-block; padding: 16px 32px; background: var(--gold); color: var(--navy); text-decoration: none; font-weight: 700; font-size: 16px; border-radius: 8px;">Create Free Account</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/marketplace/">Marketplace</a>
+        <a href="/marketplace/tile/">Tile</a>
+        <a href="/marketplace/slabs/">Slabs</a>
+        <a href="/marketplace/sinks/">Sinks</a>
+        <a href="/marketplace/faucets/">Faucets</a>
+      </div>
+      <div class="footer-copyright">&copy; 2025 Surprise Granite. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Redirect logged-in users to account
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.SgAuth) {
+        await window.SgAuth.init();
+        const user = window.SgAuth.getUser();
+        if (user) {
+          // Already logged in - could show upgrade options or redirect
+          console.log('[Membership] User already logged in, showing upgrade options');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

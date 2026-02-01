@@ -579,6 +579,168 @@
       text-decoration: none;
     }
 
+    /* Appointment Scheduling Section */
+    .appointment-section {
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .appointment-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .appointment-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(204, 166, 0, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .appointment-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: #cca600;
+    }
+
+    .appointment-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .appointment-subtitle {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      padding-left: 52px;
+    }
+
+    .appointment-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+
+    .appointment-toggle:hover {
+      border-color: rgba(204, 166, 0, 0.3);
+      background: rgba(204, 166, 0, 0.05);
+    }
+
+    .appointment-toggle.active {
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.1);
+    }
+
+    .appointment-toggle-checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .appointment-toggle.active .appointment-toggle-checkbox {
+      background: #cca600;
+      border-color: #cca600;
+    }
+
+    .appointment-toggle-checkbox svg {
+      width: 14px;
+      height: 14px;
+      stroke: #1a1a2e;
+      stroke-width: 3;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .appointment-toggle.active .appointment-toggle-checkbox svg {
+      opacity: 1;
+    }
+
+    .appointment-toggle-text {
+      flex: 1;
+    }
+
+    .appointment-toggle-label {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+    }
+
+    .appointment-toggle-desc {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .appointment-fields {
+      display: none;
+      gap: 16px;
+      animation: fadeSlideIn 0.3s ease;
+    }
+
+    .appointment-fields.show {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .time-slot {
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .time-slot:hover {
+      border-color: rgba(204, 166, 0, 0.3);
+      background: rgba(204, 166, 0, 0.05);
+    }
+
+    .time-slot.selected {
+      border-color: #cca600;
+      background: rgba(204, 166, 0, 0.15);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .floating-label input[type="date"] {
+      color-scheme: dark;
+    }
+
+    .floating-label input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
       .form-card { padding: 24px 20px; }
@@ -588,6 +750,9 @@
       .step-title { font-size: 1.4rem; }
       .progress-steps::before { left: 20px; right: 20px; }
       .step-label { font-size: 0.7rem; }
+      .appointment-fields.show { grid-template-columns: 1fr; }
+      .time-slots { grid-template-columns: repeat(2, 1fr); }
+      .appointment-subtitle { padding-left: 0; margin-top: 8px; }
     }
   </style>
 
@@ -835,6 +1000,51 @@
               <!-- Image Upload Section -->
               <div id="image-upload-container"></div>
 
+              <!-- Appointment Scheduling Section (Optional) -->
+              <div class="appointment-section">
+                <div class="appointment-header">
+                  <div class="appointment-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <span class="appointment-title">Schedule an Appointment</span>
+                </div>
+                <p class="appointment-subtitle">Want us to come to you? Schedule a free in-home estimate</p>
+
+                <div class="appointment-toggle" id="appointmentToggle">
+                  <div class="appointment-toggle-checkbox">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <div class="appointment-toggle-text">
+                    <div class="appointment-toggle-label">Yes, schedule an in-home visit</div>
+                    <div class="appointment-toggle-desc">We'll confirm your appointment within 24 hours</div>
+                  </div>
+                </div>
+
+                <div class="appointment-fields" id="appointmentFields">
+                  <div class="floating-label">
+                    <input type="date" name="appointment_date" id="appointmentDate" placeholder=" " min="">
+                    <label>Preferred Date</label>
+                  </div>
+                  <div>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 10px;">Preferred Time</p>
+                    <div class="time-slots" id="timeSlots">
+                      <div class="time-slot" data-value="morning">Morning<br><small style="opacity:0.6">8am - 12pm</small></div>
+                      <div class="time-slot" data-value="afternoon">Afternoon<br><small style="opacity:0.6">12pm - 4pm</small></div>
+                      <div class="time-slot" data-value="evening">Evening<br><small style="opacity:0.6">4pm - 7pm</small></div>
+                      <div class="time-slot" data-value="flexible">Flexible<br><small style="opacity:0.6">Any time</small></div>
+                    </div>
+                    <input type="hidden" name="appointment_time" id="appointmentTime" value="">
+                  </div>
+                </div>
+              </div>
+
               <div class="form-navigation">
                 <button type="button" class="btn btn-back" onclick="prevStep()">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -957,6 +1167,39 @@
       e.target.value = value;
     });
 
+    // Appointment scheduling toggle
+    const appointmentToggle = document.getElementById('appointmentToggle');
+    const appointmentFields = document.getElementById('appointmentFields');
+    const appointmentDate = document.getElementById('appointmentDate');
+    let appointmentEnabled = false;
+
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    appointmentDate.min = tomorrow.toISOString().split('T')[0];
+
+    appointmentToggle.addEventListener('click', function() {
+      appointmentEnabled = !appointmentEnabled;
+      this.classList.toggle('active', appointmentEnabled);
+      appointmentFields.classList.toggle('show', appointmentEnabled);
+
+      if (!appointmentEnabled) {
+        // Clear selections when disabled
+        appointmentDate.value = '';
+        document.getElementById('appointmentTime').value = '';
+        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+      }
+    });
+
+    // Time slot selection
+    document.querySelectorAll('.time-slot').forEach(slot => {
+      slot.addEventListener('click', function() {
+        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('appointmentTime').value = this.dataset.value;
+      });
+    });
+
     // Initialize image upload component
     let leadImageUpload;
     if (typeof LeadImageUpload !== 'undefined') {
@@ -994,6 +1237,10 @@
 
       submitBtn.innerHTML = 'Sending... <span class="loader"></span>';
 
+      // Get appointment data if enabled
+      const appointmentDateValue = document.getElementById('appointmentDate').value;
+      const appointmentTimeValue = document.getElementById('appointmentTime').value;
+
       const formData = {
         firstName: document.getElementById('firstName').value.trim(),
         lastName: document.getElementById('lastName').value.trim(),
@@ -1007,6 +1254,8 @@
         budget: document.getElementById('budget').value,
         message: document.getElementById('message').value.trim(),
         imageUrls: imageUrls,
+        appointment_date: appointmentDateValue || null,
+        appointment_time: appointmentTimeValue || null,
         source: 'website-estimate-form-v3',
         timestamp: new Date().toISOString()
       };
@@ -1037,6 +1286,8 @@
             project_details: formData.message,
             image_urls: imageUrls,
             contact_method: formData.contactMethod,
+            appointment_date: formData.appointment_date,
+            appointment_time: formData.appointment_time,
             source: 'website-estimate-form'
           })
         });
@@ -1066,6 +1317,8 @@
             message: formData.message,
             image_urls: imageUrls,
             images: imageUrls.map((url, i) => ({ url, order: i })),
+            appointment_date: formData.appointment_date,
+            appointment_time: formData.appointment_time,
             source: formData.source,
             form_name: 'estimate-form',
             page_url: window.location.href,

@@ -16,6 +16,9 @@
   <script src="/js/auth-state.js"></script>
   <script src="/js/state-manager.js"></script>
   <script src="/js/shopify-cart.js"></script>
+  <!-- Shepherd.js Tour Library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@13.0.3/dist/css/shepherd.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/shepherd.js@13.0.3/dist/js/shepherd.min.js"></script>
   <style>
     :root {
       /* Primary brand colors */
@@ -329,218 +332,68 @@
       padding: 2px 5px;
     }
 
-    /* Tutorial Tooltip */
-    .tutorial-tooltip {
-      position: fixed;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid var(--gold-primary);
-      border-radius: 12px;
-      padding: 18px 22px;
-      width: 340px;
-      max-width: calc(100vw - 32px);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(249, 203, 0, 0.2);
-      z-index: 10000;
-      animation: slideInTooltip 0.3s ease-out;
+    /* Shepherd.js Tour Theme Overrides */
+    .shepherd-element {
+      background: #1e293b !important;
+      border: 1px solid var(--gold-primary) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+      max-width: 380px !important;
     }
-
-    @keyframes slideInTooltip {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .shepherd-arrow:before {
+      background: #1e293b !important;
+      border-color: var(--gold-primary) !important;
     }
-
-    .tutorial-tooltip::before {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 0;
+    .shepherd-content { padding: 0 !important; }
+    .shepherd-header {
+      background: transparent !important;
+      padding: 16px 20px 8px !important;
+      border-bottom: none !important;
     }
-
-    /* Arrow pointing LEFT (tooltip is to the right of target) */
-    .tutorial-tooltip.arrow-left::before {
-      left: -10px;
-      top: var(--arrow-top, 24px);
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-right: 10px solid var(--gold-primary);
+    .shepherd-title {
+      color: #fff !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      font-family: 'Inter', sans-serif !important;
     }
-    .tutorial-tooltip.arrow-left::after {
-      content: '';
-      position: absolute;
-      left: -7px;
-      top: calc(var(--arrow-top, 24px) + 2px);
-      border-top: 8px solid transparent;
-      border-bottom: 8px solid transparent;
-      border-right: 8px solid #1e293b;
+    .shepherd-cancel-icon { color: rgba(255,255,255,0.5) !important; }
+    .shepherd-cancel-icon:hover { color: #fff !important; }
+    .shepherd-text {
+      color: rgba(255,255,255,0.75) !important;
+      font-size: 14px !important;
+      line-height: 1.6 !important;
+      padding: 0 20px 16px !important;
+      font-family: 'Inter', sans-serif !important;
     }
-
-    /* Arrow pointing UP (tooltip is below target) */
-    .tutorial-tooltip.arrow-top::before {
-      top: -10px;
-      left: var(--arrow-left, 24px);
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-bottom: 10px solid var(--gold-primary);
+    .shepherd-footer {
+      padding: 12px 20px 16px !important;
+      border-top: 1px solid rgba(255,255,255,0.1) !important;
     }
-    .tutorial-tooltip.arrow-top::after {
-      content: '';
-      position: absolute;
-      top: -7px;
-      left: calc(var(--arrow-left, 24px) + 2px);
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-bottom: 8px solid #1e293b;
+    .shepherd-button {
+      background: transparent !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      color: rgba(255,255,255,0.75) !important;
+      border-radius: 8px !important;
+      padding: 8px 16px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      font-family: 'Inter', sans-serif !important;
+      transition: all 0.2s !important;
     }
-
-    /* Arrow pointing RIGHT (tooltip is to the left of target) */
-    .tutorial-tooltip.arrow-right::before {
-      right: -10px;
-      top: var(--arrow-top, 24px);
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-left: 10px solid var(--gold-primary);
+    .shepherd-button:hover {
+      background: rgba(255,255,255,0.1) !important;
+      color: #fff !important;
     }
-    .tutorial-tooltip.arrow-right::after {
-      content: '';
-      position: absolute;
-      right: -7px;
-      top: calc(var(--arrow-top, 24px) + 2px);
-      border-top: 8px solid transparent;
-      border-bottom: 8px solid transparent;
-      border-left: 8px solid #1e293b;
+    .shepherd-button.shepherd-button-primary {
+      background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%) !important;
+      border: none !important;
+      color: #1a1a2e !important;
     }
-
-    .tutorial-tooltip-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
+    .shepherd-button.shepherd-button-primary:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(249, 203, 0, 0.4) !important;
     }
-
-    .tutorial-tooltip-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--dark-primary);
-    }
-
-    .tutorial-tooltip-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .tutorial-tooltip-step {
-      font-size: 11px;
-      color: var(--gold-primary);
-      font-weight: 600;
-    }
-
-    .tutorial-tooltip-content {
-      color: var(--text-secondary);
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-
-    .tutorial-tooltip-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    .tutorial-btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-    }
-
-    .tutorial-btn-skip {
-      background: transparent;
-      color: var(--text-muted);
-    }
-
-    .tutorial-btn-skip:hover {
-      color: var(--text-primary);
-    }
-
-    .tutorial-btn-next {
-      background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
-      color: var(--dark-primary);
-    }
-
-    .tutorial-btn-next:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(249, 203, 0, 0.3);
-    }
-
-    .tutorial-progress {
-      display: flex;
-      gap: 6px;
-      margin-top: 16px;
-      justify-content: center;
-    }
-
-    .tutorial-progress-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border-subtle);
-      transition: all 0.3s;
-    }
-
-    .tutorial-progress-dot.active {
-      background: var(--gold-primary);
-      transform: scale(1.2);
-    }
-
-    .tutorial-progress-dot.completed {
-      background: #10b981;
-    }
-
-    /* Tutorial Overlay */
-    .tutorial-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      z-index: 9999;
-    }
-
-    .tutorial-highlight {
-      position: relative;
-      z-index: 10001 !important;
-      box-shadow: 0 0 0 4px var(--gold-primary), 0 0 0 8px rgba(249, 203, 0, 0.3), 0 0 30px rgba(249, 203, 0, 0.6) !important;
-      border-radius: 8px;
-      background: var(--dark-surface) !important;
-      animation: highlightPulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes highlightPulse {
-      0%, 100% { box-shadow: 0 0 0 4px var(--gold-primary), 0 0 0 8px rgba(249, 203, 0, 0.3), 0 0 30px rgba(249, 203, 0, 0.6); }
-      50% { box-shadow: 0 0 0 4px var(--gold-primary), 0 0 0 12px rgba(249, 203, 0, 0.2), 0 0 50px rgba(249, 203, 0, 0.8); }
-    }
-
-    /* Tutorial connector animation */
-    .tutorial-connector-svg path {
-      animation: dashFlow 1s linear infinite;
-    }
-    @keyframes dashFlow {
-      to { stroke-dashoffset: -10; }
-    }
-    .tutorial-connector-svg circle {
-      animation: dotPulse 1s ease-in-out infinite;
-    }
-    @keyframes dotPulse {
-      0%, 100% { r: 5; opacity: 1; }
-      50% { r: 7; opacity: 0.8; }
-    }
+    .shepherd-modal-overlay-container { fill: rgba(0, 0, 0, 0.75) !important; }
 
     /* Enhanced Navigation Section Styles */
     .nav-section:first-child {
@@ -18466,8 +18319,9 @@
       // Update badge visibility (hide zeros)
       updateBadgeVisibility();
 
-      // Add help button to header
+      // Add help button to header and initialize tutorials
       addHelpButton();
+      initShepherdTours();
 
       // Mark auth as ready BEFORE handling hash navigation
       setAuthReady();
@@ -18502,332 +18356,313 @@
       }, 1500);
     }
 
-    // ==================== COMPREHENSIVE TUTORIAL SYSTEM ====================
 
-    // All available tutorial tours
-    const TUTORIAL_TOURS = {
-      // Quick tour of new features (default for first-time users)
-      quickStart: {
-        name: 'Quick Start',
-        description: 'A quick overview of key features',
-        steps: [
-          {
-            target: '.dashboard-header, #page-dashboard h1',
-            title: 'Welcome to Your Dashboard!',
-            content: 'This is your command center. See your stats, upcoming appointments, and items needing attention all in one place.',
-            icon: '🏠',
-            position: 'bottom'
-          },
-          {
-            target: 'a[data-page="leads"]',
-            title: 'Leads - Your Starting Point',
-            content: 'Every customer journey starts here. Capture leads from your website, phone calls, or add them manually. Track their status from first contact to closed deal.',
-            icon: '📋',
-            position: 'right'
-          },
-          {
-            target: 'a[data-page="customers"]',
-            title: 'Customer Management',
-            content: 'Once a lead converts, they become a customer. View all their info, past orders, estimates, and invoices in one place.',
-            icon: '👥',
-            position: 'right'
-          },
-          {
-            target: 'a[data-page="estimates"]',
-            title: 'Professional Estimates',
-            content: 'Create detailed estimates with line items, terms, and send them directly to customers for approval. Approved estimates convert to invoices automatically.',
-            icon: '📝',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav .nav-section-title',
-            title: 'Operations Hub (NEW!)',
-            content: 'Your complete project management system. Track projects through every stage: Lead → Estimate → Approved → Scheduled → Installing → Complete.',
-            icon: '⚡',
-            position: 'right'
-          },
-          {
-            target: '.notification-bell-wrapper',
-            title: 'Stay Notified',
-            content: 'Never miss an update! Get notifications for new leads, estimate approvals, upcoming appointments, and team activity.',
-            icon: '🔔',
-            position: 'left'
-          }
-        ]
-      },
+    // ==================== SHEPHERD.JS TUTORIAL SYSTEM ====================
 
-      // Complete workflow tutorial
-      completeWorkflow: {
-        name: 'Complete Workflow',
-        description: 'Learn the full lead-to-completion process',
-        steps: [
-          {
-            target: 'a[data-page="leads"]',
-            title: 'Step 1: Capture Leads',
-            content: 'Leads come from your website contact form, quote requests, or you can add them manually. Each lead has contact info, project details, and notes.',
-            icon: '1️⃣',
-            position: 'right',
-            tip: 'Pro tip: Respond to leads within 5 minutes for 10x better conversion!'
-          },
-          {
-            target: 'a[data-page="leads"]',
-            title: 'Step 2: Qualify & Schedule',
-            content: 'Contact the lead, understand their needs, and schedule an appointment. Use the "Schedule Appointment" button to add it to your calendar.',
-            icon: '2️⃣',
-            position: 'right',
-            tip: 'The appointment automatically shows on your calendar and sends reminders.'
-          },
-          {
-            target: 'a[data-page="customers"]',
-            title: 'Step 3: Convert to Customer',
-            content: 'When a lead is qualified, convert them to a customer. This creates a permanent customer record you can reference for future projects.',
-            icon: '3️⃣',
-            position: 'right',
-            tip: 'Converting a lead preserves all their info and links their history.'
-          },
-          {
-            target: 'a[data-page="estimates"]',
-            title: 'Step 4: Create Estimate',
-            content: 'Build a professional estimate with itemized costs, materials, labor, and terms. Send it via email for customer approval.',
-            icon: '4️⃣',
-            position: 'right',
-            tip: 'Use estimate templates to save time on common job types.'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Step 5: Create Project',
-            content: 'Once approved, create a project. You can create it from a lead, customer, or manually. The project tracks the entire job lifecycle.',
-            icon: '5️⃣',
-            position: 'right',
-            tip: 'Projects auto-link to estimates, invoices, and calendar events.'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Step 6: Workflow Stages',
-            content: 'Advance through stages: Lead → Appointment → Estimate → Approved → Deposit → Materials → Scheduled → Installing → Complete. Each stage can auto-create calendar events!',
-            icon: '6️⃣',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="collaborators"]',
-            title: 'Step 7: Assign Team',
-            content: 'Add contractors, fabricators, and installers to your network. Then quickly assign them to projects with specific roles.',
-            icon: '7️⃣',
-            position: 'right',
-            tip: 'Build your trusted team once, assign them to projects with one click.'
-          },
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Step 8: Schedule & Execute',
-            content: 'Schedule measurements, installations, and follow-ups. Add multiple participants to events - they all get notified!',
-            icon: '8️⃣',
-            position: 'right'
-          },
-          {
-            target: 'a[data-page="invoices"]',
-            title: 'Step 9: Invoice & Get Paid',
-            content: 'Convert estimates to invoices, collect deposits, and track payments. Everything syncs with Stripe for easy payment processing.',
-            icon: '9️⃣',
-            position: 'right',
-            tip: 'Invoices can be sent via email with a payment link.'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Step 10: Complete & Archive',
-            content: 'Mark the project complete when done. All history, files, and communications are preserved for future reference.',
-            icon: '🏆',
-            position: 'right',
-            tip: 'Completed projects help you track revenue and team performance.'
-          }
-        ]
-      },
+    // Tutorial tour configurations
+    var shepherdTours = {};
 
-      // Project management deep dive
-      projectManagement: {
-        name: 'Project Management',
-        description: 'Master the project management features',
-        steps: [
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Projects Overview',
-            content: 'Projects are the heart of your operations. Each project tracks a job from start to finish with all related data in one place.',
-            icon: '📊',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Creating Projects',
-            content: 'Click "New Project" to create one. Choose to populate from an existing Lead, Customer, or enter details manually.',
-            icon: '➕',
-            position: 'right',
-            tip: 'Creating from a Lead auto-fills customer info and marks the lead as converted!'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Kanban Board View',
-            content: 'Switch between List and Board views. The Kanban board lets you drag projects between status columns for quick updates.',
-            icon: '📋',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Workflow Status Bar',
-            content: 'Each project shows a workflow progress bar with 9 stages. Click the next stage to advance - it can auto-create calendar events!',
-            icon: '📈',
-            position: 'right',
-            tip: 'Workflow stages: Lead → Appointment → Estimate → Approved → Deposit → Materials → Scheduled → Installing → Complete'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Team Assignment',
-            content: 'In project details, click "Assign" to add team members from your network. Assign specific roles like Installer, Fabricator, or Measurer.',
-            icon: '👷',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="projects"]',
-            title: 'Linked Data',
-            content: 'Projects link to estimates, invoices, and calendar events. Everything is connected for full traceability.',
-            icon: '🔗',
-            position: 'right'
-          }
-        ]
-      },
-
-      // Calendar & scheduling
-      calendarScheduling: {
-        name: 'Calendar & Scheduling',
-        description: 'Learn to manage your schedule',
-        steps: [
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Your Calendar',
-            content: 'See all appointments, measurements, installations, and meetings in one visual calendar.',
-            icon: '📅',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Event Types',
-            content: 'Events are color-coded by type: Appointments (blue), Measurements (purple), Installations (green), Follow-ups (orange), and more.',
-            icon: '🎨',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Creating Events',
-            content: 'Click any date to create an event. Set the title, type, time, location, and link it to a project.',
-            icon: '➕',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Group Events (NEW!)',
-            content: 'Add multiple participants to events! Include the customer, your installers, fabricators - everyone gets notified.',
-            icon: '👥',
-            position: 'right',
-            tip: 'Click "My Network" to add from your collaborator list, or "Project Team" to add all assigned contractors.'
-          },
-          {
-            target: '#operations-nav a[data-page="calendar"]',
-            title: 'Auto-Created Events',
-            content: 'When you advance a project to "Scheduled" or "Installing" stage, calendar events are automatically created!',
-            icon: '⚡',
-            position: 'right'
-          }
-        ]
-      },
-
-      // Team collaboration
-      teamCollaboration: {
-        name: 'Team & Collaboration',
-        description: 'Build and manage your team',
-        steps: [
-          {
-            target: '#operations-nav a[data-page="collaborators"]',
-            title: 'Your Network',
-            content: 'Build a network of trusted contractors, fabricators, installers, and designers you work with regularly.',
-            icon: '🤝',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="collaborators"]',
-            title: 'Adding Collaborators',
-            content: 'Click "Add to Network" to add someone. Enter their name, email, phone, role, and company.',
-            icon: '➕',
-            position: 'right',
-            tip: 'You can invite them to create their own account for better collaboration.'
-          },
-          {
-            target: '#operations-nav a[data-page="collaborators"]',
-            title: 'Assigning to Projects',
-            content: 'Once in your network, you can quickly assign collaborators to projects. They appear in the project\'s Team section.',
-            icon: '📌',
-            position: 'right'
-          },
-          {
-            target: '#operations-nav a[data-page="collaborators"]',
-            title: 'Adding to Events',
-            content: 'When creating calendar events, click "My Network" to add collaborators as participants. They\'ll be notified of the event.',
-            icon: '📅',
-            position: 'right'
-          }
-        ]
+    function initShepherdTours() {
+      if (typeof Shepherd === 'undefined') {
+        console.warn('[Tutorial] Shepherd.js not loaded');
+        return;
       }
-    };
 
-    // Current tutorial state
-    let currentTourKey = 'quickStart';
-    let currentTutorialStep = 0;
-    let tutorialOverlay = null;
+      // Quick Start Tour
+      shepherdTours.quickStart = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          cancelIcon: { enabled: true },
+          scrollTo: { behavior: 'smooth', block: 'center' }
+        }
+      });
 
-    // Get current tour steps
-    function getTutorialSteps() {
-      return TUTORIAL_TOURS[currentTourKey]?.steps || [];
+      shepherdTours.quickStart.addSteps([
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Dashboard',
+          text: 'This is your command center. See your stats, upcoming appointments, and items needing attention all in one place.',
+          attachTo: { element: '#page-dashboard', on: 'bottom' },
+          buttons: [
+            { text: 'Skip', action: shepherdTours.quickStart.cancel, secondary: true },
+            { text: 'Next', action: shepherdTours.quickStart.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'leads',
+          title: 'Leads - Your Starting Point',
+          text: 'Every customer journey starts here. Capture leads from your website, phone calls, or add them manually.',
+          attachTo: { element: 'a[data-page="leads"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.quickStart.back, secondary: true },
+            { text: 'Next', action: shepherdTours.quickStart.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'customers',
+          title: 'Customer Management',
+          text: 'Once a lead converts, they become a customer. View their info, orders, estimates, and invoices in one place.',
+          attachTo: { element: 'a[data-page="customers"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.quickStart.back, secondary: true },
+            { text: 'Next', action: shepherdTours.quickStart.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'estimates',
+          title: 'Professional Estimates',
+          text: 'Create detailed estimates with line items and terms. Send them to customers for approval.',
+          attachTo: { element: 'a[data-page="estimates"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.quickStart.back, secondary: true },
+            { text: 'Next', action: shepherdTours.quickStart.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'operations',
+          title: 'Operations Hub',
+          text: 'Your complete project management system. Track projects through every stage from lead to completion.',
+          attachTo: { element: '#operations-nav', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.quickStart.back, secondary: true },
+            { text: 'Next', action: shepherdTours.quickStart.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'notifications',
+          title: 'Stay Notified',
+          text: 'Get notifications for new leads, estimate approvals, appointments, and team activity.',
+          attachTo: { element: '.notification-bell-wrapper', on: 'left' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.quickStart.back, secondary: true },
+            { text: 'Finish', action: shepherdTours.quickStart.complete, classes: 'shepherd-button-primary' }
+          ]
+        }
+      ]);
+
+      shepherdTours.quickStart.on('complete', function() {
+        localStorage.setItem('sg_tutorial_seen', 'true');
+        showToast('Tutorial complete! Click the help button anytime to learn more.');
+      });
+
+      // Complete Workflow Tour
+      shepherdTours.completeWorkflow = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          cancelIcon: { enabled: true },
+          scrollTo: { behavior: 'smooth', block: 'center' }
+        }
+      });
+
+      shepherdTours.completeWorkflow.addSteps([
+        {
+          id: 'step1',
+          title: 'Step 1: Capture Leads',
+          text: 'Leads come from your website, quote requests, or manual entry. Each lead has contact info and project details.<br><br><strong>Tip:</strong> Respond within 5 minutes for better conversion.',
+          attachTo: { element: 'a[data-page="leads"]', on: 'right' },
+          buttons: [
+            { text: 'Skip', action: shepherdTours.completeWorkflow.cancel, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step2',
+          title: 'Step 2: Schedule Appointment',
+          text: 'Contact the lead and schedule an appointment using the calendar. Appointments sync and send reminders automatically.',
+          attachTo: { element: 'a[data-page="calendar"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step3',
+          title: 'Step 3: Convert to Customer',
+          text: 'When qualified, convert the lead to a customer. This creates a permanent record preserving all their history.',
+          attachTo: { element: 'a[data-page="customers"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step4',
+          title: 'Step 4: Create Estimate',
+          text: 'Build a professional estimate with itemized costs, materials, and labor. Send via email for customer approval.',
+          attachTo: { element: 'a[data-page="estimates"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step5',
+          title: 'Step 5: Create Project',
+          text: 'Once approved, create a project to track the entire job lifecycle. Projects link to estimates, invoices, and events.',
+          attachTo: { element: 'a[data-page="projects"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step6',
+          title: 'Step 6: Assign Team',
+          text: 'Add contractors, fabricators, and installers from your network. Assign them specific roles on the project.',
+          attachTo: { element: 'a[data-page="collaborators"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step7',
+          title: 'Step 7: Schedule Installation',
+          text: 'Schedule the installation on your calendar. Add multiple participants - they all get notified.',
+          attachTo: { element: 'a[data-page="calendar"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Next', action: shepherdTours.completeWorkflow.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'step8',
+          title: 'Step 8: Invoice & Get Paid',
+          text: 'Convert estimates to invoices, collect deposits, and track payments. Integrates with Stripe for online payments.',
+          attachTo: { element: 'a[data-page="invoices"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.completeWorkflow.back, secondary: true },
+            { text: 'Finish', action: shepherdTours.completeWorkflow.complete, classes: 'shepherd-button-primary' }
+          ]
+        }
+      ]);
+
+      shepherdTours.completeWorkflow.on('complete', function() {
+        showToast('Workflow tutorial complete!');
+      });
+
+      // Project Management Tour
+      shepherdTours.projectManagement = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          cancelIcon: { enabled: true },
+          scrollTo: { behavior: 'smooth', block: 'center' }
+        }
+      });
+
+      shepherdTours.projectManagement.addSteps([
+        {
+          id: 'overview',
+          title: 'Projects Overview',
+          text: 'Projects are the heart of operations. Each project tracks a job from start to finish with all related data.',
+          attachTo: { element: 'a[data-page="projects"]', on: 'right' },
+          buttons: [
+            { text: 'Skip', action: shepherdTours.projectManagement.cancel, secondary: true },
+            { text: 'Next', action: shepherdTours.projectManagement.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'creation',
+          title: 'Creating Projects',
+          text: 'Click "New Project" to create one. Populate from an existing Lead, Customer, or enter details manually.',
+          attachTo: { element: 'a[data-page="projects"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.projectManagement.back, secondary: true },
+            { text: 'Next', action: shepherdTours.projectManagement.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'workflow',
+          title: 'Workflow Status',
+          text: 'Each project shows a workflow progress bar with 9 stages. Click to advance stages and auto-create calendar events.',
+          attachTo: { element: 'a[data-page="projects"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.projectManagement.back, secondary: true },
+            { text: 'Next', action: shepherdTours.projectManagement.next, classes: 'shepherd-button-primary' }
+          ]
+        },
+        {
+          id: 'team',
+          title: 'Team Assignment',
+          text: 'In project details, click "Assign" to add team members. Assign roles like Installer, Fabricator, or Measurer.',
+          attachTo: { element: 'a[data-page="collaborators"]', on: 'right' },
+          buttons: [
+            { text: 'Back', action: shepherdTours.projectManagement.back, secondary: true },
+            { text: 'Finish', action: shepherdTours.projectManagement.complete, classes: 'shepherd-button-primary' }
+          ]
+        }
+      ]);
+
+      shepherdTours.projectManagement.on('complete', function() {
+        showToast('Project management tutorial complete!');
+      });
     }
 
-    // Backward compatibility
-    const tutorialSteps = TUTORIAL_TOURS.quickStart.steps;
+    // Start a specific tour
+    function startTour(tourName) {
+      if (!shepherdTours[tourName]) {
+        console.warn('[Tutorial] Tour not found:', tourName);
+        return;
+      }
 
-    function showFeatureTutorial(tourKey = 'quickStart') {
-      currentTourKey = tourKey;
-      currentTutorialStep = 0;
-      showTutorialStep(currentTutorialStep);
+      // Cancel any active tour
+      Object.values(shepherdTours).forEach(function(tour) {
+        if (tour.isActive()) tour.cancel();
+      });
+
+      shepherdTours[tourName].start();
     }
 
-    // Show tour selection modal
+    // Show tour selection menu
     function showTutorialMenu() {
-      const existingMenu = document.getElementById('tutorial-menu-modal');
-      if (existingMenu) existingMenu.remove();
-
-      const modal = document.createElement('div');
-      modal.id = 'tutorial-menu-modal';
+      var modal = document.createElement('div');
       modal.className = 'modal-overlay active';
+      modal.id = 'tutorial-menu-modal';
       modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
-      modal.innerHTML = '<div class="modal-content" style="max-width: 500px;">' +
+      modal.innerHTML = '<div class="modal-content" style="max-width: 480px;">' +
         '<div class="modal-header">' +
-          '<h2 class="modal-title">📚 Learn the App</h2>' +
-          '<button class="modal-close" onclick="document.getElementById(\'tutorial-menu-modal\').remove()">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
-          '</button>' +
+          '<h2 class="modal-title">Learn the App</h2>' +
+          '<button class="modal-close" onclick="document.getElementById(\'tutorial-menu-modal\').remove()">&times;</button>' +
         '</div>' +
-        '<div class="modal-body" style="padding: 16px;">' +
-          '<p style="color: var(--text-secondary); margin-bottom: 16px;">Choose a tutorial to learn different parts of the app:</p>' +
-          Object.entries(TUTORIAL_TOURS).map(function(entry) {
-            var key = entry[0];
-            var tour = entry[1];
-            return '<div onclick="document.getElementById(\'tutorial-menu-modal\').remove(); showFeatureTutorial(\'' + key + '\')" style="display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor=\'var(--gold-primary)\'" onmouseout="this.style.borderColor=\'var(--border-color)\'">' +
-              '<div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;">' + (key === 'quickStart' ? '🚀' : key === 'completeWorkflow' ? '🔄' : key === 'projectManagement' ? '📊' : key === 'calendarScheduling' ? '📅' : '👥') + '</div>' +
-              '<div style="flex: 1;">' +
-                '<div style="font-weight: 600; color: var(--text-primary);">' + tour.name + '</div>' +
-                '<div style="font-size: 12px; color: var(--text-secondary);">' + tour.description + ' (' + tour.steps.length + ' steps)</div>' +
-              '</div>' +
-              '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
-            '</div>';
-          }).join('') +
+        '<div class="modal-body" style="padding: 20px;">' +
+          '<p style="color: var(--text-secondary); margin-bottom: 20px;">Choose a tutorial to learn different parts of the app:</p>' +
+
+          '<div onclick="document.getElementById(\'tutorial-menu-modal\').remove(); startTour(\'quickStart\')" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor=\'var(--gold-primary)\'" onmouseout="this.style.borderColor=\'var(--border-subtle)\'">' +
+            '<div style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark)); border-radius: 10px; display: flex; align-items: center; justify-content: center;">' +
+              '<svg width="22" height="22" fill="none" stroke="#1a1a2e" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' +
+            '</div>' +
+            '<div style="flex: 1;">' +
+              '<div style="font-weight: 600; color: var(--text-primary);">Quick Start</div>' +
+              '<div style="font-size: 13px; color: var(--text-secondary);">Overview of key features (6 steps)</div>' +
+            '</div>' +
+            '<svg width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
+          '</div>' +
+
+          '<div onclick="document.getElementById(\'tutorial-menu-modal\').remove(); startTour(\'completeWorkflow\')" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor=\'var(--gold-primary)\'" onmouseout="this.style.borderColor=\'var(--border-subtle)\'">' +
+            '<div style="width: 44px; height: 44px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 10px; display: flex; align-items: center; justify-content: center;">' +
+              '<svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>' +
+            '</div>' +
+            '<div style="flex: 1;">' +
+              '<div style="font-weight: 600; color: var(--text-primary);">Complete Workflow</div>' +
+              '<div style="font-size: 13px; color: var(--text-secondary);">Full lead-to-completion process (8 steps)</div>' +
+            '</div>' +
+            '<svg width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
+          '</div>' +
+
+          '<div onclick="document.getElementById(\'tutorial-menu-modal\').remove(); startTour(\'projectManagement\')" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor=\'var(--gold-primary)\'" onmouseout="this.style.borderColor=\'var(--border-subtle)\'">' +
+            '<div style="width: 44px; height: 44px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 10px; display: flex; align-items: center; justify-content: center;">' +
+              '<svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>' +
+            '</div>' +
+            '<div style="flex: 1;">' +
+              '<div style="font-weight: 600; color: var(--text-primary);">Project Management</div>' +
+              '<div style="font-size: 13px; color: var(--text-secondary);">Deep dive on project features (4 steps)</div>' +
+            '</div>' +
+            '<svg width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
+          '</div>' +
+
         '</div>' +
-        '<div class="modal-footer" style="padding: 12px 16px; border-top: 1px solid var(--border-color);">' +
+        '<div class="modal-footer">' +
           '<button class="btn-modern ghost" onclick="document.getElementById(\'tutorial-menu-modal\').remove()">Close</button>' +
         '</div>' +
       '</div>';
@@ -18835,391 +18670,37 @@
       document.body.appendChild(modal);
     }
 
-    // Expose tutorial menu globally
-    window.showTutorialMenu = showTutorialMenu;
-
-    function showTutorialStep(stepIndex) {
-      // Remove existing tooltip, overlay, pointer line, connector SVG
-      const existingTooltip = document.querySelector('.tutorial-tooltip');
-      const existingOverlay = document.querySelector('.tutorial-overlay');
-      const existingHighlight = document.querySelector('.tutorial-highlight');
-      const existingPointer = document.querySelector('.tutorial-pointer-line');
-      const existingConnector = document.querySelector('.tutorial-connector-svg');
-
-      if (existingTooltip) existingTooltip.remove();
-      if (existingOverlay) existingOverlay.remove();
-      if (existingHighlight) existingHighlight.classList.remove('tutorial-highlight');
-      if (existingPointer) existingPointer.remove();
-      if (existingConnector) existingConnector.remove();
-
-      const steps = getTutorialSteps();
-
-      if (stepIndex >= steps.length) {
-        // Tutorial complete
-        localStorage.setItem('sg_tutorial_seen_v2', 'true');
-        showTutorialCompleteModal();
-        return;
-      }
-
-      const step = steps[stepIndex];
-      const target = document.querySelector(step.target);
-
-      if (!target) {
-        // Skip if target not found
-        console.log('Tutorial: Target not found, skipping step', stepIndex + 1);
-        showTutorialStep(stepIndex + 1);
-        return;
-      }
-
-      // Check if target is visible (not hidden)
-      const targetStyle = window.getComputedStyle(target);
-      const parentEl = target.parentElement;
-      const grandparentEl = parentEl?.parentElement;
-      const isHidden = targetStyle.display === 'none' || targetStyle.visibility === 'hidden' ||
-                       (parentEl && window.getComputedStyle(parentEl).display === 'none') ||
-                       (grandparentEl && window.getComputedStyle(grandparentEl).display === 'none');
-
-      if (isHidden) {
-        console.log('Tutorial: Target is hidden, skipping step', stepIndex + 1);
-        showTutorialStep(stepIndex + 1);
-        return;
-      }
-
-      // First scroll target into view, then position tooltip
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      // Wait for scroll to complete before showing tooltip
-      setTimeout(function() {
-        positionTutorialTooltip(step, target, stepIndex);
-      }, 400);
-    }
-
-    function positionTutorialTooltip(step, target, stepIndex) {
-      // Create overlay
-      const overlay = document.createElement('div');
-      overlay.className = 'tutorial-overlay';
-      overlay.onclick = function() { skipTutorial(); };
-      document.body.appendChild(overlay);
-
-      // Highlight target
-      target.classList.add('tutorial-highlight');
-
-      // Get position using getBoundingClientRect
-      const rect = target.getBoundingClientRect();
-
-      // Get sidebar width
-      const sidebar = document.querySelector('.sidebar');
-      const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : { right: 200 };
-
-      console.log('Tutorial step', stepIndex + 1, '- Target:', step.target);
-      console.log('Target rect:', { top: rect.top, left: rect.left, right: rect.right, bottom: rect.bottom });
-
-      // Create tooltip
-      const tooltip = document.createElement('div');
-
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const tooltipWidth = 300;
-      const tooltipHeight = 220; // Approximate
-      const gap = 16; // Gap between target and tooltip
-
-      var tooltipLeft, tooltipTop, arrowClass, arrowOffset;
-      var targetCenterY = rect.top + (rect.height / 2);
-      var targetCenterX = rect.left + (rect.width / 2);
-
-      if (step.position === 'right') {
-        // Tooltip to the RIGHT of target (arrow points left)
-        tooltipLeft = sidebarRect.right + gap;
-
-        // Vertically center tooltip on target, but keep within viewport
-        tooltipTop = targetCenterY - (tooltipHeight / 2);
-        tooltipTop = Math.max(20, Math.min(tooltipTop, viewportHeight - tooltipHeight - 20));
-
-        arrowClass = 'arrow-left';
-
-        // Calculate where arrow should be (relative to tooltip top)
-        arrowOffset = targetCenterY - tooltipTop - 10; // -10 to center the arrow point
-        arrowOffset = Math.max(20, Math.min(arrowOffset, tooltipHeight - 40));
-
-      } else if (step.position === 'left') {
-        // Tooltip to the LEFT of target (arrow points right)
-        tooltipLeft = rect.left - tooltipWidth - gap;
-
-        // If not enough space on left, put below
-        if (tooltipLeft < 20) {
-          tooltipLeft = Math.max(20, targetCenterX - tooltipWidth / 2);
-          tooltipTop = rect.bottom + gap;
-          arrowClass = 'arrow-top';
-
-          // Arrow horizontal position
-          var arrowLeftOffset = targetCenterX - tooltipLeft - 10;
-          arrowLeftOffset = Math.max(20, Math.min(arrowLeftOffset, tooltipWidth - 40));
-          tooltip.style.setProperty('--arrow-left', arrowLeftOffset + 'px');
-        } else {
-          // Vertically center on target
-          tooltipTop = targetCenterY - (tooltipHeight / 2);
-          tooltipTop = Math.max(20, Math.min(tooltipTop, viewportHeight - tooltipHeight - 20));
-
-          arrowClass = 'arrow-right';
-          arrowOffset = targetCenterY - tooltipTop - 10;
-          arrowOffset = Math.max(20, Math.min(arrowOffset, tooltipHeight - 40));
-        }
-
-      } else {
-        // Position: bottom (tooltip below target)
-        tooltipLeft = Math.max(20, targetCenterX - tooltipWidth / 2);
-        tooltipTop = rect.bottom + gap;
-        arrowClass = 'arrow-top';
-
-        // Keep tooltip on screen
-        if (tooltipLeft + tooltipWidth > viewportWidth - 20) {
-          tooltipLeft = viewportWidth - tooltipWidth - 20;
-        }
-
-        var arrowLeftOffset = targetCenterX - tooltipLeft - 10;
-        arrowLeftOffset = Math.max(20, Math.min(arrowLeftOffset, tooltipWidth - 40));
-        tooltip.style.setProperty('--arrow-left', arrowLeftOffset + 'px');
-      }
-
-      tooltip.style.cssText = 'position: fixed; left: ' + tooltipLeft + 'px; top: ' + tooltipTop + 'px; z-index: 10000;';
-      tooltip.className = 'tutorial-tooltip ' + arrowClass;
-
-      // Set arrow vertical position for left/right arrows
-      if (arrowClass === 'arrow-left' || arrowClass === 'arrow-right') {
-        tooltip.style.setProperty('--arrow-top', arrowOffset + 'px');
-      }
-
-      // Build tooltip content
-      var steps = getTutorialSteps();
-      var currentTour = TUTORIAL_TOURS[currentTourKey];
-      var tourName = currentTour ? currentTour.name : 'Tutorial';
-
-      tooltip.innerHTML = '<div class="tutorial-tooltip-header">' +
-          '<div class="tutorial-tooltip-icon" style="font-size: 20px;">' + step.icon + '</div>' +
-          '<div>' +
-            '<div class="tutorial-tooltip-step">' + tourName + ' • Step ' + (stepIndex + 1) + ' of ' + steps.length + '</div>' +
-            '<div class="tutorial-tooltip-title">' + step.title + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="tutorial-tooltip-content">' + step.content + '</div>' +
-        (step.tip ? '<div style="background: rgba(249, 203, 0, 0.1); border-left: 3px solid var(--gold-primary); padding: 8px 12px; margin: 12px 0; border-radius: 0 6px 6px 0;"><span style="font-weight: 600; color: var(--gold-primary);">💡 Tip:</span> <span style="color: var(--text-secondary); font-size: 13px;">' + step.tip + '</span></div>' : '') +
-        '<div class="tutorial-tooltip-actions">' +
-          (stepIndex > 0 ? '<button class="tutorial-btn tutorial-btn-skip" onclick="prevTutorialStep()" style="margin-right: auto;">← Back</button>' : '<button class="tutorial-btn tutorial-btn-skip" onclick="skipTutorial()">Skip Tour</button>') +
-          '<button class="tutorial-btn tutorial-btn-next" onclick="nextTutorialStep()">' + (stepIndex === steps.length - 1 ? '✓ Finish' : 'Next →') + '</button>' +
-        '</div>' +
-        '<div class="tutorial-progress">' +
-          steps.map(function(_, i) { return '<div class="tutorial-progress-dot ' + (i < stepIndex ? 'completed' : '') + ' ' + (i === stepIndex ? 'active' : '') + '"></div>'; }).join('') +
-        '</div>';
-
-      document.body.appendChild(tooltip);
-
-      // Create connector line from target to tooltip
-      createConnectorLine(rect, tooltipLeft, tooltipTop, tooltipWidth, arrowClass, arrowOffset, targetCenterY);
-    }
-
-    function createConnectorLine(targetRect, tooltipLeft, tooltipTop, tooltipWidth, arrowClass, arrowOffset, targetCenterY) {
-      // Remove existing
-      var existing = document.querySelector('.tutorial-pointer-line');
-      if (existing) existing.remove();
-      var existingSvg = document.querySelector('.tutorial-connector-svg');
-      if (existingSvg) existingSvg.remove();
-
-      // Create SVG for smooth connector
-      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('class', 'tutorial-connector-svg');
-      svg.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10001;';
-
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', '#F9CB00');
-      path.setAttribute('stroke-width', '2');
-      path.setAttribute('stroke-dasharray', '6,4');
-
-      var startX, startY, endX, endY;
-      var targetCenterX = targetRect.left + targetRect.width / 2;
-      var targetRightX = targetRect.right;
-      var targetLeftX = targetRect.left;
-
-      if (arrowClass === 'arrow-left') {
-        // Line from target right edge to tooltip left edge
-        startX = targetRightX + 4;
-        startY = targetCenterY;
-        endX = tooltipLeft - 2;
-        endY = tooltipTop + arrowOffset + 10; // Point to arrow center
-
-      } else if (arrowClass === 'arrow-right') {
-        // Line from tooltip right edge to target left edge
-        startX = tooltipLeft + tooltipWidth + 2;
-        startY = tooltipTop + arrowOffset + 10;
-        endX = targetLeftX - 4;
-        endY = targetCenterY;
-
-      } else if (arrowClass === 'arrow-top') {
-        // Vertical line from target bottom to tooltip top
-        startX = targetCenterX;
-        startY = targetRect.bottom + 4;
-        endX = targetCenterX;
-        endY = tooltipTop - 2;
-      }
-
-      // Create curved path
-      var midX = (startX + endX) / 2;
-      var pathD = 'M ' + startX + ' ' + startY + ' Q ' + midX + ' ' + startY + ' ' + midX + ' ' + ((startY + endY) / 2) + ' T ' + endX + ' ' + endY;
-
-      // For horizontal lines, use simpler path
-      if (Math.abs(startY - endY) < 30) {
-        pathD = 'M ' + startX + ' ' + startY + ' L ' + endX + ' ' + endY;
-      }
-
-      path.setAttribute('d', pathD);
-
-      // Add glow effect
-      var glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      glow.setAttribute('fill', 'none');
-      glow.setAttribute('stroke', '#F9CB00');
-      glow.setAttribute('stroke-width', '6');
-      glow.setAttribute('stroke-opacity', '0.3');
-      glow.setAttribute('d', pathD);
-
-      // Add dot at target end
-      var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      dot.setAttribute('cx', startX);
-      dot.setAttribute('cy', startY);
-      dot.setAttribute('r', '5');
-      dot.setAttribute('fill', '#F9CB00');
-
-      svg.appendChild(glow);
-      svg.appendChild(path);
-      svg.appendChild(dot);
-      document.body.appendChild(svg);
-    }
-
-    function nextTutorialStep() {
-      currentTutorialStep++;
-      showTutorialStep(currentTutorialStep);
-    }
-
-    function prevTutorialStep() {
-      if (currentTutorialStep > 0) {
-        currentTutorialStep--;
-        showTutorialStep(currentTutorialStep);
-      }
-    }
-
-    function showTutorialCompleteModal() {
-      const currentTour = TUTORIAL_TOURS[currentTourKey];
-      const tourName = currentTour ? currentTour.name : 'Tutorial';
-
-      // Find other tours not yet viewed
-      const viewedTours = JSON.parse(localStorage.getItem('sg_viewed_tours') || '[]');
-      viewedTours.push(currentTourKey);
-      localStorage.setItem('sg_viewed_tours', JSON.stringify([...new Set(viewedTours)]));
-
-      const otherTours = Object.entries(TUTORIAL_TOURS).filter(function(entry) {
-        return !viewedTours.includes(entry[0]);
-      });
-
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay active';
-      modal.id = 'tutorial-complete-modal';
-      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-
-      modal.innerHTML = '<div class="modal-content" style="max-width: 420px; text-align: center;">' +
-        '<div style="padding: 30px 20px;">' +
-          '<div style="width: 80px; height: 80px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 40px;">🎉</div>' +
-          '<h2 style="color: var(--text-primary); margin-bottom: 8px;">' + tourName + ' Complete!</h2>' +
-          '<p style="color: var(--text-secondary); margin-bottom: 24px;">Great job! You\'ve completed this tutorial.</p>' +
-          (otherTours.length > 0 ?
-            '<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;">' +
-              '<div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Continue Learning</div>' +
-              otherTours.slice(0, 2).map(function(entry) {
-                return '<div onclick="document.getElementById(\'tutorial-complete-modal\').remove(); showFeatureTutorial(\'' + entry[0] + '\')" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--dark-tertiary); border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onmouseover="this.style.background=\'var(--dark-surface)\'" onmouseout="this.style.background=\'var(--dark-tertiary)\'">' +
-                  '<span style="font-size: 16px;">' + (entry[0] === 'completeWorkflow' ? '🔄' : entry[0] === 'projectManagement' ? '📊' : entry[0] === 'calendarScheduling' ? '📅' : '👥') + '</span>' +
-                  '<span style="color: var(--text-primary); font-size: 14px;">' + entry[1].name + '</span>' +
-                  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" stroke-width="2" style="margin-left: auto;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
-                '</div>';
-              }).join('') +
-            '</div>'
-          : '') +
-          '<div style="display: flex; gap: 10px; justify-content: center;">' +
-            '<button class="btn-modern ghost" onclick="document.getElementById(\'tutorial-complete-modal\').remove()">Close</button>' +
-            '<button class="btn-modern primary" onclick="document.getElementById(\'tutorial-complete-modal\').remove(); showTutorialMenu()">More Tutorials</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-      document.body.appendChild(modal);
-    }
-
-    function skipTutorial() {
-      const tooltip = document.querySelector('.tutorial-tooltip');
-      const overlay = document.querySelector('.tutorial-overlay');
-      const highlight = document.querySelector('.tutorial-highlight');
-      const pointer = document.querySelector('.tutorial-pointer-line');
-      const connector = document.querySelector('.tutorial-connector-svg');
-
-      if (tooltip) tooltip.remove();
-      if (overlay) overlay.remove();
-      if (highlight) highlight.classList.remove('tutorial-highlight');
-      if (pointer) pointer.remove();
-      if (connector) connector.remove();
-
-      localStorage.setItem('sg_tutorial_seen_v2', 'true');
-    }
-
-    function resetTutorial() {
-      localStorage.removeItem('sg_tutorial_seen_v2');
-      showFeatureTutorial();
-    }
-
-    // Expose tutorial functions globally
-    window.resetTutorial = resetTutorial;
-    window.showFeatureTutorial = showFeatureTutorial;
-    window.showTutorialMenu = showTutorialMenu;
-    window.skipTutorial = skipTutorial;
-    window.nextTutorialStep = nextTutorialStep;
-    window.prevTutorialStep = prevTutorialStep;
-    window.TUTORIAL_TOURS = TUTORIAL_TOURS;
-
-    // Add Help button to header (after auth ready)
+    // Add help button to header
     function addHelpButton() {
-      const headerRight = document.querySelector('.header-right');
+      var headerRight = document.querySelector('.header-right');
       if (!headerRight || document.getElementById('help-menu-btn')) return;
 
-      const helpBtn = document.createElement('div');
+      var helpBtn = document.createElement('div');
       helpBtn.id = 'help-menu-btn';
       helpBtn.style.cssText = 'position: relative; margin-right: 8px;';
       helpBtn.innerHTML = '<button onclick="toggleHelpMenu()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background=\'var(--dark-elevated)\'; this.style.color=\'var(--text-primary)\'" onmouseout="this.style.background=\'none\'; this.style.color=\'var(--text-secondary)\'" title="Help & Tutorials">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
+        '<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
       '</button>' +
-      '<div id="help-dropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 220px; background: var(--dark-secondary); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000; overflow: hidden; margin-top: 4px;">' +
-        '<div style="padding: 12px; border-bottom: 1px solid var(--border-color);">' +
-          '<div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">Help & Tutorials</div>' +
-        '</div>' +
+      '<div id="help-dropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 200px; background: var(--dark-secondary); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000; overflow: hidden; margin-top: 4px;">' +
         '<div style="padding: 8px;">' +
           '<div onclick="toggleHelpMenu(); showTutorialMenu()" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
-            '<span style="font-size: 16px;">📚</span>' +
+            '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>' +
             '<span style="color: var(--text-primary); font-size: 13px;">All Tutorials</span>' +
           '</div>' +
-          '<div onclick="toggleHelpMenu(); showFeatureTutorial(\'quickStart\')" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
-            '<span style="font-size: 16px;">🚀</span>' +
-            '<span style="color: var(--text-primary); font-size: 13px;">Quick Start Tour</span>' +
-          '</div>' +
-          '<div onclick="toggleHelpMenu(); showFeatureTutorial(\'completeWorkflow\')" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
-            '<span style="font-size: 16px;">🔄</span>' +
-            '<span style="color: var(--text-primary); font-size: 13px;">Complete Workflow</span>' +
+          '<div onclick="toggleHelpMenu(); startTour(\'quickStart\')" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
+            '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' +
+            '<span style="color: var(--text-primary); font-size: 13px;">Quick Start</span>' +
           '</div>' +
         '</div>' +
         '<div style="padding: 8px; border-top: 1px solid var(--border-color);">' +
           '<a href="mailto:support@surprisegranite.com" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background=\'var(--dark-tertiary)\'" onmouseout="this.style.background=\'transparent\'">' +
-            '<span style="font-size: 16px;">💬</span>' +
+            '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>' +
             '<span style="color: var(--text-secondary); font-size: 13px;">Contact Support</span>' +
           '</a>' +
         '</div>' +
       '</div>';
 
-      // Insert before notification bell
-      const notifWrapper = headerRight.querySelector('.notification-bell-wrapper');
+      var notifWrapper = headerRight.querySelector('.notification-bell-wrapper');
       if (notifWrapper) {
         headerRight.insertBefore(helpBtn, notifWrapper);
       } else {
@@ -19228,7 +18709,7 @@
     }
 
     function toggleHelpMenu() {
-      const dropdown = document.getElementById('help-dropdown');
+      var dropdown = document.getElementById('help-dropdown');
       if (dropdown) {
         dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
       }
@@ -19236,14 +18717,29 @@
 
     // Close help dropdown when clicking outside
     document.addEventListener('click', function(e) {
-      const helpBtn = document.getElementById('help-menu-btn');
-      const dropdown = document.getElementById('help-dropdown');
+      var helpBtn = document.getElementById('help-menu-btn');
+      var dropdown = document.getElementById('help-dropdown');
       if (helpBtn && dropdown && !helpBtn.contains(e.target)) {
         dropdown.style.display = 'none';
       }
     });
 
+    // Legacy function aliases for backward compatibility
+    function showFeatureTutorial(tourName) {
+      startTour(tourName || 'quickStart');
+    }
+    function resetTutorial() {
+      localStorage.removeItem('sg_tutorial_seen');
+      startTour('quickStart');
+    }
+
+    // Expose functions globally
+    window.startTour = startTour;
+    window.showTutorialMenu = showTutorialMenu;
+    window.showFeatureTutorial = showFeatureTutorial;
+    window.resetTutorial = resetTutorial;
     window.toggleHelpMenu = toggleHelpMenu;
+    window.initShepherdTours = initShepherdTours;
     // ==================== END TUTORIAL SYSTEM ====================
 
     async function handleHashNavigation() {
