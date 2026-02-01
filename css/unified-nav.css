@@ -153,12 +153,12 @@ body.unified-nav-active [class*="navbar-"]:not(.unified-nav *) {
    BODY PADDING FOR FIXED NAV
    =========================================== */
 body.unified-nav-active {
-  padding-top: var(--nav-height-desktop);
+  padding-top: var(--nav-height-desktop); /* 100px */
 }
 
 @media (max-width: 991px) {
   body.unified-nav-active {
-    padding-top: var(--nav-height-mobile);
+    padding-top: var(--nav-height-mobile); /* 64px */
   }
 }
 
@@ -569,19 +569,42 @@ body.unified-nav-active {
   transform: translateX(2px);
 }
 
-/* Stone Yards Link - Map Icon Styling */
-.unified-nav-links > li > a.unified-nav-stoneyards-link {
+/* Marketplace Link - Prominent Styling */
+.unified-nav-links > li > a.unified-nav-marketplace-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, rgba(26, 43, 60, 0.08) 0%, rgba(26, 43, 60, 0.03) 100%);
-  color: var(--nav-dark) !important;
-  border: 1px solid rgba(26, 43, 60, 0.2);
+  background: linear-gradient(135deg, var(--nav-dark) 0%, #2d3e50 100%);
+  color: #fff !important;
+  border: 1px solid var(--nav-dark);
   border-radius: 8px;
   padding: 8px 14px;
   font-weight: 600;
   font-size: 13px;
   transition: all 0.2s ease;
+}
+
+.unified-nav-links > li > a.unified-nav-marketplace-link:hover {
+  background: linear-gradient(135deg, #2d3e50 0%, var(--nav-dark) 100%);
+  color: var(--nav-gold) !important;
+  border-color: var(--nav-gold);
+  box-shadow: 0 2px 8px rgba(249, 203, 0, 0.2);
+}
+
+/* Stone Yards Link - Yellow/Gold Prominent Styling */
+.unified-nav-links > li > a.unified-nav-stoneyards-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--nav-gold) 0%, #e6b800 100%);
+  color: var(--nav-dark) !important;
+  border: 1px solid var(--nav-gold);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(249, 203, 0, 0.3);
 }
 
 .unified-nav-links > li > a.unified-nav-stoneyards-link::before {
@@ -595,14 +618,9 @@ body.unified-nav-active {
 }
 
 .unified-nav-links > li > a.unified-nav-stoneyards-link:hover {
-  color: var(--nav-dark) !important;
-  border-color: var(--nav-gold);
-  background: linear-gradient(135deg, rgba(249, 203, 0, 0.15) 0%, rgba(249, 203, 0, 0.05) 100%);
-  box-shadow: 0 2px 8px rgba(249, 203, 0, 0.15);
-}
-
-.unified-nav-links > li > a.unified-nav-stoneyards-link:hover::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4a900' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  background: linear-gradient(135deg, #e6b800 0%, #cca600 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 203, 0, 0.4);
 }
 
 /* For Pros Link - Special Styling */
@@ -1497,13 +1515,8 @@ body.unified-nav-active .card {
   margin-top: 24px;
 }
 
-/* Hero sections - already have padding from body, add extra if needed */
-body.unified-nav-active .hero,
-body.unified-nav-active .page-hero,
-body.unified-nav-active .section-hero {
-  /* Ensure hero content isn't cut off */
-  padding-top: max(24px, env(safe-area-inset-top));
-}
+/* Hero sections - let page-specific styles control padding */
+/* Removed blanket padding-top override - pages should set their own hero padding */
 
 /* Sidebar and dashboard layouts */
 body.unified-nav-active .sidebar,

@@ -42,19 +42,14 @@
     tagline: 'Marble & Quartz'
   };
 
-  // Menu items
+  // Menu items - Consolidated minimal nav
   const MENU_ITEMS = [
-    { label: 'Countertops', href: '/materials/all-countertops', hasMenu: true },
-    { label: 'Tile', href: '/materials/all-tile', hasMenu: true },
-    { label: 'Flooring', href: '/materials/flooring', hasMenu: true },
-    { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
-    { label: 'Marketplace', href: '/marketplace/', hasMenu: true },
+    { label: 'Materials', href: '/materials/all-countertops', hasMenu: true, menuType: 'materials' },
+    { label: 'Marketplace', href: '/marketplace/', hasMenu: true, isMarketplace: true },
     { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
-    { label: 'Shop', href: '/shop' },
-    { label: 'Gallery', href: '/company/project-gallery' },
+    { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Contact', href: '/contact-us' },
-    { label: 'Book Estimate', href: '/book-appointment', isBook: true },
-    { label: 'For Pros', href: '/vendor/signup', isPro: true }
+    { label: 'Book Estimate', href: '/book-appointment', isBook: true }
   ];
 
   // Mobile menu - simplified with collapsible categories
@@ -67,21 +62,31 @@
         { label: 'Quartz', href: '/materials/countertops/quartz-countertops' },
         { label: 'Granite', href: '/materials/countertops/granite-countertops' },
         { label: 'Marble', href: '/materials/countertops/marble-countertops' },
-        { label: 'Tile', href: '/materials/all-tile' },
-        { label: 'Flooring', href: '/materials/flooring' }
+        { label: 'Tile & Backsplash', href: '/materials/all-tile' },
+        { label: 'LVP Flooring', href: '/materials/flooring' }
       ]
     },
     {
       label: 'Marketplace',
-      icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      icon: '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>',
+      isHighlighted: true,
       items: [
         { label: 'Browse Slabs', href: '/marketplace/slabs/' },
         { label: 'Tile', href: '/marketplace/tile/' },
         { label: 'Flooring', href: '/marketplace/flooring/' },
         { label: 'Sinks', href: '/marketplace/sinks/' },
         { label: 'Faucets', href: '/marketplace/faucets/' },
-        { label: 'Remnants', href: '/marketplace/remnants/' },
-        { label: 'Stone Yards', href: '/stone-yards/' }
+        { label: 'Remnants', href: '/marketplace/remnants/' }
+      ]
+    },
+    {
+      label: 'Stone Yards',
+      icon: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      isStoneYards: true,
+      items: [
+        { label: 'Find Stone Yards', href: '/stone-yards/' },
+        { label: 'Arizona Tile', href: '/stone-yards/arizona-tile/' },
+        { label: 'MSI Surfaces', href: '/stone-yards/msi/' }
       ]
     },
     {
@@ -90,34 +95,17 @@
       items: [
         { label: 'Kitchen Remodeling', href: '/services/home/kitchen-remodeling-arizona' },
         { label: 'Bathroom Remodeling', href: '/services/home/bathroom-remodeling-arizona' },
-        { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' }
-      ]
-    },
-    {
-      label: 'Shop & Tools',
-      icon: '<svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>',
-      items: [
-        { label: 'Shop Products', href: '/shop' },
-        { label: 'Room Designer', href: '/tools/room-designer/' },
-        { label: 'Style Quiz', href: '/quiz/' }
-      ]
-    },
-    {
-      label: 'Company',
-      icon: '<svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>',
-      items: [
+        { label: 'Financing Options', href: '/services/home-remodeling-financing-options-in-arizona' },
         { label: 'Project Gallery', href: '/company/project-gallery' },
-        { label: 'Reviews', href: '/company/reviews' },
-        { label: 'About Us', href: '/company/about-us' },
-        { label: 'Contact', href: '/contact-us' }
+        { label: 'Contact Us', href: '/contact-us' }
       ]
     }
   ];
 
   // Quick action items (always visible at top)
   const MOBILE_QUICK_ACTIONS = [
-    { label: 'Book Free Estimate', href: '/book/', isBook: true },
-    { label: 'My Account', href: '/account' }
+    { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
+    { label: 'Book Estimate', href: '/book/', isBook: true }
   ];
 
   // Legacy flat menu for backwards compatibility
@@ -137,23 +125,13 @@
 
   // Product data for mega menus
   const PRODUCTS = {
-    countertops: [
-      { name: 'Quartz', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
-      { name: 'Granite', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
-      { name: 'Marble', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
-      { name: 'Porcelain', desc: 'Ultra-compact surfaces', href: '/materials/countertops/porcelain-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
-    ],
-    tile: [
-      { name: 'Porcelain Tile', desc: 'Durable & versatile', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
-      { name: 'Ceramic Tile', desc: 'Classic & affordable', href: '/materials/all-tile', img: '/images/tiles/adella-white-ceramic-modern-tile.jpg' },
-      { name: 'Mosaic Tile', desc: 'Decorative accents', href: '/materials/all-tile', img: '/images/tiles/angora-hexagon-mosaic-marble-tile.webp' },
-      { name: 'Backsplash', desc: 'Kitchen & bath', href: '/materials/all-tile', img: '/images/tiles/abani-marble-encaustic-subway-tile.webp' }
-    ],
-    flooring: [
-      { name: 'Luxury Vinyl Plank', desc: 'Waterproof LVP flooring', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
-      { name: 'Wood Look Vinyl', desc: 'LVP with wood aesthetic', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb20130fbc97c_msi-surfaces-surprise-granite-hatfield-luxury-vinyl-planks-close-up.avif' },
-      { name: 'Stone Look Vinyl', desc: 'LVP with stone patterns', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb201fafbccd6_msi-surfaces-surprise-granite-xl-trecento-mountains-gray-luxury-vinyl-planks-close-up.avif' },
-      { name: 'Marble Look Vinyl', desc: 'LVP with marble design', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2ebb6fbccd4_msi-surfaces-surprise-granite-xl-trecento-carrara-avell-luxury-vinyl-tile-close-up.avif' }
+    materials: [
+      { name: 'Quartz Countertops', desc: 'Premium engineered stone', href: '/materials/countertops/quartz-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.avif' },
+      { name: 'Granite Countertops', desc: 'Natural stone beauty', href: '/materials/countertops/granite-countertops', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif' },
+      { name: 'Marble Countertops', desc: 'Timeless elegance', href: '/materials/countertops/marble-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg' },
+      { name: 'Tile & Backsplash', desc: 'Porcelain, ceramic, mosaic', href: '/materials/all-tile', img: '/images/tiles/adella-viso-calacatta-ceramic-marble-tile.webp' },
+      { name: 'LVP Flooring', desc: 'Waterproof vinyl plank', href: '/materials/flooring', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb27db9fbccd8_msi-surfaces-surprise-granite-xl-trecento-white-ocean-luxury-vinyl-tile-close-up.avif' },
+      { name: 'All Countertops', desc: 'Browse all materials', href: '/materials/all-countertops', img: 'https://uploads-ssl.webflow.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22a2ffbc326_dekton-surprise-granite-arga-quartz-close-up.jpeg' }
     ],
     services: [
       { name: 'Kitchen Remodeling', desc: 'Complete renovations', href: '/services/home/kitchen-remodeling-arizona', img: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/65dfb7f28b5c4c03249bf4db_69647337_157661692014463_2667270912306059733_n-96da2b9c2f6e427a8fc021d5a5382031.jpg' },
@@ -210,6 +188,7 @@
       else if (item.isQuiz) linkClass = ' class="unified-nav-quiz-link"';
       else if (item.isBook) linkClass = ' class="unified-nav-book-link"';
       else if (item.isStoneYards) linkClass = ' class="unified-nav-stoneyards-link"';
+      else if (item.isMarketplace) linkClass = ' class="unified-nav-marketplace-link"';
 
       return `
         <li>
