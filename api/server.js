@@ -288,6 +288,9 @@ const jobsRouter = require('./routes/jobs');
 // Auth & SSO Routes
 const authRouter = require('./routes/auth');
 
+// Pricing Management Routes
+const pricingRouter = require('./routes/pricing');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -3419,6 +3422,10 @@ app.use('/api/calendar', calendarRouter);
 // ============ AUTOMATION ROUTES ============
 app.use('/api/automation', automationRouter);
 
+// ============ REMINDER ROUTES ============
+const remindersRouter = require('./routes/reminders');
+app.use('/api/reminders', remindersRouter);
+
 // ============ PROJECTS CRUD ROUTES ============
 app.use('/api/projects', projectsRouter);
 
@@ -3443,6 +3450,9 @@ app.use('/api/jobs', jobsRouter);
 
 // ============ AUTH & SSO ROUTES ============
 app.use('/api/auth', authRouter);
+
+// ============ PRICING MANAGEMENT ROUTES ============
+app.use('/api/pricing', pricingRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility
