@@ -44,10 +44,10 @@
       display: none;
     }
 
-    /* Hero */
+    /* Hero - body already has padding-top from unified-nav */
     .hero {
       background: linear-gradient(135deg, var(--dark-primary) 0%, #2d2d4a 100%);
-      padding: 200px 24px 60px;
+      padding: 60px 24px 60px;
       color: #fff;
     }
 
@@ -120,7 +120,7 @@
     /* Sticky behavior - JavaScript will handle this */
     .filters-bar.is-sticky {
       position: fixed;
-      top: 160px;
+      top: 140px; /* Match unified-nav desktop height */
       left: 0;
       right: 0;
       z-index: 100;
@@ -129,7 +129,7 @@
 
     @media (max-width: 991px) {
       .filters-bar.is-sticky {
-        top: 80px;
+        top: 64px; /* Match unified-nav mobile height */
       }
     }
 
@@ -992,10 +992,17 @@
       .stone-yards-bar-inner { flex-direction: column; gap: 12px; }
     }
 
+    /* Tablet Optimization */
+    @media (max-width: 991px) {
+      .hero {
+        padding: 40px 20px 40px;
+      }
+    }
+
     /* Mobile Optimization */
     @media (max-width: 768px) {
       .hero {
-        padding: 100px 16px 40px;
+        padding: 32px 16px 32px;
       }
 
       .hero h1 {
@@ -1379,8 +1386,8 @@
       const placeholder = document.getElementById('filtersPlaceholder');
       if (!filtersBar || !placeholder) return;
 
-      // Get nav height based on screen size (with extra padding)
-      const getNavHeight = () => window.innerWidth <= 991 ? 80 : 160;
+      // Get nav height based on screen size - matches unified-nav.css values
+      const getNavHeight = () => window.innerWidth <= 991 ? 64 : 140;
 
       let isSticky = false;
       let filterBarTop = 0;
