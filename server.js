@@ -2,14 +2,51 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Initialize Supabase
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+let supabase = null;
+if (SUPABASE_URL && (SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY)) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
+
+// Make supabase available to routes
+app.set('supabase', supabase);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Disable caching for HTML files
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path.endsWith('/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static('.'));
+
+// Clean URL routing for key pages
+app.get('/book-appointment', (req, res) => {
+  res.sendFile(path.join(__dirname, 'book-appointment.html'));
+});
+
+app.get('/book', (req, res) => {
+  res.redirect('/book-appointment');
+});
 
 // Email transporter
 const transporter = nodemailer.createTransport({
@@ -331,10 +368,492 @@ app.post('/api/remnant-inquiry', async (req, res) => {
     }
 });
 
+// ============================================
+// CALENDAR AVAILABILITY ENDPOINTS (PUBLIC)
+// ============================================
+
+const BUSINESS_HOURS = {
+  start: 8,  // 8 AM
+  end: 18,   // 6 PM
+  slotDuration: 60,
+  daysOfWeek: [1, 2, 3, 4, 5, 6] // Mon-Sat
+};
+
+function isBusinessDay(date) {
+  const dayOfWeek = date.getDay();
+  return BUSINESS_HOURS.daysOfWeek.includes(dayOfWeek);
+}
+
+function generateTimeSlots(date, durationMinutes = 60) {
+  const slots = [];
+  for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
+    const slotStart = new Date(date);
+    slotStart.setHours(hour, 0, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
+    if (slotEnd.getHours() <= BUSINESS_HOURS.end) {
+      slots.push({
+        start: slotStart.toISOString(),
+        end: slotEnd.toISOString(),
+        time: `${hour.toString().padStart(2, '0')}:00`,
+        label: hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`
+      });
+    }
+  }
+  return slots;
+}
+
+// Get available time slots for a specific date
+app.get('/api/calendar/availability/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    const durationMinutes = parseInt(req.query.duration_minutes) || 60;
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const targetDate = new Date(date + 'T12:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if date is in the past
+    if (targetDate < today) {
+      return res.json({ date, slots: [], availableSlots: 0, message: 'Date is in the past' });
+    }
+
+    // Check if business day
+    if (!isBusinessDay(targetDate)) {
+      return res.json({ date, isBusinessDay: false, slots: [], availableSlots: 0, message: 'Not a business day' });
+    }
+
+    // Generate all time slots
+    const allSlots = generateTimeSlots(targetDate, durationMinutes);
+
+    // Get existing events for this date from Supabase
+    let bookedSlots = [];
+    if (supabase) {
+      const startOfDay = new Date(date + 'T00:00:00').toISOString();
+      const endOfDay = new Date(date + 'T23:59:59').toISOString();
+
+      const { data: events } = await supabase
+        .from('calendar_events')
+        .select('start_time, end_time')
+        .gte('start_time', startOfDay)
+        .lte('start_time', endOfDay)
+        .neq('status', 'cancelled');
+
+      bookedSlots = events || [];
+    }
+
+    // Mark slots as available or booked
+    const slots = allSlots.map(slot => {
+      const slotStart = new Date(slot.start);
+      const slotEnd = new Date(slot.end);
+
+      const isBooked = bookedSlots.some(event => {
+        const eventStart = new Date(event.start_time);
+        const eventEnd = new Date(event.end_time);
+        return (slotStart < eventEnd && slotEnd > eventStart);
+      });
+
+      return { ...slot, available: !isBooked };
+    });
+
+    const availableSlots = slots.filter(s => s.available).length;
+
+    res.json({
+      date,
+      isBusinessDay: true,
+      totalSlots: slots.length,
+      availableSlots,
+      slots
+    });
+
+  } catch (error) {
+    console.error('Availability check error:', error);
+    res.status(500).json({ error: 'Failed to check availability' });
+  }
+});
+
+// Get availability for multiple days
+app.get('/api/calendar/availability', async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 30, 90);
+    const durationMinutes = parseInt(req.query.duration_minutes) || 60;
+
+    const availability = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get all events for the date range
+    let allEvents = [];
+    if (supabase) {
+      const startDate = today.toISOString();
+      const endDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: events } = await supabase
+        .from('calendar_events')
+        .select('start_time, end_time')
+        .gte('start_time', startDate)
+        .lte('start_time', endDate)
+        .neq('status', 'cancelled');
+
+      allEvents = events || [];
+    }
+
+    for (let i = 1; i <= days; i++) {
+      const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+
+      if (!isBusinessDay(date)) {
+        availability.push({ date: dateStr, availableSlots: 0, isBusinessDay: false });
+        continue;
+      }
+
+      const allSlots = generateTimeSlots(date, durationMinutes);
+      const dayEvents = allEvents.filter(e => e.start_time.startsWith(dateStr));
+
+      const availableSlots = allSlots.filter(slot => {
+        const slotStart = new Date(slot.start);
+        const slotEnd = new Date(slot.end);
+        return !dayEvents.some(event => {
+          const eventStart = new Date(event.start_time);
+          const eventEnd = new Date(event.end_time);
+          return (slotStart < eventEnd && slotEnd > eventStart);
+        });
+      }).length;
+
+      availability.push({
+        date: dateStr,
+        availableSlots,
+        totalSlots: allSlots.length,
+        isBusinessDay: true
+      });
+    }
+
+    res.json({
+      startDate: availability[0]?.date,
+      endDate: availability[availability.length - 1]?.date,
+      days,
+      availability,
+      datesWithAvailability: availability.filter(d => d.availableSlots > 0).map(d => d.date)
+    });
+
+  } catch (error) {
+    console.error('Availability list error:', error);
+    res.status(500).json({ error: 'Failed to get availability' });
+  }
+});
+
+// Public booking endpoint
+app.post('/api/calendar/book', async (req, res) => {
+  try {
+    const { name, email, phone, date, time, event_type, project_type, address, notes, duration_minutes } = req.body;
+
+    // Validation
+    if (!name || !email || !date || !time) {
+      return res.status(400).json({ error: 'Name, email, date, and time are required' });
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    if (!/^\d{2}:\d{2}$/.test(time)) {
+      return res.status(400).json({ error: 'Invalid time format' });
+    }
+
+    // Create datetime
+    const startTime = new Date(`${date}T${time}:00`);
+    const duration = parseInt(duration_minutes) || 60;
+    const endTime = new Date(startTime.getTime() + duration * 60000);
+
+    // Check if time is in the past
+    if (startTime < new Date()) {
+      return res.status(400).json({ error: 'Cannot book appointments in the past' });
+    }
+
+    // Check if business hours
+    const hour = startTime.getHours();
+    if (hour < BUSINESS_HOURS.start || hour >= BUSINESS_HOURS.end) {
+      return res.status(400).json({ error: 'Time is outside business hours' });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    // Check for conflicts
+    const { data: conflicts } = await supabase
+      .from('calendar_events')
+      .select('id')
+      .gte('start_time', startTime.toISOString())
+      .lt('start_time', endTime.toISOString())
+      .neq('status', 'cancelled')
+      .limit(1);
+
+    if (conflicts && conflicts.length > 0) {
+      return res.status(409).json({ error: 'This time slot is no longer available' });
+    }
+
+    // Get admin user for created_by
+    let calendarOwnerId = null;
+    const { data: adminUser } = await supabase
+      .from('sg_users')
+      .select('id')
+      .or('account_type.eq.admin,account_type.eq.super_admin')
+      .limit(1)
+      .single();
+
+    if (adminUser) {
+      calendarOwnerId = adminUser.id;
+    }
+
+    if (!calendarOwnerId) {
+      return res.status(500).json({ error: 'No admin user configured for calendar' });
+    }
+
+    // Create calendar event
+    const { data: event, error: eventError } = await supabase
+      .from('calendar_events')
+      .insert([{
+        created_by: calendarOwnerId,
+        title: `${event_type === 'consultation' ? 'Phone Consultation' : event_type === 'site_visit' ? 'Showroom Visit' : 'In-Home Estimate'}: ${name}`,
+        description: `Project: ${project_type || 'Countertops'}\nPhone: ${phone || 'N/A'}\nEmail: ${email}\nAddress: ${address || 'N/A'}\n\nNotes: ${notes || 'None'}`,
+        event_type: event_type || 'appointment',
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        location: address || null,
+        location_address: address || null,
+        status: 'scheduled',
+        color: '#f59e0b',
+        metadata: { source: 'online_booking', project_type }
+      }])
+      .select()
+      .single();
+
+    if (eventError) {
+      console.error('Calendar event creation error:', eventError);
+      return res.status(500).json({ error: 'Failed to create appointment' });
+    }
+
+    // Add customer as participant
+    await supabase
+      .from('calendar_event_participants')
+      .insert([{
+        event_id: event.id,
+        email: email.toLowerCase(),
+        name: name,
+        phone: phone || null,
+        participant_type: 'attendee',
+        response_status: 'accepted'
+      }]);
+
+    // Generate calendar links
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endTime.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(address || '')}`;
+
+    res.json({
+      success: true,
+      message: 'Appointment booked successfully',
+      event: {
+        id: event.id,
+        title: event.title,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        date: date,
+        time: time
+      },
+      calendarLinks: {
+        google: googleCalendarUrl
+      }
+    });
+
+  } catch (error) {
+    console.error('Booking error:', error);
+    res.status(500).json({ error: 'Failed to book appointment' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', supabase: !!supabase });
 });
+
+// ============================================
+// DYNAMIC PRODUCT PAGES (replaces 1600+ static files)
+// ============================================
+
+// Load product data for validation
+const fs = require('fs');
+let countertopsData = { countertops: [] };
+let tilesData = { tiles: [] };
+let flooringData = { flooring: [] };
+
+try {
+  countertopsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/countertops.json'), 'utf8'));
+  console.log(`Loaded ${countertopsData.countertops?.length || 0} countertops`);
+} catch (e) { console.log('No countertops data found'); }
+
+try {
+  tilesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/tile.json'), 'utf8'));
+  console.log(`Loaded ${tilesData.tiles?.length || 0} tiles`);
+} catch (e) { console.log('No tile data found'); }
+
+try {
+  flooringData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/flooring.json'), 'utf8'));
+  console.log(`Loaded ${flooringData.flooring?.length || 0} flooring items`);
+} catch (e) { console.log('No flooring data found'); }
+
+// Dynamic countertop pages (handles /countertops/calacatta-prado-quartz/)
+app.get('/countertops/:slug', (req, res, next) => {
+  const slug = req.params.slug.replace(/\/$/, ''); // Remove trailing slash
+  const product = countertopsData.countertops?.find(p => p.slug === slug);
+
+  if (product) {
+    res.sendFile(path.join(__dirname, 'templates/product.html'));
+  } else {
+    next(); // Fall through to static file handler
+  }
+});
+
+// Dynamic tile pages
+app.get('/tiles/:slug', (req, res, next) => {
+  const slug = req.params.slug.replace(/\/$/, '');
+  const product = tilesData.tiles?.find(p => p.slug === slug);
+
+  if (product) {
+    res.sendFile(path.join(__dirname, 'templates/product.html'));
+  } else {
+    next();
+  }
+});
+
+app.get('/tile/:slug', (req, res, next) => {
+  const slug = req.params.slug.replace(/\/$/, '');
+  const product = tilesData.tiles?.find(p => p.slug === slug);
+
+  if (product) {
+    res.sendFile(path.join(__dirname, 'templates/product.html'));
+  } else {
+    next();
+  }
+});
+
+// Dynamic flooring pages
+app.get('/flooring/:slug', (req, res, next) => {
+  const slug = req.params.slug.replace(/\/$/, '');
+  const product = flooringData.flooring?.find(p => p.slug === slug);
+
+  if (product) {
+    res.sendFile(path.join(__dirname, 'templates/product.html'));
+  } else {
+    next();
+  }
+});
+
+// ============================================
+// REDIRECTS (old redundant paths)
+// ============================================
+
+// /shop/ -> /marketplace/
+app.get('/shop', (req, res) => res.redirect(301, '/marketplace/'));
+app.get('/shop/', (req, res) => res.redirect(301, '/marketplace/'));
+
+// /store/ -> /marketplace/
+app.get('/store', (req, res) => res.redirect(301, '/marketplace/'));
+app.get('/store/', (req, res) => res.redirect(301, '/marketplace/'));
+
+// /shop.html -> /marketplace/
+app.get('/shop.html', (req, res) => res.redirect(301, '/marketplace/'));
+
+// ============================================
+// REMINDERS API
+// ============================================
+try {
+  const remindersRouter = require('./api/routes/reminders');
+  app.use('/api/reminders', remindersRouter);
+  console.log('Reminders API loaded');
+} catch (err) {
+  console.warn('Reminders API not available:', err.message);
+}
+
+// ============================================
+// EMAIL API
+// ============================================
+try {
+  const emailRouter = require('./api/routes/email');
+  app.use('/api/email', emailRouter);
+  console.log('Email API loaded');
+} catch (err) {
+  console.warn('Email API not available:', err.message);
+}
+
+// ============================================
+// CALENDAR API
+// ============================================
+try {
+  const calendarRouter = require('./api/routes/calendar');
+  app.use('/api/calendar', calendarRouter);
+  console.log('Calendar API loaded');
+} catch (err) {
+  console.warn('Calendar API not available:', err.message);
+}
+
+// ============================================
+// PROJECTS API (consolidated from jobs)
+// ============================================
+try {
+  const projectsRouter = require('./api/routes/projects');
+  app.use('/api/projects', projectsRouter);
+  console.log('Projects API loaded');
+} catch (err) {
+  console.warn('Projects API not available:', err.message);
+}
+
+// ============================================
+// LEADS API
+// ============================================
+try {
+  const leadsRouter = require('./api/routes/leads');
+  app.use('/api/leads', leadsRouter);
+  console.log('Leads API loaded');
+} catch (err) {
+  console.warn('Leads API not available:', err.message);
+}
+
+// ============================================
+// INVOICES API
+// ============================================
+try {
+  const invoicesRouter = require('./api/routes/invoices');
+  app.use('/api/invoices', invoicesRouter);
+  console.log('Invoices API loaded');
+} catch (err) {
+  console.warn('Invoices API not available:', err.message);
+}
+
+// ============================================
+// WORKFLOW API (conversions)
+// ============================================
+try {
+  const workflowRouter = require('./api/routes/workflow');
+  app.use('/api/workflow', workflowRouter);
+  console.log('Workflow API loaded');
+} catch (err) {
+  console.warn('Workflow API not available:', err.message);
+}
+
+// ============================================
+// PORTAL API (customer access)
+// ============================================
+try {
+  const portalRouter = require('./api/routes/portal');
+  app.use('/api/portal', portalRouter);
+  console.log('Portal API loaded');
+} catch (err) {
+  console.warn('Portal API not available:', err.message);
+}
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

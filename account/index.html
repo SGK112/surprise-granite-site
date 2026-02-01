@@ -14,6 +14,7 @@
   <script src="/js/supabase-init.js"></script>
   <script src="/js/sg-auth.js"></script>
   <script src="/js/auth-state.js"></script>
+  <script src="/js/state-manager.js"></script>
   <style>
     :root {
       /* Primary brand colors */
@@ -2095,6 +2096,95 @@
       animation: modalIn 0.3s ease;
     }
 
+    /* Modal Modern Styles - Base (Desktop) */
+    .modal-modern-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-modern-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-modern {
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-modern-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--dark-surface);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .modal-modern-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .modal-modern-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 300px;
+      max-height: 50vh;
+    }
+
+    .modal-modern-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      background: var(--dark-surface);
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+    }
+
+    .modal-drag-handle {
+      display: none;
+    }
+
+    .detail-section {
+      margin-bottom: 8px;
+    }
+
+    .detail-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
@@ -3104,6 +3194,18 @@
       background: rgba(139, 92, 246, 0.2);
       color: #a78bfa;
       border-left: 3px solid #8b5cf6;
+    }
+
+    .calendar-event.appointment {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border-left: 3px solid #f59e0b;
+    }
+
+    .calendar-event.consultation {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border-left: 3px solid #6366f1;
     }
 
     .calendar-event-dot {
@@ -9653,11 +9755,6 @@
             <span class="nav-item-text">My Listings</span>
             <span class="nav-badge" id="listings-count" data-count="0">0</span>
           </a>
-          <a class="nav-item" data-page="collaborations" onclick="showPage('collaborations')">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            <span class="nav-item-text">Collaborations</span>
-            <span class="nav-badge" id="collaborations-count" data-count="0" style="display: none;">0</span>
-          </a>
         </div>
 
         <!-- Tools Section -->
@@ -9704,13 +9801,8 @@
         <!-- Operations Section (Admin/Contractor) -->
         <div class="nav-section hidden" id="operations-nav">
           <div class="nav-section-title">Operations</div>
-          <a class="nav-item" data-page="jobs" onclick="showPage('jobs')">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            <span class="nav-item-text">Jobs</span>
-            <span class="nav-badge" id="jobs-count" data-count="0">0</span>
-          </a>
           <a class="nav-item" data-page="projects" onclick="showPage('projects')">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             <span class="nav-item-text">Projects</span>
             <span class="nav-badge" id="projects-count" data-count="0">0</span>
           </a>
@@ -9719,7 +9811,7 @@
             <span class="nav-item-text">Calendar</span>
           </a>
           <a class="nav-item" data-page="collaborators" onclick="showPage('collaborators')">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2M16 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             <span class="nav-item-text">Team</span>
           </a>
         </div>
@@ -9867,6 +9959,35 @@
               <div class="quick-actions" id="quick-actions">
                 <!-- Filled by JS based on role -->
               </div>
+            </div>
+          </div>
+
+          <!-- Needs Attention Widget (Admin only) -->
+          <div class="card" id="needs-attention-card" style="display: none;">
+            <div class="card-header">
+              <h3 class="card-title">Needs Attention</h3>
+              <button class="btn-modern ghost" onclick="refreshNeedsAttention()" style="padding: 6px 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </button>
+            </div>
+            <div class="card-body" id="needs-attention-content">
+              <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                <div class="spinner" style="margin: 0 auto 12px;"></div>
+                Loading...
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Schedule Widget (Admin only) -->
+          <div class="card" id="today-schedule-card" style="display: none;">
+            <div class="card-header">
+              <h3 class="card-title">Today's Schedule</h3>
+              <button class="btn-modern primary" onclick="showPage('calendar'); setTimeout(() => openCalendarEventModal(), 200);" style="padding: 6px 12px; font-size: 12px;">
+                + Add Event
+              </button>
+            </div>
+            <div class="card-body" id="today-schedule-content">
+              <div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>
             </div>
           </div>
         </section>
@@ -10838,9 +10959,21 @@
 
         <!-- Collaborators Page -->
         <section id="page-collaborators" class="page-section">
+          <!-- Team Tabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <button class="filter-btn active" id="team-tab-my-team" onclick="switchTeamTab('my-team')" style="padding: 10px 20px; border-radius: 8px; font-weight: 600;">
+              My Team
+            </button>
+            <button class="filter-btn" id="team-tab-invitations" onclick="switchTeamTab('invitations')" style="padding: 10px 20px; border-radius: 8px; font-weight: 500;">
+              Invitations <span id="team-invites-badge" style="display: none; margin-left: 6px; background: var(--warning); color: #1a1a2e; padding: 2px 8px; border-radius: 10px; font-size: 11px;"></span>
+            </button>
+          </div>
+
+          <!-- My Team Tab -->
+          <div id="team-content-my-team">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">Collaborators & Team</h3>
+              <h3 class="card-title">Contractors & Team</h3>
               <div style="display: flex; gap: 8px;">
                 <button class="btn-modern secondary" onclick="openInviteCollaboratorModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -10848,7 +10981,7 @@
                 </button>
                 <button class="btn-modern primary" onclick="openNewCollaboratorModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                  Add Collaborator
+                  Add Contractor
                 </button>
               </div>
             </div>
@@ -10874,6 +11007,25 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                       Add Collaborator
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div><!-- end team-content-my-team -->
+
+          <!-- Invitations Tab -->
+          <div id="team-content-invitations" style="display: none;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Project Invitations</h3>
+              </div>
+              <div class="card-body">
+                <div id="team-invitations-list">
+                  <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <h3>No pending invitations</h3>
+                    <p>When you're invited to collaborate on projects, they'll appear here.</p>
                   </div>
                 </div>
               </div>
@@ -14291,10 +14443,18 @@
               <label style="font-size: 13px; margin-bottom: 4px;">Type</label>
               <select id="cal-event-type" class="input-modern">
                 <option value="appointment">📅 Appointment</option>
-                <option value="measurement">📐 Measurement</option>
-                <option value="installation">🔧 Installation</option>
                 <option value="consultation">💬 Consultation</option>
+                <option value="measurement">📐 Measurement</option>
+                <option value="template">📋 Template</option>
+                <option value="fabrication">⚙️ Fabrication</option>
+                <option value="installation">🔧 Installation</option>
+                <option value="plumbing_disconnect">🔌 Plumbing Disconnect</option>
+                <option value="plumbing_reconnect">🚿 Plumbing Reconnect</option>
+                <option value="sealer_application">💧 Sealer Application</option>
+                <option value="walk_through">🚶 Walk-Through</option>
+                <option value="final_inspection">✅ Final Inspection</option>
                 <option value="delivery">🚚 Delivery</option>
+                <option value="site_visit">📍 Site Visit</option>
                 <option value="meeting">👥 Meeting</option>
                 <option value="follow_up">📞 Follow-up</option>
                 <option value="other">📌 Other</option>
@@ -14344,9 +14504,25 @@
           </div>
 
           <!-- Notes -->
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 12px;">
             <label style="font-size: 13px; margin-bottom: 4px;">Notes</label>
             <textarea id="cal-event-description" class="input-modern" rows="2" placeholder="Additional details..." style="resize: none;"></textarea>
+          </div>
+
+          <!-- Assign Contractors/Collaborators -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 13px; margin-bottom: 4px;">Assign Team Members</label>
+            <select id="cal-event-contractors" class="input-modern" multiple style="min-height: 80px;">
+            </select>
+            <span style="font-size: 11px; color: var(--text-muted);">Hold Ctrl/Cmd to select multiple</span>
+          </div>
+
+          <!-- Link to Project -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 13px; margin-bottom: 4px;">Link to Project</label>
+            <select id="cal-event-project-select" class="input-modern">
+              <option value="">-- None --</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer" style="padding: 12px 16px;">
@@ -16689,6 +16865,14 @@
       document.getElementById('dashboard-app').style.display = 'block';
       setupDashboard();
 
+      // Initialize StateManager with current user and sync confirmed events
+      if (typeof StateManager !== 'undefined') {
+        StateManager.setUser(currentUser);
+        if (supabaseClient) {
+          StateManager.syncConfirmedEvents(supabaseClient);
+        }
+      }
+
       // Initialize sidebar collapsed state from localStorage
       initSidebarState();
 
@@ -18327,6 +18511,192 @@
     }
 
     // Load subscriber/user statistics
+    // ============ NEEDS ATTENTION WIDGET ============
+    async function loadNeedsAttention() {
+      const container = document.getElementById('needs-attention-content');
+      if (!container) return;
+
+      try {
+        const items = [];
+
+        // Get leads not contacted in 48+ hours
+        const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+        const { data: staleLeads } = await supabaseClient
+          .from('leads')
+          .select('id, homeowner_name, created_at')
+          .eq('status', 'new')
+          .lt('created_at', cutoff48h)
+          .limit(5);
+
+        if (staleLeads?.length > 0) {
+          items.push({
+            type: 'leads',
+            icon: '📞',
+            color: '#f59e0b',
+            title: `${staleLeads.length} lead${staleLeads.length > 1 ? 's' : ''} need follow-up`,
+            subtitle: 'Not contacted in 48+ hours',
+            action: () => showPage('leads')
+          });
+        }
+
+        // Get today's appointments
+        const today = new Date();
+        const todayStart = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+        const todayEnd = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+        const { data: todayAppts } = await supabaseClient
+          .from('calendar_events')
+          .select('id')
+          .gte('start_time', todayStart)
+          .lte('start_time', todayEnd)
+          .in('status', ['scheduled', 'confirmed']);
+
+        if (todayAppts?.length > 0) {
+          items.push({
+            type: 'appointments',
+            icon: '📅',
+            color: '#3b82f6',
+            title: `${todayAppts.length} appointment${todayAppts.length > 1 ? 's' : ''} today`,
+            subtitle: 'View your schedule',
+            action: () => showPage('calendar')
+          });
+        }
+
+        // Get overdue invoices
+        const { data: overdueInvoices } = await supabaseClient
+          .from('invoices')
+          .select('id, total_amount')
+          .eq('status', 'sent')
+          .lt('due_date', new Date().toISOString())
+          .limit(10);
+
+        if (overdueInvoices?.length > 0) {
+          const total = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+          items.push({
+            type: 'invoices',
+            icon: '💰',
+            color: '#ef4444',
+            title: `$${total.toLocaleString()} in overdue invoices`,
+            subtitle: `${overdueInvoices.length} invoice${overdueInvoices.length > 1 ? 's' : ''} past due`,
+            action: () => showPage('invoices')
+          });
+        }
+
+        // Get pending estimates awaiting approval
+        const { data: pendingEstimates } = await supabaseClient
+          .from('estimates')
+          .select('id')
+          .eq('status', 'sent')
+          .limit(10);
+
+        if (pendingEstimates?.length > 0) {
+          items.push({
+            type: 'estimates',
+            icon: '📋',
+            color: '#8b5cf6',
+            title: `${pendingEstimates.length} estimate${pendingEstimates.length > 1 ? 's' : ''} awaiting approval`,
+            subtitle: 'Sent but not yet approved',
+            action: () => showPage('estimates')
+          });
+        }
+
+        // Render items
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <p style="margin: 0;">All caught up!</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = items.map(item => `
+          <div class="attention-item" onclick="${item.action ? item.action.toString().replace(/"/g, "'") : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px; cursor: pointer; border-left: 3px solid ${item.color};">
+            <span style="font-size: 20px;">${item.icon}</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 14px;">${item.title}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${item.subtitle}</div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="opacity: 0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        `).join('');
+
+        // Make items clickable
+        container.querySelectorAll('.attention-item').forEach((el, i) => {
+          el.onclick = items[i].action;
+        });
+
+      } catch (err) {
+        console.error('Load needs attention error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading data</div>';
+      }
+    }
+
+    function refreshNeedsAttention() {
+      loadNeedsAttention();
+      showToast('Refreshed', 'success');
+    }
+
+    // ============ TODAY'S SCHEDULE WIDGET ============
+    async function loadTodaySchedule() {
+      const container = document.getElementById('today-schedule-content');
+      if (!container) return;
+
+      try {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+        const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
+
+        const { data: events, error } = await supabaseClient
+          .from('calendar_events')
+          .select('id, title, start_time, end_time, event_type, location, status')
+          .gte('start_time', todayStart)
+          .lte('start_time', todayEnd)
+          .order('start_time', { ascending: true });
+
+        if (error) throw error;
+
+        if (!events || events.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+              <p style="margin: 0 0 12px;">No appointments scheduled for today</p>
+              <button class="btn-modern primary" onclick="showPage('calendar'); setTimeout(() => openCalendarEventModal(), 200);" style="font-size: 13px;">
+                Schedule Something
+              </button>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = events.map(event => {
+          const startTime = new Date(event.start_time);
+          const timeStr = startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          const typeColors = {
+            appointment: '#f59e0b',
+            consultation: '#6366f1',
+            measurement: '#10b981',
+            installation: '#3b82f6',
+            delivery: '#8b5cf6'
+          };
+          const color = typeColors[event.event_type] || '#6b7280';
+
+          return `
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid var(--border-subtle);">
+              <div style="width: 4px; height: 40px; background: ${color}; border-radius: 2px;"></div>
+              <div style="min-width: 70px; font-size: 13px; color: var(--text-muted);">${timeStr}</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 500; font-size: 14px;">${escapeHtml(event.title)}</div>
+                ${event.location ? `<div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(event.location)}</div>` : ''}
+              </div>
+              <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: ${color}20; color: ${color};">${event.event_type}</span>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Load today schedule error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading schedule</div>';
+      }
+    }
+
     async function loadSubscriberStats() {
       console.log('[SubscriberStats] Loading...');
       try {
@@ -18403,7 +18773,7 @@
             <div class="stat-label">Total Users</div>
             <div class="stat-value" id="stat-total-users">-</div>
           </div>
-          <div class="stat-card clickable" onclick="showPage('collaborations')">
+          <div class="stat-card clickable" onclick="showPage('collaborators')">
             <div class="stat-label">Network</div>
             <div class="stat-value" id="stat-network">-</div>
           </div>
@@ -18446,6 +18816,12 @@
             </div>
           </a>
         `;
+
+        // Show admin widgets
+        document.getElementById('needs-attention-card').style.display = 'block';
+        document.getElementById('today-schedule-card').style.display = 'block';
+        loadNeedsAttention();
+        loadTodaySchedule();
       } else {
         // Enhanced user stats
         statsEl.innerHTML = `
@@ -18464,7 +18840,7 @@
             <div class="stat-label">Quotes Sent</div>
             <div class="stat-value" id="stat-quotes">0</div>
           </div>
-          <div class="stat-card clickable" onclick="showPage('collaborations')">
+          <div class="stat-card clickable" onclick="showPage('collaborators')">
             <div class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gold-primary)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
             <div class="stat-label">My Network</div>
             <div class="stat-value" id="stat-network">0</div>
@@ -18525,7 +18901,7 @@
               <p>Estimate your project</p>
             </div>
           </a>
-          <a href="javascript:void(0)" onclick="showPage('collaborations'); return false;" class="action-card">
+          <a href="javascript:void(0)" onclick="showPage('collaborators'); return false;" class="action-card">
             <div class="action-icon">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
@@ -19108,9 +19484,9 @@
 
       if (searchTerm) {
         filtered = filtered.filter(l =>
-          (l.full_name || '').toLowerCase().includes(searchTerm) ||
-          (l.email || '').toLowerCase().includes(searchTerm) ||
-          (l.phone || '').toLowerCase().includes(searchTerm)
+          (l.full_name || l.homeowner_name || l.name || '').toLowerCase().includes(searchTerm) ||
+          (l.email || l.homeowner_email || '').toLowerCase().includes(searchTerm) ||
+          (l.phone || l.homeowner_phone || '').toLowerCase().includes(searchTerm)
         );
       }
 
@@ -19128,25 +19504,34 @@
       // Modern card-based list for better mobile experience
       document.getElementById('leads-table').innerHTML = `
         <div class="list-modern">
-          ${filtered.map(lead => `
+          ${filtered.map(lead => {
+            const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
+            const leadEmail = lead.email || lead.homeowner_email || '';
+            const leadPhone = lead.phone || lead.homeowner_phone || '';
+            const hasAppointment = lead.appointment_date && lead.appointment_time;
+            return `
             <div class="list-item-modern"
                  data-context-menu="lead"
                  data-item-id="${lead.id}"
-                 data-item-data='${JSON.stringify({ name: lead.full_name, email: lead.email, phone: lead.phone, status: lead.status }).replace(/'/g, "&#39;")}'
+                 data-item-data='${JSON.stringify({ name: leadName, email: leadEmail, phone: leadPhone, status: lead.status }).replace(/'/g, "&#39;")}'
                  onclick="viewLead('${lead.id}')">
-              <div class="list-item-icon" style="background: ${getStatusColor(lead.status)}15;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="${getStatusColor(lead.status)}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <div class="list-item-icon" style="background: ${hasAppointment ? '#f59e0b15' : getStatusColor(lead.status) + '15'};">
+                ${hasAppointment
+                  ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`
+                  : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="${getStatusColor(lead.status)}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`
+                }
               </div>
               <div class="list-item-content">
-                <div class="list-item-title">${lead.full_name || 'Unknown'}</div>
-                <div class="list-item-subtitle">${lead.email || lead.phone || 'No contact'} · ${lead.project_type || 'General'}</div>
+                <div class="list-item-title">${leadName}${hasAppointment ? ' <span style="color: #f59e0b; font-size: 11px;">📅</span>' : ''}</div>
+                <div class="list-item-subtitle">${leadEmail || leadPhone || 'No contact'} · ${lead.project_type || 'General'}</div>
+                ${hasAppointment ? `<div style="font-size: 11px; color: #f59e0b; margin-top: 2px;">Appt: ${lead.appointment_date} at ${lead.appointment_time}</div>` : ''}
               </div>
               <div class="list-item-meta">
                 <span class="badge-modern badge-${lead.status}">${lead.status}</span>
                 <div class="list-item-date">${formatDate(lead.created_at)}</div>
               </div>
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
       `;
     }
@@ -19193,38 +19578,195 @@
     function openLeadModal(id) { viewLead(id); }
 
     async function viewLead(id) {
-      selectedLead = allLeads.find(l => l.id === id);
+      try {
+      selectedLead = allLeads.find(function(l) { return l.id === id; });
       if (!selectedLead) return;
 
-      // Build base details HTML
-      let detailsHtml = `
-        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${selectedLead.full_name || 'Not provided'}</div></div>
-        <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${selectedLead.email ? `<a href="mailto:${selectedLead.email}" style="color: var(--gold-primary);">${selectedLead.email}</a>` : 'Not provided'}</div></div>
-        <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${selectedLead.phone ? `<a href="tel:${selectedLead.phone}" style="color: var(--gold-primary);">${selectedLead.phone}</a>` : 'Not provided'}</div></div>
-        <div class="detail-row"><div class="detail-label">Project</div><div class="detail-value">${selectedLead.project_type || 'Not specified'}</div></div>
-        <div class="detail-row"><div class="detail-label">Message</div><div class="detail-value">${selectedLead.message || 'No message'}</div></div>
-        <div class="detail-row"><div class="detail-label">Source</div><div class="detail-value">${selectedLead.form_name || 'Website'}</div></div>
-        <div class="detail-row"><div class="detail-label">Submitted</div><div class="detail-value">${new Date(selectedLead.created_at).toLocaleString()}</div></div>
-      `;
+      var container = document.getElementById('lead-details');
+      if (!container) { alert('Container not found'); return; }
+      container.innerHTML = '';
 
-      // Show linked customer if exists
-      if (selectedLead.customer_id) {
-        const customer = await getCustomer(selectedLead.customer_id);
-        if (customer) {
-          detailsHtml += `
-            <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
-              <div class="detail-label">Linked Customer</div>
-              <div class="detail-value">
-                <a href="javascript:void(0)" onclick="event.preventDefault(); showPage('customers'); setTimeout(() => viewCustomer('${customer.id}'), 100);" style="color: var(--gold-primary);">
-                  ${customer.name} ${customer.email ? `(${customer.email})` : ''}
-                </a>
-              </div>
-            </div>
-          `;
+      // Get values safely
+      var name = String(selectedLead.full_name || selectedLead.homeowner_name || selectedLead.name || 'Unknown');
+      var email = String(selectedLead.email || selectedLead.homeowner_email || '');
+      var phone = String(selectedLead.phone || selectedLead.homeowner_phone || '');
+      var address = String(selectedLead.project_address || selectedLead.address || '');
+      var zip = String(selectedLead.project_zip || '');
+      var project = String(selectedLead.project_type || 'Not specified');
+      var msg = String(selectedLead.message || selectedLead.project_details || '');
+      var source = String(selectedLead.source || 'Website');
+      var apptDate = selectedLead.appointment_date || '';
+      var apptTime = selectedLead.appointment_time || '';
+
+      // Appointment banner with actions
+      if (apptDate && apptTime) {
+        var apptStatus = selectedLead.appointment_status || 'scheduled';
+        var statusColors = {scheduled:'#f59e0b',confirmed:'#10b981',completed:'#6366f1',cancelled:'#ef4444'};
+        var statusColor = statusColors[apptStatus] || '#f59e0b';
+
+        var apptDiv = document.createElement('div');
+        apptDiv.style.cssText = 'background:rgba(245,158,11,0.15);border:2px solid '+statusColor+';border-radius:12px;padding:16px;margin-bottom:16px;';
+
+        var apptHeader = document.createElement('div');
+        apptHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+        var apptTitle = document.createElement('div');
+        apptTitle.style.cssText = 'color:'+statusColor+';font-weight:bold;font-size:14px;';
+        apptTitle.textContent = 'APPOINTMENT ' + apptStatus.toUpperCase();
+        var statusBadge = document.createElement('span');
+        statusBadge.style.cssText = 'background:'+statusColor+';color:#fff;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;';
+        statusBadge.textContent = apptStatus;
+        apptHeader.appendChild(apptTitle);
+        apptHeader.appendChild(statusBadge);
+        apptDiv.appendChild(apptHeader);
+
+        var apptDateTime = document.createElement('div');
+        apptDateTime.style.cssText = 'font-size:18px;font-weight:bold;margin-top:8px;';
+        apptDateTime.textContent = apptDate + ' at ' + apptTime;
+        apptDiv.appendChild(apptDateTime);
+
+        if (address) {
+          var apptLoc = document.createElement('div');
+          apptLoc.style.cssText = 'margin-top:4px;color:#999;';
+          apptLoc.textContent = '📍 ' + address;
+          apptDiv.appendChild(apptLoc);
+        }
+
+        // Action buttons
+        var btnContainer = document.createElement('div');
+        btnContainer.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+
+        if (apptStatus === 'scheduled') {
+          var confirmBtn = document.createElement('button');
+          confirmBtn.style.cssText = 'flex:1;padding:10px;border:none;border-radius:8px;background:#10b981;color:#fff;font-weight:600;cursor:pointer;';
+          confirmBtn.textContent = '✓ Confirm & Create Event';
+          confirmBtn.onclick = function() { confirmAppointment(selectedLead.id); };
+          btnContainer.appendChild(confirmBtn);
+        }
+
+        var rescheduleBtn = document.createElement('button');
+        rescheduleBtn.style.cssText = 'flex:1;padding:10px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:600;cursor:pointer;';
+        rescheduleBtn.textContent = '📅 Reschedule';
+        rescheduleBtn.onclick = function() { openRescheduleModal(selectedLead.id); };
+        btnContainer.appendChild(rescheduleBtn);
+
+        if (apptStatus !== 'cancelled') {
+          var cancelBtn = document.createElement('button');
+          cancelBtn.style.cssText = 'padding:10px 16px;border:none;border-radius:8px;background:#ef4444;color:#fff;font-weight:600;cursor:pointer;';
+          cancelBtn.textContent = '✕';
+          cancelBtn.title = 'Cancel Appointment';
+          cancelBtn.onclick = function() { cancelAppointment(selectedLead.id); };
+          btnContainer.appendChild(cancelBtn);
+        }
+
+        apptDiv.appendChild(btnContainer);
+        container.appendChild(apptDiv);
+      }
+
+      // Check if message contains appointment info - auto-create pending event
+      if (!apptDate && msg && (msg.includes('APPOINTMENT') || msg.includes('Date:') || msg.includes('Time:'))) {
+        var parsedDate = '', parsedTime = '', parsedAddress = '';
+
+        var dateMatch = msg.match(/Date:\s*([^\n]+)/i);
+        if (dateMatch) parsedDate = dateMatch[1].trim();
+
+        var timeMatch = msg.match(/Time:\s*([^\n]+)/i);
+        if (timeMatch) parsedTime = timeMatch[1].trim();
+
+        var addrMatch = msg.match(/Address:\s*([^\n]+)/i);
+        if (addrMatch) parsedAddress = addrMatch[1].trim();
+
+        if (parsedDate || parsedTime) {
+          selectedLead._parsedDate = parsedDate;
+          selectedLead._parsedTime = parsedTime;
+          selectedLead._parsedAddress = parsedAddress || address;
+
+          // Auto-create calendar event as pending (runs in background)
+          autoCreatePendingEvent(selectedLead.id, parsedDate, parsedTime, parsedAddress || address, name, email, phone, msg);
+
+          // Show pending appointment banner
+          var pendingDiv = document.createElement('div');
+          pendingDiv.id = 'pending-appt-banner';
+          pendingDiv.style.cssText = 'background:rgba(251,191,36,0.15);border:2px solid #fbbf24;border-radius:12px;padding:16px;margin-bottom:16px;';
+
+          var headerDiv = document.createElement('div');
+          headerDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+          headerDiv.innerHTML = '<div style="color:#fbbf24;font-weight:bold;font-size:14px;">📅 APPOINTMENT REQUEST</div><span style="background:#fbbf24;color:#000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;">PENDING</span>';
+          pendingDiv.appendChild(headerDiv);
+
+          var dateDiv = document.createElement('div');
+          dateDiv.style.cssText = 'font-size:18px;font-weight:bold;margin-top:8px;';
+          dateDiv.textContent = parsedDate || 'Date to be confirmed';
+          pendingDiv.appendChild(dateDiv);
+
+          var timeDiv = document.createElement('div');
+          timeDiv.style.cssText = 'color:#ccc;margin-top:2px;';
+          timeDiv.textContent = parsedTime || 'Time to be confirmed';
+          pendingDiv.appendChild(timeDiv);
+
+          if (parsedAddress) {
+            var locDiv = document.createElement('div');
+            locDiv.style.cssText = 'color:#999;margin-top:4px;';
+            locDiv.textContent = '📍 ' + parsedAddress;
+            pendingDiv.appendChild(locDiv);
+          }
+
+          var btnDiv = document.createElement('div');
+          btnDiv.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+          btnDiv.innerHTML = '<button onclick="confirmParsedAppointment(\'' + selectedLead.id + '\')" style="flex:1;padding:10px;border:none;border-radius:8px;background:#10b981;color:#fff;font-weight:600;cursor:pointer;">✓ Confirm</button>' +
+            '<button onclick="openRescheduleModal(\'' + selectedLead.id + '\')" style="flex:1;padding:10px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:600;cursor:pointer;">📅 Reschedule</button>' +
+            '<button onclick="declineAppointment(\'' + selectedLead.id + '\')" style="padding:10px 16px;border:none;border-radius:8px;background:#ef4444;color:#fff;font-weight:600;cursor:pointer;">✕</button>';
+          pendingDiv.appendChild(btnDiv);
+
+          container.appendChild(pendingDiv);
         }
       }
 
-      document.getElementById('lead-details').innerHTML = detailsHtml;
+      // Helper to create rows
+      function addRow(label, value, linkHref) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;padding:12px 0;border-bottom:1px solid #333;';
+        var labelEl = document.createElement('div');
+        labelEl.style.cssText = 'width:100px;color:#888;font-size:12px;text-transform:uppercase;flex-shrink:0;';
+        labelEl.textContent = label;
+        var valueEl = document.createElement('div');
+        valueEl.style.cssText = 'flex:1;font-size:14px;word-break:break-word;';
+        if (linkHref && value) {
+          var a = document.createElement('a');
+          a.href = linkHref;
+          a.style.cssText = 'color:#f9cb00;text-decoration:none;';
+          a.textContent = value;
+          if (linkHref.startsWith('http')) a.target = '_blank';
+          valueEl.appendChild(a);
+        } else {
+          valueEl.textContent = value || 'Not provided';
+        }
+        row.appendChild(labelEl);
+        row.appendChild(valueEl);
+        container.appendChild(row);
+      }
+
+      addRow('Name', name);
+      addRow('Email', email, email ? 'mailto:' + email : null);
+      addRow('Phone', phone, phone ? 'tel:' + phone : null);
+      if (address) addRow('Address', address, 'https://maps.google.com/?q=' + encodeURIComponent(address));
+      if (zip) addRow('ZIP', zip);
+      addRow('Project', project);
+
+      // Message row
+      var msgRow = document.createElement('div');
+      msgRow.style.cssText = 'display:flex;padding:12px 0;border-bottom:1px solid #333;align-items:flex-start;';
+      var msgLabel = document.createElement('div');
+      msgLabel.style.cssText = 'width:100px;color:#888;font-size:12px;text-transform:uppercase;flex-shrink:0;';
+      msgLabel.textContent = 'Message';
+      var msgValue = document.createElement('div');
+      msgValue.style.cssText = 'flex:1;background:#1a1a2e;padding:12px;border-radius:8px;max-height:150px;overflow-y:auto;white-space:pre-wrap;font-size:13px;';
+      msgValue.textContent = msg || 'No message';
+      msgRow.appendChild(msgLabel);
+      msgRow.appendChild(msgValue);
+      container.appendChild(msgRow);
+
+      addRow('Source', source);
+      addRow('Submitted', selectedLead.created_at ? new Date(selectedLead.created_at).toLocaleString() : 'Unknown');
 
       // Load linked estimates
       const estimatesContainer = document.getElementById('lead-estimates-list');
@@ -19255,11 +19797,573 @@
         }
       }
 
+      // Load linked calendar events for this lead
+      try {
+        const { data: calendarEvents, error: calEventsError } = await supabaseClient
+          .from('calendar_events')
+          .select('id, title, event_type, start_time, end_time, status, location')
+          .eq('lead_id', selectedLead.id)
+          .order('start_time', { ascending: true });
+
+        if (calEventsError) {
+          console.warn('Calendar events query error:', calEventsError.message);
+        }
+
+        if (calendarEvents && calendarEvents.length > 0) {
+          // Add calendar events section to detailsHtml
+          const eventsHtml = calendarEvents.map(evt => {
+            const startDate = new Date(evt.start_time);
+            const statusColors = {
+              'scheduled': '#f59e0b',
+              'confirmed': '#10b981',
+              'completed': '#6366f1',
+              'cancelled': '#ef4444',
+              'no_show': '#ef4444'
+            };
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--dark-bg); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid ${statusColors[evt.status] || '#f59e0b'};">
+                <div>
+                  <div style="font-weight: 600; font-size: 13px;">${evt.title || evt.event_type}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                  ${evt.location ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">📍 ${evt.location}</div>` : ''}
+                </div>
+                <span style="background: ${statusColors[evt.status] || '#f59e0b'}; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: capitalize;">${evt.status}</span>
+              </div>
+            `;
+          }).join('');
+
+          // Insert calendar section before Messages section
+          const detailsContainer = document.getElementById('lead-details');
+          if (detailsContainer) {
+            detailsContainer.insertAdjacentHTML('beforeend', `
+              <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+                <div class="detail-section-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span style="color: #f59e0b;">Calendar Events</span>
+                </div>
+                ${eventsHtml}
+              </div>
+            `);
+          }
+        }
+      } catch (calErr) {
+        console.warn('Failed to load calendar events for lead:', calErr);
+      }
+
       // Load messages for this lead
       loadLeadMessages(selectedLead.id);
 
       document.getElementById('lead-status-select').value = selectedLead.status || 'new';
       document.getElementById('lead-modal').classList.add('active');
+      } catch(err) {
+        console.error('viewLead error:', err);
+        showToast('Error loading lead details', 'error');
+      }
+    }
+
+    // Confirm appointment and create calendar event
+    async function confirmAppointment(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead || !lead.appointment_date || !lead.appointment_time) {
+        showToast('No appointment to confirm', 'error');
+        return;
+      }
+
+      try {
+        showToast('Creating calendar event...', 'info');
+
+        // Parse date and time
+        const dateStr = lead.appointment_date;
+        const timeStr = lead.appointment_time;
+        const [timePart, ampm] = timeStr.split(' ');
+        let [hours, minutes] = timePart.split(':').map(Number);
+        if (ampm && ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+        if (ampm && ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        minutes = minutes || 0;
+
+        const startTime = new Date(dateStr + 'T' + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0') + ':00');
+        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour
+
+        const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Customer';
+        const leadEmail = lead.email || lead.homeowner_email || '';
+        const leadPhone = lead.phone || lead.homeowner_phone || '';
+        const leadAddress = lead.project_address || lead.address || '';
+
+        // Create calendar event
+        const { data: calEvent, error: calError } = await supabaseClient
+          .from('calendar_events')
+          .insert([{
+            created_by: currentUser.id,
+            title: 'Appointment: ' + leadName,
+            description: 'Project: ' + (lead.project_type || 'Not specified') + '\nPhone: ' + leadPhone + '\nEmail: ' + leadEmail + '\n\nNotes: ' + (lead.message || lead.project_details || ''),
+            event_type: 'appointment',
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            location: leadAddress,
+            location_address: leadAddress,
+            lead_id: leadId,
+            status: 'confirmed',
+            reminder_minutes: [1440, 60],
+            color: '#10b981'
+          }])
+          .select()
+          .single();
+
+        if (calError) throw calError;
+
+        // Add customer as participant
+        if (calEvent) {
+          await supabaseClient.from('calendar_event_participants').insert([{
+            event_id: calEvent.id,
+            email: leadEmail.toLowerCase(),
+            name: leadName,
+            phone: leadPhone,
+            participant_type: 'attendee',
+            response_status: 'accepted'
+          }]);
+        }
+
+        // Update lead appointment status
+        await supabaseClient
+          .from('leads')
+          .update({ appointment_status: 'confirmed', updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        // Update local data
+        lead.appointment_status = 'confirmed';
+
+        showToast('Appointment confirmed! Calendar event created.', 'success');
+        viewLead(leadId); // Refresh the modal
+
+      } catch (err) {
+        console.error('Confirm appointment error:', err);
+        showToast('Failed to confirm: ' + err.message, 'error');
+      }
+    }
+
+    // Open reschedule modal
+    function openRescheduleModal(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const currentDate = lead.appointment_date || '';
+      const currentTime = lead.appointment_time || '';
+
+      const modal = document.createElement('div');
+      modal.id = 'reschedule-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:20000;';
+      modal.innerHTML = `
+        <div style="background:#1e1e2e;border-radius:16px;padding:24px;width:90%;max-width:400px;">
+          <h3 style="margin:0 0 16px;font-size:18px;">Reschedule Appointment</h3>
+          <p style="color:#888;margin-bottom:16px;">Current: ${currentDate} at ${currentTime}</p>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;color:#888;font-size:12px;margin-bottom:4px;">NEW DATE</label>
+            <input type="date" id="reschedule-date" value="${currentDate}" style="width:100%;padding:12px;background:#2a2a3e;border:1px solid #444;border-radius:8px;color:#fff;font-size:14px;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;color:#888;font-size:12px;margin-bottom:4px;">NEW TIME</label>
+            <input type="time" id="reschedule-time" style="width:100%;padding:12px;background:#2a2a3e;border:1px solid #444;border-radius:8px;color:#fff;font-size:14px;">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="document.getElementById('reschedule-modal').remove()" style="flex:1;padding:12px;border:1px solid #444;border-radius:8px;background:transparent;color:#fff;cursor:pointer;">Cancel</button>
+            <button onclick="submitReschedule('${leadId}')" style="flex:1;padding:12px;border:none;border-radius:8px;background:#f9cb00;color:#000;font-weight:600;cursor:pointer;">Save & Update Event</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    }
+
+    // Submit reschedule
+    async function submitReschedule(leadId) {
+      const newDate = document.getElementById('reschedule-date').value;
+      const newTimeInput = document.getElementById('reschedule-time').value;
+      if (!newDate || !newTimeInput) {
+        showToast('Please select date and time', 'error');
+        return;
+      }
+
+      // Convert 24h to 12h format for display
+      const [h, m] = newTimeInput.split(':');
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12;
+      const newTime = hour12 + ':' + m + ' ' + ampm;
+
+      try {
+        // Update lead
+        await supabaseClient
+          .from('leads')
+          .update({
+            appointment_date: newDate,
+            appointment_time: newTime,
+            appointment_status: 'scheduled',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadId);
+
+        // Update any existing calendar events for this lead
+        const startTime = new Date(newDate + 'T' + newTimeInput + ':00');
+        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+        await supabaseClient
+          .from('calendar_events')
+          .update({
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: 'scheduled'
+          })
+          .eq('lead_id', leadId);
+
+        // Update local data
+        const lead = allLeads.find(l => l.id === leadId);
+        if (lead) {
+          lead.appointment_date = newDate;
+          lead.appointment_time = newTime;
+          lead.appointment_status = 'scheduled';
+        }
+
+        document.getElementById('reschedule-modal').remove();
+        showToast('Appointment rescheduled!', 'success');
+        viewLead(leadId);
+
+      } catch (err) {
+        console.error('Reschedule error:', err);
+        showToast('Failed to reschedule: ' + err.message, 'error');
+      }
+    }
+
+    // Cancel appointment
+    async function cancelAppointment(leadId) {
+      if (!confirm('Cancel this appointment?')) return;
+
+      try {
+        await supabaseClient
+          .from('leads')
+          .update({ appointment_status: 'cancelled', updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        await supabaseClient
+          .from('calendar_events')
+          .update({ status: 'cancelled' })
+          .eq('lead_id', leadId);
+
+        const lead = allLeads.find(l => l.id === leadId);
+        if (lead) lead.appointment_status = 'cancelled';
+
+        showToast('Appointment cancelled', 'success');
+        viewLead(leadId);
+
+      } catch (err) {
+        console.error('Cancel error:', err);
+        showToast('Failed to cancel: ' + err.message, 'error');
+      }
+    }
+
+    // Create event from parsed message data
+    async function createEventFromMessage(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const parsedDate = lead._parsedDate || '';
+      const parsedTime = lead._parsedTime || '';
+      const parsedAddress = lead._parsedAddress || lead.project_address || lead.address || '';
+
+      if (!parsedDate) {
+        showToast('Could not parse date from message', 'error');
+        return;
+      }
+
+      try {
+        showToast('Creating calendar event...', 'info');
+
+        // Parse the date string (e.g., "Wednesday, February 4, 2026")
+        let startTime;
+        try {
+          // Try to parse natural date
+          const dateStr = parsedDate.replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*/i, '');
+          startTime = new Date(dateStr);
+          if (isNaN(startTime.getTime())) {
+            startTime = new Date(parsedDate);
+          }
+        } catch (e) {
+          startTime = new Date(parsedDate);
+        }
+
+        // Parse time (e.g., "3:00 PM")
+        if (parsedTime) {
+          const timeMatch = parsedTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+          if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = parseInt(timeMatch[2]) || 0;
+            const ampm = timeMatch[3];
+            if (ampm && ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+            if (ampm && ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+            startTime.setHours(hours, minutes, 0, 0);
+          }
+        }
+
+        if (isNaN(startTime.getTime())) {
+          showToast('Could not parse date/time. Please schedule manually.', 'error');
+          return;
+        }
+
+        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+        const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Customer';
+        const leadEmail = lead.email || lead.homeowner_email || '';
+        const leadPhone = lead.phone || lead.homeowner_phone || '';
+
+        // Create calendar event
+        const { data: calEvent, error: calError } = await supabaseClient
+          .from('calendar_events')
+          .insert([{
+            created_by: currentUser.id,
+            title: 'Appointment: ' + leadName,
+            description: 'Project: ' + (lead.project_type || 'Countertops') + '\nPhone: ' + leadPhone + '\nEmail: ' + leadEmail + '\n\n' + (lead.message || lead.project_details || ''),
+            event_type: 'appointment',
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            location: parsedAddress,
+            location_address: parsedAddress,
+            lead_id: leadId,
+            status: 'confirmed',
+            reminder_minutes: [1440, 60],
+            color: '#10b981'
+          }])
+          .select()
+          .single();
+
+        if (calError) throw calError;
+
+        // Add customer as participant
+        if (calEvent && leadEmail) {
+          await supabaseClient.from('calendar_event_participants').insert([{
+            event_id: calEvent.id,
+            email: leadEmail.toLowerCase(),
+            name: leadName,
+            phone: leadPhone,
+            participant_type: 'attendee',
+            response_status: 'accepted'
+          }]);
+        }
+
+        // Update lead with parsed appointment data
+        const isoDate = startTime.toISOString().split('T')[0];
+        const hours12 = startTime.getHours() % 12 || 12;
+        const ampm = startTime.getHours() >= 12 ? 'PM' : 'AM';
+        const formattedTime = hours12 + ':' + String(startTime.getMinutes()).padStart(2, '0') + ' ' + ampm;
+
+        await supabaseClient
+          .from('leads')
+          .update({
+            appointment_date: isoDate,
+            appointment_time: formattedTime,
+            appointment_status: 'confirmed',
+            project_address: parsedAddress || lead.project_address,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadId);
+
+        // Update local data
+        lead.appointment_date = isoDate;
+        lead.appointment_time = formattedTime;
+        lead.appointment_status = 'confirmed';
+        if (parsedAddress) lead.project_address = parsedAddress;
+
+        showToast('Calendar event created for ' + startTime.toLocaleDateString() + ' at ' + formattedTime, 'success');
+        viewLead(leadId);
+
+      } catch (err) {
+        console.error('Create event error:', err);
+        showToast('Failed to create event: ' + err.message, 'error');
+      }
+    }
+
+    // Auto-create pending calendar event in background
+    async function autoCreatePendingEvent(leadId, parsedDate, parsedTime, address, name, email, phone, message) {
+      try {
+        console.log('[AutoCreate] Starting for lead:', leadId, 'date:', parsedDate, 'time:', parsedTime);
+
+        // Must have currentUser
+        if (!currentUser || !currentUser.id) {
+          console.warn('[AutoCreate] No currentUser, cannot create event');
+          return;
+        }
+
+        // Check if event already exists for this lead
+        const { data: existing, error: checkError } = await supabaseClient
+          .from('calendar_events')
+          .select('id')
+          .eq('lead_id', leadId)
+          .limit(1);
+
+        if (checkError) {
+          console.warn('[AutoCreate] Check existing error:', checkError.message);
+        }
+
+        if (existing && existing.length > 0) {
+          console.log('[AutoCreate] Event already exists for lead', leadId);
+          return;
+        }
+
+        // Parse date - try multiple formats
+        let startTime = null;
+        const dateFormats = [
+          parsedDate,
+          parsedDate.replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*/i, ''),
+          parsedDate.replace(/(\d+)(st|nd|rd|th)/gi, '$1') // Remove ordinals
+        ];
+
+        for (const fmt of dateFormats) {
+          const d = new Date(fmt);
+          if (!isNaN(d.getTime())) {
+            startTime = d;
+            break;
+          }
+        }
+
+        if (!startTime) {
+          console.warn('[AutoCreate] Could not parse date:', parsedDate);
+          return;
+        }
+
+        // Parse time
+        if (parsedTime) {
+          const timeMatch = parsedTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+          if (timeMatch) {
+            let hours = parseInt(timeMatch[1]);
+            const minutes = parseInt(timeMatch[2]) || 0;
+            const ampm = timeMatch[3];
+            if (ampm && ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+            if (ampm && ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+            startTime.setHours(hours, minutes, 0, 0);
+            console.log('[AutoCreate] Parsed time:', hours + ':' + minutes);
+          }
+        } else {
+          // Default to 9 AM if no time specified
+          startTime.setHours(9, 0, 0, 0);
+        }
+
+        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+        console.log('[AutoCreate] Creating event:', startTime.toISOString(), 'to', endTime.toISOString());
+
+        // Create scheduled event
+        const { data: newEvent, error } = await supabaseClient
+          .from('calendar_events')
+          .insert([{
+            created_by: currentUser.id,
+            title: 'Appointment: ' + name,
+            description: 'Phone: ' + (phone || 'N/A') + '\nEmail: ' + (email || 'N/A') + '\n\n' + (message || ''),
+            event_type: 'appointment',
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            location: address || null,
+            location_address: address || null,
+            lead_id: leadId,
+            status: 'scheduled',
+            color: '#fbbf24'
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[AutoCreate] Insert error:', error.message, error.details, error.hint);
+        } else {
+          console.log('[AutoCreate] SUCCESS - Event created:', newEvent?.id);
+          // Refresh calendar events
+          if (typeof loadAllCalendarEvents === 'function') {
+            loadAllCalendarEvents();
+          }
+        }
+
+      } catch (err) {
+        console.error('[AutoCreate] Exception:', err);
+      }
+    }
+
+    // Confirm parsed appointment
+    async function confirmParsedAppointment(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      try {
+        showToast('Confirming appointment...', 'info');
+
+        // Update calendar event status
+        await supabaseClient
+          .from('calendar_events')
+          .update({ status: 'confirmed', color: '#10b981' })
+          .eq('lead_id', leadId);
+
+        // Update lead
+        const parsedDate = lead._parsedDate || '';
+        const parsedTime = lead._parsedTime || '';
+        const parsedAddr = lead._parsedAddress || '';
+
+        // Try to format date for storage
+        let isoDate = '';
+        try {
+          const dateStr = parsedDate.replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s*/i, '');
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) isoDate = d.toISOString().split('T')[0];
+        } catch (e) {}
+
+        await supabaseClient
+          .from('leads')
+          .update({
+            appointment_date: isoDate,
+            appointment_time: parsedTime,
+            appointment_status: 'confirmed',
+            project_address: parsedAddr || lead.project_address,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadId);
+
+        lead.appointment_date = isoDate;
+        lead.appointment_time = parsedTime;
+        lead.appointment_status = 'confirmed';
+
+        // Close modal, reload calendar, show toast
+        closeLeadModal();
+        showPage('calendar');
+        // Force reload calendar events
+        setTimeout(function() {
+          if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
+          if (typeof loadAllCalendarEvents === 'function') loadAllCalendarEvents();
+        }, 100);
+        showToast('✓ Appointment confirmed - ' + (lead._parsedDate || 'Date set'), 'success');
+
+      } catch (err) {
+        console.error('Confirm error:', err);
+        showToast('Failed to confirm: ' + err.message, 'error');
+      }
+    }
+
+    // Decline appointment
+    async function declineAppointment(leadId) {
+      if (!confirm('Decline this appointment request?')) return;
+
+      try {
+        await supabaseClient
+          .from('calendar_events')
+          .update({ status: 'cancelled', color: '#ef4444' })
+          .eq('lead_id', leadId);
+
+        await supabaseClient
+          .from('leads')
+          .update({ appointment_status: 'cancelled', updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        const lead = allLeads.find(l => l.id === leadId);
+        if (lead) lead.appointment_status = 'cancelled';
+
+        showToast('Appointment declined', 'success');
+        viewLead(leadId);
+
+      } catch (err) {
+        console.error('Decline error:', err);
+        showToast('Failed to decline: ' + err.message, 'error');
+      }
     }
 
     async function loadLeadMessages(leadId) {
@@ -20745,7 +21849,7 @@
 
         if (tab === 'jobs') {
           const { data: jobs } = await supabaseClient
-            .from('jobs')
+            .from('projects')
             .select('*')
             .eq('customer_id', selectedCustomer.id)
             .order('created_at', { ascending: false });
@@ -20765,7 +21869,7 @@
                   ${jobs.map(j => `
                     <tr style="cursor: pointer;" onclick="viewJob && viewJob('${j.id}')">
                       <td style="font-weight: 600;">${j.job_number || '-'}</td>
-                      <td>${j.project_description || '-'}</td>
+                      <td>${j.description || '-'}</td>
                       <td><span class="status-badge job-${j.status || 'new'}">${(j.status || 'new').replace('_', ' ')}</span></td>
                       <td style="color: var(--gold-primary); font-weight: 600;">$${(j.total_price || 0).toFixed(2)}</td>
                       <td>${new Date(j.created_at).toLocaleDateString()}</td>
@@ -22666,7 +23770,7 @@
             try {
               // Check if job exists for this customer email
               const { data: existingJob } = await supabaseClient
-                .from('jobs')
+                .from('projects')
                 .select('id')
                 .eq('user_id', user.id)
                 .eq('customer_email', inv.customer_email)
@@ -22689,7 +23793,7 @@
                 if (invoiceId) jobData.invoice_id = invoiceId;
 
                 const { error: jobErr } = await supabaseClient
-                  .from('jobs')
+                  .from('projects')
                   .insert(jobData);
 
                 if (!jobErr) {
@@ -23665,7 +24769,7 @@
         } catch { /* RPC may not exist yet */ }
 
         // Create job from paid invoice with full traceability
-        const { data: newJob } = await supabaseClient.from('jobs').insert({
+        const { data: newJob } = await supabaseClient.from('projects').insert({
           user_id: user.id,
           customer_id: invoice.customer_id,
           invoice_id: invoiceId,
@@ -23676,7 +24780,7 @@
           customer_email: invoice.customer_email,
           customer_phone: invoice.customer_phone,
           customer_address: invoice.customer_address,
-          project_description: invoice.project_name || 'Project from Invoice #' + invoice.invoice_number,
+          description: invoice.project_name || 'Project from Invoice #' + invoice.invoice_number,
           contract_amount: invoice.total,
           status: 'approved'
         }).select().single();
@@ -26775,7 +27879,7 @@
           customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
           customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
           project_name: document.getElementById('estimate-project-name').value.trim() || null,
-          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
+          description: document.getElementById('estimate-project-desc').value.trim() || null,
           project_type: projectType,
           valid_until: document.getElementById('estimate-valid-until')?.value || null,
           subtotal: subtotal,
@@ -26991,7 +28095,7 @@
           customer_state: document.getElementById('estimate-customer-state').value.trim() || null,
           customer_zip: document.getElementById('estimate-customer-zip').value.trim() || null,
           project_name: document.getElementById('estimate-project-name').value.trim() || null,
-          project_description: document.getElementById('estimate-project-desc').value.trim() || null,
+          description: document.getElementById('estimate-project-desc').value.trim() || null,
           valid_until: document.getElementById('estimate-valid-until').value || null,
           subtotal: subtotal,
           tax_rate: parseFloat(document.getElementById('estimate-tax-rate').value) || 0,
@@ -27331,7 +28435,7 @@
           customer_state: original.customer_state,
           customer_zip: original.customer_zip,
           project_name: original.project_name ? original.project_name + ' (Copy)' : null,
-          project_description: original.project_description,
+          description: original.description,
           valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           subtotal: original.subtotal,
           tax_rate: original.tax_rate,
@@ -28225,6 +29329,45 @@
         showToast(isEdit ? 'Project updated' : 'Project created', 'success');
         await loadProjects();
 
+        // Auto-create calendar event if project has start_date and status is scheduled/in_progress
+        const project = result.data;
+        if (project && project.start_date && ['scheduled', 'in_progress'].includes(project.status)) {
+          try {
+            // Check if calendar event already exists for this project
+            const { data: existingEvent } = await supabaseClient
+              .from('calendar_events')
+              .select('id')
+              .eq('project_id', project.id)
+              .limit(1);
+
+            if (!existingEvent || existingEvent.length === 0) {
+              // Create calendar event for project start
+              const startDate = new Date(project.start_date + 'T09:00:00');
+              const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000); // 4 hours
+
+              await supabaseClient
+                .from('calendar_events')
+                .insert([{
+                  created_by: user.id,
+                  title: 'Project: ' + project.name,
+                  description: 'Customer: ' + project.customer_name + '\nPhone: ' + (project.customer_phone || 'N/A') + '\nEmail: ' + (project.customer_email || 'N/A') + '\nAddress: ' + (project.address || 'N/A'),
+                  event_type: project.status === 'scheduled' ? 'measurement' : 'installation',
+                  start_time: startDate.toISOString(),
+                  end_time: endDate.toISOString(),
+                  location: project.address,
+                  location_address: [project.address, project.city, project.state, project.zip].filter(Boolean).join(', '),
+                  project_id: project.id,
+                  status: 'scheduled',
+                  color: '#10b981'
+                }]);
+
+              console.log('Calendar event auto-created for project', project.id);
+            }
+          } catch (calErr) {
+            console.warn('Could not auto-create calendar event:', calErr.message);
+          }
+        }
+
         // If detail modal is open, refresh it
         if (currentProjectId && isEdit) {
           openProjectDetail(currentProjectId);
@@ -28521,14 +29664,14 @@
 
         jobsList.innerHTML = '<div class="spinner" style="margin: 40px auto;"></div>';
 
+        // Load from PROJECTS table (single source of truth)
         const { data: jobs, error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .select(`
             *,
-            customers (id, name, email, phone, address, city, state, zip),
-            job_collaborators (
-              id, contractor_id, role, amount_quoted, status,
-              collaborators (id, name, email, phone, type)
+            project_contractors (
+              id, contractor_id, role, agreed_rate, status,
+              contractors:contractor_id (id, name, email, phone)
             )
           `)
           .eq('user_id', user.id)
@@ -28727,7 +29870,7 @@
               </div>
               <div class="list-item-content">
                 <div class="list-item-title">${job.job_number || 'New Job'} · ${job.customers?.name || 'Unknown'}</div>
-                <div class="list-item-subtitle">${job.project_description || 'No description'}</div>
+                <div class="list-item-subtitle">${job.description || 'No description'}</div>
               </div>
               <div class="list-item-meta">
                 <div class="list-item-amount">$${(job.contract_amount || 0).toLocaleString()}</div>
@@ -28860,7 +30003,7 @@
           customer_phone: customerPhone,
           customer_address: customerAddress,
           job_number: jobNumber || `JOB-${Date.now()}`,
-          project_description: document.getElementById('job-title').value.trim(),
+          description: document.getElementById('job-title').value.trim(),
           project_type: document.getElementById('job-type').value,
           contract_amount: parseFloat(document.getElementById('job-total').value) || 0,
           deposit_amount: depositAmount,
@@ -28870,7 +30013,7 @@
           status: scheduledDate ? 'scheduled' : 'new'
         };
 
-        const { error } = await supabaseClient.from('jobs').insert([jobData]);
+        const { error } = await supabaseClient.from('projects').insert([jobData]);
         if (error) throw error;
 
         closeNewJobModal();
@@ -28898,7 +30041,7 @@
       document.getElementById('job-detail-number').textContent = job.job_number || 'N/A';
       document.getElementById('job-detail-status').value = job.status || 'new';
       document.getElementById('job-detail-type').textContent = (job.project_type || 'N/A').replace('_', ' ');
-      document.getElementById('job-detail-priority').textContent = job.project_description || '-';
+      document.getElementById('job-detail-priority').textContent = job.description || '-';
       document.getElementById('job-detail-total').textContent = '$' + (job.contract_amount || 0).toFixed(2);
       document.getElementById('job-detail-balance').textContent = '$' + ((job.contract_amount || 0) - (job.total_paid || 0)).toFixed(2);
       document.getElementById('job-detail-notes').textContent = job.internal_notes || '-';
@@ -28917,8 +30060,8 @@
 
       // Assigned collaborators
       const collaboratorsList = document.getElementById('job-collaborators-list');
-      if (job.job_collaborators && job.job_collaborators.length > 0) {
-        collaboratorsList.innerHTML = job.job_collaborators.map(jc => `
+      if (job.project_contractors && job.project_contractors.length > 0) {
+        collaboratorsList.innerHTML = job.project_contractors.map(jc => `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--dark-elevated); border-radius: 6px; margin-bottom: 8px;">
             <div style="flex: 1; cursor: pointer;" onclick="openContractorProfile('${jc.contractor_id}')">
               <div style="font-weight: 500;">${jc.collaborators?.name || 'Unknown'}</div>
@@ -28969,7 +30112,7 @@
 
       try {
         const { error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .update({ status: newStatus, updated_at: new Date().toISOString() })
           .eq('id', currentJobId);
 
@@ -28992,13 +30135,13 @@
       try {
         // Get job details first for notification
         const { data: job } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .select('*')
           .eq('id', jobId)
           .single();
 
         const { error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .update({ status: newStatus, updated_at: new Date().toISOString() })
           .eq('id', jobId);
 
@@ -29030,7 +30173,7 @@
 
       try {
         const { error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .update({ status: 'archived', updated_at: new Date().toISOString() })
           .eq('id', jobId);
 
@@ -29052,13 +30195,13 @@
 
       try {
         // First delete related records
-        await supabaseClient.from('job_collaborators').delete().eq('job_id', jobId);
-        await supabaseClient.from('job_files').delete().eq('job_id', jobId);
-        await supabaseClient.from('job_timeline').delete().eq('job_id', jobId);
+        await supabaseClient.from('project_contractors').delete().eq('project_id', jobId);
+        await supabaseClient.from('project_files').delete().eq('project_id', jobId);
+        await supabaseClient.from('project_activity').delete().eq('project_id', jobId);
 
         // Then delete the job
         const { error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .delete()
           .eq('id', jobId);
 
@@ -29093,7 +30236,7 @@
 
       try {
         const { error } = await supabaseClient
-          .from('jobs')
+          .from('projects')
           .update(updateData)
           .eq('id', currentJobId);
 
@@ -29115,9 +30258,9 @@
 
       try {
         const { data: files, error } = await supabaseClient
-          .from('job_files')
+          .from('project_files')
           .select('*')
-          .eq('job_id', jobId)
+          .eq('project_id', jobId)
           .order('uploaded_at', { ascending: false });
 
         if (error) throw error;
@@ -29182,9 +30325,9 @@
 
           // Save file record
           const { error: dbError } = await supabaseClient
-            .from('job_files')
+            .from('project_files')
             .insert([{
-              job_id: currentJobId,
+              project_id: currentJobId,
               user_id: user.id,
               file_name: file.name,
               file_url: urlData.publicUrl,
@@ -29211,9 +30354,9 @@
 
       try {
         const { data: history, error } = await supabaseClient
-          .from('job_status_history')
+          .from('project_status_history')
           .select('*')
-          .eq('job_id', jobId)
+          .eq('project_id', jobId)
           .order('changed_at', { ascending: false })
           .limit(10);
 
@@ -29532,7 +30675,7 @@
         if (!acceptResp.ok) throw new Error(acceptData.error || 'Failed to accept');
 
         showToast(`You're now connected with ${verifyData.invitation.inviterName}!`, 'success');
-        showPage('collaborations');
+        showPage('collaborators');
         switchCollabTab('network');
 
       } catch (err) {
@@ -29997,6 +31140,68 @@
       else if (tab === 'collaborations') loadCollaborations();
     }
 
+    function switchTeamTab(tab) {
+      // Update tab buttons
+      document.querySelectorAll('#page-collaborators .filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      const activeTab = document.getElementById('team-tab-' + tab);
+      if (activeTab) activeTab.classList.add('active');
+
+      // Show/hide content
+      document.getElementById('team-content-my-team').style.display = tab === 'my-team' ? 'block' : 'none';
+      document.getElementById('team-content-invitations').style.display = tab === 'invitations' ? 'block' : 'none';
+
+      // Load data for invitations tab
+      if (tab === 'invitations') loadTeamInvitations();
+    }
+
+    async function loadTeamInvitations() {
+      const container = document.getElementById('team-invitations-list');
+      if (!container) return;
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto;"></div></div>';
+
+      try {
+        const resp = await apiCall('/api/collaboration/invitations');
+        const data = await resp.json();
+
+        if (!resp.ok || !data.received || data.received.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <h3>No pending invitations</h3>
+              <p>When you're invited to collaborate on projects, they'll appear here.</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = data.received.map(inv => `
+          <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 8px;">
+            <div>
+              <div style="font-weight: 600;">${escapeHtml(inv.project?.name || 'Project')}</div>
+              <div style="font-size: 13px; color: var(--text-muted);">From: ${escapeHtml(inv.inviter?.full_name || inv.inviter?.email || 'Unknown')}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Role: ${inv.role || 'Collaborator'}</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-modern primary" onclick="respondToInvite('${inv.id}', 'accepted')">Accept</button>
+              <button class="btn-modern ghost" onclick="respondToInvite('${inv.id}', 'declined')">Decline</button>
+            </div>
+          </div>
+        `).join('');
+
+        // Update badge
+        const badge = document.getElementById('team-invites-badge');
+        if (badge && data.received.length > 0) {
+          badge.textContent = data.received.length;
+          badge.style.display = 'inline';
+        }
+      } catch (err) {
+        console.error('Load team invitations error:', err);
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Error loading invitations</div>';
+      }
+    }
+
     async function loadMyNetwork() {
       const container = document.getElementById('network-list');
       if (!container) return;
@@ -30298,7 +31503,7 @@
         // Also add jobs
         if (allJobs && allJobs.length > 0) {
           allJobs.forEach(job => {
-            const label = (job.job_number || 'Job') + ' - ' + (job.customer_name || job.project_description || 'Untitled');
+            const label = (job.job_number || 'Job') + ' - ' + (job.customer_name || job.description || 'Untitled');
             select.innerHTML += `<option value="${job.id}">${escapeHtml(label)}</option>`;
           });
         }
@@ -30381,7 +31586,7 @@
           break;
 
         case 'job':
-          suggestedTitle = `${entityData.job_number || 'Job'} - ${entityData.customer_name || entityData.project_description || ''}`;
+          suggestedTitle = `${entityData.job_number || 'Job'} - ${entityData.customer_name || entityData.description || ''}`;
           prefillData = {
             title: suggestedTitle,
             type: entityData.eventType || 'measurement',
@@ -30537,6 +31742,10 @@
       document.getElementById('cal-event-job').value = '';
       document.getElementById('cal-event-project').value = '';
 
+      // Populate dropdowns
+      populateEventProjectDropdown();
+      populateEventContractorsDropdown();
+
       if (eventId) {
         title.textContent = 'Edit Event';
         loadCalendarEventForEditSimple(eventId);
@@ -30606,7 +31815,13 @@
         if (event.lead_id) document.getElementById('cal-event-lead').value = event.lead_id;
         if (event.customer_id) document.getElementById('cal-event-customer').value = event.customer_id;
         if (event.job_id) document.getElementById('cal-event-job').value = event.job_id;
-        if (event.project_id) document.getElementById('cal-event-project').value = event.project_id;
+        // Use project_id if available, fallback to job_id for backward compatibility
+        const projectIdToUse = event.project_id || event.job_id;
+        if (projectIdToUse) {
+          document.getElementById('cal-event-project').value = projectIdToUse;
+          const projectSelect = document.getElementById('cal-event-project-select');
+          if (projectSelect) projectSelect.value = projectIdToUse;
+        }
 
       } catch (err) {
         console.error('Error loading event:', err);
@@ -30623,14 +31838,20 @@
 
       closeLeadModal();
 
+      // Get lead name from various possible field names
+      const leadName = selectedLead.full_name || selectedLead.homeowner_name || selectedLead.name || selectedLead.email || 'Lead';
+      const leadEmail = selectedLead.email || selectedLead.homeowner_email || '';
+      const leadPhone = selectedLead.phone || selectedLead.homeowner_phone || '';
+      const leadAddress = selectedLead.address || selectedLead.project_address || '';
+
       // Open modal with pre-filled data
       openCalendarEventModal(null, null, {
-        title: `Appointment - ${selectedLead.full_name || selectedLead.email || 'Lead'}`,
+        title: `Appointment - ${leadName}`,
         type: 'appointment',
-        contactName: selectedLead.full_name || '',
-        contactEmail: selectedLead.email || '',
-        contactPhone: selectedLead.phone || '',
-        location: selectedLead.address || '',
+        contactName: leadName,
+        contactEmail: leadEmail,
+        contactPhone: leadPhone,
+        location: leadAddress,
         leadId: selectedLead.id
       });
     }
@@ -30654,7 +31875,7 @@
       select.innerHTML = '<option value="">-- None --</option>';
       if (allJobs && allJobs.length > 0) {
         allJobs.forEach(j => {
-          const label = (j.job_number || 'Job') + ' - ' + (j.customer_name || j.project_description || 'Untitled');
+          const label = (j.job_number || 'Job') + ' - ' + (j.customer_name || j.description || 'Untitled');
           select.innerHTML += `<option value="${j.id}">${escapeHtml(label)}</option>`;
         });
       }
@@ -30676,15 +31897,66 @@
     }
 
     function populateEventProjectDropdown() {
-      const select = document.getElementById('cal-event-project');
+      const select = document.getElementById('cal-event-project-select');
+      const hiddenInput = document.getElementById('cal-event-project');
       if (!select) return;
       select.innerHTML = '<option value="">-- None --</option>';
-      if (allProjects && allProjects.length > 0) {
-        allProjects.forEach(p => {
-          const name = p.name || p.project_name || 'Untitled Project';
-          select.innerHTML += `<option value="${p.id}">${escapeHtml(name)}</option>`;
+      // allJobs now contains projects (single source of truth)
+      if (allJobs && allJobs.length > 0) {
+        allJobs.forEach(p => {
+          const name = p.customer_name || p.name || p.description || 'Untitled Project';
+          const jobNum = p.job_number ? `${p.job_number} - ` : '';
+          select.innerHTML += `<option value="${p.id}">${escapeHtml(jobNum + name)}</option>`;
         });
       }
+      // Sync with hidden input
+      select.addEventListener('change', function() {
+        if (hiddenInput) hiddenInput.value = this.value;
+      });
+      // Set initial value from hidden input
+      if (hiddenInput && hiddenInput.value) {
+        select.value = hiddenInput.value;
+      }
+    }
+
+    function populateEventContractorsDropdown() {
+      const select = document.getElementById('cal-event-contractors');
+      if (!select) return;
+      select.innerHTML = '';
+      // Add contractors from allContractors
+      if (allContractors && allContractors.length > 0) {
+        allContractors.forEach(c => {
+          const name = c.name || c.company_name || c.email || 'Unknown';
+          const specialty = c.specialty ? ` (${c.specialty})` : '';
+          select.innerHTML += `<option value="${c.id}" data-email="${c.email || ''}" data-phone="${c.phone || ''}" data-name="${escapeHtml(name)}">${escapeHtml(name)}${specialty}</option>`;
+        });
+      }
+      // Also add team members if available
+      if (allUsers && allUsers.length > 0) {
+        allUsers.forEach(u => {
+          if (u.account_type !== 'customer') {
+            const name = u.full_name || u.email || 'Team Member';
+            select.innerHTML += `<option value="user_${u.id}" data-email="${u.email || ''}" data-name="${escapeHtml(name)}">${escapeHtml(name)} (Team)</option>`;
+          }
+        });
+      }
+    }
+
+    function getSelectedContractorsAsParticipants() {
+      const select = document.getElementById('cal-event-contractors');
+      if (!select) return [];
+      const participants = [];
+      const selectedOptions = Array.from(select.selectedOptions);
+      selectedOptions.forEach(opt => {
+        participants.push({
+          email: opt.dataset.email || '',
+          name: opt.dataset.name || opt.text,
+          phone: opt.dataset.phone || '',
+          role: 'contractor',
+          participant_type: 'attendee'
+        });
+      });
+      return participants;
     }
 
     function addEventParticipant() {
@@ -30831,8 +32103,9 @@
       const description = document.getElementById('cal-event-description').value.trim();
       const leadId = document.getElementById('cal-event-lead').value;
       const customerId = document.getElementById('cal-event-customer').value;
-      const jobId = document.getElementById('cal-event-job').value;
-      const projectId = document.getElementById('cal-event-project').value;
+      // Get project from visible dropdown (preferred) or hidden input
+      const projectId = document.getElementById('cal-event-project-select')?.value ||
+                        document.getElementById('cal-event-project').value;
 
       // Reminders
       const reminders = [];
@@ -30859,7 +32132,6 @@
           description: description || undefined,
           lead_id: leadId || undefined,
           customer_id: customerId || undefined,
-          job_id: jobId || undefined,
           project_id: projectId || undefined,
           reminder_minutes: reminders,
           notify_participants: notifyParticipants,
@@ -30939,11 +32211,11 @@
         // Add optional links
         const leadId = document.getElementById('cal-event-lead')?.value;
         const customerId = document.getElementById('cal-event-customer')?.value;
-        const jobId = document.getElementById('cal-event-job')?.value;
-        const projectId = document.getElementById('cal-event-project')?.value;
+        // Get project from visible dropdown (preferred) or hidden input
+        const projectId = document.getElementById('cal-event-project-select')?.value ||
+                          document.getElementById('cal-event-project')?.value;
         if (leadId) eventData.lead_id = leadId;
         if (customerId) eventData.customer_id = customerId;
-        if (jobId) eventData.job_id = jobId;
         if (projectId) eventData.project_id = projectId;
 
         const eventId = document.getElementById('cal-event-id').value;
@@ -30966,8 +32238,69 @@
 
         if (result.error) throw result.error;
 
+        const savedEvent = result.data?.[0];
+
+        // Add selected contractors/team as participants
+        if (savedEvent) {
+          const contractorParticipants = getSelectedContractorsAsParticipants();
+          // Also add customer contact as participant if provided
+          if (contactEmail) {
+            contractorParticipants.push({
+              email: contactEmail,
+              name: contactName || 'Customer',
+              phone: contactPhone || '',
+              role: 'customer',
+              participant_type: 'attendee'
+            });
+          }
+          // Insert participants
+          if (contractorParticipants.length > 0) {
+            const participantRecords = contractorParticipants
+              .filter(p => p.email) // Only add those with emails
+              .map(p => ({
+                event_id: savedEvent.id,
+                email: p.email.toLowerCase(),
+                name: p.name,
+                phone: p.phone || null,
+                participant_type: p.participant_type || 'attendee',
+                response_status: 'pending'
+              }));
+            if (participantRecords.length > 0) {
+              // Clear existing participants first if updating
+              if (eventId) {
+                await supabaseClient
+                  .from('calendar_event_participants')
+                  .delete()
+                  .eq('event_id', savedEvent.id);
+              }
+              await supabaseClient
+                .from('calendar_event_participants')
+                .insert(participantRecords);
+            }
+          }
+        }
+
+        // If linked to a lead, update the lead's appointment status
+        if (leadId && !eventId) {
+          try {
+            await supabaseClient
+              .from('leads')
+              .update({
+                appointment_status: 'scheduled',
+                appointment_date: startDate,
+                appointment_time: startTime,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', leadId);
+            console.log('Lead appointment status updated');
+          } catch (leadErr) {
+            console.warn('Could not update lead status:', leadErr.message);
+          }
+        }
+
         showToast(eventId ? 'Event updated!' : 'Event created!', 'success');
         closeCalendarEventModal();
+        loadCalendarEvents();
         loadAllCalendarEvents();
 
       } catch (err) {
@@ -30987,22 +32320,37 @@
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) return;
 
-        // Load from calendar_events table directly (faster)
-        const { data: events, error } = await supabaseClient
+        // Check if user is admin (can see all events)
+        const isAdmin = currentUser && (currentUser.account_type === 'admin' || currentUser.account_type === 'super_admin' || currentUser.role === 'admin' || currentUser.role === 'super_admin');
+
+        // Build query - admins see all, others see only their own
+        let query = supabaseClient
           .from('calendar_events')
-          .select('id, title, event_type, status, start_time, end_time, location, lead_id, customer_id, job_id, metadata')
-          .eq('created_by', user.id)
+          .select('id, title, event_type, status, start_time, end_time, location, lead_id, customer_id, project_id, metadata, created_by')
           .neq('status', 'cancelled')
           .gte('start_time', new Date(Date.now() - 30*24*60*60*1000).toISOString()) // Last 30 days
           .lte('start_time', new Date(Date.now() + 90*24*60*60*1000).toISOString()) // Next 90 days
           .order('start_time', { ascending: true });
 
+        // Only filter by created_by if NOT admin
+        if (!isAdmin) {
+          query = query.eq('created_by', user.id);
+        }
+
+        const { data: events, error } = await query;
+
+        console.log('[Calendar] Loading events, isAdmin:', isAdmin, 'events found:', events?.length || 0);
+
         if (error) {
-          console.warn('Calendar events table may not exist:', error.message);
+          console.warn('Calendar events load error:', error.message);
           // Just use jobs-based events
           renderCalendar();
           renderUpcomingEvents();
           return;
+        }
+
+        if (events && events.length > 0) {
+          console.log('[Calendar] Events:', events.map(e => ({ id: e.id, title: e.title, date: e.start_time?.split('T')[0], status: e.status })));
         }
 
         // Merge with calendar events
@@ -31082,10 +32430,21 @@
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const timeOptions = { hour: 'numeric', minute: '2-digit' };
 
+        // Status colors
+        const statusColors = {
+          scheduled: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', label: 'Pending Confirmation' },
+          confirmed: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', label: 'Confirmed' },
+          completed: { bg: 'rgba(99, 102, 241, 0.15)', color: '#6366f1', label: 'Completed' },
+          cancelled: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', label: 'Cancelled' },
+          rescheduled: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', label: 'Rescheduled' },
+          no_show: { bg: 'rgba(107, 114, 128, 0.15)', color: '#6b7280', label: 'No Show' }
+        };
+        const statusStyle = statusColors[event.status] || statusColors.scheduled;
+
         content.innerHTML = `
           <div style="text-align: center; margin-bottom: 20px;">
             <span style="display: inline-block; padding: 4px 12px; background: ${color}20; color: ${color}; border-radius: 16px; font-size: 12px; font-weight: 600; text-transform: capitalize;">${event.event_type.replace('_', ' ')}</span>
-            <span style="display: inline-block; padding: 4px 12px; background: var(--dark-elevated); color: var(--text-muted); border-radius: 16px; font-size: 12px; margin-left: 8px;">${event.status}</span>
+            <span style="display: inline-block; padding: 4px 12px; background: ${statusStyle.bg}; color: ${statusStyle.color}; border-radius: 16px; font-size: 12px; margin-left: 8px; font-weight: 500;">${statusStyle.label}</span>
           </div>
 
           <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; text-align: center;">${escapeHtml(event.title)}</h3>
@@ -31136,13 +32495,22 @@
           ` : ''}
         `;
 
-        // Actions - simplified
+        // Actions - with confirm button for scheduled events
+        const isScheduled = event.status === 'scheduled';
+        const isConfirmed = event.status === 'confirmed';
+
         actions.innerHTML = `
           <button type="button" class="btn-modern ghost" onclick="deleteCalendarEvent('${event.id}')" style="color: #ef4444;">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             Delete
           </button>
           <div style="flex: 1;"></div>
+          ${isScheduled ? `
+          <button type="button" class="btn-modern" onclick="confirmCalendarEvent('${event.id}')" style="background: #10b981; color: white;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Confirm
+          </button>
+          ` : ''}
           <button type="button" class="btn-modern secondary" onclick="closeCalendarEventDetailModal()">Close</button>
           <button type="button" class="btn-modern primary" onclick="closeCalendarEventDetailModal(); openCalendarEventModal('${event.id}')">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -31190,6 +32558,91 @@
       }
     }
 
+    // Confirm a scheduled calendar event
+    async function confirmCalendarEvent(eventId) {
+      try {
+        showToast('Confirming event...', 'info');
+
+        // Update event status to confirmed
+        const { data: event, error } = await supabaseClient
+          .from('calendar_events')
+          .update({
+            status: 'confirmed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', eventId)
+          .select('*, calendar_event_participants(*)')
+          .single();
+
+        if (error) throw error;
+
+        // Mark as confirmed in state manager
+        if (typeof StateManager !== 'undefined') {
+          StateManager.markEventConfirmed(eventId, currentUser?.id, new Date().toISOString());
+        }
+
+        // Send confirmation notification to participants
+        const participants = event.calendar_event_participants || [];
+        const customerParticipant = participants.find(p => p.participant_type === 'attendee');
+
+        if (customerParticipant?.email) {
+          try {
+            const eventDate = new Date(event.start_time).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const eventTime = new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const confirmationMessage = `
+              <p>Hi ${customerParticipant.name || 'there'},</p>
+              <p>Great news! Your appointment has been <strong>confirmed</strong>.</p>
+              <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0 0 8px; font-weight: 600;">${event.title}</p>
+                <p style="margin: 0 0 4px;">📅 ${eventDate}</p>
+                <p style="margin: 0 0 4px;">🕐 ${eventTime}</p>
+                ${event.location ? `<p style="margin: 0;">📍 ${event.location}</p>` : ''}
+              </div>
+              <p>We look forward to seeing you!</p>
+              <p>If you need to reschedule, please call us at <a href="tel:+16028333189">(602) 833-3189</a>.</p>
+            `;
+
+            await apiCall('/api/email/notify', {
+              method: 'POST',
+              body: JSON.stringify({
+                to: customerParticipant.email,
+                subject: 'Your Appointment is Confirmed - ' + event.title,
+                message: confirmationMessage,
+                type: 'success',
+                rawHtml: true
+              })
+            });
+          } catch (notifyErr) {
+            console.warn('Failed to send confirmation notification:', notifyErr);
+          }
+        }
+
+        // Update participant response status
+        if (customerParticipant) {
+          await supabaseClient
+            .from('calendar_event_participants')
+            .update({
+              response_status: 'accepted',
+              responded_at: new Date().toISOString()
+            })
+            .eq('id', customerParticipant.id);
+        }
+
+        showToast('Event confirmed!', 'success');
+        closeCalendarEventDetailModal();
+        loadAllCalendarEvents();
+
+        // Also refresh dashboard widgets
+        if (typeof loadDashboardWidgets === 'function') {
+          loadDashboardWidgets();
+        }
+
+      } catch (err) {
+        console.error('Error confirming event:', err);
+        showToast('Failed to confirm: ' + err.message, 'error');
+      }
+    }
+
     async function loadCalendarEventForEdit(eventId) {
       try {
         const resp = await apiCall(`/api/calendar/events/${eventId}`);
@@ -31213,7 +32666,11 @@
         document.getElementById('cal-event-location').value = event.location || '';
         document.getElementById('cal-event-description').value = event.description || '';
         document.getElementById('cal-event-customer').value = event.customer_id || '';
-        document.getElementById('cal-event-job').value = event.job_id || '';
+        // Use project_id with fallback to job_id for backward compatibility
+        const projectIdToUse = event.project_id || event.job_id || '';
+        document.getElementById('cal-event-project').value = projectIdToUse;
+        const projectSelect = document.getElementById('cal-event-project-select');
+        if (projectSelect) projectSelect.value = projectIdToUse;
 
         // Load participants
         if (event.participants) {
@@ -31373,8 +32830,8 @@
       if (!currentJobId) return;
       let jc = null;
       const job = allJobs.find(function(j) { return j.id === currentJobId; });
-      if (job && job.job_collaborators) {
-        jc = job.job_collaborators.find(function(c) { return c.contractor_id === contractorId; });
+      if (job && job.project_contractors) {
+        jc = job.project_contractors.find(function(c) { return c.contractor_id === contractorId; });
       }
       const contractor = allCollaborators.find(function(c) { return c.id === contractorId; });
       const email = contractor ? contractor.email : '';
@@ -32457,21 +33914,22 @@
         }
 
         const assignData = {
-          job_id: currentJobId,
+          project_id: currentJobId,
           contractor_id: contractorId,
+          user_id: user.id,
           role: document.getElementById('assign-contractor-role').value,
-          amount_quoted: parseFloat(document.getElementById('assign-contractor-amount').value) || 0,
+          agreed_rate: parseFloat(document.getElementById('assign-contractor-amount').value) || 0,
           status: 'pending'
         };
 
-        const { error } = await supabaseClient.from('job_collaborators').insert([assignData]);
+        const { error } = await supabaseClient.from('project_contractors').insert([assignData]);
         if (error) throw error;
 
         const shouldNotify = document.getElementById('assign-contractor-notify').checked;
         if (shouldNotify) {
           // Send invite email via API
           try {
-            await apiCall(`/api/jobs/${currentJobId}/assign-contractor`, {
+            await apiCall(`/api/projects/${currentJobId}/contractors`, {
               method: 'POST',
               body: JSON.stringify({ contractor_id: contractorId, send_invite: true })
             });
@@ -32552,7 +34010,7 @@
       const jobSelect = document.getElementById('schedule-job-select');
       jobSelect.innerHTML = '<option value="">-- Create New or Select Existing --</option>';
       allJobs.filter(j => j.status !== 'completed' && j.status !== 'cancelled').forEach(j => {
-        jobSelect.innerHTML += `<option value="${j.id}">${j.job_number || 'Job'} - ${j.customer_name || j.project_description}</option>`;
+        jobSelect.innerHTML += `<option value="${j.id}">${j.job_number || 'Job'} - ${j.customer_name || j.description}</option>`;
       });
 
       // Preselect job if provided
@@ -32626,7 +34084,7 @@
 
           // Generate job number
           const { count } = await supabaseClient
-            .from('jobs')
+            .from('projects')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id);
 
@@ -32634,7 +34092,7 @@
 
           // Create the job
           const { data: newJob, error: jobError } = await supabaseClient
-            .from('jobs')
+            .from('projects')
             .insert({
               user_id: user.id,
               customer_id: customerId,
@@ -32642,7 +34100,7 @@
               customer_email: customer?.email || null,
               customer_phone: customer?.phone || null,
               job_number: jobNumber,
-              project_description: description,
+              description: description,
               status: 'scheduled',
               estimated_start_date: scheduleDate,
               notes: notes
@@ -32677,7 +34135,7 @@
 
         if (targetJobId) {
           await supabaseClient
-            .from('jobs')
+            .from('projects')
             .update(updateData)
             .eq('id', targetJobId);
 
@@ -32741,7 +34199,16 @@
                 production: '#8b5cf6',
                 other: '#6b7280'
               };
+              const statusInfo = {
+                scheduled: { color: '#f59e0b', label: 'Pending' },
+                confirmed: { color: '#10b981', label: 'Confirmed' },
+                completed: { color: '#6366f1', label: 'Completed' },
+                cancelled: { color: '#ef4444', label: 'Cancelled' },
+                rescheduled: { color: '#3b82f6', label: 'Rescheduled' },
+                no_show: { color: '#6b7280', label: 'No Show' }
+              };
               const color = typeColors[evt.type] || '#3b82f6';
+              const status = statusInfo[evt.status] || { color: '#f59e0b', label: 'Pending' };
               const clickHandler = evt.apiEventId
                 ? `openCalendarEventDetailModal('${evt.apiEventId}')`
                 : (evt.jobId ? `openJobDetail('${evt.jobId}')` : '');
@@ -32757,7 +34224,7 @@
                     <div class="list-item-subtitle">${evt.type.charAt(0).toUpperCase() + evt.type.slice(1).replace('_', ' ')}</div>
                   </div>
                   <div class="list-item-meta">
-                    <span class="badge-modern" style="background: ${color}20; color: ${color};">${evt.status || 'Scheduled'}</span>
+                    <span class="badge-modern" style="background: ${status.color}20; color: ${status.color};">${status.label}</span>
                   </div>
                 </div>
               `;
@@ -32863,10 +34330,10 @@
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) return;
 
-        // Get jobs with dates
+        // Get projects with dates
         const { data: jobs, error } = await supabaseClient
-          .from('jobs')
-          .select('id, job_number, customer_name, project_description, status, estimated_start_date, field_measure_date, install_date')
+          .from('projects')
+          .select('id, job_number, customer_name, name, description, status, estimated_start_date, field_measure_date, install_date')
           .eq('user_id', user.id)
           .not('status', 'in', '("completed","cancelled")');
 
@@ -32875,7 +34342,7 @@
         calendarEvents = [];
 
         (jobs || []).forEach(job => {
-          const title = job.customer_name || job.project_description || job.job_number;
+          const title = job.customer_name || job.name || job.description || job.job_number;
 
           if (job.estimated_start_date) {
             calendarEvents.push({
@@ -33514,7 +34981,7 @@
 
       try {
         const { data: jobs, error } = await supabaseClient
-          .from('job_collaborators')
+          .from('project_contractors')
           .select(`
             id, role, amount_quoted, status,
             jobs (id, job_number, customer_name, status)

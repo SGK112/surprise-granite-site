@@ -429,6 +429,151 @@ router.post('/estimate-to-invoice/:estimateId',
 }));
 
 // ============================================================
+// ESTIMATE → PROJECT (DIRECT CONVERSION)
+// ============================================================
+
+/**
+ * Convert an approved estimate directly to a project
+ * POST /api/workflow/estimate-to-project/:estimateId
+ *
+ * Creates a project from an estimate, skipping invoice step
+ * Useful for deposit-paid or verbal approval scenarios
+ */
+router.post('/estimate-to-project/:estimateId',
+  asyncHandler(async (req, res) => {
+  const supabase = req.app.get('supabase');
+  if (!supabase) {
+    return res.status(500).json({ error: 'Database not configured' });
+  }
+
+  const { estimateId } = req.params;
+  const { user_id, status = 'approved', notes, scheduled_date } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'user_id is required' });
+  }
+
+  // Fetch the estimate
+  const { data: estimate, error: estimateError } = await supabase
+    .from('estimates')
+    .select('*')
+    .eq('id', estimateId)
+    .single();
+
+  if (estimateError || !estimate) {
+    return res.status(404).json({ error: 'Estimate not found' });
+  }
+
+  // Check if project already exists for this estimate
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('id, name')
+    .eq('estimate_id', estimateId)
+    .single();
+
+  if (existingProject) {
+    return res.status(400).json({
+      error: 'Project already exists for this estimate',
+      project_id: existingProject.id,
+      project_name: existingProject.name
+    });
+  }
+
+  // Generate portal token
+  const crypto = require('crypto');
+  const portalToken = crypto.randomBytes(32).toString('hex');
+
+  // Create project from estimate data
+  const projectData = {
+    user_id,
+    name: estimate.project_name || `Project - ${estimate.customer_name}`,
+    description: estimate.project_description || estimate.notes || '',
+    customer_name: estimate.customer_name,
+    customer_email: estimate.customer_email,
+    customer_phone: estimate.customer_phone,
+    address: estimate.customer_address || estimate.project_address,
+    status: status,
+    priority: 'medium',
+    value: estimate.total || 0,
+    estimate_id: estimateId,
+    lead_id: estimate.lead_id,
+    portal_token: portalToken,
+    portal_enabled: true,
+    notes: notes || estimate.notes,
+    start_date: scheduled_date || null
+  };
+
+  const { data: newProject, error: projectError } = await supabase
+    .from('projects')
+    .insert([projectData])
+    .select()
+    .single();
+
+  if (projectError) {
+    return handleApiError(res, projectError, 'Create project from estimate');
+  }
+
+  // Update estimate status
+  await supabase
+    .from('estimates')
+    .update({
+      status: 'converted',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', estimateId);
+
+  // Log activity
+  await supabase
+    .from('project_activity')
+    .insert([{
+      project_id: newProject.id,
+      user_id,
+      action: 'created',
+      description: `Project created from estimate ${estimate.estimate_number || estimateId}`
+    }]);
+
+  logger.info('Estimate converted to project', {
+    estimateId,
+    projectId: newProject.id,
+    projectName: newProject.name
+  });
+
+  // Send notification to customer if email configured
+  if (newProject.customer_email && emailService.isConfigured()) {
+    try {
+      const email = {
+        subject: `Your Project Has Been Created - Surprise Granite`,
+        html: emailService.wrapEmailTemplate(`
+          <h2>Great News!</h2>
+          <p>Your project "${newProject.name}" has been created and is now being processed.</p>
+          <p>You can track your project status anytime using the customer portal:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="https://www.surprisegranite.com/portal/?token=${portalToken}"
+               style="background: #f9cb00; color: #1a1a2e; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+              View Project Status
+            </a>
+          </div>
+          <p>We'll be in touch soon with next steps.</p>
+        `, { headerText: 'Project Created' })
+      };
+      await emailService.sendNotification(newProject.customer_email, email.subject, email.html);
+    } catch (emailErr) {
+      logger.apiError(emailErr, { context: 'Project creation email failed' });
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Estimate successfully converted to project',
+    data: {
+      project: newProject,
+      estimate_id: estimateId,
+      portal_url: `https://www.surprisegranite.com/portal/?token=${portalToken}`
+    }
+  });
+}));
+
+// ============================================================
 // INVOICE PAID → PROJECT UPDATE (UNIFIED APPROACH)
 // ============================================================
 
