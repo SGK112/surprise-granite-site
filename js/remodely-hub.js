@@ -461,7 +461,7 @@
         /* Mobile - positioned higher to avoid floating CTA */
         @media (max-width: 768px) {
           #remodely-hub {
-            bottom: 90px;
+            bottom: 100px;
             right: 16px;
           }
 
@@ -491,7 +491,7 @@
           }
           @media (max-width: 768px) {
             #remodely-hub {
-              bottom: calc(90px + env(safe-area-inset-bottom));
+              bottom: calc(100px + env(safe-area-inset-bottom));
               right: calc(16px + env(safe-area-inset-right));
             }
           }
