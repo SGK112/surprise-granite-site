@@ -458,10 +458,10 @@
           color: rgba(255,255,255,0.5);
         }
 
-        /* Mobile */
+        /* Mobile - positioned higher to avoid floating CTA */
         @media (max-width: 768px) {
           #remodely-hub {
-            bottom: 16px;
+            bottom: 90px;
             right: 16px;
           }
 
@@ -491,7 +491,7 @@
           }
           @media (max-width: 768px) {
             #remodely-hub {
-              bottom: calc(16px + env(safe-area-inset-bottom));
+              bottom: calc(90px + env(safe-area-inset-bottom));
               right: calc(16px + env(safe-area-inset-right));
             }
           }
