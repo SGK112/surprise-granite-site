@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>Hanstone Countertops | Surprise Granite Arizona</title>
   <link rel="canonical" href="https://surprisegranite.com/vendors/hanstone/"/>
-  <meta name="description" content="Browse Hanstone countertops at Surprise Granite. High-quality quartz surfaces with beautiful designs and excellent durability. Find 0+ colors with real-time slab availability."/>
+  <meta name="description" content="Browse Hanstone countertops at Surprise Granite. High-quality quartz surfaces with beautiful designs and excellent durability. Find 59 colors with real-time slab availability."/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
 
   <meta property="og:type" content="website"/>
@@ -452,7 +452,7 @@
 
           <div class="vendor-stats">
             <div class="stat">
-              <div class="stat-value">0</div>
+              <div class="stat-value">59</div>
               <div class="stat-label">Colors Available</div>
             </div>
             <div class="stat">
@@ -495,9 +495,44 @@
       </div>
     </div>
 
-    <div class="products-grid">
-      
+    <div class="products-grid" id="products-grid">
+      <!-- Products loaded dynamically -->
     </div>
+
+    <script>
+    // Load Hanstone products from slabs.json
+    async function loadHanstoneProducts() {
+      try {
+        const response = await fetch('/data/slabs.json');
+        const slabs = await response.json();
+        const hanstoneProducts = slabs.filter(p => p.vendor === 'Hanstone Quartz');
+
+        const grid = document.getElementById('products-grid');
+        grid.innerHTML = hanstoneProducts.map(product => `
+          <a href="/countertops/${product.handle}/" class="product-card">
+            <div class="product-images">
+              <img src="${product.images[0]}" alt="${product.title}" class="product-img primary" loading="lazy" onerror="this.src='https://cdn.msisurfaces.com/images/quartz-countertops/products/closeup/large/calacatta-laza-quartz.jpg'">
+            </div>
+            <div class="product-info">
+              <h3>${product.title}</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <span class="material-tag">${product.productType}</span>
+                <span style="font-weight: 600; color: #16a34a;">$${product.price}/sf</span>
+              </div>
+              <div style="margin-top: 8px; font-size: 0.75rem; color: #64748b;">
+                ${product.tags.find(t => t.startsWith('Countertop Style_'))?.replace('Countertop Style_', '') || 'Veining'} Pattern
+              </div>
+            </div>
+          </a>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading products:', error);
+      }
+    }
+
+    loadHanstoneProducts();
+    </script>
 
     
 
