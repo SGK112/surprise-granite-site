@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Upload Price Sheet | Surprise Granite</title>
+  <meta name="description" content="Upload vendor price sheets to update product pricing."/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="/js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+  <script src="/js/supabase-init.js"></script>
+  <script src="/js/sg-auth.js"></script>
+  <style>
+    :root {
+      --gold-primary: #f9cb00;
+      --gold-dark: #cca600;
+      --dark-primary: #1a1a2e;
+      --dark-deep: #0a0a12;
+      --dark-surface: #12121a;
+      --dark-elevated: #1e1e2d;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--dark-deep);
+      min-height: 100vh;
+      color: var(--text-primary);
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      margin-bottom: 24px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text-primary);
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    /* Steps indicator */
+    .steps {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--dark-elevated);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .step.active {
+      border-color: var(--gold-primary);
+      color: var(--text-primary);
+    }
+
+    .step.complete {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .step.active .step-number {
+      background: var(--gold-primary);
+      color: #000;
+    }
+
+    .step.complete .step-number {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--dark-elevated);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .panel.active { display: block; }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border-subtle);
+      border-radius: 12px;
+      padding: 60px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--gold-primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+
+    .upload-zone svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+    }
+
+    .upload-zone h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .upload-zone p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .upload-zone input {
+      display: none;
+    }
+
+    .upload-zone .btn {
+      display: inline-flex;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .form-select, .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+
+    .form-select:focus, .form-input:focus {
+      outline: none;
+      border-color: var(--gold-primary);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--gold-primary);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-dark);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--dark-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-danger {
+      background: var(--error);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Column Mapping */
+    .mapping-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .mapping-item {
+      background: var(--dark-surface);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .mapping-item label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .mapping-item .required {
+      color: var(--error);
+    }
+
+    .mapping-item select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .mapping-item.matched select {
+      border-color: var(--success);
+    }
+
+    /* File Info */
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--dark-surface);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(59, 130, 246, 0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--info);
+    }
+
+    .file-details h4 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .file-details p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Preview Table */
+    .preview-table-container {
+      max-height: 400px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    .preview-table th,
+    .preview-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+
+    .preview-table th {
+      background: var(--dark-surface);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      position: sticky;
+      top: 0;
+    }
+
+    .preview-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Price change cells */
+    .price-increase {
+      color: var(--error);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .price-decrease {
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .price-unchanged {
+      color: var(--text-muted);
+    }
+
+    .price-new {
+      color: var(--info);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Summary */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--dark-surface);
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .summary-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .summary-card .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-card.increase .value { color: var(--error); }
+    .summary-card.decrease .value { color: var(--success); }
+
+    /* Validation Results */
+    .validation-results {
+      margin-top: 20px;
+    }
+
+    .validation-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .validation-item.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid var(--error);
+    }
+
+    .validation-item.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 3px solid var(--warning);
+    }
+
+    .validation-item svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .validation-item.error svg { color: var(--error); }
+    .validation-item.warning svg { color: var(--warning); }
+
+    /* Loading */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      background: var(--dark-elevated);
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-subtle);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .steps { flex-direction: column; }
+      .btn-group { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/account/pricing/" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Pricing
+    </a>
+
+    <div class="header">
+      <h1>Upload Price Sheet</h1>
+      <p>Upload a CSV or Excel file to update vendor pricing</p>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active" data-step="1">
+        <span class="step-number">1</span>
+        <span class="step-label">Upload File</span>
+      </div>
+      <div class="step" data-step="2">
+        <span class="step-number">2</span>
+        <span class="step-label">Map Columns</span>
+      </div>
+      <div class="step" data-step="3">
+        <span class="step-number">3</span>
+        <span class="step-label">Review Changes</span>
+      </div>
+      <div class="step" data-step="4">
+        <span class="step-number">4</span>
+        <span class="step-label">Apply</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div class="panel active" id="step-1">
+      <div class="panel-header">
+        <h2 class="panel-title">Select File & Vendor</h2>
+      </div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Vendor</label>
+          <select id="vendor-select" class="form-select">
+            <option value="">Select a vendor...</option>
+            <option value="msi">MSI Surfaces</option>
+            <option value="arizona-tile">Arizona Tile</option>
+            <option value="cambria">Cambria</option>
+            <option value="caesarstone">Caesarstone</option>
+            <option value="silestone">Silestone</option>
+            <option value="daltile">Daltile</option>
+            <option value="hanstone">Hanstone Quartz</option>
+            <option value="bravo">Bravo Tile</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div id="other-vendor-group" class="form-group" style="display: none;">
+          <label class="form-label">Vendor Name</label>
+          <input type="text" id="other-vendor-name" class="form-input" placeholder="Enter vendor name">
+        </div>
+
+        <div class="upload-zone" id="upload-zone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <h3>Drop your file here</h3>
+          <p>or click to browse. Supports CSV, XLS, XLSX (max 10MB)</p>
+          <button class="btn btn-primary">Select File</button>
+          <input type="file" id="file-input" accept=".csv,.xls,.xlsx">
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="next-step-1" disabled>
+            Continue to Column Mapping
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Column Mapping -->
+    <div class="panel" id="step-2">
+      <div class="panel-header">
+        <h2 class="panel-title">Map Columns</h2>
+      </div>
+      <div class="panel-body">
+        <div class="file-info" id="file-info">
+          <div class="file-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="file-details">
+            <h4 id="file-name">filename.csv</h4>
+            <p id="file-rows">0 rows found</p>
+          </div>
+        </div>
+
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          Map your file columns to our system fields. Required fields are marked with <span style="color: var(--error);">*</span>
+        </p>
+
+        <div class="mapping-grid" id="mapping-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
+          <button class="btn btn-primary" id="next-step-2">
+            Validate & Preview
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div class="panel" id="step-3">
+      <div class="panel-header">
+        <h2 class="panel-title">Review Price Changes</h2>
+      </div>
+      <div class="panel-body">
+        <div class="summary-grid" id="summary-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="validation-results" id="validation-results">
+          <!-- Populated by JS -->
+        </div>
+
+        <h3 style="margin: 24px 0 16px; font-size: 16px;">Preview Changes</h3>
+        <div class="preview-table-container">
+          <table class="preview-table" id="preview-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Current Price</th>
+                <th>New Price</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody id="preview-body">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="goToStep(2)">Back</button>
+          <button class="btn btn-danger" onclick="rejectSheet()">Reject</button>
+          <button class="btn btn-success" id="approve-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Approve & Apply Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Complete -->
+    <div class="panel" id="step-4">
+      <div class="panel-header">
+        <h2 class="panel-title">Changes Applied</h2>
+      </div>
+      <div class="panel-body" style="text-align: center; padding: 60px 24px;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5" style="margin-bottom: 24px;">
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h3 style="font-size: 24px; margin-bottom: 8px;">Price Updates Complete!</h3>
+        <p id="apply-summary" style="color: var(--text-secondary); margin-bottom: 32px;">
+          Successfully updated 0 products.
+        </p>
+        <div class="btn-group" style="justify-content: center;">
+          <a href="/account/pricing/" class="btn btn-primary">Back to Pricing Dashboard</a>
+          <button class="btn btn-secondary" onclick="location.reload()">Upload Another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p id="loading-text">Processing...</p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.CONFIG?.API_URL || '';
+    let currentUser = null;
+    let currentStep = 1;
+    let uploadedFile = null;
+    let parsedData = null;
+    let sheetId = null;
+    let previewData = null;
+
+    // Field configuration
+    const FIELDS = [
+      { key: 'sku', label: 'SKU / Item Number', required: true },
+      { key: 'name', label: 'Product Name', required: false },
+      { key: 'wholesale_price', label: 'Wholesale Price', required: true },
+      { key: 'msrp', label: 'MSRP / Retail Price', required: false },
+      { key: 'category', label: 'Category', required: false },
+      { key: 'color', label: 'Color', required: false },
+      { key: 'material', label: 'Material Type', required: false },
+      { key: 'thickness', label: 'Thickness', required: false }
+    ];
+
+    // Auth check
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = '/login/?redirect=/account/pricing/upload/';
+          return;
+        }
+        currentUser = user;
+
+        // Check for existing sheet param
+        const params = new URLSearchParams(window.location.search);
+        const existingSheet = params.get('sheet');
+        if (existingSheet) {
+          await loadExistingSheet(existingSheet);
+        }
+
+        setupEventListeners();
+      } catch (err) {
+        console.error('Auth error:', err);
+        window.location.href = '/login/';
+      }
+    });
+
+    function setupEventListeners() {
+      // Vendor select
+      const vendorSelect = document.getElementById('vendor-select');
+      vendorSelect.addEventListener('change', () => {
+        document.getElementById('other-vendor-group').style.display =
+          vendorSelect.value === 'other' ? 'block' : 'none';
+        checkStep1Complete();
+      });
+
+      // File upload
+      const uploadZone = document.getElementById('upload-zone');
+      const fileInput = document.getElementById('file-input');
+
+      uploadZone.addEventListener('click', () => fileInput.click());
+
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
+
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+      });
+
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFile(files[0]);
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+      });
+
+      // Next buttons
+      document.getElementById('next-step-1').addEventListener('click', () => uploadFile());
+      document.getElementById('next-step-2').addEventListener('click', () => validateAndPreview());
+      document.getElementById('approve-btn').addEventListener('click', () => approveAndApply());
+    }
+
+    function handleFile(file) {
+      const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      const validExtensions = ['.csv', '.xls', '.xlsx'];
+      const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+      if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) {
+        alert('Please upload a CSV or Excel file.');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB.');
+        return;
+      }
+
+      uploadedFile = file;
+      const uploadZone = document.getElementById('upload-zone');
+      uploadZone.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5" style="width: 48px; height: 48px;">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <path d="M9 15l2 2 4-4"/>
+        </svg>
+        <h3>${file.name}</h3>
+        <p>${(file.size / 1024).toFixed(1)} KB</p>
+        <button class="btn btn-secondary" onclick="event.stopPropagation(); clearFile();">Remove</button>
+      `;
+
+      checkStep1Complete();
+    }
+
+    function clearFile() {
+      uploadedFile = null;
+      document.getElementById('file-input').value = '';
+      document.getElementById('upload-zone').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <h3>Drop your file here</h3>
+        <p>or click to browse. Supports CSV, XLS, XLSX (max 10MB)</p>
+        <button class="btn btn-primary">Select File</button>
+        <input type="file" id="file-input" accept=".csv,.xls,.xlsx">
+      `;
+      document.getElementById('file-input').addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+      });
+      checkStep1Complete();
+    }
+
+    function checkStep1Complete() {
+      const vendor = document.getElementById('vendor-select').value;
+      const otherName = document.getElementById('other-vendor-name').value;
+      const hasVendor = vendor && (vendor !== 'other' || otherName.trim());
+
+      document.getElementById('next-step-1').disabled = !(uploadedFile && hasVendor);
+    }
+
+    async function uploadFile() {
+      showLoading('Uploading file...');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('vendor_id', document.getElementById('vendor-select').value);
+
+        const vendorName = document.getElementById('vendor-select').value === 'other'
+          ? document.getElementById('other-vendor-name').value
+          : document.getElementById('vendor-select').options[document.getElementById('vendor-select').selectedIndex].text;
+        formData.append('vendor_name', vendorName);
+
+        const session = await supabase.auth.getSession();
+        const response = await fetch(`${API_BASE}/api/pricing/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Upload failed');
+        }
+
+        sheetId = result.sheet.id;
+        parsedData = result;
+
+        // Populate mapping grid
+        populateMappingGrid(result.headers, result.detected_mapping);
+
+        document.getElementById('file-name').textContent = uploadedFile.name;
+        document.getElementById('file-rows').textContent = `${result.row_count} rows found`;
+
+        hideLoading();
+        goToStep(2);
+      } catch (err) {
+        hideLoading();
+        alert('Error uploading file: ' + err.message);
+      }
+    }
+
+    function populateMappingGrid(headers, detectedMapping) {
+      const grid = document.getElementById('mapping-grid');
+      grid.innerHTML = FIELDS.map(field => {
+        const matched = detectedMapping[field.key];
+        return `
+          <div class="mapping-item ${matched ? 'matched' : ''}">
+            <label>
+              ${field.label}
+              ${field.required ? '<span class="required">*</span>' : ''}
+            </label>
+            <select data-field="${field.key}">
+              <option value="">-- Not mapped --</option>
+              ${headers.map(h => `
+                <option value="${h}" ${h === matched ? 'selected' : ''}>${h}</option>
+              `).join('')}
+            </select>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function validateAndPreview() {
+      showLoading('Validating data...');
+
+      try {
+        // Get column mapping
+        const mapping = {};
+        document.querySelectorAll('#mapping-grid select').forEach(select => {
+          if (select.value) {
+            mapping[select.dataset.field] = select.value;
+          }
+        });
+
+        // Validate required fields
+        if (!mapping.sku || !mapping.wholesale_price) {
+          hideLoading();
+          alert('SKU and Wholesale Price are required fields.');
+          return;
+        }
+
+        // Call validate endpoint
+        const session = await supabase.auth.getSession();
+        const validateResponse = await fetch(`${API_BASE}/api/pricing/sheets/${sheetId}/validate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          },
+          body: JSON.stringify({ column_mapping: mapping })
+        });
+
+        if (!validateResponse.ok) {
+          const err = await validateResponse.json();
+          throw new Error(err.error || 'Validation failed');
+        }
+
+        // Get preview
+        const previewResponse = await fetch(`${API_BASE}/api/pricing/sheets/${sheetId}/preview`, {
+          headers: {
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          }
+        });
+
+        if (!previewResponse.ok) {
+          const err = await previewResponse.json();
+          throw new Error(err.error || 'Preview failed');
+        }
+
+        previewData = await previewResponse.json();
+        renderPreview(previewData);
+
+        hideLoading();
+        goToStep(3);
+      } catch (err) {
+        hideLoading();
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function renderPreview(data) {
+      const { changes, summary, validation } = data;
+
+      // Summary cards
+      document.getElementById('summary-grid').innerHTML = `
+        <div class="summary-card">
+          <div class="value">${summary.total}</div>
+          <div class="label">Total Products</div>
+        </div>
+        <div class="summary-card increase">
+          <div class="value">${summary.increased}</div>
+          <div class="label">Price Increases</div>
+        </div>
+        <div class="summary-card decrease">
+          <div class="value">${summary.decreased}</div>
+          <div class="label">Price Decreases</div>
+        </div>
+        <div class="summary-card">
+          <div class="value">${summary.unchanged}</div>
+          <div class="label">Unchanged</div>
+        </div>
+        <div class="summary-card">
+          <div class="value">${summary.new}</div>
+          <div class="label">New Prices</div>
+        </div>
+        <div class="summary-card">
+          <div class="value">${summary.not_found}</div>
+          <div class="label">Not Found</div>
+        </div>
+      `;
+
+      // Validation results
+      const validationHtml = [];
+      if (validation?.errors?.length) {
+        validation.errors.slice(0, 10).forEach(e => {
+          validationHtml.push(`
+            <div class="validation-item error">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <div>
+                <strong>Row ${e.row}:</strong> ${e.message}
+              </div>
+            </div>
+          `);
+        });
+      }
+      if (validation?.warnings?.length) {
+        validation.warnings.slice(0, 10).forEach(w => {
+          validationHtml.push(`
+            <div class="validation-item warning">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <div>
+                <strong>Row ${w.row}:</strong> ${w.message}
+              </div>
+            </div>
+          `);
+        });
+      }
+      document.getElementById('validation-results').innerHTML = validationHtml.join('');
+
+      // Preview table
+      const tbody = document.getElementById('preview-body');
+      tbody.innerHTML = changes.slice(0, 100).map(c => {
+        let changeClass = '';
+        let changeText = '-';
+
+        if (c.change_type === 'increased') {
+          changeClass = 'price-increase';
+          changeText = `+$${c.change_amount.toFixed(2)} (+${c.change_percentage.toFixed(1)}%)`;
+        } else if (c.change_type === 'decreased') {
+          changeClass = 'price-decrease';
+          changeText = `-$${Math.abs(c.change_amount).toFixed(2)} (${c.change_percentage.toFixed(1)}%)`;
+        } else if (c.change_type === 'unchanged') {
+          changeClass = 'price-unchanged';
+          changeText = 'No change';
+        } else if (c.change_type === 'new_price' || c.change_type === 'new') {
+          changeClass = 'price-new';
+          changeText = 'New';
+        }
+
+        return `
+          <tr>
+            <td>${c.sku}</td>
+            <td>${c.name || '-'}</td>
+            <td>${c.old_price !== null ? '$' + c.old_price.toFixed(2) : '-'}</td>
+            <td>$${c.new_price.toFixed(2)}</td>
+            <td class="${changeClass}">${changeText}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (changes.length > 100) {
+        tbody.innerHTML += `
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted);">
+              ... and ${changes.length - 100} more products
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    async function approveAndApply() {
+      if (!confirm('This will update prices for all matched products. Continue?')) return;
+
+      showLoading('Applying price changes...');
+
+      try {
+        const session = await supabase.auth.getSession();
+
+        // Approve
+        const approveResponse = await fetch(`${API_BASE}/api/pricing/sheets/${sheetId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          }
+        });
+
+        if (!approveResponse.ok) {
+          const err = await approveResponse.json();
+          throw new Error(err.error || 'Approval failed');
+        }
+
+        // Apply
+        const applyResponse = await fetch(`${API_BASE}/api/pricing/sheets/${sheetId}/apply`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          }
+        });
+
+        if (!applyResponse.ok) {
+          const err = await applyResponse.json();
+          throw new Error(err.error || 'Apply failed');
+        }
+
+        const result = await applyResponse.json();
+        document.getElementById('apply-summary').textContent =
+          `Successfully updated ${result.applied} products.` +
+          (result.errors?.length ? ` ${result.errors.length} errors.` : '');
+
+        hideLoading();
+        goToStep(4);
+      } catch (err) {
+        hideLoading();
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function rejectSheet() {
+      if (!confirm('Are you sure you want to reject this price sheet?')) return;
+
+      showLoading('Rejecting...');
+
+      try {
+        const session = await supabase.auth.getSession();
+        const response = await fetch(`${API_BASE}/api/pricing/sheets/${sheetId}/reject`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          },
+          body: JSON.stringify({ reason: 'Rejected by user' })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Rejection failed');
+        }
+
+        hideLoading();
+        window.location.href = '/account/pricing/';
+      } catch (err) {
+        hideLoading();
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadExistingSheet(id) {
+      showLoading('Loading sheet...');
+      try {
+        sheetId = id;
+        const session = await supabase.auth.getSession();
+        const response = await fetch(`${API_BASE}/api/pricing/sheets/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          }
+        });
+
+        if (!response.ok) throw new Error('Sheet not found');
+
+        const sheet = await response.json();
+
+        // Go to appropriate step based on status
+        if (sheet.status === 'preview') {
+          const previewResponse = await fetch(`${API_BASE}/api/pricing/sheets/${id}/preview`, {
+            headers: {
+              'Authorization': `Bearer ${session.data.session?.access_token}`
+            }
+          });
+          previewData = await previewResponse.json();
+          renderPreview(previewData);
+          hideLoading();
+          goToStep(3);
+        } else {
+          hideLoading();
+          // Show sheet info or start fresh
+        }
+      } catch (err) {
+        hideLoading();
+        console.error('Error loading sheet:', err);
+      }
+    }
+
+    function goToStep(step) {
+      currentStep = step;
+
+      // Update step indicators
+      document.querySelectorAll('.step').forEach((el, i) => {
+        el.classList.remove('active', 'complete');
+        if (i + 1 < step) el.classList.add('complete');
+        if (i + 1 === step) el.classList.add('active');
+      });
+
+      // Show correct panel
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`step-${step}`).classList.add('active');
+    }
+
+    function showLoading(text = 'Processing...') {
+      document.getElementById('loading-text').textContent = text;
+      document.getElementById('loading-overlay').classList.add('active');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.remove('active');
+    }
+  </script>
+</body>
+</html>
