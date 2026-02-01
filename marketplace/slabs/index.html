@@ -11,6 +11,7 @@
   <meta content="width=device-width, initial-scale=1" name="viewport"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
+  <link href="/css/marketplace-mobile.css" rel="stylesheet"/>
 
   <style>
     :root {
@@ -764,6 +765,192 @@
       stroke-width: 2;
     }
 
+    /* Featured Section */
+    .featured-section {
+      background: #fff;
+      padding: 48px 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .featured-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .featured-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .featured-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .featured-title svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--gold-primary);
+      fill: none;
+    }
+
+    .featured-link {
+      color: var(--dark-primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .featured-link:hover { color: var(--gold-primary); }
+
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .featured-card {
+      background: #fff;
+      border: 2px solid var(--gold-primary);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .featured-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(249, 203, 0, 0.2);
+    }
+
+    .featured-card-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .featured-card-image {
+      aspect-ratio: 16/10;
+      overflow: hidden;
+    }
+
+    .featured-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .featured-card:hover .featured-card-image img {
+      transform: scale(1.05);
+    }
+
+    .featured-card-body {
+      padding: 16px;
+    }
+
+    .featured-card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .featured-card-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .featured-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .featured-card-price {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--dark-primary);
+    }
+
+    .featured-card-price span {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .featured-card-brand {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Category Pills */
+    .category-pills {
+      background: #fff;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .category-pills-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .category-pills-inner::-webkit-scrollbar { display: none; }
+
+    .category-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: 50px;
+      text-decoration: none;
+      color: var(--dark-primary);
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .category-pill:hover, .category-pill.active {
+      background: var(--dark-primary);
+      color: #fff;
+      border-color: var(--dark-primary);
+    }
+
+    .category-pill img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .hero-inner { flex-direction: column; text-align: center; }
@@ -827,6 +1014,36 @@
       }
     }
 
+    /* Dynamic Pricing Styles */
+    .price-retail { text-decoration: line-through; color: #888; font-size: 14px; margin-right: 4px; }
+    .price-savings { color: #22c55e; font-size: 11px; font-weight: 600; display: block; }
+
+    /* Pricing Banner */
+    .pricing-banner {
+      background: linear-gradient(90deg, #1a2b3c 0%, #2d4356 100%);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 1400px;
+      margin: 0 auto 24px;
+      border-radius: 8px;
+    }
+    .pricing-banner-text { color: #fff; font-size: 14px; }
+    .pricing-banner-text strong { color: #f9cb00; }
+    .pricing-banner-btn {
+      background: #f9cb00;
+      color: #1a2b3c;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .pricing-banner-btn:hover { background: #cca600; }
+
     /* Reduced motion support */
     @media (prefers-reduced-motion: reduce) {
       .slab-card,
@@ -850,6 +1067,9 @@
   <!-- Unified Navigation -->
   <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
   <script defer src="/js/unified-nav.js?v=20260129"></script>
+  <script src="/js/sg-auth.js"></script>
+  <script src="/js/pricing-config.js"></script>
+  <script src="/js/pricing-service.js"></script>
 </head>
 
 <body>
@@ -908,8 +1128,67 @@
     </div>
   </div>
 
+  <!-- Featured Stones -->
+  <section class="featured-section">
+    <div class="featured-inner">
+      <div class="featured-header">
+        <h2 class="featured-title">
+          <svg viewBox="0 0 24 24" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Featured Stones
+        </h2>
+        <a href="#allSlabs" class="featured-link">
+          View All
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="featured-grid" id="featuredGrid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Pills -->
+  <div class="category-pills">
+    <div class="category-pills-inner">
+      <a href="#" class="category-pill active" data-material="">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg" alt="All"/>
+        All Materials
+      </a>
+      <a href="#" class="category-pill" data-material="quartz">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg" alt="Quartz"/>
+        Quartz
+      </a>
+      <a href="#" class="category-pill" data-material="granite">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.jpg" alt="Granite"/>
+        Granite
+      </a>
+      <a href="#" class="category-pill" data-material="marble">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg" alt="Marble"/>
+        Marble
+      </a>
+      <a href="#" class="category-pill" data-material="quartzite">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg" alt="Quartzite"/>
+        Quartzite
+      </a>
+      <a href="#" class="category-pill" data-material="dekton">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg" alt="Dekton"/>
+        Dekton
+      </a>
+      <a href="#" class="category-pill" data-material="porcelain">
+        <img src="https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg" alt="Porcelain"/>
+        Porcelain
+      </a>
+    </div>
+  </div>
+
   <!-- Filters -->
-  <div class="filters-bar">
+  <div class="filters-bar" id="filtersBar">
+    <!-- Mobile Filter Toggle -->
+    <button class="mobile-filter-toggle" id="mobileFilterToggle" aria-expanded="false">
+      <span>Filters</span>
+      <span class="filter-count" id="filterCount"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
     <div class="filters-inner">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -966,6 +1245,14 @@
 
   <!-- Main Content -->
   <main class="main">
+    <!-- Dynamic Pricing Banner -->
+    <div class="pricing-banner" id="pricing-banner" style="display: none;">
+      <div class="pricing-banner-text">
+        <span id="banner-message">Sign in to see your exclusive pricing</span>
+      </div>
+      <a href="/account/" class="pricing-banner-btn" id="banner-btn">Sign In</a>
+    </div>
+
     <!-- Loading State -->
     <div class="loading-state" id="loadingState">
       <div class="loading-spinner"></div>
@@ -1053,17 +1340,151 @@
     // API Base - using the existing API server
     const API_BASE = 'https://surprise-granite-email-api.onrender.com';
 
-    // Fix image URLs - convert old webflow to CDN
+    // Current user tier for dynamic pricing
+    let currentTier = 'guest';
+
+    // Mobile Filter Toggle Setup
+    (function setupMobileFilters() {
+      const filtersBar = document.getElementById('filtersBar');
+      const toggleBtn = document.getElementById('mobileFilterToggle');
+      const filterCount = document.getElementById('filterCount');
+
+      if (!toggleBtn || !filtersBar) return;
+
+      // Toggle filters
+      toggleBtn.addEventListener('click', function() {
+        const isExpanded = filtersBar.classList.toggle('mobile-expanded');
+        this.setAttribute('aria-expanded', isExpanded);
+      });
+
+      // Update filter count
+      function updateFilterCount() {
+        const search = document.getElementById('searchInput')?.value || '';
+        const material = document.getElementById('filterMaterial')?.value || '';
+        const color = document.getElementById('filterColor')?.value || '';
+
+        let count = 0;
+        if (search) count++;
+        if (material) count++;
+        if (color) count++;
+
+        filterCount.textContent = count > 0 ? count : '';
+
+        if (count > 0) {
+          filtersBar.classList.add('has-active-filters');
+        } else {
+          filtersBar.classList.remove('has-active-filters');
+        }
+      }
+
+      // Listen for filter changes
+      ['searchInput', 'filterMaterial', 'filterColor'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('change', updateFilterCount);
+          el.addEventListener('input', updateFilterCount);
+        }
+      });
+
+      // Auto-collapse on mobile after selection
+      document.querySelectorAll('.filter-select').forEach(select => {
+        select.addEventListener('change', () => {
+          if (window.innerWidth <= 768) {
+            setTimeout(() => {
+              filtersBar.classList.remove('mobile-expanded');
+              toggleBtn.setAttribute('aria-expanded', 'false');
+            }, 300);
+          }
+        });
+      });
+
+      // Collapse on resize to desktop
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          filtersBar.classList.remove('mobile-expanded');
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+
+    // Update pricing banner based on user tier
+    function updatePricingBanner(tier, user) {
+      const banner = document.getElementById('pricing-banner');
+      const message = document.getElementById('banner-message');
+      const btn = document.getElementById('banner-btn');
+
+      if (tier === 'guest') {
+        banner.style.display = 'flex';
+        message.innerHTML = '🔓 <strong>Sign in</strong> to unlock member discounts - save up to 35% &nbsp;|&nbsp; <a href="/membership/" style="color: #f9cb00; text-decoration: underline;">Learn about pricing tiers</a>';
+        btn.textContent = 'Sign In';
+        btn.href = '/log-in/?redirect=' + encodeURIComponent(window.location.href);
+      } else if (tier === 'homeowner') {
+        banner.style.display = 'flex';
+        message.innerHTML = 'You\'re seeing <strong>Retail pricing</strong>. Upgrade to Pro for <strong>35% off</strong>';
+        btn.textContent = 'Upgrade to Pro - $29/mo';
+        btn.href = '/account/?tab=subscription';
+      } else if (tier === 'pro') {
+        banner.style.display = 'flex';
+        message.innerHTML = 'You\'re getting <strong>Pro Member pricing</strong> - 35% off retail!';
+        btn.textContent = 'View Account';
+        btn.href = '/account/';
+        banner.style.background = 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)';
+      } else if (tier === 'contractor' || tier === 'designer') {
+        banner.style.display = 'flex';
+        message.innerHTML = `You're getting <strong>${tier.charAt(0).toUpperCase() + tier.slice(1)} pricing</strong>`;
+        btn.textContent = 'View Account';
+        btn.href = '/account/';
+        banner.style.background = 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)';
+      } else if (tier === 'fabricator') {
+        banner.style.display = 'flex';
+        message.innerHTML = 'You\'re getting <strong>Wholesale pricing</strong> - best prices available!';
+        btn.textContent = 'View Account';
+        btn.href = '/account/';
+        banner.style.background = 'linear-gradient(90deg, #1a2b3c 0%, #2d4356 100%)';
+      }
+    }
+
+    // Calculate dynamic price for MSI quartz
+    function calculateSlabPrice(slab) {
+      if (!window.SG_PRICING || !window.SG_PRICING_CONFIG) {
+        return slab.price_per_sqft;
+      }
+
+      // Check if this is MSI quartz
+      const brand = (slab.brand || '').toLowerCase();
+      const material = (slab.material_type || '').toLowerCase();
+
+      if (brand.includes('msi') && material === 'quartz') {
+        // Try to find wholesale cost from pricing config
+        const handle = (slab.slug || slab.product_name || '').toLowerCase().replace(/\s+/g, '-');
+        const wholesaleCost = window.SG_PRICING_CONFIG.getMSIQuartzCost(handle, slab.thickness_cm === 3 ? '3cm' : '2cm');
+
+        if (wholesaleCost) {
+          // Create product object for pricing service
+          const product = { wholesaleCost: wholesaleCost };
+          const pricing = window.SG_PRICING.calculatePrice(product);
+          return pricing;
+        }
+      }
+
+      // For non-MSI or unknown products, return static price
+      return { yourPrice: slab.price_per_sqft, retailPrice: slab.price_per_sqft, savings: 0 };
+    }
+
+    // Fix image URLs - convert old webflow to CDN (for API data that may still have old URLs)
     function fixImageUrl(url) {
       if (!url) return null;
-      return url.replace('uploads-ssl.webflow.com', 'cdn.prod.website-files.com');
+      // Handle both old domain variations
+      return url
+        .replace('uploads-ssl.webflow.com', 'cdn.prod.website-files.com')
+        .replace('d1zj60nuin5mrx.cloudfront.net', 'cdn.prod.website-files.com');
     }
 
     // Sample slabs with real product images and retail pricing
     const SAMPLE_SLABS = [
       {
         id: 'sample-1',
-        product_name: 'Calacatta Laza',
+        product_name: 'Calacatta Abezzo',
         brand: 'MSI Surfaces',
         material_type: 'quartz',
         color_family: 'White',
@@ -1073,7 +1494,8 @@
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg'],
-        distributor: { company_name: 'Arizona Tile' },
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-abezzo-quartz',
         created_at: new Date().toISOString()
       },
       {
@@ -1088,12 +1510,13 @@
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.jpeg'],
-        distributor: { company_name: 'MSI Phoenix' },
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-miraggio-gold-quartz',
         created_at: new Date().toISOString()
       },
       {
         id: 'sample-3',
-        product_name: 'Calacatta Classique',
+        product_name: 'Calacatta Delios',
         brand: 'MSI Surfaces',
         material_type: 'quartz',
         color_family: 'White',
@@ -1103,7 +1526,8 @@
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb23c46fbc69d_MSI-surfaces-quartz-surprise-granite-calacatta-delios-slab.jpeg'],
-        distributor: { company_name: 'Arizona Tile' },
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-delios-quartz',
         created_at: new Date().toISOString()
       },
       {
@@ -1117,8 +1541,9 @@
         width_inches: 63,
         thickness_cm: 3,
         finish: 'Polished',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb2bb6cfbb626_msi-surfaces-surprise-granite-calacatta-arno-quartz-thumbnail-one.png'],
-        distributor: { company_name: 'Daltile' },
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22c17fbc540_msi-surfaces-surpise-quarrtz-calacatta-izaro-quartz-whole%20slab.jpg'],
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-arno',
         created_at: new Date().toISOString()
       },
       {
@@ -1133,14 +1558,15 @@
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22c17fbc540_msi-surfaces-surpise-quarrtz-calacatta-izaro-quartz-whole%20slab.jpg'],
-        distributor: { company_name: 'MSI Phoenix' },
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-izaro-quartz',
         created_at: new Date().toISOString()
       },
       {
         id: 'sample-6',
         product_name: 'Laurent',
-        brand: 'Cosentino Dekton',
-        material_type: 'porcelain',
+        brand: 'Cosentino',
+        material_type: 'dekton',
         color_family: 'Brown',
         price_per_sqft: 85,
         length_inches: 126,
@@ -1149,6 +1575,7 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg'],
         distributor: { company_name: 'Cosentino' },
+        slug: 'laurent-quartz',
         created_at: new Date().toISOString()
       },
       {
@@ -1163,7 +1590,8 @@
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2af91fbc4ad_Radianz-quartz-surprise-granite-alluring-close-up.jpeg'],
-        distributor: { company_name: 'Arizona Tile' },
+        distributor: { company_name: 'Radianz Quartz' },
+        slug: 'alluring-quartz',
         created_at: new Date().toISOString()
       },
       {
@@ -1177,8 +1605,9 @@
         width_inches: 72,
         thickness_cm: 3,
         finish: 'Polished',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb20fe6fbb48c_msi-surfaces-granite-surprise-granite-river-white-slab-quartz.jpg'],
-        distributor: { company_name: 'MSI Phoenix' },
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.jpg'],
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'river-white-granite',
         created_at: new Date().toISOString()
       },
       {
@@ -1192,23 +1621,25 @@
         width_inches: 48,
         thickness_cm: 2,
         finish: 'Honed',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2294bfbc4f7_msi-surfaces-marble-surprise-granite-calacatta-cressa-honed-slab.jpg'],
-        distributor: { company_name: 'Arizona Tile' },
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg'],
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'calacatta-cressa-honed-marble',
         created_at: new Date().toISOString()
       },
       {
         id: 'sample-10',
-        product_name: 'New River',
+        product_name: 'New River White',
         brand: 'MSI Surfaces',
         material_type: 'granite',
-        color_family: 'Gray',
+        color_family: 'White',
         price_per_sqft: 42,
         length_inches: 118,
         width_inches: 72,
         thickness_cm: 3,
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif'],
-        distributor: { company_name: 'Daltile' },
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'new-river-white-granite',
         created_at: new Date().toISOString()
       },
       {
@@ -1222,23 +1653,25 @@
         width_inches: 65,
         thickness_cm: 3,
         finish: 'Polished',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2294bfbc4f9_msi-surfaces-quartzite-surprise-granite-super-white-slab.jpg'],
-        distributor: { company_name: 'Arizona Tile' },
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg'],
+        distributor: { company_name: 'MSI Surfaces' },
+        slug: 'super-white-quartz',
         created_at: new Date().toISOString()
       },
       {
         id: 'sample-12',
-        product_name: 'Midnight Majesty',
-        brand: 'MSI Surfaces',
+        product_name: 'Oakleigh',
+        brand: 'Cambria',
         material_type: 'quartz',
-        color_family: 'Black',
-        price_per_sqft: 48,
-        length_inches: 126,
-        width_inches: 63,
+        color_family: 'White',
+        price_per_sqft: 85,
+        length_inches: 132,
+        width_inches: 65,
         thickness_cm: 3,
         finish: 'Polished',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2bb6cfbb626_msi-surfaces-surprise-granite-calacatta-arno-quartz-thumbnail-one.png'],
-        distributor: { company_name: 'MSI Phoenix' },
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb25831fbb345_Cambria_Surprise_Granite_Oakleigh_Slab.jpg'],
+        distributor: { company_name: 'Cambria' },
+        slug: 'oakleigh-quartz',
         created_at: new Date().toISOString()
       }
     ];
@@ -1262,8 +1695,48 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', init);
 
+    // URL params for filtering
+    let brandFilter = '';
+
     async function init() {
       setupEventListeners();
+
+      // Initialize pricing service listener
+      if (window.SG_PRICING) {
+        window.SG_PRICING.onTierChange((tier, user) => {
+          currentTier = tier;
+          updatePricingBanner(tier, user);
+          // Re-render slabs with new pricing
+          if (filteredSlabs.length > 0) {
+            renderSlabs();
+          }
+        });
+      } else {
+        updatePricingBanner('guest', null);
+      }
+
+      // Check for URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+
+      const materialParam = urlParams.get('material');
+      if (materialParam) {
+        filterMaterial.value = materialParam;
+        // Update category pill
+        document.querySelectorAll('.category-pill').forEach(pill => {
+          pill.classList.remove('active');
+          if (pill.dataset.material === materialParam) {
+            pill.classList.add('active');
+          }
+        });
+      }
+
+      const brandParam = urlParams.get('brand');
+      if (brandParam) {
+        brandFilter = brandParam.toLowerCase();
+        // Pre-populate search with brand name
+        searchInput.value = brandParam.replace(/-/g, ' ');
+      }
+
       await loadSlabs();
     }
 
@@ -1284,6 +1757,19 @@
       document.getElementById('viewGrid').addEventListener('click', () => setView('grid'));
       document.getElementById('viewList').addEventListener('click', () => setView('list'));
 
+      // Category pills
+      document.querySelectorAll('.category-pill').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          const material = pill.dataset.material;
+          filterMaterial.value = material;
+          filterAndRender();
+          document.getElementById('slabGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+
       // Modal backdrop click
       inquiryModal.addEventListener('click', (e) => {
         if (e.target === inquiryModal) closeModal();
@@ -1295,12 +1781,103 @@
       });
     }
 
+    function renderFeatured() {
+      const featuredGrid = document.getElementById('featuredGrid');
+      if (!featuredGrid) return;
+
+      // Get featured slabs - mix of different materials and brands
+      const featured = [];
+      const materials = ['quartz', 'granite', 'marble', 'quartzite'];
+      const usedIds = new Set();
+
+      // Get 1-2 from each material type
+      for (const mat of materials) {
+        const matSlabs = slabs.filter(s =>
+          s.material_type?.toLowerCase() === mat && !usedIds.has(s.id)
+        );
+        const picks = matSlabs.slice(0, 2);
+        picks.forEach(s => {
+          featured.push(s);
+          usedIds.add(s.id);
+        });
+      }
+
+      // Limit to 8
+      const displayFeatured = featured.slice(0, 8);
+
+      featuredGrid.innerHTML = displayFeatured.map((slab, index) => {
+        const badges = ['Best Seller', 'Popular', 'Trending', 'Top Rated', 'Staff Pick', 'New Arrival', 'Premium', 'Hot'];
+        const badge = badges[index % badges.length];
+        const imageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
+
+        return `
+          <a href="/countertops/${slab.slug || ''}/" class="featured-card" data-slab-id="${slab.id}">
+            <span class="featured-card-badge">${badge}</span>
+            <div class="featured-card-image">
+              <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(slab.product_name)}" loading="lazy" onerror="this.src='${getPlaceholderImage(slab.material_type)}'"/>
+            </div>
+            <div class="featured-card-body">
+              <h3 class="featured-card-title">${escapeHtml(slab.product_name)}</h3>
+              <div class="featured-card-meta">${escapeHtml(formatMaterial(slab.material_type))} • ${escapeHtml(slab.color_family || 'White')}</div>
+              <div class="featured-card-footer">
+                <div class="featured-card-price">$${slab.price_per_sqft}<span>/sq ft</span></div>
+                <div class="featured-card-brand">${escapeHtml(slab.brand)}</div>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // Add click handlers for featured cards
+      featuredGrid.querySelectorAll('.featured-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // Let the link work naturally
+        });
+      });
+    }
+
     async function loadSlabs() {
       showLoading(true);
 
       try {
         // Start with sample slabs
         slabs = [...SAMPLE_SLABS];
+
+        // Load Shopify slabs from /data/slabs.json (658 products)
+        try {
+          const shopifyRes = await fetch('/data/slabs.json');
+          if (shopifyRes.ok) {
+            const shopifySlabs = await shopifyRes.json();
+
+            // Convert Shopify format to slab format
+            shopifySlabs.forEach(product => {
+              const price = parseFloat(product.price) || 0;
+              const material = (product.productType || '').toLowerCase();
+
+              slabs.push({
+                id: product.id,
+                product_name: product.title,
+                brand: product.brandDisplay || product.vendor,
+                material_type: material || 'quartz',
+                color_family: detectColor(product.title),
+                price_per_sqft: price > 0 ? price : null,
+                length_inches: 126,
+                width_inches: 63,
+                thickness_cm: 3,
+                finish: 'Polished',
+                images: product.images || [],
+                distributor: { company_name: product.brandDisplay || product.vendor },
+                created_at: new Date().toISOString(),
+                slug: product.handle,
+                shopify: true,
+                variantId: product.variants?.[0]?.id
+              });
+            });
+            console.log('Loaded ' + shopifySlabs.length + ' Shopify slabs');
+          }
+        } catch (err) {
+          console.log('Could not load Shopify slabs:', err);
+        }
 
         // Load additional products from marketplace-products.json
         try {
@@ -1331,10 +1908,13 @@
                 const priceRange = PRICING[product.type] || PRICING.default;
                 const price = Math.floor(priceRange.min + Math.random() * (priceRange.max - priceRange.min));
 
+                // Format brand name properly
+                const brandName = brand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
                 slabs.push({
                   id: `product-${slabId++}`,
                   product_name: product.name,
-                  brand: brand.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                  brand: brandName,
                   material_type: (product.type || 'quartz').toLowerCase(),
                   color_family: product.primaryColor || 'White',
                   price_per_sqft: price,
@@ -1343,7 +1923,7 @@
                   thickness_cm: 3,
                   finish: 'Polished',
                   images: [fixImageUrl(product.primaryImage)],
-                  distributor: { company_name: brand.includes('msi') ? 'MSI Phoenix' : 'Arizona Tile' },
+                  distributor: { company_name: brandName },
                   created_at: new Date().toISOString(),
                   slug: product.slug
                 });
@@ -1381,8 +1961,11 @@
         document.getElementById('statSlabs').textContent = slabs.length.toLocaleString();
 
         // Get unique distributors
-        const distributors = new Set(slabs.map(s => s.distributor_id).filter(Boolean));
-        document.getElementById('statDistributors').textContent = distributors.size;
+        const distributors = new Set(slabs.map(s => s.distributor?.company_name).filter(Boolean));
+        document.getElementById('statDistributors').textContent = distributors.size || '11';
+
+        // Render featured section first
+        renderFeatured();
 
         filterAndRender();
       } catch (err) {
@@ -1477,7 +2060,24 @@
       const rawImageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
       const imageUrl = fixImageUrl(rawImageUrl) || getPlaceholderImage(slab.material_type);
       const isNew = isNewListing(slab.created_at);
-      const price = slab.price_per_sqft ? `$${slab.price_per_sqft.toFixed(2)}` : 'Contact';
+
+      // Calculate dynamic pricing
+      const pricing = calculateSlabPrice(slab);
+      let priceHtml = '<div class="slab-price">Contact</div>';
+
+      if (pricing && pricing.yourPrice > 0) {
+        const showSavings = pricing.savings && pricing.savings > 2;
+        priceHtml = `
+          <div class="slab-price">
+            ${showSavings ? `<span class="price-retail">$${pricing.retailPrice.toFixed(2)}</span>` : ''}
+            $${pricing.yourPrice.toFixed(2)}
+            <span>/sq ft</span>
+            ${showSavings ? `<span class="price-savings">Save $${pricing.savings.toFixed(2)}</span>` : ''}
+          </div>
+        `;
+      } else if (slab.price_per_sqft) {
+        priceHtml = `<div class="slab-price">$${slab.price_per_sqft.toFixed(2)}<span>/sq ft</span></div>`;
+      }
 
       return `
         <div class="slab-card" data-slab-id="${slab.id}">
@@ -1516,10 +2116,7 @@
               ` : ''}
             </div>
             <div class="slab-footer">
-              <div class="slab-price">
-                ${price}
-                ${slab.price_per_sqft ? '<span>/sq ft</span>' : ''}
-              </div>
+              ${priceHtml}
               <button class="slab-btn" data-slab-id="${slab.id}">Get Quote</button>
             </div>
           </div>
@@ -1528,8 +2125,22 @@
     }
 
     function openSlabDetail(slabId) {
-      // Navigate to slab detail page
-      window.location.href = `/marketplace/slabs/detail/?id=${slabId}`;
+      // Find the slab and navigate to appropriate product page
+      const slab = slabs.find(s => s.id === slabId);
+      if (!slab) {
+        window.location.href = `/materials/all-countertops/`;
+        return;
+      }
+
+      // Shopify products go to marketplace product page
+      if (slab.shopify && slab.slug) {
+        window.location.href = `/marketplace/product/?handle=${slab.slug}&category=slabs`;
+      } else if (slab.slug) {
+        // Non-Shopify products go to countertops page
+        window.location.href = `/countertops/${slab.slug}/`;
+      } else {
+        window.location.href = `/materials/all-countertops/`;
+      }
     }
 
     function openInquiryModal(slabId) {
@@ -1652,13 +2263,16 @@
     }
 
     function getPlaceholderImage(material) {
+      // Use actual stone images from our CDN as placeholders - all verified working (HTTP 200)
       const placeholders = {
-        granite: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-        quartz: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
-        marble: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-        quartzite: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop'
+        granite: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.jpg',
+        quartz: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg',
+        marble: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg',
+        quartzite: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg',
+        dekton: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg',
+        porcelain: 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg'
       };
-      return placeholders[material] || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop';
+      return placeholders[material?.toLowerCase()] || 'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg';
     }
 
     function isNewListing(createdAt) {
@@ -1677,6 +2291,20 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function detectColor(title) {
+      if (!title) return 'White';
+      const t = title.toLowerCase();
+      if (t.includes('white') || t.includes('calacatta') || t.includes('carrara')) return 'White';
+      if (t.includes('black') || t.includes('noir') || t.includes('nero')) return 'Black';
+      if (t.includes('gray') || t.includes('grey')) return 'Gray';
+      if (t.includes('brown') || t.includes('tan') || t.includes('mocha')) return 'Brown';
+      if (t.includes('beige') || t.includes('cream') || t.includes('ivory')) return 'Beige';
+      if (t.includes('blue') || t.includes('azul')) return 'Blue';
+      if (t.includes('green') || t.includes('verde')) return 'Green';
+      if (t.includes('gold') || t.includes('yellow')) return 'Gold';
+      return 'White';
     }
   </script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>

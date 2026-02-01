@@ -1,0 +1,238 @@
+/**
+ * MARKETPLACE MOBILE STYLES
+ * Mobile-first responsive filters and layout
+ */
+
+/* ===== MOBILE FILTER TOGGLE ===== */
+.mobile-filter-toggle {
+  display: none;
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #1a2b3c 0%, #2d3e50 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.mobile-filter-toggle:hover {
+  background: linear-gradient(135deg, #2d3e50 0%, #3d4e60 100%);
+}
+
+.mobile-filter-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.mobile-filter-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.mobile-filter-toggle .filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: #f9cb00;
+  color: #1a2b3c;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.mobile-filter-toggle .filter-count:empty {
+  display: none;
+}
+
+/* ===== FILTERS CONTAINER ===== */
+.filters-bar {
+  transition: all 0.3s ease;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet */
+@media (max-width: 991px) {
+  .filters-inner {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .search-box {
+    flex: 1 1 100%;
+    min-width: unset;
+    order: 1;
+  }
+
+  .filter-select {
+    flex: 1 1 calc(50% - 6px);
+    min-width: unset;
+  }
+
+  .location-btn {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 10;
+  }
+
+  .results-info {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    margin-left: 0;
+    order: 11;
+  }
+}
+
+/* Mobile - Show toggle, hide filters */
+@media (max-width: 768px) {
+  .mobile-filter-toggle {
+    display: flex;
+  }
+
+  .filters-bar {
+    padding: 12px 16px;
+  }
+
+  .filters-inner {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Hide filters by default on mobile */
+  .filters-inner .search-box,
+  .filters-inner .filter-select,
+  .filters-inner .location-btn {
+    display: none;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  /* Show filters when expanded */
+  .filters-bar.mobile-expanded .search-box,
+  .filters-bar.mobile-expanded .filter-select,
+  .filters-bar.mobile-expanded .location-btn {
+    display: flex;
+  }
+
+  .filters-bar.mobile-expanded .filter-select {
+    flex: 1 1 100%;
+  }
+
+  /* Always show results info */
+  .results-info {
+    display: flex !important;
+    width: 100%;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 12px;
+  }
+
+  .filters-bar:not(.mobile-expanded) .results-info {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /* Product grid - 2 columns */
+  .slab-grid,
+  .product-grid,
+  .marketplace-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Smaller cards */
+  .slab-card,
+  .product-card {
+    border-radius: 12px;
+  }
+
+  .slab-card-image {
+    padding-top: 80%;
+  }
+
+  .slab-card-body {
+    padding: 12px;
+  }
+
+  .slab-title {
+    font-size: 14px;
+  }
+
+  .slab-price {
+    font-size: 16px;
+  }
+
+  /* Hero adjustments */
+  .hero {
+    padding: 100px 16px 40px;
+    min-height: auto;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .hero p {
+    font-size: 0.95rem;
+  }
+
+  .hero-stats {
+    gap: 20px;
+  }
+
+  .hero-stat-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .slab-grid,
+  .product-grid,
+  .marketplace-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hero-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filter-select {
+    font-size: 14px;
+    padding: 10px 32px 10px 12px;
+  }
+}
+
+/* ===== ACTIVE FILTER INDICATOR ===== */
+.filters-bar.has-active-filters .mobile-filter-toggle {
+  background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%);
+  color: #1a2b3c;
+}
+
+.filters-bar.has-active-filters .mobile-filter-toggle svg {
+  stroke: #1a2b3c;
+}
+
+/* Pulse animation for active filters */
+@keyframes filter-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 203, 0, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(249, 203, 0, 0); }
+}
+
+.filters-bar.has-active-filters .mobile-filter-toggle {
+  animation: filter-pulse 2s ease-in-out 1;
+}
