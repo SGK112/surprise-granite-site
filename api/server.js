@@ -291,6 +291,9 @@ const authRouter = require('./routes/auth');
 // Pricing Management Routes
 const pricingRouter = require('./routes/pricing');
 
+// Scraper Management Routes
+const scrapersRouter = require('./routes/scrapers');
+
 // CSRF Protection Middleware
 const { csrfOriginCheck } = require('./middleware/csrf');
 
@@ -3453,6 +3456,9 @@ app.use('/api/auth', authRouter);
 
 // ============ PRICING MANAGEMENT ROUTES ============
 app.use('/api/pricing', pricingRouter);
+
+// ============ SCRAPER MANAGEMENT ROUTES ============
+app.use('/api/scrapers', scrapersRouter);
 
 // ============ BACKWARD COMPATIBILITY ALIASES ============
 // Mount routes on legacy paths for backward compatibility
