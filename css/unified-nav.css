@@ -1444,3 +1444,138 @@ html body [class*="navbar-"]:not([class*="unified"]) {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ===========================================
+   CONTENT SPACING FOR FIXED NAV
+   Ensures modals, forms, cards, and popups
+   have proper spacing below fixed header
+   =========================================== */
+
+/* Main content sections */
+body.unified-nav-active main,
+body.unified-nav-active .main-wrapper,
+body.unified-nav-active .page-wrapper,
+body.unified-nav-active .section:first-child,
+body.unified-nav-active .hero:first-child {
+  /* Content starts after nav - body padding handles this */
+}
+
+/* Modals and popups - center properly accounting for nav */
+body.unified-nav-active .modal,
+body.unified-nav-active .popup,
+body.unified-nav-active .modal-backdrop,
+body.unified-nav-active .popup-backdrop,
+body.unified-nav-active [class*="modal"],
+body.unified-nav-active [class*="popup"] {
+  /* Modals should be centered in viewport, not affected by body padding */
+}
+
+/* Fixed/sticky elements that appear below nav */
+body.unified-nav-active .filters-bar,
+body.unified-nav-active .sticky-bar,
+body.unified-nav-active .sticky-header {
+  top: var(--nav-height-desktop);
+}
+
+@media (max-width: 991px) {
+  body.unified-nav-active .filters-bar,
+  body.unified-nav-active .sticky-bar,
+  body.unified-nav-active .sticky-header {
+    top: var(--nav-height-mobile);
+  }
+}
+
+/* Form cards and content cards */
+body.unified-nav-active .form-card,
+body.unified-nav-active .card-form,
+body.unified-nav-active .content-card,
+body.unified-nav-active .form-container,
+body.unified-nav-active .card {
+  margin-top: 24px;
+}
+
+/* Hero sections - already have padding from body, add extra if needed */
+body.unified-nav-active .hero,
+body.unified-nav-active .page-hero,
+body.unified-nav-active .section-hero {
+  /* Ensure hero content isn't cut off */
+  padding-top: max(24px, env(safe-area-inset-top));
+}
+
+/* Sidebar and dashboard layouts */
+body.unified-nav-active .sidebar,
+body.unified-nav-active .dashboard-sidebar {
+  top: var(--nav-height-desktop);
+  height: calc(100vh - var(--nav-height-desktop));
+}
+
+@media (max-width: 991px) {
+  body.unified-nav-active .sidebar,
+  body.unified-nav-active .dashboard-sidebar {
+    top: var(--nav-height-mobile);
+    height: calc(100vh - var(--nav-height-mobile));
+  }
+}
+
+/* Page header/breadcrumb areas */
+body.unified-nav-active .page-header,
+body.unified-nav-active .breadcrumb,
+body.unified-nav-active .breadcrumbs {
+  padding-top: 16px;
+}
+
+/* Account and admin pages */
+body.unified-nav-active .account-container,
+body.unified-nav-active .admin-container,
+body.unified-nav-active .dashboard-container {
+  padding-top: 24px;
+}
+
+/* Booking and contact forms */
+body.unified-nav-active .booking-form,
+body.unified-nav-active .contact-form,
+body.unified-nav-active .lead-form,
+body.unified-nav-active .estimate-form {
+  margin-top: 24px;
+}
+
+/* Fullscreen overlays - position from top of viewport */
+.modal-backdrop,
+.popup-backdrop,
+.overlay-full,
+[data-overlay="full"] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10200;
+}
+
+/* Modal content - center in viewport */
+.modal-content,
+.popup-content,
+.modal-dialog {
+  margin-top: max(80px, calc(var(--nav-height-desktop) + 24px));
+}
+
+@media (max-width: 991px) {
+  .modal-content,
+  .popup-content,
+  .modal-dialog {
+    margin-top: max(80px, calc(var(--nav-height-mobile) + 16px));
+  }
+}
+
+/* Webflow modal compatibility */
+body.unified-nav-active .w-modal,
+body.unified-nav-active .w-dialog {
+  padding-top: var(--nav-height-desktop);
+}
+
+@media (max-width: 991px) {
+  body.unified-nav-active .w-modal,
+  body.unified-nav-active .w-dialog {
+    padding-top: var(--nav-height-mobile);
+  }
+}
