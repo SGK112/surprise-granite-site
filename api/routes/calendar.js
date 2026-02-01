@@ -13,7 +13,8 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { validateBody } = require('../middleware/validator');
 const emailService = require('../services/emailService');
 const smsService = require('../services/smsService');
-const { escapeHtml } = require('../utils/security');
+const { escapeHtml, isValidEmail, isValidPhone, sanitizeString } = require('../utils/security');
+const { bookingRateLimiter } = require('../middleware/rateLimiter');
 
 // Initialize Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ypeypgwsycxcagncgdur.supabase.co';
@@ -40,8 +41,9 @@ const schemas = {
     title: Joi.string().max(200).trim().required(),
     description: Joi.string().max(2000).trim().allow('', null),
     event_type: Joi.string().valid(
-      'appointment', 'measurement', 'installation', 'delivery',
-      'meeting', 'follow_up', 'consultation', 'site_visit', 'other'
+      'appointment', 'consultation', 'measurement', 'template', 'fabrication',
+      'installation', 'plumbing_disconnect', 'plumbing_reconnect', 'sealer_application',
+      'walk_through', 'final_inspection', 'delivery', 'site_visit', 'meeting', 'follow_up', 'other'
     ).required(),
     start_time: Joi.date().iso().required(),
     end_time: Joi.date().iso().required(),
@@ -68,8 +70,9 @@ const schemas = {
     title: Joi.string().max(200).trim(),
     description: Joi.string().max(2000).trim().allow('', null),
     event_type: Joi.string().valid(
-      'appointment', 'measurement', 'installation', 'delivery',
-      'meeting', 'follow_up', 'consultation', 'site_visit', 'other'
+      'appointment', 'consultation', 'measurement', 'template', 'fabrication',
+      'installation', 'plumbing_disconnect', 'plumbing_reconnect', 'sealer_application',
+      'walk_through', 'final_inspection', 'delivery', 'site_visit', 'meeting', 'follow_up', 'other'
     ),
     start_time: Joi.date().iso(),
     end_time: Joi.date().iso(),
@@ -94,6 +97,23 @@ const schemas = {
     response_status: Joi.string().valid('pending', 'accepted', 'declined', 'tentative', 'needs_action'),
     participant_type: Joi.string().valid('organizer', 'attendee', 'optional', 'resource'),
     notes: Joi.string().max(500).allow('', null)
+  }),
+
+  publicBooking: Joi.object({
+    name: Joi.string().max(200).trim().required(),
+    email: Joi.string().email().required(),
+    phone: Joi.string().max(50).allow('', null),
+    date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required()
+      .messages({ 'string.pattern.base': 'Date must be in YYYY-MM-DD format' }),
+    time: Joi.string().pattern(/^\d{2}:\d{2}$/).required()
+      .messages({ 'string.pattern.base': 'Time must be in HH:MM format (24-hour)' }),
+    event_type: Joi.string().valid(
+      'appointment', 'measurement', 'consultation', 'site_visit'
+    ).default('appointment'),
+    project_type: Joi.string().max(100).allow('', null),
+    address: Joi.string().max(500).allow('', null),
+    notes: Joi.string().max(2000).allow('', null),
+    duration_minutes: Joi.number().integer().min(15).max(480).default(60)
   })
 };
 
@@ -299,6 +319,529 @@ function generateEventEmailHtml(event, participant, isNew = true) {
     </p>
   `;
 }
+
+// ============================================================
+// BUSINESS HOURS CONFIGURATION
+// ============================================================
+
+const BUSINESS_HOURS = {
+  start: 8,   // 8 AM
+  end: 18,    // 6 PM
+  slotDuration: 60,  // 60 minutes default
+  daysOfWeek: [1, 2, 3, 4, 5, 6] // Monday to Saturday (0 = Sunday)
+};
+
+/**
+ * Check if a date falls on a business day
+ */
+function isBusinessDay(date) {
+  const dayOfWeek = date.getDay();
+  return BUSINESS_HOURS.daysOfWeek.includes(dayOfWeek);
+}
+
+/**
+ * Generate time slots for a given date
+ */
+function generateTimeSlots(date, durationMinutes = 60) {
+  const slots = [];
+  const dateStr = date.toISOString().split('T')[0];
+
+  for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
+    // Generate slots at the start of each hour
+    const slotStart = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00`);
+    const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60 * 1000);
+
+    // Only add slot if it ends within business hours
+    if (slotEnd.getHours() <= BUSINESS_HOURS.end) {
+      slots.push({
+        start: slotStart.toISOString(),
+        end: slotEnd.toISOString(),
+        startTime: `${hour.toString().padStart(2, '0')}:00`,
+        endTime: `${slotEnd.getHours().toString().padStart(2, '0')}:${slotEnd.getMinutes().toString().padStart(2, '0')}`
+      });
+    }
+  }
+
+  return slots;
+}
+
+/**
+ * Get admin/owner user ID for calendar events
+ */
+async function getCalendarOwnerId(supabaseClient) {
+  const { data: adminUser } = await supabaseClient
+    .from('sg_users')
+    .select('id')
+    .eq('email', process.env.ADMIN_EMAIL || 'mike@surprisegranite.com')
+    .single();
+
+  return adminUser?.id || '00000000-0000-0000-0000-000000000000';
+}
+
+// ============================================================
+// PUBLIC AVAILABILITY ENDPOINTS (No Auth Required)
+// ============================================================
+
+/**
+ * GET /api/calendar/availability/:date
+ * Public endpoint - Returns available time slots for a specific date
+ */
+router.get('/availability/:date', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { date } = req.params;
+  const { duration_minutes = 60 } = req.query;
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({
+      error: 'Invalid date format',
+      message: 'Date must be in YYYY-MM-DD format'
+    });
+  }
+
+  const requestedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Validate date is not in the past
+  if (requestedDate < today) {
+    return res.status(400).json({
+      error: 'Invalid date',
+      message: 'Cannot check availability for past dates'
+    });
+  }
+
+  // Check if it's a business day
+  if (!isBusinessDay(requestedDate)) {
+    return res.json({
+      success: true,
+      date,
+      isBusinessDay: false,
+      slots: [],
+      message: 'This date is not a business day'
+    });
+  }
+
+  const duration = parseInt(duration_minutes);
+  if (isNaN(duration) || duration < 15 || duration > 480) {
+    return res.status(400).json({
+      error: 'Invalid duration',
+      message: 'Duration must be between 15 and 480 minutes'
+    });
+  }
+
+  // Get all events for this date
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const { data: events, error } = await supabase
+    .from('calendar_events')
+    .select('start_time, end_time')
+    .neq('status', 'cancelled')
+    .gte('start_time', startOfDay.toISOString())
+    .lte('start_time', endOfDay.toISOString())
+    .order('start_time');
+
+  if (error) {
+    logger.apiError(error, { context: 'Fetch availability events' });
+    return res.status(500).json({ error: 'Failed to check availability' });
+  }
+
+  // Generate all possible time slots
+  const allSlots = generateTimeSlots(requestedDate, duration);
+
+  // Mark slots as available or unavailable
+  const now = new Date();
+  const slotsWithAvailability = allSlots.map(slot => {
+    const slotStart = new Date(slot.start);
+    const slotEnd = new Date(slot.end);
+
+    // Check if slot is in the past
+    if (slotStart < now) {
+      return { ...slot, available: false, reason: 'past' };
+    }
+
+    // Check if slot overlaps with any existing event
+    const hasConflict = events.some(event => {
+      const eventStart = new Date(event.start_time);
+      const eventEnd = new Date(event.end_time);
+      return (slotStart < eventEnd && slotEnd > eventStart);
+    });
+
+    return {
+      ...slot,
+      available: !hasConflict,
+      reason: hasConflict ? 'booked' : null
+    };
+  });
+
+  const availableCount = slotsWithAvailability.filter(s => s.available).length;
+
+  res.json({
+    success: true,
+    date,
+    isBusinessDay: true,
+    totalSlots: allSlots.length,
+    availableSlots: availableCount,
+    slots: slotsWithAvailability
+  });
+}));
+
+/**
+ * GET /api/calendar/availability
+ * Public endpoint - Returns available dates for the next 30 days
+ */
+router.get('/public/availability', asyncHandler(async (req, res) => {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+
+  const { days = 30, duration_minutes = 60 } = req.query;
+  const numDays = Math.min(Math.max(parseInt(days) || 30, 1), 90);
+  const duration = parseInt(duration_minutes) || 60;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + numDays);
+
+  // Get all events for the date range
+  const { data: events, error } = await supabase
+    .from('calendar_events')
+    .select('start_time, end_time')
+    .neq('status', 'cancelled')
+    .gte('start_time', today.toISOString())
+    .lte('start_time', endDate.toISOString())
+    .order('start_time');
+
+  if (error) {
+    logger.apiError(error, { context: 'Fetch 30-day availability' });
+    return res.status(500).json({ error: 'Failed to check availability' });
+  }
+
+  // Build availability for each day
+  const availability = [];
+  const currentDate = new Date(today);
+
+  while (currentDate < endDate) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const isOpen = isBusinessDay(currentDate);
+
+    if (!isOpen) {
+      availability.push({
+        date: dateStr,
+        isBusinessDay: false,
+        availableSlots: 0,
+        totalSlots: 0
+      });
+    } else {
+      // Generate slots and check availability
+      const daySlots = generateTimeSlots(currentDate, duration);
+      const dayStart = new Date(dateStr);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dateStr);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      // Get events for this specific day
+      const dayEvents = events.filter(e => {
+        const eventStart = new Date(e.start_time);
+        return eventStart >= dayStart && eventStart <= dayEnd;
+      });
+
+      // Count available slots
+      const now = new Date();
+      let availableCount = 0;
+
+      for (const slot of daySlots) {
+        const slotStart = new Date(slot.start);
+        const slotEnd = new Date(slot.end);
+
+        if (slotStart < now) continue;
+
+        const hasConflict = dayEvents.some(event => {
+          const eventStart = new Date(event.start_time);
+          const eventEnd = new Date(event.end_time);
+          return (slotStart < eventEnd && slotEnd > eventStart);
+        });
+
+        if (!hasConflict) availableCount++;
+      }
+
+      availability.push({
+        date: dateStr,
+        isBusinessDay: true,
+        availableSlots: availableCount,
+        totalSlots: daySlots.length,
+        hasAvailability: availableCount > 0
+      });
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  res.json({
+    success: true,
+    startDate: today.toISOString().split('T')[0],
+    endDate: new Date(endDate.getTime() - 86400000).toISOString().split('T')[0],
+    daysChecked: numDays,
+    availability,
+    datesWithAvailability: availability.filter(d => d.hasAvailability).map(d => d.date)
+  });
+}));
+
+/**
+ * POST /api/calendar/book
+ * Public endpoint - Allows customers to book appointments (rate limited)
+ */
+router.post('/book',
+  bookingRateLimiter,
+  validateBody(schemas.publicBooking),
+  asyncHandler(async (req, res) => {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database not configured' });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      date,
+      time,
+      event_type,
+      project_type,
+      address,
+      notes,
+      duration_minutes
+    } = req.body;
+
+    // Additional validation
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return res.status(400).json({ error: 'Invalid phone format' });
+    }
+
+    // Parse and validate the requested datetime
+    const requestedStart = new Date(`${date}T${time}:00`);
+    const requestedEnd = new Date(requestedStart.getTime() + duration_minutes * 60 * 1000);
+    const now = new Date();
+
+    if (isNaN(requestedStart.getTime())) {
+      return res.status(400).json({ error: 'Invalid date or time format' });
+    }
+
+    if (requestedStart < now) {
+      return res.status(400).json({ error: 'Cannot book appointments in the past' });
+    }
+
+    // Check if it's a business day
+    if (!isBusinessDay(requestedStart)) {
+      return res.status(400).json({
+        error: 'This date is not available',
+        message: 'Please select a business day (Monday-Saturday)'
+      });
+    }
+
+    // Check if time is within business hours
+    const startHour = requestedStart.getHours();
+    const endHour = requestedEnd.getHours() + (requestedEnd.getMinutes() > 0 ? 1 : 0);
+
+    if (startHour < BUSINESS_HOURS.start || endHour > BUSINESS_HOURS.end) {
+      return res.status(400).json({
+        error: 'Time outside business hours',
+        message: `Please select a time between ${BUSINESS_HOURS.start}:00 and ${BUSINESS_HOURS.end}:00`
+      });
+    }
+
+    // Check for conflicts
+    const { data: conflicts, error: conflictError } = await supabase
+      .from('calendar_events')
+      .select('id, title, start_time, end_time')
+      .neq('status', 'cancelled')
+      .or(`and(start_time.lt.${requestedEnd.toISOString()},end_time.gt.${requestedStart.toISOString()})`);
+
+    if (conflictError) {
+      logger.apiError(conflictError, { context: 'Check booking conflicts' });
+      return res.status(500).json({ error: 'Failed to check availability' });
+    }
+
+    if (conflicts && conflicts.length > 0) {
+      return res.status(409).json({
+        error: 'Time slot not available',
+        message: 'This time slot is already booked. Please select a different time.'
+      });
+    }
+
+    // Get owner ID for the calendar event
+    const ownerId = await getCalendarOwnerId(supabase);
+
+    // Create the calendar event
+    const eventTitle = `${event_type === 'consultation' ? 'Consultation' : 'Appointment'}: ${sanitizeString(name, 100)}`;
+    const eventDescription = [
+      `Customer: ${name}`,
+      `Email: ${email}`,
+      phone ? `Phone: ${phone}` : null,
+      project_type ? `Project Type: ${project_type}` : null,
+      address ? `Address: ${address}` : null,
+      notes ? `\nNotes: ${notes}` : null
+    ].filter(Boolean).join('\n');
+
+    const { data: event, error: eventError } = await supabase
+      .from('calendar_events')
+      .insert({
+        created_by: ownerId,
+        title: eventTitle,
+        description: eventDescription,
+        event_type: event_type || 'appointment',
+        start_time: requestedStart.toISOString(),
+        end_time: requestedEnd.toISOString(),
+        location: address || null,
+        location_address: address || null,
+        status: 'scheduled',
+        reminder_minutes: [1440, 60], // 24 hours and 1 hour before
+        color: '#f59e0b' // Amber for appointments
+      })
+      .select()
+      .single();
+
+    if (eventError) {
+      logger.apiError(eventError, { context: 'Create booking event' });
+      return res.status(500).json({ error: 'Failed to create appointment' });
+    }
+
+    // Add customer as participant
+    await supabase
+      .from('calendar_event_participants')
+      .insert({
+        event_id: event.id,
+        email: email.toLowerCase(),
+        name: sanitizeString(name, 200),
+        phone: phone || null,
+        participant_type: 'attendee',
+        response_status: 'accepted'
+      });
+
+    // Generate calendar links for confirmation email
+    const calendarLinks = generateCalendarLinks(event);
+
+    // Send confirmation email to customer
+    try {
+      const startDate = new Date(event.start_time);
+      const emailHtml = `
+        <div style="text-align: center; margin-bottom: 25px;">
+          <h2 style="margin: 0 0 10px; color: #1a1a2e; font-size: 22px;">
+            Appointment Confirmed!
+          </h2>
+          <p style="margin: 0; color: #666;">Your appointment has been successfully scheduled.</p>
+        </div>
+
+        <div style="background: #f8f8f8; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+          <table width="100%" cellspacing="0" cellpadding="8">
+            <tr>
+              <td style="color: #666; font-weight: 600; width: 100px;">Date:</td>
+              <td style="color: #1a1a2e;">${startDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+            </tr>
+            <tr>
+              <td style="color: #666; font-weight: 600;">Time:</td>
+              <td style="color: #1a1a2e;">${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</td>
+            </tr>
+            ${address ? `
+            <tr>
+              <td style="color: #666; font-weight: 600;">Location:</td>
+              <td style="color: #1a1a2e;">${escapeHtml(address)}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        <!-- Add to Calendar Buttons -->
+        <div style="text-align: center; margin-bottom: 25px;">
+          <p style="margin: 0 0 12px; color: #666; font-size: 13px; font-weight: 600;">Add to your calendar:</p>
+          <table align="center" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="padding: 0 6px;">
+                <a href="${calendarLinks.googleUrl}" target="_blank" style="display: inline-block; padding: 10px 16px; background: #4285f4; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                  Google
+                </a>
+              </td>
+              <td style="padding: 0 6px;">
+                <a href="${calendarLinks.outlookUrl}" target="_blank" style="display: inline-block; padding: 10px 16px; background: #0078d4; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                  Outlook
+                </a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="margin: 0; color: #666; font-size: 14px; text-align: center;">
+          Questions? Reply to this email or call us.
+        </p>
+      `;
+
+      await emailService.sendNotification(
+        email,
+        `Appointment Confirmed - ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+        emailService.wrapEmailTemplate(emailHtml, { headerText: 'Appointment Confirmation' })
+      );
+    } catch (emailErr) {
+      logger.apiError(emailErr, { context: 'Booking confirmation email failed' });
+      // Don't fail the booking if email fails
+    }
+
+    // Send admin notification
+    try {
+      const adminEmail = {
+        subject: `New Appointment Booked: ${name}`,
+        html: `
+          <h2>New Appointment Booked</h2>
+          <p><strong>Customer:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ''}
+          <p><strong>Date:</strong> ${new Date(event.start_time).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${new Date(event.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
+          ${project_type ? `<p><strong>Project Type:</strong> ${escapeHtml(project_type)}</p>` : ''}
+          ${address ? `<p><strong>Address:</strong> ${escapeHtml(address)}</p>` : ''}
+          ${notes ? `<p><strong>Notes:</strong> ${escapeHtml(notes)}</p>` : ''}
+        `
+      };
+      await emailService.sendAdminNotification(adminEmail.subject, adminEmail.html);
+    } catch (adminErr) {
+      logger.apiError(adminErr, { context: 'Booking admin notification failed' });
+    }
+
+    logger.info('Public booking created', {
+      eventId: event.id,
+      customerEmail: email,
+      date: date,
+      time: time
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Appointment booked successfully!',
+      booking: {
+        id: event.id,
+        date: date,
+        time: time,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        event_type: event.event_type
+      },
+      calendarLinks: {
+        google: calendarLinks.googleUrl,
+        outlook: calendarLinks.outlookUrl
+      }
+    });
+  })
+);
 
 // ============================================================
 // EVENT CRUD

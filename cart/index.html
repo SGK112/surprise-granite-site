@@ -5,7 +5,7 @@
   <meta name="robots" content="noindex, nofollow"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shopping Cart | Surprise Granite</title>
-  <meta name="description" content="Review your cart and checkout securely with Stripe.">
+  <meta name="description" content="Review your cart and checkout securely. Taxes and shipping calculated automatically.">
   <link rel="canonical" href="https://surprisegranite.com/cart/">
   <link rel="icon" href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png">
 
@@ -21,8 +21,8 @@
   <script defer src="/js/unified-nav.js?v=20260129"></script>
   <link rel="stylesheet" href="/css/cart.css?v=20260111c">
 
-  <!-- Stripe -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <!-- Shopify Cart -->
+  <script src="/js/shopify-cart.js"></script>
 
   <!-- Supabase for auth check -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -35,7 +35,7 @@
       <!-- Cart Header -->
       <div class="cart-header">
         <h1>Shopping Cart</h1>
-        <a href="/shop" class="continue-shopping">
+        <a href="/marketplace/" class="continue-shopping">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
@@ -56,7 +56,7 @@
             </svg>
             <h2>Your cart is empty</h2>
             <p>Looks like you haven't added any items to your cart yet.</p>
-            <a href="/shop" class="btn-primary">Browse Products</a>
+            <a href="/marketplace/" class="btn-primary">Browse Products</a>
           </div>
 
           <!-- Cart Items List -->
@@ -149,7 +149,7 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
-            <span>Secure checkout powered by Stripe</span>
+            <span>Secure checkout · Taxes & shipping calculated</span>
           </div>
 
           <!-- Accepted Payment Methods -->
@@ -186,29 +186,88 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/cart.js"></script>
   <script>
-    // Check authentication and manage account prompt
     document.addEventListener('DOMContentLoaded', async function() {
-      const SUPABASE_URL = 'https://ypeypgwsycxcagncgdur.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+      // Wait for ShopifyCart to initialize
+      await new Promise(r => setTimeout(r, 500));
 
-      try {
-        if (window.supabase) {
-          const { createClient } = window.supabase;
-          const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          const { data: { session } } = await supabaseClient.auth.getSession();
+      const cartEmpty = document.getElementById('cartEmpty');
+      const cartItems = document.getElementById('cartItems');
+      const cartSummary = document.getElementById('cartSummary');
+      const checkoutBtn = document.getElementById('checkoutBtn');
 
-          if (session) {
-            // User is logged in - hide prompt
-            document.body.classList.add('user-logged-in');
-          }
+      function renderCart() {
+        const items = window.ShopifyCart?.getItems() || [];
+        const total = window.ShopifyCart?.getTotal() || 0;
+
+        if (items.length === 0) {
+          cartEmpty.style.display = 'block';
+          cartItems.style.display = 'none';
+          cartSummary.style.display = 'none';
+          return;
         }
-      } catch (err) {
-        console.log('Auth check skipped');
+
+        cartEmpty.style.display = 'none';
+        cartItems.style.display = 'block';
+        cartSummary.style.display = 'block';
+
+        // Render items
+        cartItems.innerHTML = items.map(item => `
+          <div class="cart-item" data-line-id="${item.id}">
+            <div class="cart-item-image">
+              <img src="${item.image || '/images/placeholder.jpg'}" alt="${item.title}">
+            </div>
+            <div class="cart-item-details">
+              <h3 class="cart-item-title">${item.title}</h3>
+              ${item.variantTitle && item.variantTitle !== 'Default Title' ? `<p class="cart-item-variant">${item.variantTitle}</p>` : ''}
+              <p class="cart-item-price">$${item.price.toFixed(2)}</p>
+            </div>
+            <div class="cart-item-quantity">
+              <button class="qty-btn" onclick="updateQty('${item.id}', ${item.quantity - 1})">−</button>
+              <span class="qty-value">${item.quantity}</span>
+              <button class="qty-btn" onclick="updateQty('${item.id}', ${item.quantity + 1})">+</button>
+            </div>
+            <div class="cart-item-total">
+              $${(item.price * item.quantity).toFixed(2)}
+            </div>
+            <button class="cart-item-remove" onclick="removeItem('${item.id}')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        `).join('');
+
+        // Update subtotal (tax/shipping calculated at Shopify checkout)
+        document.getElementById('cartSubtotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
       }
 
-      // Continue as guest - just hide the prompt
+      // Cart update functions
+      window.updateQty = async function(lineId, newQty) {
+        if (newQty <= 0) {
+          await window.ShopifyCart.removeItem(lineId);
+        } else {
+          await window.ShopifyCart.updateQuantity(lineId, newQty);
+        }
+      };
+
+      window.removeItem = async function(lineId) {
+        await window.ShopifyCart.removeItem(lineId);
+      };
+
+      // Checkout button
+      checkoutBtn?.addEventListener('click', function() {
+        window.ShopifyCart.checkout();
+      });
+
+      // Listen for cart changes
+      window.ShopifyCart?.onChange(renderCart);
+
+      // Initial render
+      renderCart();
+
+      // Guest checkout button
       const guestBtn = document.getElementById('continueAsGuest');
       if (guestBtn) {
         guestBtn.addEventListener('click', function() {

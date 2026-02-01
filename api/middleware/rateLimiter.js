@@ -159,6 +159,12 @@ const customerRateLimiter = publicRateLimiter({
   message: 'Too many requests. Please wait.'
 });
 
+const bookingRateLimiter = publicRateLimiter({
+  maxRequests: 5,
+  windowMs: 300000, // 5 minutes
+  message: 'Too many booking requests. Please wait a few minutes before trying again.'
+});
+
 // Cleanup old entries every hour
 setInterval(() => {
   const dayAgo = Date.now() - 86400000;
@@ -183,6 +189,7 @@ module.exports = {
   leadRateLimiter,
   emailRateLimiter,
   customerRateLimiter,
+  bookingRateLimiter,
   getClientKey,
   RATE_LIMITS
 };

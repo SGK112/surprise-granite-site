@@ -456,3 +456,14 @@ COMMENT ON COLUMN public.projects.job_number IS 'Auto-generated job number for o
 COMMENT ON COLUMN public.projects.portal_token IS 'Unique token for customer portal access';
 COMMENT ON COLUMN public.projects.material_status IS 'Current status of materials for this project';
 COMMENT ON COLUMN public.projects.lead_id IS 'Reference to original lead if converted from lead';
+
+-- ============================================================
+-- PHASE 10: Add project_id to calendar_events
+-- ============================================================
+
+ALTER TABLE public.calendar_events
+  ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES public.projects(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS calendar_events_project_idx ON public.calendar_events(project_id);
+
+COMMENT ON COLUMN public.calendar_events.project_id IS 'Link to project (replaces job_id for consistency)';

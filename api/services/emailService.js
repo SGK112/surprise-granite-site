@@ -174,12 +174,29 @@ function wrapEmailTemplate(content, options = {}) {
  * Generate lead notification email for admin
  */
 function generateLeadNotificationEmail(lead) {
+  const hasAppointment = lead.appointment_date && lead.appointment_time;
+
+  // Format appointment date for display
+  let appointmentDisplay = '';
+  if (hasAppointment) {
+    const apptDate = new Date(lead.appointment_date + 'T12:00:00');
+    const formattedDate = apptDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    appointmentDisplay = `${formattedDate} at ${lead.appointment_time}`;
+  }
+
   const content = `
-    <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">New Lead Received</h2>
+    ${hasAppointment ? `
+    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;">
+      <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 4px;">📅 APPOINTMENT BOOKED</div>
+      <div style="font-size: 18px; font-weight: 700;">${escapeHtml(appointmentDisplay)}</div>
+      ${lead.project_address ? `<div style="font-size: 14px; margin-top: 6px; opacity: 0.9;">📍 ${escapeHtml(lead.project_address)}</div>` : ''}
+    </div>
+    ` : ''}
+    <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 18px; border-bottom: 2px solid #f9cb00; padding-bottom: 10px;">${hasAppointment ? 'Customer Details' : 'New Lead Received'}</h2>
     <table width="100%" cellspacing="0" cellpadding="8">
       <tr>
         <td style="color: #666; font-weight: 600; width: 140px;">Name:</td>
-        <td style="color: #1a1a2e;">${escapeHtml(lead.name || 'Not provided')}</td>
+        <td style="color: #1a1a2e; font-weight: 600; font-size: 16px;">${escapeHtml(lead.name || 'Not provided')}</td>
       </tr>
       <tr>
         <td style="color: #666; font-weight: 600;">Email:</td>
@@ -187,8 +204,14 @@ function generateLeadNotificationEmail(lead) {
       </tr>
       <tr>
         <td style="color: #666; font-weight: 600;">Phone:</td>
-        <td style="color: #1a1a2e;"><a href="tel:${escapeHtml(lead.phone)}" style="color: #1a1a2e;">${escapeHtml(lead.phone || 'Not provided')}</a></td>
+        <td style="color: #1a1a2e;"><a href="tel:${escapeHtml(lead.phone)}" style="color: #1a1a2e; font-weight: 600;">${escapeHtml(lead.phone || 'Not provided')}</a></td>
       </tr>
+      ${lead.project_address ? `
+      <tr>
+        <td style="color: #666; font-weight: 600;">Address:</td>
+        <td style="color: #1a1a2e;">${escapeHtml(lead.project_address)}</td>
+      </tr>
+      ` : ''}
       <tr>
         <td style="color: #666; font-weight: 600;">Project Type:</td>
         <td style="color: #1a1a2e;">${escapeHtml(lead.project_type || 'Not specified')}</td>
@@ -199,16 +222,24 @@ function generateLeadNotificationEmail(lead) {
       </tr>
       ${lead.message ? `
       <tr>
-        <td style="color: #666; font-weight: 600;">Message:</td>
-        <td style="color: #1a1a2e;">${escapeHtml(lead.message)}</td>
+        <td style="color: #666; font-weight: 600; vertical-align: top;">Message:</td>
+        <td style="color: #1a1a2e; white-space: pre-wrap;">${escapeHtml(lead.message)}</td>
       </tr>
       ` : ''}
     </table>
+    ${hasAppointment ? `
+    <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+      <p style="margin: 0; color: #92400e; font-size: 14px;">
+        <strong>Action Required:</strong> This appointment has been added to your calendar. Please confirm or reschedule within 24 hours.
+      </p>
+    </div>
+    ` : ''}
   `;
 
+  const subjectPrefix = hasAppointment ? '📅 APPOINTMENT' : 'New Lead';
   return {
-    subject: `New Lead: ${lead.name || 'Unknown'} - ${lead.project_type || 'General Inquiry'}`,
-    html: wrapEmailTemplate(content, { headerText: '📋 New Lead Received' })
+    subject: `${subjectPrefix}: ${lead.name || 'Unknown'} - ${lead.project_type || 'General Inquiry'}`,
+    html: wrapEmailTemplate(content, { headerText: hasAppointment ? '📅 New Appointment Booked' : '📋 New Lead Received' })
   };
 }
 
