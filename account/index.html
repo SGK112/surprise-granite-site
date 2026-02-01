@@ -8738,6 +8738,146 @@
       height: 18px;
     }
 
+    /* Lead card quick action buttons - compact version */
+    .lead-quick-actions {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      margin-top: auto;
+    }
+
+    .lead-quick-actions .btn-action {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .lead-quick-actions .btn-action:hover {
+      transform: translateY(-1px);
+    }
+
+    .lead-quick-actions .btn-action.call:hover {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .lead-quick-actions .btn-action.email:hover {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .lead-quick-actions .btn-action.status:hover {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .lead-quick-actions .btn-action.project:hover {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+
+    /* Project quick actions on list items */
+    .project-quick-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .list-item-modern:hover .project-quick-actions {
+      opacity: 1;
+    }
+
+    .project-quick-actions button {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: var(--dark-surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+
+    .project-quick-actions button:hover {
+      transform: scale(1.1);
+    }
+
+    .project-quick-actions button.status:hover {
+      background: var(--gold-primary);
+      color: var(--dark-primary);
+    }
+
+    .project-quick-actions button.schedule:hover {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .project-quick-actions button.task:hover {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    /* Kanban card quick actions */
+    .kanban-quick-actions {
+      display: none;
+      gap: 4px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--dark-border);
+    }
+
+    .kanban-card:hover .kanban-quick-actions {
+      display: flex;
+    }
+
+    .kanban-quick-actions button {
+      flex: 1;
+      padding: 6px;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .kanban-quick-actions button.schedule {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .kanban-quick-actions button.task {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .kanban-quick-actions button:hover {
+      transform: scale(1.02);
+      filter: brightness(1.1);
+    }
+
     /* Empty State - Enhanced */
     .empty-state-enhanced {
       text-align: center;
@@ -10858,7 +10998,13 @@
             <div id="notification-panel" class="notification-panel" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 360px; max-height: 480px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 1000; overflow: hidden;">
               <div style="padding: 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Notifications</h3>
-                <button onclick="markAllNotificationsRead()" style="background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer;">Mark all read</button>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                  <button onclick="sendDailyDigest()" style="background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Send daily summary to your email">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Digest
+                  </button>
+                  <button onclick="markAllNotificationsRead()" style="background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer;">Mark all read</button>
+                </div>
               </div>
               <div id="notification-list" style="max-height: 380px; overflow-y: auto;">
                 <div class="empty-state" style="padding: 40px 20px; text-align: center;">
@@ -10991,7 +11137,7 @@
                 <p style="color: #999; margin-bottom: 20px;">Browse our collections on your phone and swipe right to save your favorites!</p>
                 <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                   <a href="/materials/flooring/" class="btn-modern primary">Browse Flooring</a>
-                  <a href="/materials/all-countertops/" class="btn-modern secondary">Browse Countertops</a>
+                  <a href="/marketplace/slabs//" class="btn-modern secondary">Browse Countertops</a>
                 </div>
               </div>
 
@@ -18208,39 +18354,291 @@
         return;
       }
 
+      // Professional SVG icons for notification types
       const typeIcons = {
-        new_lead: { icon: '👤', color: '#3b82f6' },
-        appointment_booked: { icon: '📅', color: '#10b981' },
-        appointment_reminder: { icon: '⏰', color: '#f59e0b' },
-        action_required: { icon: '⚠️', color: '#ef4444' },
-        estimate_approved: { icon: '✅', color: '#10b981' },
-        payment_received: { icon: '💰', color: '#10b981' },
-        message_received: { icon: '💬', color: '#8b5cf6' },
-        new_features: { icon: '🎉', color: '#10b981' },
-        default: { icon: '🔔', color: '#6b7280' }
+        new_lead: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`,
+          color: '#3b82f6',
+          actions: [
+            { label: 'Schedule', action: 'schedule_lead', primary: true },
+            { label: 'View', action: 'view_lead' }
+          ]
+        },
+        appointment_booked: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>`,
+          color: '#10b981',
+          actions: [
+            { label: 'Confirm', action: 'confirm_appointment', primary: true },
+            { label: 'Reschedule', action: 'reschedule_appointment' }
+          ]
+        },
+        appointment_reminder: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+          color: '#f59e0b',
+          actions: [
+            { label: 'View Event', action: 'view_event', primary: true },
+            { label: 'Send Reminder', action: 'send_reminder' }
+          ]
+        },
+        action_required: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+          color: '#ef4444',
+          actions: [
+            { label: 'Take Action', action: 'take_action', primary: true },
+            { label: 'Dismiss', action: 'dismiss' }
+          ]
+        },
+        estimate_approved: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+          color: '#10b981',
+          actions: [
+            { label: 'Create Invoice', action: 'create_invoice', primary: true },
+            { label: 'View', action: 'view_estimate' }
+          ]
+        },
+        payment_received: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+          color: '#10b981',
+          actions: [
+            { label: 'View Invoice', action: 'view_invoice', primary: true },
+            { label: 'Send Receipt', action: 'send_receipt' }
+          ]
+        },
+        message_received: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+          color: '#8b5cf6',
+          actions: [
+            { label: 'Reply', action: 'reply_message', primary: true },
+            { label: 'View', action: 'view_message' }
+          ]
+        },
+        new_features: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+          color: '#f59e0b',
+          actions: [
+            { label: 'Learn More', action: 'start_tutorial', primary: true }
+          ]
+        },
+        default: {
+          icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+          color: '#6b7280',
+          actions: []
+        }
       };
 
       list.innerHTML = allNotifications.map(notif => {
         const typeInfo = typeIcons[notif.type] || typeIcons.default;
         const timeAgo = getTimeAgo(new Date(notif.created_at));
         const unreadStyle = notif.read ? '' : 'background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6;';
+        const dataAttr = encodeURIComponent(JSON.stringify(notif.data || {}));
+
+        // Build action buttons
+        const actionButtons = typeInfo.actions.map(act => {
+          const btnStyle = act.primary
+            ? `background: ${typeInfo.color}; color: white; border: none;`
+            : `background: transparent; color: ${typeInfo.color}; border: 1px solid ${typeInfo.color}40;`;
+          return `<button onclick="event.stopPropagation(); handleNotificationAction('${notif.id}', '${act.action}', '${dataAttr}')"
+                          style="${btnStyle} padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    ${act.label}
+                  </button>`;
+        }).join('');
 
         return `
           <div class="notification-item" onclick="handleNotificationClick('${notif.id}', '${notif.type}', ${JSON.stringify(notif.data || {}).replace(/"/g, '&quot;')})"
-               style="padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.2s; ${unreadStyle}">
+               style="padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.2s; ${unreadStyle}">
             <div style="display: flex; gap: 12px; align-items: flex-start;">
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: ${typeInfo.color}20; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: ${typeInfo.color}20; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: ${typeInfo.color};">
                 ${typeInfo.icon}
               </div>
               <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 500; font-size: 14px; margin-bottom: 2px; ${notif.read ? 'color: var(--text-secondary)' : 'color: var(--text-primary)'}">${escapeHtml(notif.title)}</div>
-                <div style="font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(notif.message)}</div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${timeAgo}</div>
+                <div style="font-weight: 500; font-size: 14px; margin-bottom: 3px; ${notif.read ? 'color: var(--text-secondary)' : 'color: var(--text-primary)'}">${escapeHtml(notif.title)}</div>
+                <div style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-bottom: 6px;">${escapeHtml(notif.message)}</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">${timeAgo}</span>
+                  ${actionButtons ? `<div style="display: flex; gap: 6px;">${actionButtons}</div>` : ''}
+                </div>
               </div>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    // Handle notification action button clicks
+    async function handleNotificationAction(notifId, action, encodedData) {
+      const data = JSON.parse(decodeURIComponent(encodedData));
+
+      // Mark notification as read
+      const notif = allNotifications.find(n => n.id === notifId);
+      if (notif) notif.read = true;
+      if (typeof StateManager !== 'undefined') {
+        StateManager.markNotificationViewed(notifId);
+      }
+
+      // Close notification panel
+      toggleNotificationPanel();
+
+      // Handle different actions
+      switch (action) {
+        case 'schedule_lead':
+          if (data.lead_id) {
+            showPage('leads');
+            setTimeout(() => openScheduleLeadModal(data.lead_id), 300);
+          }
+          break;
+
+        case 'view_lead':
+          if (data.lead_id) {
+            showPage('leads');
+            setTimeout(() => viewLead(data.lead_id), 300);
+          }
+          break;
+
+        case 'confirm_appointment':
+          if (data.event_id) {
+            await confirmCalendarEvent(data.event_id);
+            showToast('Appointment confirmed');
+          }
+          break;
+
+        case 'reschedule_appointment':
+          if (data.event_id) {
+            showPage('calendar');
+            setTimeout(() => {
+              openCalendarEventDetailModal(data.event_id);
+              // Auto-click edit after opening
+              setTimeout(() => {
+                const editBtn = document.querySelector('#calendar-event-detail-modal [onclick*="editCalendarEvent"]');
+                if (editBtn) editBtn.click();
+              }, 300);
+            }, 300);
+          }
+          break;
+
+        case 'view_event':
+          if (data.event_id) {
+            showPage('calendar');
+            setTimeout(() => openCalendarEventDetailModal(data.event_id), 300);
+          }
+          break;
+
+        case 'send_reminder':
+          if (data.event_id) {
+            await sendEventReminder(data.event_id);
+          }
+          break;
+
+        case 'take_action':
+          // Navigate based on data context
+          if (data.lead_id) {
+            showPage('leads');
+            setTimeout(() => viewLead(data.lead_id), 300);
+          } else if (data.event_id) {
+            showPage('calendar');
+            setTimeout(() => openCalendarEventDetailModal(data.event_id), 300);
+          } else if (data.estimate_id) {
+            showPage('estimates');
+          } else if (data.invoice_id) {
+            showPage('invoices');
+          }
+          break;
+
+        case 'dismiss':
+          renderNotificationPanel();
+          updateNotificationBadge();
+          break;
+
+        case 'create_invoice':
+          if (data.estimate_id) {
+            showPage('invoices');
+            setTimeout(() => createInvoiceFromEstimate(data.estimate_id), 300);
+          }
+          break;
+
+        case 'view_estimate':
+          if (data.estimate_id) {
+            showPage('estimates');
+          }
+          break;
+
+        case 'view_invoice':
+          if (data.invoice_id) {
+            showPage('invoices');
+          }
+          break;
+
+        case 'send_receipt':
+          if (data.invoice_id) {
+            await sendInvoiceReceipt(data.invoice_id);
+          }
+          break;
+
+        case 'reply_message':
+        case 'view_message':
+          // TODO: Implement message viewing
+          showToast('Messages feature coming soon', 'info');
+          break;
+
+        case 'start_tutorial':
+          setTimeout(() => showFeatureTutorial(), 300);
+          break;
+
+        default:
+          console.log('Unknown notification action:', action);
+      }
+
+      renderNotificationPanel();
+      updateNotificationBadge();
+    }
+
+    // Send reminder for an event
+    async function sendEventReminder(eventId) {
+      try {
+        const response = await fetch('/api/calendar/events/' + eventId + '/reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          showToast('Reminder sent successfully');
+        } else {
+          showToast('Failed to send reminder', 'error');
+        }
+      } catch (err) {
+        console.error('Error sending reminder:', err);
+        showToast('Failed to send reminder', 'error');
+      }
+    }
+
+    // Send invoice receipt
+    async function sendInvoiceReceipt(invoiceId) {
+      try {
+        const response = await fetch('/api/invoices/' + invoiceId + '/receipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          showToast('Receipt sent successfully');
+        } else {
+          showToast('Failed to send receipt', 'error');
+        }
+      } catch (err) {
+        console.error('Error sending receipt:', err);
+        showToast('Failed to send receipt', 'error');
+      }
+    }
+
+    // Create invoice from estimate
+    async function createInvoiceFromEstimate(estimateId) {
+      // Open invoice creation modal pre-filled with estimate data
+      // This assumes there's an existing function or we need to implement it
+      if (typeof openCreateInvoiceModal === 'function') {
+        openCreateInvoiceModal({ estimate_id: estimateId });
+      } else {
+        showToast('Opening invoice creation...', 'info');
+        // Navigate to invoices page - the user can create manually
+      }
     }
 
     function getTimeAgo(date) {
@@ -18340,6 +18738,42 @@
     function startNotificationPolling() {
       loadNotifications();
       setInterval(loadNotifications, 60000); // Every minute
+    }
+
+    // Send daily digest email
+    async function sendDailyDigest() {
+      if (!currentUser) {
+        showToast('Please sign in to receive your digest', 'error');
+        return;
+      }
+
+      const userName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+
+      showToast('Sending daily digest...', 'info');
+
+      try {
+        const response = await fetch('/api/email/daily-digest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: currentUser.id,
+            email: currentUser.email,
+            name: userName
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showToast(`Digest sent to ${currentUser.email}`, 'success');
+          toggleNotificationPanel();
+        } else {
+          throw new Error(result.error || 'Failed to send digest');
+        }
+      } catch (err) {
+        console.error('Error sending digest:', err);
+        showToast('Failed to send digest: ' + err.message, 'error');
+      }
     }
 
     function showDashboard() {
@@ -20780,7 +21214,7 @@
               <p>Buy & sell remnants</p>
             </div>
           </a>
-          <a href="/materials/all-countertops/" class="action-card">
+          <a href="/marketplace/slabs//" class="action-card">
             <div class="action-icon">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2"/></svg>
             </div>
@@ -21467,7 +21901,7 @@
 
               <!-- Appointment Section -->
               ${hasAppointment ? `
-                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 0;">
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                     <svg width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     <span style="font-size: 12px; font-weight: 600; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px;">Scheduled</span>
@@ -21477,13 +21911,33 @@
                 </div>
               ` : `
                 <button onclick="event.stopPropagation(); openScheduleLeadModal('${lead.id}')"
-                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); border: none; border-radius: 8px; color: var(--dark-primary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%); border: none; border-radius: 8px; color: var(--dark-primary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 12px;"
                         onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(249, 203, 0, 0.4)'"
                         onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
                   <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   Schedule Appointment
                 </button>
               `}
+
+              <!-- Quick Actions Bar -->
+              <div class="lead-quick-actions">
+                ${leadPhone ? `<button onclick="event.stopPropagation(); window.location.href='tel:${encodeURIComponent(leadPhone)}'" class="btn-action call" title="Call">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                  Call
+                </button>` : ''}
+                ${leadEmail ? `<button onclick="event.stopPropagation(); window.location.href='mailto:${encodeURIComponent(leadEmail)}'" class="btn-action email" title="Email">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  Email
+                </button>` : ''}
+                <button onclick="event.stopPropagation(); quickChangeLeadStatus('${lead.id}', '${lead.status}')" class="btn-action status" title="Change Status">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+                  Status
+                </button>
+                <button onclick="event.stopPropagation(); convertLeadToProject('${lead.id}')" class="btn-action project" title="Convert to Project">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                  Project
+                </button>
+              </div>
             </div>
           `}).join('')}
         </div>
@@ -21530,6 +21984,124 @@
     }
 
     function openLeadModal(id) { viewLead(id); }
+
+    // Quick Actions for Lead Cards
+    function quickChangeLeadStatus(leadId, currentStatus) {
+      const statuses = ['new', 'contacted', 'qualified', 'quoted', 'won', 'lost'];
+      const statusLabels = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quoted: 'Quoted', won: 'Won', lost: 'Lost' };
+
+      // Create dropdown modal
+      const modal = document.createElement('div');
+      modal.id = 'quick-status-modal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div style="background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; min-width: 240px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+          <h3 style="margin: 0 0 16px; font-size: 14px; color: var(--text-primary);">Change Lead Status</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${statuses.map(s => `
+              <button onclick="setLeadStatusQuick('${leadId}', '${s}')"
+                      style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: ${s === currentStatus ? 'var(--gold-primary)20' : 'var(--dark-elevated)'}; border: 1px solid ${s === currentStatus ? 'var(--gold-primary)' : 'var(--border-subtle)'}; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: ${s === currentStatus ? 'var(--gold-primary)' : 'var(--text-secondary)'};"
+                      onmouseover="this.style.borderColor='var(--gold-primary)'"
+                      onmouseout="this.style.borderColor='${s === currentStatus ? 'var(--gold-primary)' : 'var(--border-subtle)'}'"
+              >
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${getStatusColor(s)};"></span>
+                <span style="font-weight: 500;">${statusLabels[s]}</span>
+                ${s === currentStatus ? '<span style="margin-left: auto; font-size: 11px;">Current</span>' : ''}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    async function setLeadStatusQuick(leadId, newStatus) {
+      document.getElementById('quick-status-modal')?.remove();
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        // Update local data
+        const lead = allLeads.find(l => l.id === leadId);
+        if (lead) lead.status = newStatus;
+
+        renderLeads();
+        showToast(`Lead status changed to ${newStatus}`, 'success');
+      } catch (err) {
+        console.error('Error updating status:', err);
+        showToast('Failed to update status', 'error');
+      }
+    }
+
+    async function convertLeadToProject(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) {
+        showToast('Lead not found', 'error');
+        return;
+      }
+
+      const leadName = lead.full_name || lead.homeowner_name || lead.name || 'Unknown';
+
+      if (!confirm(`Convert "${leadName}" to a project?`)) return;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Create project from lead data
+        const projectData = {
+          user_id: user.id,
+          name: `${leadName} - ${lead.project_type || 'Project'}`,
+          customer_name: leadName,
+          customer_email: lead.email || lead.homeowner_email || null,
+          customer_phone: lead.phone || lead.homeowner_phone || null,
+          address: lead.project_address || lead.address || null,
+          description: lead.message || lead.project_details || null,
+          status: 'lead',
+          priority: 'medium',
+          lead_id: leadId
+        };
+
+        const { data: project, error } = await supabaseClient
+          .from('projects')
+          .insert(projectData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update lead status to won
+        await supabaseClient
+          .from('leads')
+          .update({ status: 'won', updated_at: new Date().toISOString() })
+          .eq('id', leadId);
+
+        // Update local lead
+        if (lead) lead.status = 'won';
+
+        showToast('Project created successfully!', 'success');
+        renderLeads();
+
+        // Optionally navigate to projects page
+        if (confirm('View the new project?')) {
+          showPage('projects');
+          await loadProjects();
+          setTimeout(() => openProjectDetail(project.id), 500);
+        }
+
+      } catch (err) {
+        console.error('Error converting lead:', err);
+        showToast('Failed to convert lead: ' + err.message, 'error');
+      }
+    }
 
     async function viewLead(id) {
       try {
@@ -31215,7 +31787,7 @@
         const progress = p.progress || 0;
         const dateStr = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 
-        return `<div class="list-item-modern" style="display: flex; align-items: center; gap: 16px; padding: 16px; cursor: pointer; border-bottom: 1px solid var(--dark-border); transition: background 0.15s;" onclick="openProjectDetail('${p.id}')" onmouseover="this.style.background='var(--dark-elevated)'" onmouseout="this.style.background='transparent'">
+        return `<div class="list-item-modern project-list-item" style="display: flex; align-items: center; gap: 16px; padding: 16px; cursor: pointer; border-bottom: 1px solid var(--dark-border); transition: background 0.15s; position: relative;" onclick="openProjectDetail('${p.id}')">
           <div style="width: 42px; height: 42px; border-radius: 10px; background: ${statusColor}20; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="${statusColor}" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
           </div>
@@ -31229,6 +31801,18 @@
             <span style="font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: ${priorityColor}15; color: ${priorityColor}; text-transform: capitalize;">${p.priority || 'medium'}</span>
             ${value > 0 ? `<span style="font-size: 13px; font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>` : ''}
             <span style="font-size: 11px; color: var(--text-muted);">${dateStr}</span>
+            <!-- Quick Actions (visible on hover) -->
+            <div class="project-quick-actions">
+              <button onclick="event.stopPropagation(); quickChangeProjectStatus('${p.id}', '${p.status}')" class="status" title="Change Status">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+              </button>
+              <button onclick="event.stopPropagation(); scheduleForProject('${p.id}')" class="schedule" title="Schedule">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </button>
+              <button onclick="event.stopPropagation(); quickAddProjectTask('${p.id}')" class="task" title="Add Task">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              </button>
+            </div>
           </div>
         </div>`;
       }).join('');
@@ -31256,7 +31840,7 @@
           const progress = p.progress || 0;
           const priorityColor = PROJECT_PRIORITY_COLORS[p.priority] || '#6b7280';
 
-          return `<div class="kanban-card" draggable="true" ondragstart="onProjectDragStart(event, '${p.id}')" ondragend="onProjectDragEnd(event)" onclick="openProjectDetail('${p.id}')" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--dark-border)'">
+          return `<div class="kanban-card" draggable="true" ondragstart="onProjectDragStart(event, '${p.id}')" ondragend="onProjectDragEnd(event)" onclick="openProjectDetail('${p.id}')" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.15s;">
             <div style="font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${escapeHtml(p.customer_name || 'No customer')}</div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
@@ -31264,6 +31848,17 @@
               ${value > 0 ? `<span style="font-size: 12px; font-weight: 600; color: var(--gold-primary);">$${value.toLocaleString()}</span>` : ''}
             </div>
             ${progress > 0 ? `<div style="margin-top: 8px; height: 4px; background: var(--dark-border); border-radius: 2px; overflow: hidden;"><div style="width: ${progress}%; height: 100%; background: var(--gold-primary); border-radius: 2px;"></div></div>` : ''}
+            <!-- Kanban Quick Actions -->
+            <div class="kanban-quick-actions">
+              <button onclick="event.stopPropagation(); scheduleForProject('${p.id}')" class="schedule">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Schedule
+              </button>
+              <button onclick="event.stopPropagation(); quickAddProjectTask('${p.id}')" class="task">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Task
+              </button>
+            </div>
           </div>`;
         }).join('');
       });
@@ -31847,14 +32442,35 @@
             </select>
           </div>
 
-          ${progress > 0 ? `<div style="margin-bottom: 20px;">
+          <!-- Progress Bar -->
+          <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">
               <span>Progress</span><span>${progress}%</span>
             </div>
             <div style="height: 8px; background: var(--dark-border); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${progress}%; height: 100%; background: ${statusColor}; border-radius: 4px; transition: width 0.3s;"></div>
+              <div style="width: ${progress}%; height: 100%; background: ${progress >= 100 ? '#22c55e' : 'var(--gold-primary)'}; border-radius: 4px; transition: width 0.3s;"></div>
             </div>
-          </div>` : ''}
+          </div>
+
+          <!-- Task Checklist -->
+          <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="none" stroke="var(--gold-primary)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Tasks</span>
+                <span style="font-size: 11px; color: var(--text-muted);">(${tasks.filter(t => t.status === 'completed').length}/${tasks.length})</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button onclick="showAddTaskTemplates('${project.id}')" class="btn-modern ghost" style="font-size: 11px; padding: 4px 8px;" title="Add from template">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                </button>
+                <button onclick="addProjectTask('${project.id}')" class="btn-modern primary" style="font-size: 11px; padding: 4px 10px;">+ Add Task</button>
+              </div>
+            </div>
+            <div id="project-tasks-list" data-project-id="${project.id}">
+              ${tasks.length > 0 ? tasks.map(task => renderProjectTaskItem(task)).join('') : '<div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">No tasks yet. Add tasks to track progress.</div>'}
+            </div>
+          </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
             <div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px;">
@@ -31967,9 +32583,29 @@
             <div id="project-collab-listings-content" style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px;">Loading listings...</div>
           </div>
 
-          ${activity.length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <!-- Comments Feed -->
+          <div id="project-comments-section" style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="none" stroke="var(--gold-primary)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Comments</span>
+              </div>
+            </div>
+            <div id="project-comments-list" data-project-id="${project.id}" style="max-height: 300px; overflow-y: auto; margin-bottom: 12px;">
+              <div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 13px;">Loading comments...</div>
+            </div>
+            <form onsubmit="addProjectComment('${project.id}', this); return false;" style="display: flex; gap: 8px;">
+              <input type="text" name="comment" placeholder="Add a comment..." required
+                     style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--dark-border); background: var(--dark-surface); color: var(--text-primary); font-size: 13px;">
+              <button type="submit" class="btn-modern primary" style="padding: 10px 16px;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </form>
+          </div>
+
+          ${activity.filter(a => a.action !== 'comment').length > 0 ? `<div style="background: var(--dark-elevated); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Recent Activity</div>
-            ${activity.slice(0, 10).map(a => `<div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
+            ${activity.filter(a => a.action !== 'comment').slice(0, 10).map(a => `<div style="display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dark-border);">
               <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold-primary); margin-top: 6px; flex-shrink: 0;"></div>
               <div style="flex: 1;">
                 <div style="font-size: 12px; color: var(--text-primary);">${escapeHtml(a.description || a.action || 'Activity')}</div>
@@ -31994,9 +32630,10 @@
           </div>
         `;
 
-        // Load team members, design handoffs and collaborator listings for this project
+        // Load team members, design handoffs, comments and collaborator listings for this project
         loadProjectTeam(projectId);
         loadProjectHandoffs(projectId);
+        loadProjectComments(projectId);
         loadCollaboratorListings(projectId);
 
       } catch (err) {
@@ -32008,6 +32645,347 @@
     function closeProjectDetail() {
       document.getElementById('project-detail-modal').classList.remove('active');
       currentProjectId = null;
+    }
+
+    // =============================================
+    // PROJECT TASK CHECKLIST
+    // =============================================
+
+    // Task templates for quick setup
+    const PROJECT_TASK_TEMPLATES = {
+      kitchen: [
+        { title: 'Initial consultation', sort_order: 1 },
+        { title: 'Measure completed', sort_order: 2 },
+        { title: 'Material selected', sort_order: 3 },
+        { title: 'Estimate approved', sort_order: 4 },
+        { title: 'Deposit received', sort_order: 5 },
+        { title: 'Material ordered', sort_order: 6 },
+        { title: 'Material received', sort_order: 7 },
+        { title: 'Template created', sort_order: 8 },
+        { title: 'Fabrication complete', sort_order: 9 },
+        { title: 'Installation scheduled', sort_order: 10 },
+        { title: 'Installation complete', sort_order: 11 },
+        { title: 'Final walkthrough', sort_order: 12 }
+      ],
+      bathroom: [
+        { title: 'Initial consultation', sort_order: 1 },
+        { title: 'Measure completed', sort_order: 2 },
+        { title: 'Material selected', sort_order: 3 },
+        { title: 'Estimate approved', sort_order: 4 },
+        { title: 'Deposit received', sort_order: 5 },
+        { title: 'Material ordered', sort_order: 6 },
+        { title: 'Installation scheduled', sort_order: 7 },
+        { title: 'Installation complete', sort_order: 8 },
+        { title: 'Final inspection', sort_order: 9 }
+      ],
+      simple: [
+        { title: 'Contact customer', sort_order: 1 },
+        { title: 'Schedule appointment', sort_order: 2 },
+        { title: 'Create estimate', sort_order: 3 },
+        { title: 'Get approval', sort_order: 4 },
+        { title: 'Complete work', sort_order: 5 },
+        { title: 'Collect payment', sort_order: 6 }
+      ]
+    };
+
+    function renderProjectTaskItem(task) {
+      const isCompleted = task.status === 'completed';
+      const checkboxStyle = isCompleted
+        ? 'background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-color: #22c55e;'
+        : 'background: transparent; border-color: var(--border-light);';
+
+      return `
+        <div class="task-item" data-task-id="${task.id}" style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); ${isCompleted ? 'opacity: 0.6;' : ''}">
+          <button onclick="toggleProjectTask('${task.id}', ${!isCompleted})"
+                  style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid; ${checkboxStyle} cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;">
+            ${isCompleted ? '<svg width="14" height="14" fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+          </button>
+          <span style="flex: 1; font-size: 14px; color: var(--text-primary); ${isCompleted ? 'text-decoration: line-through;' : ''}">${escapeHtml(task.title)}</span>
+          ${task.assigned_to ? `<span style="font-size: 11px; color: var(--text-muted); background: var(--dark-surface); padding: 2px 8px; border-radius: 4px;">${escapeHtml(task.assigned_to)}</span>` : ''}
+          <button onclick="deleteProjectTask('${task.id}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; opacity: 0.5; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'; this.style.color='#ef4444'" onmouseout="this.style.opacity='0.5'; this.style.color='var(--text-muted)'">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      `;
+    }
+
+    async function toggleProjectTask(taskId, completed) {
+      try {
+        const newStatus = completed ? 'completed' : 'pending';
+        const completedAt = completed ? new Date().toISOString() : null;
+
+        const { error } = await supabaseClient
+          .from('project_tasks')
+          .update({ status: newStatus, completed_at: completedAt })
+          .eq('id', taskId);
+
+        if (error) throw error;
+
+        // Refresh project detail to show updated progress
+        if (currentProjectId) {
+          openProjectDetail(currentProjectId);
+        }
+        showToast(completed ? 'Task completed!' : 'Task reopened', 'success');
+      } catch (err) {
+        console.error('Error toggling task:', err);
+        showToast('Failed to update task', 'error');
+      }
+    }
+
+    async function addProjectTask(projectId, title) {
+      if (!title) {
+        title = prompt('Enter task name:');
+        if (!title || !title.trim()) return;
+      }
+
+      try {
+        // Get current max sort_order
+        const { data: existingTasks } = await supabaseClient
+          .from('project_tasks')
+          .select('sort_order')
+          .eq('project_id', projectId)
+          .order('sort_order', { ascending: false })
+          .limit(1);
+
+        const sortOrder = (existingTasks && existingTasks[0]?.sort_order || 0) + 1;
+
+        const { error } = await supabaseClient
+          .from('project_tasks')
+          .insert({
+            project_id: projectId,
+            title: title.trim(),
+            status: 'pending',
+            sort_order: sortOrder
+          });
+
+        if (error) throw error;
+
+        // Refresh project detail
+        openProjectDetail(projectId);
+        showToast('Task added', 'success');
+      } catch (err) {
+        console.error('Error adding task:', err);
+        showToast('Failed to add task', 'error');
+      }
+    }
+
+    async function deleteProjectTask(taskId) {
+      if (!confirm('Delete this task?')) return;
+
+      try {
+        const { error } = await supabaseClient
+          .from('project_tasks')
+          .delete()
+          .eq('id', taskId);
+
+        if (error) throw error;
+
+        // Refresh project detail
+        if (currentProjectId) {
+          openProjectDetail(currentProjectId);
+        }
+        showToast('Task deleted', 'success');
+      } catch (err) {
+        console.error('Error deleting task:', err);
+        showToast('Failed to delete task', 'error');
+      }
+    }
+
+    function showAddTaskTemplates(projectId) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      modal.id = 'task-templates-modal';
+      modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 420px;">
+          <div class="modal-header">
+            <h2 class="modal-title">Add Task Template</h2>
+            <button class="modal-close" onclick="document.getElementById('task-templates-modal').remove()">&times;</button>
+          </div>
+          <div class="modal-body" style="padding: 20px;">
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 13px;">Choose a template to quickly add common tasks:</p>
+
+            <div onclick="applyTaskTemplate('${projectId}', 'kitchen')" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+              </div>
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">Kitchen Remodel</div>
+                <div style="font-size: 12px; color: var(--text-muted);">12 tasks: consultation to walkthrough</div>
+              </div>
+            </div>
+
+            <div onclick="applyTaskTemplate('${projectId}', 'bathroom')" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">Bathroom Project</div>
+                <div style="font-size: 12px; color: var(--text-muted);">9 tasks: consultation to inspection</div>
+              </div>
+            </div>
+
+            <div onclick="applyTaskTemplate('${projectId}', 'simple')" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--gold-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">Simple Project</div>
+                <div style="font-size: 12px; color: var(--text-muted);">6 tasks: contact to payment</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    async function applyTaskTemplate(projectId, templateKey) {
+      const template = PROJECT_TASK_TEMPLATES[templateKey];
+      if (!template) return;
+
+      document.getElementById('task-templates-modal')?.remove();
+
+      try {
+        // Get current max sort_order
+        const { data: existingTasks } = await supabaseClient
+          .from('project_tasks')
+          .select('sort_order')
+          .eq('project_id', projectId)
+          .order('sort_order', { ascending: false })
+          .limit(1);
+
+        const startOrder = (existingTasks && existingTasks[0]?.sort_order || 0) + 1;
+
+        // Insert all template tasks
+        const tasks = template.map((t, i) => ({
+          project_id: projectId,
+          title: t.title,
+          status: 'pending',
+          sort_order: startOrder + i
+        }));
+
+        const { error } = await supabaseClient
+          .from('project_tasks')
+          .insert(tasks);
+
+        if (error) throw error;
+
+        // Refresh project detail
+        openProjectDetail(projectId);
+        showToast(`Added ${template.length} tasks from template`, 'success');
+      } catch (err) {
+        console.error('Error applying template:', err);
+        showToast('Failed to apply template', 'error');
+      }
+    }
+
+    // =============================================
+    // PROJECT COMMENTS FEED
+    // =============================================
+
+    async function loadProjectComments(projectId) {
+      const list = document.getElementById('project-comments-list');
+      if (!list || list.dataset.projectId !== projectId) return;
+
+      try {
+        const { data: comments, error } = await supabaseClient
+          .from('project_activity')
+          .select('*')
+          .eq('project_id', projectId)
+          .eq('action', 'comment')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!comments || comments.length === 0) {
+          list.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 8px; opacity: 0.5;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              <p style="font-size: 13px; margin: 0;">No comments yet. Start the conversation!</p>
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = comments.map(comment => renderProjectComment(comment)).join('');
+
+        // Scroll to bottom
+        list.scrollTop = list.scrollHeight;
+
+      } catch (err) {
+        console.error('Error loading comments:', err);
+        list.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--error-color); font-size: 13px;">Failed to load comments</div>';
+      }
+    }
+
+    function renderProjectComment(comment) {
+      const initial = (comment.user_name || 'U').charAt(0).toUpperCase();
+      const timeAgo = getTimeAgo(new Date(comment.created_at));
+      const isOwnComment = currentUser && comment.user_id === currentUser.id;
+
+      return `
+        <div class="comment-item" style="display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); ${isOwnComment ? 'background: rgba(212, 175, 55, 0.05); margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 6px;' : ''}">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isOwnComment ? 'var(--gold-primary)' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'}; color: ${isOwnComment ? 'var(--dark-primary)' : '#fff'}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex-shrink: 0;">
+            ${initial}
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${escapeHtml(comment.user_name || 'Team Member')}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">${timeAgo}</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.4; word-wrap: break-word;">${escapeHtml(comment.description || '')}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addProjectComment(projectId, form) {
+      const input = form.querySelector('input[name="comment"]');
+      const commentText = input.value.trim();
+
+      if (!commentText) return;
+
+      // Disable form while submitting
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      input.disabled = true;
+
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Get user's display name
+        const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+
+        const { error } = await supabaseClient
+          .from('project_activity')
+          .insert({
+            project_id: projectId,
+            action: 'comment',
+            description: commentText,
+            user_id: user.id,
+            user_name: userName
+          });
+
+        if (error) throw error;
+
+        // Clear input and reload comments
+        input.value = '';
+        await loadProjectComments(projectId);
+
+      } catch (err) {
+        console.error('Error adding comment:', err);
+        showToast('Failed to add comment', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
     }
 
     // =============================================
@@ -34669,6 +35647,136 @@
       const project = allProjects?.find(p => p.id === projectId);
       if (project) {
         quickSchedule('project', project);
+      }
+    }
+
+    // Quick change project status
+    function quickChangeProjectStatus(projectId, currentStatus) {
+      const statuses = ['lead', 'approved', 'scheduled', 'in_progress', 'completed', 'on_hold', 'cancelled'];
+
+      const modal = document.createElement('div');
+      modal.id = 'quick-project-status-modal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div style="background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; min-width: 260px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+          <h3 style="margin: 0 0 16px; font-size: 14px; color: var(--text-primary);">Change Project Status</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${statuses.map(s => {
+              const color = PROJECT_STATUS_COLORS[s] || '#6b7280';
+              return `
+                <button onclick="setProjectStatusQuick('${projectId}', '${s}')"
+                        style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: ${s === currentStatus ? color + '20' : 'var(--dark-elevated)'}; border: 1px solid ${s === currentStatus ? color : 'var(--border-subtle)'}; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: ${s === currentStatus ? color : 'var(--text-secondary)'};"
+                        onmouseover="this.style.borderColor='${color}'"
+                        onmouseout="this.style.borderColor='${s === currentStatus ? color : 'var(--border-subtle)'}'"
+                >
+                  <span style="width: 10px; height: 10px; border-radius: 50%; background: ${color};"></span>
+                  <span style="font-weight: 500;">${PROJECT_STATUS_LABELS[s] || s}</span>
+                  ${s === currentStatus ? '<span style="margin-left: auto; font-size: 11px;">Current</span>' : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    async function setProjectStatusQuick(projectId, newStatus) {
+      document.getElementById('quick-project-status-modal')?.remove();
+
+      try {
+        const { error } = await supabaseClient
+          .from('projects')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', projectId);
+
+        if (error) throw error;
+
+        // Update local data
+        const project = allProjects?.find(p => p.id === projectId);
+        if (project) project.status = newStatus;
+
+        renderProjectsList();
+        renderProjectsKanban();
+        showToast(`Project status changed to ${PROJECT_STATUS_LABELS[newStatus] || newStatus}`, 'success');
+      } catch (err) {
+        console.error('Error updating project status:', err);
+        showToast('Failed to update status', 'error');
+      }
+    }
+
+    // Quick add task to project
+    function quickAddProjectTask(projectId) {
+      const modal = document.createElement('div');
+      modal.id = 'quick-add-task-modal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `
+        <div style="background: var(--dark-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; min-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+          <h3 style="margin: 0 0 16px; font-size: 14px; color: var(--text-primary);">Add Task</h3>
+          <form onsubmit="submitQuickTask('${projectId}', this); return false;">
+            <input type="text" name="title" placeholder="Task title..." required autofocus
+                   style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--dark-elevated); color: var(--text-primary); font-size: 14px; margin-bottom: 12px; box-sizing: border-box;">
+            <div style="display: flex; gap: 8px;">
+              <button type="button" onclick="document.getElementById('quick-add-task-modal').remove()"
+                      style="flex: 1; padding: 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--dark-elevated); color: var(--text-secondary); cursor: pointer; font-size: 13px;">
+                Cancel
+              </button>
+              <button type="submit"
+                      style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: var(--gold-primary); color: var(--dark-primary); cursor: pointer; font-weight: 600; font-size: 13px;">
+                Add Task
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      setTimeout(() => modal.querySelector('input')?.focus(), 100);
+    }
+
+    async function submitQuickTask(projectId, form) {
+      const title = form.querySelector('input[name="title"]').value.trim();
+      if (!title) return;
+
+      document.getElementById('quick-add-task-modal')?.remove();
+
+      try {
+        // Get max sort order
+        const { data: existingTasks } = await supabaseClient
+          .from('project_tasks')
+          .select('sort_order')
+          .eq('project_id', projectId)
+          .order('sort_order', { ascending: false })
+          .limit(1);
+
+        const sortOrder = (existingTasks?.[0]?.sort_order || 0) + 1;
+
+        const { error } = await supabaseClient
+          .from('project_tasks')
+          .insert({
+            project_id: projectId,
+            title,
+            status: 'pending',
+            sort_order: sortOrder
+          });
+
+        if (error) throw error;
+
+        showToast('Task added', 'success');
+
+        // If project detail is open, refresh it
+        if (currentProjectId === projectId) {
+          openProjectDetail(projectId);
+        }
+
+      } catch (err) {
+        console.error('Error adding task:', err);
+        showToast('Failed to add task', 'error');
       }
     }
 
