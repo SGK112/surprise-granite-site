@@ -346,10 +346,16 @@
           </div>
           <div class="unified-nav-drawer-footer">
             <a href="/get-a-free-estimate" class="unified-nav-drawer-cta">Get Free Estimate</a>
-            <a href="${CONFIG.phoneHref}" class="unified-nav-drawer-phone">
-              <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
-              ${CONFIG.phone}
-            </a>
+            <div class="unified-nav-drawer-footer-row">
+              <a href="/account" class="unified-nav-drawer-account" id="unifiedNavDrawerAccount">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span id="unifiedNavDrawerAccountText">Log In / Sign Up</span>
+              </a>
+              <a href="${CONFIG.phoneHref}" class="unified-nav-drawer-phone">
+                <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H5.03C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+                ${CONFIG.phone}
+              </a>
+            </div>
           </div>
         </div>
       </nav>
@@ -706,8 +712,8 @@
     const accountLink = document.getElementById('unifiedNavAccount');
     const accountText = document.getElementById('unifiedNavAccountText');
     const accountAvatar = document.getElementById('unifiedNavAvatar');
-
-    if (!accountLink) return;
+    const drawerAccountLink = document.getElementById('unifiedNavDrawerAccount');
+    const drawerAccountText = document.getElementById('unifiedNavDrawerAccountText');
 
     // Check if SgAuth is available and user is logged in
     if (window.SgAuth && window.SgAuth.isLoggedIn()) {
@@ -724,20 +730,36 @@
       // Get initial for avatar
       const initial = displayName.charAt(0).toUpperCase();
 
-      // Update UI
-      accountLink.classList.add('logged-in');
-      accountText.textContent = displayName;
-      accountAvatar.innerHTML = `<span class="avatar-initial">${initial}</span>`;
-      accountAvatar.classList.add('has-user');
-      accountLink.title = user.email;
+      // Update desktop UI
+      if (accountLink) {
+        accountLink.classList.add('logged-in');
+        accountLink.title = user.email;
+      }
+      if (accountText) accountText.textContent = displayName;
+      if (accountAvatar) {
+        accountAvatar.innerHTML = `<span class="avatar-initial">${initial}</span>`;
+        accountAvatar.classList.add('has-user');
+      }
+
+      // Update mobile drawer UI
+      if (drawerAccountLink) drawerAccountLink.classList.add('logged-in');
+      if (drawerAccountText) drawerAccountText.textContent = `Hi, ${displayName}`;
 
     } else {
-      // Not logged in
-      accountLink.classList.remove('logged-in');
-      accountText.textContent = 'Account';
-      accountAvatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
-      accountAvatar.classList.remove('has-user');
-      accountLink.removeAttribute('title');
+      // Not logged in - desktop
+      if (accountLink) {
+        accountLink.classList.remove('logged-in');
+        accountLink.removeAttribute('title');
+      }
+      if (accountText) accountText.textContent = 'Account';
+      if (accountAvatar) {
+        accountAvatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+        accountAvatar.classList.remove('has-user');
+      }
+
+      // Not logged in - mobile drawer
+      if (drawerAccountLink) drawerAccountLink.classList.remove('logged-in');
+      if (drawerAccountText) drawerAccountText.textContent = 'Log In / Sign Up';
     }
   }
 
