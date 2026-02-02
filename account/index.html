@@ -10582,17 +10582,17 @@
     .kanban-column.drag-over { outline: 2px solid var(--gold-primary) !important; }
 
     /* =============================================
-       PROFILE SLIDE-OVER PANEL
+       PROFILE SLIDE-OVER PANEL - ENHANCED
        ============================================= */
     .profile-panel-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
       z-index: 9999;
       opacity: 0;
       visibility: hidden;
-      transition: all 0.3s ease;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .profile-panel-overlay.active {
       opacity: 1;
@@ -10603,12 +10603,12 @@
       top: 0;
       right: 0;
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       height: 100vh;
-      background: var(--dark-surface);
-      box-shadow: -4px 0 30px rgba(0, 0, 0, 0.4);
+      background: var(--dark-bg);
+      box-shadow: -8px 0 50px rgba(0, 0, 0, 0.5);
       transform: translateX(100%);
-      transition: transform 0.3s ease;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
       z-index: 10000;
@@ -10617,62 +10617,165 @@
       transform: translateX(0);
     }
     .profile-panel-header {
-      padding: 20px 24px;
+      padding: 0;
       border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      background: linear-gradient(135deg, var(--dark-elevated) 0%, var(--dark-surface) 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      position: relative;
+      overflow: hidden;
     }
-    .profile-avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    .profile-panel-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 60%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(249, 203, 0, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .profile-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px 0;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .profile-header-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
-      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .profile-header-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .profile-header-btn.close:hover {
+      background: rgba(239, 68, 68, 0.4);
+    }
+    .profile-header-main {
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      padding: 20px 24px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--primary) 0%, #e6b800 50%, var(--accent) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 800;
       color: #000;
       flex-shrink: 0;
+      box-shadow: 0 8px 32px rgba(249, 203, 0, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+    .profile-avatar-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 3px solid var(--dark-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .profile-avatar-badge svg {
+      width: 14px;
+      height: 14px;
+      color: #fff;
     }
     .profile-header-info {
       flex: 1;
       min-width: 0;
     }
     .profile-name {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 4px;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
     .profile-meta {
       font-size: 14px;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 16px;
+      margin-bottom: 12px;
     }
     .profile-meta-item {
       display: flex;
       align-items: center;
       gap: 6px;
     }
+    .profile-meta-item svg {
+      opacity: 0.6;
+    }
+    .profile-meta-item a {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .profile-meta-item a:hover {
+      color: var(--primary);
+    }
+    .profile-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .profile-status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 12px;
+      padding: 5px 14px;
       border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .profile-status-badge.new { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-    .profile-status-badge.contacted { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-    .profile-status-badge.qualified { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-    .profile-status-badge.converted { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+    .profile-status-badge.new { background: rgba(249, 203, 0, 0.25); color: #f9cb00; border: 1px solid rgba(249, 203, 0, 0.3); }
+    .profile-status-badge.contacted { background: rgba(59, 130, 246, 0.25); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .profile-status-badge.qualified { background: rgba(139, 92, 246, 0.25); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .profile-status-badge.quoted { background: rgba(6, 182, 212, 0.25); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .profile-status-badge.won { background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .profile-status-badge.lost { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .profile-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
     .profile-close-btn {
       width: 40px;
       height: 40px;
@@ -10689,78 +10792,388 @@
     .profile-close-btn:hover {
       background: rgba(239, 68, 68, 0.3);
     }
+
+    /* Quick Stats Bar */
+    .profile-stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .profile-stat {
+      background: var(--dark-elevated);
+      padding: 14px 16px;
+      text-align: center;
+      transition: background 0.2s;
+      cursor: default;
+    }
+    .profile-stat:hover {
+      background: var(--dark-surface);
+    }
+    .profile-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .profile-stat-value.highlight {
+      color: var(--primary);
+    }
+    .profile-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Tabs with badges */
     .profile-tabs {
       display: flex;
-      gap: 4px;
-      padding: 0 24px;
-      background: var(--dark-elevated);
+      gap: 0;
+      padding: 0 16px;
+      background: var(--dark-surface);
       border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
+      scrollbar-width: none;
     }
+    .profile-tabs::-webkit-scrollbar { display: none; }
     .profile-tab {
-      padding: 14px 20px;
+      padding: 16px 20px;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
       border: none;
       background: none;
       white-space: nowrap;
-      border-bottom: 2px solid transparent;
+      border-bottom: 3px solid transparent;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
     }
     .profile-tab:hover {
       color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.03);
     }
     .profile-tab.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
+      background: rgba(249, 203, 0, 0.05);
     }
+    .profile-tab .tab-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.7;
+    }
+    .profile-tab.active .tab-icon {
+      opacity: 1;
+    }
+    .tab-badge {
+      background: var(--primary);
+      color: #000;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+    .tab-badge.muted {
+      background: var(--dark-elevated);
+      color: var(--text-muted);
+    }
+
+    /* Content area */
     .profile-content {
       flex: 1;
       overflow-y: auto;
       padding: 24px;
+      background: var(--dark-bg);
     }
     .profile-section {
-      margin-bottom: 24px;
+      margin-bottom: 28px;
+    }
+    .profile-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
     }
     .profile-section-title {
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--text-secondary);
-      margin-bottom: 12px;
+      margin-bottom: 0;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .profile-section-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--primary);
     }
     .profile-info-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+      gap: 12px;
     }
     .profile-info-item {
-      background: var(--dark-elevated);
-      padding: 14px 16px;
-      border-radius: 10px;
+      background: var(--dark-surface);
+      padding: 16px 18px;
+      border-radius: 12px;
       border: 1px solid var(--border-subtle);
+      transition: all 0.2s;
+    }
+    .profile-info-item:hover {
+      border-color: var(--primary);
+      background: var(--dark-elevated);
+    }
+    .profile-info-item.clickable {
+      cursor: pointer;
     }
     .profile-info-label {
       font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .profile-info-value {
       font-size: 15px;
       color: var(--text-primary);
-      font-weight: 500;
+      font-weight: 600;
+      word-break: break-word;
     }
+    .profile-info-value.muted {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* Quick Actions Grid */
+    .profile-quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .profile-quick-action {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .profile-quick-action:hover {
+      background: var(--dark-elevated);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .profile-quick-action .action-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .profile-quick-action .action-icon.gold {
+      background: linear-gradient(135deg, rgba(249, 203, 0, 0.2), rgba(249, 203, 0, 0.1));
+      color: var(--primary);
+    }
+    .profile-quick-action .action-icon.blue {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+      color: #3b82f6;
+    }
+    .profile-quick-action .action-icon.green {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+      color: #22c55e;
+    }
+    .profile-quick-action .action-icon.purple {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+      color: #8b5cf6;
+    }
+    .profile-quick-action .action-text {
+      flex: 1;
+    }
+    .profile-quick-action .action-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .profile-quick-action .action-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Footer Actions */
     .profile-actions {
       padding: 16px 24px;
       border-top: 1px solid var(--border-subtle);
       display: flex;
       gap: 12px;
+      background: var(--dark-surface);
+    }
+    .profile-actions .btn-modern {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Activity Timeline */
+    .activity-timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+    .activity-timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border-subtle);
+      border-radius: 2px;
+    }
+    .activity-item {
+      position: relative;
+      padding: 12px 0;
+      padding-left: 20px;
+    }
+    .activity-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 18px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
       background: var(--dark-elevated);
+      border: 2px solid var(--primary);
+    }
+    .activity-item.completed::before {
+      background: var(--primary);
+    }
+    .activity-content {
+      background: var(--dark-surface);
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+    .activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .activity-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .activity-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .activity-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Appointment Cards */
+    .appointment-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 16px;
+      transition: all 0.2s;
+    }
+    .appointment-card:hover {
+      border-color: var(--primary);
+    }
+    .appointment-date-box {
+      width: 56px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .appointment-month {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .appointment-day {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .appointment-weekday {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .appointment-info {
+      flex: 1;
+    }
+    .appointment-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .appointment-time {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .appointment-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .appointment-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .appointment-status.scheduled {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+    .appointment-status.completed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    .appointment-status.cancelled {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
     }
 
     /* =============================================
@@ -16325,68 +16738,152 @@
   </div>
 
   <!-- =============================================
-       LEAD/CUSTOMER PROFILE PANEL (Slide-over)
+       LEAD/CUSTOMER PROFILE PANEL (Slide-over) - ENHANCED
        ============================================= -->
   <div id="profile-panel-overlay" class="profile-panel-overlay" onclick="if(event.target === this) closeProfilePanel()">
     <div class="profile-panel">
-      <!-- Header -->
+      <!-- Enhanced Header -->
       <div class="profile-panel-header">
-        <div class="profile-avatar" id="profile-avatar">JD</div>
-        <div class="profile-header-info">
-          <div class="profile-name" id="profile-name">John Doe</div>
-          <div class="profile-meta">
-            <span class="profile-meta-item" id="profile-email">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              email@example.com
-            </span>
-            <span class="profile-meta-item" id="profile-phone">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              (555) 123-4567
-            </span>
+        <div class="profile-header-top">
+          <div class="profile-header-actions">
+            <button class="profile-header-btn" onclick="copyProfileLink()" title="Copy link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+            <button class="profile-header-btn" onclick="printProfile()" title="Print">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            </button>
           </div>
-          <div style="margin-top: 8px;">
-            <span class="profile-status-badge new" id="profile-status">New Lead</span>
+          <button class="profile-header-btn close" onclick="closeProfilePanel()" title="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="profile-header-main">
+          <div class="profile-avatar" id="profile-avatar">
+            JD
+            <div class="profile-avatar-badge" id="profile-avatar-badge" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <div class="profile-header-info">
+            <div class="profile-name" id="profile-name">John Doe</div>
+            <div class="profile-meta">
+              <span class="profile-meta-item" id="profile-email">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <a href="#" id="profile-email-link">email@example.com</a>
+              </span>
+              <span class="profile-meta-item" id="profile-phone">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <a href="#" id="profile-phone-link">(555) 123-4567</a>
+              </span>
+            </div>
+            <div class="profile-badges">
+              <span class="profile-status-badge new" id="profile-status">New Lead</span>
+              <span class="profile-tag" id="profile-source-tag" style="display: none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span id="profile-source-text">Website</span>
+              </span>
+            </div>
           </div>
         </div>
-        <button class="profile-close-btn" onclick="closeProfilePanel()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
       </div>
 
-      <!-- Tabs -->
+      <!-- Quick Stats Bar -->
+      <div class="profile-stats-bar">
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="profile-stat-days">0</div>
+          <div class="profile-stat-label">Days in Pipeline</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-value highlight" id="profile-stat-value">$0</div>
+          <div class="profile-stat-label">Est. Value</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="profile-stat-appointments">0</div>
+          <div class="profile-stat-label">Appointments</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="profile-stat-messages">0</div>
+          <div class="profile-stat-label">Messages</div>
+        </div>
+      </div>
+
+      <!-- Enhanced Tabs with Icons -->
       <div class="profile-tabs">
-        <button class="profile-tab active" data-tab="overview" onclick="switchProfileTab('overview')">Overview</button>
-        <button class="profile-tab" data-tab="appointments" onclick="switchProfileTab('appointments')">Appointments</button>
-        <button class="profile-tab" data-tab="notes" onclick="switchProfileTab('notes')">Notes</button>
-        <button class="profile-tab" data-tab="attachments" onclick="switchProfileTab('attachments')">Files</button>
-        <button class="profile-tab" data-tab="messages" onclick="switchProfileTab('messages')">Messages</button>
-        <button class="profile-tab" data-tab="activity" onclick="switchProfileTab('activity')">Activity</button>
+        <button class="profile-tab active" data-tab="overview" onclick="switchProfileTab('overview')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Overview
+        </button>
+        <button class="profile-tab" data-tab="appointments" onclick="switchProfileTab('appointments')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Appointments
+          <span class="tab-badge muted" id="tab-badge-appointments">0</span>
+        </button>
+        <button class="profile-tab" data-tab="notes" onclick="switchProfileTab('notes')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Notes
+          <span class="tab-badge muted" id="tab-badge-notes">0</span>
+        </button>
+        <button class="profile-tab" data-tab="attachments" onclick="switchProfileTab('attachments')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Files
+          <span class="tab-badge muted" id="tab-badge-files">0</span>
+        </button>
+        <button class="profile-tab" data-tab="messages" onclick="switchProfileTab('messages')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Messages
+          <span class="tab-badge muted" id="tab-badge-messages">0</span>
+        </button>
+        <button class="profile-tab" data-tab="activity" onclick="switchProfileTab('activity')">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Activity
+        </button>
       </div>
 
       <!-- Content -->
       <div class="profile-content">
         <!-- Overview Tab -->
         <div id="profile-tab-overview" class="profile-tab-content">
+          <!-- Contact Information -->
           <div class="profile-section">
-            <div class="profile-section-title">Contact Information</div>
+            <div class="profile-section-header">
+              <div class="profile-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Contact Information
+              </div>
+            </div>
             <div class="profile-info-grid">
-              <div class="profile-info-item">
-                <div class="profile-info-label">Email</div>
+              <div class="profile-info-item clickable" onclick="copyToClipboard(document.getElementById('profile-detail-email').textContent, 'Email copied')">
+                <div class="profile-info-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  Email
+                </div>
                 <div class="profile-info-value" id="profile-detail-email">—</div>
               </div>
-              <div class="profile-info-item">
-                <div class="profile-info-label">Phone</div>
+              <div class="profile-info-item clickable" onclick="copyToClipboard(document.getElementById('profile-detail-phone').textContent, 'Phone copied')">
+                <div class="profile-info-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+                  Phone
+                </div>
                 <div class="profile-info-value" id="profile-detail-phone">—</div>
               </div>
               <div class="profile-info-item" style="grid-column: span 2;">
-                <div class="profile-info-label">Address</div>
+                <div class="profile-info-label">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Address
+                </div>
                 <div class="profile-info-value" id="profile-detail-address">—</div>
               </div>
             </div>
           </div>
 
+          <!-- Project Details -->
           <div class="profile-section">
-            <div class="profile-section-title">Project Details</div>
+            <div class="profile-section-header">
+              <div class="profile-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Project Details
+              </div>
+            </div>
             <div class="profile-info-grid">
               <div class="profile-info-item">
                 <div class="profile-info-label">Project Type</div>
@@ -16401,30 +16898,69 @@
                 <div class="profile-info-value" id="profile-detail-timeline">—</div>
               </div>
               <div class="profile-info-item">
-                <div class="profile-info-label">Source</div>
+                <div class="profile-info-label">Lead Source</div>
                 <div class="profile-info-value" id="profile-detail-source">—</div>
               </div>
             </div>
           </div>
 
+          <!-- Original Message -->
+          <div class="profile-section" id="profile-message-section" style="display: none;">
+            <div class="profile-section-header">
+              <div class="profile-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Original Message
+              </div>
+            </div>
+            <div class="profile-info-item" style="background: var(--dark-elevated); border-left: 3px solid var(--primary);">
+              <div class="profile-info-value" id="profile-detail-message" style="font-style: italic; color: var(--text-secondary); white-space: pre-wrap;">—</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
           <div class="profile-section">
-            <div class="profile-section-title">Quick Actions</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-              <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Schedule Job Phases
+            <div class="profile-section-header">
+              <div class="profile-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Quick Actions
+              </div>
+            </div>
+            <div class="profile-quick-actions">
+              <button class="profile-quick-action" onclick="openJobSchedulerFromProfile()">
+                <div class="action-icon gold">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="action-text">
+                  <div class="action-title">Schedule Job</div>
+                  <div class="action-desc">Plan phases & send invites</div>
+                </div>
               </button>
-              <button class="btn-modern secondary" onclick="createEstimateFromProfile()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Create Estimate
+              <button class="profile-quick-action" onclick="createEstimateFromProfile()">
+                <div class="action-icon blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="action-text">
+                  <div class="action-title">Create Estimate</div>
+                  <div class="action-desc">Generate a quote</div>
+                </div>
               </button>
-              <button class="btn-modern secondary" onclick="sendMessageFromProfile()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Send Message
+              <button class="profile-quick-action" onclick="sendMessageFromProfile()">
+                <div class="action-icon green">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div class="action-text">
+                  <div class="action-title">Send Email</div>
+                  <div class="action-desc">Contact customer</div>
+                </div>
               </button>
-              <button class="btn-modern secondary" onclick="openPortalFromProfile()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                Open Portal
+              <button class="profile-quick-action" onclick="openPortalFromProfile()">
+                <div class="action-icon purple">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </div>
+                <div class="action-text">
+                  <div class="action-title">Customer Portal</div>
+                  <div class="action-desc">View their portal</div>
+                </div>
               </button>
             </div>
           </div>
@@ -16432,87 +16968,121 @@
 
         <!-- Appointments Tab -->
         <div id="profile-tab-appointments" class="profile-tab-content" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div class="profile-section-title" style="margin: 0;">Scheduled Appointments</div>
-            <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()" style="padding: 8px 14px; font-size: 13px;">
+          <div class="profile-section-header" style="margin-bottom: 16px;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Scheduled Appointments
+            </div>
+            <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()" style="padding: 8px 16px; font-size: 13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Schedule
             </button>
           </div>
           <div id="profile-appointments-list">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <div>No appointments scheduled</div>
-              <div style="font-size: 12px; margin-top: 4px;">Click "Schedule" to add job phases</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(249,203,0,0.1), rgba(249,203,0,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Appointments Yet</div>
+              <div style="font-size: 13px; max-width: 280px; margin: 0 auto;">Click "Schedule" to plan job phases like templating, fabrication, and installation</div>
             </div>
           </div>
         </div>
 
         <!-- Notes Tab -->
         <div id="profile-tab-notes" class="profile-tab-content" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div class="profile-section-title" style="margin: 0;">Notes</div>
-            <button class="btn-modern primary" onclick="addNewNote()" style="padding: 8px 14px; font-size: 13px;">
+          <div class="profile-section-header" style="margin-bottom: 16px;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Notes
+            </div>
+            <button class="btn-modern primary" onclick="addNewNote()" style="padding: 8px 16px; font-size: 13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Add Note
             </button>
           </div>
-          <div id="profile-notes-input" style="display: none; margin-bottom: 16px;">
-            <textarea id="new-note-text" class="input-modern" rows="3" placeholder="Type your note here..." style="margin-bottom: 8px;"></textarea>
+          <div id="profile-notes-input" style="display: none; margin-bottom: 20px; background: var(--dark-surface); padding: 16px; border-radius: 12px; border: 1px solid var(--primary);">
+            <textarea id="new-note-text" class="input-modern" rows="4" placeholder="Type your note here..." style="margin-bottom: 12px; resize: none;"></textarea>
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
               <button class="btn-modern ghost" onclick="cancelNewNote()">Cancel</button>
-              <button class="btn-modern primary" onclick="saveNewNote()">Save Note</button>
+              <button class="btn-modern primary" onclick="saveNewNote()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                Save Note
+              </button>
             </div>
           </div>
           <div id="profile-notes-list">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              <div>No notes yet</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Notes Yet</div>
+              <div style="font-size: 13px;">Add notes to track important details about this lead</div>
             </div>
           </div>
         </div>
 
         <!-- Attachments Tab -->
         <div id="profile-tab-attachments" class="profile-tab-content" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div class="profile-section-title" style="margin: 0;">Files & Attachments</div>
-            <button class="btn-modern primary" onclick="uploadAttachment()" style="padding: 8px 14px; font-size: 13px;">
+          <div class="profile-section-header" style="margin-bottom: 16px;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              Files & Attachments
+            </div>
+            <button class="btn-modern primary" onclick="uploadAttachment()" style="padding: 8px 16px; font-size: 13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               Upload
             </button>
           </div>
           <div id="profile-attachments-list">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-              <div>No files attached</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Files Attached</div>
+              <div style="font-size: 13px;">Upload photos, contracts, or other documents</div>
             </div>
           </div>
         </div>
 
         <!-- Messages Tab -->
         <div id="profile-tab-messages" class="profile-tab-content" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div class="profile-section-title" style="margin: 0;">Messages</div>
-            <button class="btn-modern primary" onclick="composeMessage()" style="padding: 8px 14px; font-size: 13px;">
+          <div class="profile-section-header" style="margin-bottom: 16px;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Messages
+            </div>
+            <button class="btn-modern primary" onclick="composeMessage()" style="padding: 8px 16px; font-size: 13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
               Compose
             </button>
           </div>
           <div id="profile-messages-list">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              <div>No messages yet</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Messages Yet</div>
+              <div style="font-size: 13px;">Send an email to start the conversation</div>
             </div>
           </div>
         </div>
 
         <!-- Activity Tab -->
         <div id="profile-tab-activity" class="profile-tab-content" style="display: none;">
-          <div class="profile-section-title">Activity Timeline</div>
+          <div class="profile-section-header" style="margin-bottom: 16px;">
+            <div class="profile-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Activity Timeline
+            </div>
+          </div>
           <div id="profile-activity-list">
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <div>No activity recorded</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Activity Yet</div>
+              <div style="font-size: 13px;">Activity will appear as you interact with this lead</div>
             </div>
           </div>
         </div>
@@ -16520,12 +17090,12 @@
 
       <!-- Footer Actions -->
       <div class="profile-actions">
-        <button class="btn-modern secondary" style="flex: 1;" onclick="editProfileRecord()">
+        <button class="btn-modern secondary" onclick="editProfileRecord()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Edit Details
         </button>
-        <button class="btn-modern primary" style="flex: 1;" onclick="openJobSchedulerFromProfile()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Schedule Job
         </button>
       </div>
@@ -37609,43 +38179,171 @@
       const phone = data.phone || data.homeowner_phone || '';
       const address = formatAddressFromData(data);
       const status = data.status || 'new';
+      const source = data.source || data.lead_source || '';
+      const message = data.message || data.notes || '';
 
-      // Set header info
-      document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase();
+      // Set header info - Avatar with initials
+      const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+      document.getElementById('profile-avatar').innerHTML = initials;
+
+      // Show badge for qualified/won leads
+      const badge = document.getElementById('profile-avatar-badge');
+      if (badge) {
+        badge.style.display = (status === 'qualified' || status === 'won') ? 'flex' : 'none';
+      }
+
       document.getElementById('profile-name').textContent = name;
-      document.getElementById('profile-email').innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        ${email || 'No email'}
-      `;
-      document.getElementById('profile-phone').innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        ${phone || 'No phone'}
-      `;
+
+      // Email with clickable link
+      const emailLink = document.getElementById('profile-email-link');
+      const emailContainer = document.getElementById('profile-email');
+      if (email) {
+        emailLink.textContent = email;
+        emailLink.href = `mailto:${email}`;
+        emailContainer.style.display = 'flex';
+      } else {
+        emailLink.textContent = 'No email';
+        emailLink.href = '#';
+        emailContainer.style.display = 'flex';
+      }
+
+      // Phone with clickable link
+      const phoneLink = document.getElementById('profile-phone-link');
+      const phoneContainer = document.getElementById('profile-phone');
+      if (phone) {
+        phoneLink.textContent = phone;
+        phoneLink.href = `tel:${phone.replace(/\D/g, '')}`;
+        phoneContainer.style.display = 'flex';
+      } else {
+        phoneLink.textContent = 'No phone';
+        phoneLink.href = '#';
+        phoneContainer.style.display = 'flex';
+      }
 
       // Set status badge
       const statusEl = document.getElementById('profile-status');
       statusEl.className = 'profile-status-badge ' + status;
-      statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+      const statusLabels = {
+        'new': 'New Lead',
+        'contacted': 'Contacted',
+        'qualified': 'Qualified',
+        'quoted': 'Quoted',
+        'won': 'Won',
+        'lost': 'Lost'
+      };
+      statusEl.textContent = statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+
+      // Source tag
+      const sourceTag = document.getElementById('profile-source-tag');
+      const sourceText = document.getElementById('profile-source-text');
+      if (source && sourceTag && sourceText) {
+        sourceTag.style.display = 'inline-flex';
+        sourceText.textContent = source;
+      } else if (sourceTag) {
+        sourceTag.style.display = 'none';
+      }
+
+      // Calculate days in pipeline
+      const createdDate = data.created_at ? new Date(data.created_at) : new Date();
+      const daysInPipeline = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
+      document.getElementById('profile-stat-days').textContent = daysInPipeline;
+
+      // Estimate value (from budget or default)
+      const budget = data.budget_range || data.budget || '';
+      let estValue = '$0';
+      if (budget) {
+        const match = budget.match(/\$?([\d,]+)/);
+        if (match) estValue = '$' + match[1];
+        else estValue = budget;
+      }
+      document.getElementById('profile-stat-value').textContent = estValue;
 
       // Set detail fields
       document.getElementById('profile-detail-email').textContent = email || '—';
       document.getElementById('profile-detail-phone').textContent = phone || '—';
       document.getElementById('profile-detail-address').textContent = address || '—';
-      document.getElementById('profile-detail-project-type').textContent = data.project_type || data.service_type || '—';
-      document.getElementById('profile-detail-budget').textContent = data.budget_range || data.budget || '—';
-      document.getElementById('profile-detail-timeline').textContent = data.timeline || data.preferred_timeline || '—';
-      document.getElementById('profile-detail-source').textContent = data.source || data.lead_source || '—';
 
-      // Load appointments, notes, etc.
+      const projectType = data.project_type || data.service_type || '';
+      document.getElementById('profile-detail-project-type').textContent = projectType || '—';
+
+      // Format project type nicely
+      if (projectType) {
+        const projectTypeEl = document.getElementById('profile-detail-project-type');
+        const typeLabels = {
+          'kitchen': 'Kitchen Countertops',
+          'bathroom': 'Bathroom Vanity',
+          'flooring': 'Flooring',
+          'fireplace': 'Fireplace',
+          'outdoor': 'Outdoor Kitchen',
+          'commercial': 'Commercial Project'
+        };
+        projectTypeEl.textContent = typeLabels[projectType] || projectType;
+      }
+
+      document.getElementById('profile-detail-budget').textContent = budget || '—';
+      document.getElementById('profile-detail-timeline').textContent = data.timeline || data.preferred_timeline || '—';
+      document.getElementById('profile-detail-source').textContent = source || '—';
+
+      // Show original message if present
+      const messageSection = document.getElementById('profile-message-section');
+      const messageEl = document.getElementById('profile-detail-message');
+      if (message && messageSection && messageEl) {
+        messageSection.style.display = 'block';
+        messageEl.textContent = message;
+      } else if (messageSection) {
+        messageSection.style.display = 'none';
+      }
+
+      // Load appointments, notes, etc. and update tab badges
       loadProfileAppointments(data.id);
       loadProfileNotes(data.id);
       loadProfileActivity(data.id);
+      loadProfileMessages(data.id);
+
+      // Reset tab badges (will be updated by load functions)
+      document.getElementById('tab-badge-appointments').textContent = '0';
+      document.getElementById('tab-badge-notes').textContent = '0';
+      document.getElementById('tab-badge-files').textContent = '0';
+      document.getElementById('tab-badge-messages').textContent = '0';
+      document.getElementById('profile-stat-appointments').textContent = '0';
+      document.getElementById('profile-stat-messages').textContent = '0';
 
       // Switch to overview tab
       switchProfileTab('overview');
 
       // Show panel
       document.getElementById('profile-panel-overlay').classList.add('active');
+    }
+
+    // Helper function for copying to clipboard
+    function copyToClipboard(text, successMessage) {
+      if (!text || text === '—') return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(successMessage || 'Copied to clipboard', 'success');
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Copy profile link
+    function copyProfileLink() {
+      if (currentProfileData) {
+        const link = `${window.location.origin}/account/#leads?id=${currentProfileData.id}`;
+        copyToClipboard(link, 'Link copied to clipboard');
+      }
+    }
+
+    // Print profile (simple version)
+    function printProfile() {
+      showToast('Print feature coming soon', 'info');
+    }
+
+    // Load messages for profile
+    async function loadProfileMessages(entityId) {
+      // Placeholder - will be enhanced with actual email history
+      const msgCount = 0;
+      document.getElementById('tab-badge-messages').textContent = msgCount;
+      document.getElementById('profile-stat-messages').textContent = msgCount;
     }
 
     function closeProfilePanel() {
@@ -37676,29 +38374,61 @@
           .eq('lead_id', entityId)
           .order('start_time', { ascending: true });
 
+        // Update badge counts
+        const count = events?.length || 0;
+        document.getElementById('tab-badge-appointments').textContent = count;
+        document.getElementById('tab-badge-appointments').className = count > 0 ? 'tab-badge' : 'tab-badge muted';
+        document.getElementById('profile-stat-appointments').textContent = count;
+
         if (error || !events || events.length === 0) {
           container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <div>No appointments scheduled</div>
+            <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+              <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(249,203,0,0.1), rgba(249,203,0,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Appointments Yet</div>
+              <div style="font-size: 13px; max-width: 280px; margin: 0 auto;">Click "Schedule" to plan job phases like templating, fabrication, and installation</div>
             </div>
           `;
           return;
         }
 
+        const typeIcons = {
+          'template': '📐', 'measurement': '📐', 'fabrication': '⚙️',
+          'installation': '🔧', 'plumbing_disconnect': '🔌', 'plumbing_reconnect': '🚿',
+          'appointment': '📅', 'consultation': '💬', 'sealer_application': '💧',
+          'walk_through': '🚶', 'final_inspection': '✅', 'delivery': '🚚', 'demo': '🔨'
+        };
+
         container.innerHTML = events.map(evt => {
           const date = new Date(evt.start_time);
-          const typeIcons = {
-            'template': '📐', 'measurement': '📐', 'fabrication': '⚙️',
-            'installation': '🔧', 'plumbing_disconnect': '🔌', 'appointment': '📅'
-          };
+          const endDate = evt.end_time ? new Date(evt.end_time) : null;
+          const now = new Date();
+          const isPast = date < now;
+          const isToday = date.toDateString() === now.toDateString();
+
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+          const statusClass = evt.status === 'completed' ? 'completed' : (evt.status === 'cancelled' ? 'cancelled' : 'scheduled');
+
           return `
-            <div class="phase-card" style="cursor: default;">
-              <div class="phase-header">
-                <div class="phase-icon">${typeIcons[evt.event_type] || '📅'}</div>
-                <div>
-                  <div class="phase-title">${escapeHtml(evt.title)}</div>
-                  <div class="phase-subtitle">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+            <div class="appointment-card ${isPast ? 'past' : ''}" style="${isPast ? 'opacity: 0.7;' : ''}">
+              <div class="appointment-date-box">
+                <div class="appointment-month">${monthNames[date.getMonth()]}</div>
+                <div class="appointment-day">${date.getDate()}</div>
+                <div class="appointment-weekday">${dayNames[date.getDay()]}</div>
+              </div>
+              <div class="appointment-info">
+                <div class="appointment-title">${typeIcons[evt.event_type] || '📅'} ${escapeHtml(evt.title)}</div>
+                <div class="appointment-time">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}${endDate ? ' - ' + endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''}
+                  ${isToday ? '<span style="background: var(--primary); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-left: 8px;">TODAY</span>' : ''}
+                </div>
+                <div class="appointment-meta">
+                  ${evt.location ? `<span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(evt.location.substring(0, 30))}${evt.location.length > 30 ? '...' : ''}</span>` : ''}
+                  <span class="appointment-status ${statusClass}">${evt.status || 'Scheduled'}</span>
                 </div>
               </div>
             </div>
@@ -37728,11 +38458,19 @@
       // Also check for legacy notes field (plain text)
       const legacyNote = currentProfileData.notes || currentProfileData.message;
 
+      // Update badge count
+      const noteCount = notes.length + (legacyNote ? 1 : 0);
+      document.getElementById('tab-badge-notes').textContent = noteCount;
+      document.getElementById('tab-badge-notes').className = noteCount > 0 ? 'tab-badge' : 'tab-badge muted';
+
       if (notes.length === 0 && !legacyNote) {
         container.innerHTML = `
-          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            <div>No notes yet</div>
+          <div style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.05)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">No Notes Yet</div>
+            <div style="font-size: 13px;">Add notes to track important details about this lead</div>
           </div>
         `;
         return;
@@ -37756,7 +38494,7 @@
       // Show legacy notes
       if (legacyNote) {
         html += `
-          <div class="note-card" style="background: var(--dark-elevated); border: 1px dashed var(--border-subtle);">
+          <div class="note-card" style="border-left-color: #3b82f6;">
             <div class="note-header">
               <span class="note-author">Original Message</span>
               <span class="note-time">${currentProfileData.created_at ? new Date(currentProfileData.created_at).toLocaleString() : ''}</span>
@@ -37766,12 +38504,7 @@
         `;
       }
 
-      container.innerHTML = html || `
-        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          <div>No notes yet</div>
-        </div>
-      `;
+      container.innerHTML = html;
     }
 
     async function loadProfileActivity(entityId) {
