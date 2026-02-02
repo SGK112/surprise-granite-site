@@ -765,17 +765,23 @@
 
   // Listen for auth changes
   function initAuthListener() {
+    let authInitialized = false;
+    let retryCount = 0;
+    const maxRetries = 10;
+
     // Check for SgAuth after a short delay (to allow it to initialize)
     const checkAuth = () => {
+      if (authInitialized) return;
+
       if (window.SgAuth) {
+        authInitialized = true;
         window.SgAuth.onAuthChange((event, data) => {
-          console.log('Unified Nav: Auth event', event);
           updateAuthUI();
         });
         updateAuthUI();
-      } else {
-        // Retry
-        setTimeout(checkAuth, 200);
+      } else if (retryCount < maxRetries) {
+        retryCount++;
+        setTimeout(checkAuth, 300);
       }
     };
 

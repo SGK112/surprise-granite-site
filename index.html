@@ -86,7 +86,7 @@
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260130">
 <link rel="stylesheet" href="/css/footer-enhanced.css?v=20260130">
 <script defer src="https://cdn.jsdelivr.net/gh/sygnaltech/webflow-util@5.4.2/dist/nocode/webflow-form.js"></script>
-<script defer src="/js/unified-nav.js?v=20260129"></script>
+<script defer src="/js/unified-nav.js?v=20260201"></script>
 
 <script defer src="/js/pro-signup-popup.js"></script>
 <script defer src="/js/cart.js"></script>
@@ -8102,7 +8102,7 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 <script src="/js/remodely-widgets.js?v=20260113"></script>
 
 <!-- Remodely Tools Hub -->
-<script defer src="/js/remodely-hub.js?v=20260201b"></script>
+<script defer src="/js/remodely-hub.js?v=20260201c"></script>
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
@@ -8136,40 +8136,21 @@ function sgTrackClick(c,a){if(typeof gtag==='function')gtag('event',a,{event_cat
 }
 </style>
 <script>
-// Floating CTA - show after scrolling past hero + move Remodely widget
+// Floating CTA - show after scrolling past hero
 (function() {
   const floatingCta = document.getElementById('floatingCta');
   if (!floatingCta) return;
 
-  const showThreshold = 600; // Show after scrolling 600px
+  const showThreshold = 600;
 
-  function updatePositions() {
-    const currentScroll = window.pageYOffset;
-    const remodelyHub = document.getElementById('remodely-hub');
-
-    // Only apply on mobile
+  window.addEventListener('scroll', function() {
     if (window.innerWidth > 768) {
       floatingCta.style.display = 'none';
-      if (remodelyHub) remodelyHub.style.bottom = '';
       return;
     }
+    floatingCta.style.display = window.pageYOffset > showThreshold ? 'block' : 'none';
+  }, { passive: true });
 
-    // Show/hide CTA and move Remodely widget based on scroll position
-    if (currentScroll > showThreshold) {
-      floatingCta.style.display = 'block';
-      // Move Remodely widget up to make room for floating CTA
-      if (remodelyHub) remodelyHub.style.bottom = '90px';
-    } else {
-      floatingCta.style.display = 'none';
-      // Reset Remodely widget to normal position
-      if (remodelyHub) remodelyHub.style.bottom = '';
-    }
-  }
-
-  window.addEventListener('scroll', updatePositions, { passive: true });
-  window.addEventListener('resize', updatePositions, { passive: true });
-
-  // Open SwipeForm on click
   floatingCta.addEventListener('click', function(e) {
     e.preventDefault();
     if (window.SwipeForm && window.SwipeForm.open) {

@@ -458,12 +458,11 @@
           color: rgba(255,255,255,0.5);
         }
 
-        /* Mobile */
+        /* Mobile - higher position to avoid floating CTA */
         @media (max-width: 768px) {
           #remodely-hub {
-            bottom: 16px;
+            bottom: 85px;
             right: 16px;
-            transition: bottom 0.3s ease;
           }
 
           .rh-trigger {
@@ -492,7 +491,7 @@
           }
           @media (max-width: 768px) {
             #remodely-hub {
-              bottom: calc(16px + env(safe-area-inset-bottom));
+              bottom: calc(85px + env(safe-area-inset-bottom));
               right: calc(16px + env(safe-area-inset-right));
             }
           }

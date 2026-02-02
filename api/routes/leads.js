@@ -83,26 +83,27 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
 
   const isAppointment = !!(appointment_date && appointment_time);
 
-  // Build lead data
+  // Build lead data - using actual database column names
   const leadData = {
-    homeowner_name: sanitizeString(homeowner_name, 200),
-    homeowner_email: homeowner_email.toLowerCase().trim(),
-    homeowner_phone: homeowner_phone || null,
+    full_name: sanitizeString(homeowner_name, 200),
+    email: homeowner_email.toLowerCase().trim(),
+    phone: homeowner_phone || null,
     project_type: sanitizeString(project_type, 100),
-    project_budget: sanitizeString(project_budget, 50),
-    project_timeline: sanitizeString(project_timeline, 100),
-    project_zip: sanitizeString(project_zip, 20),
+    budget: sanitizeString(project_budget, 50),
+    timeline: sanitizeString(project_timeline, 100),
+    zip_code: sanitizeString(project_zip, 20),
     project_details: sanitizeString(project_details, 2000),
-    project_address: sanitizeString(project_address, 500),
     source: sanitizeString(source, 50),
-    lead_price,
     status: 'new',
-    expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-    ...(isAppointment && {
-      appointment_date,
-      appointment_time,
-      appointment_status: 'scheduled'
-    })
+    raw_data: {
+      project_address: sanitizeString(project_address, 500),
+      lead_price,
+      ...(isAppointment && {
+        appointment_date,
+        appointment_time,
+        appointment_status: 'scheduled'
+      })
+    }
   };
 
   logger.info('New lead received', { source, project_type, isAppointment });

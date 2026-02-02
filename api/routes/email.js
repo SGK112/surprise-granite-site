@@ -131,6 +131,57 @@ router.post('/notify', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Send professional email to lead/customer
+ * POST /api/email/send
+ */
+router.post('/send', asyncHandler(async (req, res) => {
+  const { to, subject, body, lead_id, customer_id } = req.body;
+
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  if (!subject || !body) {
+    return res.status(400).json({ error: 'Subject and message body are required' });
+  }
+
+  if (!SMTP_USER) {
+    return res.status(500).json({ error: 'Email not configured' });
+  }
+
+  // Build professional HTML email
+  const html = emailService.wrapEmailTemplate(`
+    <div style="color: #333; line-height: 1.7; font-size: 15px;">
+      ${sanitizeString(body, 5000).replace(/\n/g, '<br>')}
+    </div>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+      <p style="margin: 0; color: #666; font-size: 14px;">
+        <strong style="color: #333;">Surprise Granite</strong><br>
+        Premium Countertops & Stone<br>
+        <a href="tel:+14802555887" style="color: #f9cb00;">(480) 255-5887</a><br>
+        <a href="https://www.surprisegranite.com" style="color: #f9cb00;">www.surprisegranite.com</a>
+      </p>
+    </div>
+  `);
+
+  try {
+    await transporter.sendMail({
+      from: `"Surprise Granite" <${SMTP_USER}>`,
+      to,
+      subject: sanitizeString(subject, 200),
+      html,
+      replyTo: process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com'
+    });
+
+    logger.info('Email sent to lead/customer', { to, subject, lead_id, customer_id });
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (err) {
+    logger.apiError(err, { context: 'Send email to lead/customer failed' });
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+}));
+
+/**
  * Send contact form message
  * POST /api/email/contact
  */
