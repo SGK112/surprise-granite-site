@@ -765,23 +765,16 @@
 
   // Listen for auth changes
   function initAuthListener() {
-    let authInitialized = false;
-    let retryCount = 0;
-    const maxRetries = 10;
-
     // Check for SgAuth after a short delay (to allow it to initialize)
     const checkAuth = () => {
-      if (authInitialized) return;
-
       if (window.SgAuth) {
-        authInitialized = true;
         window.SgAuth.onAuthChange((event, data) => {
           updateAuthUI();
         });
         updateAuthUI();
-      } else if (retryCount < maxRetries) {
-        retryCount++;
-        setTimeout(checkAuth, 300);
+      } else {
+        // Retry after 200ms, max ~10 seconds
+        setTimeout(checkAuth, 200);
       }
     };
 
