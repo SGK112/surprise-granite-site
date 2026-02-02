@@ -31,8 +31,21 @@
     }
   }
 
+  // Load site search script
+  function loadSiteSearch() {
+    if (!window.SiteSearch && !document.querySelector('script[src*="site-search.js"]')) {
+      const searchScript = document.createElement('script');
+      searchScript.src = '/js/site-search.js?v=20260202';
+      searchScript.async = true;
+      document.head.appendChild(searchScript);
+    }
+  }
+
   // Load auth dependencies immediately
   loadAuthDependencies();
+
+  // Load site search
+  loadSiteSearch();
 
   // Configuration
   const CONFIG = {
@@ -291,7 +304,7 @@
           </a>
 
           <div class="unified-nav-search">
-            <input type="text" placeholder="Search countertops, tile, flooring..." id="unifiedNavSearch">
+            <input type="text" placeholder="Search products, services, blog..." id="unifiedNavSearch" readonly>
             <button type="button" id="unifiedNavSearchBtn" aria-label="Search">
               <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </button>
@@ -339,7 +352,7 @@
             <button class="unified-nav-drawer-close" id="unifiedNavClose" aria-label="Close menu"></button>
           </div>
           <div class="unified-nav-drawer-search">
-            <input type="text" placeholder="Search..." id="unifiedNavDrawerSearch">
+            <input type="text" placeholder="Tap to search..." id="unifiedNavDrawerSearch" readonly>
           </div>
           <div class="unified-nav-drawer-links">
             ${createDrawerLinks()}
@@ -362,10 +375,45 @@
     `;
   }
 
-  // Search handler
+  // Search handler - opens site search modal or falls back to search page
   function handleSearch(query) {
-    if (query && query.trim()) {
+    // Try to use the site search modal first
+    if (window.SiteSearch && typeof window.SiteSearch.open === 'function') {
+      window.SiteSearch.open();
+      // Pre-fill search query if provided
+      if (query && query.trim()) {
+        setTimeout(() => {
+          const searchInput = document.getElementById('siteSearchInput');
+          if (searchInput) {
+            searchInput.value = query.trim();
+            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }, 100);
+      }
+    } else if (query && query.trim()) {
+      // Fallback to search page if SiteSearch not available
       window.location.href = '/search?q=' + encodeURIComponent(query.trim());
+    }
+  }
+
+  // Open site search modal directly
+  function openSiteSearch() {
+    if (window.SiteSearch && typeof window.SiteSearch.open === 'function') {
+      window.SiteSearch.open();
+    } else {
+      // Fallback - try to load site-search.js dynamically
+      if (!document.querySelector('script[src*="site-search.js"]')) {
+        const script = document.createElement('script');
+        script.src = '/js/site-search.js?v=20260202';
+        script.onload = () => {
+          setTimeout(() => {
+            if (window.SiteSearch && typeof window.SiteSearch.open === 'function') {
+              window.SiteSearch.open();
+            }
+          }, 100);
+        };
+        document.head.appendChild(script);
+      }
     }
   }
 
@@ -620,15 +668,33 @@
     drawer?.addEventListener('touchmove', handleTouchMove, { passive: false });
     drawer?.addEventListener('touchend', handleTouchEnd, { passive: true });
 
-    // Desktop search
-    searchBtn?.addEventListener('click', () => handleSearch(searchInput?.value));
+    // Desktop search - open modal on click/focus
+    searchBtn?.addEventListener('click', () => openSiteSearch());
+    searchInput?.addEventListener('focus', () => openSiteSearch());
+    searchInput?.addEventListener('click', (e) => {
+      e.preventDefault();
+      openSiteSearch();
+    });
     searchInput?.addEventListener('keypress', e => {
-      if (e.key === 'Enter') handleSearch(searchInput.value);
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSearch(searchInput.value);
+      }
     });
 
-    // Mobile search
+    // Mobile search - open modal on focus/click
+    drawerSearch?.addEventListener('focus', () => {
+      closeDrawer();
+      setTimeout(() => openSiteSearch(), 150);
+    });
+    drawerSearch?.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDrawer();
+      setTimeout(() => openSiteSearch(), 150);
+    });
     drawerSearch?.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         handleSearch(drawerSearch.value);
         closeDrawer();
       }
