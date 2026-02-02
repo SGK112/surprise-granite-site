@@ -49,7 +49,7 @@
     { label: 'Stone Yards', href: '/stone-yards/', isStoneYards: true },
     { label: 'Services', href: '/services/home/kitchen-remodeling-arizona', hasMenu: true },
     { label: 'Contact', href: '/contact-us' },
-    { label: 'Book Estimate', href: '/book-appointment', isBook: true }
+    { label: 'Book Estimate', href: '/get-a-free-estimate', isBook: true }
   ];
 
   // Mobile menu - simplified with collapsible categories
