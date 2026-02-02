@@ -98,9 +98,9 @@
       display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px; background: #ffffff;
     }
     .product-card { display: block; text-decoration: none; color: inherit; cursor: pointer; }
-    .product-image { border-radius: 12px; overflow: hidden; }
+    .product-image { border-radius: 12px; overflow: hidden; min-height: 200px; background: #f0f0f0; }
     .product-image img {
-      width: 100%; aspect-ratio: 1; object-fit: cover; display: block; transition: transform 0.3s ease;
+      width: 100%; aspect-ratio: 1; min-height: 200px; object-fit: cover; display: block; transition: transform 0.3s ease;
     }
     .product-card:hover .product-image img { transform: scale(1.03); }
     .product-info { padding: 16px 0; text-align: center; }
@@ -386,7 +386,7 @@
         return `
           <div class="product-card" data-title="${product.title.toLowerCase()}" data-vendor="${(product.vendor||'').toLowerCase()}" onclick="window.location='${url}'">
             <div class="product-image">
-              <img src="${img}" alt="${product.title}" loading="lazy" onerror="this.src='https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif'"/>
+              <img src="${img}" alt="${product.title}" onerror="this.src='https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/64f6d0f0ecc300110deac147_adella-calacatta-close-up.avif'"/>
             </div>
             <div class="product-info">
               ${brand ? `<span class="product-brand">${brand}</span>` : ''}

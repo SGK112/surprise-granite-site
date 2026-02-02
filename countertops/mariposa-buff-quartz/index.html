@@ -1987,7 +1987,24 @@
   <script>
     // Image data
     const images = [
-      'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb29107fbc5e9_Radianz-quartz-surprise-granite-mariposa-buff-close-up.jpeg"lightbox-thumb ${i === 0 ? 'active' : ''}" src="${src}" onclick="goToImage(${i})" alt="Thumbnail ${i + 1}"/>`
+      'https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb29107fbc5e9_Radianz-quartz-surprise-granite-mariposa-buff-close-up.jpeg'
+    ];
+    // Enhanced Lightbox with Pan & Zoom
+    let currentImageIndex = 0;
+    let zoomLevel = 1;
+    let panX = 0, panY = 0;
+    let isDragging = false;
+    let startX, startY;
+
+    // Populate thumbnails
+    function initThumbnails() {
+      const thumbsContainer = document.getElementById('thumbs');
+      const lightboxThumbs = document.getElementById('lightboxThumbnails');
+      thumbsContainer.innerHTML = images.map((src, i) =>
+        `<img class="thumb ${i === 0 ? 'active' : ''}" src="${src}" onclick="changeImage(${i}, this)" alt="Thumbnail ${i + 1}"/>`
+      ).join('');
+      lightboxThumbs.innerHTML = images.map((src, i) =>
+        `<img class="lightbox-thumb ${i === 0 ? 'active' : ''}" src="${src}" onclick="goToImage(${i})" alt="Thumbnail ${i + 1}"/>`
       ).join('');
       document.getElementById('totalImages').textContent = images.length;
     }

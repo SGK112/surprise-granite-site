@@ -1944,8 +1944,7 @@
         return `
           <a href="/countertops/${slab.slug || ''}/" class="featured-card" data-slab-id="${slab.id}">
             <span class="featured-card-badge">${badge}</span>
-            <div class="featured-card-image">
-              <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(slab.product_name)}" loading="lazy" onerror="this.src='${getPlaceholderImage(slab.material_type)}'"/>
+            <div class="featured-card-image" style="background-image: url('${imageUrl}'); background-size: cover; background-position: center;">
             </div>
             <div class="featured-card-body">
               <h3 class="featured-card-title">${escapeHtml(slab.product_name)}</h3>
@@ -2214,8 +2213,7 @@
 
       return `
         <div class="slab-card" data-slab-id="${slab.id}">
-          <div class="slab-card-image">
-            <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(slab.product_name)}" loading="lazy" onerror="this.src='${getPlaceholderImage(slab.material_type)}'">
+          <div class="slab-card-image" style="background-image: url('${imageUrl || getPlaceholderImage(slab.material_type)}'); background-size: cover; background-position: center;">
             <div class="slab-badges">
               <span class="slab-badge slab-badge-material">${escapeHtml(formatMaterial(slab.material_type))}</span>
               ${isNew ? '<span class="slab-badge slab-badge-new">New</span>' : ''}
