@@ -72,17 +72,21 @@
         position: absolute;
         top: 12px;
         right: 12px;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         background: #f0f0f0;
-        border: none;
-        border-radius: 50%;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
         font-size: 20px;
         cursor: pointer;
         color: #666;
         line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
       }
-      .sg-popup-x:hover { background: #e0e0e0; }
+      .sg-popup-x:hover { background: #e0e0e0; border-color: #d0d0d0; }
       .sg-popup-tag {
         display: inline-block;
         background: #f9cb00;

@@ -9611,6 +9611,31 @@
       transform: translateY(0);
     }
 
+    /* Workflow Schedule Modal Styles */
+    .workflow-event-toggle:has(input:checked) {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .workflow-event-toggle:hover {
+      border-color: var(--primary);
+    }
+
+    #workflow-dates-container input[type="date"],
+    #workflow-dates-container input[type="time"] {
+      background: var(--dark-tertiary);
+      border: 1px solid var(--border-color);
+    }
+
+    #workflow-contractors-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #workflow-contractors-list::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
     .modal-header {
       display: flex;
       align-items: center;
@@ -10555,6 +10580,425 @@
     .kanban-card[draggable="true"] { cursor: grab; }
     .kanban-card[draggable="true"]:active { cursor: grabbing; }
     .kanban-column.drag-over { outline: 2px solid var(--gold-primary) !important; }
+
+    /* =============================================
+       PROFILE SLIDE-OVER PANEL
+       ============================================= */
+    .profile-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .profile-panel-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .profile-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 800px;
+      height: 100vh;
+      background: var(--dark-surface);
+      box-shadow: -4px 0 30px rgba(0, 0, 0, 0.4);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      z-index: 10000;
+    }
+    .profile-panel-overlay.active .profile-panel {
+      transform: translateX(0);
+    }
+    .profile-panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: linear-gradient(135deg, var(--dark-elevated) 0%, var(--dark-surface) 100%);
+    }
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #000;
+      flex-shrink: 0;
+    }
+    .profile-header-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .profile-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .profile-meta {
+      font-size: 14px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .profile-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .profile-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .profile-status-badge.new { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .profile-status-badge.contacted { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .profile-status-badge.qualified { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .profile-status-badge.converted { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+    .profile-close-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .profile-close-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+    .profile-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 24px;
+      background: var(--dark-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+    }
+    .profile-tab {
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .profile-tab:hover {
+      color: var(--text-primary);
+    }
+    .profile-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .profile-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .profile-section {
+      margin-bottom: 24px;
+    }
+    .profile-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .profile-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .profile-info-item {
+      background: var(--dark-elevated);
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+    .profile-info-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .profile-info-value {
+      font-size: 15px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .profile-actions {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 12px;
+      background: var(--dark-elevated);
+    }
+
+    /* =============================================
+       JOB PHASE SCHEDULER (Full Width)
+       ============================================= */
+    .job-scheduler-panel {
+      position: fixed;
+      inset: 0;
+      background: var(--dark-surface);
+      z-index: 9998;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .job-scheduler-panel.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .job-scheduler-header {
+      padding: 16px 24px;
+      background: linear-gradient(135deg, var(--primary) 0%, #e6b800 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .job-scheduler-header h1 {
+      color: #000;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .job-scheduler-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 350px 1fr 320px;
+      overflow: hidden;
+    }
+    .job-scheduler-sidebar {
+      background: var(--dark-elevated);
+      border-right: 1px solid var(--border-subtle);
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .job-scheduler-main {
+      padding: 24px;
+      overflow-y: auto;
+      background: var(--dark-surface);
+    }
+    .job-scheduler-timeline {
+      background: var(--dark-elevated);
+      border-left: 1px solid var(--border-subtle);
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .phase-card {
+      background: var(--dark-surface);
+      border: 2px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .phase-card:hover {
+      border-color: var(--primary);
+    }
+    .phase-card.selected {
+      border-color: var(--primary);
+      background: rgba(249, 203, 0, 0.05);
+    }
+    .phase-card.completed {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.05);
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .phase-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: var(--dark-elevated);
+    }
+    .phase-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .phase-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .phase-date-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 32px;
+      padding-bottom: 24px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-subtle);
+    }
+    .timeline-item:last-child::before {
+      display: none;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: 0;
+      top: 4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--dark-surface);
+      border: 3px solid var(--primary);
+    }
+    .timeline-dot.completed {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+    .timeline-content {
+      background: var(--dark-surface);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+    .timeline-date {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Notes Component */
+    .note-card {
+      background: var(--dark-elevated);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--primary);
+    }
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .note-author {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .note-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .note-content {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Activity Timeline */
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--dark-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .activity-content {
+      flex: 1;
+    }
+    .activity-text {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    .activity-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    @media (max-width: 1200px) {
+      .job-scheduler-body {
+        grid-template-columns: 1fr;
+      }
+      .job-scheduler-sidebar,
+      .job-scheduler-timeline {
+        display: none;
+      }
+    }
+    @media (max-width: 768px) {
+      .profile-panel {
+        max-width: 100%;
+      }
+      .profile-info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 <!-- Unified Navigation -->
 <link rel="stylesheet" href="/css/unified-nav.css?v=20260129">
@@ -13687,9 +14131,13 @@
 
         <div class="detail-section-title">Actions</div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-          <button class="btn-modern primary" onclick="scheduleAppointmentForLead()" style="grid-column: span 2;">
+          <button class="btn-modern primary" onclick="scheduleWorkflowForLead()" style="grid-column: span 2; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Schedule Appointment
+            Schedule Project Workflow
+          </button>
+          <button class="btn-modern secondary" onclick="scheduleAppointmentForLead()" style="grid-column: span 2;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Quick Single Event
           </button>
           <button class="btn-modern secondary" onclick="convertLeadToCustomer()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
@@ -15723,6 +16171,489 @@
     </div>
   </div>
 
+  <!-- Multi-Event Workflow Scheduling Modal -->
+  <div id="workflow-schedule-modal" class="modal-overlay" onclick="if(event.target === this) closeWorkflowScheduleModal()">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);">
+        <h2 class="modal-title" style="color: #fff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -4px; margin-right: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Schedule Project Workflow
+        </h2>
+        <button class="modal-close" onclick="closeWorkflowScheduleModal()" style="color: #fff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="workflow-schedule-form" onsubmit="submitWorkflowSchedule(event)">
+        <input type="hidden" id="workflow-lead-id" value="" />
+        <div class="modal-body" style="padding: 20px; max-height: 65vh; overflow-y: auto;">
+
+          <!-- Customer Info Summary -->
+          <div id="workflow-customer-info" style="background: var(--dark-tertiary); border-radius: 10px; padding: 14px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; font-weight: 600;" id="workflow-customer-avatar">?</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 15px; color: var(--text-primary);" id="workflow-customer-name">Customer Name</div>
+                <div style="font-size: 13px; color: var(--text-muted);" id="workflow-customer-details">email@example.com • (555) 123-4567</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;" id="workflow-customer-address">123 Main St, City, ST</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Type Selection -->
+          <div style="margin-bottom: 20px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--text-primary);">Select Events to Schedule</label>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-template" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">📐 Template/Measure</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">On-site measurement</div>
+                </div>
+              </label>
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-demo" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">🔨 Demo/Tear-out</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Remove existing counters</div>
+                </div>
+              </label>
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-fabrication" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">⚙️ Fabrication</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Cut & polish at shop</div>
+                </div>
+              </label>
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-installation" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">🔧 Installation</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Install at customer site</div>
+                </div>
+              </label>
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-plumbing" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">🚿 Plumbing</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Disconnect & reconnect</div>
+                </div>
+              </label>
+              <label class="workflow-event-toggle" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--dark-elevated); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" id="workflow-include-sealer" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                <div>
+                  <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">💧 Sealer Application</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Apply protective sealer</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dates Section -->
+          <div style="margin-bottom: 20px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 10px; display: block; color: var(--text-primary);">Schedule Dates</label>
+            <div id="workflow-dates-container" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Dynamic date inputs will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Participants Section -->
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; color: var(--text-primary);">
+              <span>Invite Participants</span>
+              <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);" id="workflow-participant-count">0 selected</span>
+            </label>
+
+            <!-- Homeowner (auto-added) -->
+            <div id="workflow-homeowner-participant" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; margin-bottom: 10px;">
+              <input type="checkbox" id="workflow-invite-homeowner" checked style="width: 16px; height: 16px; accent-color: #22c55e;">
+              <div style="flex: 1;">
+                <div style="font-weight: 500; font-size: 13px; color: var(--text-primary);">👤 Homeowner</div>
+                <div style="font-size: 11px; color: var(--text-muted);" id="workflow-homeowner-email">customer@email.com</div>
+              </div>
+              <span style="font-size: 10px; padding: 2px 8px; background: #22c55e; color: #fff; border-radius: 4px;">Customer</span>
+            </div>
+
+            <!-- Contractor Selection -->
+            <div style="background: var(--dark-tertiary); border-radius: 8px; padding: 12px; border: 1px solid var(--border-color);">
+              <div style="font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary);">Add Contractors</div>
+              <div id="workflow-contractors-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                <div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px;">Loading contractors...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notification Options -->
+          <div style="background: var(--dark-elevated); border-radius: 8px; padding: 14px; border: 1px solid var(--border-color);">
+            <label style="font-size: 13px; font-weight: 500; margin-bottom: 10px; display: block; color: var(--text-secondary);">Notification Options</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="workflow-send-email" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                <span style="font-size: 13px; color: var(--text-primary);">📧 Send email invites</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="workflow-send-sms" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                <span style="font-size: 13px; color: var(--text-primary);">📱 Send SMS reminders</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="workflow-add-calendar" checked style="width: 16px; height: 16px; accent-color: var(--primary);">
+                <span style="font-size: 13px; color: var(--text-primary);">📅 Add to calendar</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div style="margin-top: 16px;">
+            <label style="font-size: 13px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Notes for all events</label>
+            <textarea id="workflow-notes" class="input-modern" rows="2" placeholder="Special instructions, access codes, etc..." style="resize: none;"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 12px; color: var(--text-muted);">
+            <span id="workflow-event-summary">3 events will be created</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-modern ghost" onclick="closeWorkflowScheduleModal()">Cancel</button>
+            <button type="submit" class="btn-modern primary" id="workflow-submit-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -3px; margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Schedule & Send Invites
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================
+       LEAD/CUSTOMER PROFILE PANEL (Slide-over)
+       ============================================= -->
+  <div id="profile-panel-overlay" class="profile-panel-overlay" onclick="if(event.target === this) closeProfilePanel()">
+    <div class="profile-panel">
+      <!-- Header -->
+      <div class="profile-panel-header">
+        <div class="profile-avatar" id="profile-avatar">JD</div>
+        <div class="profile-header-info">
+          <div class="profile-name" id="profile-name">John Doe</div>
+          <div class="profile-meta">
+            <span class="profile-meta-item" id="profile-email">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              email@example.com
+            </span>
+            <span class="profile-meta-item" id="profile-phone">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              (555) 123-4567
+            </span>
+          </div>
+          <div style="margin-top: 8px;">
+            <span class="profile-status-badge new" id="profile-status">New Lead</span>
+          </div>
+        </div>
+        <button class="profile-close-btn" onclick="closeProfilePanel()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="profile-tabs">
+        <button class="profile-tab active" data-tab="overview" onclick="switchProfileTab('overview')">Overview</button>
+        <button class="profile-tab" data-tab="appointments" onclick="switchProfileTab('appointments')">Appointments</button>
+        <button class="profile-tab" data-tab="notes" onclick="switchProfileTab('notes')">Notes</button>
+        <button class="profile-tab" data-tab="attachments" onclick="switchProfileTab('attachments')">Files</button>
+        <button class="profile-tab" data-tab="messages" onclick="switchProfileTab('messages')">Messages</button>
+        <button class="profile-tab" data-tab="activity" onclick="switchProfileTab('activity')">Activity</button>
+      </div>
+
+      <!-- Content -->
+      <div class="profile-content">
+        <!-- Overview Tab -->
+        <div id="profile-tab-overview" class="profile-tab-content">
+          <div class="profile-section">
+            <div class="profile-section-title">Contact Information</div>
+            <div class="profile-info-grid">
+              <div class="profile-info-item">
+                <div class="profile-info-label">Email</div>
+                <div class="profile-info-value" id="profile-detail-email">—</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="profile-info-label">Phone</div>
+                <div class="profile-info-value" id="profile-detail-phone">—</div>
+              </div>
+              <div class="profile-info-item" style="grid-column: span 2;">
+                <div class="profile-info-label">Address</div>
+                <div class="profile-info-value" id="profile-detail-address">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <div class="profile-section-title">Project Details</div>
+            <div class="profile-info-grid">
+              <div class="profile-info-item">
+                <div class="profile-info-label">Project Type</div>
+                <div class="profile-info-value" id="profile-detail-project-type">—</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="profile-info-label">Budget Range</div>
+                <div class="profile-info-value" id="profile-detail-budget">—</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="profile-info-label">Timeline</div>
+                <div class="profile-info-value" id="profile-detail-timeline">—</div>
+              </div>
+              <div class="profile-info-item">
+                <div class="profile-info-label">Source</div>
+                <div class="profile-info-value" id="profile-detail-source">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <div class="profile-section-title">Quick Actions</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+              <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Schedule Job Phases
+              </button>
+              <button class="btn-modern secondary" onclick="createEstimateFromProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Create Estimate
+              </button>
+              <button class="btn-modern secondary" onclick="sendMessageFromProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Send Message
+              </button>
+              <button class="btn-modern secondary" onclick="openPortalFromProfile()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Open Portal
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div id="profile-tab-appointments" class="profile-tab-content" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="profile-section-title" style="margin: 0;">Scheduled Appointments</div>
+            <button class="btn-modern primary" onclick="openJobSchedulerFromProfile()" style="padding: 8px 14px; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Schedule
+            </button>
+          </div>
+          <div id="profile-appointments-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <div>No appointments scheduled</div>
+              <div style="font-size: 12px; margin-top: 4px;">Click "Schedule" to add job phases</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes Tab -->
+        <div id="profile-tab-notes" class="profile-tab-content" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="profile-section-title" style="margin: 0;">Notes</div>
+            <button class="btn-modern primary" onclick="addNewNote()" style="padding: 8px 14px; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Add Note
+            </button>
+          </div>
+          <div id="profile-notes-input" style="display: none; margin-bottom: 16px;">
+            <textarea id="new-note-text" class="input-modern" rows="3" placeholder="Type your note here..." style="margin-bottom: 8px;"></textarea>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button class="btn-modern ghost" onclick="cancelNewNote()">Cancel</button>
+              <button class="btn-modern primary" onclick="saveNewNote()">Save Note</button>
+            </div>
+          </div>
+          <div id="profile-notes-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <div>No notes yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attachments Tab -->
+        <div id="profile-tab-attachments" class="profile-tab-content" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="profile-section-title" style="margin: 0;">Files & Attachments</div>
+            <button class="btn-modern primary" onclick="uploadAttachment()" style="padding: 8px 14px; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              Upload
+            </button>
+          </div>
+          <div id="profile-attachments-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              <div>No files attached</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div id="profile-tab-messages" class="profile-tab-content" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="profile-section-title" style="margin: 0;">Messages</div>
+            <button class="btn-modern primary" onclick="composeMessage()" style="padding: 8px 14px; font-size: 13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Compose
+            </button>
+          </div>
+          <div id="profile-messages-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              <div>No messages yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Tab -->
+        <div id="profile-tab-activity" class="profile-tab-content" style="display: none;">
+          <div class="profile-section-title">Activity Timeline</div>
+          <div id="profile-activity-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <div>No activity recorded</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="profile-actions">
+        <button class="btn-modern secondary" style="flex: 1;" onclick="editProfileRecord()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit Details
+        </button>
+        <button class="btn-modern primary" style="flex: 1;" onclick="openJobSchedulerFromProfile()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Schedule Job
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================
+       JOB PHASE SCHEDULER (Full Page)
+       ============================================= -->
+  <div id="job-scheduler-panel" class="job-scheduler-panel">
+    <!-- Header -->
+    <div class="job-scheduler-header">
+      <h1>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Job Phase Scheduler
+      </h1>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span id="scheduler-customer-name" style="color: #000; font-weight: 500;">Customer Name</span>
+        <button onclick="closeJobScheduler()" style="background: rgba(0,0,0,0.1); border: none; color: #000; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="job-scheduler-body">
+      <!-- Left Sidebar: Customer Info & Settings -->
+      <div class="job-scheduler-sidebar">
+        <div class="profile-section">
+          <div class="profile-section-title">Customer</div>
+          <div class="profile-info-item" style="margin-bottom: 12px;">
+            <div class="profile-info-label">Name</div>
+            <div class="profile-info-value" id="scheduler-detail-name">—</div>
+          </div>
+          <div class="profile-info-item" style="margin-bottom: 12px;">
+            <div class="profile-info-label">Address</div>
+            <div class="profile-info-value" id="scheduler-detail-address">—</div>
+          </div>
+          <div class="profile-info-item">
+            <div class="profile-info-label">Phone</div>
+            <div class="profile-info-value" id="scheduler-detail-phone">—</div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Backward Scheduling</div>
+          <div style="background: var(--dark-surface); border-radius: 10px; padding: 14px; border: 1px solid var(--border-subtle);">
+            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 8px;">Installation Date</label>
+            <input type="date" id="scheduler-install-date" class="input-modern" style="width: 100%; font-size: 15px;" onchange="recalculatePhases()">
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Set the install date and we'll calculate all other phases backward.</p>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Lead Times (Days)</div>
+          <div style="display: grid; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 8px;">
+              <span style="font-size: 13px; color: var(--text-secondary);">Fabrication</span>
+              <input type="number" id="lead-time-fab" value="3" min="1" max="14" style="width: 60px; text-align: center;" class="input-modern" onchange="recalculatePhases()">
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 8px;">
+              <span style="font-size: 13px; color: var(--text-secondary);">Template to Fab</span>
+              <input type="number" id="lead-time-template" value="5" min="1" max="14" style="width: 60px; text-align: center;" class="input-modern" onchange="recalculatePhases()">
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Notifications</div>
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--dark-surface); border-radius: 8px; cursor: pointer; margin-bottom: 8px;">
+            <input type="checkbox" id="scheduler-notify-customer" checked style="accent-color: var(--primary);">
+            <span style="font-size: 13px; color: var(--text-primary);">Email customer</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--dark-surface); border-radius: 8px; cursor: pointer; margin-bottom: 8px;">
+            <input type="checkbox" id="scheduler-notify-contractors" checked style="accent-color: var(--primary);">
+            <span style="font-size: 13px; color: var(--text-primary);">Email contractors</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--dark-surface); border-radius: 8px; cursor: pointer;">
+            <input type="checkbox" id="scheduler-sms" style="accent-color: var(--primary);">
+            <span style="font-size: 13px; color: var(--text-primary);">SMS reminders</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Main: Phase Cards -->
+      <div class="job-scheduler-main">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; font-size: 18px; color: var(--text-primary);">Job Phases</h2>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-modern ghost" onclick="resetPhases()">Reset</button>
+            <button class="btn-modern primary" onclick="saveJobPhases()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+              Save & Send Invites
+            </button>
+          </div>
+        </div>
+
+        <div id="job-phases-container">
+          <!-- Phase cards will be rendered here -->
+        </div>
+
+        <!-- Add Phase Button -->
+        <button class="btn-modern ghost" style="width: 100%; padding: 16px; border: 2px dashed var(--border-subtle); margin-top: 12px;" onclick="showAddPhaseOptions()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add Custom Phase
+        </button>
+      </div>
+
+      <!-- Right Sidebar: Timeline Preview -->
+      <div class="job-scheduler-timeline">
+        <div class="profile-section-title">Timeline Preview</div>
+        <div id="scheduler-timeline-preview">
+          <!-- Timeline items will be rendered here -->
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+          <div class="profile-section-title">Assigned Contractors</div>
+          <div id="scheduler-contractors-list">
+            <button class="btn-modern ghost" style="width: 100%; font-size: 13px;" onclick="openContractorPicker()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Add Contractor
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Calendar Event Detail Modal -->
   <div id="calendar-event-detail-modal" class="modal-overlay" onclick="if(event.target === this) closeCalendarEventDetailModal()">
     <div class="modal-content" style="max-width: 550px;">
@@ -17286,6 +18217,9 @@
     let selectedCustomer = null;
     let customerFilter = 'all';
     let currentCustomerTab = 'jobs';
+
+    // Global contractors state
+    let allContractors = [];
 
     // Global estimates state
     let allEstimates = [];
@@ -22345,6 +23279,10 @@
       selectedLead = allLeads.find(function(l) { return l.id === id; });
       if (!selectedLead) return;
 
+      // Open the new profile panel instead of old modal
+      openProfilePanel(selectedLead, 'lead');
+      return; // Skip old modal code
+
       var container = document.getElementById('lead-details');
       if (!container) { alert('Container not found'); return; }
       container.innerHTML = '';
@@ -23912,7 +24850,8 @@
       await findOrCreateCustomerFromLead(lead);
 
       // Close lead modal and navigate to projects
-      document.getElementById('lead-detail-modal').classList.remove('active');
+      const leadModal = document.getElementById('lead-modal');
+      if (leadModal) leadModal.classList.remove('active');
       showPage('projects');
 
       setTimeout(function() {
@@ -25083,7 +26022,7 @@
           contactName: customer.name || '',
           contactEmail: customer.email || '',
           contactPhone: customer.phone || '',
-          location: customer.address || '',
+          location: formatAddressFromData(customer),
           customerId: customer.id
         });
       }, 200);
@@ -36021,7 +36960,7 @@
     // CALENDAR EVENTS (MULTI-PARTICIPANT)
     // =============================================
 
-    function openCalendarEventModal(eventId = null, preselectedDate = null, prefillData = null) {
+    async function openCalendarEventModal(eventId = null, preselectedDate = null, prefillData = null) {
       const form = document.getElementById('calendar-event-form');
       const title = document.getElementById('calendar-event-modal-title');
       form.reset();
@@ -36040,6 +36979,11 @@
       // Hide manual participant form
       const manualForm = document.getElementById('manual-participant-form');
       if (manualForm) manualForm.style.display = 'none';
+
+      // Load contractors if not already loaded
+      if (!allContractors || allContractors.length === 0) {
+        await loadContractors();
+      }
 
       // Populate dropdowns
       populateEventProjectDropdown();
@@ -36192,7 +37136,7 @@
       const leadName = selectedLead.full_name || selectedLead.homeowner_name || selectedLead.name || selectedLead.email || 'Lead';
       const leadEmail = selectedLead.email || selectedLead.homeowner_email || '';
       const leadPhone = selectedLead.phone || selectedLead.homeowner_phone || '';
-      const leadAddress = selectedLead.address || selectedLead.project_address || '';
+      const leadAddress = formatAddressFromData(selectedLead);
 
       // Open modal with pre-filled data
       openCalendarEventModal(null, null, {
@@ -36208,6 +37152,1141 @@
 
     function closeCalendarEventModal() {
       document.getElementById('calendar-event-modal').classList.remove('active');
+    }
+
+    // =============================================
+    // WORKFLOW SCHEDULING (Multi-Event)
+    // =============================================
+    let workflowLeadData = null;
+    let workflowSelectedContractors = [];
+
+    async function openWorkflowScheduleModal(leadOrCustomer = null) {
+      const modal = document.getElementById('workflow-schedule-modal');
+      if (!modal) return;
+
+      // Load contractors if needed
+      if (!allContractors || allContractors.length === 0) {
+        await loadContractors();
+      }
+
+      // Use provided data or selected lead
+      workflowLeadData = leadOrCustomer || selectedLead;
+      if (!workflowLeadData) {
+        showToast('No lead or customer selected', 'warning');
+        return;
+      }
+
+      // Reset form
+      document.getElementById('workflow-schedule-form').reset();
+      document.getElementById('workflow-lead-id').value = workflowLeadData.id || '';
+      workflowSelectedContractors = [];
+
+      // Populate customer info
+      const name = workflowLeadData.full_name || workflowLeadData.name || workflowLeadData.homeowner_name || 'Customer';
+      const email = workflowLeadData.email || workflowLeadData.homeowner_email || '';
+      const phone = workflowLeadData.phone || workflowLeadData.homeowner_phone || '';
+      const address = formatAddressFromData(workflowLeadData);
+
+      document.getElementById('workflow-customer-avatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('workflow-customer-name').textContent = name;
+      document.getElementById('workflow-customer-details').textContent = [email, phone].filter(Boolean).join(' • ') || 'No contact info';
+      document.getElementById('workflow-customer-address').textContent = address || 'No address provided';
+      document.getElementById('workflow-homeowner-email').textContent = email || 'No email';
+
+      // Setup event toggle listeners
+      const eventTypes = ['template', 'demo', 'fabrication', 'installation', 'plumbing', 'sealer'];
+      eventTypes.forEach(type => {
+        const checkbox = document.getElementById(`workflow-include-${type}`);
+        if (checkbox) {
+          checkbox.onchange = updateWorkflowDates;
+        }
+      });
+
+      // Render date inputs
+      updateWorkflowDates();
+
+      // Render contractors list
+      renderWorkflowContractors();
+
+      // Update summary
+      updateWorkflowSummary();
+
+      modal.classList.add('active');
+    }
+
+    function closeWorkflowScheduleModal() {
+      document.getElementById('workflow-schedule-modal').classList.remove('active');
+      workflowLeadData = null;
+      workflowSelectedContractors = [];
+    }
+
+    function updateWorkflowDates() {
+      const container = document.getElementById('workflow-dates-container');
+      if (!container) return;
+
+      const events = getSelectedWorkflowEvents();
+      const today = new Date();
+      let currentDate = new Date(today);
+
+      container.innerHTML = events.map((evt, idx) => {
+        // Suggest dates based on typical workflow
+        if (idx > 0) {
+          if (evt.type === 'fabrication') {
+            currentDate.setDate(currentDate.getDate() + 5); // 5 days after template
+          } else if (evt.type === 'installation') {
+            currentDate.setDate(currentDate.getDate() + 1); // Day after fabrication
+          } else {
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        return `
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 20px;">${evt.icon}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 500; font-size: 13px; color: var(--text-primary);">${evt.label}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${evt.description}</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="date" id="workflow-date-${evt.type}" class="input-modern" value="${dateStr}" style="width: 140px; font-size: 13px; padding: 6px 10px;" onchange="updateWorkflowSummary()">
+              <input type="time" id="workflow-time-${evt.type}" class="input-modern" value="${evt.defaultTime}" style="width: 100px; font-size: 13px; padding: 6px 10px;">
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateWorkflowSummary();
+    }
+
+    function getSelectedWorkflowEvents() {
+      const events = [];
+
+      if (document.getElementById('workflow-include-template')?.checked) {
+        events.push({ type: 'template', icon: '📐', label: 'Template/Measure', description: 'On-site measurement', defaultTime: '09:00', eventType: 'template' });
+      }
+      if (document.getElementById('workflow-include-demo')?.checked) {
+        events.push({ type: 'demo', icon: '🔨', label: 'Demo/Tear-out', description: 'Remove existing countertops', defaultTime: '08:00', eventType: 'site_visit' });
+      }
+      if (document.getElementById('workflow-include-fabrication')?.checked) {
+        events.push({ type: 'fabrication', icon: '⚙️', label: 'Fabrication', description: 'Cut & polish at shop', defaultTime: '07:00', eventType: 'fabrication' });
+      }
+      if (document.getElementById('workflow-include-installation')?.checked) {
+        events.push({ type: 'installation', icon: '🔧', label: 'Installation', description: 'Install at customer site', defaultTime: '08:00', eventType: 'installation' });
+      }
+      if (document.getElementById('workflow-include-plumbing')?.checked) {
+        events.push({ type: 'plumbing', icon: '🚿', label: 'Plumbing', description: 'Disconnect & reconnect', defaultTime: '07:30', eventType: 'plumbing_disconnect' });
+      }
+      if (document.getElementById('workflow-include-sealer')?.checked) {
+        events.push({ type: 'sealer', icon: '💧', label: 'Sealer Application', description: 'Apply protective sealer', defaultTime: '10:00', eventType: 'sealer_application' });
+      }
+
+      return events;
+    }
+
+    function renderWorkflowContractors() {
+      const container = document.getElementById('workflow-contractors-list');
+      if (!container) return;
+
+      if (!allContractors || allContractors.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+            <div style="font-size: 12px;">No contractors found</div>
+            <button type="button" class="btn-modern ghost" style="margin-top: 8px; font-size: 11px; padding: 6px 12px;" onclick="openAddContractorFromWorkflow()">+ Add Contractor</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = allContractors.map(c => {
+        const name = c.name || c.company_name || c.email || 'Unknown';
+        const specialty = c.specialty || 'Contractor';
+        const email = c.email || '';
+        const phone = c.phone || '';
+
+        return `
+          <label style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <input type="checkbox" class="workflow-contractor-checkbox" data-id="${c.id}" data-name="${escapeHtml(name)}" data-email="${escapeHtml(email)}" data-phone="${escapeHtml(phone)}" data-specialty="${escapeHtml(specialty)}" style="width: 16px; height: 16px; accent-color: var(--primary);" onchange="updateWorkflowParticipantCount()">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 500; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(email || phone || 'No contact')}</div>
+            </div>
+            <span style="font-size: 10px; padding: 2px 6px; background: var(--dark-tertiary); color: var(--text-muted); border-radius: 4px;">${escapeHtml(specialty)}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function updateWorkflowParticipantCount() {
+      const checkboxes = document.querySelectorAll('.workflow-contractor-checkbox:checked');
+      const homeownerChecked = document.getElementById('workflow-invite-homeowner')?.checked ? 1 : 0;
+      const count = checkboxes.length + homeownerChecked;
+      document.getElementById('workflow-participant-count').textContent = `${count} selected`;
+    }
+
+    function updateWorkflowSummary() {
+      const events = getSelectedWorkflowEvents();
+      const summary = document.getElementById('workflow-event-summary');
+      if (summary) {
+        summary.textContent = `${events.length} event${events.length !== 1 ? 's' : ''} will be created`;
+      }
+    }
+
+    async function submitWorkflowSchedule(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('workflow-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; margin-right: 8px;"></div> Creating events...';
+
+      try {
+        const events = getSelectedWorkflowEvents();
+        if (events.length === 0) {
+          showToast('Please select at least one event type', 'warning');
+          return;
+        }
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Get participant info
+        const participants = [];
+        const homeownerEmail = workflowLeadData.email || workflowLeadData.homeowner_email;
+        const homeownerName = workflowLeadData.full_name || workflowLeadData.name || workflowLeadData.homeowner_name || 'Customer';
+        const homeownerPhone = workflowLeadData.phone || workflowLeadData.homeowner_phone || '';
+
+        if (document.getElementById('workflow-invite-homeowner')?.checked && homeownerEmail) {
+          participants.push({
+            email: homeownerEmail,
+            name: homeownerName,
+            phone: homeownerPhone,
+            role: 'customer',
+            participant_type: 'attendee'
+          });
+        }
+
+        // Add selected contractors
+        document.querySelectorAll('.workflow-contractor-checkbox:checked').forEach(cb => {
+          if (cb.dataset.email) {
+            participants.push({
+              email: cb.dataset.email,
+              name: cb.dataset.name,
+              phone: cb.dataset.phone || '',
+              role: cb.dataset.specialty || 'contractor',
+              participant_type: 'attendee'
+            });
+          }
+        });
+
+        const notes = document.getElementById('workflow-notes')?.value || '';
+        const address = workflowLeadData.address || workflowLeadData.project_address || '';
+        const sendEmail = document.getElementById('workflow-send-email')?.checked;
+        const sendSms = document.getElementById('workflow-send-sms')?.checked;
+
+        const createdEvents = [];
+
+        // Create each event
+        for (const evt of events) {
+          const dateInput = document.getElementById(`workflow-date-${evt.type}`);
+          const timeInput = document.getElementById(`workflow-time-${evt.type}`);
+          if (!dateInput?.value) continue;
+
+          const startTime = new Date(`${dateInput.value}T${timeInput?.value || '09:00'}:00`);
+          const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours default
+
+          const eventData = {
+            title: `${evt.label} - ${homeownerName}`,
+            event_type: evt.eventType,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            location: evt.type === 'fabrication' ? 'Shop' : address,
+            lead_id: workflowLeadData.id,
+            notes: notes,
+            status: 'scheduled',
+            user_id: user.id,
+            metadata: {
+              contact_name: homeownerName,
+              contact_email: homeownerEmail,
+              contact_phone: homeownerPhone,
+              workflow_type: evt.type
+            }
+          };
+
+          // Insert event
+          const { data: newEvent, error: eventError } = await supabaseClient
+            .from('calendar_events')
+            .insert(eventData)
+            .select()
+            .single();
+
+          if (eventError) {
+            console.error('Error creating event:', eventError);
+            continue;
+          }
+
+          createdEvents.push({ ...newEvent, eventInfo: evt });
+
+          // Add participants
+          if (participants.length > 0 && newEvent) {
+            const participantRecords = participants.map(p => ({
+              event_id: newEvent.id,
+              email: p.email,
+              name: p.name,
+              phone: p.phone,
+              role: p.role,
+              participant_type: p.participant_type,
+              response_status: 'pending'
+            }));
+
+            await supabaseClient.from('calendar_event_participants').insert(participantRecords);
+          }
+        }
+
+        // Send email invites if enabled
+        if (sendEmail && createdEvents.length > 0) {
+          await sendWorkflowInviteEmails(createdEvents, participants, homeownerName, address);
+        }
+
+        // Send SMS if enabled
+        if (sendSms && createdEvents.length > 0) {
+          await sendWorkflowSmsNotifications(createdEvents, participants);
+        }
+
+        showToast(`Created ${createdEvents.length} events and sent invitations!`, 'success');
+        closeWorkflowScheduleModal();
+
+        // Refresh calendar if visible
+        if (typeof loadCalendarEvents === 'function') {
+          loadCalendarEvents();
+        }
+
+      } catch (err) {
+        console.error('Workflow schedule error:', err);
+        showToast('Error creating events: ' + err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -3px; margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Schedule & Send Invites
+        `;
+      }
+    }
+
+    async function sendWorkflowInviteEmails(events, participants, customerName, address) {
+      try {
+        const API_BASE = window.API_BASE_URL || '';
+
+        // Format events for email
+        const eventsList = events.map(e => {
+          const date = new Date(e.start_time);
+          return {
+            type: e.eventInfo.label,
+            icon: e.eventInfo.icon,
+            date: date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+            time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            location: e.location || address
+          };
+        });
+
+        // Send to each participant
+        for (const participant of participants) {
+          if (!participant.email) continue;
+
+          const emailData = {
+            to: participant.email,
+            subject: `📅 Project Schedule - ${customerName}`,
+            customerName: participant.name || participant.email,
+            projectAddress: address,
+            events: eventsList,
+            role: participant.role
+          };
+
+          await fetch(`${API_BASE}/api/email/workflow-invite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailData)
+          });
+        }
+
+        console.log(`Sent workflow invite emails to ${participants.length} participants`);
+      } catch (err) {
+        console.error('Error sending workflow emails:', err);
+      }
+    }
+
+    async function sendWorkflowSmsNotifications(events, participants) {
+      try {
+        const API_BASE = window.API_BASE_URL || '';
+
+        for (const participant of participants) {
+          if (!participant.phone) continue;
+
+          const firstEvent = events[0];
+          const date = new Date(firstEvent.start_time);
+          const message = `📅 You've been scheduled for ${events.length} event(s) starting ${date.toLocaleDateString()}. Check your email for details.`;
+
+          await fetch(`${API_BASE}/api/sms/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: participant.phone,
+              message: message
+            })
+          });
+        }
+
+        console.log(`Sent SMS notifications to ${participants.filter(p => p.phone).length} participants`);
+      } catch (err) {
+        console.error('Error sending SMS:', err);
+      }
+    }
+
+    // Update the lead schedule button to use workflow modal
+    function scheduleWorkflowForLead() {
+      if (!selectedLead) {
+        showToast('No lead selected', 'warning');
+        return;
+      }
+      closeLeadModal();
+      openJobScheduler(selectedLead);
+    }
+
+    // =============================================
+    // PROFILE PANEL FUNCTIONS
+    // =============================================
+    let currentProfileData = null;
+    let currentProfileType = 'lead'; // 'lead', 'customer', 'contractor'
+
+    // Helper function to format address from JSON object or string
+    function formatAddressFromData(data) {
+      // Check for service_address first (for leads, this is the project location)
+      let addrObj = data.service_address || data.billing_address;
+
+      // If it's already a string, use it
+      if (typeof addrObj === 'string' && addrObj.trim()) {
+        return addrObj;
+      }
+
+      // If it's an object, format it
+      if (addrObj && typeof addrObj === 'object') {
+        const parts = [];
+        if (addrObj.street) parts.push(addrObj.street);
+        if (addrObj.street2) parts.push(addrObj.street2);
+        if (addrObj.city || addrObj.state || addrObj.zip) {
+          const cityStateZip = [
+            addrObj.city,
+            addrObj.state,
+            addrObj.zip
+          ].filter(Boolean).join(addrObj.city && addrObj.state ? ', ' : ' ');
+          if (cityStateZip) parts.push(cityStateZip);
+        }
+        if (parts.length > 0) return parts.join(', ');
+      }
+
+      // Fall back to other address fields
+      if (data.address && typeof data.address === 'string') return data.address;
+      if (data.project_address && typeof data.project_address === 'string') return data.project_address;
+
+      // Build from individual fields if available
+      if (data.street || data.city) {
+        const parts = [];
+        if (data.street) parts.push(data.street);
+        if (data.city) parts.push(data.city);
+        if (data.state) parts.push(data.state);
+        if (data.zip || data.zip_code) parts.push(data.zip || data.zip_code);
+        if (parts.length > 0) return parts.join(', ');
+      }
+
+      return '';
+    }
+
+    function openProfilePanel(data, type = 'lead') {
+      currentProfileData = data;
+      currentProfileType = type;
+
+      const name = data.full_name || data.name || data.homeowner_name || 'Unknown';
+      const email = data.email || data.homeowner_email || '';
+      const phone = data.phone || data.homeowner_phone || '';
+      const address = formatAddressFromData(data);
+      const status = data.status || 'new';
+
+      // Set header info
+      document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('profile-name').textContent = name;
+      document.getElementById('profile-email').innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        ${email || 'No email'}
+      `;
+      document.getElementById('profile-phone').innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        ${phone || 'No phone'}
+      `;
+
+      // Set status badge
+      const statusEl = document.getElementById('profile-status');
+      statusEl.className = 'profile-status-badge ' + status;
+      statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+
+      // Set detail fields
+      document.getElementById('profile-detail-email').textContent = email || '—';
+      document.getElementById('profile-detail-phone').textContent = phone || '—';
+      document.getElementById('profile-detail-address').textContent = address || '—';
+      document.getElementById('profile-detail-project-type').textContent = data.project_type || data.service_type || '—';
+      document.getElementById('profile-detail-budget').textContent = data.budget_range || data.budget || '—';
+      document.getElementById('profile-detail-timeline').textContent = data.timeline || data.preferred_timeline || '—';
+      document.getElementById('profile-detail-source').textContent = data.source || data.lead_source || '—';
+
+      // Load appointments, notes, etc.
+      loadProfileAppointments(data.id);
+      loadProfileNotes(data.id);
+      loadProfileActivity(data.id);
+
+      // Switch to overview tab
+      switchProfileTab('overview');
+
+      // Show panel
+      document.getElementById('profile-panel-overlay').classList.add('active');
+    }
+
+    function closeProfilePanel() {
+      document.getElementById('profile-panel-overlay').classList.remove('active');
+      currentProfileData = null;
+    }
+
+    function switchProfileTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+
+      // Show/hide content
+      document.querySelectorAll('.profile-tab-content').forEach(content => {
+        content.style.display = 'none';
+      });
+      const targetContent = document.getElementById(`profile-tab-${tabName}`);
+      if (targetContent) targetContent.style.display = 'block';
+    }
+
+    async function loadProfileAppointments(entityId) {
+      const container = document.getElementById('profile-appointments-list');
+      try {
+        const { data: events, error } = await supabaseClient
+          .from('calendar_events')
+          .select('*')
+          .eq('lead_id', entityId)
+          .order('start_time', { ascending: true });
+
+        if (error || !events || events.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <div>No appointments scheduled</div>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = events.map(evt => {
+          const date = new Date(evt.start_time);
+          const typeIcons = {
+            'template': '📐', 'measurement': '📐', 'fabrication': '⚙️',
+            'installation': '🔧', 'plumbing_disconnect': '🔌', 'appointment': '📅'
+          };
+          return `
+            <div class="phase-card" style="cursor: default;">
+              <div class="phase-header">
+                <div class="phase-icon">${typeIcons[evt.event_type] || '📅'}</div>
+                <div>
+                  <div class="phase-title">${escapeHtml(evt.title)}</div>
+                  <div class="phase-subtitle">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Error loading appointments:', err);
+      }
+    }
+
+    async function loadProfileNotes(entityId) {
+      const container = document.getElementById('profile-notes-list');
+      if (!currentProfileData) return;
+
+      // Check for notes in the lead data (stored as JSON array or string)
+      let notes = [];
+      try {
+        if (currentProfileData.notes_history) {
+          notes = typeof currentProfileData.notes_history === 'string'
+            ? JSON.parse(currentProfileData.notes_history)
+            : currentProfileData.notes_history;
+        }
+      } catch (e) {
+        console.warn('Error parsing notes:', e);
+      }
+
+      // Also check for legacy notes field (plain text)
+      const legacyNote = currentProfileData.notes || currentProfileData.message;
+
+      if (notes.length === 0 && !legacyNote) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <div>No notes yet</div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+
+      // Show structured notes first
+      if (Array.isArray(notes) && notes.length > 0) {
+        html += notes.map(note => `
+          <div class="note-card">
+            <div class="note-header">
+              <span class="note-author">${escapeHtml(note.author || 'Staff')}</span>
+              <span class="note-time">${note.created_at ? new Date(note.created_at).toLocaleString() : 'Unknown date'}</span>
+            </div>
+            <div class="note-content">${escapeHtml(note.text || note.content || '')}</div>
+          </div>
+        `).join('');
+      }
+
+      // Show legacy notes
+      if (legacyNote) {
+        html += `
+          <div class="note-card" style="background: var(--dark-elevated); border: 1px dashed var(--border-subtle);">
+            <div class="note-header">
+              <span class="note-author">Original Message</span>
+              <span class="note-time">${currentProfileData.created_at ? new Date(currentProfileData.created_at).toLocaleString() : ''}</span>
+            </div>
+            <div class="note-content">${escapeHtml(legacyNote)}</div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html || `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.5; margin-bottom: 12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <div>No notes yet</div>
+        </div>
+      `;
+    }
+
+    async function loadProfileActivity(entityId) {
+      const container = document.getElementById('profile-activity-list');
+      try {
+        const { data: activities, error } = await supabaseClient
+          .from('portal_activity')
+          .select('*')
+          .eq('lead_id', entityId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (error || !activities || activities.length === 0) {
+          return; // Keep placeholder
+        }
+
+        const activityIcons = {
+          'portal_viewed': '👁️', 'estimate_viewed': '📄', 'estimate_approved': '✅',
+          'message_sent': '💬', 'appointment_confirmed': '📅', 'payment_made': '💳'
+        };
+
+        container.innerHTML = activities.map(act => `
+          <div class="activity-item">
+            <div class="activity-icon">${activityIcons[act.action_type] || '📌'}</div>
+            <div class="activity-content">
+              <div class="activity-text">${escapeHtml(act.action_type.replace(/_/g, ' '))}</div>
+              <div class="activity-time">${new Date(act.created_at).toLocaleString()}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading activity:', err);
+      }
+    }
+
+    function addNewNote() {
+      document.getElementById('profile-notes-input').style.display = 'block';
+      document.getElementById('new-note-text').focus();
+    }
+
+    function cancelNewNote() {
+      document.getElementById('profile-notes-input').style.display = 'none';
+      document.getElementById('new-note-text').value = '';
+    }
+
+    async function saveNewNote() {
+      const text = document.getElementById('new-note-text').value.trim();
+      if (!text || !currentProfileData) {
+        showToast('No note text entered', 'warning');
+        return;
+      }
+
+      try {
+        // Get current user
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const authorName = user?.email || 'Staff';
+
+        // Get existing notes or create new array
+        let notesHistory = [];
+        try {
+          if (currentProfileData.notes_history) {
+            notesHistory = typeof currentProfileData.notes_history === 'string'
+              ? JSON.parse(currentProfileData.notes_history)
+              : currentProfileData.notes_history;
+          }
+        } catch (e) {
+          notesHistory = [];
+        }
+
+        // Add new note
+        const newNote = {
+          id: Date.now().toString(),
+          text: text,
+          author: authorName,
+          created_at: new Date().toISOString()
+        };
+        notesHistory.unshift(newNote);
+
+        // Determine table based on profile type
+        const table = currentProfileType === 'customer' ? 'customers' : 'leads';
+
+        // Save to database
+        const { error } = await supabaseClient
+          .from(table)
+          .update({ notes_history: notesHistory })
+          .eq('id', currentProfileData.id);
+
+        if (error) throw error;
+
+        // Update local data
+        currentProfileData.notes_history = notesHistory;
+
+        // Update allLeads array if it's a lead
+        if (currentProfileType === 'lead') {
+          const leadIndex = allLeads.findIndex(l => l.id === currentProfileData.id);
+          if (leadIndex !== -1) {
+            allLeads[leadIndex].notes_history = notesHistory;
+          }
+        }
+
+        showToast('Note saved', 'success');
+        cancelNewNote();
+
+        // Refresh notes display
+        loadProfileNotes(currentProfileData.id);
+
+      } catch (err) {
+        console.error('Error saving note:', err);
+        showToast('Error saving note: ' + err.message, 'error');
+      }
+    }
+
+    // File Upload functionality
+    function uploadAttachment() {
+      if (!currentProfileData) {
+        showToast('No profile selected', 'warning');
+        return;
+      }
+
+      // Create file input dynamically
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx';
+      fileInput.multiple = true;
+      fileInput.style.display = 'none';
+
+      fileInput.onchange = async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        showToast(`Uploading ${files.length} file(s)...`, 'info');
+
+        for (const file of files) {
+          try {
+            // Check file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+              showToast(`${file.name} is too large (max 10MB)`, 'error');
+              continue;
+            }
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const fileName = `${currentProfileType}_${currentProfileData.id}/${Date.now()}_${file.name}`;
+
+            // Upload to Supabase Storage
+            const { data, error } = await supabaseClient.storage
+              .from('attachments')
+              .upload(fileName, file);
+
+            if (error) throw error;
+
+            // Get public URL
+            const { data: urlData } = supabaseClient.storage
+              .from('attachments')
+              .getPublicUrl(fileName);
+
+            // Add to attachments display
+            addAttachmentToDisplay(file.name, urlData.publicUrl, file.type);
+
+            showToast(`${file.name} uploaded`, 'success');
+          } catch (err) {
+            console.error('Upload error:', err);
+            showToast(`Error uploading ${file.name}: ${err.message}`, 'error');
+          }
+        }
+      };
+
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      document.body.removeChild(fileInput);
+    }
+
+    function addAttachmentToDisplay(name, url, type) {
+      const container = document.getElementById('profile-attachments-list');
+      const icon = type.includes('image') ? '🖼️' : type.includes('pdf') ? '📄' : '📎';
+
+      const attachmentHtml = `
+        <div class="attachment-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px;">
+          <span style="font-size: 24px;">${icon}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Just now</div>
+          </div>
+          <a href="${url}" target="_blank" class="btn-modern ghost" style="padding: 6px 12px; font-size: 12px;">View</a>
+        </div>
+      `;
+
+      // Remove empty state if present
+      if (container.querySelector('svg')) {
+        container.innerHTML = attachmentHtml;
+      } else {
+        container.insertAdjacentHTML('afterbegin', attachmentHtml);
+      }
+    }
+
+    // Message composer
+    function composeMessage() {
+      if (!currentProfileData) {
+        showToast('No profile selected', 'warning');
+        return;
+      }
+
+      const email = currentProfileData.email || currentProfileData.homeowner_email;
+      if (!email) {
+        showToast('No email address available', 'warning');
+        return;
+      }
+
+      // Save profile data before closing
+      const data = currentProfileData;
+      closeProfilePanel();
+
+      // Open email modal for the lead
+      if (currentProfileType === 'lead') {
+        selectedLead = data;
+        openLeadEmailModal(data.id);
+      } else {
+        // For customers, use mailto as fallback
+        window.location.href = `mailto:${email}`;
+      }
+    }
+
+    function openJobSchedulerFromProfile() {
+      // Save data before closing (closeProfilePanel sets currentProfileData to null)
+      const data = currentProfileData;
+      closeProfilePanel();
+      if (data) {
+        openJobScheduler(data);
+      }
+    }
+
+    function createEstimateFromProfile() {
+      // Save data before closing
+      const data = currentProfileData;
+      closeProfilePanel();
+      if (data) {
+        // Navigate to estimates and create new
+        showPage('estimates');
+        setTimeout(() => {
+          if (typeof openNewEstimateModal === 'function') {
+            openNewEstimateModal(data);
+          }
+        }, 300);
+      }
+    }
+
+    function sendMessageFromProfile() {
+      composeMessage();
+    }
+
+    function openPortalFromProfile() {
+      if (currentProfileData && currentProfileData.portal_token) {
+        window.open(`/portal/?token=${currentProfileData.portal_token}`, '_blank');
+      } else {
+        showToast('No portal access configured', 'warning');
+      }
+    }
+
+    function editProfileRecord() {
+      // Save data before closing (closeProfilePanel sets currentProfileData to null)
+      const data = currentProfileData;
+      const type = currentProfileType;
+      closeProfilePanel();
+      if (type === 'lead' && data) {
+        selectedLead = data;
+        openLeadModal(data.id);
+      }
+    }
+
+    // =============================================
+    // JOB PHASE SCHEDULER FUNCTIONS
+    // =============================================
+    let schedulerData = null;
+    let jobPhases = [];
+    let schedulerContractors = [];
+
+    const DEFAULT_JOB_PHASES = [
+      { id: 'template', name: 'Template/Measure', icon: '📐', type: 'template', duration: 60, defaultTime: '09:00', daysBeforeInstall: null, enabled: true },
+      { id: 'demo', name: 'Demo/Tear-out', icon: '🔨', type: 'site_visit', duration: 120, defaultTime: '08:00', daysBeforeInstall: 1, enabled: false },
+      { id: 'plumbing_disconnect', name: 'Plumbing Disconnect', icon: '🔌', type: 'plumbing_disconnect', duration: 60, defaultTime: '07:30', daysBeforeInstall: 0, enabled: false },
+      { id: 'fabrication', name: 'Fabrication', icon: '⚙️', type: 'fabrication', duration: 480, defaultTime: '07:00', daysBeforeInstall: null, enabled: true, isShopWork: true },
+      { id: 'installation', name: 'Installation', icon: '🔧', type: 'installation', duration: 240, defaultTime: '08:00', daysBeforeInstall: 0, enabled: true, isAnchor: true },
+      { id: 'plumbing_reconnect', name: 'Plumbing Reconnect', icon: '🚿', type: 'plumbing_reconnect', duration: 60, defaultTime: '14:00', daysBeforeInstall: 0, enabled: false },
+      { id: 'sealer', name: 'Sealer Application', icon: '💧', type: 'sealer_application', duration: 60, defaultTime: '10:00', daysBeforeInstall: -1, enabled: false },
+      { id: 'walkthrough', name: 'Final Walk-through', icon: '✅', type: 'walk_through', duration: 30, defaultTime: '16:00', daysBeforeInstall: -1, enabled: false }
+    ];
+
+    function openJobScheduler(data) {
+      schedulerData = data;
+      jobPhases = JSON.parse(JSON.stringify(DEFAULT_JOB_PHASES));
+      schedulerContractors = [];
+
+      const name = data.full_name || data.name || data.homeowner_name || 'Customer';
+      const address = formatAddressFromData(data);
+      const phone = data.phone || data.homeowner_phone || '';
+
+      document.getElementById('scheduler-customer-name').textContent = name;
+      document.getElementById('scheduler-detail-name').textContent = name;
+      document.getElementById('scheduler-detail-address').textContent = address || '—';
+      document.getElementById('scheduler-detail-phone').textContent = phone || '—';
+
+      // Set default install date (7 days from now)
+      const installDate = new Date();
+      installDate.setDate(installDate.getDate() + 7);
+      document.getElementById('scheduler-install-date').value = installDate.toISOString().split('T')[0];
+
+      recalculatePhases();
+      renderJobPhases();
+      renderSchedulerTimeline();
+
+      document.getElementById('job-scheduler-panel').classList.add('active');
+    }
+
+    function closeJobScheduler() {
+      document.getElementById('job-scheduler-panel').classList.remove('active');
+      schedulerData = null;
+    }
+
+    function recalculatePhases() {
+      const installDateStr = document.getElementById('scheduler-install-date').value;
+      if (!installDateStr) return;
+
+      const installDate = new Date(installDateStr + 'T00:00:00');
+      const leadTimeFab = parseInt(document.getElementById('lead-time-fab').value) || 3;
+      const leadTimeTemplate = parseInt(document.getElementById('lead-time-template').value) || 5;
+
+      jobPhases.forEach(phase => {
+        if (phase.id === 'installation') {
+          phase.date = new Date(installDate);
+        } else if (phase.id === 'fabrication') {
+          phase.date = new Date(installDate);
+          phase.date.setDate(phase.date.getDate() - leadTimeFab);
+        } else if (phase.id === 'template') {
+          phase.date = new Date(installDate);
+          phase.date.setDate(phase.date.getDate() - leadTimeFab - leadTimeTemplate);
+        } else if (phase.id === 'demo') {
+          phase.date = new Date(installDate);
+          phase.date.setDate(phase.date.getDate() - 1);
+        } else if (phase.daysBeforeInstall !== null) {
+          phase.date = new Date(installDate);
+          phase.date.setDate(phase.date.getDate() - phase.daysBeforeInstall);
+        }
+      });
+
+      renderJobPhases();
+      renderSchedulerTimeline();
+    }
+
+    function renderJobPhases() {
+      const container = document.getElementById('job-phases-container');
+      container.innerHTML = jobPhases.map(phase => `
+        <div class="phase-card ${phase.enabled ? 'selected' : ''}" onclick="togglePhase('${phase.id}')">
+          <div class="phase-header">
+            <div class="phase-icon">${phase.icon}</div>
+            <div style="flex: 1;">
+              <div class="phase-title">${phase.name}</div>
+              <div class="phase-subtitle">${phase.isShopWork ? 'Shop work' : 'On-site'} • ${Math.floor(phase.duration / 60)}h ${phase.duration % 60}m</div>
+            </div>
+            <label style="display: flex; align-items: center;" onclick="event.stopPropagation()">
+              <input type="checkbox" ${phase.enabled ? 'checked' : ''} onchange="togglePhase('${phase.id}')" style="accent-color: var(--primary); width: 18px; height: 18px;">
+            </label>
+          </div>
+          ${phase.enabled ? `
+            <div class="phase-date-row">
+              <input type="date" value="${phase.date ? phase.date.toISOString().split('T')[0] : ''}"
+                onchange="updatePhaseDate('${phase.id}', this.value)"
+                onclick="event.stopPropagation()"
+                class="input-modern" style="flex: 1; font-size: 13px; padding: 8px;">
+              <input type="time" value="${phase.defaultTime}"
+                onchange="updatePhaseTime('${phase.id}', this.value)"
+                onclick="event.stopPropagation()"
+                class="input-modern" style="width: 100px; font-size: 13px; padding: 8px;">
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function togglePhase(phaseId) {
+      const phase = jobPhases.find(p => p.id === phaseId);
+      if (phase && !phase.isAnchor) {
+        phase.enabled = !phase.enabled;
+        if (phase.enabled) recalculatePhases();
+        renderJobPhases();
+        renderSchedulerTimeline();
+      }
+    }
+
+    function updatePhaseDate(phaseId, dateStr) {
+      const phase = jobPhases.find(p => p.id === phaseId);
+      if (phase) {
+        phase.date = new Date(dateStr + 'T00:00:00');
+        renderSchedulerTimeline();
+      }
+    }
+
+    function updatePhaseTime(phaseId, timeStr) {
+      const phase = jobPhases.find(p => p.id === phaseId);
+      if (phase) {
+        phase.defaultTime = timeStr;
+      }
+    }
+
+    function renderSchedulerTimeline() {
+      const container = document.getElementById('scheduler-timeline-preview');
+      const enabledPhases = jobPhases.filter(p => p.enabled && p.date).sort((a, b) => a.date - b.date);
+
+      if (enabledPhases.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Select phases to see timeline</div>';
+        return;
+      }
+
+      container.innerHTML = enabledPhases.map((phase, idx) => `
+        <div class="timeline-item">
+          <div class="timeline-dot ${phase.id === 'installation' ? 'completed' : ''}"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">${phase.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+            <div class="timeline-title">${phase.icon} ${phase.name}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetPhases() {
+      jobPhases = JSON.parse(JSON.stringify(DEFAULT_JOB_PHASES));
+      recalculatePhases();
+    }
+
+    async function saveJobPhases() {
+      const enabledPhases = jobPhases.filter(p => p.enabled && p.date);
+      if (enabledPhases.length === 0) {
+        showToast('Please enable at least one phase', 'warning');
+        return;
+      }
+
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        showToast('Not authenticated', 'error');
+        return;
+      }
+
+      const name = schedulerData.full_name || schedulerData.name || schedulerData.homeowner_name || 'Customer';
+      const email = schedulerData.email || schedulerData.homeowner_email || '';
+      const phone = schedulerData.phone || schedulerData.homeowner_phone || '';
+      const address = formatAddressFromData(schedulerData);
+
+      const createdEvents = [];
+
+      for (const phase of enabledPhases) {
+        const startTime = new Date(phase.date);
+        const [hours, mins] = phase.defaultTime.split(':');
+        startTime.setHours(parseInt(hours), parseInt(mins), 0, 0);
+
+        const endTime = new Date(startTime.getTime() + phase.duration * 60 * 1000);
+
+        const eventData = {
+          title: `${phase.name} - ${name}`,
+          event_type: phase.type,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          location: phase.isShopWork ? 'Shop' : address,
+          lead_id: schedulerData.id,
+          status: 'scheduled',
+          user_id: user.id,
+          metadata: {
+            contact_name: name,
+            contact_email: email,
+            contact_phone: phone,
+            phase_id: phase.id
+          }
+        };
+
+        const { data: newEvent, error } = await supabaseClient
+          .from('calendar_events')
+          .insert(eventData)
+          .select()
+          .single();
+
+        if (!error && newEvent) {
+          createdEvents.push({ ...newEvent, phaseInfo: phase });
+        }
+      }
+
+      // Send notifications
+      const notifyCustomer = document.getElementById('scheduler-notify-customer').checked;
+      const notifyContractors = document.getElementById('scheduler-notify-contractors').checked;
+
+      if (notifyCustomer && email) {
+        await sendWorkflowInviteEmails(createdEvents, [{ email, name, phone, role: 'customer' }], name, address);
+      }
+
+      showToast(`Created ${createdEvents.length} job phases!`, 'success');
+      closeJobScheduler();
+
+      // Refresh calendar if visible
+      if (typeof loadCalendarEvents === 'function') {
+        loadCalendarEvents();
+      }
+    }
+
+    function openContractorPicker() {
+      // TODO: Open contractor picker modal
+      showToast('Contractor picker coming soon', 'info');
+    }
+
+    function showAddPhaseOptions() {
+      // TODO: Show custom phase options
+      showToast('Custom phases coming soon', 'info');
+    }
+
+    // Connect lead row clicks to open profile panel
+    function openLeadProfile(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (lead) {
+        openProfilePanel(lead, 'lead');
+      }
     }
 
     function populateEventCustomerDropdown() {
@@ -36269,6 +38348,46 @@
       }
     }
 
+    // Load contractors from database
+    async function loadContractors() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+
+        // Load from contractors table
+        const { data: contractors, error } = await supabaseClient
+          .from('contractors')
+          .select('id, name, company_name, email, phone, specialty, status')
+          .order('name');
+
+        if (error) {
+          console.warn('Could not load contractors:', error.message);
+          // Try loading from sg_users with contractor account type as fallback
+          const { data: teamUsers, error: teamError } = await supabaseClient
+            .from('sg_users')
+            .select('id, full_name, email, phone, account_type')
+            .in('account_type', ['contractor', 'fabricator', 'installer', 'admin', 'staff']);
+
+          if (!teamError && teamUsers) {
+            allContractors = teamUsers.map(u => ({
+              id: u.id,
+              name: u.full_name || u.email,
+              email: u.email,
+              phone: u.phone,
+              specialty: u.account_type
+            }));
+          }
+        } else {
+          allContractors = contractors || [];
+        }
+
+        console.log('[Contractors] Loaded', allContractors.length, 'contractors');
+      } catch (err) {
+        console.error('Error loading contractors:', err);
+        allContractors = [];
+      }
+    }
+
     function populateEventContractorsDropdown() {
       const select = document.getElementById('cal-event-contractors');
       if (!select) return;
@@ -36279,15 +38398,6 @@
           const name = c.name || c.company_name || c.email || 'Unknown';
           const specialty = c.specialty ? ` (${c.specialty})` : '';
           select.innerHTML += `<option value="${c.id}" data-email="${c.email || ''}" data-phone="${c.phone || ''}" data-name="${escapeHtml(name)}">${escapeHtml(name)}${specialty}</option>`;
-        });
-      }
-      // Also add team members if available
-      if (allUsers && allUsers.length > 0) {
-        allUsers.forEach(u => {
-          if (u.account_type !== 'customer') {
-            const name = u.full_name || u.email || 'Team Member';
-            select.innerHTML += `<option value="user_${u.id}" data-email="${u.email || ''}" data-name="${escapeHtml(name)}">${escapeHtml(name)} (Team)</option>`;
-          }
         });
       }
     }

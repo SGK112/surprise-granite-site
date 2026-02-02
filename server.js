@@ -3,7 +3,9 @@ const nodemailer = require('nodemailer');
 const cors = require('cors');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+// Load environment variables - try root first, then api/.env
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, 'api', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

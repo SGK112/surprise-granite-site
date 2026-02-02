@@ -1410,6 +1410,37 @@
     .seam-suggestions, .seam-current { margin-top: 16px; }
     .seam-suggestions h4, .seam-current h4 { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; text-transform: uppercase; }
     .seam-suggestion, .seam-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--dark-elevated); border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+
+    /* Fabrication Plan Modal */
+    .fabrication-plan-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+    .fabrication-plan-content { background: var(--dark-surface); border: 1px solid var(--border); border-radius: 12px; max-width: 800px; width: 95%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+    .fabrication-plan-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .fabrication-plan-header h3 { margin: 0; font-size: 18px; }
+    .fabrication-plan-header button { width: 32px; height: 32px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
+    .fabrication-plan-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .fab-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+    .fab-stat { background: var(--dark-elevated); border-radius: 10px; padding: 16px 12px; text-align: center; }
+    .fab-value { font-size: 24px; font-weight: 700; color: var(--primary); display: block; }
+    .fab-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+    .fab-section { margin-bottom: 24px; }
+    .fab-section h4 { font-size: 14px; color: var(--text); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .fab-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .fab-table th, .fab-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .fab-table th { color: var(--text-muted); font-weight: 500; background: var(--dark-elevated); }
+    .fab-table td { color: var(--text); }
+    .fab-note { font-size: 11px; color: var(--text-muted); margin-top: 12px; text-align: center; font-style: italic; }
+    .slab-layouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .slab-preview { background: var(--dark-elevated); border-radius: 8px; padding: 12px; }
+    .slab-header { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .slab-diagram { background: #f5f5f5; border: 2px solid #999; border-radius: 4px; display: flex; flex-wrap: wrap; align-content: flex-start; min-height: 80px; }
+    .slab-piece { background: var(--primary); border: 1px solid rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #fff; }
+    .fabrication-plan-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; flex-shrink: 0; }
+    .fab-export-btn, .fab-copy-btn { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+    .fab-export-btn { background: var(--primary); color: var(--dark-deep); }
+    .fab-copy-btn { background: rgba(255,255,255,0.1); color: var(--text); }
+    .fab-export-btn:hover { opacity: 0.9; }
+    .fab-copy-btn:hover { background: rgba(255,255,255,0.15); }
+    @media (max-width: 600px) { .fab-summary { grid-template-columns: repeat(3, 1fr); } }
     .seam-suggestion button, .seam-item button { padding: 4px 10px; background: var(--primary); border: none; border-radius: 4px; color: var(--dark-deep); cursor: pointer; font-size: 11px; font-weight: 600; }
     .seam-item button { background: rgba(239,68,68,0.2); color: #ef4444; }
     .no-seams { font-size: 13px; color: var(--text-muted); font-style: italic; }
@@ -10229,6 +10260,47 @@
     }
 
     /* Quick Actions Footer */
+    .notification-prefs {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .notif-pref-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: #888;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .notif-pref-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #aaa;
+    }
+
+    .notif-pref-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .notif-pref-btn svg {
+      opacity: 0.7;
+    }
+
+    .notif-pref-btn.active svg {
+      opacity: 1;
+    }
+
     .notification-footer {
       padding: 10px 12px;
       border-top: 1px solid var(--border);
@@ -12201,6 +12273,23 @@
                 <div class="notification-empty-subtext">Messages from clients and team will appear here</div>
               </div>
             </div>
+            <div class="notification-prefs">
+              <button class="notif-pref-btn active" id="toggleSoundNotif" onclick="toggleNotificationPref('sound')" title="Sound notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+                Sound
+              </button>
+              <button class="notif-pref-btn" id="toggleDesktopNotif" onclick="toggleNotificationPref('desktop')" title="Desktop notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                Desktop
+              </button>
+            </div>
             <div class="notification-footer">
               <button class="view-all-btn" onclick="openFullInbox()">View Full Inbox</button>
             </div>
@@ -12786,6 +12875,19 @@
           </div>
         </div>
 
+        <!-- Electrical (collapsed by default) -->
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)" title="Electrical, lighting & HVAC">
+            <span class="sidebar-title">Electrical & HVAC</span>
+            <span class="sidebar-toggle">▶</span>
+          </div>
+          <div class="sidebar-content collapsed">
+            <div class="element-grid" id="electricalGrid">
+              <!-- Elements rendered by JS -->
+            </div>
+          </div>
+        </div>
+
         <!-- Materials Library -->
         <div class="sidebar-section">
           <div class="sidebar-header" onclick="toggleSection(this)" title="Apply materials">
@@ -13036,6 +13138,28 @@
                   <path d="M3 3v5h5"/>
                 </svg>
                 Reset
+              </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <!-- Fabrication Tools -->
+            <div class="toolbar-btn-group">
+              <button class="btn btn-sm btn-secondary" onclick="showFabricationPlan()" title="Generate fabrication plan for countertops (seams, cut list, slab layout)" style="color: #f59e0b;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="18" rx="2"/>
+                  <path d="M8 7h8M8 11h8M8 15h4"/>
+                  <line x1="16" y1="3" x2="16" y2="21" stroke-dasharray="3 2"/>
+                </svg>
+                Fab Plan
+              </button>
+              <button class="btn btn-sm btn-secondary" onclick="showSlabLayoutModal()" title="Interactive slab layout and optimization">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="20" rx="1"/>
+                  <rect x="4" y="4" width="7" height="5" rx="0.5"/>
+                  <rect x="13" y="4" width="7" height="8" rx="0.5"/>
+                  <rect x="4" y="11" width="7" height="9" rx="0.5"/>
+                  <rect x="13" y="14" width="7" height="6" rx="0.5"/>
+                </svg>
+                Slabs
               </button>
             </div>
           </div>
@@ -13501,10 +13625,13 @@
             <div class="input-group">
               <label class="input-label">Door Style</label>
               <select class="input-field" id="doorStyle" onchange="updateCabinetSettings()">
-                <option value="shaker">Shaker</option>
+                <option value="shaker">Shaker (Standard)</option>
+                <option value="thin-shaker">Thin Shaker (Slim Rail)</option>
                 <option value="shaker-beaded">Shaker Beaded</option>
-                <option value="flat">Flat Panel</option>
-                <option value="raised">Raised Panel</option>
+                <option value="raised">Raised Panel (Traditional)</option>
+                <option value="recessed">Recessed Panel</option>
+                <option value="mission">Mission/Craftsman</option>
+                <option value="flat">Flat Panel (Modern)</option>
                 <option value="slab">Slab (No Detail)</option>
               </select>
             </div>
@@ -13861,6 +13988,36 @@
               <span class="property-label">Depth (ft)</span>
               <input type="number" class="property-input" id="propCustomNicheDepth" step="0.0833" min="0.1" max="3" onchange="applyCustomNicheDepth()">
               <span class="dimension-display" id="propNicheDepthDisplay"></span>
+            </div>
+            <!-- Backsplash vertical height controls -->
+            <div class="property-row" id="backsplashHeightRow" style="display: none;">
+              <span class="property-label">Backsplash Height</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select class="property-select" id="propBacksplashHeight" onchange="updateBacksplashHeight()" style="flex: 1;">
+                  <option value="0.333">4" - Standard</option>
+                  <option value="0.5">6" - Raised</option>
+                  <option value="1">12" - Half Height</option>
+                  <option value="1.5">18" - Full (to Wall Cabs)</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+            </div>
+            <div class="property-row" id="customBacksplashHeightRow" style="display: none;">
+              <span class="property-label">Height (inches)</span>
+              <input type="number" class="property-input" id="propCustomBacksplashHeight" step="1" min="2" max="24" onchange="applyCustomBacksplashHeight()">
+              <span class="dimension-display" id="propBacksplashHeightDisplay"></span>
+            </div>
+            <!-- Tile type for backsplash -->
+            <div class="property-row" id="tileTypeRow" style="display: none;">
+              <span class="property-label">Tile Pattern</span>
+              <select class="property-select" id="propTileType" onchange="updateTileType()">
+                <option value="standard">Standard (4"×4")</option>
+                <option value="subway">Subway (3"×6")</option>
+                <option value="mosaic">Mosaic (1"×1")</option>
+                <option value="herringbone">Herringbone</option>
+                <option value="chevron">Chevron</option>
+                <option value="hexagon">Hexagon</option>
+              </select>
             </div>
             <!-- Stone surface thickness controls -->
             <div class="property-row" id="stoneThicknessRow" style="display: none;">
@@ -14548,6 +14705,18 @@
       </svg>
       <span id="lockText">Lock</span>
     </div>
+    <div class="context-menu-item" id="groupAdjacentMenuItem" onclick="contextAction('groupAdjacent')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 17h8M18 14v6"/>
+      </svg>
+      Group Adjacent Cabinets
+    </div>
+    <div class="context-menu-item" id="ungroupMenuItem" onclick="contextAction('ungroupCabinets')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14l8 8M22 14l-8 8"/>
+      </svg>
+      Ungroup Cabinets
+    </div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item" onclick="contextAction('front')">Bring to Front</div>
     <div class="context-menu-item" onclick="contextAction('back')">Send to Back</div>
@@ -15073,7 +15242,7 @@
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>N</kbd><span>New Design</span></div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Z</kbd><span>Undo</span></div>
               <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>Y</kbd><span>Redo</span></div>
-              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>D</kbd><span>Duplicate</span></div>
+              <div class="shortcut-item"><kbd>D</kbd><span>Duplicate Element</span></div>
               <div class="shortcut-item"><kbd>Delete</kbd><span>Delete Selected</span></div>
               <div class="shortcut-item"><kbd>Esc</kbd><span>Deselect / Cancel</span></div>
             </div>
@@ -15097,11 +15266,12 @@
             <h4 style="color: var(--gold); margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Elements</h4>
             <div class="shortcut-list">
               <div class="shortcut-item"><kbd>R</kbd><span>Rotate 90°</span></div>
-              <div class="shortcut-item"><kbd>Shift</kbd>+<kbd>R</kbd><span>Rotate -90°</span></div>
-              <div class="shortcut-item"><kbd>↑↓←→</kbd><span>Nudge Element</span></div>
+              <div class="shortcut-item"><kbd>X</kbd><span>Flip/Swap Dimensions</span></div>
+              <div class="shortcut-item"><kbd>↑↓←→</kbd><span>Nudge (3")</span></div>
+              <div class="shortcut-item"><kbd>Shift</kbd>+<kbd>↑↓←→</kbd><span>Fine Nudge (1")</span></div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd>+<kbd>↑↓←→</kbd><span>Big Nudge (1')</span></div>
               <div class="shortcut-item"><kbd>Shift</kbd>+<kbd>Drag</kbd><span>Free Place (no snap)</span></div>
-              <div class="shortcut-item"><kbd>[</kbd><span>Send Backward</span></div>
-              <div class="shortcut-item"><kbd>]</kbd><span>Bring Forward</span></div>
+              <div class="shortcut-item"><kbd>T</kbd><span>Cycle Panel Tabs</span></div>
             </div>
           </div>
         </div>
@@ -17160,6 +17330,9 @@
 
     // ===== BUILDING STANDARDS =====
     const BUILDING_STANDARDS = {
+      // ===== NKBA (National Kitchen & Bath Association) + IRC/IBC Building Codes =====
+      // All measurements in feet unless otherwise noted
+
       // Standard element dimensions (in feet)
       DOORS: {
         interior: { width: 2.667, height: 6.667, label: "2'-8\" × 6'-8\"" },    // 32" × 80"
@@ -17177,8 +17350,39 @@
         large: { width: 4, height: 5, label: "4'-0\" × 5'-0\"" },               // 48" × 60"
         picture: { width: 6, height: 4, label: "6'-0\" × 4'-0\"" }              // 72" × 48"
       },
+
+      // ===== CABINET DIMENSIONS (NKBA Standards) =====
       CABINETS: {
-        // Base cabinets (height is depth in floor plan)
+        // Base cabinet specifications
+        BASE: {
+          height: 2.875,        // 34.5" cabinet height (without countertop)
+          depth: 2,             // 24" standard depth
+          toeKickHeight: 0.375, // 4.5" toe kick height
+          toeKickDepth: 0.25,   // 3" toe kick recess
+          standardWidths: [0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4] // 9"-48" in 3" increments
+        },
+        // Wall cabinet specifications
+        WALL: {
+          depth: 1,             // 12" standard depth (shallower than base)
+          heights: {
+            short: 2.5,         // 30" height
+            standard: 3,        // 36" height
+            tall: 3.5           // 42" height
+          },
+          bottomFromFloor: 4.5, // 54" from floor to bottom edge (NKBA standard)
+          standardWidths: [0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3] // 9"-36" standard widths
+        },
+        // Tall/Pantry cabinet specifications
+        TALL: {
+          depth: 2,             // 24" standard depth (matches base)
+          heights: {
+            standard: 7,        // 84" height
+            tall: 8,            // 96" height
+            extraTall: 8.5      // 102" height (for high ceilings)
+          },
+          standardWidths: [1.5, 2, 2.5, 3] // 18"-36" widths
+        },
+        // Legacy format for compatibility
         base12: { width: 1, depth: 2, label: "12\" wide" },
         base15: { width: 1.25, depth: 2, label: "15\" wide" },
         base18: { width: 1.5, depth: 2, label: "18\" wide" },
@@ -17201,40 +17405,160 @@
         tall24: { width: 2, depth: 2, label: "24\" wide pantry" },
         tall36: { width: 3, depth: 2, label: "36\" wide pantry" }
       },
+
+      // ===== COUNTERTOP SPECIFICATIONS =====
       COUNTERTOPS: {
-        standardDepth: 2.083,  // 25" including overhang
-        barHeight: 3.5,       // 42" bar height
-        islandMinWidth: 2,    // 24" minimum
-        islandMinDepth: 4     // 48" minimum for seating
+        standardDepth: 2.083,   // 25" including 1" overhang
+        thickness: 0.125,       // 1.5" (standard 3cm stone)
+        thinThickness: 0.0833,  // 1" (2cm stone)
+        overhang: {
+          front: 0.0833,        // 1" front overhang
+          side: 0.0833,         // 1" side overhang
+          barSeating: 1         // 12" overhang for bar seating
+        },
+        barHeight: 3.5,         // 42" bar height
+        islandMinWidth: 2,      // 24" minimum island width
+        islandMinDepth: 4       // 48" minimum for seating on one side
       },
-      // Clearance requirements (in feet)
+
+      // ===== BACKSPLASH SPECIFICATIONS =====
+      BACKSPLASH: {
+        standard: 0.333,        // 4" standard backsplash
+        full: 1.5,              // 18" full height (to wall cabinet)
+        custom: {
+          min: 0.333,           // 4" minimum
+          max: 1.5              // 18" maximum (to wall cabinet bottom)
+        }
+      },
+
+      // ===== CLEARANCE REQUIREMENTS (NKBA Guidelines) =====
       CLEARANCES: {
-        walkway: 3,           // 36" minimum walkway
-        twoCoook: 4,          // 48" for two cooks
-        applianceOpen: 3.5,   // 42" in front of open appliance
-        islandWalkway: 3.5,   // 42" around island
-        adaTurning: 5,        // 60" ADA turning radius
-        doorSwing: 1.5,       // 18" beside door latch
-        doorFront: 5          // 60" in front of door
+        // Kitchen walkways
+        walkway: 3,             // 36" minimum walkway (one cook)
+        twoCook: 4,             // 48" for two cooks (NKBA 8)
+        applianceOpen: 3.5,     // 42" in front of open appliance
+        islandWalkway: 3.5,     // 42" around island minimum
+
+        // Work centers
+        sinkCenter: 2,          // 24" on each side of sink center
+        cooktopCenter: 1.25,    // 15" on one side, 12" on other (min)
+        cooktopSideMin: 1,      // 12" minimum on any side
+        cooktopSidePref: 1.5,   // 18" preferred on landing side
+        refrigerator: 1.25,     // 15" landing space at handle side
+
+        // ADA Requirements
+        adaTurning: 5,          // 60" turning radius
+        adaWheelchair: 5,       // 60" T-turn space
+        adaKneeClearance: 2.25, // 27" knee clearance under counter
+        adaApproach: 4,         // 48" clear floor space
+
+        // Door clearances
+        doorSwing: 1.5,         // 18" beside door latch
+        doorFront: 5,           // 60" in front of door
+
+        // Appliance-specific
+        dishwasherOpen: 3,      // 36" in front of open dishwasher
+        ovenDoor: 3,            // 36" in front of open oven
+        refrigeratorDoor: 4     // 48" for full door swing
       },
-      // Work triangle limits (in feet)
+
+      // ===== WORK TRIANGLE (NKBA Guidelines 1-6) =====
       WORK_TRIANGLE: {
-        legMin: 4,            // Minimum leg length
-        legMax: 9,            // Maximum leg length
-        perimeterMin: 13,     // Minimum total perimeter
-        perimeterMax: 26      // Maximum total perimeter
+        legMin: 4,              // 4' minimum leg length
+        legMax: 9,              // 9' maximum leg length
+        perimeterMin: 13,       // 13' minimum total perimeter
+        perimeterMax: 26,       // 26' maximum total perimeter
+        noObstruction: true,    // No obstructions crossing triangle
+        islandIntersect: 1      // Island should not intersect by more than 12"
       },
-      // Standard heights (for 3D and reference)
+
+      // ===== VERTICAL HEIGHTS (Floor to Element) =====
       HEIGHTS: {
-        ceiling: 8,           // 8' standard ceiling
-        ceilingTall: 9,       // 9' ceiling
-        ceilingLuxury: 10,    // 10' ceiling
-        baseCounter: 3,       // 36" counter height
-        barCounter: 3.5,      // 42" bar height
-        wallCabBottom: 4.5,   // 54" to bottom of wall cabinet
-        wallCabTop: 7,        // 84" to top of wall cabinet
-        rangeHood: 5.5,       // 66" to bottom of hood
-        windowSill: 3         // 36" typical window sill
+        // Ceiling heights
+        ceiling: 8,             // 8' standard ceiling
+        ceilingTall: 9,         // 9' ceiling
+        ceilingLuxury: 10,      // 10' ceiling
+        ceilingMinimum: 7,      // 7' minimum ceiling (IRC R305.1)
+
+        // Counter heights
+        baseCounter: 3,         // 36" standard counter height
+        baseCabinet: 2.875,     // 34.5" cabinet height (without counter)
+        barCounter: 3.5,        // 42" bar height
+        adaCounter: 2.833,      // 34" max ADA counter height
+
+        // Wall cabinet positioning
+        wallCabBottom: 4.5,     // 54" to bottom of wall cabinet (NKBA)
+        wallCabTop: 7,          // 84" to top of 30" wall cabinet
+        wallCabBottomMin: 4.25, // 51" minimum (15" above counter)
+        wallCabBottomMax: 4.75, // 57" maximum practical reach
+
+        // Appliance heights
+        rangeHood: 5.5,         // 66" to bottom of range hood (24-30" above cooktop)
+        rangeHoodMin: 5,        // 60" minimum (electric: 24" above)
+        rangeHoodGas: 5.5,      // 66" for gas (30" above burners)
+        microwave: 4.5,         // 54" to bottom (matches wall cab)
+        microwaveMax: 4.5,      // 54" max bottom height (NKBA 13)
+
+        // Window and door
+        windowSill: 3,          // 36" typical window sill
+        windowSillMin: 2,       // 24" minimum above counter
+        doorHeader: 6.8         // 82" door header height
+      },
+
+      // ===== APPLIANCE CLEARANCES (Manufacturer + Code) =====
+      APPLIANCES: {
+        // Range/Cooktop
+        rangeHoodClearance: {
+          electric: 2,          // 24" above electric cooktop
+          gas: 2.5              // 30" above gas cooktop
+        },
+        cooktopToWindow: 0.25,  // 3" min to operable window (fire code)
+        cooktopToWall: 0,       // Can be against wall with proper protection
+
+        // Refrigerator
+        fridgeVentilation: 0.083, // 1" sides, 1" top for ventilation
+        fridgeDepth: 2.5,       // 30" typical counter-depth
+        fridgeDepthStandard: 3, // 36" standard depth
+
+        // Dishwasher
+        dishwasherWidth: 2,     // 24" standard width
+        dishwasherToCorner: 1.5, // 18" from corner for door swing
+
+        // Microwave (OTR)
+        microwaveDepth: 1.25,   // 15" typical depth
+        microwaveHeight: 1.375  // 16.5" typical height
+      },
+
+      // ===== ELECTRICAL (NEC Requirements) =====
+      ELECTRICAL: {
+        outletSpacing: 4,       // 48" max between outlets (NEC 210.52)
+        counterOutlet: 2,       // Outlet within 24" of counter end
+        gfciRequired: true,     // GFCI required within 6' of water
+        islandOutlet: true,     // Island requires outlet if > 24"x12"
+        peninsulaOutlet: true   // Peninsula requires outlet if > 24"x12"
+      },
+
+      // ===== VENTILATION (IMC/IRC Requirements) =====
+      VENTILATION: {
+        rangeHoodCFM: {
+          min: 100,             // 100 CFM minimum
+          perLinealFoot: 100,   // 100 CFM per lineal foot of range
+          recommended: 400      // 400 CFM typical for 30" range
+        },
+        makeupAir: 400,         // Makeup air required above 400 CFM
+        ductSize: {
+          round6: 225,          // 6" round = 225 CFM max
+          round8: 400,          // 8" round = 400 CFM max
+          rectangular: true     // 3.25"x10" = 6" round equivalent
+        }
+      },
+
+      // ===== PLUMBING CENTERLINES =====
+      PLUMBING: {
+        sinkCenter: 1.75,       // 21" from back wall to sink center
+        faucetSetback: 0.333,   // 4" from sink edge to faucet
+        dishwasherToSink: 3,    // 36" max drain run to sink
+        islandVenting: true     // Island sinks need AAV or loop vent
       }
     };
 
@@ -17280,8 +17604,40 @@
     function canApplyMaterialToElement(category, element, showWarning = true) {
       if (!category) return true; // No category restriction
 
-      const normalizedCategory = category.toLowerCase().trim();
-      const allowedTypes = MATERIAL_TYPE_MAP[normalizedCategory];
+      let normalizedCategory = category.toLowerCase().trim();
+
+      // Extract base material type from compound names like "Granite Slab", "Quartz Countertop", etc.
+      const materialKeywords = ['granite', 'quartz', 'quartzite', 'marble', 'dekton', 'neolith', 'porcelain',
+                                'soapstone', 'onyx', 'travertine', 'limestone', 'sintered', 'stone',
+                                'tile', 'flooring', 'cabinet', 'cabinets'];
+      for (const keyword of materialKeywords) {
+        if (normalizedCategory.includes(keyword)) {
+          normalizedCategory = keyword;
+          break;
+        }
+      }
+
+      let allowedTypes = MATERIAL_TYPE_MAP[normalizedCategory];
+
+      // If no match found, try common aliases
+      if (!allowedTypes) {
+        const aliases = {
+          'natural stone': 'stone',
+          'engineered stone': 'quartz',
+          'solid surface': 'stone',
+          'ultra compact': 'dekton',
+          'ceramic': 'tile',
+          'mosaic': 'tile',
+          'subway': 'tile',
+          'backsplash tile': 'tile',
+          'wall tile': 'tile',
+          'floor tile': 'tile'
+        };
+        const aliasMatch = Object.keys(aliases).find(k => normalizedCategory.includes(k));
+        if (aliasMatch) {
+          allowedTypes = MATERIAL_TYPE_MAP[aliases[aliasMatch]];
+        }
+      }
 
       // No restriction for this category
       if (!allowedTypes) return true;
@@ -19097,6 +19453,558 @@
       return issues;
     }
 
+    // Validate ADA bathroom requirements
+    function validateADABathroom() {
+      const issues = [];
+
+      // ADA Standards
+      const ADA = {
+        toiletClearWidth: 5,          // 60" clear floor space width for wheelchair
+        toiletClearDepth: 4.75,       // 57" clear floor space depth
+        toiletCenterFromWall: 1.5,    // 18" from side wall to toilet centerline
+        grabBarLength: 3.5,           // 42" minimum grab bar length
+        showerMinSize: 3,             // 36"x36" minimum roll-in shower
+        turningRadius: 5,             // 60" diameter turning space
+        vanityKneeSpace: 2.25,        // 27" minimum knee clearance height
+        vanityKneeDepth: 2,           // 25" knee clearance depth
+        mirrorMaxHeight: 3.33,        // 40" maximum mirror bottom height
+        doorMinWidth: 2.67            // 32" minimum clear door opening
+      };
+
+      // Find bathroom elements
+      const toilets = elements.filter(el =>
+        ['toilet', 'toilet-round', 'toilet-wall', 'bidet'].includes(el.type)
+      );
+      const showers = elements.filter(el =>
+        el.type?.startsWith('shower') || el.type === 'bathtub-walk-in'
+      );
+      const vanities = elements.filter(el =>
+        el.type?.startsWith('vanity-')
+      );
+      const grabBars = elements.filter(el =>
+        el.type?.startsWith('grab-bar')
+      );
+      const doors = elements.filter(el =>
+        ['door', 'double-door'].includes(el.type)
+      );
+
+      // Check toilet clearances
+      toilets.forEach(toilet => {
+        const toiletX = toilet.x / pixelsPerFoot;
+        const toiletY = toilet.y / pixelsPerFoot;
+        const toiletW = toilet.width;
+
+        // Check for grab bars near toilet
+        const nearbyGrabBars = grabBars.filter(bar => {
+          const barX = bar.x / pixelsPerFoot;
+          const barY = bar.y / pixelsPerFoot;
+          const dist = Math.sqrt(Math.pow(barX - toiletX, 2) + Math.pow(barY - toiletY, 2));
+          return dist < 3; // Within 3 feet
+        });
+
+        if (nearbyGrabBars.length === 0) {
+          issues.push({
+            type: 'warning',
+            message: `ADA: No grab bars near "${toilet.label}" - recommend 42" side bar and 36" rear bar`,
+            elements: [toilet]
+          });
+        }
+
+        // Check distance from side wall (should be 18" to centerline)
+        if (toiletX < ADA.toiletCenterFromWall - 0.5) {
+          issues.push({
+            type: 'info',
+            message: `ADA: "${toilet.label}" is ${formatDimension(toiletX)} from wall (ADA requires 18" min to centerline)`,
+            elements: [toilet]
+          });
+        }
+      });
+
+      // Check shower size for roll-in accessibility
+      showers.forEach(shower => {
+        const showerW = shower.width;
+        const showerD = shower.height;
+
+        if (showerW < ADA.showerMinSize || showerD < ADA.showerMinSize) {
+          issues.push({
+            type: 'info',
+            message: `ADA: "${shower.label}" is ${formatDimension(showerW)}x${formatDimension(showerD)} (ADA roll-in min: 36"x36")`,
+            elements: [shower]
+          });
+        }
+
+        // Check for shower bench
+        const nearbyBenches = elements.filter(el =>
+          el.type === 'shower-bench' &&
+          Math.abs(el.x / pixelsPerFoot - shower.x / pixelsPerFoot) < shower.width + 1
+        );
+
+        if (nearbyBenches.length === 0 && (showerW >= ADA.showerMinSize || showerD >= ADA.showerMinSize)) {
+          issues.push({
+            type: 'info',
+            message: `ADA: Consider adding shower bench to "${shower.label}" for accessibility`,
+            elements: [shower]
+          });
+        }
+      });
+
+      // Check door width for wheelchair access
+      doors.forEach(door => {
+        if (door.width < ADA.doorMinWidth) {
+          issues.push({
+            type: 'warning',
+            message: `ADA: "${door.label}" width ${formatDimension(door.width)} (min 32" clear opening required)`,
+            elements: [door]
+          });
+        }
+      });
+
+      // Check for 60" turning radius
+      // Simplified: check if room has enough open floor space
+      const totalFloorArea = roomWidth * roomDepth;
+      const usedArea = elements.reduce((sum, el) => sum + (el.width * el.height), 0);
+      const openArea = totalFloorArea - usedArea;
+
+      if (openArea < ADA.turningRadius * ADA.turningRadius) {
+        issues.push({
+          type: 'info',
+          message: `ADA: Limited open floor space - ensure 60" turning radius available`,
+          elements: []
+        });
+      }
+
+      return issues;
+    }
+
+    // Validate wall cabinet placement per NKBA standards
+    function validateWallCabinetPlacement() {
+      const issues = [];
+      // Find all wall cabinets including sized variants (wall-cabinet-12, wall-cabinet-18, etc.)
+      const wallCabinets = elements.filter(el =>
+        el.type === 'wall-cabinet' || (el.type && el.type.startsWith('wall-cabinet-'))
+      );
+      // Find all base cabinets including sized variants
+      const baseCabinets = elements.filter(el =>
+        ['base-cabinet', 'drawer-base', 'sink-base'].includes(el.type) ||
+        (el.type && (el.type.startsWith('base-cabinet-') || el.type.startsWith('drawer-base-') || el.type.startsWith('sink-base-')))
+      );
+      const countertops = elements.filter(el =>
+        ['countertop', 'countertop-l', 'countertop-corner', 'countertop-u'].includes(el.type)
+      );
+      const backsplashes = elements.filter(el => el.type === 'backsplash');
+
+      // NKBA Standards for wall cabinet placement
+      const minClearanceAboveCounter = 1.25;  // 15" minimum clearance
+      const standardClearance = 1.5;          // 18" standard clearance
+      const maxClearance = 1.75;              // 21" maximum for accessibility
+      const standardWallCabBottom = BUILDING_STANDARDS.HEIGHTS?.wallCabBottom || 4.5; // 54" from floor
+      const standardCounterHeight = BUILDING_STANDARDS.HEIGHTS?.baseCounter || 3; // 36" counter
+
+      wallCabinets.forEach(wallCab => {
+        const wcLeft = wallCab.x / pixelsPerFoot;
+        const wcRight = wcLeft + wallCab.width;
+
+        // Check for base cabinet alignment below
+        let hasBaseCabinetBelow = false;
+        let baseDepthMismatch = false;
+
+        baseCabinets.forEach(baseCab => {
+          const bcLeft = baseCab.x / pixelsPerFoot;
+          const bcRight = bcLeft + baseCab.width;
+
+          // Check for horizontal overlap
+          const overlapX = Math.max(0, Math.min(wcRight, bcRight) - Math.max(wcLeft, bcLeft));
+          if (overlapX > 0.5) {
+            hasBaseCabinetBelow = true;
+
+            // Check if wall cabinet width matches base cabinet width (alignment)
+            const widthDiff = Math.abs(wallCab.width - baseCab.width);
+            if (widthDiff > 0.1) {
+              issues.push({
+                type: 'info',
+                message: `Wall cabinet "${wallCab.label}" width (${formatDimension(wallCab.width)}) differs from base cabinet (${formatDimension(baseCab.width)})`,
+                elements: [wallCab, baseCab]
+              });
+            }
+
+            // Check depth alignment - wall cabinet should be aligned at wall, not front
+            const baseCabDepth = baseCab.height; // 2D height = 3D depth
+            const wallCabDepth = wallCab.height;
+            const baseBack = baseCab.y / pixelsPerFoot;
+            const wallBack = wallCab.y / pixelsPerFoot;
+
+            // Wall cabinet back should align with base cabinet back (both against wall)
+            if (Math.abs(baseBack - wallBack) > 0.5) {
+              baseDepthMismatch = true;
+              issues.push({
+                type: 'warning',
+                message: `Wall cabinet "${wallCab.label}" not aligned at wall with base cabinet below`,
+                elements: [wallCab, baseCab]
+              });
+            }
+          }
+        });
+
+        // Check for countertop/backsplash clearance
+        let hasBacksplashBelow = false;
+        backsplashes.forEach(bs => {
+          const bsLeft = bs.x / pixelsPerFoot;
+          const bsRight = bsLeft + bs.width;
+          const overlapX = Math.max(0, Math.min(wcRight, bsRight) - Math.max(wcLeft, bsLeft));
+          if (overlapX > 0.5) {
+            hasBacksplashBelow = true;
+            const bsHeight = bs.verticalHeight || bs.wallHeight || 1.5;
+            // Wall cabinet should sit just above backsplash
+            // This is handled in get3DYPosition, but we can validate the design intent
+            if (bsHeight > standardClearance) {
+              issues.push({
+                type: 'info',
+                message: `Full-height backsplash (${formatDimension(bsHeight)}) under "${wallCab.label}" - cabinet will sit above it`,
+                elements: [wallCab, bs]
+              });
+            }
+          }
+        });
+
+        // Check countertop clearance
+        countertops.forEach(counter => {
+          const ctLeft = counter.x / pixelsPerFoot;
+          const ctRight = ctLeft + counter.width;
+          const overlapX = Math.max(0, Math.min(wcRight, ctRight) - Math.max(wcLeft, ctLeft));
+          if (overlapX > 0.5 && !hasBacksplashBelow) {
+            // Standard clearance check (only if no backsplash)
+            issues.push({
+              type: 'info',
+              message: `Wall cabinet "${wallCab.label}" positioned 18" above countertop (standard clearance)`,
+              elements: [wallCab, counter]
+            });
+          }
+        });
+
+        // Warn if wall cabinet has no base cabinet below (floating)
+        if (!hasBaseCabinetBelow && !hasBacksplashBelow) {
+          issues.push({
+            type: 'info',
+            message: `Wall cabinet "${wallCab.label}" has no base cabinet directly below`,
+            elements: [wallCab]
+          });
+        }
+
+        // Check wall cabinet height options (30", 36", 42" standard)
+        const wallCabHeight = get3DHeight(wallCab);
+        const standardHeights = [2.5, 3, 3.5]; // 30", 36", 42" in feet
+        const isStandardHeight = standardHeights.some(h => Math.abs(wallCabHeight - h) < 0.1);
+        if (!isStandardHeight && wallCabHeight > 0) {
+          issues.push({
+            type: 'info',
+            message: `Wall cabinet "${wallCab.label}" height (${formatDimension(wallCabHeight)}) is non-standard (standard: 30", 36", 42")`,
+            elements: [wallCab]
+          });
+        }
+      });
+
+      return issues;
+    }
+
+    // Validate appliance landing space requirements per NKBA
+    function validateLandingSpaces() {
+      const issues = [];
+
+      // NKBA Landing Space Requirements:
+      // - Cooktop/Range: 15" (1.25') on each side, 12" (1') min on one side
+      // - Sink: 24" (2') on one side, 18" (1.5') on other side
+      // - Refrigerator: 15" (1.25') on handle side
+      // - Microwave: 15" (1.25') above or beside
+      // - Dishwasher: counter landing within 24" (2') of dishwasher
+
+      const countertops = elements.filter(el =>
+        ['countertop', 'countertop-l', 'countertop-corner', 'countertop-u'].includes(el.type)
+      );
+
+      // Helper: Check if there's counter space adjacent to an appliance
+      function getAdjacentCounterSpace(appliance, side) {
+        const appLeft = appliance.x / pixelsPerFoot;
+        const appRight = appLeft + appliance.width;
+        const appTop = appliance.y / pixelsPerFoot;
+        const appBottom = appTop + appliance.height;
+
+        let maxSpace = 0;
+
+        countertops.forEach(counter => {
+          const cLeft = counter.x / pixelsPerFoot;
+          const cRight = cLeft + counter.width;
+          const cTop = counter.y / pixelsPerFoot;
+          const cBottom = cTop + counter.height;
+
+          // Check vertical alignment (countertops should be adjacent in Y)
+          const verticalOverlap = Math.max(0, Math.min(appBottom, cBottom) - Math.max(appTop, cTop));
+          if (verticalOverlap < 0.5) return; // Not aligned vertically
+
+          if (side === 'left') {
+            // Counter to the left of appliance
+            if (cRight >= appLeft - 0.1 && cRight <= appLeft + 0.5) {
+              maxSpace = Math.max(maxSpace, counter.width);
+            }
+          } else if (side === 'right') {
+            // Counter to the right of appliance
+            if (cLeft <= appRight + 0.1 && cLeft >= appRight - 0.5) {
+              maxSpace = Math.max(maxSpace, counter.width);
+            }
+          } else if (side === 'any') {
+            // Counter on either side
+            if (cRight >= appLeft - 0.1 && cRight <= appLeft + 0.5) {
+              maxSpace = Math.max(maxSpace, counter.width);
+            }
+            if (cLeft <= appRight + 0.1 && cLeft >= appRight - 0.5) {
+              maxSpace = Math.max(maxSpace, counter.width);
+            }
+          }
+        });
+
+        return maxSpace;
+      }
+
+      // Check cooktops and ranges
+      const cookingAppliances = elements.filter(el =>
+        ['cooktop', 'range', 'stove', 'slide-in-range', 'grill-builtin', 'grill-42'].includes(el.type)
+      );
+
+      cookingAppliances.forEach(appliance => {
+        const leftSpace = getAdjacentCounterSpace(appliance, 'left');
+        const rightSpace = getAdjacentCounterSpace(appliance, 'right');
+
+        const minOneSide = 1;     // 12" minimum one side
+        const preferredSide = 1.25; // 15" preferred each side
+
+        if (leftSpace < minOneSide && rightSpace < minOneSide) {
+          issues.push({
+            type: 'error',
+            message: `${appliance.label || appliance.type}: No landing space (min 12" required on at least one side)`,
+            elements: [appliance]
+          });
+        } else if (leftSpace < preferredSide || rightSpace < preferredSide) {
+          const lesserSide = Math.min(leftSpace, rightSpace);
+          if (lesserSide < minOneSide) {
+            issues.push({
+              type: 'warning',
+              message: `${appliance.label || appliance.type}: Only ${formatDimension(Math.max(leftSpace, rightSpace))} landing (15" each side recommended)`,
+              elements: [appliance]
+            });
+          }
+        }
+      });
+
+      // Check sinks
+      const sinks = elements.filter(el =>
+        ['sink', 'sink-double', 'sink-farmhouse'].includes(el.type)
+      );
+
+      sinks.forEach(sink => {
+        const leftSpace = getAdjacentCounterSpace(sink, 'left');
+        const rightSpace = getAdjacentCounterSpace(sink, 'right');
+
+        const preferredOneSide = 2;   // 24" on one side
+        const preferredOtherSide = 1.5; // 18" on other side
+
+        if (leftSpace < 1 && rightSpace < 1) {
+          issues.push({
+            type: 'error',
+            message: `${sink.label || 'Sink'}: No counter landing space (24" + 18" required)`,
+            elements: [sink]
+          });
+        } else {
+          const maxSide = Math.max(leftSpace, rightSpace);
+          const minSide = Math.min(leftSpace, rightSpace);
+
+          if (maxSide < preferredOneSide) {
+            issues.push({
+              type: 'warning',
+              message: `${sink.label || 'Sink'}: Landing ${formatDimension(maxSide)} (24" recommended on one side)`,
+              elements: [sink]
+            });
+          } else if (minSide < preferredOtherSide && minSide > 0) {
+            issues.push({
+              type: 'info',
+              message: `${sink.label || 'Sink'}: Secondary landing ${formatDimension(minSide)} (18" recommended)`,
+              elements: [sink]
+            });
+          }
+        }
+      });
+
+      // Check refrigerators
+      const refrigerators = elements.filter(el =>
+        ['refrigerator', 'outdoor-fridge'].includes(el.type)
+      );
+
+      refrigerators.forEach(fridge => {
+        const anySpace = getAdjacentCounterSpace(fridge, 'any');
+
+        if (anySpace < 1.25) {
+          issues.push({
+            type: 'warning',
+            message: `${fridge.label || 'Refrigerator'}: Landing ${formatDimension(anySpace)} (15" recommended at handle side)`,
+            elements: [fridge]
+          });
+        }
+      });
+
+      // Check dishwashers - need counter within 24" for unloading
+      const dishwashers = elements.filter(el => el.type === 'dishwasher');
+
+      dishwashers.forEach(dw => {
+        const anySpace = getAdjacentCounterSpace(dw, 'any');
+
+        if (anySpace < 1.5) {
+          issues.push({
+            type: 'warning',
+            message: `${dw.label || 'Dishwasher'}: Limited landing space for unloading`,
+            elements: [dw]
+          });
+        }
+
+        // Check if near sink (dishwasher should be within 36" of sink)
+        const dwCenter = {
+          x: dw.x / pixelsPerFoot + dw.width / 2,
+          y: dw.y / pixelsPerFoot + dw.height / 2
+        };
+
+        let nearestSinkDist = Infinity;
+        sinks.forEach(sink => {
+          const sinkCenter = {
+            x: sink.x / pixelsPerFoot + sink.width / 2,
+            y: sink.y / pixelsPerFoot + sink.height / 2
+          };
+          const dist = Math.sqrt(
+            Math.pow(dwCenter.x - sinkCenter.x, 2) +
+            Math.pow(dwCenter.y - sinkCenter.y, 2)
+          );
+          nearestSinkDist = Math.min(nearestSinkDist, dist);
+        });
+
+        if (nearestSinkDist > 3 && sinks.length > 0) {
+          issues.push({
+            type: 'info',
+            message: `${dw.label || 'Dishwasher'}: ${formatDimension(nearestSinkDist)} from sink (36" max recommended)`,
+            elements: [dw]
+          });
+        }
+      });
+
+      return issues;
+    }
+
+    // Validate electrical requirements per NEC (National Electrical Code)
+    function validateElectrical() {
+      const issues = [];
+
+      // NEC Kitchen Requirements:
+      // - Countertop outlets: every 4' (48") of counter space, max 24" from any point
+      // - GFCI protection within 6' of water sources
+      // - Dedicated circuits for major appliances
+      // - No outlets above stovetop
+
+      const NEC = {
+        maxOutletSpacing: 4,       // 48" maximum spacing between outlets
+        maxDistToOutlet: 2,        // 24" maximum distance to nearest outlet
+        gfciWaterDistance: 6,      // 6' GFCI zone near water
+        minOutletsPerCounter: 1    // At least one outlet per counter section
+      };
+
+      // Find elements
+      const countertops = elements.filter(el =>
+        ['countertop', 'countertop-l', 'countertop-corner', 'countertop-u'].includes(el.type)
+      );
+      const outlets = elements.filter(el =>
+        ['outlet', 'outlet-gfci', 'electrical-outlet'].includes(el.type)
+      );
+      const sinks = elements.filter(el =>
+        ['sink', 'sink-double', 'sink-farmhouse', 'utility-sink', 'laundry-sink', 'outdoor-sink'].includes(el.type)
+      );
+      const stoves = elements.filter(el =>
+        ['stove', 'range', 'cooktop', 'grill-builtin'].includes(el.type)
+      );
+
+      // Check counter outlet coverage
+      countertops.forEach(counter => {
+        const counterW = counter.width;
+        const counterX = counter.x / pixelsPerFoot;
+
+        // Calculate required outlets based on counter length
+        const requiredOutlets = Math.ceil(counterW / NEC.maxOutletSpacing);
+
+        // Find outlets near this counter
+        const counterOutlets = outlets.filter(outlet => {
+          const outletX = outlet.x / pixelsPerFoot;
+          const outletY = outlet.y / pixelsPerFoot;
+          const counterY = counter.y / pixelsPerFoot;
+
+          // Check if outlet is at back of counter (within backsplash area)
+          return outletX >= counterX &&
+                 outletX <= counterX + counterW &&
+                 Math.abs(outletY - counterY) < 1.5; // Within 18" of counter back
+        });
+
+        if (counterOutlets.length < requiredOutlets) {
+          issues.push({
+            type: 'warning',
+            message: `NEC: Counter "${counter.label}" (${formatDimension(counterW)}) needs ${requiredOutlets} outlet(s), has ${counterOutlets.length}`,
+            elements: [counter]
+          });
+        }
+      });
+
+      // Check GFCI near water sources
+      sinks.forEach(sink => {
+        const sinkX = sink.x / pixelsPerFoot;
+        const sinkY = sink.y / pixelsPerFoot;
+
+        // Find outlets within GFCI zone
+        const nearbyOutlets = outlets.filter(outlet => {
+          const outletX = outlet.x / pixelsPerFoot;
+          const outletY = outlet.y / pixelsPerFoot;
+          const dist = Math.sqrt(Math.pow(outletX - sinkX, 2) + Math.pow(outletY - sinkY, 2));
+          return dist < NEC.gfciWaterDistance;
+        });
+
+        // Check if any nearby outlets are non-GFCI
+        const nonGfci = nearbyOutlets.filter(o => o.type !== 'outlet-gfci');
+        if (nonGfci.length > 0) {
+          issues.push({
+            type: 'warning',
+            message: `NEC: Outlet(s) within 6' of "${sink.label}" require GFCI protection`,
+            elements: [sink, ...nonGfci]
+          });
+        }
+      });
+
+      // Check for outlets above stovetop (not allowed)
+      stoves.forEach(stove => {
+        const stoveX = stove.x / pixelsPerFoot;
+        const stoveW = stove.width;
+        const stoveY = stove.y / pixelsPerFoot;
+
+        const outletsAbove = outlets.filter(outlet => {
+          const outletX = outlet.x / pixelsPerFoot;
+          const outletY = outlet.y / pixelsPerFoot;
+
+          return outletX >= stoveX - 0.5 &&
+                 outletX <= stoveX + stoveW + 0.5 &&
+                 outletY < stoveY + 0.5; // Outlet above/behind stove
+        });
+
+        if (outletsAbove.length > 0) {
+          issues.push({
+            type: 'error',
+            message: `NEC: Outlet above "${stove.label}" is not permitted (fire hazard)`,
+            elements: [stove, ...outletsAbove]
+          });
+        }
+      });
+
+      return issues;
+    }
+
     // Run all validations
     function runValidation() {
       validationIssues = [];
@@ -19122,6 +20030,34 @@
       validationIssues.push(...doorIssues.map(i => ({
         ...i,
         category: 'Door Swing'
+      })));
+
+      // Wall cabinet placement (NKBA standards)
+      const wallCabIssues = validateWallCabinetPlacement();
+      validationIssues.push(...wallCabIssues.map(i => ({
+        ...i,
+        category: 'Cabinet Placement'
+      })));
+
+      // Appliance landing spaces (NKBA requirements)
+      const landingIssues = validateLandingSpaces();
+      validationIssues.push(...landingIssues.map(i => ({
+        ...i,
+        category: 'Landing Spaces'
+      })));
+
+      // ADA bathroom compliance (accessibility)
+      const adaIssues = validateADABathroom();
+      validationIssues.push(...adaIssues.map(i => ({
+        ...i,
+        category: 'ADA Accessibility'
+      })));
+
+      // NEC electrical requirements
+      const electricalIssues = validateElectrical();
+      validationIssues.push(...electricalIssues.map(i => ({
+        ...i,
+        category: 'Electrical (NEC)'
       })));
 
       updateValidationPanel();
@@ -19404,7 +20340,30 @@
       'makeup-vanity': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="24" width="36" height="20" rx="2" fill="#8B5A2B"/><rect x="8" y="26" width="32" height="16" rx="1" fill="#A0522D"/><rect x="10" y="4" width="28" height="18" rx="2" fill="#E8E8FF" stroke="#CCC" stroke-width="1"/><rect x="20" y="40" width="8" height="2" rx="0.5" fill="#FFD700"/><rect x="18" y="30" width="12" height="6" rx="1" fill="#BFA070"/></svg>',
       'pedestal-sink': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><ellipse cx="24" cy="16" rx="16" ry="10" fill="#FFFFFF" stroke="#CCC" stroke-width="1.5"/><rect x="20" y="22" width="8" height="22" rx="1" fill="#F0F0F0" stroke="#CCC" stroke-width="1"/><ellipse cx="24" cy="16" rx="10" ry="6" fill="#F5F5F5" stroke="#DDD" stroke-width="1"/><circle cx="24" cy="16" r="2" fill="#888"/><circle cx="24" cy="10" r="2.5" fill="#C0C0C0"/></svg>',
       'linen-closet': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#8B5A2B"/><rect x="8" y="4" width="32" height="40" rx="1" fill="#A0522D"/><line x1="8" y1="14" x2="40" y2="14" stroke="#6B3A1B" stroke-width="1"/><line x1="8" y1="24" x2="40" y2="24" stroke="#6B3A1B" stroke-width="1"/><line x1="8" y1="34" x2="40" y2="34" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="20" width="4" height="8" rx="1" fill="#FFD700"/></svg>',
-      'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>'
+      'linen-tower': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="2" width="28" height="44" rx="2" fill="#8B5A2B"/><rect x="12" y="4" width="24" height="40" rx="1" fill="#A0522D"/><line x1="12" y1="12" x2="36" y2="12" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="20" x2="36" y2="20" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="28" x2="36" y2="28" stroke="#6B3A1B" stroke-width="1"/><line x1="12" y1="36" x2="36" y2="36" stroke="#6B3A1B" stroke-width="1"/><rect x="22" y="18" width="4" height="6" rx="1" fill="#FFD700"/></svg>',
+      // ===== ELECTRICAL & HVAC ELEMENTS =====
+      'outlet': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="18" y="16" width="4" height="8" rx="1" fill="#333"/><rect x="26" y="16" width="4" height="8" rx="1" fill="#333"/><rect x="18" y="28" width="4" height="8" rx="1" fill="#333"/><rect x="26" y="28" width="4" height="8" rx="1" fill="#333"/><circle cx="24" cy="24" r="2" fill="#333"/></svg>',
+      'outlet-gfci': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="18" y="12" width="4" height="6" rx="1" fill="#333"/><rect x="26" y="12" width="4" height="6" rx="1" fill="#333"/><rect x="16" y="22" width="6" height="4" rx="1" fill="#FF0000"/><rect x="26" y="22" width="6" height="4" rx="1" fill="#333"/><rect x="18" y="32" width="4" height="6" rx="1" fill="#333"/><rect x="26" y="32" width="4" height="6" rx="1" fill="#333"/><text x="19" y="25" font-size="3" fill="#FFF" font-weight="bold">T</text><text x="29" y="25" font-size="3" fill="#FFF" font-weight="bold">R</text></svg>',
+      'outlet-20a': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="16" y="16" width="4" height="8" rx="1" fill="#333"/><rect x="22" y="16" width="4" height="8" rx="1" fill="#333" transform="rotate(90 24 20)"/><rect x="28" y="16" width="4" height="8" rx="1" fill="#333"/><circle cx="24" cy="32" r="3" fill="#333"/></svg>',
+      'outlet-240v': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><circle cx="16" cy="20" r="4" fill="#333"/><circle cx="32" cy="20" r="4" fill="#333"/><rect x="20" y="28" width="8" height="6" rx="1" fill="#333"/><text x="24" y="42" font-size="6" fill="#666" text-anchor="middle">240V</text></svg>',
+      'outlet-usb': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="18" y="12" width="4" height="6" rx="1" fill="#333"/><rect x="26" y="12" width="4" height="6" rx="1" fill="#333"/><rect x="16" y="22" width="6" height="4" rx="1" fill="#4169E1"/><rect x="26" y="22" width="6" height="4" rx="1" fill="#4169E1"/><rect x="18" y="32" width="4" height="6" rx="1" fill="#333"/><rect x="26" y="32" width="4" height="6" rx="1" fill="#333"/></svg>',
+      'switch-single': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="18" y="14" width="12" height="20" rx="2" fill="#DDD"/><rect x="20" y="16" width="8" height="8" rx="1" fill="#888"/></svg>',
+      'switch-dimmer': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="18" y="12" width="12" height="24" rx="2" fill="#DDD"/><circle cx="24" cy="24" r="6" fill="#888" stroke="#666"/><rect x="22" y="18" width="4" height="2" rx="1" fill="#FFF"/></svg>',
+      'switch-3way': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#F5F5DC" stroke="#CCC" stroke-width="2"/><rect x="16" y="14" width="16" height="20" rx="2" fill="#DDD"/><rect x="18" y="16" width="5" height="8" rx="1" fill="#888"/><rect x="25" y="16" width="5" height="8" rx="1" fill="#888"/><rect x="21" y="26" width="6" height="6" rx="1" fill="#666"/></svg>',
+      'switch-smart': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="4" fill="#87CEEB" stroke="#4682B4" stroke-width="2"/><rect x="16" y="14" width="16" height="20" rx="2" fill="#E0F0FF"/><circle cx="24" cy="24" r="6" fill="#4169E1"/><path d="M21 24 L24 21 L27 24 L24 27 Z" fill="#FFF"/></svg>',
+      'panel-main': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="4" width="36" height="40" rx="2" fill="#696969" stroke="#555" stroke-width="2"/><rect x="10" y="8" width="12" height="6" fill="#333"/><rect x="26" y="8" width="12" height="6" fill="#333"/><rect x="10" y="16" width="12" height="4" fill="#444"/><rect x="26" y="16" width="12" height="4" fill="#444"/><rect x="10" y="22" width="12" height="4" fill="#444"/><rect x="26" y="22" width="12" height="4" fill="#444"/><rect x="10" y="28" width="12" height="4" fill="#444"/><rect x="26" y="28" width="12" height="4" fill="#444"/><rect x="10" y="34" width="12" height="4" fill="#444"/><rect x="26" y="34" width="12" height="4" fill="#444"/></svg>',
+      'panel-sub': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="32" rx="2" fill="#696969" stroke="#555" stroke-width="2"/><rect x="14" y="12" width="8" height="6" fill="#333"/><rect x="26" y="12" width="8" height="6" fill="#333"/><rect x="14" y="20" width="8" height="4" fill="#444"/><rect x="26" y="20" width="8" height="4" fill="#444"/><rect x="14" y="26" width="8" height="4" fill="#444"/><rect x="26" y="26" width="8" height="4" fill="#444"/><rect x="14" y="32" width="8" height="4" fill="#444"/><rect x="26" y="32" width="8" height="4" fill="#444"/></svg>',
+      'junction-box': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="14" width="20" height="20" rx="2" fill="#808080" stroke="#666" stroke-width="2"/><circle cx="24" cy="24" r="6" fill="#666"/><circle cx="18" cy="18" r="2" fill="#555"/><circle cx="30" cy="18" r="2" fill="#555"/><circle cx="18" cy="30" r="2" fill="#555"/><circle cx="30" cy="30" r="2" fill="#555"/></svg>',
+      'recessed-light': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="14" fill="#FFF" stroke="#CCC" stroke-width="2"/><circle cx="24" cy="24" r="8" fill="#FFD700"/><circle cx="24" cy="24" r="4" fill="#FFF8DC"/></svg>',
+      'pendant-light': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="4" width="4" height="12" fill="#333"/><path d="M14 16 L34 16 L30 36 L18 36 Z" fill="#FFD700" stroke="#DAA520"/><ellipse cx="24" cy="36" rx="6" ry="2" fill="#FFF8DC"/></svg>',
+      'under-cabinet-light': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="20" width="40" height="8" rx="2" fill="#FFFACD" stroke="#DAA520"/><rect x="8" y="22" width="32" height="4" fill="#FFD700"/></svg>',
+      'light-fixture': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="16" fill="#FFF" stroke="#CCC" stroke-width="2"/><circle cx="24" cy="24" r="10" fill="#FFD700"/><circle cx="24" cy="24" r="4" fill="#FFF"/><rect x="22" y="4" width="4" height="4" fill="#888"/></svg>',
+      'chandelier': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="2" width="4" height="8" fill="#333"/><ellipse cx="24" cy="14" rx="16" ry="4" fill="#C0C0C0"/><path d="M12 14 L10 28" stroke="#A0A0A0" stroke-width="2"/><path d="M24 14 L24 32" stroke="#A0A0A0" stroke-width="2"/><path d="M36 14 L38 28" stroke="#A0A0A0" stroke-width="2"/><circle cx="10" cy="30" r="4" fill="#FFD700"/><circle cx="24" cy="34" r="4" fill="#FFD700"/><circle cx="38" cy="30" r="4" fill="#FFD700"/></svg>',
+      'sconce': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="8" width="8" height="4" fill="#888"/><path d="M16 12 L32 12 L30 36 L18 36 Z" fill="#FFD700" stroke="#DAA520"/><ellipse cx="24" cy="36" rx="4" ry="1.5" fill="#FFF8DC"/></svg>',
+      'vent': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="16" width="32" height="16" rx="2" fill="#C0C0C0" stroke="#A0A0A0"/><line x1="12" y1="20" x2="36" y2="20" stroke="#888" stroke-width="2"/><line x1="12" y1="24" x2="36" y2="24" stroke="#888" stroke-width="2"/><line x1="12" y1="28" x2="36" y2="28" stroke="#888" stroke-width="2"/></svg>',
+      'return-vent': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="12" width="40" height="24" rx="2" fill="#A0A0A0" stroke="#888"/><rect x="8" y="16" width="32" height="16" fill="#666"/><line x1="12" y1="18" x2="36" y2="18" stroke="#555" stroke-width="2"/><line x1="12" y1="24" x2="36" y2="24" stroke="#555" stroke-width="2"/><line x1="12" y1="30" x2="36" y2="30" stroke="#555" stroke-width="2"/></svg>',
+      'exhaust-fan': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" rx="2" fill="#B0B0B0" stroke="#888"/><circle cx="24" cy="24" r="12" fill="#666"/><circle cx="24" cy="24" r="4" fill="#444"/><path d="M24 12 L28 20 L24 18 L20 20 Z" fill="#888"/><path d="M36 24 L28 28 L30 24 L28 20 Z" fill="#888"/><path d="M24 36 L20 28 L24 30 L28 28 Z" fill="#888"/><path d="M12 24 L20 20 L18 24 L20 28 Z" fill="#888"/></svg>',
+      'thermostat': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="8" width="24" height="32" rx="4" fill="#E8E8E8" stroke="#CCC" stroke-width="2"/><circle cx="24" cy="24" r="10" fill="#FFF" stroke="#DDD"/><text x="24" y="28" font-size="10" fill="#333" text-anchor="middle">72</text><rect x="18" y="36" width="12" height="2" rx="1" fill="#4CAF50"/></svg>'
     };
 
     // Map sized and variant cabinet types to base icons (reuse icons for different sizes)
@@ -19482,6 +20441,20 @@
         { type: 'base-cabinet-27', width: 2.25, height: 2, color: '#8B7355', label: 'Base Cabinet 27"' },
         { type: 'base-cabinet-30', width: 2.5, height: 2, color: '#8B7355', label: 'Base Cabinet 30"' },
         { type: 'base-cabinet-33', width: 2.75, height: 2, color: '#8B7355', label: 'Base Cabinet 33"' },
+        // Sized drawer base cabinets (width in inches, depth always 24"/2ft)
+        { type: 'drawer-base-12', width: 1, height: 2, color: '#8B7355', label: 'Drawer Base 12"' },
+        { type: 'drawer-base-15', width: 1.25, height: 2, color: '#8B7355', label: 'Drawer Base 15"' },
+        { type: 'drawer-base-18', width: 1.5, height: 2, color: '#8B7355', label: 'Drawer Base 18"' },
+        { type: 'drawer-base-21', width: 1.75, height: 2, color: '#8B7355', label: 'Drawer Base 21"' },
+        { type: 'drawer-base-24', width: 2, height: 2, color: '#8B7355', label: 'Drawer Base 24"' },
+        { type: 'drawer-base-30', width: 2.5, height: 2, color: '#8B7355', label: 'Drawer Base 30"' },
+        { type: 'drawer-base-36', width: 3, height: 2, color: '#8B7355', label: 'Drawer Base 36"' },
+        // Sized sink base cabinets (width in inches, depth always 24"/2ft)
+        { type: 'sink-base-30', width: 2.5, height: 2, color: '#8B7355', label: 'Sink Base 30"' },
+        { type: 'sink-base-33', width: 2.75, height: 2, color: '#8B7355', label: 'Sink Base 33"' },
+        { type: 'sink-base-36', width: 3, height: 2, color: '#8B7355', label: 'Sink Base 36"' },
+        { type: 'sink-base-42', width: 3.5, height: 2, color: '#8B7355', label: 'Sink Base 42"' },
+        { type: 'sink-base-48', width: 4, height: 2, color: '#8B7355', label: 'Sink Base 48"' },
         // Sized wall cabinets (width in inches, depth always 12"/1ft)
         { type: 'wall-cabinet-12', width: 1, height: 1, color: '#9B8465', label: 'Wall Cabinet 12"' },
         { type: 'wall-cabinet-15', width: 1.25, height: 1, color: '#9B8465', label: 'Wall Cabinet 15"' },
@@ -19489,7 +20462,24 @@
         { type: 'wall-cabinet-24', width: 2, height: 1, color: '#9B8465', label: 'Wall Cabinet 24"' },
         { type: 'wall-cabinet-30', width: 2.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 30"' },
         { type: 'wall-cabinet-36', width: 3, height: 1, color: '#9B8465', label: 'Wall Cabinet 36"' },
-        { type: 'wall-cabinet-42', width: 3.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 42"' }
+        { type: 'wall-cabinet-42', width: 3.5, height: 1, color: '#9B8465', label: 'Wall Cabinet 42"' },
+        // Tall wall cabinets (36" height, for 42" clearance layouts)
+        { type: 'wall-cabinet-12-tall', width: 1, height: 1, color: '#9B8465', label: 'Wall 12"×36"H', cabinetHeight: 3 },
+        { type: 'wall-cabinet-18-tall', width: 1.5, height: 1, color: '#9B8465', label: 'Wall 18"×36"H', cabinetHeight: 3 },
+        { type: 'wall-cabinet-24-tall', width: 2, height: 1, color: '#9B8465', label: 'Wall 24"×36"H', cabinetHeight: 3 },
+        { type: 'wall-cabinet-30-tall', width: 2.5, height: 1, color: '#9B8465', label: 'Wall 30"×36"H', cabinetHeight: 3 },
+        { type: 'wall-cabinet-36-tall', width: 3, height: 1, color: '#9B8465', label: 'Wall 36"×36"H', cabinetHeight: 3 },
+        // Extra-tall wall cabinets (42" height, for stacked to ceiling)
+        { type: 'wall-cabinet-12-xtall', width: 1, height: 1, color: '#9B8465', label: 'Wall 12"×42"H', cabinetHeight: 3.5 },
+        { type: 'wall-cabinet-18-xtall', width: 1.5, height: 1, color: '#9B8465', label: 'Wall 18"×42"H', cabinetHeight: 3.5 },
+        { type: 'wall-cabinet-24-xtall', width: 2, height: 1, color: '#9B8465', label: 'Wall 24"×42"H', cabinetHeight: 3.5 },
+        { type: 'wall-cabinet-30-xtall', width: 2.5, height: 1, color: '#9B8465', label: 'Wall 30"×42"H', cabinetHeight: 3.5 },
+        { type: 'wall-cabinet-36-xtall', width: 3, height: 1, color: '#9B8465', label: 'Wall 36"×42"H', cabinetHeight: 3.5 },
+        // Sized tall/pantry cabinets
+        { type: 'tall-cabinet-18', width: 1.5, height: 2, color: '#8B7355', label: 'Tall Cabinet 18"' },
+        { type: 'tall-cabinet-24', width: 2, height: 2, color: '#8B7355', label: 'Tall Cabinet 24"' },
+        { type: 'tall-cabinet-30', width: 2.5, height: 2, color: '#8B7355', label: 'Tall Cabinet 30"' },
+        { type: 'tall-cabinet-36', width: 3, height: 2, color: '#8B7355', label: 'Tall Cabinet 36"' }
       ],
       surfaces: [
         // Standard countertop: 25.5" depth (2.125') with 1.5" overhang = 2.17' total
@@ -19506,7 +20496,12 @@
         { type: 'surface-laminate', width: 4, height: 2, color: '#D4C4A8', label: 'Laminate/Formica' },
         { type: 'surface-butcherblock', width: 3, height: 2, color: '#C4A76C', label: 'Butcher Block' },
         { type: 'surface-concrete', width: 4, height: 2, color: '#808080', label: 'Concrete' },
-        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 1.5, color: '#B8860B', label: 'Backsplash' },
+        // Backsplash options with different heights
+        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 1.5, color: '#B8860B', label: 'Full Backsplash (18")' },
+        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 0.5, color: '#B8860B', label: 'Raised Backsplash (6")' },
+        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 0.333, color: '#B8860B', label: 'Standard Backsplash (4")' },
+        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 1.5, tileType: 'subway', color: '#FFFFFF', label: 'Subway Tile Backsplash' },
+        { type: 'backsplash', width: 6, height: 0.08, verticalHeight: 1.5, tileType: 'mosaic', color: '#4A90A4', label: 'Mosaic Tile Backsplash' },
         { type: 'flooring', width: 5, height: 5, color: '#D2691E', label: 'Flooring' },
         { type: 'tile', width: 4, height: 4, color: '#CCC', label: 'Tile Area' },
         // Stone Caps & Ledges (for pony walls, entryways, etc.)
@@ -19533,7 +20528,29 @@
         { type: 'microwave', width: 2.5, height: 1.33, color: '#4a4a4a', label: 'Microwave' },
         { type: 'range-hood', width: 2.5, height: 1.67, color: '#696969', label: 'Range Hood' },
         { type: 'oven', width: 2.5, height: 2.08, color: '#3a3a3a', label: 'Wall Oven' },
-        { type: 'wall-oven-double', width: 2.5, height: 2.08, color: '#3a3a3a', label: 'Double Wall Oven' }
+        { type: 'wall-oven-double', width: 2.5, height: 2.08, color: '#3a3a3a', label: 'Double Wall Oven' },
+        // Specialty Kitchen Appliances
+        { type: 'wine-cooler', width: 2, height: 2, color: '#4a4a4a', label: 'Wine Cooler 24"' },
+        { type: 'beverage-center', width: 2, height: 2, color: '#4a4a4a', label: 'Beverage Center' },
+        { type: 'ice-maker', width: 1.25, height: 2, color: '#808080', label: 'Ice Maker 15"' },
+        { type: 'warming-drawer', width: 2.5, height: 0.83, color: '#3a3a3a', label: 'Warming Drawer 30"' },
+        { type: 'trash-compactor', width: 1.25, height: 2, color: '#696969', label: 'Trash Compactor' },
+        { type: 'coffee-system', width: 2, height: 1.5, color: '#3a3a3a', label: 'Built-in Coffee' },
+        { type: 'steam-oven', width: 2, height: 1.5, color: '#4a4a4a', label: 'Steam Oven 24"' },
+        { type: 'speed-oven', width: 2, height: 1.5, color: '#4a4a4a', label: 'Speed Oven 24"' },
+        // Outdoor Kitchen Appliances
+        { type: 'grill-builtin', width: 3, height: 2.5, color: '#2F2F2F', label: 'Built-in Grill 36"' },
+        { type: 'grill-42', width: 3.5, height: 2.5, color: '#2F2F2F', label: 'Built-in Grill 42"' },
+        { type: 'side-burner', width: 1, height: 2, color: '#3a3a3a', label: 'Side Burner' },
+        { type: 'power-burner', width: 1.5, height: 2, color: '#3a3a3a', label: 'Power Burner' },
+        { type: 'outdoor-fridge', width: 2, height: 2.5, color: '#A9A9A9', label: 'Outdoor Fridge' },
+        { type: 'kegerator', width: 2, height: 2.5, color: '#4a4a4a', label: 'Kegerator' },
+        { type: 'pizza-oven', width: 2.5, height: 2.5, color: '#8B4513', label: 'Pizza Oven' },
+        { type: 'smoker', width: 2, height: 2.5, color: '#2F2F2F', label: 'Built-in Smoker' },
+        { type: 'outdoor-sink', width: 2, height: 2, color: '#C0C0C0', label: 'Outdoor Sink' },
+        { type: 'outdoor-ice-maker', width: 1.25, height: 2, color: '#808080', label: 'Outdoor Ice Maker' },
+        { type: 'access-door', width: 1.75, height: 2, color: '#696969', label: 'Access Door' },
+        { type: 'trash-drawer', width: 1.5, height: 2, color: '#696969', label: 'Trash Drawer' }
       ],
       structure: [
         // Doors & Entryways
@@ -19750,6 +20767,35 @@
         { type: 'area-rug-lg', width: 8, height: 10, color: '#8B6914', label: 'Area Rug 8x10' },
         { type: 'runner-rug', width: 2.5, height: 8, color: '#8B6914', label: 'Runner Rug 2.5x8' },
         { type: 'round-rug', width: 6, height: 6, color: '#8B6914', label: 'Round Rug 6\'' }
+      ],
+      electrical: [
+        // Outlets - NEC requires GFCI within 6' of water sources
+        { type: 'outlet', width: 0.33, height: 0.25, color: '#F5F5DC', label: 'Duplex Outlet' },
+        { type: 'outlet-gfci', width: 0.33, height: 0.25, color: '#F5F5DC', label: 'GFCI Outlet' },
+        { type: 'outlet-20a', width: 0.33, height: 0.25, color: '#F5F5DC', label: '20A Outlet' },
+        { type: 'outlet-240v', width: 0.5, height: 0.33, color: '#F5F5DC', label: '240V Outlet' },
+        { type: 'outlet-usb', width: 0.33, height: 0.25, color: '#F5F5DC', label: 'USB Outlet' },
+        // Switches
+        { type: 'switch-single', width: 0.33, height: 0.25, color: '#F5F5DC', label: 'Light Switch' },
+        { type: 'switch-dimmer', width: 0.33, height: 0.25, color: '#F5F5DC', label: 'Dimmer Switch' },
+        { type: 'switch-3way', width: 0.33, height: 0.25, color: '#F5F5DC', label: '3-Way Switch' },
+        { type: 'switch-smart', width: 0.33, height: 0.25, color: '#87CEEB', label: 'Smart Switch' },
+        // Panels & Connections
+        { type: 'panel-main', width: 2, height: 3, color: '#696969', label: 'Main Panel' },
+        { type: 'panel-sub', width: 1.5, height: 2, color: '#696969', label: 'Sub Panel' },
+        { type: 'junction-box', width: 0.33, height: 0.33, color: '#808080', label: 'Junction Box' },
+        // Lighting (for placement reference)
+        { type: 'recessed-light', width: 0.5, height: 0.5, color: '#FFD700', label: 'Recessed Light' },
+        { type: 'pendant-light', width: 0.5, height: 0.5, color: '#FFD700', label: 'Pendant Light' },
+        { type: 'under-cabinet-light', width: 2, height: 0.25, color: '#FFFACD', label: 'Under-Cabinet Light' },
+        { type: 'light-fixture', width: 1, height: 1, color: '#FFD700', label: 'Ceiling Light' },
+        { type: 'chandelier', width: 2, height: 2, color: '#FFD700', label: 'Chandelier' },
+        { type: 'sconce', width: 0.5, height: 0.33, color: '#FFD700', label: 'Wall Sconce' },
+        // HVAC/Mechanical
+        { type: 'vent', width: 0.83, height: 0.5, color: '#C0C0C0', label: 'HVAC Vent' },
+        { type: 'return-vent', width: 1.5, height: 0.5, color: '#A0A0A0', label: 'Return Vent' },
+        { type: 'exhaust-fan', width: 1, height: 1, color: '#B0B0B0', label: 'Exhaust Fan' },
+        { type: 'thermostat', width: 0.33, height: 0.5, color: '#E8E8E8', label: 'Thermostat' }
       ]
     };
 
@@ -23558,7 +24604,7 @@
 
     function renderSidebar() {
       // Render element grids with SVG icons
-      ['cabinets', 'surfaces', 'appliances', 'structure', 'bathroom', 'laundry', 'closet'].forEach(category => {
+      ['cabinets', 'surfaces', 'appliances', 'structure', 'bathroom', 'laundry', 'closet', 'electrical'].forEach(category => {
         const grid = document.getElementById(category + 'Grid');
         if (!grid) return;
 
@@ -24368,6 +25414,7 @@
       element.materialId = product.slug;
       element.materialName = product.name;
       element.materialBrand = product.brand;
+      element.materialCategory = product.type?.toLowerCase() || product.category || null;
       element.texture = product.primaryImage;
       element.label = product.name; // Update label to product name
 
@@ -25463,6 +26510,201 @@
           ctx.fill();
         }
       }
+
+      // === ELEMENT-TO-ELEMENT ALIGNMENT GUIDES ===
+      // Show alignment when current element aligns with other elements
+      const alignThreshold = pixelsPerFoot * 0.25; // 3" tolerance
+      const elCenterX = elX + elW / 2;
+      const elCenterY = elY + elH / 2;
+      const elRight = elX + elW;
+      const elBottom = elY + elH;
+
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+
+      elements.forEach(other => {
+        if (other.id === selectedElement.id) return;
+        if (other.type === 'flooring' || other.type === 'tile') return; // Skip floor elements
+
+        const otherX = other.x;
+        const otherY = other.y;
+        const otherW = other.width * pixelsPerFoot;
+        const otherH = other.height * pixelsPerFoot;
+        const otherCenterX = otherX + otherW / 2;
+        const otherCenterY = otherY + otherH / 2;
+        const otherRight = otherX + otherW;
+        const otherBottom = otherY + otherH;
+
+        // Vertical alignment guides (X axis matches)
+        // Left edge to left edge
+        if (Math.abs(elX - otherX) < alignThreshold) {
+          ctx.strokeStyle = '#00BCD4';
+          ctx.beginPath();
+          ctx.moveTo(otherX, Math.min(elY, otherY) - 20);
+          ctx.lineTo(otherX, Math.max(elBottom, otherBottom) + 20);
+          ctx.stroke();
+        }
+        // Right edge to right edge
+        if (Math.abs(elRight - otherRight) < alignThreshold) {
+          ctx.strokeStyle = '#00BCD4';
+          ctx.beginPath();
+          ctx.moveTo(otherRight, Math.min(elY, otherY) - 20);
+          ctx.lineTo(otherRight, Math.max(elBottom, otherBottom) + 20);
+          ctx.stroke();
+        }
+        // Center to center (vertical)
+        if (Math.abs(elCenterX - otherCenterX) < alignThreshold) {
+          ctx.strokeStyle = '#E91E63';
+          ctx.beginPath();
+          ctx.moveTo(otherCenterX, Math.min(elY, otherY) - 20);
+          ctx.lineTo(otherCenterX, Math.max(elBottom, otherBottom) + 20);
+          ctx.stroke();
+        }
+        // Left edge to right edge (butting together)
+        if (Math.abs(elX - otherRight) < alignThreshold) {
+          ctx.strokeStyle = '#8BC34A';
+          ctx.beginPath();
+          ctx.moveTo(otherRight, Math.min(elY, otherY) - 10);
+          ctx.lineTo(otherRight, Math.max(elBottom, otherBottom) + 10);
+          ctx.stroke();
+        }
+        // Right edge to left edge (butting together)
+        if (Math.abs(elRight - otherX) < alignThreshold) {
+          ctx.strokeStyle = '#8BC34A';
+          ctx.beginPath();
+          ctx.moveTo(otherX, Math.min(elY, otherY) - 10);
+          ctx.lineTo(otherX, Math.max(elBottom, otherBottom) + 10);
+          ctx.stroke();
+        }
+
+        // Horizontal alignment guides (Y axis matches)
+        // Top edge to top edge
+        if (Math.abs(elY - otherY) < alignThreshold) {
+          ctx.strokeStyle = '#00BCD4';
+          ctx.beginPath();
+          ctx.moveTo(Math.min(elX, otherX) - 20, otherY);
+          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherY);
+          ctx.stroke();
+        }
+        // Bottom edge to bottom edge
+        if (Math.abs(elBottom - otherBottom) < alignThreshold) {
+          ctx.strokeStyle = '#00BCD4';
+          ctx.beginPath();
+          ctx.moveTo(Math.min(elX, otherX) - 20, otherBottom);
+          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherBottom);
+          ctx.stroke();
+        }
+        // Center to center (horizontal)
+        if (Math.abs(elCenterY - otherCenterY) < alignThreshold) {
+          ctx.strokeStyle = '#E91E63';
+          ctx.beginPath();
+          ctx.moveTo(Math.min(elX, otherX) - 20, otherCenterY);
+          ctx.lineTo(Math.max(elRight, otherRight) + 20, otherCenterY);
+          ctx.stroke();
+        }
+        // Top edge to bottom edge (stacking)
+        if (Math.abs(elY - otherBottom) < alignThreshold) {
+          ctx.strokeStyle = '#8BC34A';
+          ctx.beginPath();
+          ctx.moveTo(Math.min(elX, otherX) - 10, otherBottom);
+          ctx.lineTo(Math.max(elRight, otherRight) + 10, otherBottom);
+          ctx.stroke();
+        }
+        // Bottom edge to top edge (stacking)
+        if (Math.abs(elBottom - otherY) < alignThreshold) {
+          ctx.strokeStyle = '#8BC34A';
+          ctx.beginPath();
+          ctx.moveTo(Math.min(elX, otherX) - 10, otherY);
+          ctx.lineTo(Math.max(elRight, otherRight) + 10, otherY);
+          ctx.stroke();
+        }
+
+        // === DISTANCE MEASUREMENTS ===
+        // Show gap distance when elements are close but not touching
+        const gapThreshold = pixelsPerFoot * 4; // Show distances up to 4 feet
+
+        // Horizontal gap (elements side by side)
+        if (elY < otherBottom && elBottom > otherY) { // Vertically overlapping
+          let hGap = 0;
+          let gapX = 0;
+          let gapY = Math.max(elY, otherY) + Math.min(elH, otherH) / 2;
+
+          if (elX > otherRight) {
+            hGap = elX - otherRight;
+            gapX = otherRight + hGap / 2;
+          } else if (otherX > elRight) {
+            hGap = otherX - elRight;
+            gapX = elRight + hGap / 2;
+          }
+
+          if (hGap > 0 && hGap < gapThreshold) {
+            // Draw gap indicator
+            ctx.strokeStyle = '#FFC107';
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            if (elX > otherRight) {
+              ctx.moveTo(otherRight, gapY);
+              ctx.lineTo(elX, gapY);
+            } else {
+              ctx.moveTo(elRight, gapY);
+              ctx.lineTo(otherX, gapY);
+            }
+            ctx.stroke();
+
+            // Draw measurement text
+            const gapFeet = hGap / pixelsPerFoot;
+            const gapInches = Math.round(gapFeet * 12);
+            const gapText = gapInches < 12 ? `${gapInches}"` : `${Math.floor(gapInches / 12)}'-${gapInches % 12}"`;
+
+            ctx.font = '10px Inter';
+            ctx.fillStyle = '#FFC107';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(gapText, gapX, gapY - 3);
+          }
+        }
+
+        // Vertical gap (elements stacked)
+        if (elX < otherRight && elRight > otherX) { // Horizontally overlapping
+          let vGap = 0;
+          let gapY = 0;
+          let gapX = Math.max(elX, otherX) + Math.min(elW, otherW) / 2;
+
+          if (elY > otherBottom) {
+            vGap = elY - otherBottom;
+            gapY = otherBottom + vGap / 2;
+          } else if (otherY > elBottom) {
+            vGap = otherY - elBottom;
+            gapY = elBottom + vGap / 2;
+          }
+
+          if (vGap > 0 && vGap < gapThreshold) {
+            // Draw gap indicator
+            ctx.strokeStyle = '#FFC107';
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            if (elY > otherBottom) {
+              ctx.moveTo(gapX, otherBottom);
+              ctx.lineTo(gapX, elY);
+            } else {
+              ctx.moveTo(gapX, elBottom);
+              ctx.lineTo(gapX, otherY);
+            }
+            ctx.stroke();
+
+            // Draw measurement text
+            const gapFeet = vGap / pixelsPerFoot;
+            const gapInches = Math.round(gapFeet * 12);
+            const gapText = gapInches < 12 ? `${gapInches}"` : `${Math.floor(gapInches / 12)}'-${gapInches % 12}"`;
+
+            ctx.font = '10px Inter';
+            ctx.fillStyle = '#FFC107';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(gapText, gapX + 5, gapY);
+          }
+        }
+      });
 
       ctx.restore();
     }
@@ -30327,11 +31569,38 @@
         ctx.stroke();
       }
 
-      // Small lock icon for locked/grouped elements
-      if (isLocked && !isSelected) {
-        ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('\uD83D\uDD17', x + 4, y + 12);
+      // Group indicator for grouped elements
+      if (el.groupId) {
+        // Generate consistent color from group ID
+        const groupColors = ['#22d3ee', '#f472b6', '#a78bfa', '#4ade80', '#fb923c', '#f87171'];
+        const groupIndex = parseInt(el.groupId.replace('group-', ''), 10) || 0;
+        const groupColor = groupColors[groupIndex % groupColors.length];
+
+        // Draw group indicator badge in top-left corner
+        const badgeSize = 14;
+        const badgeX = x + 3;
+        const badgeY = y + 3;
+
+        ctx.fillStyle = groupColor;
+        ctx.beginPath();
+        ctx.arc(badgeX + badgeSize/2, badgeY + badgeSize/2, badgeSize/2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Link icon in badge
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('G', badgeX + badgeSize/2, badgeY + badgeSize/2 + 1);
+
+        // Thin colored border around element when grouped
+        if (!isSelected) {
+          ctx.strokeStyle = groupColor;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 2]);
+          ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+          ctx.setLineDash([]);
+        }
       }
 
       // Only show label if element is large enough or selected
@@ -31071,8 +32340,17 @@
 
       // Check if this is a cabinet-type element for stricter alignment
       const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
-                            'tall-cabinet', 'corner-cabinet', 'lazy-susan'];
-      const isCabinetElement = cabinetTypes.includes(selectedElement.type);
+                            'tall-cabinet', 'corner-cabinet', 'lazy-susan', 'blind-corner',
+                            'island', 'fridge-cabinet', 'single-oven-cabinet', 'tall-oven',
+                            'double-oven-cabinet', 'microwave-cabinet', 'above-microwave-cabinet'];
+
+      // Check for sized cabinet variants (base-cabinet-12, wall-cabinet-18, etc.)
+      const isCabinetElement = cabinetTypes.includes(selectedElement.type) ||
+                               selectedElement.type?.startsWith('base-cabinet-') ||
+                               selectedElement.type?.startsWith('wall-cabinet-') ||
+                               selectedElement.type?.startsWith('tall-cabinet-') ||
+                               selectedElement.type?.startsWith('drawer-base-') ||
+                               selectedElement.type?.startsWith('sink-base-');
 
       // Wall element types - these should ATTRACT cabinets, not repel them
       const wallTypes = ['wall', 'wall-block', 'wall-concrete', 'wall-framed', 'wall-wood-2x4',
@@ -31086,7 +32364,12 @@
         const otherY = other.y;
         const otherW = other.width * pixelsPerFoot;
         const otherH = other.height * pixelsPerFoot;
-        const isOtherCabinet = cabinetTypes.includes(other.type);
+        const isOtherCabinet = cabinetTypes.includes(other.type) ||
+                               other.type?.startsWith('base-cabinet-') ||
+                               other.type?.startsWith('wall-cabinet-') ||
+                               other.type?.startsWith('tall-cabinet-') ||
+                               other.type?.startsWith('drawer-base-') ||
+                               other.type?.startsWith('sink-base-');
         const isOtherWall = wallTypes.includes(other.type);
 
         // WALL ELEMENTS: Cabinets should snap AGAINST walls (back of cabinet to wall surface)
@@ -31169,6 +32452,47 @@
         // Align rights when close
         if (Math.abs((snapX + elW) - (otherX + otherW)) < snapDistance) {
           snapX = otherX + otherW - elW;
+        }
+
+        // === CABINET RUN BACK ALIGNMENT ===
+        // When placing cabinets in a run, align their backs (wall-facing edge)
+        // This ensures a straight cabinet run even with different depth cabinets
+        if (isCabinetElement && isOtherCabinet) {
+          // Check if we're placing cabinets side by side (horizontally adjacent)
+          const isHorizontallyAdjacent = Math.abs((snapX + elW) - otherX) < pixelsPerFoot * 0.2 ||
+                                          Math.abs(snapX - (otherX + otherW)) < pixelsPerFoot * 0.2;
+
+          // Check if we're placing cabinets vertically adjacent
+          const isVerticallyAdjacent = Math.abs((snapY + elH) - otherY) < pixelsPerFoot * 0.2 ||
+                                        Math.abs(snapY - (otherY + otherH)) < pixelsPerFoot * 0.2;
+
+          if (isHorizontallyAdjacent) {
+            // Align backs (top edge in 2D = back wall in 3D for back wall cabinets)
+            // If other cabinet is near top wall, align our top to theirs
+            if (otherY < pixelsPerFoot * 0.5 && Math.abs(snapY - otherY) < pixelsPerFoot * 0.5) {
+              snapY = otherY; // Align backs at wall
+            }
+            // If other cabinet is near bottom wall, align our bottoms
+            const roomBottom = roomDepth * pixelsPerFoot;
+            if (otherY + otherH > roomBottom - pixelsPerFoot * 0.5 &&
+                Math.abs((snapY + elH) - (otherY + otherH)) < pixelsPerFoot * 0.5) {
+              snapY = otherY + otherH - elH; // Align fronts at wall
+            }
+          }
+
+          if (isVerticallyAdjacent) {
+            // Align backs for side wall cabinet runs
+            // If other cabinet is near left wall, align our lefts
+            if (otherX < pixelsPerFoot * 0.5 && Math.abs(snapX - otherX) < pixelsPerFoot * 0.5) {
+              snapX = otherX; // Align backs at left wall
+            }
+            // If other cabinet is near right wall, align our rights
+            const roomRight = roomWidth * pixelsPerFoot;
+            if (otherX + otherW > roomRight - pixelsPerFoot * 0.5 &&
+                Math.abs((snapX + elW) - (otherX + otherW)) < pixelsPerFoot * 0.5) {
+              snapX = otherX + otherW - elW; // Align backs at right wall
+            }
+          }
         }
       });
 
@@ -31641,9 +32965,39 @@
           }
           break;
         case 'd':
-          if ((e.ctrlKey || e.metaKey) && selectedElement) {
+          if (selectedElement && !selectedElement.locked) {
             e.preventDefault();
             duplicateElement(selectedElement);
+          }
+          break;
+        case 'x':
+          // X to flip/mirror horizontally (swap width and height for asymmetric elements)
+          if (selectedElement && !selectedElement.locked) {
+            // For countertops and surfaces, this swaps dimensions
+            const temp = selectedElement.width;
+            selectedElement.width = selectedElement.height;
+            selectedElement.height = temp;
+            markElement3DDirty(selectedElement.id);
+            saveUndoState();
+            updateProperties();
+            draw();
+          }
+          break;
+        case 'g':
+          // G to toggle grid visibility
+          if (typeof CONFIG !== 'undefined') {
+            CONFIG.SHOW_GRID = !CONFIG.SHOW_GRID;
+            showSnapFeedback(CONFIG.SHOW_GRID ? 'Grid: ON' : 'Grid: OFF');
+            draw();
+          }
+          break;
+        case 't':
+          // T to cycle through tab panels (Elements, Materials, Properties)
+          const tabs = document.querySelectorAll('.panel-tabs .panel-tab');
+          if (tabs.length > 0) {
+            const activeIdx = Array.from(tabs).findIndex(t => t.classList.contains('active'));
+            const nextIdx = (activeIdx + 1) % tabs.length;
+            tabs[nextIdx].click();
           }
           break;
         case 'l':
@@ -31721,6 +33075,58 @@
           // Home key resets view
           e.preventDefault();
           resetView();
+          break;
+        case 'arrowup':
+        case 'arrowdown':
+        case 'arrowleft':
+        case 'arrowright':
+          // Arrow keys nudge selected element
+          if (selectedElement && !selectedElement.locked) {
+            e.preventDefault();
+            // Shift = fine nudge (1"), Ctrl = large nudge (1'), default = 3"
+            const nudgeAmount = e.shiftKey ? pixelsPerFoot / 12 : // 1 inch
+                                e.ctrlKey ? pixelsPerFoot :        // 1 foot
+                                pixelsPerFoot / 4;                 // 3 inches
+
+            const prevX = selectedElement.x;
+            const prevY = selectedElement.y;
+
+            switch(e.key.toLowerCase()) {
+              case 'arrowup':
+                selectedElement.y -= nudgeAmount;
+                break;
+              case 'arrowdown':
+                selectedElement.y += nudgeAmount;
+                break;
+              case 'arrowleft':
+                selectedElement.x -= nudgeAmount;
+                break;
+              case 'arrowright':
+                selectedElement.x += nudgeAmount;
+                break;
+            }
+
+            // Constrain to room boundaries
+            const roomW = roomWidth * pixelsPerFoot;
+            const roomH = roomDepth * pixelsPerFoot;
+            const elW = selectedElement.width * pixelsPerFoot;
+            const elH = selectedElement.height * pixelsPerFoot;
+
+            selectedElement.x = Math.max(0, Math.min(roomW - elW, selectedElement.x));
+            selectedElement.y = Math.max(0, Math.min(roomH - elH, selectedElement.y));
+
+            // Move grouped elements too
+            if (selectedElement.groupId) {
+              const dx = selectedElement.x - prevX;
+              const dy = selectedElement.y - prevY;
+              moveGroupedElements(selectedElement, dx, dy);
+            }
+
+            markElement3DDirty(selectedElement.id);
+            saveUndoState();
+            draw();
+            updateProperties();
+          }
           break;
       }
     }
@@ -31945,6 +33351,7 @@
       element.materialId = product.slug;
       element.materialName = product.name;
       element.materialBrand = product.brand;
+      element.materialCategory = productType || product.category || null;
 
       // Apply as texture if product has image
       if (imageUrl) {
@@ -32477,6 +33884,109 @@
       }
     }
 
+    // Auto-group adjacent cabinets in a run
+    function groupAdjacentCabinets() {
+      if (!selectedElement) {
+        showToast('Select a cabinet first', 'warning', 2000);
+        return;
+      }
+
+      const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
+                            'tall-cabinet', 'corner-cabinet', 'lazy-susan', 'blind-corner',
+                            'island', 'fridge-cabinet', 'single-oven-cabinet', 'tall-oven',
+                            'double-oven-cabinet', 'microwave-cabinet', 'above-microwave-cabinet'];
+
+      // Check if selected is a cabinet (including sized variants)
+      const isCabinet = cabinetTypes.includes(selectedElement.type) ||
+                        selectedElement.type?.startsWith('base-cabinet-') ||
+                        selectedElement.type?.startsWith('wall-cabinet-') ||
+                        selectedElement.type?.startsWith('tall-cabinet-') ||
+                        selectedElement.type?.startsWith('drawer-base-') ||
+                        selectedElement.type?.startsWith('sink-base-');
+
+      if (!isCabinet) {
+        showToast('Select a cabinet element', 'warning', 2000);
+        return;
+      }
+
+      // Find all adjacent cabinets using flood fill
+      const visited = new Set();
+      const group = new Set();
+      const threshold = pixelsPerFoot * 0.2; // 2.4" tolerance for adjacency
+
+      function findAdjacent(element) {
+        if (visited.has(element.id)) return;
+        visited.add(element.id);
+
+        const isElCabinet = cabinetTypes.includes(element.type) ||
+                            element.type?.startsWith('base-cabinet-') ||
+                            element.type?.startsWith('wall-cabinet-') ||
+                            element.type?.startsWith('tall-cabinet-') ||
+                            element.type?.startsWith('drawer-base-') ||
+                            element.type?.startsWith('sink-base-');
+
+        if (!isElCabinet) return;
+
+        group.add(element.id);
+
+        const elLeft = element.x;
+        const elRight = element.x + element.width * pixelsPerFoot;
+        const elTop = element.y;
+        const elBottom = element.y + element.height * pixelsPerFoot;
+
+        elements.forEach(other => {
+          if (visited.has(other.id)) return;
+
+          const isOtherCabinet = cabinetTypes.includes(other.type) ||
+                                  other.type?.startsWith('base-cabinet-') ||
+                                  other.type?.startsWith('wall-cabinet-') ||
+                                  other.type?.startsWith('tall-cabinet-') ||
+                                  other.type?.startsWith('drawer-base-') ||
+                                  other.type?.startsWith('sink-base-');
+
+          if (!isOtherCabinet) return;
+
+          const otherLeft = other.x;
+          const otherRight = other.x + other.width * pixelsPerFoot;
+          const otherTop = other.y;
+          const otherBottom = other.y + other.height * pixelsPerFoot;
+
+          // Check if adjacent horizontally (side by side)
+          const hAdjacent = (Math.abs(elRight - otherLeft) < threshold || Math.abs(otherRight - elLeft) < threshold) &&
+                            !(elBottom < otherTop || otherBottom < elTop);
+
+          // Check if adjacent vertically (stacked)
+          const vAdjacent = (Math.abs(elBottom - otherTop) < threshold || Math.abs(otherBottom - elTop) < threshold) &&
+                            !(elRight < otherLeft || otherRight < elLeft);
+
+          if (hAdjacent || vAdjacent) {
+            findAdjacent(other);
+          }
+        });
+      }
+
+      findAdjacent(selectedElement);
+
+      if (group.size < 2) {
+        showToast('No adjacent cabinets found', 'info', 2000);
+        return;
+      }
+
+      // Create new group
+      const groupId = 'group-' + nextGroupId++;
+      group.forEach(id => {
+        const el = elements.find(e => e.id === id);
+        if (el) {
+          el.groupId = groupId;
+        }
+      });
+
+      saveUndoState();
+      showToast(`Grouped ${group.size} adjacent cabinets`, 'success', 2000);
+      draw();
+      updateProperties();
+    }
+
     // Unlock element from its group
     function unlockElement() {
       if (!selectedElement || !selectedElement.groupId) {
@@ -32500,6 +34010,31 @@
       updateLockUI();
       draw();
       showSnapFeedback('Element unlocked');
+    }
+
+    // Ungroup all cabinets in a group
+    function ungroupCabinets(element) {
+      const el = element || selectedElement;
+      if (!el || !el.groupId) {
+        showToast('Element is not in a group', 'warning', 2000);
+        return;
+      }
+
+      const groupId = el.groupId;
+      let count = 0;
+
+      // Remove groupId from all elements in this group
+      elements.forEach(other => {
+        if (other.groupId === groupId) {
+          delete other.groupId;
+          count++;
+        }
+      });
+
+      saveUndoState();
+      showToast(`Ungrouped ${count} cabinets`, 'success', 2000);
+      draw();
+      updateProperties();
     }
 
     // Get all elements in the same group as the given element
@@ -33400,11 +34935,28 @@
       document.getElementById('lockText').textContent = element.locked ? 'Unlock' : 'Lock';
 
       // Show/hide cabinet-specific options
-      const isCabinet = CABINET_TYPES_FOR_MENU.includes(element.type);
+      const cabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'wall-cabinet',
+                            'tall-cabinet', 'corner-cabinet', 'lazy-susan', 'blind-corner',
+                            'island', 'fridge-cabinet', 'single-oven-cabinet', 'tall-oven',
+                            'double-oven-cabinet', 'microwave-cabinet', 'above-microwave-cabinet'];
+      const isCabinet = CABINET_TYPES_FOR_MENU.includes(element.type) ||
+                        cabinetTypes.includes(element.type) ||
+                        element.type?.startsWith('base-cabinet-') ||
+                        element.type?.startsWith('wall-cabinet-') ||
+                        element.type?.startsWith('tall-cabinet-') ||
+                        element.type?.startsWith('drawer-base-') ||
+                        element.type?.startsWith('sink-base-');
       const replaceItem = document.getElementById('replaceMenuItem');
       const resizeItem = document.getElementById('resizeMenuItem');
       if (replaceItem) replaceItem.style.display = isCabinet ? 'flex' : 'none';
       if (resizeItem) resizeItem.style.display = isCabinet ? 'flex' : 'none';
+
+      // Show/hide group options
+      const groupItem = document.getElementById('groupAdjacentMenuItem');
+      const ungroupItem = document.getElementById('ungroupMenuItem');
+      const isInGroup = !!element.groupId;
+      if (groupItem) groupItem.style.display = (isCabinet && !isInGroup) ? 'flex' : 'none';
+      if (ungroupItem) ungroupItem.style.display = isInGroup ? 'flex' : 'none';
     }
 
     function hideContextMenu() {
@@ -33453,6 +35005,12 @@
           break;
         case 'resize':
           openResizeCabinetModal(contextMenuElement);
+          break;
+        case 'groupAdjacent':
+          groupAdjacentCabinets();
+          break;
+        case 'ungroupCabinets':
+          ungroupCabinets(contextMenuElement);
           break;
       }
 
@@ -36845,16 +38403,24 @@
         case 'refrigerator':
           return height / 2; // Floor standing, tall
 
-        // Wall mounted (54" from floor is typical bottom edge)
+        // Wall mounted (54" from floor is typical bottom edge per NKBA)
         case 'wall-cabinet': {
-          // Smart stacking: wall cabinet sits above backsplash/countertop with 18" clearance
+          // NKBA Standard: Wall cabinet bottom at 54" (4.5 ft) from floor
+          // This provides 18" clearance above 36" counter height
+          // Can be adjusted if backsplash extends higher
           const wcLeft = el.x / pixelsPerFoot;
           const wcRight = wcLeft + el.width;
           const wcTop = el.y / pixelsPerFoot;
           const wcBottom = wcTop + el.height;
 
+          // Standard heights from BUILDING_STANDARDS
+          const standardWallCabBottom = BUILDING_STANDARDS.HEIGHTS?.wallCabBottom || 4.5; // 54" from floor
+          const standardCounterHeight = BUILDING_STANDARDS.HEIGHTS?.baseCounter || 3; // 36" counter
+          const standardBacksplashClearance = 1.5; // 18" between counter and wall cabinet
+
           // Find backsplash or countertop beneath this wall cabinet
-          let surfaceBelowTop = 3.02; // Default counter surface
+          let surfaceBelowTop = standardCounterHeight + 0.02; // Default counter surface (36" + counter thickness)
+          let hasBacksplash = false;
 
           elements.forEach(other => {
             if (other.id === el.id) return;
@@ -36864,32 +38430,51 @@
             const otherTop = other.y / pixelsPerFoot;
             const otherBottom = otherTop + other.height;
 
-            // Check for horizontal overlap
+            // Check for horizontal overlap (wall cabinet should be roughly above the element)
             const overlapX = Math.max(0, Math.min(wcRight, otherRight) - Math.max(wcLeft, otherLeft));
             if (overlapX < 0.1) return;
 
-            // Check for overlap or adjacency in Y
+            // Check for overlap or adjacency in Y (floor plan view)
             const overlapY = Math.max(0, Math.min(wcBottom, otherBottom) - Math.max(wcTop, otherTop));
             const adjacentY = Math.abs(wcBottom - otherTop) < 1 || Math.abs(wcTop - otherBottom) < 1;
             if (overlapY < 0.1 && !adjacentY) return;
 
             if (other.type === 'backsplash') {
-              // Get backsplash top - sits on counter surface (3.02) + backsplash height
-              const bsHeight = other.wallHeight || 1.5; // Default 18" backsplash
-              const bsTop = 3.02 + bsHeight;
+              // Backsplash found - wall cabinet sits on top of backsplash
+              // Backsplash sits on counter surface + extends up
+              const bsHeight = other.verticalHeight || other.wallHeight || BUILDING_STANDARDS.BACKSPLASH?.full || 1.5;
+              const bsTop = standardCounterHeight + 0.02 + bsHeight;
               if (bsTop > surfaceBelowTop) {
                 surfaceBelowTop = bsTop;
+                hasBacksplash = true;
               }
-            } else if (other.type === 'countertop') {
-              const counterTop = 3.02;
-              if (counterTop > surfaceBelowTop) {
-                surfaceBelowTop = counterTop;
+            } else if (other.type === 'countertop' || other.type === 'countertop-l' || other.type === 'countertop-corner') {
+              // Countertop found - note its surface height
+              const counterSurface = standardCounterHeight + 0.02;
+              if (counterSurface > surfaceBelowTop && !hasBacksplash) {
+                surfaceBelowTop = counterSurface;
               }
             }
           });
 
-          // Wall cabinet sits 1.5 feet (18") above the surface below
-          return surfaceBelowTop + 1.5 + height / 2;
+          // Calculate wall cabinet bottom position
+          let wallCabBottom;
+
+          if (hasBacksplash) {
+            // Wall cabinet sits just above backsplash (small gap for visual clarity)
+            wallCabBottom = surfaceBelowTop + 0.02;
+          } else {
+            // No backsplash found - use standard 18" clearance above counter
+            // Or minimum NKBA standard of 54" from floor
+            const clearanceBasedBottom = surfaceBelowTop + standardBacksplashClearance;
+            wallCabBottom = Math.max(clearanceBasedBottom, standardWallCabBottom);
+          }
+
+          // Ensure minimum height per NKBA guidelines (54" min for accessibility)
+          wallCabBottom = Math.max(wallCabBottom, BUILDING_STANDARDS.HEIGHTS?.wallCabBottomMin || 4.25);
+
+          // Return Y position (center of cabinet)
+          return wallCabBottom + height / 2;
         }
 
         case 'above-microwave-cabinet': {
@@ -38735,6 +40320,95 @@
             raised.position.set(doorMeshOffset, 0, 0.06);
             raised.castShadow = true;
             doorGroup.add(raised);
+          } else if (style === 'thin-shaker' || style === 'shaker-slim') {
+            // Thin/Slim Shaker: narrower frame rails for modern minimalist look
+            const fw = 0.05; // Thinner frame than standard shaker
+
+            // Top rail
+            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.015), doorFrameMat);
+            top.position.set(doorMeshOffset, doorH/2 - fw/2 - 0.01, 0.035);
+            top.castShadow = true;
+            doorGroup.add(top);
+
+            // Bottom rail
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.015), doorFrameMat);
+            bot.position.set(doorMeshOffset, -doorH/2 + fw/2 + 0.01, 0.035);
+            bot.castShadow = true;
+            doorGroup.add(bot);
+
+            // Left stile
+            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.015), doorFrameMat);
+            left.position.set(doorMeshOffset - doorW/2 + fw/2 + 0.01, 0, 0.035);
+            left.castShadow = true;
+            doorGroup.add(left);
+
+            // Right stile
+            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.015), doorFrameMat);
+            right.position.set(doorMeshOffset + doorW/2 - fw/2 - 0.01, 0, 0.035);
+            right.castShadow = true;
+            doorGroup.add(right);
+
+          } else if (style === 'recessed' || style === 'recessed-panel') {
+            // Recessed Panel: outer frame with deeply recessed center
+            const fw = 0.09;
+
+            // Frame pieces
+            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.025), doorFrameMat);
+            top.position.set(doorMeshOffset, doorH/2 - fw/2 - 0.01, 0.045);
+            top.castShadow = true;
+            doorGroup.add(top);
+
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.025), doorFrameMat);
+            bot.position.set(doorMeshOffset, -doorH/2 + fw/2 + 0.01, 0.045);
+            bot.castShadow = true;
+            doorGroup.add(bot);
+
+            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.025), doorFrameMat);
+            left.position.set(doorMeshOffset - doorW/2 + fw/2 + 0.01, 0, 0.045);
+            left.castShadow = true;
+            doorGroup.add(left);
+
+            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.025), doorFrameMat);
+            right.position.set(doorMeshOffset + doorW/2 - fw/2 - 0.01, 0, 0.045);
+            right.castShadow = true;
+            doorGroup.add(right);
+
+            // Deeply recessed center (set back into door)
+            const recessedMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(cabinetColor).multiplyScalar(0.92),
+              map: woodTexture,
+              roughness: baseRoughness + 0.05
+            });
+            const recessed = new THREE.Mesh(new THREE.BoxGeometry(doorW - fw*2 - 0.04, doorH - fw*2 - 0.04, 0.02), recessedMat);
+            recessed.position.set(doorMeshOffset, 0, 0.01);
+            doorGroup.add(recessed);
+
+          } else if (style === 'mission' || style === 'craftsman') {
+            // Mission/Craftsman: double recessed panel detail
+            const fw = 0.07;
+
+            // Outer frame
+            const top = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
+            top.position.set(doorMeshOffset, doorH/2 - fw/2 - 0.01, 0.04);
+            doorGroup.add(top);
+
+            const bot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.02, fw, 0.02), doorFrameMat);
+            bot.position.set(doorMeshOffset, -doorH/2 + fw/2 + 0.01, 0.04);
+            doorGroup.add(bot);
+
+            const left = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
+            left.position.set(doorMeshOffset - doorW/2 + fw/2 + 0.01, 0, 0.04);
+            doorGroup.add(left);
+
+            const right = new THREE.Mesh(new THREE.BoxGeometry(fw, doorH - fw*2, 0.02), doorFrameMat);
+            right.position.set(doorMeshOffset + doorW/2 - fw/2 - 0.01, 0, 0.04);
+            doorGroup.add(right);
+
+            // Center mullion (vertical divider)
+            const mullion = new THREE.Mesh(new THREE.BoxGeometry(fw * 0.6, doorH - fw*2 - 0.02, 0.02), doorFrameMat);
+            mullion.position.set(doorMeshOffset, 0, 0.04);
+            doorGroup.add(mullion);
+
           } else if (style === 'flat') {
             // Flat panel: minimal detail, recessed center
             const grooveMat = new THREE.MeshStandardMaterial({
@@ -41675,30 +43349,123 @@
 
         case 'backsplash': {
           // Tile backsplash - vertical against wall
-          // verticalHeight is the actual height (18" typical), h (depth) is thin (~1")
-          const bsVerticalHeight = el.verticalHeight || 1.5; // Default 18" backsplash
-          const bsThickness = d > 0.2 ? 0.08 : d; // Use thin depth for thickness
+          // verticalHeight is the actual height: 4" (0.333), 6" (0.5), 18" (1.5), or full height
+          // Convert backsplash property to proper height
+          let bsVerticalHeight = el.verticalHeight;
+          if (!bsVerticalHeight && el.backsplash) {
+            // Parse backsplash setting
+            if (el.backsplash.height === 4) bsVerticalHeight = 0.333; // 4"
+            else if (el.backsplash.height === 6) bsVerticalHeight = 0.5; // 6"
+            else if (el.backsplash.height === 18) bsVerticalHeight = 1.5; // 18"
+            else if (el.backsplash.type === 'full') bsVerticalHeight = 1.5; // Full height to wall cab
+          }
+          bsVerticalHeight = bsVerticalHeight || 1.5; // Default 18" backsplash
+          const bsThickness = d > 0.2 ? 0.08 : Math.max(d, 0.04); // Minimum 0.5" thick
 
-          const bsMat = createTexturedMaterial(color, textureUrl, {
-            roughness: 0.25,
-            metalness: 0.02
-          });
+          // Detect tile type from label or texture
+          const tileType = el.tileType || (el.label?.toLowerCase().includes('subway') ? 'subway' :
+                          el.label?.toLowerCase().includes('mosaic') ? 'mosaic' :
+                          el.label?.toLowerCase().includes('herringbone') ? 'herringbone' : 'standard');
+
+          // Tile dimensions based on type
+          const tileSizes = {
+            subway: { width: 0.25, height: 0.125 }, // 3"×1.5" (scaled to ft)
+            mosaic: { width: 0.083, height: 0.083 }, // 1"×1" mosaic
+            standard: { width: 0.333, height: 0.333 }, // 4"×4" tile
+            herringbone: { width: 0.25, height: 0.0625 }, // 3"×0.75" for herringbone
+            chevron: { width: 0.25, height: 0.0625 },
+            hexagon: { width: 0.167, height: 0.167 }
+          };
+          const tileSize = tileSizes[tileType] || tileSizes.standard;
+
+          // Check for shop product texture - prioritize this for accurate material display
+          let bsTextureUrl = textureUrl;
+          if (!bsTextureUrl && el.storeProduct?.image) {
+            bsTextureUrl = el.storeProduct.image;
+          }
+          if (!bsTextureUrl && el.materialId) {
+            const product = storeProducts.find(p => p.slug === el.materialId);
+            if (product?.primaryImage) bsTextureUrl = product.primaryImage;
+          }
+
+          // Determine if this is a stone backsplash (from shop) or tile
+          const isStoneBacksplash = el.materialCategory &&
+            ['granite', 'quartz', 'marble', 'quartzite', 'dekton', 'porcelain', 'stone'].includes(el.materialCategory.toLowerCase());
+
+          // Create backsplash material - use different settings for stone vs tile
+          let bsMat;
+          if (bsTextureUrl) {
+            // Shop material with texture - create proper material
+            bsMat = createTexturedMaterial(color, bsTextureUrl, {
+              roughness: isStoneBacksplash ? 0.15 : 0.25,
+              metalness: 0.02,
+              isCountertop: isStoneBacksplash, // Use countertop settings for stone
+              width: w,
+              depth: bsVerticalHeight,
+              finish: el.finish || (isStoneBacksplash ? 'polished' : 'matte')
+            });
+            console.log(`Backsplash using shop texture: ${bsTextureUrl.substring(0, 50)}...`);
+          } else {
+            // No texture - use solid color with glossy tile finish
+            bsMat = new THREE.MeshStandardMaterial({
+              color: color,
+              roughness: 0.2,
+              metalness: 0.02
+            });
+            // Add subtle environment reflection for tile look
+            if (window.roomEnvMap) {
+              bsMat.envMap = window.roomEnvMap;
+              bsMat.envMapIntensity = 0.3;
+            }
+          }
+
           const bs = new THREE.Mesh(
             new THREE.BoxGeometry(w, bsVerticalHeight, bsThickness),
             bsMat
           );
+          bs.castShadow = true;
+          bs.receiveShadow = true;
           group.add(bs);
 
-          // Subtle grout lines
-          const groutMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.9 });
-          const tileSize = 0.5;
-          for (let bx = -w/2 + tileSize; bx < w/2; bx += tileSize) {
-            const vGrout = new THREE.Mesh(
-              new THREE.BoxGeometry(0.01, bsVerticalHeight - 0.1, 0.01),
-              groutMat
+          // Only add grout lines for tile backsplash (not stone slab)
+          if (!isStoneBacksplash || tileType !== 'standard') {
+            // Grout color based on tile color (contrast)
+            const groutLuminance = new THREE.Color(color).getHSL({}).l;
+            const groutColor = groutLuminance > 0.5 ? 0x888888 : 0xCCCCCC;
+            const groutMat = new THREE.MeshStandardMaterial({ color: groutColor, roughness: 0.95 });
+
+            // Vertical grout lines
+            const numVLines = Math.floor(w / tileSize.width);
+            for (let i = 1; i < numVLines; i++) {
+              const vGrout = new THREE.Mesh(
+                new THREE.BoxGeometry(0.008, bsVerticalHeight - 0.02, 0.005),
+                groutMat
+              );
+              vGrout.position.set(-w/2 + i * tileSize.width, 0, bsThickness/2 + 0.003);
+              group.add(vGrout);
+            }
+
+            // Horizontal grout lines
+            const numHLines = Math.floor(bsVerticalHeight / tileSize.height);
+            for (let i = 1; i < numHLines; i++) {
+              const hGrout = new THREE.Mesh(
+                new THREE.BoxGeometry(w - 0.02, 0.008, 0.005),
+                groutMat
+              );
+              hGrout.position.set(0, -bsVerticalHeight/2 + i * tileSize.height, bsThickness/2 + 0.003);
+              group.add(hGrout);
+            }
+          }
+
+          // Top edge cap (small lip at top of backsplash)
+          if (bsVerticalHeight > 0.4) { // Only for taller backsplashes
+            const capMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3 });
+            const cap = new THREE.Mesh(
+              new THREE.BoxGeometry(w, 0.02, bsThickness + 0.01),
+              capMat
             );
-            vGrout.position.set(bx, 0, bsThickness/2 + 0.01);
-            group.add(vGrout);
+            cap.position.set(0, bsVerticalHeight/2 + 0.01, 0);
+            group.add(cap);
           }
           break;
         }
@@ -50832,6 +52599,75 @@
           // Back wall elements keep default rotation (facing into room)
         }
 
+        // ===== WALL CABINET DEPTH POSITIONING =====
+        // Wall cabinets are 12" deep vs base cabinets at 24" deep
+        // Both should align at the wall surface, not at the front face
+        // This ensures proper visual alignment in 3D view
+        const wallCabinetTypes = ['wall-cabinet'];
+        const isWallCabinet = wallCabinetTypes.includes(el.type) ||
+                              (el.type && el.type.startsWith('wall-cabinet-'));
+
+        if (isWallCabinet && !autoRotated) {
+          // Wall cabinet on back wall (no rotation) - adjust Z to align at wall
+          // Base cabinet depth: 24" (2 ft), Wall cabinet depth: 12" (1 ft)
+          // Difference: 12" (1 ft) - wall cabinet sits 1 ft closer to wall
+          const baseCabinetDepth = BUILDING_STANDARDS.CABINETS.BASE?.depth || 2;
+          const wallCabinetDepth = BUILDING_STANDARDS.CABINETS.WALL?.depth || 1;
+          const depthDifference = baseCabinetDepth - wallCabinetDepth;
+
+          // Move wall cabinet forward (toward the wall) by the depth difference
+          // This aligns the back of wall cabinet with back of base cabinet (both at wall)
+          zPos = (el.y / pixelsPerFoot) + el.height / 2 - depthDifference / 2;
+
+          // Ensure minimum distance from wall (wall cabinets should be at wall, not inside it)
+          if (zPos < wallCabinetDepth / 2) {
+            zPos = wallCabinetDepth / 2;
+          }
+        } else if (isWallCabinet && autoRotated) {
+          // Wall cabinet was auto-rotated to face a side or front wall
+          // Adjust position based on rotation direction
+          const baseCabinetDepth = BUILDING_STANDARDS.CABINETS.BASE?.depth || 2;
+          const wallCabinetDepth = BUILDING_STANDARDS.CABINETS.WALL?.depth || 1;
+          const depthDifference = baseCabinetDepth - wallCabinetDepth;
+
+          if (isAgainstRightWall) {
+            // Cabinet faces left, adjust X position closer to right wall
+            xPos = roomWidth - wallCabinetDepth / 2;
+          } else if (isAgainstLeftWall) {
+            // Cabinet faces right, adjust X position closer to left wall
+            xPos = wallCabinetDepth / 2;
+          } else if (isAgainstFrontWall) {
+            // Cabinet faces back, adjust Z position closer to front wall
+            zPos = roomDepth - wallCabinetDepth / 2;
+          }
+        }
+
+        // ===== BASE CABINET WALL ALIGNMENT =====
+        // Ensure base cabinets (24" deep) sit flush against walls
+        // Back of cabinet should touch wall surface, not be offset
+        const baseCabinetTypes = ['base-cabinet', 'drawer-base', 'sink-base', 'corner-cabinet', 'lazy-susan', 'blind-corner'];
+        const isBaseCabinet = baseCabinetTypes.some(t => el.type === t || el.type?.startsWith(t + '-'));
+
+        if (isBaseCabinet) {
+          const baseCabinetDepth = el.height || BUILDING_STANDARDS.CABINETS.BASE?.depth || 2; // Use element's depth (height in 2D)
+
+          if (!autoRotated) {
+            // Back wall (no rotation) - position so cabinet back is at wall
+            if (isAgainstBackWall) {
+              zPos = baseCabinetDepth / 2;
+            }
+          } else {
+            // Auto-rotated cabinet - align to the wall it faces
+            if (isAgainstRightWall) {
+              xPos = roomWidth - baseCabinetDepth / 2;
+            } else if (isAgainstLeftWall) {
+              xPos = baseCabinetDepth / 2;
+            } else if (isAgainstFrontWall) {
+              zPos = roomDepth - baseCabinetDepth / 2;
+            }
+          }
+        }
+
         if (isWindowDoor || isNiche || isGrabBar || isBacksplash || isWallMountedShelf || isWallAccessory || isRangeHood || isWallPanel) {
           // Determine which wall based on 2D position and rotation
           const rotation = (el.rotation || 0) % 360;
@@ -52715,6 +54551,176 @@
           // === LINEN STORAGE ===
           { type: 'tall-cabinet', x: 4, y: 0, width: 2, height: 1, label: 'Linen', rotation: 0 },
         ]
+      },
+
+      // ========== ADDITIONAL SPECIALTY TEMPLATES ==========
+
+      'coffee-bar': {
+        name: 'Coffee Bar / Espresso Station',
+        roomType: 'kitchen',
+        width: 8,
+        depth: 4,
+        elements: [
+          // === BACK WALL (y=0) - Compact coffee station ===
+          // Built-in espresso, sink for rinsing, storage for cups/beans
+          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Cup Storage', rotation: 0 },
+          { type: 'coffee-system', x: 2, y: 0.25, width: 2, height: 1.5, label: 'Espresso Machine', rotation: 0 },
+          { type: 'sink-base', x: 4, y: 0, width: 2, height: 2, label: 'Rinse Sink', rotation: 0 },
+          { type: 'base-cabinet', x: 6, y: 0, width: 2, height: 2, label: 'Bean Storage', rotation: 0 },
+          // Countertop
+          { type: 'countertop', x: -0.125, y: -0.04, width: 8.25, height: 2.165, label: 'Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 4.25, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
+          // Upper cabinets - mug display and storage
+          { type: 'wall-cabinet', x: 0, y: 0, width: 2, height: 1, label: 'Mug Display', rotation: 0 },
+          { type: 'wall-cabinet', x: 4, y: 0, width: 2, height: 1, label: 'Supplies', rotation: 0 },
+          { type: 'wall-cabinet', x: 6, y: 0, width: 2, height: 1, label: 'Beans/Filters', rotation: 0 },
+          // Backsplash
+          { type: 'backsplash', x: 0, y: 0, width: 8, height: 0.08, label: 'Tile Backsplash', rotation: 0 },
+        ]
+      },
+
+      'mudroom': {
+        name: 'Mudroom / Entry',
+        roomType: 'closet',
+        width: 10,
+        depth: 6,
+        elements: [
+          // === BACK WALL (y=0) - Lockers/cubbies with bench ===
+          // Storage for coats, bags, shoes with seating
+          { type: 'tall-cabinet', x: 0, y: 0, width: 1.5, height: 2, label: 'Locker 1', rotation: 0 },
+          { type: 'tall-cabinet', x: 1.5, y: 0, width: 1.5, height: 2, label: 'Locker 2', rotation: 0 },
+          { type: 'tall-cabinet', x: 3, y: 0, width: 1.5, height: 2, label: 'Locker 3', rotation: 0 },
+          { type: 'tall-cabinet', x: 4.5, y: 0, width: 1.5, height: 2, label: 'Locker 4', rotation: 0 },
+          // Bench with shoe storage below
+          { type: 'base-cabinet', x: 6.5, y: 0, width: 3.5, height: 1.5, label: 'Bench Storage', rotation: 0 },
+          { type: 'countertop', x: 6.375, y: -0.04, width: 3.75, height: 1.665, color: '#8B4513', label: 'Bench Seat', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Hooks above bench (represented as wall accessory)
+          { type: 'closet-rod', x: 6.5, y: 0, width: 3.5, height: 0.15, label: 'Coat Hooks', rotation: 0 },
+          // Shoe cubbies below
+          { type: 'shoe-rack', x: 0, y: 2.5, width: 6, height: 1.5, label: 'Shoe Cubbies', rotation: 0 },
+          // Door entry
+          { type: 'door', x: 4, y: 5.5, width: 3, height: 0.5, label: 'Entry Door', rotation: 0 },
+        ]
+      },
+
+      'pool-house-bar': {
+        name: 'Pool House Bar',
+        roomType: 'kitchen',
+        width: 14,
+        depth: 6,
+        elements: [
+          // === BACK WALL (y=0) - Full outdoor entertaining setup ===
+          // Grill, outdoor fridge, kegerator, sink, pizza oven
+          { type: 'outdoor-fridge', x: 0, y: 0, width: 2, height: 2.5, label: 'Outdoor Fridge', rotation: 0 },
+          { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 2, label: 'Storage', rotation: 0 },
+          { type: 'grill-builtin', x: 4, y: 0, width: 3, height: 2.5, label: 'Built-in Grill', rotation: 0 },
+          { type: 'side-burner', x: 7, y: 0, width: 1, height: 2, label: 'Side Burner', rotation: 0 },
+          { type: 'outdoor-sink', x: 8, y: 0, width: 2, height: 2, label: 'Sink', rotation: 0 },
+          { type: 'kegerator', x: 10, y: 0, width: 2, height: 2.5, label: 'Kegerator', rotation: 0 },
+          { type: 'outdoor-ice-maker', x: 12, y: 0, width: 1.25, height: 2, label: 'Ice Maker', rotation: 0 },
+          { type: 'base-cabinet', x: 13.25, y: 0, width: 0.75, height: 2, label: 'Storage', rotation: 0 },
+          // Continuous granite counter with bar seating overhang
+          { type: 'countertop', x: -0.125, y: -0.04, width: 14.25, height: 2.915, label: 'Granite Bar Top', rotation: 0, overhangFront: 0.75, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'sink', x: 8.25, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
+          // Range hood over grill
+          { type: 'range-hood', x: 4.25, y: 0, width: 2.5, height: 1, label: 'Vent Hood', rotation: 0 },
+          // Backsplash
+          { type: 'backsplash', x: 0, y: 0, width: 14, height: 0.08, label: 'Stone Backsplash', rotation: 0 },
+        ]
+      },
+
+      'home-office': {
+        name: 'Home Office with Built-ins',
+        roomType: 'closet',
+        width: 12,
+        depth: 10,
+        elements: [
+          // === BACK WALL (y=0) - Desk with overhead shelving ===
+          { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'File Cabinet', rotation: 0 },
+          { type: 'base-cabinet', x: 2, y: 0, width: 6, height: 2, label: 'Desk Base', rotation: 0 },
+          { type: 'base-cabinet', x: 8, y: 0, width: 2, height: 2, label: 'Drawer Pedestal', rotation: 0 },
+          // Desk surface
+          { type: 'countertop', x: -0.125, y: -0.04, width: 10.25, height: 2.165, color: '#5D4037', label: 'Desk Surface', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          // Upper shelving
+          { type: 'wall-cabinet', x: 0, y: 0, width: 3, height: 1, label: 'Bookshelves', rotation: 0 },
+          { type: 'wall-cabinet', x: 3, y: 0, width: 4, height: 1, label: 'Display Shelves', rotation: 0 },
+          { type: 'wall-cabinet', x: 7, y: 0, width: 3, height: 1, label: 'Storage', rotation: 0 },
+          // === RIGHT WALL (x=10) - Bookcase wall ===
+          { type: 'tall-cabinet', x: 10, y: 0, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
+          { type: 'tall-cabinet', x: 10, y: 3, width: 2, height: 4, label: 'Bookcase', rotation: 90 },
+          { type: 'tall-cabinet', x: 10, y: 7, width: 2, height: 3, label: 'Bookcase', rotation: 90 },
+          // === Entry ===
+          { type: 'door', x: 0, y: 9.5, width: 3, height: 0.5, label: 'Entry', rotation: 0 },
+        ]
+      },
+
+      'commercial-prep-kitchen': {
+        name: 'Commercial Prep Kitchen',
+        roomType: 'kitchen',
+        width: 20,
+        depth: 16,
+        elements: [
+          // === BACK WALL (y=0) - Commercial cooking line ===
+          // Walk-in cooler access, prep tables, commercial range
+          { type: 'refrigerator', x: 0, y: 0, width: 4, height: 3, label: 'Walk-in Cooler', rotation: 0 },
+          { type: 'base-cabinet', x: 4, y: 0, width: 4, height: 2.5, label: 'Prep Table', rotation: 0 },
+          { type: 'range', x: 8, y: 0, width: 4, height: 3, label: 'Commercial Range', rotation: 0 },
+          { type: 'range-hood', x: 8, y: 0, width: 4, height: 2, label: 'Hood System', rotation: 0 },
+          { type: 'base-cabinet', x: 12, y: 0, width: 4, height: 2.5, label: 'Hot Holding', rotation: 0 },
+          { type: 'refrigerator', x: 16, y: 0, width: 4, height: 3, label: 'Reach-in Freezer', rotation: 0 },
+          // Countertops - stainless steel
+          { type: 'countertop', x: 3.875, y: -0.04, width: 12.25, height: 2.665, color: '#C0C0C0', label: 'Stainless Prep', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+
+          // === LEFT WALL (x=0) - Dish station ===
+          { type: 'sink-base', x: 0, y: 4, width: 3, height: 4, label: '3-Compartment Sink', rotation: 270 },
+          { type: 'dishwasher', x: 0, y: 8, width: 3, height: 3, label: 'Commercial Dishwasher', rotation: 270 },
+          { type: 'base-cabinet', x: 0, y: 11, width: 3, height: 3, label: 'Clean Dish Table', rotation: 270 },
+          { type: 'countertop', x: -0.04, y: 3.875, width: 3.165, height: 10.25, color: '#C0C0C0', label: 'Dish Area', rotation: 0, overhangFront: 0, overhangBack: 0, overhangLeft: 0, overhangRight: 0.125 },
+
+          // === CENTER - Prep island ===
+          { type: 'island', x: 7, y: 6, width: 6, height: 4, label: 'Prep Island', rotation: 0 },
+          { type: 'countertop', x: 6.875, y: 5.875, width: 6.25, height: 4.25, color: '#C0C0C0', label: 'Stainless Island', rotation: 0, overhangFront: 0.125, overhangBack: 0.125, overhangLeft: 0.125, overhangRight: 0.125 },
+
+          // === RIGHT WALL (x=17) - Cold storage and plating ===
+          { type: 'refrigerator', x: 17, y: 4, width: 3, height: 4, label: 'Reach-in Cooler', rotation: 90 },
+          { type: 'base-cabinet', x: 17, y: 8, width: 3, height: 4, label: 'Plating Station', rotation: 90 },
+          { type: 'base-cabinet', x: 17, y: 12, width: 3, height: 4, label: 'Expediting', rotation: 90 },
+          { type: 'countertop', x: 16.835, y: 3.875, width: 3.165, height: 12.125, color: '#C0C0C0', label: 'Plating Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+
+          // === FRONT WALL (y=14) - Pass window / service line ===
+          { type: 'window', x: 6, y: 15.5, width: 8, height: 0.5, label: 'Pass Window', rotation: 0 },
+        ]
+      },
+
+      'scullery': {
+        name: 'Scullery / Prep Kitchen',
+        roomType: 'kitchen',
+        width: 8,
+        depth: 8,
+        elements: [
+          // === BACK WALL (y=0) - Secondary sink and prep ===
+          // Hidden prep area behind main kitchen
+          { type: 'tall-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Pantry Storage', rotation: 0 },
+          { type: 'base-cabinet', x: 2, y: 0, width: 2, height: 2, label: 'Prep Base', rotation: 0 },
+          { type: 'sink-base', x: 4, y: 0, width: 2.5, height: 2, label: 'Prep Sink', rotation: 0 },
+          { type: 'dishwasher', x: 6.5, y: 0, width: 1.5, height: 2, label: 'Dishwasher', rotation: 0 },
+          { type: 'countertop', x: 1.875, y: -0.04, width: 6.125, height: 2.165, label: 'Prep Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0 },
+          { type: 'sink', x: 4.25, y: 0.25, width: 2, height: 1.5, label: 'Prep Sink', rotation: 0 },
+          // Wall cabinets
+          { type: 'wall-cabinet', x: 2, y: 0, width: 2, height: 1, label: 'Upper', rotation: 0 },
+          { type: 'wall-cabinet', x: 4, y: 0, width: 2.5, height: 1, label: 'Upper', rotation: 0 },
+
+          // === LEFT WALL - Additional storage ===
+          { type: 'tall-cabinet', x: 0, y: 2, width: 2, height: 3, label: 'Pantry', rotation: 270 },
+          { type: 'tall-cabinet', x: 0, y: 5, width: 2, height: 3, label: 'Appliance Garage', rotation: 270 },
+
+          // === FRONT WALL (y=6) - Extra counter ===
+          { type: 'base-cabinet', x: 2.5, y: 6, width: 3, height: 2, label: 'Extra Storage', rotation: 180 },
+          { type: 'countertop', x: 2.375, y: 5.835, width: 3.25, height: 2.165, label: 'Landing', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+
+          // Backsplash
+          { type: 'backsplash', x: 2, y: 0, width: 6, height: 0.08, label: 'Backsplash', rotation: 0 },
+        ]
       }
     };
 
@@ -53609,6 +55615,46 @@
         }
         if (customNicheDepthRow && !isNiche) {
           customNicheDepthRow.style.display = 'none';
+        }
+
+        // Backsplash height controls
+        const isBacksplash = selectedElement.type === 'backsplash';
+        const backsplashHeightRow = document.getElementById('backsplashHeightRow');
+        const customBacksplashHeightRow = document.getElementById('customBacksplashHeightRow');
+        const tileTypeRow = document.getElementById('tileTypeRow');
+
+        if (backsplashHeightRow) {
+          backsplashHeightRow.style.display = isBacksplash ? 'flex' : 'none';
+          if (isBacksplash) {
+            const bsHeight = selectedElement.verticalHeight || 1.5;
+            const select = document.getElementById('propBacksplashHeight');
+
+            // Check if it matches a preset
+            const presets = [0.333, 0.5, 1, 1.5];
+            const matchesPreset = presets.some(p => Math.abs(bsHeight - p) < 0.05);
+
+            if (matchesPreset) {
+              select.value = presets.find(p => Math.abs(bsHeight - p) < 0.05).toString();
+              if (customBacksplashHeightRow) customBacksplashHeightRow.style.display = 'none';
+            } else {
+              select.value = 'custom';
+              if (customBacksplashHeightRow) {
+                customBacksplashHeightRow.style.display = 'flex';
+                document.getElementById('propCustomBacksplashHeight').value = Math.round(bsHeight * 12);
+                document.getElementById('propBacksplashHeightDisplay').textContent = formatDimension(bsHeight);
+              }
+            }
+          }
+        }
+        if (customBacksplashHeightRow && !isBacksplash) {
+          customBacksplashHeightRow.style.display = 'none';
+        }
+        if (tileTypeRow) {
+          tileTypeRow.style.display = isBacksplash ? 'flex' : 'none';
+          if (isBacksplash) {
+            const tileType = selectedElement.tileType || 'standard';
+            document.getElementById('propTileType').value = tileType;
+          }
         }
 
         // Stone surface thickness controls
@@ -54651,6 +56697,88 @@
       showSnapFeedback(`Niche depth: ${Math.round(selectedElement.nicheDepth * 12)}" (${formatDimension(selectedElement.nicheDepth)})`);
     }
 
+    // Update backsplash vertical height
+    function updateBacksplashHeight() {
+      if (!selectedElement || selectedElement.type !== 'backsplash') return;
+
+      const select = document.getElementById('propBacksplashHeight');
+      const value = select.value;
+      const customRow = document.getElementById('customBacksplashHeightRow');
+
+      if (value === 'custom') {
+        if (customRow) {
+          customRow.style.display = 'flex';
+          const currentHeight = selectedElement.verticalHeight || 1.5;
+          document.getElementById('propCustomBacksplashHeight').value = Math.round(currentHeight * 12);
+          document.getElementById('propBacksplashHeightDisplay').textContent = formatDimension(currentHeight);
+        }
+        return;
+      }
+
+      if (customRow) customRow.style.display = 'none';
+
+      const heightFt = parseFloat(value);
+      selectedElement.verticalHeight = heightFt;
+
+      // Convert to inches for display
+      const heightInches = Math.round(heightFt * 12);
+      let heightLabel = heightInches + '"';
+      if (heightInches === 4) heightLabel = '4" (Standard)';
+      else if (heightInches === 6) heightLabel = '6" (Raised)';
+      else if (heightInches === 12) heightLabel = '12" (Half Height)';
+      else if (heightInches === 18) heightLabel = '18" (Full)';
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Backsplash height: ${heightLabel}`);
+    }
+
+    // Apply custom backsplash height
+    function applyCustomBacksplashHeight() {
+      if (!selectedElement || selectedElement.type !== 'backsplash') return;
+
+      const input = document.getElementById('propCustomBacksplashHeight');
+      const heightInches = parseFloat(input.value) || 18;
+
+      // Clamp to reasonable values (2" to 24")
+      const clampedInches = Math.max(2, Math.min(24, heightInches));
+      selectedElement.verticalHeight = clampedInches / 12;
+
+      // Update display
+      document.getElementById('propBacksplashHeightDisplay').textContent = formatDimension(selectedElement.verticalHeight);
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Backsplash height: ${clampedInches}"`);
+    }
+
+    // Update tile type for backsplash
+    function updateTileType() {
+      if (!selectedElement || selectedElement.type !== 'backsplash') return;
+
+      const select = document.getElementById('propTileType');
+      selectedElement.tileType = select.value;
+
+      const tileLabels = {
+        'standard': 'Standard 4"×4"',
+        'subway': 'Subway 3"×6"',
+        'mosaic': 'Mosaic 1"×1"',
+        'herringbone': 'Herringbone',
+        'chevron': 'Chevron',
+        'hexagon': 'Hexagon'
+      };
+
+      markElement3DDirty(selectedElement.id);
+      saveUndoState();
+      draw();
+      update3DScene();
+      showSnapFeedback(`Tile pattern: ${tileLabels[selectedElement.tileType] || selectedElement.tileType}`);
+    }
+
     // Update stone surface thickness
     function updateStoneThickness() {
       if (!selectedElement) return;
@@ -54915,8 +57043,1052 @@
         preferredZone: { min: 0.25, max: 0.75 }, // Middle 50% is preferred
         // Types of elements to avoid seaming over
         avoidOver: ['sink', 'sink-double', 'sink-farmhouse', 'cooktop', 'range']
+      },
+      // Standard slab sizes available
+      slabSizes: {
+        standard: { width: 120, depth: 60, name: 'Standard (120"×60")' },
+        jumbo: { width: 130, depth: 68, name: 'Jumbo (130"×68")' },
+        compact: { width: 96, depth: 48, name: 'Compact (96"×48")' }
+      },
+      // Cut waste allowance
+      wasteAllowance: 0.15, // 15% waste factor for cuts
+      // Minimum usable remnant size (sq in)
+      minRemnantSize: 144, // 12"x12" minimum
+      // Edge profile labor times (minutes per linear foot)
+      edgeProfileLabor: {
+        'eased': 2,
+        'pencil': 3,
+        'quarter-round': 4,
+        'half-bullnose': 5,
+        'full-bullnose': 6,
+        'quarter-bevel': 3,
+        'ogee': 8,
+        'double-ogee': 12,
+        'dupont': 10,
+        'cove': 6,
+        'mitered': 15,
+        'waterfall': 20
       }
     };
+
+    // ===== FABRICATION TOOLS MODULE =====
+
+    // Slab inventory for layout optimization
+    const SLAB_INVENTORY = {
+      slabs: [],
+      selectedSlab: null
+    };
+
+    // Generate fabrication plan for all countertops
+    function generateFabricationPlan() {
+      const countertopTypes = ['countertop', 'countertop-corner', 'countertop-l', 'countertop-u', 'island'];
+      const countertops = elements.filter(el => countertopTypes.includes(el.type));
+
+      if (countertops.length === 0) {
+        showToast('No countertops found in design', 'warning');
+        return null;
+      }
+
+      const plan = {
+        timestamp: new Date().toISOString(),
+        projectName: document.getElementById('projectName')?.value || 'Untitled',
+        countertops: [],
+        cutList: [],
+        totalSqFt: 0,
+        totalEdgeLF: 0,
+        totalCutouts: [],
+        slabsRequired: 0,
+        estimatedWaste: 0,
+        estimatedLaborHours: 0
+      };
+
+      countertops.forEach((ctop, idx) => {
+        const widthIn = ctop.width * 12;
+        const depthIn = ctop.height * 12;
+        const sqFt = (widthIn * depthIn) / 144;
+        const edgeLF = calculateEdgeLinearFeet(ctop);
+
+        const piece = {
+          id: ctop.id,
+          label: ctop.label || `Countertop ${idx + 1}`,
+          type: ctop.type,
+          dimensions: {
+            width: widthIn,
+            depth: depthIn,
+            widthFt: ctop.width,
+            depthFt: ctop.height
+          },
+          sqFt: sqFt,
+          edgeLF: edgeLF,
+          edgeProfile: ctop.edgeProfile || 'eased',
+          material: ctop.texture || ctop.materialName || 'TBD',
+          thickness: ctop.thickness || '3cm',
+          seams: ctop.seams || [],
+          cutouts: [],
+          specialInstructions: []
+        };
+
+        // Find cutouts (sinks, cooktops) on this countertop
+        const cutoutTypes = ['sink', 'sink-double', 'sink-farmhouse', 'cooktop', 'range'];
+        elements.forEach(el => {
+          if (!cutoutTypes.includes(el.type)) return;
+
+          // Check if element is on this countertop
+          const elCenterX = el.x + (el.width * pixelsPerFoot) / 2;
+          const elCenterY = el.y + (el.height * pixelsPerFoot) / 2;
+          const ctopLeft = ctop.x;
+          const ctopRight = ctop.x + ctop.width * pixelsPerFoot;
+          const ctopTop = ctop.y;
+          const ctopBottom = ctop.y + ctop.height * pixelsPerFoot;
+
+          if (elCenterX >= ctopLeft && elCenterX <= ctopRight &&
+              elCenterY >= ctopTop && elCenterY <= ctopBottom) {
+            const cutout = {
+              type: el.type,
+              label: el.label,
+              width: el.width * 12,
+              depth: el.height * 12,
+              position: {
+                fromLeft: ((el.x - ctop.x) / pixelsPerFoot) * 12,
+                fromBack: ((el.y - ctop.y) / pixelsPerFoot) * 12
+              },
+              mountType: el.mountType || 'undermount',
+              cornerRadius: el.type.includes('sink') ? 0.5 : 0.25
+            };
+            piece.cutouts.push(cutout);
+            plan.totalCutouts.push(cutout);
+          }
+        });
+
+        // Calculate pieces from seams
+        if (piece.seams.length > 0) {
+          let lastPos = 0;
+          piece.seams.forEach((seam, sIdx) => {
+            const pieceWidth = (seam.position - lastPos) * widthIn;
+            plan.cutList.push({
+              countertopId: ctop.id,
+              countertopLabel: piece.label,
+              pieceNumber: sIdx + 1,
+              width: pieceWidth,
+              depth: depthIn,
+              sqFt: (pieceWidth * depthIn) / 144,
+              seamLeft: sIdx > 0,
+              seamRight: true,
+              edgeProfile: piece.edgeProfile
+            });
+            lastPos = seam.position;
+          });
+          // Last piece
+          const lastPieceWidth = (1 - lastPos) * widthIn;
+          plan.cutList.push({
+            countertopId: ctop.id,
+            countertopLabel: piece.label,
+            pieceNumber: piece.seams.length + 1,
+            width: lastPieceWidth,
+            depth: depthIn,
+            sqFt: (lastPieceWidth * depthIn) / 144,
+            seamLeft: true,
+            seamRight: false,
+            edgeProfile: piece.edgeProfile
+          });
+        } else {
+          // Single piece
+          plan.cutList.push({
+            countertopId: ctop.id,
+            countertopLabel: piece.label,
+            pieceNumber: 1,
+            width: widthIn,
+            depth: depthIn,
+            sqFt: sqFt,
+            seamLeft: false,
+            seamRight: false,
+            edgeProfile: piece.edgeProfile
+          });
+        }
+
+        plan.countertops.push(piece);
+        plan.totalSqFt += sqFt;
+        plan.totalEdgeLF += edgeLF;
+      });
+
+      // Calculate slabs required
+      const slabSize = FABRICATION_STANDARDS.slabSizes.standard;
+      const slabSqFt = (slabSize.width * slabSize.depth) / 144;
+      const effectiveSqFt = plan.totalSqFt * (1 + FABRICATION_STANDARDS.wasteAllowance);
+      plan.slabsRequired = Math.ceil(effectiveSqFt / slabSqFt);
+      plan.estimatedWaste = effectiveSqFt - plan.totalSqFt;
+
+      // Calculate labor hours
+      plan.cutList.forEach(piece => {
+        const edgeLabor = FABRICATION_STANDARDS.edgeProfileLabor[piece.edgeProfile] || 3;
+        const edgeLF = (piece.width + piece.depth * 2) / 12; // Front + sides
+        plan.estimatedLaborHours += (edgeLF * edgeLabor) / 60;
+      });
+      plan.totalCutouts.forEach(cutout => {
+        plan.estimatedLaborHours += cutout.type.includes('sink') ? 0.75 : 0.5;
+      });
+
+      return plan;
+    }
+
+    // Calculate edge linear feet for a countertop
+    function calculateEdgeLinearFeet(ctop) {
+      const widthIn = ctop.width * 12;
+      const depthIn = ctop.height * 12;
+
+      // Default: front edge + both side edges
+      let edgeLF = (widthIn + depthIn * 2) / 12;
+
+      // Adjust for L-shaped
+      if (ctop.type === 'countertop-l') {
+        const armWidth = (ctop.armWidth || 2.17) * 12;
+        edgeLF = (widthIn + depthIn + armWidth * 2) / 12;
+      }
+
+      return edgeLF;
+    }
+
+    // Generate slab layout visualization
+    function generateSlabLayout(plan) {
+      if (!plan) plan = generateFabricationPlan();
+      if (!plan) return null;
+
+      const slabSize = FABRICATION_STANDARDS.slabSizes.standard;
+      const layouts = [];
+      let currentSlab = {
+        number: 1,
+        pieces: [],
+        usedArea: 0,
+        remainingArea: slabSize.width * slabSize.depth
+      };
+
+      // Simple bin packing algorithm
+      plan.cutList.forEach(piece => {
+        const pieceArea = piece.width * piece.depth;
+
+        // Check if piece fits in current slab
+        if (pieceArea <= currentSlab.remainingArea) {
+          currentSlab.pieces.push(piece);
+          currentSlab.usedArea += pieceArea;
+          currentSlab.remainingArea -= pieceArea;
+        } else {
+          // Start new slab
+          layouts.push(currentSlab);
+          currentSlab = {
+            number: layouts.length + 2,
+            pieces: [piece],
+            usedArea: pieceArea,
+            remainingArea: (slabSize.width * slabSize.depth) - pieceArea
+          };
+        }
+      });
+
+      // Add last slab
+      if (currentSlab.pieces.length > 0) {
+        layouts.push(currentSlab);
+      }
+
+      return {
+        slabSize: slabSize,
+        layouts: layouts,
+        totalSlabs: layouts.length,
+        avgUtilization: layouts.reduce((sum, s) => sum + (s.usedArea / (slabSize.width * slabSize.depth)), 0) / layouts.length
+      };
+    }
+
+    // Show fabrication plan modal
+    function showFabricationPlan() {
+      const plan = generateFabricationPlan();
+      if (!plan) return;
+
+      const slabLayout = generateSlabLayout(plan);
+
+      const modal = document.createElement('div');
+      modal.className = 'fabrication-plan-modal';
+      modal.innerHTML = `
+        <div class="fabrication-plan-content">
+          <div class="fabrication-plan-header">
+            <h3>Fabrication Plan - ${plan.projectName}</h3>
+            <button onclick="this.closest('.fabrication-plan-modal').remove()">×</button>
+          </div>
+          <div class="fabrication-plan-body">
+            <div class="fab-summary">
+              <div class="fab-stat">
+                <span class="fab-value">${plan.totalSqFt.toFixed(1)}</span>
+                <span class="fab-label">Total Sq Ft</span>
+              </div>
+              <div class="fab-stat">
+                <span class="fab-value">${plan.totalEdgeLF.toFixed(1)}</span>
+                <span class="fab-label">Edge LF</span>
+              </div>
+              <div class="fab-stat">
+                <span class="fab-value">${plan.slabsRequired}</span>
+                <span class="fab-label">Slabs Required</span>
+              </div>
+              <div class="fab-stat">
+                <span class="fab-value">${plan.totalCutouts.length}</span>
+                <span class="fab-label">Cutouts</span>
+              </div>
+              <div class="fab-stat">
+                <span class="fab-value">${plan.estimatedLaborHours.toFixed(1)}h</span>
+                <span class="fab-label">Est. Labor</span>
+              </div>
+            </div>
+
+            <div class="fab-section">
+              <h4>Cut List</h4>
+              <table class="fab-table">
+                <thead>
+                  <tr>
+                    <th>Piece</th>
+                    <th>Dimensions</th>
+                    <th>Sq Ft</th>
+                    <th>Seams</th>
+                    <th>Edge</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${plan.cutList.map(p => `
+                    <tr>
+                      <td>${p.countertopLabel} #${p.pieceNumber}</td>
+                      <td>${p.width.toFixed(1)}" × ${p.depth.toFixed(1)}"</td>
+                      <td>${p.sqFt.toFixed(2)}</td>
+                      <td>${p.seamLeft ? 'L' : ''}${p.seamRight ? 'R' : ''}${!p.seamLeft && !p.seamRight ? '-' : ''}</td>
+                      <td>${p.edgeProfile}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            ${plan.totalCutouts.length > 0 ? `
+              <div class="fab-section">
+                <h4>Cutouts</h4>
+                <table class="fab-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Size</th>
+                      <th>Position</th>
+                      <th>Mount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${plan.totalCutouts.map(c => `
+                      <tr>
+                        <td>${c.label || c.type}</td>
+                        <td>${c.width.toFixed(1)}" × ${c.depth.toFixed(1)}"</td>
+                        <td>${c.position.fromLeft.toFixed(1)}" from left, ${c.position.fromBack.toFixed(1)}" from back</td>
+                        <td>${c.mountType}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : ''}
+
+            <div class="fab-section">
+              <h4>Slab Layout (${slabLayout.totalSlabs} slab${slabLayout.totalSlabs > 1 ? 's' : ''})</h4>
+              <div class="slab-layouts">
+                ${slabLayout.layouts.map(slab => `
+                  <div class="slab-preview">
+                    <div class="slab-header">Slab #${slab.number} - ${((slab.usedArea / (slabLayout.slabSize.width * slabLayout.slabSize.depth)) * 100).toFixed(0)}% utilized</div>
+                    <div class="slab-diagram" style="aspect-ratio: ${slabLayout.slabSize.width}/${slabLayout.slabSize.depth};">
+                      ${slab.pieces.map((p, i) => `
+                        <div class="slab-piece" style="width: ${(p.width / slabLayout.slabSize.width) * 100}%; height: ${(p.depth / slabLayout.slabSize.depth) * 100}%;" title="${p.countertopLabel} #${p.pieceNumber}">
+                          <span>${p.pieceNumber}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="fab-note">Avg utilization: ${(slabLayout.avgUtilization * 100).toFixed(0)}%</div>
+            </div>
+          </div>
+          <div class="fabrication-plan-footer">
+            <button onclick="exportFabricationPlan()" class="fab-export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export PDF
+            </button>
+            <button onclick="copyFabricationPlan()" class="fab-copy-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    // Export fabrication plan as text
+    function copyFabricationPlan() {
+      const plan = generateFabricationPlan();
+      if (!plan) return;
+
+      let text = `FABRICATION PLAN - ${plan.projectName}\n`;
+      text += `Generated: ${new Date().toLocaleString()}\n`;
+      text += `${'='.repeat(50)}\n\n`;
+
+      text += `SUMMARY\n`;
+      text += `-`.repeat(30) + `\n`;
+      text += `Total Square Feet: ${plan.totalSqFt.toFixed(2)} sq ft\n`;
+      text += `Edge Linear Feet: ${plan.totalEdgeLF.toFixed(2)} LF\n`;
+      text += `Slabs Required: ${plan.slabsRequired}\n`;
+      text += `Total Cutouts: ${plan.totalCutouts.length}\n`;
+      text += `Est. Labor Hours: ${plan.estimatedLaborHours.toFixed(1)}\n\n`;
+
+      text += `CUT LIST\n`;
+      text += `-`.repeat(30) + `\n`;
+      plan.cutList.forEach(p => {
+        text += `${p.countertopLabel} #${p.pieceNumber}: ${p.width.toFixed(1)}" × ${p.depth.toFixed(1)}" (${p.sqFt.toFixed(2)} sq ft)\n`;
+        text += `  Edge: ${p.edgeProfile}, Seams: ${p.seamLeft ? 'Left ' : ''}${p.seamRight ? 'Right' : ''}${!p.seamLeft && !p.seamRight ? 'None' : ''}\n`;
+      });
+
+      if (plan.totalCutouts.length > 0) {
+        text += `\nCUTOUTS\n`;
+        text += `-`.repeat(30) + `\n`;
+        plan.totalCutouts.forEach(c => {
+          text += `${c.label || c.type}: ${c.width.toFixed(1)}" × ${c.depth.toFixed(1)}" (${c.mountType})\n`;
+          text += `  Position: ${c.position.fromLeft.toFixed(1)}" from left, ${c.position.fromBack.toFixed(1)}" from back\n`;
+        });
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Fabrication plan copied to clipboard', 'success');
+      });
+    }
+
+    // ===== INTERACTIVE SLAB LAYOUT MODAL =====
+    // CounterGo-style slab layout interface for drag-and-drop piece arrangement
+    function showSlabLayoutModal() {
+      // Try to get countertops from design, but don't require them
+      const plan = generateFabricationPlan();
+      const hasDesignPieces = plan && plan.cutList && plan.cutList.length > 0;
+
+      const slabSizes = FABRICATION_STANDARDS.slabSizes;
+      let currentSlabSize = slabSizes.standard;
+      let pieceCounter = 0;
+
+      // Initialize pieces from design or start empty
+      let pieces = hasDesignPieces ? plan.cutList.map((p, i) => ({
+        ...p,
+        id: `piece-${pieceCounter++}`,
+        x: 10 + (i % 3) * 35,
+        y: 10 + Math.floor(i / 3) * 25,
+        rotation: 0,
+        slabNumber: null
+      })) : [];
+
+      const modal = document.createElement('div');
+      modal.className = 'fabrication-plan-modal';
+      modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+      modal.innerHTML = `
+        <div style="background: var(--dark-surface, #1a1a2e); border-radius: 12px; width: 95vw; max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <h3 style="margin: 0; font-size: 18px; color: #fff;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                  <rect x="2" y="2" width="20" height="20" rx="1"/>
+                  <rect x="4" y="4" width="7" height="5" rx="0.5" fill="currentColor" opacity="0.3"/>
+                  <rect x="13" y="4" width="7" height="8" rx="0.5" fill="currentColor" opacity="0.3"/>
+                  <rect x="4" y="11" width="7" height="9" rx="0.5" fill="currentColor" opacity="0.3"/>
+                </svg>
+                Slab Layout Tool
+              </h3>
+              <select id="slabSizeSelect" style="padding: 6px 12px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 13px;">
+                <option value="standard">${slabSizes.standard.name} (${slabSizes.standard.width}"×${slabSizes.standard.depth}")</option>
+                <option value="jumbo">${slabSizes.jumbo.name} (${slabSizes.jumbo.width}"×${slabSizes.jumbo.depth}")</option>
+                <option value="compact">${slabSizes.compact.name} (${slabSizes.compact.width}"×${slabSizes.compact.depth}")</option>
+              </select>
+              <span id="slabUtilization" style="font-size: 12px; color: rgba(255,255,255,0.6); padding: 4px 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">Utilization: 0%</span>
+            </div>
+            <button onclick="this.closest('.fabrication-plan-modal').remove()" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 20px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">×</button>
+          </div>
+
+          <div style="display: flex; flex: 1; overflow: hidden;">
+            <!-- Slab Canvas -->
+            <div style="flex: 1; padding: 20px; overflow: auto; background: rgba(0,0,0,0.2);">
+              <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div id="slabContainer" style="position: relative; background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%); border: 3px solid rgba(255,255,255,0.3); border-radius: 4px; box-shadow: inset 0 0 30px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.3); margin: 30px;">
+                  <!-- Slab pieces will be rendered here -->
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                  <button onclick="slabAutoArrange()" style="padding: 8px 16px; border-radius: 6px; background: rgba(34,197,94,0.3); border: 1px solid rgba(34,197,94,0.5); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(34,197,94,0.5)'" onmouseout="this.style.background='rgba(34,197,94,0.3)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    Auto-Arrange
+                  </button>
+                  <button onclick="slabOptimize()" style="padding: 8px 16px; border-radius: 6px; background: rgba(99,102,241,0.3); border: 1px solid rgba(99,102,241,0.5); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.5)'" onmouseout="this.style.background='rgba(99,102,241,0.3)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                    Optimize
+                  </button>
+                  <button onclick="slabReset()" style="padding: 8px 16px; border-radius: 6px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.3); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Reset
+                  </button>
+                  <button onclick="slabClearAll()" style="padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Piece Library Panel -->
+            <div style="width: 320px; border-left: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden;">
+              <!-- Add Piece Form -->
+              <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: rgba(255,255,255,0.9); display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                  Add New Piece
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                  <div>
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Width (inches)</label>
+                    <input type="number" id="newPieceWidth" value="36" min="1" max="200" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Depth (inches)</label>
+                    <input type="number" id="newPieceDepth" value="26" min="1" max="200" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 14px;">
+                  </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 4px;">Label (optional)</label>
+                  <input type="text" id="newPieceLabel" placeholder="e.g., Kitchen Island" style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 13px; box-sizing: border-box;">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button onclick="slabAddPiece()" style="flex: 1; padding: 10px; border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-weight: 500; cursor: pointer; font-size: 13px; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                    + Add Piece
+                  </button>
+                  <button onclick="slabImportFromDesign()" style="padding: 10px 14px; border-radius: 6px; background: rgba(245,158,11,0.3); border: 1px solid rgba(245,158,11,0.5); color: #fff; cursor: pointer; font-size: 13px;" title="Import countertops from room design">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Piece List -->
+              <div style="flex: 1; overflow-y: auto; padding: 16px;">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: rgba(255,255,255,0.8); display: flex; justify-content: space-between; align-items: center;">
+                  Cut Pieces
+                  <span id="pieceCount" style="font-size: 12px; color: rgba(255,255,255,0.5); font-weight: normal;">0 pieces</span>
+                </h4>
+                <div id="pieceLibrary" style="display: flex; flex-direction: column; gap: 8px;">
+                  <!-- Pieces will be rendered here -->
+                </div>
+                <div id="emptyPieceMessage" style="text-align: center; padding: 30px 20px; color: rgba(255,255,255,0.4); font-size: 13px; ${pieces.length > 0 ? 'display: none;' : ''}">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom: 12px; opacity: 0.5;"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+                  <div>No pieces yet</div>
+                  <div style="font-size: 11px; margin-top: 4px;">Add pieces manually or import from your design</div>
+                </div>
+              </div>
+
+              <!-- Stats -->
+              <div style="padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
+                <div id="layoutStats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px;">
+                  <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Total Sq Ft</div>
+                    <div id="totalSqFt" style="color: #fff; font-size: 18px; font-weight: 600;">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; text-align: center;">
+                    <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Waste</div>
+                    <div id="wastePercent" style="color: #fff; font-size: 18px; font-weight: 600;">0%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 16px; align-items: center;">
+              <span style="font-size: 11px; color: rgba(255,255,255,0.5);">
+                <strong>Drag</strong> pieces to position • <strong>Double-click</strong> to rotate • <strong>Right-click</strong> to delete
+              </span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button onclick="slabExportPDF()" style="padding: 8px 16px; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 13px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Export
+              </button>
+              <button onclick="slabSaveLayout()" style="padding: 8px 20px; border-radius: 6px; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; color: #fff; font-weight: 500; cursor: pointer; font-size: 13px;">
+                Save Layout
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Initialize the slab canvas
+      const slabContainer = modal.querySelector('#slabContainer');
+      const slabSelect = modal.querySelector('#slabSizeSelect');
+      let scale = 5; // pixels per inch
+
+      function renderPieceLibrary() {
+        const library = modal.querySelector('#pieceLibrary');
+        const emptyMsg = modal.querySelector('#emptyPieceMessage');
+        const countEl = modal.querySelector('#pieceCount');
+
+        countEl.textContent = pieces.length + ' piece' + (pieces.length !== 1 ? 's' : '');
+        emptyMsg.style.display = pieces.length === 0 ? 'block' : 'none';
+
+        library.innerHTML = pieces.map(p => `
+          <div class="layout-piece-card" data-piece-id="${p.id}" draggable="true" style="padding: 10px; background: ${p.slabNumber ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)'}; border: 1px solid ${p.slabNumber ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.1)'}; border-radius: 6px; cursor: move; transition: all 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <div style="font-weight: 500; font-size: 13px; color: #fff;">${p.label || p.countertopLabel || 'Piece'} #${p.pieceNumber || pieces.indexOf(p) + 1}</div>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px;">${p.width.toFixed(1)}" × ${p.depth.toFixed(1)}"</div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px;">${((p.width * p.depth) / 144).toFixed(2)} sq ft</div>
+              </div>
+              <button onclick="slabRemovePiece('${p.id}')" style="width: 24px; height: 24px; border-radius: 4px; background: rgba(239,68,68,0.2); border: none; color: #ef4444; cursor: pointer; font-size: 14px;" title="Remove piece">×</button>
+            </div>
+            ${p.slabNumber ? '<div style="font-size: 10px; color: #22c55e; margin-top: 6px;">✓ Placed on slab</div>' : '<div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 6px;">Drag to slab →</div>'}
+          </div>
+        `).join('');
+
+        // Re-attach drag handlers
+        library.querySelectorAll('.layout-piece-card').forEach(card => {
+          card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', card.dataset.pieceId);
+            card.style.opacity = '0.5';
+          });
+          card.addEventListener('dragend', () => {
+            card.style.opacity = '1';
+          });
+        });
+
+        updateStats();
+      }
+
+      function renderSlab() {
+        const size = slabSizes[slabSelect.value];
+        currentSlabSize = size;
+        const containerWidth = size.width * scale;
+        const containerHeight = size.depth * scale;
+
+        slabContainer.style.width = containerWidth + 'px';
+        slabContainer.style.height = containerHeight + 'px';
+        slabContainer.innerHTML = '';
+
+        // Draw grid
+        const gridSize = 12 * scale; // 12" grid
+        for (let x = gridSize; x < containerWidth; x += gridSize) {
+          const line = document.createElement('div');
+          line.style.cssText = `position: absolute; width: 1px; height: 100%; background: rgba(255,255,255,${x % (24 * scale) === 0 ? '0.1' : '0.05'}); pointer-events: none;`;
+          line.style.left = x + 'px';
+          slabContainer.appendChild(line);
+        }
+        for (let y = gridSize; y < containerHeight; y += gridSize) {
+          const line = document.createElement('div');
+          line.style.cssText = `position: absolute; width: 100%; height: 1px; background: rgba(255,255,255,${y % (24 * scale) === 0 ? '0.1' : '0.05'}); pointer-events: none;`;
+          line.style.top = y + 'px';
+          slabContainer.appendChild(line);
+        }
+
+        // Render dimension labels
+        const widthLabel = document.createElement('div');
+        widthLabel.style.cssText = 'position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;';
+        widthLabel.textContent = size.width + '"';
+        slabContainer.appendChild(widthLabel);
+
+        const heightLabel = document.createElement('div');
+        heightLabel.style.cssText = 'position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;';
+        heightLabel.textContent = size.depth + '"';
+        slabContainer.appendChild(heightLabel);
+
+        // Render placed pieces
+        pieces.filter(p => p.slabNumber === 1).forEach(piece => {
+          const pieceEl = createPieceElement(piece);
+          slabContainer.appendChild(pieceEl);
+        });
+
+        updateStats();
+      }
+
+      function createPieceElement(piece) {
+        const el = document.createElement('div');
+        const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
+        const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
+
+        el.dataset.pieceId = piece.id;
+        el.style.cssText = `
+          position: absolute;
+          left: ${piece.x}px;
+          top: ${piece.y}px;
+          width: ${w * scale}px;
+          height: ${h * scale}px;
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.7), rgba(139, 92, 246, 0.7));
+          border: 2px solid #6366f1;
+          border-radius: 3px;
+          cursor: move;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          color: #fff;
+          user-select: none;
+          transition: box-shadow 0.2s, border-color 0.2s;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        `;
+        el.innerHTML = `<span style="text-shadow: 0 1px 3px rgba(0,0,0,0.7); text-align: center; line-height: 1.3;">${piece.label || 'Piece'}<br><strong>${w.toFixed(0)}×${h.toFixed(0)}</strong></span>`;
+
+        // Drag functionality
+        let isDragging = false;
+        let startX, startY, startPieceX, startPieceY;
+
+        el.addEventListener('mousedown', (e) => {
+          if (e.button === 2) return; // Right click
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          startPieceX = piece.x;
+          startPieceY = piece.y;
+          el.style.zIndex = '100';
+          el.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
+          el.style.transform = 'scale(1.02)';
+        });
+
+        const moveHandler = (e) => {
+          if (!isDragging) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          piece.x = Math.max(0, Math.min(startPieceX + dx, currentSlabSize.width * scale - w * scale));
+          piece.y = Math.max(0, Math.min(startPieceY + dy, currentSlabSize.depth * scale - h * scale));
+          el.style.left = piece.x + 'px';
+          el.style.top = piece.y + 'px';
+          checkOverlap(el, piece);
+        };
+
+        const upHandler = () => {
+          if (isDragging) {
+            isDragging = false;
+            el.style.zIndex = '';
+            el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+            el.style.transform = '';
+            updateStats();
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+          }
+        };
+
+        el.addEventListener('mousedown', () => {
+          document.addEventListener('mousemove', moveHandler);
+          document.addEventListener('mouseup', upHandler);
+        });
+
+        // Double-click to rotate
+        el.addEventListener('dblclick', () => {
+          piece.rotation = (piece.rotation + 90) % 360;
+          renderSlab();
+          renderPieceLibrary();
+        });
+
+        // Right-click to remove from slab
+        el.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          piece.slabNumber = null;
+          piece.x = 10;
+          piece.y = 10;
+          renderSlab();
+          renderPieceLibrary();
+        });
+
+        return el;
+      }
+
+      function checkOverlap(el, piece) {
+        const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
+        const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
+        const rect1 = { x: piece.x, y: piece.y, w: w * scale, h: h * scale };
+
+        let hasOverlap = false;
+        pieces.filter(p => p.slabNumber === 1 && p.id !== piece.id).forEach(other => {
+          const ow = other.rotation % 180 === 0 ? other.width : other.depth;
+          const oh = other.rotation % 180 === 0 ? other.depth : other.width;
+          const rect2 = { x: other.x, y: other.y, w: ow * scale, h: oh * scale };
+
+          if (rect1.x < rect2.x + rect2.w && rect1.x + rect1.w > rect2.x &&
+              rect1.y < rect2.y + rect2.h && rect1.y + rect1.h > rect2.y) {
+            hasOverlap = true;
+          }
+        });
+
+        el.style.background = hasOverlap
+          ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.7), rgba(220, 38, 38, 0.7))'
+          : 'linear-gradient(135deg, rgba(34, 197, 94, 0.7), rgba(22, 163, 74, 0.7))';
+        el.style.borderColor = hasOverlap ? '#ef4444' : '#22c55e';
+      }
+
+      function updateStats() {
+        const slabArea = currentSlabSize.width * currentSlabSize.depth;
+        const placedPieces = pieces.filter(p => p.slabNumber === 1);
+        const usedArea = placedPieces.reduce((sum, p) => sum + p.width * p.depth, 0);
+        const totalArea = pieces.reduce((sum, p) => sum + p.width * p.depth, 0);
+        const utilization = slabArea > 0 ? ((usedArea / slabArea) * 100).toFixed(1) : 0;
+        const waste = slabArea > 0 ? (100 - parseFloat(utilization)).toFixed(1) : 0;
+
+        modal.querySelector('#slabUtilization').textContent = 'Utilization: ' + utilization + '%';
+        modal.querySelector('#totalSqFt').textContent = (totalArea / 144).toFixed(1);
+        modal.querySelector('#wastePercent').textContent = waste + '%';
+      }
+
+      // Drop zone for slab
+      slabContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        slabContainer.style.borderColor = 'rgba(99,102,241,0.8)';
+      });
+      slabContainer.addEventListener('dragleave', () => {
+        slabContainer.style.borderColor = 'rgba(255,255,255,0.3)';
+      });
+      slabContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        slabContainer.style.borderColor = 'rgba(255,255,255,0.3)';
+        const pieceId = e.dataTransfer.getData('text/plain');
+        const piece = pieces.find(p => p.id === pieceId);
+        if (piece && piece.slabNumber === null) {
+          const rect = slabContainer.getBoundingClientRect();
+          const w = piece.rotation % 180 === 0 ? piece.width : piece.depth;
+          const h = piece.rotation % 180 === 0 ? piece.depth : piece.width;
+          piece.x = Math.max(0, Math.min(e.clientX - rect.left - (w * scale / 2), currentSlabSize.width * scale - w * scale));
+          piece.y = Math.max(0, Math.min(e.clientY - rect.top - (h * scale / 2), currentSlabSize.depth * scale - h * scale));
+          piece.slabNumber = 1;
+          renderSlab();
+          renderPieceLibrary();
+          showToast('Piece placed on slab', 'success');
+        }
+      });
+
+      slabSelect.addEventListener('change', () => {
+        renderSlab();
+        renderPieceLibrary();
+      });
+
+      // Window functions for buttons
+      window.slabAddPiece = () => {
+        const width = parseFloat(modal.querySelector('#newPieceWidth').value) || 36;
+        const depth = parseFloat(modal.querySelector('#newPieceDepth').value) || 26;
+        const label = modal.querySelector('#newPieceLabel').value || `Piece ${pieces.length + 1}`;
+
+        if (width < 1 || depth < 1 || width > 200 || depth > 200) {
+          showToast('Invalid dimensions (1-200 inches)', 'error');
+          return;
+        }
+
+        pieces.push({
+          id: `piece-${pieceCounter++}`,
+          width: width,
+          depth: depth,
+          label: label,
+          pieceNumber: pieces.length + 1,
+          x: 10,
+          y: 10,
+          rotation: 0,
+          slabNumber: null,
+          sqFt: (width * depth) / 144
+        });
+
+        modal.querySelector('#newPieceLabel').value = '';
+        renderPieceLibrary();
+        showToast(`Added ${label} (${width}" × ${depth}")`, 'success');
+      };
+
+      window.slabRemovePiece = (id) => {
+        pieces = pieces.filter(p => p.id !== id);
+        renderSlab();
+        renderPieceLibrary();
+      };
+
+      window.slabImportFromDesign = () => {
+        const plan = generateFabricationPlan();
+        if (!plan || plan.cutList.length === 0) {
+          showToast('No countertops in design to import', 'warning');
+          return;
+        }
+
+        const newPieces = plan.cutList.map((p, i) => ({
+          ...p,
+          id: `piece-${pieceCounter++}`,
+          label: p.countertopLabel || `Counter ${i + 1}`,
+          x: 10,
+          y: 10,
+          rotation: 0,
+          slabNumber: null
+        }));
+
+        pieces = [...pieces, ...newPieces];
+        renderPieceLibrary();
+        showToast(`Imported ${newPieces.length} pieces from design`, 'success');
+      };
+
+      window.slabAutoArrange = () => {
+        if (pieces.length === 0) {
+          showToast('Add pieces first', 'warning');
+          return;
+        }
+        // Sort by area (largest first) for better packing
+        const sortedPieces = [...pieces].sort((a, b) => (b.width * b.depth) - (a.width * a.depth));
+        let x = 5, y = 5, rowHeight = 0;
+
+        sortedPieces.forEach(p => {
+          const w = p.width * scale;
+          const h = p.depth * scale;
+          if (x + w > currentSlabSize.width * scale - 5) {
+            x = 5;
+            y += rowHeight + 5;
+            rowHeight = 0;
+          }
+          p.x = x;
+          p.y = y;
+          p.slabNumber = 1;
+          p.rotation = 0;
+          x += w + 5;
+          rowHeight = Math.max(rowHeight, h);
+        });
+
+        renderSlab();
+        renderPieceLibrary();
+        showToast('Auto-arranged ' + pieces.length + ' pieces', 'success');
+      };
+
+      window.slabOptimize = () => {
+        if (pieces.length === 0) {
+          showToast('Add pieces first', 'warning');
+          return;
+        }
+        // Try both orientations and pick better fit
+        pieces.forEach(p => {
+          const normalFit = p.width <= currentSlabSize.width && p.depth <= currentSlabSize.depth;
+          const rotatedFit = p.depth <= currentSlabSize.width && p.width <= currentSlabSize.depth;
+
+          if (!normalFit && rotatedFit) {
+            p.rotation = 90;
+          } else if (normalFit && rotatedFit) {
+            // Choose orientation that wastes less
+            const normalWaste = (currentSlabSize.width - p.width) + (currentSlabSize.depth - p.depth);
+            const rotatedWaste = (currentSlabSize.width - p.depth) + (currentSlabSize.depth - p.width);
+            p.rotation = rotatedWaste < normalWaste ? 90 : 0;
+          }
+        });
+
+        window.slabAutoArrange();
+        showToast('Optimized piece orientations', 'success');
+      };
+
+      window.slabReset = () => {
+        pieces.forEach(p => {
+          p.slabNumber = null;
+          p.x = 10;
+          p.y = 10;
+          p.rotation = 0;
+        });
+        renderSlab();
+        renderPieceLibrary();
+        showToast('Layout reset', 'info');
+      };
+
+      window.slabClearAll = () => {
+        if (pieces.length === 0) return;
+        if (!confirm('Remove all pieces?')) return;
+        pieces = [];
+        pieceCounter = 0;
+        renderSlab();
+        renderPieceLibrary();
+        showToast('All pieces cleared', 'info');
+      };
+
+      window.slabExportPDF = () => {
+        showToast('Export feature coming soon!', 'info');
+      };
+
+      window.slabSaveLayout = () => {
+        const placedCount = pieces.filter(p => p.slabNumber).length;
+        showToast(`Layout saved! ${placedCount}/${pieces.length} pieces placed.`, 'success');
+        modal.remove();
+      };
+
+      // Initial render
+      renderSlab();
+      renderPieceLibrary();
+    }
+
+    // Export fabrication plan as PDF (simplified - creates printable view)
+    function exportFabricationPlan() {
+      const plan = generateFabricationPlan();
+      if (!plan) return;
+
+      // Create printable window
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Fabrication Plan - ${plan.projectName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+            h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            h2 { font-size: 18px; color: #555; margin-top: 30px; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background: #f5f5f5; }
+            .summary { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+            .stat { background: #f0f0f0; padding: 15px; border-radius: 8px; text-align: center; }
+            .stat-value { font-size: 24px; font-weight: bold; color: #333; }
+            .stat-label { font-size: 12px; color: #666; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <h1>Fabrication Plan - ${plan.projectName}</h1>
+          <p>Generated: ${new Date().toLocaleString()}</p>
+
+          <div class="summary">
+            <div class="stat"><div class="stat-value">${plan.totalSqFt.toFixed(1)}</div><div class="stat-label">Total Sq Ft</div></div>
+            <div class="stat"><div class="stat-value">${plan.totalEdgeLF.toFixed(1)}</div><div class="stat-label">Edge LF</div></div>
+            <div class="stat"><div class="stat-value">${plan.slabsRequired}</div><div class="stat-label">Slabs</div></div>
+            <div class="stat"><div class="stat-value">${plan.totalCutouts.length}</div><div class="stat-label">Cutouts</div></div>
+          </div>
+
+          <h2>Cut List</h2>
+          <table>
+            <tr><th>Piece</th><th>Dimensions</th><th>Sq Ft</th><th>Seams</th><th>Edge Profile</th></tr>
+            ${plan.cutList.map(p => `
+              <tr>
+                <td>${p.countertopLabel} #${p.pieceNumber}</td>
+                <td>${p.width.toFixed(1)}" × ${p.depth.toFixed(1)}"</td>
+                <td>${p.sqFt.toFixed(2)}</td>
+                <td>${p.seamLeft ? 'L' : ''}${p.seamRight ? 'R' : ''}${!p.seamLeft && !p.seamRight ? '-' : ''}</td>
+                <td>${p.edgeProfile}</td>
+              </tr>
+            `).join('')}
+          </table>
+
+          ${plan.totalCutouts.length > 0 ? `
+            <h2>Cutouts</h2>
+            <table>
+              <tr><th>Type</th><th>Size</th><th>Position</th><th>Mount Type</th></tr>
+              ${plan.totalCutouts.map(c => `
+                <tr>
+                  <td>${c.label || c.type}</td>
+                  <td>${c.width.toFixed(1)}" × ${c.depth.toFixed(1)}"</td>
+                  <td>${c.position.fromLeft.toFixed(1)}" left, ${c.position.fromBack.toFixed(1)}" back</td>
+                  <td>${c.mountType}</td>
+                </tr>
+              `).join('')}
+            </table>
+          ` : ''}
+
+          <script>window.print();</script>
+        </body>
+        </html>
+      `);
+    }
 
     // Check overhang and return warnings/requirements
     function validateOverhang(overhangInches, thickness = '3cm', countertopDepthInches = 25) {
@@ -66267,13 +69439,184 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
       showToast(`${icon} ${notif.author}: "${notif.message.substring(0, 50)}..."`, 'info');
     }
 
+    // Notification preferences
+    const NOTIFICATION_PREFS = {
+      soundEnabled: localStorage.getItem('notifSound') !== 'false',
+      desktopEnabled: localStorage.getItem('notifDesktop') !== 'false',
+      soundVolume: parseFloat(localStorage.getItem('notifVolume') || '0.3')
+    };
+
     // Play notification sound
     function playNotificationSound() {
+      if (!NOTIFICATION_PREFS.soundEnabled) return;
       try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleU47XZyUZC');
-        audio.volume = 0.3;
+        audio.volume = NOTIFICATION_PREFS.soundVolume;
         audio.play().catch(() => {});
       } catch (e) {}
+    }
+
+    // Request desktop notification permission
+    async function requestNotificationPermission() {
+      if (!('Notification' in window)) {
+        showToast('Desktop notifications not supported', 'warning');
+        return false;
+      }
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied') {
+        showToast('Notifications blocked - check browser settings', 'warning');
+        return false;
+      }
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+
+    // Show desktop notification
+    async function showDesktopNotification(title, body, icon = '💬') {
+      if (!NOTIFICATION_PREFS.desktopEnabled) return;
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      try {
+        const notif = new Notification(title, {
+          body: body,
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: 'room-designer-' + Date.now(),
+          requireInteraction: false,
+          silent: false
+        });
+
+        notif.onclick = () => {
+          window.focus();
+          toggleNotificationHub();
+          notif.close();
+        };
+
+        setTimeout(() => notif.close(), 8000);
+      } catch (e) {
+        console.log('Desktop notification error:', e);
+      }
+    }
+
+    // Toggle notification preferences
+    function toggleNotificationPref(pref) {
+      if (pref === 'sound') {
+        NOTIFICATION_PREFS.soundEnabled = !NOTIFICATION_PREFS.soundEnabled;
+        localStorage.setItem('notifSound', NOTIFICATION_PREFS.soundEnabled);
+        showToast(`Sound notifications ${NOTIFICATION_PREFS.soundEnabled ? 'enabled' : 'disabled'}`, 'info');
+      } else if (pref === 'desktop') {
+        if (!NOTIFICATION_PREFS.desktopEnabled) {
+          requestNotificationPermission().then(granted => {
+            if (granted) {
+              NOTIFICATION_PREFS.desktopEnabled = true;
+              localStorage.setItem('notifDesktop', 'true');
+              showToast('Desktop notifications enabled', 'success');
+              showDesktopNotification('Notifications Enabled', 'You will now receive desktop notifications');
+            }
+          });
+        } else {
+          NOTIFICATION_PREFS.desktopEnabled = false;
+          localStorage.setItem('notifDesktop', 'false');
+          showToast('Desktop notifications disabled', 'info');
+        }
+      }
+      updateNotificationPrefsUI();
+    }
+
+    // Update notification prefs UI
+    function updateNotificationPrefsUI() {
+      const soundBtn = document.getElementById('toggleSoundNotif');
+      const desktopBtn = document.getElementById('toggleDesktopNotif');
+      if (soundBtn) soundBtn.classList.toggle('active', NOTIFICATION_PREFS.soundEnabled);
+      if (desktopBtn) desktopBtn.classList.toggle('active', NOTIFICATION_PREFS.desktopEnabled);
+    }
+
+    // Message templates for quick replies
+    const MESSAGE_TEMPLATES = [
+      { id: 'thanks', label: 'Thank You', text: 'Thank you for your feedback! I\'ll review your comments and update the design.' },
+      { id: 'received', label: 'Received', text: 'I\'ve received your message and will get back to you shortly.' },
+      { id: 'revision', label: 'Revision Ready', text: 'I\'ve updated the design based on your feedback. Please review the changes and let me know your thoughts.' },
+      { id: 'question', label: 'Question', text: 'I have a few questions about your requirements. Could you please clarify:' },
+      { id: 'quote', label: 'Quote Ready', text: 'I\'ve prepared a quote for your project. The estimated cost is shown in the design summary.' },
+      { id: 'schedule', label: 'Schedule', text: 'I\'d like to schedule a time to discuss your project further. What times work best for you?' },
+      { id: 'materials', label: 'Materials', text: 'I\'ve selected materials that match your style preferences. Click on any element to see the material details and pricing.' },
+      { id: 'approval', label: 'Approval Needed', text: 'Please review the design and let me know if you approve this layout, or if you\'d like any changes.' }
+    ];
+
+    // Insert message template
+    function insertMessageTemplate(templateId, inputId = 'chatMessageInput') {
+      const template = MESSAGE_TEMPLATES.find(t => t.id === templateId);
+      const input = document.getElementById(inputId);
+      if (template && input) {
+        input.value = template.text;
+        input.focus();
+        // Position cursor at end
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+
+    // Render message templates dropdown
+    function renderMessageTemplates(containerId = 'messageTemplatesDropdown') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = MESSAGE_TEMPLATES.map(t => `
+        <div class="template-item" onclick="insertMessageTemplate('${t.id}')">
+          <span class="template-label">${t.label}</span>
+          <span class="template-preview">${t.text.substring(0, 40)}...</span>
+        </div>
+      `).join('');
+    }
+
+    // Attach design snapshot to message
+    async function attachDesignSnapshot(inputId = 'chatMessageInput') {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+      // Capture canvas as image
+      const canvas = document.getElementById('canvas');
+      if (!canvas) {
+        showToast('No design to capture', 'warning');
+        return;
+      }
+
+      try {
+        // Get current design state
+        const snapshot = {
+          timestamp: new Date().toISOString(),
+          roomSize: `${roomWidth}'×${roomDepth}'`,
+          elementCount: elements.length,
+          thumbnail: canvas.toDataURL('image/jpeg', 0.5)
+        };
+
+        // Add snapshot reference to message
+        const currentText = input.value;
+        const snapshotRef = `\n\n📐 Design Snapshot (${snapshot.roomSize}, ${snapshot.elementCount} elements)`;
+        input.value = currentText + snapshotRef;
+
+        // Store snapshot for sending
+        input.dataset.snapshot = JSON.stringify(snapshot);
+
+        showToast('Design snapshot attached', 'success');
+      } catch (e) {
+        console.log('Snapshot error:', e);
+        showToast('Could not attach snapshot', 'warning');
+      }
+    }
+
+    // Enhanced notification with desktop + sound
+    function triggerNotification(notif) {
+      // Play sound
+      playNotificationSound();
+
+      // Show desktop notification
+      showDesktopNotification(
+        `${notif.type === 'chat' ? '💬' : '👥'} ${notif.source}`,
+        `${notif.author}: ${notif.message}`
+      );
+
+      // Show in-app toast
+      showNotificationToast(notif);
     }
 
     // Render notification hub list

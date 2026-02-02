@@ -701,4 +701,120 @@ router.post('/digest-preferences', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Send workflow invite emails
+ * POST /api/email/workflow-invite
+ * Sends calendar invite emails to participants for scheduled project events
+ */
+router.post('/workflow-invite', asyncHandler(async (req, res) => {
+  const { to, subject, customerName, projectAddress, events, role } = req.body;
+
+  if (!to || !isValidEmail(to)) {
+    return res.status(400).json({ error: 'Valid email address required' });
+  }
+
+  if (!events || !Array.isArray(events) || events.length === 0) {
+    return res.status(400).json({ error: 'Events array required' });
+  }
+
+  try {
+    const isCustomer = role === 'customer';
+    const greeting = isCustomer
+      ? `Great news! Your project has been scheduled.`
+      : `You've been assigned to a project.`;
+
+    // Build events HTML
+    const eventsHtml = events.map(evt => `
+      <div style="background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #6366f1;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 28px;">${evt.icon || '📅'}</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 16px; color: #1e293b; margin-bottom: 4px;">${sanitizeString(evt.type)}</div>
+            <div style="font-size: 14px; color: #64748b;">
+              <span style="margin-right: 16px;">📅 ${sanitizeString(evt.date)}</span>
+              <span>🕐 ${sanitizeString(evt.time)}</span>
+            </div>
+            ${evt.location ? `<div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">📍 ${sanitizeString(evt.location)}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f1f5f9;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px 16px 0 0; padding: 32px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Project Schedule Confirmed</h1>
+            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">${greeting}</p>
+          </div>
+
+          <!-- Content -->
+          <div style="background: #ffffff; padding: 32px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <p style="margin: 0 0 8px; color: #1e293b; font-size: 15px;">Hi ${sanitizeString(customerName || 'there')},</p>
+            <p style="margin: 0 0 24px; color: #64748b; font-size: 14px; line-height: 1.6;">
+              ${isCustomer
+                ? 'Here are your upcoming appointments. Please make sure someone is available at the scheduled times.'
+                : 'You have been scheduled for the following appointments. Please confirm your availability.'}
+            </p>
+
+            ${projectAddress ? `
+              <div style="background: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
+                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">PROJECT ADDRESS</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 500;">📍 ${sanitizeString(projectAddress)}</div>
+              </div>
+            ` : ''}
+
+            <h3 style="margin: 0 0 16px; color: #1e293b; font-size: 16px; font-weight: 600;">Scheduled Events</h3>
+            ${eventsHtml}
+
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+              <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                ${isCustomer
+                  ? 'If you need to reschedule, please contact us as soon as possible.'
+                  : 'Please contact the office if you have any scheduling conflicts.'}
+              </p>
+            </div>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="${isCustomer ? 'tel:' + (COMPANY.phone || '') : 'mailto:' + (COMPANY.email || '')}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                ${isCustomer ? 'Call Us' : 'Contact Office'}
+              </a>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 12px;">
+            <p style="margin: 0 0 8px;">${COMPANY.name || 'Remodely'}</p>
+            <p style="margin: 0;">${COMPANY.phone || ''} | ${COMPANY.email || ''}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"${COMPANY.name}" <${SMTP_USER}>`,
+      to,
+      subject: subject || `📅 Project Schedule - ${events.length} Event${events.length > 1 ? 's' : ''} Confirmed`,
+      html
+    });
+
+    logger.emailSent('workflow-invite', true, { to: to.substring(0, 3) + '***', eventCount: events.length });
+    res.json({ success: true, message: 'Workflow invite sent' });
+
+  } catch (err) {
+    logger.apiError(err, { context: 'Workflow invite email failed' });
+    res.status(500).json({ error: 'Failed to send invite: ' + err.message });
+  }
+}));
+
 module.exports = router;

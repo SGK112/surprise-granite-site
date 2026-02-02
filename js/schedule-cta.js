@@ -183,23 +183,25 @@
         }
         .schedule-modal-close {
           position: absolute;
-          top: 12px;
-          right: 12px;
-          background: none;
-          border: none;
-          color: rgba(255,255,255,0.6);
-          font-size: 28px;
+          top: 16px;
+          right: 16px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          color: rgba(255,255,255,0.7);
+          font-size: 24px;
           cursor: pointer;
-          width: 36px;
-          height: 36px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 50%;
+          border-radius: 10px;
           transition: all 0.2s;
+          line-height: 1;
         }
         .schedule-modal-close:hover {
-          background: rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.15);
+          border-color: rgba(255,255,255,0.3);
           color: #fff;
         }
         .schedule-modal-header {

@@ -213,10 +213,10 @@
           top: 20px;
           right: 20px;
           background: rgba(255,255,255,0.1);
-          border: none;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.2);
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
           color: #fff;
           cursor: pointer;
           display: flex;
@@ -224,7 +224,7 @@
           justify-content: center;
           transition: all 0.2s;
         }
-        .rb-close:hover { background: rgba(255,255,255,0.2); }
+        .rb-close:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); }
         .rb-close svg { width: 20px; height: 20px; }
 
         .rb-progress {
