@@ -3339,7 +3339,7 @@
     .panel-section {
       padding: 8px 10px;
       border-bottom: 1px solid var(--border);
-      overflow: hidden;
+      flex-shrink: 0;
     }
 
     .panel-section.collapsed .panel-content {
@@ -3659,11 +3659,13 @@
     }
 
     .item-picker-list {
+      min-height: 100px;
       max-height: 280px;
       overflow-y: auto;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--dark-surface);
+      flex: 1 1 auto;
     }
 
     .item-picker-item {
@@ -3834,6 +3836,11 @@
     }
 
     /* Room Templates Styles */
+    #roomTemplatesSection .panel-content {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
     .room-templates-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -12349,6 +12356,47 @@
       .demo-banner-text {
         display: none;
       }
+    }
+
+    /* Demo mode layout adjustments - when banner is visible */
+    .demo-banner:not([style*="display: none"]) ~ .header ~ .main {
+      max-height: calc(100vh - 56px - 48px); /* Account for demo banner (~48px) */
+    }
+
+    /* Ensure right panel sections can grow/shrink properly */
+    .right-panel .panel-section#itemPickerSection {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .right-panel .panel-section#itemPickerSection .item-picker-list {
+      flex: 1 1 auto;
+      min-height: 100px;
+      max-height: none;
+    }
+
+    .right-panel .panel-section#propertiesPanel {
+      flex-shrink: 1;
+      overflow-y: auto;
+      max-height: 350px;
+    }
+
+    /* Collapsible message section shouldn't break layout */
+    .right-panel .panel-section#teamChatSection {
+      flex-shrink: 0;
+      max-height: 300px;
+      overflow: hidden;
+    }
+
+    .right-panel .panel-section#teamChatSection:not(.collapsed) {
+      overflow-y: auto;
+    }
+
+    .right-panel .panel-section#teamChatSection #teamChatMessages {
+      max-height: 150px;
+      overflow-y: auto;
     }
   </style>
 </head>
