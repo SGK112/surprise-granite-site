@@ -42259,7 +42259,9 @@
 
         if (error) throw error;
 
-        calendarEvents = [];
+        // Keep API events (appointments), clear only job-based events
+        // This prevents API appointments from disappearing when this function is called alone
+        calendarEvents = calendarEvents.filter(e => e.apiEventId);
 
         (jobs || []).forEach(job => {
           const title = job.customer_name || job.name || job.description || job.job_number;
