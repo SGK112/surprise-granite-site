@@ -155,7 +155,7 @@ const StateManager = (function() {
         .from('pro_notifications')
         .select('id')
         .eq('pro_user_id', userId)
-        .eq('read', true);
+        .eq('is_read', true);
 
       // Table may not exist - silently ignore
       if (error) {
