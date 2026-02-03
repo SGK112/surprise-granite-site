@@ -40431,6 +40431,8 @@
         case 'outdoor-fridge':
         case 'kegerator':
         case 'outdoor-ice-maker':
+        case 'wine-cooler':
+        case 'beverage-center':
           return height / 2; // Floor standing, tall
 
         // Wall mounted (54" from floor is typical bottom edge per NKBA)
@@ -41208,6 +41210,85 @@
           ctx.fillStyle = 'rgba(200,200,200,0.7)';
           ctx.fillRect(x + w - padding - 8, y + (fridgeMid - y) / 2 - 15, 4, 30);
           ctx.fillRect(x + w - padding - 8, fridgeMid + (y + h - fridgeMid) / 2 - 18, 4, 36);
+          break;
+        }
+
+        case 'wine-cooler':
+        case 'beverage-center': {
+          // Dark body with glass door look
+          ctx.fillStyle = '#2a2a2a';
+          ctx.fillRect(x, y, w, h);
+
+          // Glass door (tinted)
+          ctx.fillStyle = el.type === 'wine-cooler' ? 'rgba(40,30,50,0.7)' : 'rgba(30,50,50,0.7)';
+          ctx.fillRect(x + padding, y + padding, w - padding * 2, h - padding * 2);
+
+          // Shelves
+          ctx.strokeStyle = 'rgba(80,80,80,0.6)';
+          ctx.lineWidth = 1;
+          const shelfRows = 4;
+          for (let s = 1; s < shelfRows; s++) {
+            const shelfY = y + padding + s * ((h - padding * 2) / shelfRows);
+            ctx.beginPath();
+            ctx.moveTo(x + padding + 4, shelfY);
+            ctx.lineTo(x + w - padding - 4, shelfY);
+            ctx.stroke();
+          }
+
+          // Bottles/cans
+          if (el.type === 'wine-cooler') {
+            ctx.fillStyle = 'rgba(100,40,40,0.6)';
+            for (let r = 0; r < 3; r++) {
+              const bottleY = y + padding + 8 + r * ((h - padding * 2) / shelfRows);
+              for (let b = 0; b < 3; b++) {
+                ctx.beginPath();
+                ctx.ellipse(x + w/2 - 15 + b * 15, bottleY + 8, 5, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          } else {
+            const canColors = ['rgba(255,100,50,0.6)', 'rgba(65,105,225,0.6)', 'rgba(34,139,34,0.6)'];
+            for (let r = 0; r < 3; r++) {
+              const canY = y + padding + 6 + r * ((h - padding * 2) / shelfRows);
+              for (let c = 0; c < 4; c++) {
+                ctx.fillStyle = canColors[(r + c) % canColors.length];
+                ctx.fillRect(x + padding + 6 + c * 12, canY, 8, 14);
+              }
+            }
+          }
+
+          // Handle
+          ctx.fillStyle = 'rgba(180,180,180,0.7)';
+          ctx.fillRect(x + w - padding - 6, y + h/2 - 15, 3, 30);
+          break;
+        }
+
+        case 'outdoor-fridge':
+        case 'kegerator':
+        case 'outdoor-ice-maker': {
+          // Stainless body
+          ctx.fillStyle = '#A8A8A8';
+          ctx.fillRect(x, y, w, h);
+
+          ctx.strokeStyle = 'rgba(100,100,100,0.6)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x + padding, y + padding, w - padding * 2, h - padding * 2);
+
+          // Handle
+          ctx.fillStyle = 'rgba(180,180,180,0.8)';
+          ctx.fillRect(x + w * 0.2, y + h * 0.25, w * 0.6, 5);
+
+          // Type indicator
+          ctx.fillStyle = '#4169E1';
+          ctx.font = '10px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          if (el.type === 'kegerator') {
+            ctx.fillText('🍺', x + w/2, y + h/2 + 4);
+          } else if (el.type === 'outdoor-ice-maker') {
+            ctx.fillText('❄', x + w/2, y + h/2 + 4);
+          } else {
+            ctx.fillText('❄', x + w/2, y + h * 0.7);
+          }
           break;
         }
 
@@ -47976,6 +48057,253 @@
           break;
         }
 
+        case 'wine-cooler':
+        case 'beverage-center': {
+          // Wine cooler / Beverage center with glass door
+          const wcIsWine = el.type === 'wine-cooler';
+
+          const wcBodyMat = new THREE.MeshStandardMaterial({
+            color: 0x2a2a2a,
+            roughness: 0.4,
+            metalness: 0.3
+          });
+
+          // Main body
+          const wcBody = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, d),
+            wcBodyMat
+          );
+          group.add(wcBody);
+
+          // Glass door frame (dark metal)
+          const wcFrameMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a1a,
+            roughness: 0.3,
+            metalness: 0.6
+          });
+          const wcFrame = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.04, h - 0.04, 0.04),
+            wcFrameMat
+          );
+          wcFrame.position.set(0, 0, d/2 + 0.02);
+          group.add(wcFrame);
+
+          // Glass door (tinted, semi-transparent)
+          const wcGlassMat = new THREE.MeshPhysicalMaterial({
+            color: wcIsWine ? 0x1a1a2e : 0x1a2e2e,
+            transparent: true,
+            opacity: 0.7,
+            roughness: 0.05,
+            metalness: 0.1,
+            transmission: 0.3
+          });
+          const wcGlass = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.12, h - 0.12, 0.015),
+            wcGlassMat
+          );
+          wcGlass.position.set(0, 0, d/2 + 0.035);
+          group.add(wcGlass);
+
+          // Interior shelves (visible through glass)
+          const wcShelfMat = new THREE.MeshStandardMaterial({
+            color: 0x444444,
+            roughness: 0.6,
+            metalness: 0.3
+          });
+          const shelfCount = Math.floor(h / 0.5); // Shelf every ~6"
+          for (let s = 1; s < shelfCount; s++) {
+            const wcShelf = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.15, 0.02, d - 0.1),
+              wcShelfMat
+            );
+            wcShelf.position.set(0, -h/2 + s * (h / shelfCount), 0);
+            group.add(wcShelf);
+          }
+
+          // Wine bottles or beverage cans (visible through glass)
+          if (wcIsWine) {
+            // Wine bottles
+            const bottleMat = new THREE.MeshStandardMaterial({
+              color: 0x2d1f1f,
+              roughness: 0.3,
+              metalness: 0.1
+            });
+            for (let row = 0; row < Math.min(4, shelfCount - 1); row++) {
+              const bottlesInRow = Math.floor((w - 0.2) / 0.12);
+              for (let b = 0; b < bottlesInRow; b++) {
+                const bottle = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.04, 0.04, 0.25, 8),
+                  bottleMat
+                );
+                bottle.rotation.z = Math.PI / 2;
+                bottle.position.set(
+                  -w/2 + 0.12 + b * 0.12,
+                  -h/2 + (row + 0.5) * (h / shelfCount),
+                  0.05
+                );
+                group.add(bottle);
+              }
+            }
+          } else {
+            // Beverage cans
+            const canColors = [0xFF6B35, 0x4169E1, 0x228B22, 0xDC143C];
+            for (let row = 0; row < Math.min(4, shelfCount - 1); row++) {
+              const cansInRow = Math.floor((w - 0.2) / 0.1);
+              for (let c = 0; c < cansInRow; c++) {
+                const canMat = new THREE.MeshStandardMaterial({
+                  color: canColors[(row + c) % canColors.length],
+                  roughness: 0.4,
+                  metalness: 0.6
+                });
+                const can = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.035, 0.035, 0.12, 12),
+                  canMat
+                );
+                can.position.set(
+                  -w/2 + 0.1 + c * 0.1,
+                  -h/2 + (row + 0.5) * (h / shelfCount) + 0.06,
+                  0.05
+                );
+                group.add(can);
+              }
+            }
+          }
+
+          // Handle (vertical bar)
+          const wcHandleMat = new THREE.MeshStandardMaterial({
+            color: 0xAAAAAA,
+            roughness: 0.1,
+            metalness: 0.9
+          });
+          const wcHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, h * 0.4, 12),
+            wcHandleMat
+          );
+          wcHandle.position.set(w/2 - 0.08, 0, d/2 + 0.06);
+          group.add(wcHandle);
+
+          // Temperature display (small LED)
+          const wcDisplayMat = new THREE.MeshStandardMaterial({
+            color: 0x00AAFF,
+            emissive: 0x0066AA,
+            emissiveIntensity: 0.3
+          });
+          const wcDisplay = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.03, 0.005),
+            wcDisplayMat
+          );
+          wcDisplay.position.set(0, h/2 - 0.08, d/2 + 0.045);
+          group.add(wcDisplay);
+
+          break;
+        }
+
+        case 'outdoor-fridge':
+        case 'kegerator':
+        case 'outdoor-ice-maker': {
+          // Outdoor/undercounter refrigeration with stainless body
+          const ofIsKeg = el.type === 'kegerator';
+          const ofIsIce = el.type === 'outdoor-ice-maker';
+
+          const ofBodyMat = new THREE.MeshStandardMaterial({
+            color: 0xA8A8A8,
+            roughness: 0.25,
+            metalness: 0.6,
+            envMap: window.roomEnvMap || null
+          });
+
+          // Main body
+          const ofBody = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, d),
+            ofBodyMat
+          );
+          group.add(ofBody);
+
+          // Front door
+          const ofDoorMat = new THREE.MeshStandardMaterial({
+            color: 0xC0C0C0,
+            roughness: 0.15,
+            metalness: 0.7,
+            envMap: window.roomEnvMap || null
+          });
+          const ofDoor = new THREE.Mesh(
+            new THREE.BoxGeometry(w - 0.06, h - 0.08, 0.03),
+            ofDoorMat
+          );
+          ofDoor.position.set(0, 0, d/2 + 0.015);
+          group.add(ofDoor);
+
+          // Handle (horizontal bar style)
+          const ofHandleMat = new THREE.MeshStandardMaterial({
+            color: 0xB0B0B0,
+            roughness: 0.08,
+            metalness: 0.95
+          });
+          const ofHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, w * 0.5, 12),
+            ofHandleMat
+          );
+          ofHandle.rotation.z = Math.PI / 2;
+          ofHandle.position.set(0, h * 0.3, d/2 + 0.07);
+          group.add(ofHandle);
+
+          if (ofIsKeg) {
+            // Kegerator tap tower on top
+            const tapTowerMat = new THREE.MeshStandardMaterial({
+              color: 0xC0C0C0,
+              roughness: 0.1,
+              metalness: 0.9
+            });
+            const tapTower = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.06, 0.08, 0.3, 16),
+              tapTowerMat
+            );
+            tapTower.position.set(0, h/2 + 0.15, 0);
+            group.add(tapTower);
+
+            // Tap handle
+            const tapHandleMat = new THREE.MeshStandardMaterial({
+              color: 0x2a2a2a,
+              roughness: 0.4
+            });
+            const tapHandle = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.02, 0.025, 0.12, 12),
+              tapHandleMat
+            );
+            tapHandle.position.set(0, h/2 + 0.35, 0.06);
+            tapHandle.rotation.x = -0.3;
+            group.add(tapHandle);
+          } else if (ofIsIce) {
+            // Ice maker bin indicator
+            const iceBinMat = new THREE.MeshStandardMaterial({
+              color: 0xB0E0E6,
+              transparent: true,
+              opacity: 0.5
+            });
+            const iceBin = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.2, h * 0.35, 0.02),
+              iceBinMat
+            );
+            iceBin.position.set(0, h * 0.15, d/2 + 0.03);
+            group.add(iceBin);
+          }
+
+          // Snowflake/temp indicator
+          const ofIndicatorMat = new THREE.MeshStandardMaterial({
+            color: 0x4169E1,
+            emissive: 0x2244AA,
+            emissiveIntensity: 0.2
+          });
+          const ofIndicator = new THREE.Mesh(
+            new THREE.CircleGeometry(0.03, 8),
+            ofIndicatorMat
+          );
+          ofIndicator.position.set(w/2 - 0.12, h/2 - 0.1, d/2 + 0.035);
+          group.add(ofIndicator);
+
+          break;
+        }
+
         case 'dishwasher': {
           // High-detail built-in dishwasher (stainless steel)
           const dwBodyMat = new THREE.MeshStandardMaterial({
@@ -48258,23 +48586,89 @@
           break;
         }
 
-        case 'range-hood':
-          // Trapezoidal range hood
-          const hoodMat = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0.6, roughness: 0.3 });
-          const hoodShape = new THREE.Shape();
-          hoodShape.moveTo(-w/2, 0);
-          hoodShape.lineTo(-w/3, h);
-          hoodShape.lineTo(w/3, h);
-          hoodShape.lineTo(w/2, 0);
-          hoodShape.closePath();
+        case 'range-hood': {
+          // Professional range hood with chimney/canopy design
+          const hoodMetalMat = new THREE.MeshStandardMaterial({
+            color: 0xB8B8B8,
+            metalness: 0.85,
+            roughness: 0.15,
+            envMap: window.roomEnvMap || null,
+            envMapIntensity: 1.2
+          });
+          const hoodDarkMat = new THREE.MeshStandardMaterial({
+            color: 0x2a2a2a,
+            metalness: 0.4,
+            roughness: 0.6
+          });
 
-          const extrudeSettings = { depth: d, bevelEnabled: false };
-          const hoodGeom = new THREE.ExtrudeGeometry(hoodShape, extrudeSettings);
-          hoodGeom.rotateX(Math.PI / 2);
-          hoodGeom.translate(0, h/2, -d/2);
-          const hood = new THREE.Mesh(hoodGeom, hoodMat);
-          group.add(hood);
+          // Canopy (main hood body) - slightly tapered
+          const canopyH = h * 0.4;
+          const canopyShape = new THREE.Shape();
+          canopyShape.moveTo(-w/2, 0);
+          canopyShape.lineTo(-w/2 + 0.05, canopyH);
+          canopyShape.lineTo(w/2 - 0.05, canopyH);
+          canopyShape.lineTo(w/2, 0);
+          canopyShape.closePath();
+
+          const canopyGeom = new THREE.ExtrudeGeometry(canopyShape, { depth: d, bevelEnabled: false });
+          canopyGeom.rotateX(Math.PI / 2);
+          canopyGeom.translate(0, -h/2 + canopyH/2, -d/2);
+          const canopy = new THREE.Mesh(canopyGeom, hoodMetalMat);
+          group.add(canopy);
+
+          // Chimney section (upper part going to ceiling)
+          const chimneyW = w * 0.5;
+          const chimneyD = d * 0.6;
+          const chimneyH = h * 0.6;
+          const chimney = new THREE.Mesh(
+            new THREE.BoxGeometry(chimneyW, chimneyH, chimneyD),
+            hoodMetalMat
+          );
+          chimney.position.set(0, canopyH/2 + chimneyH/2 - h/2, 0);
+          group.add(chimney);
+
+          // Vent grille (bottom of canopy)
+          const grilleW = w - 0.15;
+          const grilleD = d - 0.1;
+          const grille = new THREE.Mesh(
+            new THREE.BoxGeometry(grilleW, 0.02, grilleD),
+            hoodDarkMat
+          );
+          grille.position.set(0, -h/2 + 0.02, 0);
+          group.add(grille);
+
+          // Grille slats
+          const slotCount = Math.floor(grilleD / 0.15);
+          for (let i = 0; i < slotCount; i++) {
+            const slat = new THREE.Mesh(
+              new THREE.BoxGeometry(grilleW - 0.04, 0.015, 0.02),
+              hoodMetalMat
+            );
+            slat.position.set(0, -h/2 + 0.025, -grilleD/2 + 0.08 + i * (grilleD / slotCount));
+            group.add(slat);
+          }
+
+          // LED light strip (under canopy)
+          const ledStrip = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.7, 0.015, 0.04),
+            new THREE.MeshStandardMaterial({ color: 0xFFFAE6, emissive: 0xFFE4B5, emissiveIntensity: 0.5 })
+          );
+          ledStrip.position.set(0, -h/2 + 0.06, -d/2 + 0.15);
+          group.add(ledStrip);
+
+          // Control buttons (front of canopy)
+          const btnCount = 3;
+          for (let i = 0; i < btnCount; i++) {
+            const btn = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.025, 0.025, 0.015, 16),
+              hoodDarkMat
+            );
+            btn.rotation.x = Math.PI / 2;
+            btn.position.set(-w/4 + i * (w/4), -h/2 + canopyH * 0.3, d/2 + 0.01);
+            group.add(btn);
+          }
           break;
+        }
 
         case 'oven':
           const ovenMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.4 });
