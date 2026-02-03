@@ -158,7 +158,7 @@ router.post('/send', asyncHandler(async (req, res) => {
       <p style="margin: 0; color: #666; font-size: 14px;">
         <strong style="color: #333;">Surprise Granite</strong><br>
         Premium Countertops & Stone<br>
-        <a href="tel:+14802555887" style="color: #f9cb00;">(480) 255-5887</a><br>
+        <a href="tel:+16028333189" style="color: #f9cb00;">(602) 833-3189</a><br>
         <a href="https://www.surprisegranite.com" style="color: #f9cb00;">www.surprisegranite.com</a>
       </p>
     </div>
@@ -793,8 +793,9 @@ router.post('/workflow-invite', asyncHandler(async (req, res) => {
 
           <!-- Footer -->
           <div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 12px;">
-            <p style="margin: 0 0 8px;">${COMPANY.name || 'Remodely'}</p>
-            <p style="margin: 0;">${COMPANY.phone || ''} | ${COMPANY.email || ''}</p>
+            <p style="margin: 0 0 8px;">${COMPANY.name || 'Surprise Granite'}</p>
+            <p style="margin: 0 0 8px;">${COMPANY.phone || '(602) 833-3189'} | ${COMPANY.email || 'info@surprisegranite.com'}</p>
+            <p style="margin: 0; font-size: 10px; color: #64748b;">Powered by Remodely.ai</p>
           </div>
         </div>
       </body>

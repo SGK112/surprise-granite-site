@@ -236,7 +236,7 @@ class SeleniumScraper:
         logger.info("Scraping Cambria with Selenium...")
 
         try:
-            self.driver.get("https://www.cambriausa.com/quartz-colors/")
+            self.driver.get("https://www.cambriausa.com/quartz-countertops/quartz-colors")
             time.sleep(3)
 
             # Wait for products to load
@@ -300,10 +300,10 @@ class SeleniumScraper:
         logger.info("Scraping Caesarstone with Selenium...")
 
         try:
-            self.driver.get("https://www.caesarstone.com/en-us/design-quartz-colors-quartz-countertops/")
+            self.driver.get("https://www.caesarstoneus.com/countertops/")
             time.sleep(3)
 
-            self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.color-card, .product-card')))
+            self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.color-card, .product-card, a[href*="/countertops/"]')))
 
             # Scroll for lazy loading
             for _ in range(5):

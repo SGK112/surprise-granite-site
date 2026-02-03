@@ -38,17 +38,22 @@ python inventory-scraper.py --vendor all --output ./my-output
 ```
 
 **Supported Vendors:**
-- `msi` - MSI Surfaces
-- `arizona-tile` - Arizona Tile
-- `daltile` - Daltile
-- `cambria` - Cambria
-- `caesarstone` - Caesarstone
-- `silestone` - Silestone
+- `msi` - MSI Surfaces ✅ (128+ products)
+- `daltile` - Daltile ✅ (345+ products)
+- `cambria` - Cambria ✅ (163+ products)
+- `silestone` - Silestone ✅ (244+ products)
+- `arizona-tile` - Arizona Tile ⚠️ (needs Selenium - JS-heavy site)
+- `caesarstone` - Caesarstone ⚠️ (needs Selenium - Vue.js site)
 
 ### 2. `vendor-api-scraper.py` - API & Selenium Scraper
 Best for JavaScript-heavy sites and API-based vendors.
 
+**Required for:** Arizona Tile, Caesarstone (these sites render products via JavaScript)
+
 ```bash
+# Install Selenium dependencies first
+pip install selenium webdriver-manager
+
 # Scrape with browser automation
 python vendor-api-scraper.py --vendor cambria
 
@@ -58,6 +63,17 @@ python vendor-api-scraper.py --vendor all --headless
 # Run with visible browser (for debugging)
 python vendor-api-scraper.py --vendor cambria --no-headless
 ```
+
+## Vendor Compatibility
+
+| Vendor | Basic Scraper | Selenium | Notes |
+|--------|--------------|----------|-------|
+| MSI Surfaces | ✅ 128+ | ✅ | Works with basic HTTP |
+| Daltile | ✅ 345+ | ✅ | Works with basic HTTP |
+| Cambria | ✅ 163+ | ✅ | Works with basic HTTP |
+| Silestone | ✅ 244+ | ✅ | Works with basic HTTP |
+| Arizona Tile | ❌ | Required | Site uses heavy JavaScript |
+| Caesarstone | ❌ | Required | Site uses Vue.js framework |
 
 ## Output Files
 

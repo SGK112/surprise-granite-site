@@ -433,7 +433,7 @@ async function markNotificationRead(notificationId, userId) {
   try {
     const { error } = await supabase
       .from('pro_notifications')
-      .update({ read: true, read_at: new Date().toISOString() })
+      .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('id', notificationId)
       .eq('pro_user_id', userId);
 
@@ -455,7 +455,7 @@ async function getUnreadCount(userId) {
       .from('pro_notifications')
       .select('id', { count: 'exact', head: true })
       .eq('pro_user_id', userId)
-      .eq('read', false);
+      .eq('is_read', false);
 
     return error ? 0 : count;
   } catch (err) {

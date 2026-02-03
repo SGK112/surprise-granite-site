@@ -27,12 +27,24 @@
     body { font-family: 'Inter', -apple-system, sans-serif; color: var(--text-primary); line-height: 1.6; }
     .page-header {
       background: linear-gradient(135deg, var(--navy) 0%, #0f1a24 100%);
-      padding: 60px 24px 48px; /* Body has nav padding */
+      padding: 80px 24px 80px;
       color: #fff;
+      position: relative;
+      overflow: hidden;
     }
-    .page-header-inner { max-width: 1200px; margin: 0 auto; }
-    .breadcrumb { font-size: 13px; margin-bottom: 16px; opacity: 0.7; }
-    .breadcrumb a { color: inherit; text-decoration: none; }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background: url('https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/651c69d8e6c77c995d99b4d7_arizona-countertop-installation-service_thumbnail.avif') center/cover;
+      opacity: 0.4;
+      mask-image: linear-gradient(to left, rgba(0,0,0,0.8), transparent);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.6), transparent);
+    }
+    .page-header-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
     .page-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 8px; }
     .page-header p { font-size: 1.1rem; opacity: 0.85; }
     .main { max-width: 1400px; margin: 0 auto; padding: 32px 24px; background: #ffffff; }
@@ -76,7 +88,8 @@
     .footer-links a { color: #fff; text-decoration: none; opacity: 0.8; }
     .footer-copyright { font-size: 13px; opacity: 0.6; }
     @media (max-width: 991px) {
-      .page-header { padding: 40px 20px 32px; }
+      .page-header { padding: 60px 20px 60px; }
+      .page-header::before { width: 100%; opacity: 0.3; }
     }
     @media (max-width: 768px) {
       .page-header { padding: 32px 16px 24px; }
@@ -91,7 +104,6 @@
 <body>
   <div class="page-header">
     <div class="page-header-inner">
-      <div class="breadcrumb"><a href="/">Home</a> / <a href="/marketplace/">Marketplace</a> / Kitchen Accessories</div>
       <h1>Kitchen Accessories</h1>
       <p>Premium kitchen hardware and accessories</p>
     </div>
