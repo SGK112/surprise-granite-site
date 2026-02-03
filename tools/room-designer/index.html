@@ -17132,6 +17132,16 @@
     // Check if current user can view pricing
     async function checkPricingAccess(forceRefresh = false) {
       try {
+        // Demo mode - always show as guest with no pricing access
+        if (DEMO_MODE) {
+          PRICING_ACCESS.isSubscribed = false;
+          PRICING_ACCESS.accountType = 'demo';
+          PRICING_ACCESS.canViewPricing = false;
+          PRICING_ACCESS.checkedAt = Date.now();
+          updatePricingVisibility();
+          return false;
+        }
+
         const user = window.SgAuth?.getUser();
         let profile = null;
 
@@ -64478,8 +64488,9 @@
 
     // Update header to show logged-in state
     function updateAuthUI() {
-      const user = window.SgAuth?.getUser();
-      const profile = window.SgAuth?.getProfile();
+      // In demo mode, always show guest/sign-in state (hide actual user info)
+      const user = DEMO_MODE ? null : window.SgAuth?.getUser();
+      const profile = DEMO_MODE ? null : window.SgAuth?.getProfile();
 
       // Update new user menu
       const userAvatarSmall = document.getElementById('userAvatarSmall');
