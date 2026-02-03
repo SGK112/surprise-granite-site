@@ -56907,14 +56907,13 @@
       // Add template elements (using the correct pixelsPerFoot set by fitToScreen)
       template.elements.forEach(elDef => {
         // Copy all properties from template, then override with converted/computed values
-        // IMPORTANT: Template width/height are in feet - must convert to pixels!
+        // NOTE: width/height stay in FEET (same as normal element creation)
+        // Only x/y are converted to pixels for canvas positioning
         const el = {
           ...elDef,  // Copy ALL template properties (waterfallSides, overhangs, finishedEnds, etc.)
           id: Date.now() + Math.random(),
           x: elDef.x * pixelsPerFoot,
           y: elDef.y * pixelsPerFoot,
-          width: elDef.width * pixelsPerFoot,
-          height: elDef.height * pixelsPerFoot,
           rotation: elDef.rotation || 0,
           color: elDef.color || getDefaultColor(elDef.type),
           category: getElementCategory(elDef.type),
