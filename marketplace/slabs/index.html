@@ -49,6 +49,21 @@
       background: linear-gradient(135deg, var(--dark-primary) 0%, #2d2d4a 100%);
       padding: 60px 24px 60px;
       color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background: url('https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg') center/cover;
+      opacity: 0.4;
+      mask-image: linear-gradient(to left, rgba(0,0,0,0.8), transparent);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.6), transparent);
     }
 
     .hero-inner {
@@ -58,6 +73,8 @@
       justify-content: space-between;
       align-items: center;
       gap: 48px;
+      position: relative;
+      z-index: 1;
     }
 
     .hero-content { max-width: 600px; }
@@ -354,6 +371,19 @@
     .slab-badge-new {
       background: var(--success);
       color: #fff;
+    }
+
+    .slab-badge-origin {
+      background: transparent;
+      font-size: 2.5rem;
+      padding: 0;
+      cursor: help;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+      line-height: 1;
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      z-index: 100;
     }
 
     .slab-favorite {
@@ -1053,6 +1083,10 @@
     @media (max-width: 991px) {
       .hero {
         padding: 40px 20px 40px;
+      }
+      .hero::before {
+        width: 100%;
+        opacity: 0.3;
       }
     }
 
@@ -1817,8 +1851,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb21a6cfbc44d_Msi-surfaces-surprise-quartz-calacatta-abezzo-quartz-slab.jpg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-abezzo-quartz',
-        created_at: new Date().toISOString()
+        slug: 'calacatta-abezzo-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-2',
@@ -1833,8 +1869,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2d8c0fbc6fb_msi-surfaces-quartz-surprise-granite-calacatta-miraggio-gold-close-up.jpeg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-miraggio-gold-quartz',
-        created_at: new Date().toISOString()
+        slug: 'calacatta-miraggio-gold-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-3',
@@ -1849,8 +1887,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb23c46fbc69d_MSI-surfaces-quartz-surprise-granite-calacatta-delios-slab.jpeg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-delios-quartz',
-        created_at: new Date().toISOString()
+        slug: 'calacatta-delios-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-4',
@@ -1865,8 +1905,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22c17fbc540_msi-surfaces-surpise-quarrtz-calacatta-izaro-quartz-whole%20slab.jpg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-arno',
-        created_at: new Date().toISOString()
+        slug: 'calacatta-arno-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-5',
@@ -1881,8 +1923,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb22c17fbc540_msi-surfaces-surpise-quarrtz-calacatta-izaro-quartz-whole%20slab.jpg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-izaro-quartz',
-        created_at: new Date().toISOString()
+        slug: 'calacatta-izaro-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-6',
@@ -1897,8 +1941,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb294bffbc2da_dekton-surprise-granite-laurent-quartz-close-up.jpeg'],
         distributor: { company_name: 'Cosentino' },
-        slug: 'laurent-quartz',
-        created_at: new Date().toISOString()
+        slug: 'laurent-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'Spain',
+        originFlag: '🇪🇸'
       },
       {
         id: 'sample-7',
@@ -1913,8 +1959,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2af91fbc4ad_Radianz-quartz-surprise-granite-alluring-close-up.jpeg'],
         distributor: { company_name: 'Radianz Quartz' },
-        slug: 'alluring-quartz',
-        created_at: new Date().toISOString()
+        slug: 'alluring-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'South Korea',
+        originFlag: '🇰🇷'
       },
       {
         id: 'sample-8',
@@ -1929,8 +1977,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.jpg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'river-white-granite',
-        created_at: new Date().toISOString()
+        slug: 'new-river-white-granite-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'India',
+        originFlag: '🇮🇳'
       },
       {
         id: 'sample-9',
@@ -1945,8 +1995,10 @@
         finish: 'Honed',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2b48efbbd7f_msi-surfaces-sruprise-granite-absolute-white-marble-close%20up.jpg'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'calacatta-cressa-honed-marble',
-        created_at: new Date().toISOString()
+        slug: 'absolute-white-granite-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-10',
@@ -1961,24 +2013,28 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb22cfafbb7e4_msi-surfaces-surprise-granite-new-river-close-up.avif'],
         distributor: { company_name: 'MSI Surfaces' },
-        slug: 'new-river-white-granite',
-        created_at: new Date().toISOString()
+        slug: 'new-river-white-granite-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'India',
+        originFlag: '🇮🇳'
       },
       {
         id: 'sample-11',
         product_name: 'Super White',
-        brand: 'MSI Surfaces',
-        material_type: 'quartzite',
+        brand: 'Pentalquartz',
+        material_type: 'quartz',
         color_family: 'White',
-        price_per_sqft: 125,
-        length_inches: 110,
-        width_inches: 65,
+        price_per_sqft: 52,
+        length_inches: 126,
+        width_inches: 63,
         thickness_cm: 3,
         finish: 'Polished',
-        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/661b2371ac865464ae22b944_vancouver-close-up.jpg'],
-        distributor: { company_name: 'MSI Surfaces' },
-        slug: 'super-white-quartz',
-        created_at: new Date().toISOString()
+        images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4576abb2dc93fbbbe4_Pental-quartz-surprise-granite-super-white-close-up.jpeg'],
+        distributor: { company_name: 'Pentalquartz' },
+        slug: 'super-white-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       },
       {
         id: 'sample-12',
@@ -1993,8 +2049,10 @@
         finish: 'Polished',
         images: ['https://cdn.prod.website-files.com/6456ce4476abb2d4f9fbad10/6456ce4476abb25831fbb345_Cambria_Surprise_Granite_Oakleigh_Slab.jpg'],
         distributor: { company_name: 'Cambria' },
-        slug: 'oakleigh-quartz',
-        created_at: new Date().toISOString()
+        slug: 'oakleigh-quartz-sample',
+        created_at: new Date().toISOString(),
+        originCountry: 'USA',
+        originFlag: '🇺🇸'
       }
     ];
 
@@ -2151,7 +2209,7 @@
         const imageUrl = slab.images?.[0] || getPlaceholderImage(slab.material_type);
 
         return `
-          <a href="/countertops/${slab.slug || ''}/" class="featured-card" data-slab-id="${slab.id}">
+          <a href="/marketplace/product/?handle=${slab.slug || ''}&category=slabs" class="featured-card" data-slab-id="${slab.id}">
             <span class="featured-card-badge">${badge}</span>
             <div class="featured-card-image" style="background-image: url('${imageUrl}'); background-size: cover; background-position: center;">
             </div>
@@ -2209,7 +2267,9 @@
                 created_at: new Date().toISOString(),
                 slug: product.handle,
                 shopify: true,
-                variantId: product.variants?.[0]?.id
+                variantId: product.variants?.[0]?.id,
+                originCountry: product.originCountry || null,
+                originFlag: product.originFlag || null
               });
             });
             console.log('Loaded ' + shopifySlabs.length + ' Shopify slabs');
@@ -2235,12 +2295,34 @@
               'default': { min: 45, max: 80 }
             };
 
+            // Brand to origin mapping
+            const BRAND_ORIGINS = {
+              'cambria': { country: 'USA', flag: '🇺🇸' },
+              'silestone': { country: 'Spain', flag: '🇪🇸' },
+              'dekton': { country: 'Spain', flag: '🇪🇸' },
+              'cosentino': { country: 'Spain', flag: '🇪🇸' },
+              'caesarstone': { country: 'Israel', flag: '🇮🇱' },
+              'radianz': { country: 'South Korea', flag: '🇰🇷' },
+              'radianz quartz': { country: 'South Korea', flag: '🇰🇷' },
+              'hanstone': { country: 'South Korea', flag: '🇰🇷' },
+              'hanstone quartz': { country: 'South Korea', flag: '🇰🇷' },
+              'lg hausys': { country: 'South Korea', flag: '🇰🇷' },
+              'lx hausys': { country: 'South Korea', flag: '🇰🇷' },
+              'pentalquartz': { country: 'USA', flag: '🇺🇸' },
+              'pental': { country: 'USA', flag: '🇺🇸' },
+              'arizona tile': { country: 'USA', flag: '🇺🇸' },
+              'msi': { country: 'USA', flag: '🇺🇸' },
+              'msi surfaces': { country: 'USA', flag: '🇺🇸' }
+            };
+
             // Convert products to slab format
             let slabId = 100;
             const brands = Object.keys(productsData.by_brand || {});
 
             for (const brand of brands) {
               const products = productsData.by_brand[brand] || [];
+              const brandLower = brand.toLowerCase();
+              const origin = BRAND_ORIGINS[brandLower] || null;
 
               // Take first 15 products per brand
               for (const product of products.slice(0, 15)) {
@@ -2264,7 +2346,9 @@
                   images: [fixImageUrl(product.primaryImage)],
                   distributor: { company_name: brandName },
                   created_at: new Date().toISOString(),
-                  slug: product.slug
+                  slug: product.slug,
+                  originCountry: origin?.country || null,
+                  originFlag: origin?.flag || null
                 });
               }
             }
@@ -2427,6 +2511,7 @@
               <span class="slab-badge slab-badge-material">${escapeHtml(formatMaterial(slab.material_type))}</span>
               ${isNew ? '<span class="slab-badge slab-badge-new">New</span>' : ''}
             </div>
+            ${slab.originFlag ? `<span class="slab-badge-origin" title="Made in ${slab.originCountry}">${slab.originFlag}</span>` : ''}
             <button class="slab-favorite" aria-label="Add to favorites">
               <svg viewBox="0 0 24 24" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
@@ -2491,14 +2576,11 @@
         return;
       }
 
-      // Shopify products go to marketplace product page
-      if (slab.shopify && slab.slug) {
+      // All products go to marketplace product page
+      if (slab.slug) {
         window.location.href = `/marketplace/product/?handle=${slab.slug}&category=slabs`;
-      } else if (slab.slug) {
-        // Non-Shopify products go to countertops page
-        window.location.href = `/countertops/${slab.slug}/`;
       } else {
-        window.location.href = `/marketplace/slabs//`;
+        window.location.href = `/marketplace/slabs/`;
       }
     }
 
