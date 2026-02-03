@@ -155,14 +155,15 @@ class MSIScraper(BaseScraper):
     def scrape(self) -> List[Product]:
         logger.info(f"Starting MSI Surfaces scrape...")
 
-        # MSI product categories
+        # MSI product categories - Updated URLs for 2026
         categories = [
-            ('/countertops/quartz', 'quartz'),
-            ('/countertops/granite', 'granite'),
-            ('/countertops/marble', 'marble'),
-            ('/countertops/quartzite', 'quartzite'),
-            ('/tile', 'tile'),
-            ('/flooring/luxury-vinyl-tile', 'lvp'),
+            ('/quartz-countertops/', 'quartz'),
+            ('/granite-countertops/', 'granite'),
+            ('/marble/', 'marble'),
+            ('/quartzite/', 'quartzite'),
+            ('/porcelain-tile/', 'tile'),
+            ('/ceramic-tile/', 'tile'),
+            ('/luxury-vinyl-tile/', 'lvp'),
         ]
 
         for category_url, material_type in categories:
@@ -173,52 +174,73 @@ class MSIScraper(BaseScraper):
 
     def _scrape_category(self, category_path: str, material_type: str):
         """Scrape a product category"""
-        page = 1
-        max_pages = 50  # Safety limit
+        # MSI has collection pages that list all colors
+        collection_paths = {
+            '/quartz-countertops/': '/quartz-countertops/quartz-collections/',
+            '/granite-countertops/': '/granite-countertops/granite-colors/',
+            '/marble/': '/marble/marble-colors/',
+            '/quartzite/': '/quartzite/quartzite-colors/',
+            '/porcelain-tile/': '/porcelain-tile/',
+            '/ceramic-tile/': '/ceramic-tile/',
+            '/luxury-vinyl-tile/': '/luxury-vinyl-tile/lvt-colors/',
+        }
 
-        while page <= max_pages:
-            url = f"{self.base_url}{category_path}?page={page}"
-            soup = self.fetch_page(url)
+        # Use collection page if available
+        url = self.base_url + collection_paths.get(category_path, category_path)
+        soup = self.fetch_page(url)
 
+        if not soup:
+            # Try the original path
+            soup = self.fetch_page(self.base_url + category_path)
             if not soup:
-                break
+                return
 
-            # Find product cards (adjust selectors based on actual site structure)
-            products = soup.select('.product-card, .product-item, [data-product-id]')
+        # MSI uses various selectors for product cards
+        products = soup.select('.colors-container a, .product-title, [class*="productid"], .color-card')
 
-            if not products:
-                # Try alternative selectors
-                products = soup.select('.grid-item, .collection-item, .product-tile')
+        if not products:
+            # Try finding all links that look like product pages
+            products = soup.select('a[href*="/quartz/"], a[href*="/granite/"], a[href*="/marble/"]')
 
-            if not products:
-                logger.debug(f"No products found on page {page}")
-                break
+        if not products:
+            # Try generic product selectors
+            products = soup.select('.product-card, .product-item, .grid-item, .collection-item')
 
-            for product in products:
-                try:
-                    self._parse_product(product, material_type)
-                except Exception as e:
-                    logger.warning(f"Error parsing product: {e}")
+        logger.info(f"Found {len(products)} potential products in {category_path}")
 
-            # Check for next page
-            next_btn = soup.select_one('.pagination .next, [rel="next"], .load-more')
-            if not next_btn or 'disabled' in next_btn.get('class', []):
-                break
-
-            page += 1
+        for product in products:
+            try:
+                self._parse_product(product, material_type)
+            except Exception as e:
+                logger.warning(f"Error parsing product: {e}")
 
     def _parse_product(self, element, material_type: str):
         """Parse a single product element"""
-        # Get product name
-        name_el = element.select_one('.product-name, .product-title, h3, h4')
+        # Get product name - try multiple selectors
+        name_el = element.select_one('.product-title, .product-title-inner, .product-name, h3, h4, .title')
         name = name_el.get_text(strip=True) if name_el else None
 
-        if not name:
+        # If element is a link, try getting text from it
+        if not name and element.name == 'a':
+            name = element.get_text(strip=True)
+            # Also check for title attribute
+            if not name:
+                name = element.get('title', '')
+
+        if not name or len(name) < 2:
+            return
+
+        # Skip navigation links
+        skip_words = ['home', 'colors', 'gallery', 'contact', 'video', 'warranty', 'care', 'resources', 'explore', 'discover']
+        if any(word in name.lower() for word in skip_words):
             return
 
         # Get product URL
-        link = element.select_one('a[href]')
-        product_url = urljoin(self.base_url, link['href']) if link else ""
+        if element.name == 'a':
+            product_url = urljoin(self.base_url, element.get('href', ''))
+        else:
+            link = element.select_one('a[href]')
+            product_url = urljoin(self.base_url, link['href']) if link else ""
 
         # Get image
         img = element.select_one('img')
