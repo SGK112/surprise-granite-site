@@ -22275,6 +22275,14 @@
       'wall-cabinet-21': 'wall-cabinet', 'wall-cabinet-24': 'wall-cabinet', 'wall-cabinet-27': 'wall-cabinet',
       'wall-cabinet-30': 'wall-cabinet', 'wall-cabinet-33': 'wall-cabinet', 'wall-cabinet-36': 'wall-cabinet',
       'wall-cabinet-42': 'wall-cabinet',
+      // Tall wall cabinets (36"H) - use wall-cabinet icon
+      'wall-cabinet-12-tall': 'wall-cabinet', 'wall-cabinet-15-tall': 'wall-cabinet', 'wall-cabinet-18-tall': 'wall-cabinet',
+      'wall-cabinet-21-tall': 'wall-cabinet', 'wall-cabinet-24-tall': 'wall-cabinet', 'wall-cabinet-27-tall': 'wall-cabinet',
+      'wall-cabinet-30-tall': 'wall-cabinet', 'wall-cabinet-33-tall': 'wall-cabinet', 'wall-cabinet-36-tall': 'wall-cabinet',
+      // Extra-tall wall cabinets (42"H) - use wall-cabinet icon
+      'wall-cabinet-12-xtall': 'wall-cabinet', 'wall-cabinet-15-xtall': 'wall-cabinet', 'wall-cabinet-18-xtall': 'wall-cabinet',
+      'wall-cabinet-21-xtall': 'wall-cabinet', 'wall-cabinet-24-xtall': 'wall-cabinet', 'wall-cabinet-27-xtall': 'wall-cabinet',
+      'wall-cabinet-30-xtall': 'wall-cabinet', 'wall-cabinet-33-xtall': 'wall-cabinet', 'wall-cabinet-36-xtall': 'wall-cabinet',
       // Tall cabinet sizes
       'tall-cabinet-18': 'tall-cabinet', 'tall-cabinet-24': 'tall-cabinet', 'tall-cabinet-30': 'tall-cabinet',
       'tall-cabinet-36': 'tall-cabinet',
@@ -34384,13 +34392,23 @@
             snapY = otherY;
           }
         }
-        // Snap bottom edge of selected to top edge of other
-        if (Math.abs((snapY + elH) - otherY) < edgeSnapDist) {
+        // Snap bottom edge of selected to top edge of other (vertical cabinet runs)
+        // Use cabinetRunSnapDist for cabinet-to-cabinet vertical runs (left/right walls)
+        const verticalSnapDist = (isCabinetElement && isOtherCabinet) ? cabinetRunSnapDist : edgeSnapDist;
+        if (Math.abs((snapY + elH) - otherY) < verticalSnapDist) {
           snapY = otherY - elH;
+          // Align X (backs) when forming vertical cabinet runs
+          if (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.3) {
+            snapX = otherX;
+          }
         }
         // Snap top edge of selected to bottom edge of other
-        if (Math.abs(snapY - (otherY + otherH)) < edgeSnapDist) {
+        if (Math.abs(snapY - (otherY + otherH)) < verticalSnapDist) {
           snapY = otherY + otherH;
+          // Align X (backs) when forming vertical cabinet runs
+          if (isCabinetElement && isOtherCabinet && Math.abs(snapX - otherX) < pixelsPerFoot * 0.3) {
+            snapX = otherX;
+          }
         }
 
         // Align tops when close (for cabinet runs along a wall)
