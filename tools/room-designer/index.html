@@ -12363,9 +12363,9 @@
     <!-- Header -->
     <header class="header">
       <div class="header-left">
-        <div class="logo-group">
-          <a href="/" class="logo">
-            <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" alt="Surprise Granite">
+        <div class="logo-group" id="logoGroup">
+          <a href="/" class="logo" id="mainLogo">
+            <img src="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" alt="Surprise Granite" id="logoImg">
           </a>
         </div>
         <input type="text" class="project-input" id="projectName" value="Untitled Project" placeholder="Project name">
@@ -16318,6 +16318,25 @@
         if (demoBanner) {
           demoBanner.style.display = 'flex';
         }
+
+        // Replace logo with Remodely.ai branding
+        const logoGroup = document.getElementById('logoGroup');
+        if (logoGroup) {
+          logoGroup.innerHTML = `
+            <a href="https://remodely.ai" class="logo" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+              <div style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M9 22V12H15V22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span style="font-size:18px;font-weight:700;color:#fff;">Remodely<span style="color:#818cf8;">.ai</span></span>
+            </a>
+          `;
+        }
+
+        // Update page title
+        document.title = 'Room Designer Pro Demo | Remodely.ai';
 
         // Add demo upgrade modal to body
         const modalHTML = `
