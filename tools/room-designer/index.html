@@ -12170,6 +12170,153 @@
       border-color: var(--text);
       color: var(--text);
     }
+
+    /* Demo Mode Banner */
+    .demo-banner {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      z-index: 1000;
+    }
+
+    .demo-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .demo-banner-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .demo-banner-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .demo-banner-cta {
+      background: #fff;
+      color: #6366f1;
+      padding: 8px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .demo-banner-cta:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .demo-banner-link {
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .demo-banner-link:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* Demo mode upgrade modal */
+    .demo-upgrade-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .demo-upgrade-modal.show {
+      display: flex;
+    }
+
+    .demo-upgrade-content {
+      background: var(--dark-surface);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 480px;
+      text-align: center;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .demo-upgrade-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .demo-upgrade-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .demo-upgrade-content h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .demo-upgrade-content p {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .demo-upgrade-features {
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .demo-upgrade-feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .demo-upgrade-feature:last-child {
+      border-bottom: none;
+    }
+
+    .demo-upgrade-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      .demo-banner {
+        padding: 8px 12px;
+      }
+      .demo-banner-text {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -12204,6 +12351,15 @@
     </div>
   </div>
   <div class="app">
+    <!-- Demo Mode Banner (hidden by default, shown via ?demo=true) -->
+    <div class="demo-banner" id="demoBanner" style="display: none;">
+      <div class="demo-banner-content">
+        <span class="demo-banner-badge">DEMO</span>
+        <span class="demo-banner-text">You're viewing Room Designer Pro in demo mode</span>
+        <a href="https://remodely.ai/signup" class="demo-banner-cta" target="_blank">Get Full Access</a>
+        <a href="https://remodely.ai/features" class="demo-banner-link" target="_blank">Learn More</a>
+      </div>
+    </div>
     <!-- Header -->
     <header class="header">
       <div class="header-left">
@@ -16151,6 +16307,77 @@
   </div>
 
   <script>
+    // ===== DEMO MODE DETECTION =====
+    const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === 'true';
+
+    // Initialize demo mode UI on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      if (DEMO_MODE) {
+        // Show demo banner
+        const demoBanner = document.getElementById('demoBanner');
+        if (demoBanner) {
+          demoBanner.style.display = 'flex';
+        }
+
+        // Add demo upgrade modal to body
+        const modalHTML = `
+          <div class="demo-upgrade-modal" id="demoUpgradeModal">
+            <div class="demo-upgrade-content">
+              <button class="demo-upgrade-close" onclick="closeDemoUpgradeModal()">&times;</button>
+              <div class="demo-upgrade-icon">✨</div>
+              <h2 id="demoUpgradeTitle">Unlock Full Access</h2>
+              <p id="demoUpgradeDesc">Get access to all Room Designer Pro features with a free 14-day trial.</p>
+              <div class="demo-upgrade-features">
+                <div class="demo-upgrade-feature"><span style="color:#10b981;">✓</span> Save & load unlimited designs</div>
+                <div class="demo-upgrade-feature"><span style="color:#10b981;">✓</span> 500+ premium materials & textures</div>
+                <div class="demo-upgrade-feature"><span style="color:#10b981;">✓</span> Export PDF quotes & cut lists</div>
+                <div class="demo-upgrade-feature"><span style="color:#10b981;">✓</span> Real-time pricing estimates</div>
+                <div class="demo-upgrade-feature"><span style="color:#10b981;">✓</span> Share designs with clients</div>
+              </div>
+              <div class="demo-upgrade-actions">
+                <button class="btn btn-secondary" onclick="closeDemoUpgradeModal()">Continue Demo</button>
+                <a href="https://remodely.ai/signup" class="btn btn-primary" target="_blank">Start Free Trial</a>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        console.log('🎮 Room Designer Pro running in DEMO MODE');
+      }
+    });
+
+    // Demo mode upgrade modal functions
+    function showDemoUpgradeModal(feature) {
+      if (!DEMO_MODE) return false;
+
+      const modal = document.getElementById('demoUpgradeModal');
+      const title = document.getElementById('demoUpgradeTitle');
+      const desc = document.getElementById('demoUpgradeDesc');
+
+      // Customize message based on feature
+      const messages = {
+        save: { title: 'Save Your Design', desc: 'Create a free account to save your designs and access them anytime.' },
+        export: { title: 'Export Your Design', desc: 'Upgrade to export PDF quotes, cut lists, and share with clients.' },
+        share: { title: 'Share Your Design', desc: 'Create an account to share designs with clients and team members.' },
+        materials: { title: 'Premium Materials', desc: 'Access 500+ premium stone, quartz, and material textures.' },
+        pricing: { title: 'Real-Time Pricing', desc: 'Get instant pricing estimates with your Remodely.ai account.' },
+        default: { title: 'Unlock Full Access', desc: 'Get access to all Room Designer Pro features with a free 14-day trial.' }
+      };
+
+      const msg = messages[feature] || messages.default;
+      if (title) title.textContent = msg.title;
+      if (desc) desc.textContent = msg.desc;
+
+      if (modal) modal.classList.add('show');
+      return true;
+    }
+
+    function closeDemoUpgradeModal() {
+      const modal = document.getElementById('demoUpgradeModal');
+      if (modal) modal.classList.remove('show');
+    }
+
     // ===== CONFIGURATION =====
     const CONFIG = {
       MIN_PIXELS_PER_FOOT: 5,  // Allow zooming out to see very large rooms
@@ -64537,6 +64764,11 @@
     async function generateShareLink() {
       console.log('=== generateShareLink START ===');
 
+      // Demo mode check
+      if (DEMO_MODE) {
+        if (showDemoUpgradeModal('share')) return;
+      }
+
       // Check if user is logged in
       const user = window.SgAuth?.getUser();
       if (!user) {
@@ -67389,6 +67621,11 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     function exportToPDF() {
       document.getElementById('exportMenu').classList.remove('show');
 
+      // Demo mode check
+      if (DEMO_MODE) {
+        if (showDemoUpgradeModal('export')) return;
+      }
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'letter');
 
@@ -67764,6 +68001,11 @@ Lazy Susan,BLS33,lazy-susan,33,33,34.5,420`;
     // Save design to cloud (Supabase) or locally
     // silentMode = true means no popups/redirects (used when saving before creating new design)
     async function saveDesignToCloud(silentMode = false) {
+      // Demo mode check
+      if (DEMO_MODE) {
+        if (showDemoUpgradeModal('save')) return;
+      }
+
       console.log('saveDesignToCloud called, silentMode:', silentMode);
       const saveBtn = document.getElementById('saveDesignBtn');
       const saveText = document.getElementById('saveDesignText');
