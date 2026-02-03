@@ -13675,6 +13675,7 @@
                 <option value="living">Living Room</option>
                 <option value="office">Office</option>
                 <option value="commercial">Commercial</option>
+                <option value="outdoor">Outdoor</option>
               </select>
             </div>
             <div class="input-group">
@@ -40420,9 +40421,16 @@
         case 'dishwasher':
         case 'oven':
         case 'wall-oven-double':
+        case 'grill-builtin':
+        case 'grill-42':
+        case 'side-burner':
+        case 'power-burner':
           return height / 2; // These are floor-standing appliances
 
         case 'refrigerator':
+        case 'outdoor-fridge':
+        case 'kegerator':
+        case 'outdoor-ice-maker':
           return height / 2; // Floor standing, tall
 
         // Wall mounted (54" from floor is typical bottom edge per NKBA)
@@ -41142,9 +41150,13 @@
 
         case 'stove':
         case 'range':
-        case 'cooktop': {
-          // Background - stove surface
-          ctx.fillStyle = '#2a2a2a';
+        case 'cooktop':
+        case 'grill-builtin':
+        case 'grill-42':
+        case 'side-burner':
+        case 'power-burner': {
+          // Background - stove/grill surface
+          ctx.fillStyle = el.type.includes('grill') ? '#1a1a1a' : '#2a2a2a';
           ctx.fillRect(x, y, w, h);
 
           // Draw stove burners
@@ -46738,9 +46750,14 @@
 
         case 'stove':
         case 'range':
-        case 'cooktop': {
-          // High-detail professional range/stove/cooktop
+        case 'cooktop':
+        case 'grill-builtin':
+        case 'grill-42':
+        case 'side-burner':
+        case 'power-burner': {
+          // High-detail professional range/stove/cooktop/grill
           const isCooktopOnly = (el.type === 'cooktop');
+          const isGrill = el.type.includes('grill') || el.type.includes('burner');
 
           const stoveMat = new THREE.MeshStandardMaterial({
             color: 0x2a2a2a,
@@ -54256,12 +54273,15 @@
      */
     function buildRoomStructure() {
       const wallHeight = roomHeight || 8;
+      const currentRoomType = document.getElementById('roomType')?.value || 'kitchen';
+      const isOutdoor = currentRoomType === 'outdoor';
 
       // Check if we need to rebuild
       const dimensionsChanged =
         cachedRoomDimensions.width !== roomWidth ||
         cachedRoomDimensions.depth !== roomDepth ||
-        cachedRoomDimensions.height !== wallHeight;
+        cachedRoomDimensions.height !== wallHeight ||
+        cachedRoomDimensions.roomType !== currentRoomType;
 
       if (cachedRoomStructure && !dimensionsChanged && !forceFullRebuild3D) {
         // Return cached structure
@@ -54279,78 +54299,138 @@
 
       const structure = [];
 
-      // Floor
-      const floorMat = new THREE.MeshStandardMaterial({
-        color: 0xD2B48C,
-        roughness: 0.8
-      });
-      const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomWidth + 4, roomDepth + 4),
-        floorMat
-      );
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.set(roomWidth / 2, 0, roomDepth / 2);
-      floor.receiveShadow = true;
-      floor.userData.isRoomStructure = true;
-      structure.push(floor);
+      if (isOutdoor) {
+        // === OUTDOOR ROOM - Patio/deck with partial wall backdrop ===
 
-      // Wall material
-      const wallMat = new THREE.MeshStandardMaterial({
-        color: 0xFFFAF0,
-        roughness: 0.9,
-        side: THREE.DoubleSide
-      });
+        // Ground/patio - larger area, stone/concrete texture
+        const groundMat = new THREE.MeshStandardMaterial({
+          color: 0x9E9E9E, // Gray stone/concrete
+          roughness: 0.9
+        });
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth + 8, roomDepth + 8),
+          groundMat
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set(roomWidth / 2, 0, roomDepth / 2);
+        ground.receiveShadow = true;
+        ground.userData.isRoomStructure = true;
+        structure.push(ground);
 
-      // Back wall
-      const backWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomWidth, wallHeight),
-        wallMat.clone()
-      );
-      backWall.position.set(roomWidth / 2, wallHeight / 2, 0);
-      backWall.receiveShadow = true;
-      backWall.userData.isRoomStructure = true;
-      structure.push(backWall);
+        // Sky background - large blue plane behind the scene
+        const skyMat = new THREE.MeshBasicMaterial({
+          color: 0x87CEEB, // Sky blue
+          side: THREE.DoubleSide
+        });
+        const sky = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth + 40, wallHeight + 20),
+          skyMat
+        );
+        sky.position.set(roomWidth / 2, wallHeight / 2 + 2, -10);
+        sky.userData.isRoomStructure = true;
+        structure.push(sky);
 
-      // Left wall
-      const leftWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomDepth, wallHeight),
-        wallMat.clone()
-      );
-      leftWall.rotation.y = Math.PI / 2;
-      leftWall.position.set(0, wallHeight / 2, roomDepth / 2);
-      leftWall.receiveShadow = true;
-      leftWall.userData.isRoomStructure = true;
-      structure.push(leftWall);
+        // Back wall only (outdoor kitchen backdrop) - stucco/stone look
+        const backWallMat = new THREE.MeshStandardMaterial({
+          color: 0xE8D4B8, // Warm stucco color
+          roughness: 0.85,
+          side: THREE.DoubleSide
+        });
+        const backWall = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth, wallHeight * 0.6), // Shorter wall
+          backWallMat
+        );
+        backWall.position.set(roomWidth / 2, (wallHeight * 0.6) / 2, 0);
+        backWall.receiveShadow = true;
+        backWall.userData.isRoomStructure = true;
+        structure.push(backWall);
 
-      // Right wall
-      const rightWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomDepth, wallHeight),
-        wallMat.clone()
-      );
-      rightWall.rotation.y = -Math.PI / 2;
-      rightWall.position.set(roomWidth, wallHeight / 2, roomDepth / 2);
-      rightWall.receiveShadow = true;
-      rightWall.userData.isRoomStructure = true;
-      structure.push(rightWall);
+        // Change scene background for outdoor
+        if (scene) {
+          scene.background = new THREE.Color(0x87CEEB); // Sky blue
+        }
 
-      // Front wall (optional)
-      if (sceneSettings.showFrontWall) {
-        const frontWallMat = new THREE.MeshStandardMaterial({
+      } else {
+        // === INDOOR ROOM - Standard walls ===
+
+        // Floor
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: 0xD2B48C,
+          roughness: 0.8
+        });
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomWidth + 4, roomDepth + 4),
+          floorMat
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(roomWidth / 2, 0, roomDepth / 2);
+        floor.receiveShadow = true;
+        floor.userData.isRoomStructure = true;
+        structure.push(floor);
+
+        // Wall material
+        const wallMat = new THREE.MeshStandardMaterial({
           color: 0xFFFAF0,
           roughness: 0.9,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: sceneSettings.wallTransparency || 0.5
+          side: THREE.DoubleSide
         });
-        const frontWall = new THREE.Mesh(
+
+        // Back wall
+        const backWall = new THREE.Mesh(
           new THREE.PlaneGeometry(roomWidth, wallHeight),
-          frontWallMat
+          wallMat.clone()
         );
-        frontWall.rotation.y = Math.PI;
-        frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth);
-        frontWall.receiveShadow = true;
-        frontWall.userData.isRoomStructure = true;
-        structure.push(frontWall);
+        backWall.position.set(roomWidth / 2, wallHeight / 2, 0);
+        backWall.receiveShadow = true;
+        backWall.userData.isRoomStructure = true;
+        structure.push(backWall);
+
+        // Left wall
+        const leftWall = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomDepth, wallHeight),
+          wallMat.clone()
+        );
+        leftWall.rotation.y = Math.PI / 2;
+        leftWall.position.set(0, wallHeight / 2, roomDepth / 2);
+        leftWall.receiveShadow = true;
+        leftWall.userData.isRoomStructure = true;
+        structure.push(leftWall);
+
+        // Right wall
+        const rightWall = new THREE.Mesh(
+          new THREE.PlaneGeometry(roomDepth, wallHeight),
+          wallMat.clone()
+        );
+        rightWall.rotation.y = -Math.PI / 2;
+        rightWall.position.set(roomWidth, wallHeight / 2, roomDepth / 2);
+        rightWall.receiveShadow = true;
+        rightWall.userData.isRoomStructure = true;
+        structure.push(rightWall);
+
+        // Front wall (optional)
+        if (sceneSettings.showFrontWall) {
+          const frontWallMat = new THREE.MeshStandardMaterial({
+            color: 0xFFFAF0,
+            roughness: 0.9,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: sceneSettings.wallTransparency || 0.5
+          });
+          const frontWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(roomWidth, wallHeight),
+            frontWallMat
+          );
+          frontWall.rotation.y = Math.PI;
+          frontWall.position.set(roomWidth / 2, wallHeight / 2, roomDepth);
+          frontWall.receiveShadow = true;
+          frontWall.userData.isRoomStructure = true;
+          structure.push(frontWall);
+        }
+
+        // Reset scene background to default for indoor
+        if (scene) {
+          scene.background = new THREE.Color(0x1a1a2e);
+        }
       }
 
       // Wall labels (3D text sprites)
@@ -54376,31 +54456,33 @@
       }
 
       // Back wall label
-      const backLabel = createWallLabel('BACK WALL');
-      backLabel.position.set(roomWidth / 2, wallHeight - 0.5, 0.3);
+      const backLabel = createWallLabel(isOutdoor ? 'BACK' : 'BACK WALL');
+      backLabel.position.set(roomWidth / 2, isOutdoor ? 3 : wallHeight - 0.5, 0.3);
       structure.push(backLabel);
 
-      // Left wall label
-      const leftLabel = createWallLabel('LEFT WALL');
-      leftLabel.position.set(0.3, wallHeight - 0.5, roomDepth / 2);
-      structure.push(leftLabel);
+      if (!isOutdoor) {
+        // Left wall label
+        const leftLabel = createWallLabel('LEFT WALL');
+        leftLabel.position.set(0.3, wallHeight - 0.5, roomDepth / 2);
+        structure.push(leftLabel);
 
-      // Right wall label
-      const rightLabel = createWallLabel('RIGHT WALL');
-      rightLabel.position.set(roomWidth - 0.3, wallHeight - 0.5, roomDepth / 2);
-      structure.push(rightLabel);
+        // Right wall label
+        const rightLabel = createWallLabel('RIGHT WALL');
+        rightLabel.position.set(roomWidth - 0.3, wallHeight - 0.5, roomDepth / 2);
+        structure.push(rightLabel);
 
-      // Front wall label
-      const frontLabel = createWallLabel('FRONT WALL');
-      frontLabel.position.set(roomWidth / 2, wallHeight - 0.5, roomDepth - 0.3);
-      structure.push(frontLabel);
+        // Front wall label
+        const frontLabel = createWallLabel('FRONT WALL');
+        frontLabel.position.set(roomWidth / 2, wallHeight - 0.5, roomDepth - 0.3);
+        structure.push(frontLabel);
+      }
 
       // Add all to scene
       structure.forEach(mesh => scene.add(mesh));
 
       // Cache
       cachedRoomStructure = structure;
-      cachedRoomDimensions = { width: roomWidth, depth: roomDepth, height: wallHeight };
+      cachedRoomDimensions = { width: roomWidth, depth: roomDepth, height: wallHeight, roomType: currentRoomType };
 
       return structure;
     }
@@ -56504,23 +56586,22 @@
 
       'outdoor-kitchen': {
         name: 'Outdoor Kitchen',
-        roomType: 'kitchen',
+        roomType: 'outdoor',
         width: 12,
         depth: 6,
         elements: [
           // === BACK WALL (y=0) - Linear outdoor cooking station ===
-          // Grill-centric with prep space on each side
+          // Built-in grill centered with prep space on each side
           { type: 'base-cabinet', x: 0, y: 0, width: 2, height: 2, label: 'Storage', rotation: 0 },
-          { type: 'refrigerator', x: 2, y: 0, width: 2, height: 2, label: 'Mini Fridge', rotation: 0 },
+          { type: 'outdoor-fridge', x: 2, y: 0, width: 2, height: 2, label: 'Outdoor Fridge', rotation: 0 },
           { type: 'base-cabinet', x: 4, y: 0, width: 2, height: 2, label: 'Prep Station', rotation: 0 },
-          { type: 'range', x: 6, y: 0, width: 3, height: 2.5, label: 'Built-in Grill', rotation: 0 },
+          { type: 'grill-builtin', x: 6, y: 0, width: 3, height: 2.5, label: 'Built-in Grill 36"', rotation: 0 },
           { type: 'sink-base', x: 9, y: 0, width: 2, height: 2, label: 'Sink Base', rotation: 0 },
           { type: 'base-cabinet', x: 11, y: 0, width: 1, height: 2, label: 'Storage', rotation: 0 },
           // Continuous countertop (weather-resistant material like granite)
-          { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.665, label: 'Granite Counter', rotation: 0, overhangFront: 0.5, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
-          { type: 'sink', x: 9.25, y: 0.25, width: 1.5, height: 1.5, label: 'Bar Sink', rotation: 0 },
-          // Range hood / ventilation
-          { type: 'range-hood', x: 6.25, y: 0, width: 2.5, height: 1, label: 'Vent Hood', rotation: 0 },
+          // Position countertop ABOVE cabinets (y slightly negative for overhang)
+          { type: 'countertop', x: -0.125, y: -0.04, width: 12.25, height: 2.165, label: 'Granite Counter', rotation: 0, overhangFront: 0.125, overhangBack: 0, overhangLeft: 0.125, overhangRight: 0.125 },
+          { type: 'outdoor-sink', x: 9.25, y: 0.25, width: 1.5, height: 1.5, label: 'Outdoor Sink', rotation: 0 },
           // === BACKSPLASH ===
           { type: 'backsplash', x: 0, y: 0, width: 12, height: 0.08, label: 'Stone Backsplash', rotation: 0 },
         ]
