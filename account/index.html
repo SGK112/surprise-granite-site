@@ -58,6 +58,12 @@
       --warning-old: #ffb84d;
       --error-old: #ff6b6b;
       --info-old: #4da6ff;
+
+      /* Background aliases (for components) */
+      --dark-bg: #0a0a12;
+      --bg-primary: #0a0a12;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -8791,6 +8797,18 @@
       border-color: rgba(139, 92, 246, 0.4);
     }
 
+    .lead-quick-actions .btn-action.archive:hover {
+      background: rgba(107, 114, 128, 0.15);
+      color: #9ca3af;
+      border-color: rgba(107, 114, 128, 0.4);
+    }
+
+    .lead-quick-actions .btn-action.delete:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
     /* Project quick actions on list items */
     .project-quick-actions {
       display: flex;
@@ -10587,9 +10605,9 @@
     .profile-panel-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 99999;
       opacity: 0;
       visibility: hidden;
       transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -10605,13 +10623,15 @@
       width: 100%;
       max-width: 900px;
       height: 100vh;
-      background: var(--dark-bg);
+      height: 100dvh;
+      background: #0a0a12;
       box-shadow: -8px 0 50px rgba(0, 0, 0, 0.5);
       transform: translateX(100%);
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
-      z-index: 10000;
+      z-index: 100000;
+      overflow: hidden;
     }
     .profile-panel-overlay.active .profile-panel {
       transform: translateX(0);
@@ -10764,6 +10784,7 @@
     .profile-status-badge.quoted { background: rgba(6, 182, 212, 0.25); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
     .profile-status-badge.won { background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
     .profile-status-badge.lost { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .profile-status-badge.archived { background: rgba(107, 114, 128, 0.25); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.3); }
     .profile-tag {
       display: inline-flex;
       align-items: center;
@@ -11182,13 +11203,14 @@
     .job-scheduler-panel {
       position: fixed;
       inset: 0;
-      background: var(--dark-bg);
-      z-index: 9998;
+      background: #0a0a12;
+      z-index: 99998;
       opacity: 0;
       visibility: hidden;
       transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .job-scheduler-panel.active {
       opacity: 1;
@@ -12681,6 +12703,10 @@
                 <button class="filter-pill" data-status="quoted">Quoted</button>
                 <button class="filter-pill" data-status="won">Won</button>
                 <button class="filter-pill" data-status="lost">Lost</button>
+                <button class="filter-pill" data-status="archived" style="margin-left: 8px; border-left: 1px solid var(--border-subtle); padding-left: 16px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+                  Archived
+                </button>
               </div>
             </div>
             <div id="leads-table">
@@ -15060,6 +15086,10 @@
                 <option value="new">New</option>
                 <option value="contacted">Contacted</option>
                 <option value="qualified">Qualified</option>
+                <option value="quoted">Quoted</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -17022,15 +17052,15 @@
             </div>
           </div>
           <div class="profile-header-info">
-            <div class="profile-name" id="profile-name">John Doe</div>
+            <div class="profile-name" id="panel-profile-name">John Doe</div>
             <div class="profile-meta">
-              <span class="profile-meta-item" id="profile-email">
+              <span class="profile-meta-item" id="panel-profile-email">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                <a href="#" id="profile-email-link">email@example.com</a>
+                <a href="#" id="panel-profile-email-link">email@example.com</a>
               </span>
-              <span class="profile-meta-item" id="profile-phone">
+              <span class="profile-meta-item" id="panel-profile-phone">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <a href="#" id="profile-phone-link">(555) 123-4567</a>
+                <a href="#" id="panel-profile-phone-link">(555) 123-4567</a>
               </span>
             </div>
             <div class="profile-badges">
@@ -17217,6 +17247,15 @@
                 <div class="action-text">
                   <div class="action-title">Customer Portal</div>
                   <div class="action-desc">View their portal</div>
+                </div>
+              </button>
+              <button class="profile-quick-action" onclick="archiveLeadFromProfile()" id="archive-lead-btn">
+                <div class="action-icon" style="background: rgba(107, 114, 128, 0.15);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </div>
+                <div class="action-text">
+                  <div class="action-title" id="archive-btn-title">Archive Lead</div>
+                  <div class="action-desc" id="archive-btn-desc">Hide from active list</div>
                 </div>
               </button>
             </div>
@@ -19072,6 +19111,8 @@
     let currentFilter = 'all';
     let currentLeadsView = 'grid'; // 'grid', 'list', or 'kanban'
     let selectedLead = null;
+    let editingLeadId = null; // Track if we're editing an existing lead
+    let showArchivedLeads = false; // Hide archived leads by default
 
     let allCustomers = [];
     let selectedCustomer = null;
@@ -20490,7 +20531,7 @@
         try {
           await supabaseClient
             .from('pro_notifications')
-            .update({ read: true, read_at: new Date().toISOString() })
+            .update({ is_read: true, read_at: new Date().toISOString() })
             .eq('id', notifId);
         } catch (err) {
           console.warn('Could not persist notification read state:', err);
@@ -20535,9 +20576,9 @@
         try {
           await supabaseClient
             .from('pro_notifications')
-            .update({ read: true, read_at: new Date().toISOString() })
+            .update({ is_read: true, read_at: new Date().toISOString() })
             .eq('pro_user_id', currentUser.id)
-            .eq('read', false);
+            .eq('is_read', false);
         } catch (err) {
           // Ignore - may not have this table
         }
@@ -23595,11 +23636,16 @@
     }
 
     function updateStats() {
+      // Exclude archived leads from main stats
+      const activeLeads = allLeads.filter(l => l.status !== 'archived');
+      const archivedCount = allLeads.filter(l => l.status === 'archived').length;
+
       const stats = {
-        total: allLeads.length,
-        new: allLeads.filter(l => l.status === 'new').length,
-        contacted: allLeads.filter(l => l.status === 'contacted').length,
-        won: allLeads.filter(l => l.status === 'won').length
+        total: activeLeads.length,
+        new: activeLeads.filter(l => l.status === 'new').length,
+        contacted: activeLeads.filter(l => l.status === 'contacted').length,
+        won: activeLeads.filter(l => l.status === 'won').length,
+        archived: archivedCount
       };
 
       console.log('[Stats] updateStats called, stats:', stats);
@@ -23648,6 +23694,11 @@
       const searchTerm = document.getElementById('leads-search')?.value.toLowerCase() || '';
 
       let filtered = allLeads;
+
+      // Filter out archived leads unless showArchivedLeads is true or filtering by archived
+      if (!showArchivedLeads && currentFilter !== 'archived') {
+        filtered = filtered.filter(l => l.status !== 'archived');
+      }
 
       if (currentFilter !== 'all') {
         filtered = filtered.filter(l => l.status === currentFilter);
@@ -23726,6 +23777,8 @@
                 ${leadEmail ? `<button onclick="event.stopPropagation(); openLeadEmailModal('${lead.id}')" class="btn-action email" title="Email"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Email</button>` : ''}
                 <button onclick="event.stopPropagation(); quickChangeLeadStatus('${lead.id}', '${lead.status}')" class="btn-action status" title="Change Status"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>Status</button>
                 <button onclick="event.stopPropagation(); convertLeadToProject('${lead.id}')" class="btn-action project" title="Convert to Project"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>Project</button>
+                <button onclick="event.stopPropagation(); quickArchiveLead('${lead.id}')" class="btn-action archive" title="${lead.status === 'archived' ? 'Restore' : 'Archive'}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>${lead.status === 'archived' ? 'Restore' : 'Archive'}</button>
+                <button onclick="event.stopPropagation(); quickDeleteLead('${lead.id}')" class="btn-action delete" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>
               </div>
             </div>
           `}).join('')}
@@ -23765,9 +23818,11 @@
               <div>
                 <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: ${statusColor}25; color: ${statusColor}; text-transform: uppercase;">${lead.status}</span>
               </div>
-              <div style="display: flex; gap: 6px;" onclick="event.stopPropagation()">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;" onclick="event.stopPropagation()">
                 ${leadPhone ? `<button onclick="window.location.href='tel:${encodeURIComponent(leadPhone)}'" style="padding: 6px 10px; background: rgba(34, 197, 94, 0.15); border: none; border-radius: 6px; color: #22c55e; cursor: pointer; font-size: 12px;">Call</button>` : ''}
                 ${leadEmail ? `<button onclick="openLeadEmailModal('${lead.id}')" style="padding: 6px 10px; background: rgba(59, 130, 246, 0.15); border: none; border-radius: 6px; color: #3b82f6; cursor: pointer; font-size: 12px;">Email</button>` : ''}
+                <button onclick="quickArchiveLead('${lead.id}')" style="padding: 6px 10px; background: rgba(107, 114, 128, 0.15); border: none; border-radius: 6px; color: #9ca3af; cursor: pointer; font-size: 12px;" title="${lead.status === 'archived' ? 'Restore' : 'Archive'}">${lead.status === 'archived' ? '↩' : '📦'}</button>
+                <button onclick="quickDeleteLead('${lead.id}')" style="padding: 6px 10px; background: rgba(239, 68, 68, 0.15); border: none; border-radius: 6px; color: #ef4444; cursor: pointer; font-size: 12px;" title="Delete">🗑</button>
               </div>
             </div>
           `}).join('')}
@@ -23777,7 +23832,7 @@
 
     function renderLeadsKanbanView(filtered) {
       const statuses = ['new', 'contacted', 'qualified', 'quoted', 'won', 'lost'];
-      const statusLabels = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quoted: 'Quoted', won: 'Won', lost: 'Lost' };
+      const statusLabels = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quoted: 'Quoted', won: 'Won', lost: 'Lost', archived: 'Archived' };
       const grouped = {};
       statuses.forEach(s => grouped[s] = []);
       filtered.forEach(lead => {
@@ -23809,6 +23864,8 @@
                     <div style="display: flex; gap: 6px; margin-top: 10px;" onclick="event.stopPropagation()">
                       ${leadPhone ? `<button onclick="window.location.href='tel:${encodeURIComponent(leadPhone)}'" style="flex: 1; padding: 6px; background: rgba(34, 197, 94, 0.15); border: none; border-radius: 6px; color: #22c55e; cursor: pointer; font-size: 11px;">Call</button>` : ''}
                       ${leadEmail ? `<button onclick="openLeadEmailModal('${lead.id}')" style="flex: 1; padding: 6px; background: rgba(59, 130, 246, 0.15); border: none; border-radius: 6px; color: #3b82f6; cursor: pointer; font-size: 11px;">Email</button>` : ''}
+                      <button onclick="quickArchiveLead('${lead.id}')" style="padding: 6px 8px; background: rgba(107, 114, 128, 0.15); border: none; border-radius: 6px; color: #9ca3af; cursor: pointer; font-size: 11px;" title="Archive">📦</button>
+                      <button onclick="quickDeleteLead('${lead.id}')" style="padding: 6px 8px; background: rgba(239, 68, 68, 0.15); border: none; border-radius: 6px; color: #ef4444; cursor: pointer; font-size: 11px;" title="Delete">🗑</button>
                     </div>
                   </div>
                 `}).join('')}
@@ -24019,7 +24076,7 @@
     // Quick Actions for Lead Cards
     function quickChangeLeadStatus(leadId, currentStatus) {
       const statuses = ['new', 'contacted', 'qualified', 'quoted', 'won', 'lost'];
-      const statusLabels = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quoted: 'Quoted', won: 'Won', lost: 'Lost' };
+      const statusLabels = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', quoted: 'Quoted', won: 'Won', lost: 'Lost', archived: 'Archived' };
 
       // Create dropdown modal
       const modal = document.createElement('div');
@@ -25084,6 +25141,11 @@
       // Reset service address section
       document.getElementById('new-lead-address-same').checked = true;
       document.getElementById('new-lead-service-address-section').style.display = 'none';
+      // Reset edit mode and title
+      editingLeadId = null;
+      const modalTitle = document.querySelector('#add-lead-modal .modal-title');
+      if (modalTitle) modalTitle.textContent = 'Add New Lead';
+      document.getElementById('add-lead-form').reset();
     }
 
     function toggleNewLeadServiceAddress() {
@@ -25177,8 +25239,6 @@
         const fullMessage = userMessage + appointmentInfo;
 
         const leadData = {
-          // Note: assigned_to references sg_users, not auth.users
-          // Leave null - leads can be assigned later via admin panel
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
@@ -25189,8 +25249,6 @@
           message: fullMessage || null,
           source: document.getElementById('new-lead-source').value,
           status: document.getElementById('new-lead-status').value,
-          form_name: 'manual-entry',
-          created_at: new Date().toISOString(),
           // Address fields
           billing_address: billingAddress,
           service_address: serviceAddress,
@@ -25205,52 +25263,77 @@
           } : null
         };
 
-        const { data, error } = await supabaseClient
-          .from('leads')
-          .insert([leadData])
-          .select()
-          .single();
+        let data, error;
+
+        // Check if we're editing an existing lead
+        if (editingLeadId) {
+          // Update existing lead - add updated_at timestamp
+          leadData.updated_at = new Date().toISOString();
+
+          const { data: updateData, error: updateError } = await supabaseClient
+            .from('leads')
+            .update(leadData)
+            .eq('id', editingLeadId)
+            .select()
+            .single();
+          data = updateData;
+          error = updateError;
+        } else {
+          // Insert new lead - add created_at and form_name
+          leadData.created_at = new Date().toISOString();
+          leadData.form_name = 'manual-entry';
+
+          const { data: insertData, error: insertError } = await supabaseClient
+            .from('leads')
+            .insert([leadData])
+            .select()
+            .single();
+          data = insertData;
+          error = insertError;
+        }
 
         if (error) throw error;
 
-        // Create portal token for the new lead
+        // Create portal token for new leads only (not edits)
         let portalUrl = null;
-        try {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          const { data: token, error: tokenError } = await supabaseClient
-            .from('portal_tokens')
-            .insert([{
-              lead_id: data.id,
-              owner_id: user.id,
-              email: email,
-              phone: phone,
-              permissions: {
-                view_project: true,
-                view_estimates: true,
-                approve_estimates: true,
-                view_invoices: true,
-                pay_invoices: true,
-                upload_photos: true,
-                send_messages: true,
-                view_appointments: true
-              }
-            }])
-            .select()
-            .single();
+        if (!editingLeadId) {
+          try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const { data: token, error: tokenError } = await supabaseClient
+              .from('portal_tokens')
+              .insert([{
+                lead_id: data.id,
+                owner_id: user.id,
+                email: email,
+                phone: phone,
+                permissions: {
+                  view_project: true,
+                  view_estimates: true,
+                  approve_estimates: true,
+                  view_invoices: true,
+                  pay_invoices: true,
+                  upload_photos: true,
+                  send_messages: true,
+                  view_appointments: true
+                }
+              }])
+              .select()
+              .single();
 
-          if (token && !tokenError) {
-            portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
-            console.log('Portal token created:', token.id);
-          } else if (tokenError) {
-            console.warn('Portal token error:', tokenError.message);
+            if (token && !tokenError) {
+              portalUrl = `https://www.surprisegranite.com/portal/?token=${token.token}`;
+              console.log('Portal token created:', token.id);
+            } else if (tokenError) {
+              console.warn('Portal token error:', tokenError.message);
+            }
+          } catch (tokenErr) {
+            console.warn('Portal token creation error:', tokenErr);
           }
-        } catch (tokenErr) {
-          console.warn('Portal token creation error:', tokenErr);
         }
 
-        // Send welcome email if checkbox is checked
+        // Send welcome email if checkbox is checked (new leads only)
         const sendEmail = document.getElementById('new-lead-send-email').checked;
-        if (sendEmail && email) {
+        if (sendEmail && email && !editingLeadId) {
           try {
             await sendLeadWelcomeEmail({
               firstName,
@@ -25269,14 +25352,27 @@
           }
         }
 
-        // Add to local array and refresh display
-        allLeads.unshift(data);
+        // Capture edit state before closing modal (which resets editingLeadId)
+        const wasEditing = !!editingLeadId;
+
+        // Update local array and refresh display
+        if (wasEditing && data) {
+          // Replace existing lead in array
+          const index = allLeads.findIndex(l => l.id === editingLeadId);
+          if (index !== -1) {
+            allLeads[index] = data;
+          }
+        } else if (data) {
+          // Add new lead to beginning
+          allLeads.unshift(data);
+        }
+
         updateStats();
         renderLeads();
         closeAddLeadModal();
 
-        let successMsg = 'Lead added successfully!';
-        if (sendEmail && email) successMsg += ' Welcome email sent.';
+        let successMsg = wasEditing ? 'Lead updated successfully!' : 'Lead added successfully!';
+        if (!wasEditing && sendEmail && email) successMsg += ' Welcome email sent.';
         if (hasAppointment) successMsg += ' Appointment scheduled.';
         showToast(successMsg, 'success');
 
@@ -38419,12 +38515,27 @@
 
     // Helper function to format address from JSON object or string
     function formatAddressFromData(data) {
-      // Check for service_address first (for leads, this is the project location)
+      if (!data) return '';
+
+      // Check for string addresses first (most common in older leads)
+      if (data.project_address && typeof data.project_address === 'string' && data.project_address.trim()) {
+        return data.project_address.trim();
+      }
+      if (data.address && typeof data.address === 'string' && data.address.trim()) {
+        return data.address.trim();
+      }
+
+      // Check for JSON object addresses (newer leads)
       let addrObj = data.service_address || data.billing_address;
 
-      // If it's already a string, use it
+      // If it's a string (could be JSON string), try to parse it
       if (typeof addrObj === 'string' && addrObj.trim()) {
-        return addrObj;
+        try {
+          addrObj = JSON.parse(addrObj);
+        } catch (e) {
+          // It's a plain string address, use it directly
+          return addrObj.trim();
+        }
       }
 
       // If it's an object, format it
@@ -38443,11 +38554,7 @@
         if (parts.length > 0) return parts.join(', ');
       }
 
-      // Fall back to other address fields
-      if (data.address && typeof data.address === 'string') return data.address;
-      if (data.project_address && typeof data.project_address === 'string') return data.project_address;
-
-      // Build from individual fields if available
+      // Build from individual fields if available (some forms use these)
       if (data.street || data.city) {
         const parts = [];
         if (data.street) parts.push(data.street);
@@ -38472,6 +38579,7 @@
       const source = data.source || data.lead_source || '';
       const message = data.message || data.notes || '';
 
+
       // Set header info - Avatar with initials
       const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
       document.getElementById('profile-avatar').innerHTML = initials;
@@ -38482,11 +38590,11 @@
         badge.style.display = (status === 'qualified' || status === 'won') ? 'flex' : 'none';
       }
 
-      document.getElementById('profile-name').textContent = name;
+      document.getElementById('panel-profile-name').textContent = name;
 
       // Email with clickable link
-      const emailLink = document.getElementById('profile-email-link');
-      const emailContainer = document.getElementById('profile-email');
+      const emailLink = document.getElementById('panel-profile-email-link');
+      const emailContainer = document.getElementById('panel-profile-email');
       if (email) {
         emailLink.textContent = email;
         emailLink.href = `mailto:${email}`;
@@ -38498,8 +38606,8 @@
       }
 
       // Phone with clickable link
-      const phoneLink = document.getElementById('profile-phone-link');
-      const phoneContainer = document.getElementById('profile-phone');
+      const phoneLink = document.getElementById('panel-profile-phone-link');
+      const phoneContainer = document.getElementById('panel-profile-phone');
       if (phone) {
         phoneLink.textContent = phone;
         phoneLink.href = `tel:${phone.replace(/\D/g, '')}`;
@@ -38519,7 +38627,8 @@
         'qualified': 'Qualified',
         'quoted': 'Quoted',
         'won': 'Won',
-        'lost': 'Lost'
+        'lost': 'Lost',
+        'archived': 'Archived'
       };
       statusEl.textContent = statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
 
@@ -38600,6 +38709,9 @@
 
       // Switch to overview tab
       switchProfileTab('overview');
+
+      // Update archive button based on current status
+      updateArchiveButton(status === 'archived');
 
       // Show panel
       document.getElementById('profile-panel-overlay').classList.add('active');
@@ -39052,6 +39164,119 @@
       }
     }
 
+    async function archiveLeadFromProfile() {
+      if (!currentProfileData) return;
+
+      const isArchived = currentProfileData.status === 'archived';
+      const newStatus = isArchived ? 'new' : 'archived';
+      const action = isArchived ? 'restore' : 'archive';
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: newStatus })
+          .eq('id', currentProfileData.id);
+
+        if (error) throw error;
+
+        // Update local data
+        currentProfileData.status = newStatus;
+        const index = allLeads.findIndex(l => l.id === currentProfileData.id);
+        if (index !== -1) {
+          allLeads[index].status = newStatus;
+        }
+
+        // Update archive button text
+        updateArchiveButton(newStatus === 'archived');
+
+        // Refresh display
+        updateStats();
+        renderLeads();
+
+        showToast(isArchived ? 'Lead restored successfully' : 'Lead archived successfully', 'success');
+      } catch (err) {
+        console.error('Error archiving lead:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function updateArchiveButton(isArchived) {
+      const titleEl = document.getElementById('archive-btn-title');
+      const descEl = document.getElementById('archive-btn-desc');
+      if (titleEl) titleEl.textContent = isArchived ? 'Restore Lead' : 'Archive Lead';
+      if (descEl) descEl.textContent = isArchived ? 'Move back to active' : 'Hide from active list';
+    }
+
+    async function quickArchiveLead(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const isArchived = lead.status === 'archived';
+      const newStatus = isArchived ? 'new' : 'archived';
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .update({ status: newStatus })
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        // Update local data
+        lead.status = newStatus;
+
+        // Refresh display
+        updateStats();
+        renderLeads();
+
+        showToast(isArchived ? 'Lead restored' : 'Lead archived', 'success');
+      } catch (err) {
+        console.error('Error archiving lead:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function quickDeleteLead(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const leadName = lead.full_name || lead.homeowner_name || lead.name || 'this lead';
+
+      // Show confirmation dialog
+      if (!confirm(`Are you sure you want to permanently delete "${leadName}"?\n\nThis action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from('leads')
+          .delete()
+          .eq('id', leadId);
+
+        if (error) throw error;
+
+        // Remove from local data
+        const index = allLeads.findIndex(l => l.id === leadId);
+        if (index !== -1) {
+          allLeads.splice(index, 1);
+        }
+
+        // Close profile panel if this lead was open
+        if (currentProfileData && currentProfileData.id === leadId) {
+          closeProfilePanel();
+        }
+
+        // Refresh display
+        updateStats();
+        renderLeads();
+
+        showToast('Lead deleted permanently', 'success');
+      } catch (err) {
+        console.error('Error deleting lead:', err);
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
     function editProfileRecord() {
       // Save data before closing (closeProfilePanel sets currentProfileData to null)
       const data = currentProfileData;
@@ -39059,8 +39284,71 @@
       closeProfilePanel();
       if (type === 'lead' && data) {
         selectedLead = data;
-        openLeadModal(data.id);
+        openEditLeadModal(data);
       }
+    }
+
+    function openEditLeadModal(lead) {
+      editingLeadId = lead.id;
+
+      // Update modal title for edit mode
+      const modalTitle = document.querySelector('#add-lead-modal .modal-title');
+      if (modalTitle) modalTitle.textContent = 'Edit Lead';
+
+      // Parse name into first/last
+      const fullName = lead.full_name || lead.name || '';
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Populate basic fields
+      document.getElementById('new-lead-first-name').value = firstName;
+      document.getElementById('new-lead-last-name').value = lastName;
+      document.getElementById('new-lead-email').value = lead.email || '';
+      document.getElementById('new-lead-phone').value = lead.phone || '';
+      document.getElementById('new-lead-project-type').value = lead.project_type || '';
+      document.getElementById('new-lead-zip').value = lead.zip_code || '';
+
+      // Populate billing address
+      const billing = lead.billing_address || {};
+      if (typeof billing === 'object') {
+        document.getElementById('new-lead-billing-street').value = billing.street || '';
+        document.getElementById('new-lead-billing-street2').value = billing.street2 || '';
+        document.getElementById('new-lead-billing-city').value = billing.city || '';
+        document.getElementById('new-lead-billing-state').value = billing.state || 'AZ';
+        document.getElementById('new-lead-billing-zip').value = billing.zip || '';
+      }
+
+      // Handle service address
+      const addressSame = lead.address_same !== false;
+      document.getElementById('new-lead-address-same').checked = addressSame;
+      toggleNewLeadServiceAddress();
+
+      if (!addressSame && lead.service_address) {
+        const service = lead.service_address;
+        if (typeof service === 'object') {
+          document.getElementById('new-lead-service-street').value = service.street || '';
+          document.getElementById('new-lead-service-street2').value = service.street2 || '';
+          document.getElementById('new-lead-service-city').value = service.city || '';
+          document.getElementById('new-lead-service-state').value = service.state || 'AZ';
+          document.getElementById('new-lead-service-zip').value = service.zip || '';
+        }
+      }
+
+      // Populate status and source
+      const statusSelect = document.getElementById('new-lead-status');
+      const sourceSelect = document.getElementById('new-lead-source');
+      if (statusSelect) statusSelect.value = lead.status || 'new';
+      if (sourceSelect) sourceSelect.value = lead.source || 'manual';
+
+      // Populate message (strip any appointment info if present)
+      let message = lead.message || '';
+      const apptInfoIndex = message.indexOf('\n\nSCHEDULED APPOINTMENT:');
+      if (apptInfoIndex > -1) message = message.substring(0, apptInfoIndex);
+      document.getElementById('new-lead-message').value = message;
+
+      // Open the modal
+      document.getElementById('add-lead-modal').classList.add('active');
     }
 
     // =============================================
@@ -39310,8 +39598,125 @@
     }
 
     function openContractorPicker() {
-      // TODO: Open contractor picker modal
-      showToast('Contractor picker coming soon', 'info');
+      // Create contractor picker modal dynamically
+      let modal = document.getElementById('contractor-picker-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'contractor-picker-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '100001';
+        modal.innerHTML = `
+          <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Assign Contractor</h2>
+              <button class="modal-close" onclick="closeContractorPicker()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="modal-body" id="contractor-picker-list" style="max-height: 400px; overflow-y: auto;">
+              <div style="text-align: center; padding: 40px; color: var(--text-muted);">Loading contractors...</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-modern secondary" onclick="closeContractorPicker()">Cancel</button>
+            </div>
+          </div>
+        `;
+        modal.onclick = (e) => { if (e.target === modal) closeContractorPicker(); };
+        document.body.appendChild(modal);
+      }
+
+      // Populate contractor list
+      const listContainer = document.getElementById('contractor-picker-list');
+      if (allContractors && allContractors.length > 0) {
+        listContainer.innerHTML = allContractors.map(c => {
+          const name = c.name || c.company_name || c.email || 'Unknown';
+          const specialty = c.specialty ? c.specialty.replace('_', ' ') : '';
+          const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+          const isAssigned = schedulerContractors.some(sc => sc.id === c.id);
+          return `
+            <div class="contractor-picker-item" style="display: flex; align-items: center; padding: 14px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; ${isAssigned ? 'opacity: 0.5; pointer-events: none;' : ''}" onclick="assignContractorToJob('${c.id}')">
+              <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #e6b800); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #000; margin-right: 14px;">${initials}</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(name)}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${specialty}${c.email ? ' • ' + c.email : ''}</div>
+              </div>
+              ${isAssigned ? '<span style="color: var(--success); font-size: 12px; font-weight: 600;">Assigned</span>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'}
+            </div>
+          `;
+        }).join('');
+      } else {
+        listContainer.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div style="font-weight: 600; margin-bottom: 4px;">No Contractors Available</div>
+            <div style="font-size: 13px;">Add contractors in the Team section first.</div>
+          </div>
+        `;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeContractorPicker() {
+      const modal = document.getElementById('contractor-picker-modal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function assignContractorToJob(contractorId) {
+      const contractor = allContractors.find(c => c.id === contractorId);
+      if (!contractor) return;
+
+      // Add to scheduler contractors list
+      if (!schedulerContractors.some(c => c.id === contractorId)) {
+        schedulerContractors.push(contractor);
+        updateSchedulerContractorsList();
+      }
+
+      closeContractorPicker();
+      showToast(`${contractor.name || 'Contractor'} assigned to job`, 'success');
+    }
+
+    function removeContractorFromJob(contractorId) {
+      schedulerContractors = schedulerContractors.filter(c => c.id !== contractorId);
+      updateSchedulerContractorsList();
+    }
+
+    function updateSchedulerContractorsList() {
+      const container = document.getElementById('scheduler-contractors-list');
+      if (!container) return;
+
+      if (schedulerContractors.length === 0) {
+        container.innerHTML = `
+          <button class="btn-modern ghost" style="width: 100%; font-size: 13px; padding: 14px;" onclick="openContractorPicker()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Add Contractor
+          </button>
+        `;
+        return;
+      }
+
+      container.innerHTML = schedulerContractors.map(c => {
+        const name = c.name || c.company_name || 'Contractor';
+        const initials = name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+        const specialty = c.specialty ? c.specialty.replace('_', ' ') : '';
+        return `
+          <div style="display: flex; align-items: center; padding: 10px 12px; background: var(--dark-elevated); border-radius: 10px; margin-bottom: 8px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #e6b800); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; margin-right: 12px;">${initials}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${escapeHtml(name)}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${specialty}</div>
+            </div>
+            <button onclick="removeContractorFromJob('${c.id}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;" title="Remove">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('') + `
+        <button class="btn-modern ghost" style="width: 100%; font-size: 12px; padding: 10px; margin-top: 4px;" onclick="openContractorPicker()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Another
+        </button>
+      `;
     }
 
     function showAddPhaseOptions() {
@@ -39861,21 +40266,22 @@
           console.log('[Calendar] Events:', events.map(e => ({ id: e.id, title: e.title, date: e.start_time?.split('T')[0], status: e.status })));
         }
 
-        // Merge with calendar events
+        // IMPORTANT: Remove all API-sourced events first (to handle deletions)
+        // Keep only job-based events (those without apiEventId)
+        calendarEvents = calendarEvents.filter(e => !e.apiEventId);
+
+        // Add fresh events from database
         (events || []).forEach(event => {
           const date = event.start_time.split('T')[0];
-          const existing = calendarEvents.find(e => e.apiEventId === event.id);
-          if (!existing) {
-            calendarEvents.push({
-              date,
-              title: event.title,
-              type: event.event_type,
-              apiEventId: event.id,
-              status: event.status,
-              location: event.location,
-              metadata: event.metadata
-            });
-          }
+          calendarEvents.push({
+            date,
+            title: event.title,
+            type: event.event_type,
+            apiEventId: event.id,
+            status: event.status,
+            location: event.location,
+            metadata: event.metadata
+          });
         });
 
         renderCalendar();
@@ -44996,9 +45402,6 @@
     }
   });
 </script>
-
-<!-- Remodely Tools Hub -->
-<script defer src="/js/remodely-hub.js?v=20260118"></script>
 
 <!-- Pro-Customer Referral Tracking -->
 <script src="/js/referral-tracking.js?v=20260118"></script>
