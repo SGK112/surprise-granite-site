@@ -195,24 +195,77 @@ class MSIScraper(BaseScraper):
             if not soup:
                 return
 
-        # MSI uses various selectors for product cards
-        products = soup.select('.colors-container a, .product-title, [class*="productid"], .color-card')
+        # MSI uses 'productid' class for product links
+        products = soup.select('a.productid[href]')
 
         if not products:
-            # Try finding all links that look like product pages
-            products = soup.select('a[href*="/quartz/"], a[href*="/granite/"], a[href*="/marble/"]')
+            # Try alternative selectors
+            products = soup.select('.colors-container a[href], .product-title, .color-card a[href]')
 
         if not products:
             # Try generic product selectors
-            products = soup.select('.product-card, .product-item, .grid-item, .collection-item')
+            products = soup.select('.product-card a[href], .product-item a[href], .grid-item a[href]')
 
-        logger.info(f"Found {len(products)} potential products in {category_path}")
+        logger.info(f"Found {len(products)} products in {category_path}")
 
         for product in products:
             try:
-                self._parse_product(product, material_type)
+                self._parse_msi_product(product, material_type, soup)
             except Exception as e:
                 logger.warning(f"Error parsing product: {e}")
+
+    def _parse_msi_product(self, link_element, material_type: str, soup):
+        """Parse MSI product from link element"""
+        # Get product URL
+        href = link_element.get('href', '')
+        if not href:
+            return
+        product_url = urljoin(self.base_url, href)
+
+        # Get product name from aria-label or link text
+        name = link_element.get('aria-label', '').replace(' product page', '').strip()
+        if not name:
+            name = link_element.get_text(strip=True)
+
+        if not name or len(name) < 2:
+            return
+
+        # Skip navigation links
+        skip_words = ['home', 'colors', 'gallery', 'contact', 'video', 'warranty', 'care', 'resources', 'explore', 'discover', 'view all']
+        if any(word in name.lower() for word in skip_words):
+            return
+
+        # Find the associated image - look for img inside or next to the link
+        image_url = ""
+        img = link_element.select_one('img')
+        if not img:
+            # Try to find img sibling
+            parent = link_element.parent
+            if parent:
+                img = parent.select_one('img')
+
+        if img:
+            # MSI uses data-src for lazy loading
+            image_url = img.get('data-src') or img.get('src') or ''
+            if image_url and not image_url.startswith('http'):
+                image_url = urljoin(self.base_url, image_url)
+            # Skip placeholder/icon images
+            if 'logo' in image_url.lower() or 'icon' in image_url.lower() or 'svg' in image_url.lower():
+                image_url = ""
+
+        product = Product(
+            id="",
+            name=name,
+            vendor=self.vendor_name,
+            material_type=material_type,
+            color_family=self.get_color_family(name),
+            description=f"MSI {material_type.title()}",
+            image_url=image_url,
+            product_url=product_url,
+            available=True
+        )
+
+        self.products.append(product)
 
     def _parse_product(self, element, material_type: str):
         """Parse a single product element"""
