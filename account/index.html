@@ -22748,13 +22748,13 @@
         // Get overdue invoices
         const { data: overdueInvoices } = await supabaseClient
           .from('invoices')
-          .select('id, total_amount')
+          .select('id, total')
           .eq('status', 'sent')
           .lt('due_date', new Date().toISOString())
           .limit(10);
 
         if (overdueInvoices?.length > 0) {
-          const total = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+          const total = overdueInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
           items.push({
             type: 'invoices',
             icon: '💰',
