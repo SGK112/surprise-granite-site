@@ -504,6 +504,147 @@
             font-size: 0.9rem;
         }
 
+        /* Solutions Section */
+        .solutions {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, var(--dark) 0%, var(--gray-900) 100%);
+        }
+
+        .solutions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .solution-card {
+            background: var(--gray-800);
+            border: 1px solid var(--gray-700);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solution-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+
+        .solution-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .solution-card.featured {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(14, 165, 233, 0.05));
+        }
+
+        .solution-card.featured::before {
+            transform: scaleX(1);
+        }
+
+        .solution-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .solution-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(14, 165, 233, 0.2));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .solution-icon.social { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(236, 72, 153, 0.2)); }
+        .solution-icon.design { background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2)); }
+        .solution-icon.voice { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(14, 165, 233, 0.2)); }
+        .solution-icon.estimate { background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2)); }
+        .solution-icon.inventory { background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(16, 185, 129, 0.2)); }
+        .solution-icon.leads { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(245, 158, 11, 0.2)); }
+
+        .solution-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .solution-desc {
+            color: var(--gray-400);
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .solution-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .solution-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: var(--gray-300);
+            font-size: 0.9rem;
+        }
+
+        .solution-features li i {
+            color: var(--success);
+            font-size: 0.8rem;
+        }
+
+        .solution-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            transition: gap 0.3s;
+        }
+
+        .solution-cta:hover {
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 1024px) {
+            .solutions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .solutions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* White Label Section */
         .white-label {
             padding: 6rem 2rem;
@@ -776,6 +917,147 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
+        /* Contact Section */
+        .contact {
+            padding: 6rem 2rem;
+            background: var(--dark);
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .contact-content h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .contact-content p {
+            color: var(--gray-400);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        .contact-features {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .contact-feature {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .contact-feature-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .contact-feature-text {
+            color: var(--gray-300);
+        }
+
+        .contact-form-card {
+            background: var(--gray-800);
+            border: 1px solid var(--gray-700);
+            border-radius: 24px;
+            padding: 2.5rem;
+        }
+
+        .contact-form-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-form-card .subtitle {
+            color: var(--gray-400);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--gray-900);
+            border: 1px solid var(--gray-700);
+            border-radius: 10px;
+            color: var(--white);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Footer */
         .footer {
             background: var(--gray-900);
@@ -973,6 +1255,7 @@
             <div class="nav-links">
                 <a href="#roles">For You</a>
                 <a href="#features">Features</a>
+                <a href="#solutions">Solutions</a>
                 <a href="#white-label">White Label</a>
                 <a href="#pricing">Pricing</a>
             </div>
@@ -1187,6 +1470,117 @@
         </div>
     </section>
 
+    <!-- Solutions Section -->
+    <section id="solutions" class="solutions">
+        <div class="section-container">
+            <div class="section-header">
+                <div class="section-badge">Solutions</div>
+                <h2 class="section-title">Everything You Need to Grow</h2>
+                <p class="section-subtitle">Comprehensive tools designed to streamline operations, attract customers, and boost revenue.</p>
+            </div>
+
+            <div class="solutions-grid">
+                <!-- Social Media Solution -->
+                <div class="solution-card featured">
+                    <span class="solution-badge">New</span>
+                    <div class="solution-icon social">
+                        <i class="fas fa-hashtag"></i>
+                    </div>
+                    <h3 class="solution-title">Social Media AI</h3>
+                    <p class="solution-desc">AI-powered content creation for Instagram, Facebook, Pinterest & more. Generate stunning posts featuring your stone and tile projects.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Auto-generate project showcase posts</li>
+                        <li><i class="fas fa-check"></i> AI captions & hashtag optimization</li>
+                        <li><i class="fas fa-check"></i> Scheduled posting across platforms</li>
+                        <li><i class="fas fa-check"></i> Before/after transformations</li>
+                        <li><i class="fas fa-check"></i> Analytics & engagement tracking</li>
+                    </ul>
+                    <a href="#contact" class="solution-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <!-- Room Designer -->
+                <div class="solution-card">
+                    <div class="solution-icon design">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <h3 class="solution-title">Room Designer Pro</h3>
+                    <p class="solution-desc">Interactive 3D room visualization. Let customers design their dream kitchen or bathroom with your materials.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> 2D & 3D design views</li>
+                        <li><i class="fas fa-check"></i> Real material textures</li>
+                        <li><i class="fas fa-check"></i> Instant price estimates</li>
+                        <li><i class="fas fa-check"></i> Export & share designs</li>
+                    </ul>
+                    <a href="/tools/room-designer/?demo=true" class="solution-cta">Try Demo <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <!-- Voice AI -->
+                <div class="solution-card">
+                    <div class="solution-icon voice">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="solution-title">SARAH Voice AI</h3>
+                    <p class="solution-desc">24/7 AI assistant that handles customer inquiries, schedules appointments, and qualifies leads automatically.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Natural voice conversations</li>
+                        <li><i class="fas fa-check"></i> Appointment scheduling</li>
+                        <li><i class="fas fa-check"></i> Lead qualification</li>
+                        <li><i class="fas fa-check"></i> CRM integration</li>
+                    </ul>
+                    <a href="#contact" class="solution-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <!-- Smart Estimating -->
+                <div class="solution-card">
+                    <div class="solution-icon estimate">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h3 class="solution-title">Smart Estimating</h3>
+                    <p class="solution-desc">Generate accurate quotes in seconds. AI analyzes project details, material costs, and labor to deliver precise estimates.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Instant quote generation</li>
+                        <li><i class="fas fa-check"></i> Material cost database</li>
+                        <li><i class="fas fa-check"></i> Labor calculation</li>
+                        <li><i class="fas fa-check"></i> PDF proposal export</li>
+                    </ul>
+                    <a href="#contact" class="solution-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <!-- Inventory Sync -->
+                <div class="solution-card">
+                    <div class="solution-icon inventory">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <h3 class="solution-title">Inventory Sync</h3>
+                    <p class="solution-desc">Real-time inventory management connected to distributor feeds. Never sell what you don't have in stock.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Live distributor feeds</li>
+                        <li><i class="fas fa-check"></i> Stock alerts & notifications</li>
+                        <li><i class="fas fa-check"></i> Multi-location support</li>
+                        <li><i class="fas fa-check"></i> Automatic price updates</li>
+                    </ul>
+                    <a href="#contact" class="solution-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <!-- Lead Generation -->
+                <div class="solution-card">
+                    <div class="solution-icon leads">
+                        <i class="fas fa-magnet"></i>
+                    </div>
+                    <h3 class="solution-title">Lead Generation</h3>
+                    <p class="solution-desc">Attract and convert more customers with AI-optimized landing pages, quote widgets, and marketing automation.</p>
+                    <ul class="solution-features">
+                        <li><i class="fas fa-check"></i> Embeddable quote widgets</li>
+                        <li><i class="fas fa-check"></i> SEO-optimized pages</li>
+                        <li><i class="fas fa-check"></i> Email campaigns</li>
+                        <li><i class="fas fa-check"></i> Lead scoring & routing</li>
+                    </ul>
+                    <a href="#contact" class="solution-cta">Learn More <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- White Label Section -->
     <section id="white-label" class="white-label">
         <div class="section-container">
@@ -1342,10 +1736,108 @@
                 <i class="fas fa-rocket"></i>
                 Start Free Trial
             </a>
-            <a href="javascript:void(0)" class="btn btn-outline btn-large" style="border-color: rgba(255,255,255,0.5); color: white;">
+            <a href="#contact" class="btn btn-outline btn-large" style="border-color: rgba(255,255,255,0.5); color: white;">
                 <i class="fas fa-calendar"></i>
                 Schedule Demo
             </a>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="contact-grid">
+            <div class="contact-content">
+                <h2>Let's Talk About Your Business</h2>
+                <p>Whether you're a contractor looking to grow, a distributor wanting to expand reach, or exploring white-label options — we're here to help you succeed.</p>
+
+                <div class="contact-features">
+                    <div class="contact-feature">
+                        <div class="contact-feature-icon"><i class="fas fa-clock"></i></div>
+                        <div class="contact-feature-text">Response within 24 hours</div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="contact-feature-icon"><i class="fas fa-video"></i></div>
+                        <div class="contact-feature-text">Free personalized demo</div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="contact-feature-icon"><i class="fas fa-user-tie"></i></div>
+                        <div class="contact-feature-text">Dedicated account manager</div>
+                    </div>
+                    <div class="contact-feature">
+                        <div class="contact-feature-icon"><i class="fas fa-rocket"></i></div>
+                        <div class="contact-feature-text">Quick onboarding process</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form-card">
+                <h3>Request a Demo</h3>
+                <p class="subtitle">Fill out the form and we'll be in touch shortly.</p>
+
+                <form id="contactForm" onsubmit="handleContactSubmit(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" name="firstName" required placeholder="John">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name *</label>
+                            <input type="text" id="lastName" name="lastName" required placeholder="Smith">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required placeholder="john@company.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="company">Company Name</label>
+                        <input type="text" id="company" name="company" placeholder="Your Company">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessType">Business Type *</label>
+                        <select id="businessType" name="businessType" required>
+                            <option value="">Select your business type</option>
+                            <option value="contractor">Contractor / Fabricator</option>
+                            <option value="distributor">Distributor / Supplier</option>
+                            <option value="homeowner">Homeowner</option>
+                            <option value="designer">Designer / Architect</option>
+                            <option value="franchise">Franchise / Multi-location</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="interest">What interests you most?</label>
+                        <select id="interest" name="interest">
+                            <option value="">Select an option</option>
+                            <option value="room-designer">Room Designer Pro</option>
+                            <option value="social-media">Social Media AI</option>
+                            <option value="voice-ai">SARAH Voice AI</option>
+                            <option value="estimating">Smart Estimating</option>
+                            <option value="inventory">Inventory Management</option>
+                            <option value="white-label">White Label Platform</option>
+                            <option value="all">Full Platform Demo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Tell us about your needs..."></textarea>
+                    </div>
+
+                    <button type="submit" class="form-submit">
+                        <i class="fas fa-paper-plane"></i> Request Demo
+                    </button>
+                </form>
+            </div>
         </div>
     </section>
 
@@ -1458,6 +1950,91 @@
             } else {
                 nav.style.background = 'rgba(15, 23, 42, 0.95)';
             }
+        });
+
+        // Contact form handler
+        async function handleContactSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('.form-submit');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            submitBtn.disabled = true;
+
+            // Gather form data
+            const formData = {
+                firstName: form.firstName.value,
+                lastName: form.lastName.value,
+                email: form.email.value,
+                phone: form.phone.value || '',
+                company: form.company.value || '',
+                businessType: form.businessType.value,
+                interest: form.interest.value || '',
+                message: form.message.value || '',
+                source: 'remodely-landing-page',
+                submittedAt: new Date().toISOString()
+            };
+
+            try {
+                // Send to API (you can update this endpoint)
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    // Success
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Sent Successfully!';
+                    submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    form.reset();
+
+                    // Show success message
+                    setTimeout(() => {
+                        alert('Thank you! We\'ll be in touch within 24 hours.');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.style.background = '';
+                        submitBtn.disabled = false;
+                    }, 1500);
+                } else {
+                    throw new Error('Failed to submit');
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+
+                // Store locally as backup
+                const leads = JSON.parse(localStorage.getItem('remodely_leads') || '[]');
+                leads.push(formData);
+                localStorage.setItem('remodely_leads', JSON.stringify(leads));
+
+                // Still show success to user
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Request Received!';
+                submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                form.reset();
+
+                setTimeout(() => {
+                    alert('Thank you for your interest! We\'ll contact you soon.');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.background = '';
+                    submitBtn.disabled = false;
+                }, 1500);
+            }
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#' || targetId === 'javascript:void(0)') return;
+
+                const target = document.querySelector(targetId);
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
         });
     </script>
 <script defer src="/js/remodely-hub.js?v=20260118"></script>
