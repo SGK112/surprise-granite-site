@@ -24945,10 +24945,11 @@
         // Close modal, reload calendar, show toast
         closeLeadModal();
         showPage('calendar');
-        // Force reload calendar events
-        setTimeout(function() {
-          if (typeof loadCalendarEvents === 'function') loadCalendarEvents();
-          if (typeof loadAllCalendarEvents === 'function') loadAllCalendarEvents();
+        // Force reload calendar events (sequentially to avoid race condition)
+        setTimeout(async function() {
+          if (typeof loadCalendarEvents === 'function') await loadCalendarEvents();
+          if (typeof loadAllCalendarEvents === 'function') await loadAllCalendarEvents();
+          console.log('[Calendar] Events reloaded after confirmation, total:', calendarEvents.length);
         }, 100);
         showToast('✓ Appointment confirmed - ' + (lead._parsedDate || 'Date set'), 'success');
 
@@ -40214,8 +40215,11 @@
 
         showToast(eventId ? 'Event updated!' : 'Event created!', 'success');
         closeCalendarEventModal();
-        loadCalendarEvents();
-        loadAllCalendarEvents();
+        // IMPORTANT: Load events sequentially to avoid race condition
+        // loadCalendarEvents clears the array, then loadAllCalendarEvents adds API events
+        await loadCalendarEvents();
+        await loadAllCalendarEvents();
+        console.log('[Calendar] Events reloaded after save, total:', calendarEvents.length);
 
       } catch (err) {
         console.error('Error saving event:', err);
