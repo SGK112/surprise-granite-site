@@ -523,7 +523,7 @@
     }
 
     .sidebar-header {
-      padding: 10px 12px;
+      padding: 8px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -559,12 +559,15 @@
     }
 
     .sidebar-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
       transition: color 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .sidebar-header:hover .sidebar-title {
@@ -596,7 +599,7 @@
     }
 
     .sidebar-content {
-      padding: 0 10px 10px;
+      padding: 0 8px 8px;
       max-height: 1000px;
       overflow: hidden;
       transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
@@ -605,7 +608,7 @@
 
     .sidebar-content.collapsed {
       max-height: 0;
-      padding: 0 10px;
+      padding: 0 8px;
       opacity: 0;
     }
 
@@ -1704,10 +1707,11 @@
     .element-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      max-height: 400px;
+      gap: 4px;
+      max-height: 320px;
       overflow-y: auto;
-      padding-right: 4px;
+      overflow-x: hidden;
+      padding-right: 2px;
     }
 
     /* Scrollbar styling for element grid */
@@ -1733,11 +1737,13 @@
       background: var(--dark-elevated);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px;
+      padding: 6px 4px;
       cursor: grab;
       transition: all 0.2s;
       text-align: center;
       position: relative;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .element-item:hover {
@@ -1754,15 +1760,16 @@
     }
 
     .element-icon {
-      width: 44px;
-      height: 44px;
-      margin: 0 auto 6px;
-      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 4px;
+      border-radius: 5px;
       background-size: cover;
       background-position: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       border: 1px solid rgba(255,255,255,0.1);
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .element-icon.element-svg {
@@ -1782,10 +1789,13 @@
       font-size: 9px;
       font-weight: 500;
       color: var(--text-secondary);
-      line-height: 1.2;
+      line-height: 1.15;
       word-wrap: break-word;
       overflow-wrap: break-word;
       max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .element-upload-btn {
@@ -1863,19 +1873,20 @@
     .materials-tabs {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 10px;
+      gap: 3px;
+      margin-bottom: 8px;
     }
 
     .material-tab {
-      padding: 4px 8px;
-      font-size: 10px;
+      padding: 3px 6px;
+      font-size: 9px;
       background: var(--dark-elevated);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 3px;
       color: var(--text-muted);
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .material-tab:hover {
@@ -1892,15 +1903,16 @@
     .material-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      max-height: 500px;
+      gap: 6px;
+      max-height: 400px;
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .material-swatch {
       aspect-ratio: 1;
-      min-height: 80px;
-      border-radius: 8px;
+      min-height: 70px;
+      border-radius: 6px;
       cursor: pointer;
       border: 2px solid transparent;
       transition: all 0.2s;
@@ -3308,6 +3320,8 @@
     /* Right Panel */
     .right-panel {
       width: 260px;
+      min-width: 260px;
+      max-width: 260px;
       background: linear-gradient(180deg, rgba(30, 30, 46, 0.98) 0%, rgba(26, 26, 38, 0.98) 100%);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -3315,13 +3329,17 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      flex-grow: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+      max-height: 100%;
     }
 
     .panel-section {
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--border);
+      overflow: hidden;
     }
 
     .panel-section.collapsed .panel-content {
@@ -3337,12 +3355,14 @@
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      letter-spacing: 0.3px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
       user-select: none;
+      gap: 6px;
     }
 
     .panel-title .toggle-icon {
@@ -4027,22 +4047,30 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      gap: 8px;
     }
 
     .property-label {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+      min-width: 0;
     }
 
     .property-input {
-      width: 70px;
+      width: 65px;
+      min-width: 50px;
+      flex-shrink: 0;
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      padding: 6px 8px;
+      border-radius: 5px;
+      padding: 5px 6px;
       color: var(--text);
       font-size: 11px;
       text-align: right;
@@ -4061,13 +4089,15 @@
     }
 
     .property-select {
-      width: 100px;
+      width: 95px;
+      min-width: 70px;
+      flex-shrink: 0;
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      padding: 6px 8px;
+      border-radius: 5px;
+      padding: 5px 6px;
       color: var(--text);
       font-size: 10px;
       cursor: pointer;
@@ -4075,8 +4105,8 @@
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 6px center;
-      padding-right: 22px;
+      background-position: right 5px center;
+      padding-right: 18px;
     }
 
     .property-select:hover {
@@ -8499,8 +8529,11 @@
 
     /* Responsive */
     @media (max-width: 1200px) {
-      .sidebar { width: 180px; }
-      .right-panel { width: 220px; }
+      .sidebar { width: 180px; min-width: 180px; max-width: 180px; }
+      .right-panel { width: 220px; min-width: 220px; max-width: 220px; }
+      .element-grid { grid-template-columns: repeat(2, 1fr); gap: 3px; }
+      .element-icon { width: 36px; height: 36px; }
+      .element-name { font-size: 8px; }
     }
 
     /* Mobile toolbar - MUST be hidden by default on desktop */
@@ -12595,7 +12628,17 @@
                 <line x1="12" y1="18" x2="12" y2="12"/>
                 <line x1="9" y1="15" x2="15" y2="15"/>
               </svg>
-              Import Data
+              Import Image/Scan
+            </button>
+            <button onclick="toggleAIChatDesigner(); closeProToolsMenu();" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="10" r="1" fill="currentColor"/>
+                <circle cx="8" cy="10" r="1" fill="currentColor"/>
+                <circle cx="16" cy="10" r="1" fill="currentColor"/>
+              </svg>
+              <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">AI Designer Chat</span>
+              <span style="font-size: 9px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">NEW</span>
             </button>
             <div class="dropdown-divider"></div>
             <button onclick="showApprovalWorkflow(); closeProToolsMenu();">
@@ -17234,18 +17277,22 @@
       return SUPER_ADMIN_EMAILS.includes((user.email || '').toLowerCase());
     }
 
-    // Wrapper for AI PDF Importer - checks GOD access
+    // Wrapper for AI Room Scanner - available to all authenticated users
     function showAIImporter() {
-      if (hasGodAccess()) {
-        // GOD access - show full AI importer
+      // Check if user is authenticated (or allow demo mode)
+      const user = window.SgAuth?.getUser();
+      const isDemo = DEMO_MODE;
+
+      if (user || hasGodAccess() || isDemo) {
+        // Show AI Room Scanner
         if (typeof window.showPDFImporter === 'function') {
           window.showPDFImporter();
         } else {
-          showToast('AI Importer loading...', 'info');
+          showToast('AI Room Scanner loading...', 'info');
         }
       } else {
-        // Regular users - show coming soon
-        showComingSoonModal('AI Blueprint Analyzer', 'Our AI-powered blueprint analysis tool is coming soon! This feature will automatically extract cabinet layouts from your drawings.');
+        // Not logged in - prompt to sign in
+        showComingSoonModal('AI Room Scanner', 'Sign in to use the AI Room Scanner. Upload photos of rooms, countertops, or hand sketches and our AI will create a quote-ready 3D project instantly.');
       }
     }
 
@@ -17280,6 +17327,1572 @@
       `;
       document.body.appendChild(modal);
       modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    // ============================================
+    // AI ROOM SCANNER - Universal Image to Quote
+    // Analyzes room photos, countertops, sketches, and CAD drawings
+    // ============================================
+    window.showPDFImporter = function() {
+      const existing = document.getElementById('pdfImporterModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'pdfImporterModal';
+      modal.className = 'cabinet-library-modal';
+      modal.innerHTML = `
+        <div class="cabinet-library-content" style="max-width: 750px;">
+          <div class="cabinet-library-header">
+            <h3>🤖 AI Room Scanner</h3>
+            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
+          </div>
+          <div class="cabinet-library-body" style="padding: 24px;">
+
+            <!-- Scan Mode Selection -->
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text);">What are you scanning?</label>
+              <div id="scanModeGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <button class="scan-mode-btn active" data-mode="room-photo" style="padding: 16px 8px; border: 2px solid var(--primary); border-radius: 10px; background: rgba(99, 102, 241, 0.1); cursor: pointer; text-align: center;">
+                  <div style="font-size: 28px; margin-bottom: 6px;">📸</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text);">Room Photo</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Kitchen, bath, etc.</div>
+                </button>
+                <button class="scan-mode-btn" data-mode="countertop" style="padding: 16px 8px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; text-align: center;">
+                  <div style="font-size: 28px; margin-bottom: 6px;">🪨</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text);">Countertop</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Existing counter</div>
+                </button>
+                <button class="scan-mode-btn" data-mode="sketch" style="padding: 16px 8px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; text-align: center;">
+                  <div style="font-size: 28px; margin-bottom: 6px;">✏️</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text);">Hand Sketch</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Napkin drawings</div>
+                </button>
+                <button class="scan-mode-btn" data-mode="cad" style="padding: 16px 8px; border: 2px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; text-align: center;">
+                  <div style="font-size: 28px; margin-bottom: 6px;">📐</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text);">CAD Drawing</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">2020, CabVision</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mode-specific tips -->
+            <div id="modeTips" style="padding: 12px 16px; background: rgba(99, 102, 241, 0.08); border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: var(--text-muted);">
+              <span id="tipIcon" style="margin-right: 8px;">💡</span>
+              <span id="tipText">Take a photo showing the full room. AI will detect cabinets, countertops, appliances and estimate dimensions.</span>
+            </div>
+
+            <!-- File Upload Area -->
+            <div id="blueprintDropZone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: all 0.2s;">
+              <div id="uploadPlaceholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin-bottom: 12px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p style="margin: 0 0 8px; color: var(--text);">Drop image here or click to browse</p>
+                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Supports: PNG, JPG, HEIC, PDF</p>
+              </div>
+              <div id="uploadPreview" style="display: none;">
+                <img id="previewImage" style="max-width: 100%; max-height: 280px; border-radius: 8px;">
+                <button id="clearUpload" style="margin-top: 12px; padding: 6px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text);">
+                  ✕ Clear & Upload Different
+                </button>
+              </div>
+              <input type="file" id="blueprintFileInput" accept="image/*,.pdf" style="display: none;">
+            </div>
+
+            <!-- Context & Dimensions Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <!-- Context Input -->
+              <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 13px;">
+                  Additional Context <span style="color: var(--text-muted); font-weight: 400;">(optional)</span>
+                </label>
+                <textarea id="blueprintContext" placeholder="E.g., 'L-shaped kitchen, granite counters' or 'Focus on the island only'"
+                  style="width: 100%; height: 70px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); resize: none; font-size: 13px;"></textarea>
+              </div>
+              <!-- Known Dimensions -->
+              <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 13px;">
+                  Known Dimensions <span style="color: var(--text-muted); font-weight: 400;">(helps accuracy)</span>
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div>
+                    <input type="number" id="knownWidth" placeholder="Width (ft)" min="1" max="100"
+                      style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px;">
+                  </div>
+                  <div>
+                    <input type="number" id="knownDepth" placeholder="Depth (ft)" min="1" max="100"
+                      style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px;">
+                  </div>
+                </div>
+                <p style="margin: 4px 0 0; font-size: 10px; color: var(--text-muted);">Enter room or counter dimensions if known</p>
+              </div>
+            </div>
+
+            <!-- Project Type -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 13px;">Project Type</label>
+                <select id="blueprintProjectType" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px;">
+                  <option value="kitchen-remodel">Kitchen</option>
+                  <option value="bathroom-remodel">Bathroom</option>
+                  <option value="laundry">Laundry Room</option>
+                  <option value="commercial-cabinets">Commercial</option>
+                  <option value="outdoor-kitchen">Outdoor Kitchen</option>
+                  <option value="full-home">Full Home</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 13px;">What to Extract</label>
+                <select id="extractMode" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px;">
+                  <option value="all">Everything (cabinets, counters, appliances)</option>
+                  <option value="cabinets">Cabinets Only</option>
+                  <option value="countertops">Countertops Only</option>
+                  <option value="layout">Room Layout Only</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Import Options -->
+            <div style="margin-bottom: 20px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                  <input type="checkbox" id="clearBeforeImport" style="width: 16px; height: 16px;">
+                  <span style="color: var(--text);">Clear existing elements</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                  <input type="checkbox" id="updateRoomSize" checked style="width: 16px; height: 16px;">
+                  <span style="color: var(--text);">Update room dimensions</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                  <input type="checkbox" id="autoCountertop" checked style="width: 16px; height: 16px;">
+                  <span style="color: var(--text);">Auto-add countertops</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Status/Progress -->
+            <div id="importStatus" style="display: none; padding: 16px; background: var(--surface); border-radius: 8px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="spinner" style="width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div>
+                  <span id="importStatusText" style="color: var(--text); font-weight: 500;">Analyzing image...</span>
+                  <div id="importStatusDetail" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;"></div>
+                </div>
+              </div>
+              <div id="progressBar" style="margin-top: 12px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;">
+                <div id="progressFill" style="height: 100%; width: 0%; background: var(--primary); transition: width 0.3s;"></div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button onclick="this.closest('.cabinet-library-modal').remove()"
+                style="padding: 10px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--text); font-weight: 500;">
+                Cancel
+              </button>
+              <button id="analyzeBtn" onclick="analyzeRoomImage()" disabled
+                style="padding: 10px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 600; opacity: 0.5; font-size: 14px;">
+                🔍 Scan & Create Quote
+              </button>
+            </div>
+          </div>
+        </div>
+        <style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+          #blueprintDropZone:hover, #blueprintDropZone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+          }
+          .scan-mode-btn:hover {
+            border-color: var(--primary) !important;
+            background: rgba(99, 102, 241, 0.05) !important;
+          }
+          .scan-mode-btn.active {
+            border-color: var(--primary) !important;
+            background: rgba(99, 102, 241, 0.1) !important;
+          }
+        </style>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+      // Scan mode selection
+      let currentScanMode = 'room-photo';
+      const modeTips = {
+        'room-photo': { icon: '📸', text: 'Take a photo showing the full room. AI will detect cabinets, countertops, appliances and estimate dimensions.' },
+        'countertop': { icon: '🪨', text: 'Photo your existing countertop from above. Include a reference object (like a phone) for scale if possible.' },
+        'sketch': { icon: '✏️', text: 'Upload a hand-drawn sketch or napkin diagram. Label dimensions if you have them. AI will interpret your layout.' },
+        'cad': { icon: '📐', text: 'Upload elevation views, plan views, or cabinet schedules from 2020 Design, Cabinet Vision, KCD, or similar CAD software.' }
+      };
+
+      document.querySelectorAll('.scan-mode-btn').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.scan-mode-btn').forEach(b => {
+            b.classList.remove('active');
+            b.style.borderColor = 'var(--border)';
+            b.style.background = 'var(--surface)';
+          });
+          btn.classList.add('active');
+          btn.style.borderColor = 'var(--primary)';
+          btn.style.background = 'rgba(99, 102, 241, 0.1)';
+          currentScanMode = btn.dataset.mode;
+
+          const tip = modeTips[currentScanMode];
+          document.getElementById('tipIcon').textContent = tip.icon;
+          document.getElementById('tipText').textContent = tip.text;
+        };
+      });
+
+      // Set up file upload handlers
+      const dropZone = document.getElementById('blueprintDropZone');
+      const fileInput = document.getElementById('blueprintFileInput');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      let uploadedImageData = null;
+
+      dropZone.onclick = () => fileInput.click();
+
+      dropZone.ondragover = (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      };
+      dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+      dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) handleBlueprintFile(file);
+      };
+
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) handleBlueprintFile(file);
+      };
+
+      document.getElementById('clearUpload').onclick = (e) => {
+        e.stopPropagation();
+        uploadedImageData = null;
+        document.getElementById('uploadPlaceholder').style.display = 'block';
+        document.getElementById('uploadPreview').style.display = 'none';
+        analyzeBtn.disabled = true;
+        analyzeBtn.style.opacity = '0.5';
+      };
+
+      function handleBlueprintFile(file) {
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          showToast('Please upload an image or PDF file', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          uploadedImageData = e.target.result;
+          document.getElementById('previewImage').src = uploadedImageData;
+          document.getElementById('uploadPlaceholder').style.display = 'none';
+          document.getElementById('uploadPreview').style.display = 'block';
+          analyzeBtn.disabled = false;
+          analyzeBtn.style.opacity = '1';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // Main analysis function
+      window.analyzeRoomImage = async function() {
+        if (!uploadedImageData) {
+          showToast('Please upload an image first', 'error');
+          return;
+        }
+
+        const statusDiv = document.getElementById('importStatus');
+        const statusText = document.getElementById('importStatusText');
+        const statusDetail = document.getElementById('importStatusDetail');
+        const progressFill = document.getElementById('progressFill');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        statusDiv.style.display = 'block';
+        analyzeBtn.disabled = true;
+        analyzeBtn.style.opacity = '0.5';
+
+        // Build context based on scan mode and user inputs
+        const knownWidth = document.getElementById('knownWidth').value;
+        const knownDepth = document.getElementById('knownDepth').value;
+        const extractMode = document.getElementById('extractMode').value;
+        let userContext = document.getElementById('blueprintContext').value || '';
+
+        // Add scan mode context
+        const modeContexts = {
+          'room-photo': 'This is a photograph of an actual room. Estimate dimensions from standard cabinet/appliance sizes. Identify visible cabinets, countertops, and appliances.',
+          'countertop': 'This is a photograph of an existing countertop. Focus on the counter shape, edges, and estimate dimensions. Identify material if possible.',
+          'sketch': 'This is a hand-drawn sketch or diagram. Interpret the layout and any labeled dimensions. Convert the sketch into cabinet and countertop elements.',
+          'cad': 'This is a CAD drawing or elevation view from design software. Extract precise cabinet data with exact dimensions and positions.'
+        };
+
+        userContext = `${modeContexts[currentScanMode]} ${userContext}`;
+
+        if (knownWidth || knownDepth) {
+          userContext += ` Known dimensions: ${knownWidth ? `width=${knownWidth}ft` : ''} ${knownDepth ? `depth=${knownDepth}ft` : ''}`;
+        }
+
+        if (extractMode !== 'all') {
+          userContext += ` Focus on extracting: ${extractMode}`;
+        }
+
+        try {
+          // Progress simulation
+          const progressSteps = [
+            { pct: 10, text: 'Uploading image...', detail: 'Preparing for analysis' },
+            { pct: 25, text: 'Analyzing with AI...', detail: 'Detecting room layout' },
+            { pct: 50, text: 'Identifying elements...', detail: 'Finding cabinets & counters' },
+            { pct: 75, text: 'Extracting dimensions...', detail: 'Calculating measurements' },
+            { pct: 90, text: 'Building layout...', detail: 'Creating quote elements' }
+          ];
+
+          let stepIndex = 0;
+          const progressInterval = setInterval(() => {
+            if (stepIndex < progressSteps.length) {
+              const step = progressSteps[stepIndex];
+              progressFill.style.width = step.pct + '%';
+              statusText.textContent = step.text;
+              statusDetail.textContent = step.detail;
+              stepIndex++;
+            }
+          }, 1500);
+
+          const response = await fetch('/api/ai/room-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              image: uploadedImageData,
+              scanMode: currentScanMode,
+              projectType: document.getElementById('blueprintProjectType').value,
+              userContext: userContext,
+              extractMode: extractMode,
+              knownDimensions: (knownWidth || knownDepth) ? { width: parseFloat(knownWidth) || null, depth: parseFloat(knownDepth) || null } : null
+            })
+          });
+
+          clearInterval(progressInterval);
+
+          // If room-scan endpoint doesn't exist, fall back to blueprint endpoint
+          let data;
+          if (response.status === 404) {
+            // Fallback to existing blueprint endpoint
+            const fallbackResponse = await fetch('/api/ai/blueprint', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image: uploadedImageData,
+                projectType: document.getElementById('blueprintProjectType').value,
+                userContext: userContext
+              })
+            });
+            data = await fallbackResponse.json();
+          } else {
+            data = await response.json();
+          }
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          progressFill.style.width = '100%';
+          statusText.textContent = 'Processing results...';
+          statusDetail.textContent = 'Creating design elements';
+
+          // Process the AI response and create elements
+          const importResult = await processAIBlueprintResult(data, {
+            clearExisting: document.getElementById('clearBeforeImport').checked,
+            updateRoomSize: document.getElementById('updateRoomSize').checked,
+            autoCountertop: document.getElementById('autoCountertop')?.checked ?? true
+          });
+
+          statusDiv.style.display = 'none';
+
+          // Show success modal with results
+          showImportResultModal(importResult);
+
+          // Close the importer modal
+          document.getElementById('pdfImporterModal')?.remove();
+
+        } catch (error) {
+          console.error('Blueprint analysis error:', error);
+          statusText.textContent = 'Error: ' + error.message;
+          statusDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+          analyzeBtn.disabled = false;
+          analyzeBtn.style.opacity = '1';
+        }
+      };
+    };
+
+    // Process AI blueprint analysis result and create elements
+    async function processAIBlueprintResult(data, options = {}) {
+      const { clearExisting = false, updateRoomSize = true, autoCountertop = true } = options;
+      const result = { cabinetsAdded: 0, appliancesAdded: 0, countertopsAdded: 0, roomUpdated: false, warnings: [], confidence: data.confidence || 'medium' };
+
+      // Find room data from response
+      const rooms = data.rooms || [];
+      if (rooms.length === 0) {
+        result.warnings.push('No rooms detected in the image');
+        return result;
+      }
+
+      const room = rooms[0]; // Use first room
+      const cabinets = room.cabinets || [];
+      const appliances = room.appliances || [];
+      const countertops = room.countertops || data.countertops || [];
+
+      // Clear existing elements if requested
+      if (clearExisting) {
+        elements.length = 0;
+        elementListDirty = true;
+      }
+
+      // Update room dimensions if detected
+      if (updateRoomSize && room.widthFt && room.depthFt) {
+        roomWidth = room.widthFt;
+        roomDepth = room.depthFt;
+        result.roomUpdated = true;
+
+        // Update room dimension inputs if they exist
+        const widthInput = document.getElementById('roomWidth');
+        const depthInput = document.getElementById('roomDepth');
+        if (widthInput) widthInput.value = roomWidth;
+        if (depthInput) depthInput.value = roomDepth;
+      }
+
+      // Calculate positions along each wall
+      const wallPositions = { top: 0, bottom: 0, left: 0, right: 0 };
+      const wallPadding = 0.5; // Half foot padding from wall corners
+
+      // Helper to get element type from AI cabinet type
+      function getElementType(cabType) {
+        const typeMap = {
+          'base-cabinet': 'base-cabinet',
+          'wall-cabinet': 'wall-cabinet',
+          'tall-cabinet': 'tall-cabinet',
+          'sink-base': 'sink-base',
+          'drawer-base': 'drawer-base',
+          'corner-cabinet': 'corner-cabinet',
+          'lazy-susan': 'lazy-susan',
+          'blind-corner': 'blind-corner',
+          'island': 'island'
+        };
+        return typeMap[cabType] || 'base-cabinet';
+      }
+
+      // Helper to get cabinet color based on type
+      function getCabinetColor(cabType) {
+        if (cabType.includes('wall')) return '#B8860B';
+        if (cabType.includes('tall')) return '#654321';
+        return '#8B4513'; // Base cabinet brown
+      }
+
+      // Place cabinets along walls
+      for (const cab of cabinets) {
+        const wall = cab.wall || 'top';
+        const widthFt = (cab.width || 36) / 12; // Convert inches to feet
+        const depthFt = (cab.depth || 24) / 12;
+        const heightFt = (cab.height || 34.5) / 12;
+        const elementType = getElementType(cab.type);
+
+        let x, y, rotation = 0;
+
+        // Position based on wall
+        switch (wall) {
+          case 'top': // Back wall
+            x = wallPadding + wallPositions.top;
+            y = wallPadding;
+            wallPositions.top += widthFt + 0.1; // Small gap
+            break;
+          case 'bottom': // Front wall
+            x = wallPadding + wallPositions.bottom;
+            y = roomDepth - depthFt - wallPadding;
+            rotation = 180;
+            wallPositions.bottom += widthFt + 0.1;
+            break;
+          case 'left': // Left wall
+            x = wallPadding;
+            y = wallPadding + wallPositions.left;
+            rotation = 270;
+            wallPositions.left += widthFt + 0.1;
+            break;
+          case 'right': // Right wall
+            x = roomWidth - depthFt - wallPadding;
+            y = wallPadding + wallPositions.right;
+            rotation = 90;
+            wallPositions.right += widthFt + 0.1;
+            break;
+          case 'island': // Center island
+            x = roomWidth / 2 - widthFt / 2;
+            y = roomDepth / 2 - depthFt / 2;
+            break;
+          default:
+            x = wallPadding + wallPositions.top;
+            y = wallPadding;
+            wallPositions.top += widthFt + 0.1;
+        }
+
+        // Create element
+        const element = {
+          id: Date.now() + Math.random(),
+          type: elementType,
+          x: x * pixelsPerFoot,
+          y: y * pixelsPerFoot,
+          width: widthFt,
+          height: depthFt,
+          rotation: rotation,
+          color: getCabinetColor(cab.type),
+          label: cab.label || elementType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          locked: false,
+          roomId: currentRoom,
+          floorLevel: cabinetSettings?.currentFloor || 1,
+          construction: cabinetSettings?.construction || 'framed',
+          doorStyle: cabinetSettings?.doorStyle || 'shaker',
+          doorOverlay: cabinetSettings?.doorOverlay || 'full',
+          cabinetFinish: cabinetSettings?.cabinetFinish || 'wood-grain',
+          grainType: cabinetSettings?.grainType || 'oak',
+          // Store original dimensions from AI
+          aiImported: true,
+          aiLabel: cab.label,
+          aiWall: wall,
+          aiWidthInches: cab.width,
+          aiDepthInches: cab.depth,
+          aiHeightInches: cab.height
+        };
+
+        elements.push(element);
+        result.cabinetsAdded++;
+      }
+
+      // Place appliances
+      for (const app of appliances) {
+        const wall = app.wall || 'top';
+        const widthFt = (app.width || 30) / 12;
+        const depthFt = 2; // Standard appliance depth
+
+        // Determine appliance type and dimensions
+        let elementType = 'refrigerator';
+        let height = 5.75; // Default fridge height in feet
+        let color = '#C0C0C0'; // Stainless steel
+
+        if (app.type === 'range' || app.type === 'stove') {
+          elementType = 'range';
+          height = 3; // Range footprint depth
+        } else if (app.type === 'dishwasher') {
+          elementType = 'dishwasher';
+          height = 2;
+        } else if (app.type === 'microwave') {
+          elementType = 'microwave';
+          height = 1;
+        }
+
+        let x, y, rotation = 0;
+
+        switch (wall) {
+          case 'top':
+            x = wallPadding + wallPositions.top;
+            y = wallPadding;
+            wallPositions.top += widthFt + 0.1;
+            break;
+          case 'bottom':
+            x = wallPadding + wallPositions.bottom;
+            y = roomDepth - depthFt - wallPadding;
+            rotation = 180;
+            wallPositions.bottom += widthFt + 0.1;
+            break;
+          case 'left':
+            x = wallPadding;
+            y = wallPadding + wallPositions.left;
+            rotation = 270;
+            wallPositions.left += widthFt + 0.1;
+            break;
+          case 'right':
+            x = roomWidth - depthFt - wallPadding;
+            y = wallPadding + wallPositions.right;
+            rotation = 90;
+            wallPositions.right += widthFt + 0.1;
+            break;
+          default:
+            x = wallPadding + wallPositions.top;
+            y = wallPadding;
+            wallPositions.top += widthFt + 0.1;
+        }
+
+        const element = {
+          id: Date.now() + Math.random(),
+          type: elementType,
+          x: x * pixelsPerFoot,
+          y: y * pixelsPerFoot,
+          width: widthFt,
+          height: depthFt,
+          rotation: rotation,
+          color: color,
+          label: app.type ? app.type.charAt(0).toUpperCase() + app.type.slice(1) : 'Appliance',
+          locked: false,
+          roomId: currentRoom,
+          floorLevel: cabinetSettings?.currentFloor || 1,
+          aiImported: true,
+          aiWall: wall
+        };
+
+        elements.push(element);
+        result.appliancesAdded++;
+      }
+
+      // Handle countertops from AI detection
+      for (const counter of countertops) {
+        const widthFt = (counter.width || 96) / 12;
+        const depthFt = (counter.depth || 25.5) / 12;
+
+        const element = {
+          id: Date.now() + Math.random(),
+          type: 'countertop',
+          x: (counter.x || 0.5) * pixelsPerFoot,
+          y: (counter.y || 0.5) * pixelsPerFoot,
+          width: widthFt,
+          height: depthFt,
+          rotation: counter.rotation || 0,
+          color: '#4a5568',
+          label: counter.material || 'Countertop',
+          locked: false,
+          roomId: currentRoom,
+          floorLevel: cabinetSettings?.currentFloor || 1,
+          edgeProfile: 'eased',
+          thickness: '3cm',
+          overhangFront: 0.125,
+          overhangBack: 0,
+          overhangLeft: 0.125,
+          overhangRight: 0.125,
+          aiImported: true,
+          aiMaterial: counter.material
+        };
+
+        elements.push(element);
+        result.countertopsAdded++;
+      }
+
+      // Auto-generate countertops over base cabinets if enabled
+      const autoCountertopEnabled = document.getElementById('autoCountertop')?.checked ?? autoCountertop;
+      if (autoCountertopEnabled && result.cabinetsAdded > 0 && result.countertopsAdded === 0) {
+        // Group base cabinets by wall
+        const baseCabinetsByWall = { top: [], bottom: [], left: [], right: [], island: [] };
+
+        elements.forEach(el => {
+          if (el.aiImported && ['base-cabinet', 'sink-base', 'drawer-base', 'corner-cabinet'].includes(el.type)) {
+            const wall = el.aiWall || 'top';
+            baseCabinetsByWall[wall].push(el);
+          }
+        });
+
+        // Create countertop for each wall that has base cabinets
+        const overhang = 0.125; // 1.5 inches in feet
+
+        Object.entries(baseCabinetsByWall).forEach(([wall, cabs]) => {
+          if (cabs.length === 0) return;
+
+          // Sort cabinets by position
+          if (wall === 'top' || wall === 'bottom') {
+            cabs.sort((a, b) => a.x - b.x);
+          } else {
+            cabs.sort((a, b) => a.y - b.y);
+          }
+
+          // Calculate bounding box
+          const first = cabs[0];
+          const last = cabs[cabs.length - 1];
+
+          let counterX, counterY, counterWidth, counterHeight, counterRotation = 0;
+
+          if (wall === 'top') {
+            counterX = (first.x / pixelsPerFoot) - overhang;
+            counterY = (first.y / pixelsPerFoot) - overhang;
+            counterWidth = ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot) + overhang * 2;
+            counterHeight = first.height + overhang * 2;
+          } else if (wall === 'bottom') {
+            counterX = (first.x / pixelsPerFoot) - overhang;
+            counterY = (first.y / pixelsPerFoot) - overhang;
+            counterWidth = ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot) + overhang * 2;
+            counterHeight = first.height + overhang * 2;
+            counterRotation = 180;
+          } else if (wall === 'left' || wall === 'right') {
+            counterX = (first.x / pixelsPerFoot) - overhang;
+            counterY = (first.y / pixelsPerFoot) - overhang;
+            counterWidth = ((last.y + last.width * pixelsPerFoot - first.y) / pixelsPerFoot) + overhang * 2;
+            counterHeight = first.height + overhang * 2;
+            counterRotation = wall === 'left' ? 270 : 90;
+          } else if (wall === 'island') {
+            const minX = Math.min(...cabs.map(c => c.x));
+            const maxX = Math.max(...cabs.map(c => c.x + c.width * pixelsPerFoot));
+            const minY = Math.min(...cabs.map(c => c.y));
+            const maxY = Math.max(...cabs.map(c => c.y + c.height * pixelsPerFoot));
+            counterX = (minX / pixelsPerFoot) - overhang;
+            counterY = (minY / pixelsPerFoot) - overhang;
+            counterWidth = ((maxX - minX) / pixelsPerFoot) + overhang * 2;
+            counterHeight = ((maxY - minY) / pixelsPerFoot) + overhang * 2;
+          }
+
+          if (counterWidth && counterHeight) {
+            const counterElement = {
+              id: Date.now() + Math.random() + Math.random(),
+              type: 'countertop',
+              x: counterX * pixelsPerFoot,
+              y: counterY * pixelsPerFoot,
+              width: counterWidth,
+              height: counterHeight,
+              rotation: counterRotation,
+              color: '#4a5568',
+              label: `${wall.charAt(0).toUpperCase() + wall.slice(1)} Counter`,
+              locked: false,
+              roomId: currentRoom,
+              floorLevel: cabinetSettings?.currentFloor || 1,
+              edgeProfile: 'eased',
+              thickness: '3cm',
+              overhangFront: 0.167,
+              overhangBack: 0,
+              overhangLeft: overhang,
+              overhangRight: overhang,
+              aiImported: true,
+              aiWall: wall,
+              autoGenerated: true
+            };
+
+            elements.push(counterElement);
+            result.countertopsAdded++;
+          }
+        });
+      }
+
+      // Update the canvas
+      elementListDirty = true;
+      draw();
+      calculateQuote();
+      saveUndoState();
+
+      // Switch to 3D view if we added elements
+      if (result.cabinetsAdded > 0 || result.appliancesAdded > 0 || result.countertopsAdded > 0) {
+        if (currentView === '2d') {
+          // Optionally auto-switch to 3D
+        }
+        update3DScene();
+      }
+
+      return result;
+    }
+
+    // Show import result modal
+    function showImportResultModal(result) {
+      const existing = document.getElementById('importResultModal');
+      if (existing) existing.remove();
+
+      const hasItems = result.cabinetsAdded > 0 || result.appliancesAdded > 0 || result.countertopsAdded > 0;
+      const totalItems = result.cabinetsAdded + result.appliancesAdded + result.countertopsAdded;
+
+      const modal = document.createElement('div');
+      modal.id = 'importResultModal';
+      modal.className = 'cabinet-library-modal';
+      modal.innerHTML = `
+        <div class="cabinet-library-content" style="max-width: 500px;">
+          <div class="cabinet-library-header">
+            <h3>${hasItems ? '✅ Scan Complete' : '⚠️ Scan Results'}</h3>
+            <button onclick="this.closest('.cabinet-library-modal').remove()">&times;</button>
+          </div>
+          <div class="cabinet-library-body" style="text-align: center; padding: 30px;">
+            ${hasItems ? `
+              <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+              <h4 style="margin: 0 0 8px; color: var(--text);">Quote Project Created!</h4>
+              <p style="margin: 0 0 20px; font-size: 13px; color: var(--text-muted);">
+                AI detected ${totalItems} element${totalItems > 1 ? 's' : ''} from your image
+                ${result.confidence ? `<span style="display: inline-block; padding: 2px 8px; background: ${result.confidence === 'high' ? 'rgba(34, 197, 94, 0.2)' : result.confidence === 'medium' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; border-radius: 4px; font-size: 11px; margin-left: 6px;">${result.confidence} confidence</span>` : ''}
+              </p>
+              <div style="display: flex; gap: 16px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+                ${result.cabinetsAdded > 0 ? `
+                <div style="text-align: center; padding: 12px 20px; background: var(--surface); border-radius: 8px; min-width: 80px;">
+                  <div style="font-size: 24px; font-weight: 700; color: var(--primary);">${result.cabinetsAdded}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Cabinets</div>
+                </div>` : ''}
+                ${result.countertopsAdded > 0 ? `
+                <div style="text-align: center; padding: 12px 20px; background: var(--surface); border-radius: 8px; min-width: 80px;">
+                  <div style="font-size: 24px; font-weight: 700; color: #10b981;">${result.countertopsAdded}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Countertops</div>
+                </div>` : ''}
+                ${result.appliancesAdded > 0 ? `
+                <div style="text-align: center; padding: 12px 20px; background: var(--surface); border-radius: 8px; min-width: 80px;">
+                  <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${result.appliancesAdded}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Appliances</div>
+                </div>` : ''}
+              </div>
+              ${result.roomUpdated ? '<p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Room dimensions updated from image.</p>' : ''}
+              <div style="padding: 12px 16px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; margin-bottom: 16px;">
+                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">
+                  💡 <strong>Tip:</strong> Review and adjust positions in 2D view, then switch to 3D to see your layout. Select elements to edit dimensions or add materials.
+                </p>
+              </div>
+            ` : `
+              <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+              <h4 style="margin: 0 0 16px; color: var(--text);">No Elements Detected</h4>
+              <p style="color: var(--text-muted); line-height: 1.6;">
+                The AI couldn't detect elements in this image. Try:
+              </p>
+              <ul style="text-align: left; color: var(--text-muted); padding-left: 20px; margin: 16px 0; line-height: 1.8;">
+                <li>Taking a clearer photo with better lighting</li>
+                <li>Including more of the room in the shot</li>
+                <li>Adding context about what you're scanning</li>
+                <li>Using a different angle or perspective</li>
+              </ul>
+            `}
+            ${result.warnings && result.warnings.length > 0 ? `
+              <div style="margin-top: 16px; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; text-align: left;">
+                <p style="margin: 0; font-size: 12px; color: #B45309;"><strong>Notes:</strong></p>
+                ${result.warnings.map(w => `<p style="margin: 4px 0 0; font-size: 12px; color: var(--text-muted);">• ${w}</p>`).join('')}
+              </div>
+            ` : ''}
+            <button onclick="this.closest('.cabinet-library-modal').remove()"
+              style="margin-top: 20px; padding: 10px 32px; background: var(--primary); border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 500;">
+              ${hasItems ? 'View in Designer' : 'Close'}
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    // ============================================
+    // AI CHAT DESIGNER - Natural Language Room Builder
+    // ============================================
+    let aiChatOpen = false;
+    let aiChatHistory = [];
+    let aiChatProcessing = false;
+
+    function toggleAIChatDesigner() {
+      const existing = document.getElementById('aiChatPanel');
+      if (existing) {
+        aiChatOpen = !aiChatOpen;
+        existing.style.transform = aiChatOpen ? 'translateX(0)' : 'translateX(100%)';
+        return;
+      }
+
+      // Create the chat panel
+      const panel = document.createElement('div');
+      panel.id = 'aiChatPanel';
+      panel.innerHTML = `
+        <style>
+          #aiChatPanel {
+            position: fixed;
+            top: 60px;
+            right: 0;
+            width: 380px;
+            height: calc(100vh - 60px);
+            background: var(--bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+          }
+          #aiChatPanel .chat-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+          #aiChatPanel .chat-header h3 {
+            margin: 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          #aiChatPanel .chat-header h3 span {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+          #aiChatPanel .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          #aiChatPanel .chat-message {
+            max-width: 90%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+          }
+          #aiChatPanel .chat-message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-bottom-right-radius: 4px;
+          }
+          #aiChatPanel .chat-message.assistant {
+            align-self: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+          }
+          #aiChatPanel .chat-message.system {
+            align-self: center;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: var(--text-muted);
+            font-size: 12px;
+            max-width: 100%;
+          }
+          #aiChatPanel .chat-message .action-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 8px;
+          }
+          #aiChatPanel .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+          }
+          #aiChatPanel .chat-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+          }
+          #aiChatPanel .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            outline: none;
+          }
+          #aiChatPanel .chat-input:focus {
+            border-color: var(--primary);
+          }
+          #aiChatPanel .chat-send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, opacity 0.2s;
+          }
+          #aiChatPanel .chat-send-btn:hover {
+            transform: scale(1.05);
+          }
+          #aiChatPanel .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+          #aiChatPanel .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+          }
+          #aiChatPanel .quick-action {
+            padding: 6px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+          }
+          #aiChatPanel .quick-action:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+          }
+          #aiChatPanel .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            align-self: flex-start;
+          }
+          #aiChatPanel .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typingBounce 1.4s ease-in-out infinite;
+          }
+          #aiChatPanel .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+          #aiChatPanel .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+          @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+          }
+        </style>
+
+        <div class="chat-header">
+          <h3>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#chatGrad)" stroke-width="2">
+              <defs>
+                <linearGradient id="chatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#8b5cf6"/>
+                </linearGradient>
+              </defs>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span>AI Designer</span>
+          </h3>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="clearAIChat()" title="Clear chat" style="background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+            <button onclick="toggleAIChatDesigner()" style="background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="aiChatMessages">
+          <div class="chat-message assistant">
+            <strong>👋 Hi! I'm your AI Design Assistant.</strong><br><br>
+            Tell me what you want to build and I'll create it for you. Try:
+            <ul style="margin: 8px 0 0; padding-left: 20px;">
+              <li>"Create an L-shaped kitchen, 12x14 feet"</li>
+              <li>"Add a 36-inch sink base on the back wall"</li>
+              <li>"Put a refrigerator on the right wall"</li>
+              <li>"Add wall cabinets above the base cabinets"</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="quick-actions">
+            <button class="quick-action" onclick="sendAIChatMessage('Create a basic L-shaped kitchen')">L-shaped kitchen</button>
+            <button class="quick-action" onclick="sendAIChatMessage('Add an island in the center')">Add island</button>
+            <button class="quick-action" onclick="sendAIChatMessage('Add countertops over all base cabinets')">Add countertops</button>
+            <button class="quick-action" onclick="sendAIChatMessage('Clear the room and start fresh')">Clear room</button>
+          </div>
+          <div class="chat-input-wrapper">
+            <textarea class="chat-input" id="aiChatInput" placeholder="Describe what you want to build..." rows="1"
+              onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendAIChatMessage(); }"></textarea>
+            <button class="chat-send-btn" onclick="sendAIChatMessage()" id="aiChatSendBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(panel);
+      aiChatOpen = true;
+
+      // Auto-resize textarea
+      const input = document.getElementById('aiChatInput');
+      input.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+      });
+    }
+
+    function clearAIChat() {
+      aiChatHistory = [];
+      const messages = document.getElementById('aiChatMessages');
+      if (messages) {
+        messages.innerHTML = `
+          <div class="chat-message assistant">
+            <strong>👋 Chat cleared!</strong><br><br>
+            Ready to start a new design. What would you like to create?
+          </div>
+        `;
+      }
+    }
+
+    function addChatMessage(role, content, actions = []) {
+      const messages = document.getElementById('aiChatMessages');
+      if (!messages) return;
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `chat-message ${role}`;
+
+      let html = content.replace(/\n/g, '<br>');
+      if (actions.length > 0) {
+        html += '<div style="margin-top: 8px;">';
+        actions.forEach(a => {
+          html += `<span class="action-badge">✓ ${a}</span> `;
+        });
+        html += '</div>';
+      }
+      msgDiv.innerHTML = html;
+
+      messages.appendChild(msgDiv);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const messages = document.getElementById('aiChatMessages');
+      if (!messages) return;
+
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.id = 'typingIndicator';
+      indicator.innerHTML = '<span></span><span></span><span></span>';
+      messages.appendChild(indicator);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    async function sendAIChatMessage(presetMessage = null) {
+      const input = document.getElementById('aiChatInput');
+      const sendBtn = document.getElementById('aiChatSendBtn');
+      const message = presetMessage || input?.value?.trim();
+
+      if (!message || aiChatProcessing) return;
+
+      // Clear input
+      if (input && !presetMessage) {
+        input.value = '';
+        input.style.height = 'auto';
+      }
+
+      // Add user message to chat
+      addChatMessage('user', message);
+      aiChatHistory.push({ role: 'user', content: message });
+
+      // Show typing indicator
+      aiChatProcessing = true;
+      if (sendBtn) sendBtn.disabled = true;
+      showTypingIndicator();
+
+      try {
+        // Get current room state for context
+        const roomState = {
+          roomWidth,
+          roomDepth,
+          elementCount: elements.length,
+          elements: elements.map(el => ({
+            type: el.type,
+            label: el.label,
+            width: el.width,
+            height: el.height,
+            wall: el.aiWall || 'unknown',
+            x: el.x / pixelsPerFoot,
+            y: el.y / pixelsPerFoot
+          }))
+        };
+
+        // Call AI endpoint
+        const response = await fetch('/api/ai/design-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            history: aiChatHistory.slice(-10), // Last 10 messages for context
+            roomState
+          })
+        });
+
+        const data = await response.json();
+        hideTypingIndicator();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Execute any actions returned by AI
+        const executedActions = [];
+        if (data.actions && Array.isArray(data.actions)) {
+          for (const action of data.actions) {
+            try {
+              const result = await executeAIDesignAction(action);
+              if (result) executedActions.push(result);
+            } catch (actionError) {
+              console.error('Action error:', actionError);
+            }
+          }
+        }
+
+        // Add assistant response
+        addChatMessage('assistant', data.response, executedActions);
+        aiChatHistory.push({ role: 'assistant', content: data.response });
+
+        // Update canvas if actions were taken
+        if (executedActions.length > 0) {
+          draw();
+          calculateQuote();
+          saveUndoState();
+          update3DScene();
+        }
+
+      } catch (error) {
+        hideTypingIndicator();
+        console.error('AI Chat error:', error);
+        addChatMessage('assistant', `Sorry, I encountered an error: ${error.message}. Please try again.`);
+      } finally {
+        aiChatProcessing = false;
+        if (sendBtn) sendBtn.disabled = false;
+      }
+    }
+
+    // Execute AI design actions
+    async function executeAIDesignAction(action) {
+      const { type, params } = action;
+
+      switch (type) {
+        case 'SET_ROOM_SIZE':
+          if (params.width) roomWidth = params.width;
+          if (params.depth) roomDepth = params.depth;
+          const widthInput = document.getElementById('roomWidth');
+          const depthInput = document.getElementById('roomDepth');
+          if (widthInput) widthInput.value = roomWidth;
+          if (depthInput) depthInput.value = roomDepth;
+          return `Room set to ${roomWidth}' x ${roomDepth}'`;
+
+        case 'CLEAR_ELEMENTS':
+          elements.length = 0;
+          elementListDirty = true;
+          return 'Cleared all elements';
+
+        case 'ADD_CABINET':
+          return addAICabinet(params);
+
+        case 'ADD_APPLIANCE':
+          return addAIAppliance(params);
+
+        case 'ADD_COUNTERTOP':
+          return addAICountertop(params);
+
+        case 'ADD_ISLAND':
+          return addAIIsland(params);
+
+        case 'CREATE_LAYOUT':
+          return createAILayout(params);
+
+        case 'DELETE_ELEMENT':
+          const idx = elements.findIndex(el => el.label?.toLowerCase().includes(params.label?.toLowerCase()));
+          if (idx !== -1) {
+            elements.splice(idx, 1);
+            elementListDirty = true;
+            return `Removed ${params.label}`;
+          }
+          return null;
+
+        case 'SELECT_ELEMENT':
+          const el = elements.find(e => e.label?.toLowerCase().includes(params.label?.toLowerCase()));
+          if (el) {
+            selectedElement = el;
+            updateProperties();
+            return `Selected ${el.label}`;
+          }
+          return null;
+
+        default:
+          console.log('Unknown action:', type);
+          return null;
+      }
+    }
+
+    // Helper: Add cabinet from AI
+    function addAICabinet(params) {
+      const { type = 'base-cabinet', wall = 'top', width = 36, position = null, label = null } = params;
+
+      const widthFt = width / 12;
+      const depthFt = type.includes('wall') ? 1 : 2;
+      const heightFt = type.includes('wall') ? 2.5 : depthFt;
+
+      let x, y, rotation = 0;
+      const padding = 0.5;
+
+      // Find existing cabinets on this wall to position after them
+      const wallCabs = elements.filter(el =>
+        el.aiWall === wall || (wall === 'top' && el.y < roomDepth * pixelsPerFoot / 3)
+      );
+      const lastCab = wallCabs[wallCabs.length - 1];
+      const offset = lastCab ? (lastCab.x / pixelsPerFoot + lastCab.width + 0.1) : padding;
+
+      switch (wall) {
+        case 'top':
+          x = position ?? offset;
+          y = padding;
+          break;
+        case 'bottom':
+          x = position ?? offset;
+          y = roomDepth - depthFt - padding;
+          rotation = 180;
+          break;
+        case 'left':
+          x = padding;
+          y = position ?? offset;
+          rotation = 270;
+          break;
+        case 'right':
+          x = roomWidth - depthFt - padding;
+          y = position ?? offset;
+          rotation = 90;
+          break;
+      }
+
+      const element = {
+        id: Date.now() + Math.random(),
+        type: type,
+        x: x * pixelsPerFoot,
+        y: y * pixelsPerFoot,
+        width: widthFt,
+        height: depthFt,
+        rotation,
+        color: type.includes('wall') ? '#B8860B' : '#8B4513',
+        label: label || `${type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} ${width}"`,
+        locked: false,
+        roomId: currentRoom,
+        floorLevel: cabinetSettings?.currentFloor || 1,
+        construction: cabinetSettings?.construction || 'framed',
+        doorStyle: cabinetSettings?.doorStyle || 'shaker',
+        aiWall: wall,
+        aiGenerated: true
+      };
+
+      elements.push(element);
+      elementListDirty = true;
+      return `Added ${width}" ${type.replace('-', ' ')} on ${wall} wall`;
+    }
+
+    // Helper: Add appliance from AI
+    function addAIAppliance(params) {
+      const { type = 'refrigerator', wall = 'right', width = 36 } = params;
+
+      const widthFt = width / 12;
+      const depthFt = type === 'refrigerator' ? 2.5 : 2;
+      let x, y, rotation = 0;
+      const padding = 0.5;
+
+      // Find position
+      const wallItems = elements.filter(el => el.aiWall === wall);
+      const offset = wallItems.length > 0
+        ? Math.max(...wallItems.map(el => el.x / pixelsPerFoot + el.width)) + 0.2
+        : padding;
+
+      switch (wall) {
+        case 'top':
+          x = offset; y = padding;
+          break;
+        case 'bottom':
+          x = offset; y = roomDepth - depthFt - padding; rotation = 180;
+          break;
+        case 'left':
+          x = padding; y = offset; rotation = 270;
+          break;
+        case 'right':
+          x = roomWidth - depthFt - padding; y = offset; rotation = 90;
+          break;
+      }
+
+      const element = {
+        id: Date.now() + Math.random(),
+        type,
+        x: x * pixelsPerFoot,
+        y: y * pixelsPerFoot,
+        width: widthFt,
+        height: depthFt,
+        rotation,
+        color: '#C0C0C0',
+        label: type.charAt(0).toUpperCase() + type.slice(1),
+        locked: false,
+        roomId: currentRoom,
+        aiWall: wall,
+        aiGenerated: true
+      };
+
+      elements.push(element);
+      elementListDirty = true;
+      return `Added ${type} on ${wall} wall`;
+    }
+
+    // Helper: Add countertop from AI
+    function addAICountertop(params) {
+      const { wall = 'top', material = 'granite' } = params;
+
+      // Find base cabinets on this wall
+      const baseCabs = elements.filter(el =>
+        ['base-cabinet', 'sink-base', 'drawer-base'].includes(el.type) &&
+        (el.aiWall === wall || wall === 'all')
+      );
+
+      if (baseCabs.length === 0 && wall !== 'all') {
+        return null;
+      }
+
+      let added = 0;
+      const walls = wall === 'all' ? ['top', 'bottom', 'left', 'right'] : [wall];
+
+      walls.forEach(w => {
+        const cabs = elements.filter(el =>
+          ['base-cabinet', 'sink-base', 'drawer-base'].includes(el.type) &&
+          el.aiWall === w
+        );
+        if (cabs.length === 0) return;
+
+        cabs.sort((a, b) => a.x - b.x);
+        const first = cabs[0];
+        const last = cabs[cabs.length - 1];
+        const overhang = 0.125;
+
+        const counter = {
+          id: Date.now() + Math.random() + added,
+          type: 'countertop',
+          x: first.x - overhang * pixelsPerFoot,
+          y: first.y - overhang * pixelsPerFoot,
+          width: ((last.x + last.width * pixelsPerFoot - first.x) / pixelsPerFoot) + overhang * 2,
+          height: first.height + overhang * 2,
+          rotation: first.rotation || 0,
+          color: '#4a5568',
+          label: `${material.charAt(0).toUpperCase() + material.slice(1)} Counter`,
+          roomId: currentRoom,
+          edgeProfile: 'eased',
+          thickness: '3cm',
+          aiWall: w,
+          aiGenerated: true
+        };
+
+        elements.push(counter);
+        added++;
+      });
+
+      elementListDirty = true;
+      return added > 0 ? `Added ${added} countertop${added > 1 ? 's' : ''}` : null;
+    }
+
+    // Helper: Add island from AI
+    function addAIIsland(params) {
+      const { width = 48, depth = 36 } = params;
+
+      const widthFt = width / 12;
+      const depthFt = depth / 12;
+
+      const element = {
+        id: Date.now() + Math.random(),
+        type: 'island',
+        x: (roomWidth / 2 - widthFt / 2) * pixelsPerFoot,
+        y: (roomDepth / 2 - depthFt / 2) * pixelsPerFoot,
+        width: widthFt,
+        height: depthFt,
+        rotation: 0,
+        color: '#8B4513',
+        label: `Island ${width}" x ${depth}"`,
+        roomId: currentRoom,
+        aiWall: 'island',
+        aiGenerated: true
+      };
+
+      elements.push(element);
+      elementListDirty = true;
+      return `Added ${width}" x ${depth}" island`;
+    }
+
+    // Helper: Create complete layout from AI
+    function createAILayout(params) {
+      const { layoutType = 'L-shape', width = 12, depth = 10 } = params;
+
+      // Set room size
+      roomWidth = width;
+      roomDepth = depth;
+
+      // Clear existing
+      elements.length = 0;
+
+      const layouts = {
+        'L-shape': [
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'sink-base', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 24 },
+          { type: 'base-cabinet', wall: 'left', width: 36 },
+          { type: 'base-cabinet', wall: 'left', width: 24 },
+          { type: 'wall-cabinet', wall: 'top', width: 36 },
+          { type: 'wall-cabinet', wall: 'top', width: 36 },
+          { type: 'wall-cabinet', wall: 'top', width: 30 },
+          { appliance: 'refrigerator', wall: 'right', width: 36 },
+          { appliance: 'range', wall: 'top', width: 30 }
+        ],
+        'U-shape': [
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'sink-base', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'left', width: 36 },
+          { type: 'base-cabinet', wall: 'left', width: 24 },
+          { type: 'base-cabinet', wall: 'right', width: 36 },
+          { type: 'base-cabinet', wall: 'right', width: 24 },
+          { appliance: 'refrigerator', wall: 'right', width: 36 },
+          { appliance: 'range', wall: 'top', width: 30 }
+        ],
+        'galley': [
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'sink-base', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'bottom', width: 36 },
+          { type: 'base-cabinet', wall: 'bottom', width: 36 },
+          { appliance: 'refrigerator', wall: 'bottom', width: 36 },
+          { appliance: 'range', wall: 'top', width: 30 }
+        ],
+        'single-wall': [
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'sink-base', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 24 },
+          { type: 'wall-cabinet', wall: 'top', width: 36 },
+          { type: 'wall-cabinet', wall: 'top', width: 36 },
+          { appliance: 'refrigerator', wall: 'right', width: 36 }
+        ],
+        'island': [
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { type: 'sink-base', wall: 'top', width: 36 },
+          { type: 'base-cabinet', wall: 'top', width: 36 },
+          { island: true, width: 60, depth: 42 },
+          { appliance: 'refrigerator', wall: 'right', width: 36 },
+          { appliance: 'range', wall: 'top', width: 30 }
+        ]
+      };
+
+      const items = layouts[layoutType] || layouts['L-shape'];
+      const results = [];
+
+      items.forEach(item => {
+        if (item.appliance) {
+          results.push(addAIAppliance({ type: item.appliance, wall: item.wall, width: item.width }));
+        } else if (item.island) {
+          results.push(addAIIsland({ width: item.width, depth: item.depth }));
+        } else {
+          results.push(addAICabinet(item));
+        }
+      });
+
+      // Auto-add countertops
+      addAICountertop({ wall: 'all', material: 'granite' });
+
+      elementListDirty = true;
+      return `Created ${layoutType} kitchen layout`;
     }
 
     // Update UI to show/hide pricing based on access
@@ -20625,7 +22238,29 @@
       'vent': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="16" width="32" height="16" rx="2" fill="#C0C0C0" stroke="#A0A0A0"/><line x1="12" y1="20" x2="36" y2="20" stroke="#888" stroke-width="2"/><line x1="12" y1="24" x2="36" y2="24" stroke="#888" stroke-width="2"/><line x1="12" y1="28" x2="36" y2="28" stroke="#888" stroke-width="2"/></svg>',
       'return-vent': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="12" width="40" height="24" rx="2" fill="#A0A0A0" stroke="#888"/><rect x="8" y="16" width="32" height="16" fill="#666"/><line x1="12" y1="18" x2="36" y2="18" stroke="#555" stroke-width="2"/><line x1="12" y1="24" x2="36" y2="24" stroke="#555" stroke-width="2"/><line x1="12" y1="30" x2="36" y2="30" stroke="#555" stroke-width="2"/></svg>',
       'exhaust-fan': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" rx="2" fill="#B0B0B0" stroke="#888"/><circle cx="24" cy="24" r="12" fill="#666"/><circle cx="24" cy="24" r="4" fill="#444"/><path d="M24 12 L28 20 L24 18 L20 20 Z" fill="#888"/><path d="M36 24 L28 28 L30 24 L28 20 Z" fill="#888"/><path d="M24 36 L20 28 L24 30 L28 28 Z" fill="#888"/><path d="M12 24 L20 20 L18 24 L20 28 Z" fill="#888"/></svg>',
-      'thermostat': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="8" width="24" height="32" rx="4" fill="#E8E8E8" stroke="#CCC" stroke-width="2"/><circle cx="24" cy="24" r="10" fill="#FFF" stroke="#DDD"/><text x="24" y="28" font-size="10" fill="#333" text-anchor="middle">72</text><rect x="18" y="36" width="12" height="2" rx="1" fill="#4CAF50"/></svg>'
+      'thermostat': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="8" width="24" height="32" rx="4" fill="#E8E8E8" stroke="#CCC" stroke-width="2"/><circle cx="24" cy="24" r="10" fill="#FFF" stroke="#DDD"/><text x="24" y="28" font-size="10" fill="#333" text-anchor="middle">72</text><rect x="18" y="36" width="12" height="2" rx="1" fill="#4CAF50"/></svg>',
+      // ===== SPECIALTY KITCHEN APPLIANCES =====
+      'wine-cooler': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#2a2a2a"/><rect x="8" y="4" width="32" height="40" rx="1" fill="#1a1a1a"/><rect x="10" y="6" width="28" height="36" rx="1" fill="#3a3a3a" opacity="0.5"/><line x1="10" y1="14" x2="38" y2="14" stroke="#555" stroke-width="1"/><line x1="10" y1="22" x2="38" y2="22" stroke="#555" stroke-width="1"/><line x1="10" y1="30" x2="38" y2="30" stroke="#555" stroke-width="1"/><ellipse cx="18" cy="10" rx="3" ry="4" fill="#722F37" opacity="0.6"/><ellipse cx="30" cy="10" rx="3" ry="4" fill="#722F37" opacity="0.6"/><ellipse cx="18" cy="18" rx="3" ry="4" fill="#722F37" opacity="0.6"/><ellipse cx="30" cy="18" rx="3" ry="4" fill="#722F37" opacity="0.6"/><ellipse cx="18" cy="26" rx="3" ry="4" fill="#E8E8D0" opacity="0.6"/><ellipse cx="30" cy="26" rx="3" ry="4" fill="#E8E8D0" opacity="0.6"/><circle cx="40" cy="24" r="2" fill="#4169E1"/></svg>',
+      'beverage-center': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#2a2a2a"/><rect x="8" y="4" width="32" height="40" rx="1" fill="#4a90a4" opacity="0.3"/><rect x="10" y="6" width="28" height="36" fill="#1a1a1a" opacity="0.5"/><rect x="14" y="10" width="6" height="12" rx="1" fill="#FFA500" opacity="0.7"/><rect x="22" y="10" width="6" height="12" rx="1" fill="#8B4513" opacity="0.7"/><rect x="30" y="10" width="6" height="12" rx="1" fill="#228B22" opacity="0.7"/><rect x="14" y="26" width="6" height="12" rx="1" fill="#DC143C" opacity="0.7"/><rect x="22" y="26" width="6" height="12" rx="1" fill="#4169E1" opacity="0.7"/><rect x="30" y="26" width="6" height="12" rx="1" fill="#FFD700" opacity="0.7"/><rect x="38" y="20" width="4" height="8" rx="1" fill="#333"/></svg>',
+      'ice-maker': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="4" width="32" height="40" rx="2" fill="#A0A0A0"/><rect x="10" y="6" width="28" height="14" rx="1" fill="#E0F4FF"/><rect x="10" y="22" width="28" height="20" rx="1" fill="#888"/><rect x="12" y="24" width="24" height="16" fill="#666"/><polygon points="16,28 20,28 18,32" fill="#87CEEB"/><polygon points="22,28 26,28 24,32" fill="#87CEEB"/><polygon points="28,28 32,28 30,32" fill="#87CEEB"/><polygon points="19,34 23,34 21,38" fill="#87CEEB"/><polygon points="25,34 29,34 27,38" fill="#87CEEB"/><circle cx="36" cy="12" r="2" fill="#4CAF50"/></svg>',
+      'warming-drawer': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="14" width="40" height="20" rx="2" fill="#2a2a2a"/><rect x="6" y="16" width="36" height="16" rx="1" fill="#3a3a3a"/><rect x="8" y="18" width="32" height="12" fill="#1a1a1a"/><path d="M14 22 Q16 20 18 22 Q20 24 22 22" stroke="#FF6B35" stroke-width="2" fill="none"/><path d="M26 22 Q28 20 30 22 Q32 24 34 22" stroke="#FF6B35" stroke-width="2" fill="none"/><rect x="20" y="28" width="8" height="2" rx="1" fill="#666"/></svg>',
+      'trash-compactor': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="4" width="28" height="40" rx="2" fill="#696969"/><rect x="12" y="6" width="24" height="8" rx="1" fill="#555"/><rect x="14" y="8" width="20" height="4" fill="#444"/><circle cx="18" cy="10" r="1.5" fill="#333"/><circle cx="24" cy="10" r="1.5" fill="#333"/><circle cx="30" cy="10" r="1.5" fill="#333"/><rect x="12" y="16" width="24" height="26" rx="1" fill="#5a5a5a"/><rect x="14" y="18" width="20" height="22" fill="#4a4a4a"/><path d="M18 24 L30 24 L28 36 L20 36 Z" fill="#333"/><rect x="22" y="40" width="4" height="2" rx="1" fill="#888"/></svg>',
+      'coffee-system': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="8" width="36" height="32" rx="2" fill="#2a2a2a"/><rect x="8" y="10" width="32" height="28" rx="1" fill="#3a3a3a"/><rect x="12" y="14" width="10" height="8" rx="1" fill="#1a1a1a"/><rect x="26" y="14" width="10" height="8" rx="1" fill="#1a1a1a"/><ellipse cx="17" cy="18" rx="3" ry="2" fill="#4a3728"/><ellipse cx="31" cy="18" rx="3" ry="2" fill="#4a3728"/><rect x="14" y="26" width="6" height="8" rx="1" fill="#F5F5DC"/><rect x="28" y="26" width="6" height="8" rx="1" fill="#F5F5DC"/><circle cx="40" cy="18" r="2" fill="#4CAF50"/><circle cx="40" cy="24" r="2" fill="#FFA500"/></svg>',
+      'steam-oven': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="8" width="36" height="32" rx="2" fill="#3a3a3a"/><rect x="8" y="10" width="32" height="6" rx="1" fill="#4a4a4a"/><circle cx="14" cy="13" r="2" fill="#666"/><circle cx="22" cy="13" r="2" fill="#666"/><circle cx="30" cy="13" r="2" fill="#666"/><rect x="8" y="18" width="32" height="20" rx="1" fill="#2a2a2a"/><rect x="10" y="20" width="28" height="16" fill="#1a1a1a"/><path d="M16 28 Q18 24 20 28" stroke="#87CEEB" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M24 28 Q26 24 28 28" stroke="#87CEEB" stroke-width="1.5" fill="none" opacity="0.7"/><path d="M32 28 Q34 24 36 28" stroke="#87CEEB" stroke-width="1.5" fill="none" opacity="0.7"/><rect x="36" y="24" width="2" height="4" rx="1" fill="#666"/></svg>',
+      'speed-oven': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="8" width="36" height="32" rx="2" fill="#3a3a3a"/><rect x="8" y="10" width="32" height="6" rx="1" fill="#4a4a4a"/><circle cx="12" cy="13" r="2" fill="#666"/><rect x="18" y="11" width="18" height="4" rx="1" fill="#222"/><text x="27" y="14.5" font-size="4" fill="#0f0" text-anchor="middle">350°</text><rect x="8" y="18" width="32" height="20" rx="1" fill="#2a2a2a"/><rect x="10" y="20" width="28" height="16" fill="#1a1a1a"/><circle cx="24" cy="28" r="6" fill="#222"/><circle cx="24" cy="28" r="4" fill="#333"/><rect x="36" y="24" width="2" height="4" rx="1" fill="#666"/></svg>',
+      // ===== OUTDOOR KITCHEN APPLIANCES =====
+      'grill-builtin': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="2" fill="#2F2F2F"/><rect x="6" y="10" width="36" height="12" rx="1" fill="#1a1a1a"/><line x1="10" y1="14" x2="38" y2="14" stroke="#444" stroke-width="2"/><line x1="10" y1="18" x2="38" y2="18" stroke="#444" stroke-width="2"/><rect x="6" y="24" width="36" height="14" rx="1" fill="#3a3a3a"/><circle cx="14" cy="31" r="3" fill="#444" stroke="#555"/><circle cx="24" cy="31" r="3" fill="#444" stroke="#555"/><circle cx="34" cy="31" r="3" fill="#444" stroke="#555"/><path d="M12 12 Q14 8 16 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/><path d="M22 12 Q24 8 26 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/><path d="M32 12 Q34 8 36 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/></svg>',
+      'grill-42': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="44" height="32" rx="2" fill="#2F2F2F"/><rect x="4" y="10" width="40" height="12" rx="1" fill="#1a1a1a"/><line x1="8" y1="14" x2="40" y2="14" stroke="#444" stroke-width="2"/><line x1="8" y1="18" x2="40" y2="18" stroke="#444" stroke-width="2"/><rect x="4" y="24" width="40" height="14" rx="1" fill="#3a3a3a"/><circle cx="12" cy="31" r="3" fill="#444" stroke="#555"/><circle cx="24" cy="31" r="3" fill="#444" stroke="#555"/><circle cx="36" cy="31" r="3" fill="#444" stroke="#555"/><path d="M10 12 Q12 8 14 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/><path d="M22 12 Q24 8 26 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/><path d="M34 12 Q36 8 38 12" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/></svg>',
+      'side-burner': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="8" width="24" height="32" rx="2" fill="#2F2F2F"/><rect x="14" y="10" width="20" height="12" rx="1" fill="#1a1a1a"/><circle cx="24" cy="16" r="6" fill="#333" stroke="#444" stroke-width="2"/><circle cx="24" cy="16" r="3" fill="#444"/><path d="M22 14 Q24 10 26 14" stroke="#FF6B35" stroke-width="1.5" fill="none" opacity="0.8"/><rect x="14" y="24" width="20" height="14" rx="1" fill="#3a3a3a"/><circle cx="24" cy="31" r="3" fill="#444" stroke="#555"/></svg>',
+      'power-burner': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" rx="2" fill="#2F2F2F"/><rect x="10" y="10" width="28" height="14" rx="1" fill="#1a1a1a"/><circle cx="24" cy="17" r="8" fill="#333" stroke="#555" stroke-width="2"/><circle cx="24" cy="17" r="5" fill="#444"/><circle cx="24" cy="17" r="2" fill="#555"/><path d="M20 15 Q22 10 24 15" stroke="#FF6B35" stroke-width="2" fill="none"/><path d="M24 15 Q26 10 28 15" stroke="#FF6B35" stroke-width="2" fill="none"/><rect x="10" y="26" width="28" height="12" rx="1" fill="#3a3a3a"/><circle cx="24" cy="32" r="4" fill="#444" stroke="#555"/></svg>',
+      'outdoor-fridge': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2" width="36" height="44" rx="2" fill="#A9A9A9"/><rect x="8" y="4" width="32" height="16" rx="1" fill="#C0C0C0"/><rect x="8" y="22" width="32" height="22" rx="1" fill="#B8B8B8"/><line x1="8" y1="20" x2="40" y2="20" stroke="#888" stroke-width="2"/><rect x="34" y="10" width="3" height="6" rx="1" fill="#888"/><rect x="34" y="30" width="3" height="8" rx="1" fill="#888"/><text x="24" y="14" font-size="6" fill="#666" text-anchor="middle">❄</text></svg>',
+      'kegerator': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="36" height="38" rx="2" fill="#3a3a3a"/><rect x="8" y="8" width="32" height="34" rx="1" fill="#2a2a2a"/><circle cx="24" cy="25" r="10" fill="#444" stroke="#555" stroke-width="2"/><circle cx="24" cy="25" r="6" fill="#DAA520"/><text x="24" y="28" font-size="6" fill="#8B4513" text-anchor="middle" font-weight="bold">B</text><rect x="20" y="4" width="8" height="4" rx="1" fill="#C0C0C0"/><circle cx="24" cy="5" r="2" fill="#888"/><rect x="22" y="0" width="4" height="4" fill="#A0A0A0"/></svg>',
+      'pizza-oven': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M6 16 Q6 6 24 6 Q42 6 42 16 L42 40 Q42 44 38 44 L10 44 Q6 44 6 40 Z" fill="#8B4513"/><path d="M10 18 Q10 10 24 10 Q38 10 38 18 L38 36 Q38 38 36 38 L12 38 Q10 38 10 36 Z" fill="#2a2a2a"/><ellipse cx="24" cy="28" rx="10" ry="8" fill="#1a1a1a"/><path d="M16 26 Q18 22 20 26" stroke="#FF6B35" stroke-width="2" fill="none"/><path d="M24 26 Q26 22 28 26" stroke="#FF6B35" stroke-width="2" fill="none"/><path d="M32 26 Q34 22 36 26" stroke="#FF4500" stroke-width="2" fill="none"/><ellipse cx="24" cy="30" rx="6" ry="4" fill="#FFD700" opacity="0.3"/></svg>',
+      'smoker': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="8" width="28" height="36" rx="2" fill="#2F2F2F"/><rect x="12" y="10" width="24" height="32" rx="1" fill="#1a1a1a"/><rect x="14" y="12" width="20" height="10" fill="#333"/><rect x="14" y="24" width="20" height="10" fill="#333"/><line x1="14" y1="17" x2="34" y2="17" stroke="#444" stroke-width="1"/><line x1="14" y1="22" x2="34" y2="22" stroke="#444" stroke-width="1"/><line x1="14" y1="29" x2="34" y2="29" stroke="#444" stroke-width="1"/><line x1="14" y1="34" x2="34" y2="34" stroke="#444" stroke-width="1"/><path d="M20 6 Q22 2 24 6" stroke="#888" stroke-width="1.5" fill="none"/><path d="M26 4 Q28 0 30 4" stroke="#888" stroke-width="1.5" fill="none"/><rect x="16" y="38" width="16" height="4" rx="1" fill="#3a3a3a"/><circle cx="24" cy="40" r="2" fill="#666"/></svg>',
+      'outdoor-sink': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="14" width="36" height="28" rx="2" fill="#A0A0A0"/><rect x="8" y="16" width="32" height="24" rx="1" fill="#C0C0C0"/><rect x="10" y="18" width="28" height="20" fill="#666"/><rect x="22" y="6" width="4" height="12" rx="2" fill="#888"/><ellipse cx="24" cy="6" rx="4" ry="2" fill="#777"/><circle cx="24" cy="30" r="2" fill="#444"/><rect x="22" y="32" width="4" height="4" fill="#333"/></svg>',
+      'outdoor-ice-maker': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="6" width="28" height="36" rx="2" fill="#808080"/><rect x="12" y="8" width="24" height="12" rx="1" fill="#B0E0E6"/><rect x="12" y="22" width="24" height="18" rx="1" fill="#696969"/><rect x="14" y="24" width="20" height="14" fill="#555"/><polygon points="18,28 22,28 20,32" fill="#87CEEB"/><polygon points="26,28 30,28 28,32" fill="#87CEEB"/><polygon points="22,34 26,34 24,38" fill="#87CEEB"/><circle cx="34" cy="14" r="2" fill="#4CAF50"/><text x="24" y="14" font-size="5" fill="#4682B4" text-anchor="middle">❄</text></svg>',
+      'access-door': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" rx="2" fill="#696969"/><rect x="10" y="10" width="28" height="28" rx="1" fill="#808080"/><rect x="12" y="12" width="24" height="24" fill="#5a5a5a"/><rect x="32" y="22" width="3" height="6" rx="1" fill="#444"/></svg>',
+      'trash-drawer': '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="32" height="28" rx="2" fill="#696969"/><rect x="10" y="14" width="28" height="24" rx="1" fill="#808080"/><rect x="12" y="16" width="24" height="20" fill="#5a5a5a"/><rect x="20" y="36" width="8" height="2" rx="1" fill="#444"/><path d="M18 22 L24 22 L26 32 L16 32 Z" fill="#333"/><path d="M24 22 L30 22 L32 32 L26 32 Z" fill="#444"/></svg>'
     };
 
     // Map sized and variant cabinet types to base icons (reuse icons for different sizes)
@@ -22994,6 +24629,22 @@
     let lastSnappedWall = null; // Track which wall we last snapped to
     let drawPending = false; // Throttle flag for requestAnimationFrame-based draw batching
 
+    // DOM element cache for frequently accessed elements
+    const domCache = {
+      elementCount: null,
+      elementLayerList: null,
+      elementCountDisplay: null,
+      quoteItems: null
+    };
+
+    // Initialize DOM cache (call after DOM ready)
+    function initDomCache() {
+      domCache.elementCount = document.getElementById('elementCount');
+      domCache.elementLayerList = document.getElementById('elementLayerList');
+      domCache.elementCountDisplay = document.getElementById('elementCountDisplay');
+      domCache.quoteItems = document.getElementById('quoteItems');
+    }
+
     // Element locking (simple grouping)
     let nextGroupId = 1;
 
@@ -23835,6 +25486,9 @@
     function initializeWorkspace() {
       if (workspaceInitialized) return; // Prevent double initialization
       workspaceInitialized = true;
+
+      // Initialize DOM cache for frequently accessed elements
+      initDomCache();
 
       canvas = document.getElementById('canvas');
       ctx = canvas.getContext('2d');
@@ -24900,9 +26554,10 @@
             <div class="element-item ${elementTextures[el.type] ? 'has-texture' : ''}"
                  draggable="true"
                  data-type="${el.type}"
-                 data-category="${category}">
+                 data-category="${category}"
+                 title="${el.label}">
               ${iconContent}
-              <div class="element-name">${el.label}</div>
+              <div class="element-name" title="${el.label}">${el.label}</div>
               <div class="element-upload-btn" onclick="event.stopPropagation(); uploadElementTexture('${el.type}')" title="Upload custom texture">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -26630,8 +28285,10 @@
 
       ctx.restore();
 
-      document.getElementById('elementCount').textContent = `${elements.length} element${elements.length !== 1 ? 's' : ''}`;
-      calculateQuote();
+      // Use cached DOM element for performance
+      const elCount = domCache.elementCount || document.getElementById('elementCount');
+      if (elCount) elCount.textContent = `${elements.length} element${elements.length !== 1 ? 's' : ''}`;
+      calculateQuoteThrottled();
 
       // Update element layer list panel
       updateElementList();
@@ -31466,130 +33123,130 @@
       ctx.lineWidth = 1;
     }
 
+    // Z-order constants for element rendering (defined outside function for performance)
+    // Layer 0-9: Floor level (flooring, rugs)
+    // Layer 10-19: Base level (cabinets, appliances on floor)
+    // Layer 20-29: Counter level (countertops, sinks)
+    // Layer 30-39: Above counter (backsplash, upper cabs)
+    // Layer 40-49: Wall fixtures (windows, doors, niches)
+    // Layer 50-59: Walls and partitions
+    // Layer 60+: Annotations, labels
+    const ELEMENT_Z_ORDER = {
+      // Floor level
+      'flooring': 0,
+      'tile': 1,
+      'rug': 2,
+      'threshold': 3,
+      'fireplace-hearth': 4,
+
+      // Base level
+      'island': 10,
+      'base-cabinet': 11,
+      'drawer-base': 11,
+      'sink-base': 11,
+      'corner-cabinet': 12,
+      'lazy-susan': 12,
+      'tall-cabinet': 13,
+      'pantry': 13,
+      'refrigerator': 14,
+      'oven': 14,
+      'dishwasher': 14,
+      'stove': 15,
+      'range': 15,
+      'cooktop': 16,
+
+      // Counter level
+      'countertop': 20,
+      'bar-top': 21,
+      'wall-cap': 21,
+      'sink': 22,
+      'sink-double': 22,
+      'sink-farmhouse': 22,
+
+      // Above counter
+      'backsplash': 30,
+      'wall-cabinet': 31,
+      'range-hood': 32,
+      'microwave': 32,
+
+      // Wall fixtures
+      'window': 40,
+      'bay-window': 40,
+      'picture-window': 40,
+      'door': 41,
+      'sliding-door': 41,
+      'french-door': 41,
+      'glass-door': 41,
+      'wall-niche': 42,
+      'shower-niche': 42,
+      'fireplace-niche': 43,
+      'tv-niche': 43,
+      'grab-bar': 44,
+      'grab-bar-24': 44,
+      'grab-bar-36': 44,
+      'grab-bar-42': 44,
+
+      // Walls and partitions
+      'wall': 50,
+      'wall-block': 50,
+      'wall-concrete': 50,
+      'wall-framed': 50,
+      'pony-wall': 51,
+      'pony-wall-bar': 51,
+      'knee-wall': 51,
+
+      // Fixtures and accessories (bathroom)
+      'toilet': 45,
+      'toilet-round': 45,
+      'toilet-wall': 45,
+      'bidet': 45,
+      'bathtub': 45,
+      'bathtub-freestanding': 45,
+      'bathtub-corner': 45,
+      'bathtub-walk-in': 45,
+      'shower': 45,
+      'shower-base-36': 5,
+      'shower-base-48': 5,
+      'shower-base-60': 5,
+      'vanity-24': 46,
+      'vanity-30': 46,
+      'vanity-36': 46,
+      'vanity-48': 46,
+      'vanity-60': 46,
+      'vanity-72': 46,
+      'shower-bench': 44,
+      'towel-warmer': 47,
+
+      // Laundry elements
+      'washer': 14,
+      'dryer': 14,
+      'washer-dryer-stack': 14,
+      'laundry-cabinet': 13,
+      'ironing-board': 15,
+      'utility-sink': 22,
+      'laundry-sink': 22,
+      'drying-rack': 47,
+
+      // Closet elements
+      'closet-rod': 35,
+      'closet-shelf': 36,
+      'drawer-unit': 13,
+      'closet-drawers': 13,
+      'shoe-rack': 12,
+      'closet-island': 11,
+      'jewelry-cabinet': 46,
+      'jewelry-drawer': 46,
+      'tie-rack': 37,
+      'full-mirror': 48,
+
+      // Decorative
+      'crown-molding': 55,
+      'mantel': 55,
+      'fireplace-surround': 55,
+      'niche-surround': 55
+    };
+
     function drawElements() {
-      // Define z-order for element types (lower = drawn first = below)
-      // Layer 0-9: Floor level (flooring, rugs)
-      // Layer 10-19: Base level (cabinets, appliances on floor)
-      // Layer 20-29: Counter level (countertops, sinks)
-      // Layer 30-39: Above counter (backsplash, upper cabs)
-      // Layer 40-49: Wall fixtures (windows, doors, niches)
-      // Layer 50-59: Walls and partitions
-      // Layer 60+: Annotations, labels
-      const zOrder = {
-        // Floor level
-        'flooring': 0,
-        'tile': 1,
-        'rug': 2,
-        'threshold': 3,
-        'fireplace-hearth': 4,
-
-        // Base level
-        'island': 10,
-        'base-cabinet': 11,
-        'drawer-base': 11,
-        'sink-base': 11,
-        'corner-cabinet': 12,
-        'lazy-susan': 12,
-        'tall-cabinet': 13,
-        'pantry': 13,
-        'refrigerator': 14,
-        'oven': 14,
-        'dishwasher': 14,
-        'stove': 15,
-        'range': 15,
-        'cooktop': 16,
-
-        // Counter level
-        'countertop': 20,
-        'bar-top': 21,
-        'wall-cap': 21,
-        'sink': 22,
-        'sink-double': 22,
-        'sink-farmhouse': 22,
-
-        // Above counter
-        'backsplash': 30,
-        'wall-cabinet': 31,
-        'range-hood': 32,
-        'microwave': 32,
-
-        // Wall fixtures
-        'window': 40,
-        'bay-window': 40,
-        'picture-window': 40,
-        'door': 41,
-        'sliding-door': 41,
-        'french-door': 41,
-        'glass-door': 41,
-        'wall-niche': 42,
-        'shower-niche': 42,
-        'fireplace-niche': 43,
-        'tv-niche': 43,
-        'grab-bar': 44,
-        'grab-bar-24': 44,
-        'grab-bar-36': 44,
-        'grab-bar-42': 44,
-
-        // Walls and partitions
-        'wall': 50,
-        'wall-block': 50,
-        'wall-concrete': 50,
-        'wall-framed': 50,
-        'pony-wall': 51,
-        'pony-wall-bar': 51,
-        'knee-wall': 51,
-
-        // Fixtures and accessories (bathroom)
-        'toilet': 45,
-        'toilet-round': 45,
-        'toilet-wall': 45,
-        'bidet': 45,
-        'bathtub': 45,
-        'bathtub-freestanding': 45,
-        'bathtub-corner': 45,
-        'bathtub-walk-in': 45,
-        'shower': 45,
-        'shower-base-36': 5,
-        'shower-base-48': 5,
-        'shower-base-60': 5,
-        'vanity-24': 46,
-        'vanity-30': 46,
-        'vanity-36': 46,
-        'vanity-48': 46,
-        'vanity-60': 46,
-        'vanity-72': 46,
-        'shower-bench': 44,
-        'towel-warmer': 47,
-
-        // Laundry elements
-        'washer': 14,
-        'dryer': 14,
-        'washer-dryer-stack': 14,
-        'laundry-cabinet': 13,
-        'ironing-board': 15,
-        'utility-sink': 22,
-        'laundry-sink': 22,
-        'drying-rack': 47,
-
-        // Closet elements
-        'closet-rod': 35,
-        'closet-shelf': 36,
-        'drawer-unit': 13,
-        'closet-drawers': 13,
-        'shoe-rack': 12,
-        'closet-island': 11,
-        'jewelry-cabinet': 46,
-        'jewelry-drawer': 46,
-        'tie-rack': 37,
-        'full-mirror': 48,
-
-        // Decorative
-        'crown-molding': 55,
-        'mantel': 55,
-        'fireplace-surround': 55,
-        'niche-surround': 55
-      };
-
       // Filter out hidden elements based on visibility settings AND by current room
       const visibleElements = elements.filter(el => {
         if (el.hidden) return false;
@@ -31607,8 +33264,8 @@
         if (b === selectedElement) return -1;
 
         // Get base z-order from type
-        const aBase = zOrder[a.type] ?? 25;
-        const bBase = zOrder[b.type] ?? 25;
+        const aBase = ELEMENT_Z_ORDER[a.type] ?? 25;
+        const bBase = ELEMENT_Z_ORDER[b.type] ?? 25;
 
         // Apply custom zIndex offset if set (from send to back/bring to front)
         const aZ = aBase + (a.zIndexOffset || 0);
@@ -34822,8 +36479,8 @@
 
     // Update element layer list panel
     function updateElementList() {
-      const listContainer = document.getElementById('elementLayerList');
-      const countDisplay = document.getElementById('elementCountDisplay');
+      const listContainer = domCache.elementLayerList || document.getElementById('elementLayerList');
+      const countDisplay = domCache.elementCountDisplay || document.getElementById('elementCountDisplay');
       if (!listContainer) return;
 
       // Check if anything actually changed - skip rebuild if nothing changed
@@ -60478,8 +62135,11 @@
       renderQuoteItems(items, totalCost, totalRetail);
     }
 
+    // Throttled version for use in render loop (prevents excessive recalculations)
+    const calculateQuoteThrottled = throttle(calculateQuote, 250);
+
     function renderQuoteItems(items, totalCost, totalRetail) {
-      const quoteItems = document.getElementById('quoteItems');
+      const quoteItems = domCache.quoteItems || document.getElementById('quoteItems');
       const showCost = PRICING_STATE.showCostView;
       const canViewPrices = checkPermission('canViewPrices');
       const canViewCosts = checkPermission('canViewCosts');

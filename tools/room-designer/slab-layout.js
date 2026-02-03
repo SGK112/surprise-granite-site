@@ -23,14 +23,17 @@
     bladeKerf: 0.125, // 1/8 inch
     // Minimum gap between pieces (in inches)
     minGap: 0.25,
-    // Seam rules
-    seamRules: {
-      minDistanceFromEdge: 3, // inches
-      maxLength: 48, // inches - prefer shorter seams
-      avoidOverDishwasher: true,
-      avoidOverUnsupportedSpan: true,
-      preferNarrowSections: true
-    },
+    // Grid spacing in inches (1 foot)
+    gridSpacing: 12,
+    // Vein guide line spacing
+    veinLineSpacing: 20,
+    // Standard countertop depth
+    standardDepth: 25.5,
+    // Zoom constraints
+    minZoom: 0.5,
+    maxZoom: 5,
+    // Optimization step size (larger = faster but less precise)
+    optimizationStep: 2,
     // Colors
     colors: {
       piece: 'rgba(99, 102, 241, 0.6)',
@@ -40,7 +43,14 @@
       seamWarning: '#f59e0b',
       waste: 'rgba(239, 68, 68, 0.2)',
       veinLine: 'rgba(255, 255, 255, 0.3)',
-      grid: 'rgba(255, 255, 255, 0.1)'
+      grid: 'rgba(255, 255, 255, 0.1)',
+      background: '#1a1a2e',
+      slabBorder: '#6366f1'
+    },
+    // Yield thresholds
+    yieldThresholds: {
+      excellent: 85,
+      good: 70
     }
   };
 
@@ -57,22 +67,52 @@
     panX: 0,
     panY: 0,
     isDragging: false,
+    isPanning: false,
+    panStart: { x: 0, y: 0 },
     dragOffset: { x: 0, y: 0 },
     showGrid: true,
     showVeinGuide: false,
     veinAngle: 0, // degrees
     inventory: [], // Available slabs from inventory
-    selectedSlabId: null
+    canvasSize: { width: 0, height: 0 }, // Cached canvas dimensions
+    placeholderTexture: null // Cached placeholder texture
   };
 
-  // ===== DOM ELEMENTS =====
+  // ===== DOM ELEMENTS (cached for performance) =====
   let slabCanvas, slabCtx, slabPanel;
+  const domCache = {
+    cursorDisplay: null,
+    zoomDisplay: null,
+    statSlabArea: null,
+    statUsedArea: null,
+    statWasteArea: null,
+    statYieldPercent: null,
+    yieldBar: null,
+    yieldNote: null,
+    piecesList: null,
+    inventoryList: null
+  };
+
+  // Cache DOM elements for frequent access
+  function cacheDomElements() {
+    domCache.cursorDisplay = document.getElementById('slabCanvasCursor');
+    domCache.zoomDisplay = document.getElementById('slabCanvasZoom');
+    domCache.statSlabArea = document.getElementById('statSlabArea');
+    domCache.statUsedArea = document.getElementById('statUsedArea');
+    domCache.statWasteArea = document.getElementById('statWasteArea');
+    domCache.statYieldPercent = document.getElementById('statYieldPercent');
+    domCache.yieldBar = document.getElementById('yieldBar');
+    domCache.yieldNote = document.getElementById('yieldNote');
+    domCache.piecesList = document.getElementById('slabPiecesList');
+    domCache.inventoryList = document.getElementById('slabInventoryList');
+  }
 
   // ===== INITIALIZATION =====
   function init() {
     createSlabPanel();
     createSlabCanvas();
     bindEvents();
+    cacheDomElements();
     console.log('SlabLayout: Module initialized');
   }
 
@@ -384,9 +424,17 @@
   }
 
   function loadSlabImage(file) {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file', 'error');
+      return;
+    }
+
     const reader = new FileReader();
+
     reader.onload = (e) => {
       const img = new Image();
+
       img.onload = () => {
         state.slabImage = img;
         state.slabImageUrl = e.target.result;
@@ -394,8 +442,20 @@
         render();
         showToast('Slab image loaded', 'success');
       };
+
+      img.onerror = () => {
+        showToast('Failed to load image. Please try another file.', 'error');
+        state.slabImage = null;
+        state.slabImageUrl = null;
+      };
+
       img.src = e.target.result;
     };
+
+    reader.onerror = () => {
+      showToast('Failed to read file. Please try again.', 'error');
+    };
+
     reader.readAsDataURL(file);
   }
 
@@ -445,10 +505,9 @@
     const x = (rawX - state.panX) / state.scale;
     const y = (rawY - state.panY) / state.scale;
 
-    // Update cursor position display
-    const cursorDisplay = document.getElementById('slabCanvasCursor');
-    if (cursorDisplay) {
-      cursorDisplay.textContent = `${x.toFixed(1)}", ${y.toFixed(1)}"`;
+    // Update cursor position display (using cached element)
+    if (domCache.cursorDisplay) {
+      domCache.cursorDisplay.textContent = `${x.toFixed(1)}", ${y.toFixed(1)}"`;
     }
 
     if (state.isDragging && state.selectedPiece) {
@@ -500,8 +559,15 @@
     state.panY = y - (y - state.panY) * (newScale / state.scale);
     state.scale = newScale;
 
-    document.getElementById('slabCanvasZoom').textContent = `${Math.round(state.scale * 100)}%`;
+    updateZoomDisplay();
     render();
+  }
+
+  // Helper to update zoom display
+  function updateZoomDisplay() {
+    if (domCache.zoomDisplay) {
+      domCache.zoomDisplay.textContent = `${Math.round(state.scale * 100)}%`;
+    }
   }
 
   function handleKeyDown(e) {
@@ -541,14 +607,21 @@
   function render() {
     if (!slabCtx || !slabCanvas) return;
 
+    // Only resize canvas if container size changed (expensive operation)
     const container = slabCanvas.parentElement;
     if (container) {
-      slabCanvas.width = container.clientWidth;
-      slabCanvas.height = container.clientHeight;
+      const newWidth = container.clientWidth;
+      const newHeight = container.clientHeight;
+      if (state.canvasSize.width !== newWidth || state.canvasSize.height !== newHeight) {
+        slabCanvas.width = newWidth;
+        slabCanvas.height = newHeight;
+        state.canvasSize.width = newWidth;
+        state.canvasSize.height = newHeight;
+      }
     }
 
     // Clear canvas
-    slabCtx.fillStyle = '#1a1a2e';
+    slabCtx.fillStyle = CONFIG.colors.background;
     slabCtx.fillRect(0, 0, slabCanvas.width, slabCanvas.height);
 
     slabCtx.save();
@@ -582,7 +655,7 @@
     });
 
     // Draw slab border
-    slabCtx.strokeStyle = '#6366f1';
+    slabCtx.strokeStyle = CONFIG.colors.slabBorder;
     slabCtx.lineWidth = 2 / state.scale;
     slabCtx.strokeRect(0, 0, state.slabDimensions.width, state.slabDimensions.height);
 
@@ -602,28 +675,35 @@
         state.slabDimensions.height
       );
     } else {
-      // Draw placeholder slab texture
-      const gradient = slabCtx.createLinearGradient(0, 0, state.slabDimensions.width, state.slabDimensions.height);
-      gradient.addColorStop(0, '#4a4a5a');
-      gradient.addColorStop(0.3, '#5a5a6a');
-      gradient.addColorStop(0.7, '#4a4a5a');
-      gradient.addColorStop(1, '#3a3a4a');
-      slabCtx.fillStyle = gradient;
-      slabCtx.fillRect(0, 0, state.slabDimensions.width, state.slabDimensions.height);
+      // Draw placeholder slab texture (use cached if available)
+      drawPlaceholderTexture();
+    }
+  }
 
-      // Add some veining effect
-      slabCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      slabCtx.lineWidth = 2;
-      for (let i = 0; i < 5; i++) {
-        slabCtx.beginPath();
-        slabCtx.moveTo(Math.random() * state.slabDimensions.width, 0);
-        slabCtx.bezierCurveTo(
-          Math.random() * state.slabDimensions.width, state.slabDimensions.height * 0.3,
-          Math.random() * state.slabDimensions.width, state.slabDimensions.height * 0.7,
-          Math.random() * state.slabDimensions.width, state.slabDimensions.height
-        );
-        slabCtx.stroke();
-      }
+  // Create and cache placeholder texture for performance
+  function drawPlaceholderTexture() {
+    const gradient = slabCtx.createLinearGradient(0, 0, state.slabDimensions.width, state.slabDimensions.height);
+    gradient.addColorStop(0, '#4a4a5a');
+    gradient.addColorStop(0.3, '#5a5a6a');
+    gradient.addColorStop(0.7, '#4a4a5a');
+    gradient.addColorStop(1, '#3a3a4a');
+    slabCtx.fillStyle = gradient;
+    slabCtx.fillRect(0, 0, state.slabDimensions.width, state.slabDimensions.height);
+
+    // Draw consistent veining effect (seeded by slab dimensions for consistency)
+    slabCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    slabCtx.lineWidth = 2;
+    const seed = state.slabDimensions.width + state.slabDimensions.height;
+    for (let i = 0; i < 5; i++) {
+      const offset = (seed * (i + 1) * 0.1) % 1;
+      slabCtx.beginPath();
+      slabCtx.moveTo(offset * state.slabDimensions.width, 0);
+      slabCtx.bezierCurveTo(
+        ((offset + 0.3) % 1) * state.slabDimensions.width, state.slabDimensions.height * 0.3,
+        ((offset + 0.6) % 1) * state.slabDimensions.width, state.slabDimensions.height * 0.7,
+        ((offset + 0.2) % 1) * state.slabDimensions.width, state.slabDimensions.height
+      );
+      slabCtx.stroke();
     }
   }
 
@@ -631,14 +711,18 @@
     slabCtx.strokeStyle = CONFIG.colors.grid;
     slabCtx.lineWidth = 0.5 / state.scale;
 
-    // Draw 1-inch grid
-    for (let x = 0; x <= state.slabDimensions.width; x += 12) { // Every foot
+    const spacing = CONFIG.gridSpacing; // Grid lines every foot (12 inches)
+
+    // Draw vertical grid lines
+    for (let x = 0; x <= state.slabDimensions.width; x += spacing) {
       slabCtx.beginPath();
       slabCtx.moveTo(x, 0);
       slabCtx.lineTo(x, state.slabDimensions.height);
       slabCtx.stroke();
     }
-    for (let y = 0; y <= state.slabDimensions.height; y += 12) {
+
+    // Draw horizontal grid lines
+    for (let y = 0; y <= state.slabDimensions.height; y += spacing) {
       slabCtx.beginPath();
       slabCtx.moveTo(0, y);
       slabCtx.lineTo(state.slabDimensions.width, y);
@@ -651,6 +735,7 @@
     const centerY = state.slabDimensions.height / 2;
     const angle = state.veinAngle * Math.PI / 180;
     const length = Math.max(state.slabDimensions.width, state.slabDimensions.height);
+    const spacing = CONFIG.veinLineSpacing;
 
     slabCtx.save();
     slabCtx.strokeStyle = CONFIG.colors.veinLine;
@@ -658,14 +743,14 @@
     slabCtx.setLineDash([10, 5]);
 
     // Draw multiple parallel lines to show vein direction
-    for (let offset = -length; offset <= length; offset += 20) {
-      slabCtx.beginPath();
-      const perpAngle = angle + Math.PI / 2;
+    const perpAngle = angle + Math.PI / 2;
+    for (let offset = -length; offset <= length; offset += spacing) {
       const startX = centerX + Math.cos(perpAngle) * offset - Math.cos(angle) * length;
       const startY = centerY + Math.sin(perpAngle) * offset - Math.sin(angle) * length;
       const endX = centerX + Math.cos(perpAngle) * offset + Math.cos(angle) * length;
       const endY = centerY + Math.sin(perpAngle) * offset + Math.sin(angle) * length;
 
+      slabCtx.beginPath();
       slabCtx.moveTo(startX, startY);
       slabCtx.lineTo(endX, endY);
       slabCtx.stroke();
@@ -677,47 +762,61 @@
   function drawPiece(piece, isSelected) {
     slabCtx.save();
 
+    const centerX = piece.x + piece.width / 2;
+    const centerY = piece.y + piece.height / 2;
+
     // Piece fill
     slabCtx.fillStyle = isSelected ? CONFIG.colors.pieceSelected : CONFIG.colors.piece;
     slabCtx.fillRect(piece.x, piece.y, piece.width, piece.height);
 
     // Piece border
     slabCtx.strokeStyle = isSelected ? '#fff' : CONFIG.colors.pieceBorder;
-    slabCtx.lineWidth = isSelected ? 3 / state.scale : 2 / state.scale;
+    slabCtx.lineWidth = (isSelected ? 3 : 2) / state.scale;
     slabCtx.strokeRect(piece.x, piece.y, piece.width, piece.height);
 
-    // Piece label
-    const fontSize = Math.max(10, 14 / state.scale);
-    slabCtx.font = `bold ${fontSize}px Inter, sans-serif`;
-    slabCtx.fillStyle = '#fff';
-    slabCtx.textAlign = 'center';
-    slabCtx.textBaseline = 'middle';
+    // Draw labels only if piece is large enough
+    const minLabelSize = 20 / state.scale;
+    if (piece.width >= minLabelSize && piece.height >= minLabelSize) {
+      const fontSize = Math.max(10, 14 / state.scale);
 
-    const label = piece.label || `Piece ${piece.id}`;
-    const dims = `${piece.width}" × ${piece.height}"`;
+      // Piece label
+      slabCtx.font = `bold ${fontSize}px Inter, sans-serif`;
+      slabCtx.fillStyle = '#fff';
+      slabCtx.textAlign = 'center';
+      slabCtx.textBaseline = 'middle';
 
-    slabCtx.fillText(label, piece.x + piece.width / 2, piece.y + piece.height / 2 - fontSize / 2);
+      const label = piece.label || `Piece ${piece.id}`;
+      slabCtx.fillText(label, centerX, centerY - fontSize / 2);
 
-    slabCtx.font = `${fontSize * 0.8}px Inter, sans-serif`;
-    slabCtx.fillStyle = 'rgba(255,255,255,0.8)';
-    slabCtx.fillText(dims, piece.x + piece.width / 2, piece.y + piece.height / 2 + fontSize / 2);
+      // Dimensions
+      const dims = `${piece.width}" × ${piece.height}"`;
+      slabCtx.font = `${fontSize * 0.8}px Inter, sans-serif`;
+      slabCtx.fillStyle = 'rgba(255,255,255,0.8)';
+      slabCtx.fillText(dims, centerX, centerY + fontSize / 2);
+    }
 
     // Selection handles
     if (isSelected) {
-      const handleSize = 8 / state.scale;
-      slabCtx.fillStyle = '#fff';
-      const handles = [
-        { x: piece.x, y: piece.y },
-        { x: piece.x + piece.width, y: piece.y },
-        { x: piece.x, y: piece.y + piece.height },
-        { x: piece.x + piece.width, y: piece.y + piece.height }
-      ];
-      handles.forEach(h => {
-        slabCtx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-      });
+      drawSelectionHandles(piece);
     }
 
     slabCtx.restore();
+  }
+
+  function drawSelectionHandles(piece) {
+    const handleSize = 8 / state.scale;
+    slabCtx.fillStyle = '#fff';
+
+    const handles = [
+      { x: piece.x, y: piece.y },
+      { x: piece.x + piece.width, y: piece.y },
+      { x: piece.x, y: piece.y + piece.height },
+      { x: piece.x + piece.width, y: piece.y + piece.height }
+    ];
+
+    handles.forEach(h => {
+      slabCtx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
+    });
   }
 
   function drawSeam(seam) {
@@ -745,13 +844,11 @@
     slabCtx.restore();
   }
 
+  // Placeholder for future waste area visualization
+  // TODO: Implement polygon clipping for accurate waste region display
   function drawWasteAreas() {
-    // Calculate and draw areas not covered by pieces
-    // This is a simplified version - full implementation would use polygon clipping
-    slabCtx.fillStyle = CONFIG.colors.waste;
-
-    // For now, just highlight areas outside pieces
-    // A more sophisticated version would compute exact waste regions
+    // Currently not implemented - would require polygon clipping
+    // to accurately show waste areas between placed pieces
   }
 
   function drawDimensionLabels() {
@@ -801,19 +898,21 @@
       const widthInches = ct.width * 12;
       const heightInches = ct.height * 12;
 
+      const depth = CONFIG.standardDepth;
+
       // For L and U shapes, break into rectangles
       if (ct.type === 'countertop-l') {
         // L-shape: two rectangles
         addPiece({
           label: `${ct.label || 'L-Counter'} - Long`,
           width: widthInches,
-          height: 25.5, // Standard depth
+          height: depth,
           sourceElement: ct
         });
         addPiece({
           label: `${ct.label || 'L-Counter'} - Short`,
-          width: 25.5,
-          height: heightInches - 25.5,
+          width: depth,
+          height: heightInches - depth,
           sourceElement: ct
         });
         addedCount += 2;
@@ -821,19 +920,19 @@
         // U-shape: three rectangles
         addPiece({
           label: `${ct.label || 'U-Counter'} - Left`,
-          width: 25.5,
+          width: depth,
           height: heightInches,
           sourceElement: ct
         });
         addPiece({
           label: `${ct.label || 'U-Counter'} - Back`,
-          width: widthInches - 51,
-          height: 25.5,
+          width: widthInches - (depth * 2),
+          height: depth,
           sourceElement: ct
         });
         addPiece({
           label: `${ct.label || 'U-Counter'} - Right`,
-          width: 25.5,
+          width: depth,
           height: heightInches,
           sourceElement: ct
         });
@@ -863,10 +962,10 @@
     const piece = {
       id: Date.now() + Math.random(),
       label: options.label || `Piece ${state.pieces.length + 1}`,
-      x: options.x ?? 10,
-      y: options.y ?? 10,
+      x: options.x ?? CONFIG.minGap,
+      y: options.y ?? CONFIG.minGap,
       width: options.width || 36, // Default 3 feet
-      height: options.height || 25.5, // Standard 25.5" depth
+      height: options.height || CONFIG.standardDepth,
       rotation: options.rotation || 0,
       sourceElement: options.sourceElement || null,
       edgeProfile: options.edgeProfile || 'eased',
@@ -879,14 +978,23 @@
 
   function addPieceManually() {
     const width = prompt('Enter width in inches:', '36');
-    const height = prompt('Enter height (depth) in inches:', '25.5');
+    const height = prompt('Enter height (depth) in inches:', String(CONFIG.standardDepth));
     const label = prompt('Enter piece label:', `Piece ${state.pieces.length + 1}`);
 
     if (width && height) {
+      const parsedWidth = parseFloat(width);
+      const parsedHeight = parseFloat(height);
+
+      // Validate dimensions
+      if (isNaN(parsedWidth) || isNaN(parsedHeight) || parsedWidth <= 0 || parsedHeight <= 0) {
+        showToast('Invalid dimensions. Please enter positive numbers.', 'error');
+        return;
+      }
+
       addPiece({
         label: label || undefined,
-        width: parseFloat(width),
-        height: parseFloat(height)
+        width: parsedWidth,
+        height: parsedHeight
       });
 
       autoArrangePieces();
@@ -980,12 +1088,13 @@
   }
 
   function findBestLayout(pieces) {
-    // Bottom-left bin packing algorithm
+    // Bottom-left bin packing algorithm with optimizations
     const positions = [];
     const placed = [];
     const slabW = state.slabDimensions.width;
     const slabH = state.slabDimensions.height;
     const gap = CONFIG.minGap + CONFIG.bladeKerf;
+    const step = CONFIG.optimizationStep; // Larger step = faster but less precise
 
     for (const piece of pieces) {
       let bestPos = null;
@@ -998,14 +1107,17 @@
       ];
 
       for (const orient of orientations) {
-        // Try each position
-        for (let y = 0; y <= slabH - orient.h; y += 1) {
-          for (let x = 0; x <= slabW - orient.w; x += 1) {
+        // Skip if piece doesn't fit in this orientation
+        if (orient.w > slabW || orient.h > slabH) continue;
+
+        // Try each position with step size for optimization
+        for (let y = 0; y <= slabH - orient.h; y += step) {
+          for (let x = 0; x <= slabW - orient.w; x += step) {
+            // Early termination: if we found a position at y=0, x=0, it's optimal
+            if (bestPos && bestPos.y === 0 && bestPos.x < step) break;
+
             // Check if position is valid (no overlaps)
-            const overlaps = placed.some(p =>
-              !(x + orient.w + gap <= p.x || x >= p.x + p.w + gap ||
-                y + orient.h + gap <= p.y || y >= p.y + p.h + gap)
-            );
+            const overlaps = checkOverlapsWithPlaced(x, y, orient.w, orient.h, placed, gap);
 
             if (!overlaps) {
               // Score: prefer bottom-left positions
@@ -1016,6 +1128,8 @@
               }
             }
           }
+          // Early termination at row level
+          if (bestPos && bestPos.y === 0) break;
         }
       }
 
@@ -1030,6 +1144,17 @@
     return positions;
   }
 
+  // Helper function to check overlaps with placed pieces
+  function checkOverlapsWithPlaced(x, y, w, h, placed, gap) {
+    for (const p of placed) {
+      if (!(x + w + gap <= p.x || x >= p.x + p.w + gap ||
+            y + h + gap <= p.y || y >= p.y + p.h + gap)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // ===== STATISTICS =====
   function calculateYield() {
     const slabArea = state.slabDimensions.width * state.slabDimensions.height;
@@ -1038,38 +1163,48 @@
   }
 
   function updateStats() {
+    // Calculate areas
     const slabAreaSqft = (state.slabDimensions.width * state.slabDimensions.height) / 144;
     const usedAreaSqft = state.pieces.reduce((sum, p) => sum + (p.width * p.height), 0) / 144;
     const wasteAreaSqft = slabAreaSqft - usedAreaSqft;
     const yieldPercent = calculateYield();
 
-    document.getElementById('statSlabArea').textContent = slabAreaSqft.toFixed(1);
-    document.getElementById('statUsedArea').textContent = usedAreaSqft.toFixed(1);
-    document.getElementById('statWasteArea').textContent = wasteAreaSqft.toFixed(1);
-    document.getElementById('statYieldPercent').textContent = `${yieldPercent.toFixed(0)}%`;
+    // Update stat displays using cached elements
+    if (domCache.statSlabArea) domCache.statSlabArea.textContent = slabAreaSqft.toFixed(1);
+    if (domCache.statUsedArea) domCache.statUsedArea.textContent = usedAreaSqft.toFixed(1);
+    if (domCache.statWasteArea) domCache.statWasteArea.textContent = wasteAreaSqft.toFixed(1);
+    if (domCache.statYieldPercent) domCache.statYieldPercent.textContent = `${yieldPercent.toFixed(0)}%`;
 
-    const yieldBar = document.getElementById('yieldBar');
-    if (yieldBar) {
-      yieldBar.style.width = `${yieldPercent}%`;
-      yieldBar.style.background = yieldPercent >= 85 ? '#10b981' :
-                                   yieldPercent >= 70 ? '#f59e0b' : '#ef4444';
+    // Update yield bar
+    if (domCache.yieldBar) {
+      domCache.yieldBar.style.width = `${yieldPercent}%`;
+      domCache.yieldBar.style.background =
+        yieldPercent >= CONFIG.yieldThresholds.excellent ? '#10b981' :
+        yieldPercent >= CONFIG.yieldThresholds.good ? '#f59e0b' : '#ef4444';
     }
 
-    const yieldNote = document.getElementById('yieldNote');
-    if (yieldNote) {
-      if (yieldPercent >= 85) {
-        yieldNote.textContent = 'Excellent yield! This is an efficient layout.';
-        yieldNote.style.color = '#10b981';
-      } else if (yieldPercent >= 70) {
-        yieldNote.textContent = 'Good yield. Try rotating pieces for better fit.';
-        yieldNote.style.color = '#f59e0b';
-      } else if (usedAreaSqft > 0) {
-        yieldNote.textContent = 'Low yield. Consider a smaller slab or rearranging pieces.';
-        yieldNote.style.color = '#ef4444';
-      } else {
-        yieldNote.textContent = 'Add countertop pieces to calculate yield.';
-        yieldNote.style.color = '#9ca3af';
-      }
+    // Update yield note
+    if (domCache.yieldNote) {
+      updateYieldNote(yieldPercent, usedAreaSqft);
+    }
+  }
+
+  function updateYieldNote(yieldPercent, usedAreaSqft) {
+    const note = domCache.yieldNote;
+    if (!note) return;
+
+    if (yieldPercent >= CONFIG.yieldThresholds.excellent) {
+      note.textContent = 'Excellent yield! This is an efficient layout.';
+      note.style.color = '#10b981';
+    } else if (yieldPercent >= CONFIG.yieldThresholds.good) {
+      note.textContent = 'Good yield. Try rotating pieces for better fit.';
+      note.style.color = '#f59e0b';
+    } else if (usedAreaSqft > 0) {
+      note.textContent = 'Low yield. Consider a smaller slab or rearranging pieces.';
+      note.style.color = '#ef4444';
+    } else {
+      note.textContent = 'Add countertop pieces to calculate yield.';
+      note.style.color = '#9ca3af';
     }
   }
 
@@ -1157,17 +1292,20 @@
   }
 
   function applyPreset(preset) {
-    if (CONFIG.slabSizes[preset]) {
-      const size = CONFIG.slabSizes[preset];
-      state.slabDimensions.width = size.width;
-      state.slabDimensions.height = size.height;
+    const size = CONFIG.slabSizes[preset];
+    if (!size) return;
 
-      document.getElementById('slabWidth').value = size.width;
-      document.getElementById('slabHeight').value = size.height;
+    state.slabDimensions.width = size.width;
+    state.slabDimensions.height = size.height;
 
-      render();
-      updateStats();
-    }
+    // Update input fields with null checks
+    const widthInput = document.getElementById('slabWidth');
+    const heightInput = document.getElementById('slabHeight');
+    if (widthInput) widthInput.value = size.width;
+    if (heightInput) heightInput.value = size.height;
+
+    render();
+    updateStats();
   }
 
   // ===== TABS & PANELS =====
@@ -1185,38 +1323,57 @@
 
   // ===== INVENTORY INTEGRATION =====
   async function loadInventory() {
-    const list = document.getElementById('slabInventoryList');
+    const list = domCache.inventoryList || document.getElementById('slabInventoryList');
     if (!list) return;
+
+    // Show loading state
+    list.innerHTML = '<p class="slab-inventory-empty">Loading inventory...</p>';
 
     try {
       const apiBase = window.SG_CONFIG?.API_URL || '';
-      const response = await fetch(`${apiBase}/api/marketplace/slabs?limit=50`);
 
-      if (!response.ok) throw new Error('Failed to load inventory');
+      // Fetch with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(`${apiBase}/api/marketplace/slabs?limit=50`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
-      state.inventory = data.slabs || [];
+
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format');
+      }
+
+      state.inventory = Array.isArray(data.slabs) ? data.slabs : [];
 
       if (state.inventory.length === 0) {
         list.innerHTML = '<p class="slab-inventory-empty">No slabs in inventory.</p>';
         return;
       }
 
-      list.innerHTML = state.inventory.map(slab => `
-        <div class="slab-inventory-item" onclick="SlabLayout.selectInventorySlab('${slab.id}')">
-          <img src="${slab.primary_image_url || slab.images?.[0] || '/assets/placeholder-slab.png'}"
-               alt="${slab.product_name || slab.name}"
-               onerror="this.src='/assets/placeholder-slab.png'">
-          <div class="slab-inventory-info">
-            <strong>${slab.product_name || slab.name}</strong>
-            <span>${slab.brand || ''} ${slab.material_type || ''}</span>
-            <span>${slab.length_inches || 120}" × ${slab.width_inches || 60}"</span>
-          </div>
-        </div>
-      `).join('');
+      list.innerHTML = state.inventory.map(renderInventoryItem).join('');
     } catch (err) {
       console.error('Failed to load inventory:', err);
-      list.innerHTML = '<p class="slab-inventory-empty">Could not load inventory. Check your connection.</p>';
+
+      // Provide specific error messages
+      let errorMessage = 'Could not load inventory.';
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (err.message.includes('HTTP')) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (!navigator.onLine) {
+        errorMessage = 'No internet connection.';
+      }
+
+      list.innerHTML = `<p class="slab-inventory-empty">${errorMessage}</p>`;
     }
   }
 
@@ -1234,53 +1391,88 @@
       return;
     }
 
-    list.innerHTML = filtered.map(slab => `
+    list.innerHTML = filtered.map(renderInventoryItem).join('');
+  }
+
+  // Reusable template for inventory items
+  function renderInventoryItem(slab) {
+    const imageUrl = slab.primary_image_url || slab.images?.[0] || '/assets/placeholder-slab.png';
+    const name = slab.product_name || slab.name || 'Unknown Slab';
+    const brand = slab.brand || '';
+    const material = slab.material_type || '';
+    const dimensions = `${slab.length_inches || 120}" × ${slab.width_inches || 60}"`;
+
+    return `
       <div class="slab-inventory-item" onclick="SlabLayout.selectInventorySlab('${slab.id}')">
-        <img src="${slab.primary_image_url || slab.images?.[0] || '/assets/placeholder-slab.png'}"
-             alt="${slab.product_name || slab.name}">
+        <img src="${imageUrl}" alt="${name}" onerror="this.src='/assets/placeholder-slab.png'">
         <div class="slab-inventory-info">
-          <strong>${slab.product_name || slab.name}</strong>
-          <span>${slab.brand || ''} ${slab.material_type || ''}</span>
+          <strong>${name}</strong>
+          <span>${brand} ${material}</span>
+          <span>${dimensions}</span>
         </div>
       </div>
-    `).join('');
+    `;
   }
 
   function selectInventorySlab(slabId) {
     const slab = state.inventory.find(s => s.id === slabId);
-    if (!slab) return;
+    if (!slab) {
+      showToast('Slab not found', 'error');
+      return;
+    }
 
-    state.selectedSlabId = slabId;
+    // Update dimensions
     state.slabDimensions.width = slab.length_inches || 120;
     state.slabDimensions.height = slab.width_inches || 60;
 
-    document.getElementById('slabWidth').value = state.slabDimensions.width;
-    document.getElementById('slabHeight').value = state.slabDimensions.height;
-    document.getElementById('slabSizePreset').value = '';
+    // Update input fields with null checks
+    const widthInput = document.getElementById('slabWidth');
+    const heightInput = document.getElementById('slabHeight');
+    const presetSelect = document.getElementById('slabSizePreset');
+
+    if (widthInput) widthInput.value = state.slabDimensions.width;
+    if (heightInput) heightInput.value = state.slabDimensions.height;
+    if (presetSelect) presetSelect.value = '';
 
     // Load slab image
     const imageUrl = slab.primary_image_url || slab.images?.[0];
     if (imageUrl) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        state.slabImage = img;
-        state.slabImageUrl = imageUrl;
-        render();
-      };
-      img.onerror = () => {
-        state.slabImage = null;
-        render();
-      };
-      img.src = imageUrl;
+      loadImageFromUrl(imageUrl);
+    } else {
+      state.slabImage = null;
+      state.slabImageUrl = null;
+      render();
     }
 
     // Highlight selected item
     document.querySelectorAll('.slab-inventory-item').forEach(el => el.classList.remove('selected'));
-    event.target.closest('.slab-inventory-item')?.classList.add('selected');
+    if (event?.target) {
+      event.target.closest('.slab-inventory-item')?.classList.add('selected');
+    }
 
     showToast(`Selected: ${slab.product_name || slab.name}`, 'success');
     updateStats();
+  }
+
+  // Helper to load image from URL with error handling
+  function loadImageFromUrl(imageUrl) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      state.slabImage = img;
+      state.slabImageUrl = imageUrl;
+      render();
+    };
+
+    img.onerror = () => {
+      console.warn('Failed to load slab image:', imageUrl);
+      state.slabImage = null;
+      state.slabImageUrl = null;
+      render();
+    };
+
+    img.src = imageUrl;
   }
 
   // ===== VEIN GUIDE =====
@@ -1304,14 +1496,14 @@
   }
 
   function zoomIn() {
-    state.scale = Math.min(5, state.scale * 1.2);
-    document.getElementById('slabCanvasZoom').textContent = `${Math.round(state.scale * 100)}%`;
+    state.scale = Math.min(CONFIG.maxZoom, state.scale * 1.2);
+    updateZoomDisplay();
     render();
   }
 
   function zoomOut() {
-    state.scale = Math.max(0.5, state.scale / 1.2);
-    document.getElementById('slabCanvasZoom').textContent = `${Math.round(state.scale * 100)}%`;
+    state.scale = Math.max(CONFIG.minZoom, state.scale / 1.2);
+    updateZoomDisplay();
     render();
   }
 
@@ -1322,11 +1514,11 @@
     const scaleX = (slabCanvas.width - padding * 2) / state.slabDimensions.width;
     const scaleY = (slabCanvas.height - padding * 2) / state.slabDimensions.height;
 
-    state.scale = Math.min(scaleX, scaleY, 3);
+    state.scale = Math.min(scaleX, scaleY, CONFIG.maxZoom);
     state.panX = (slabCanvas.width - state.slabDimensions.width * state.scale) / 2;
     state.panY = (slabCanvas.height - state.slabDimensions.height * state.scale) / 2;
 
-    document.getElementById('slabCanvasZoom').textContent = `${Math.round(state.scale * 100)}%`;
+    updateZoomDisplay();
     render();
   }
 
@@ -1456,19 +1648,28 @@
 
   // ===== PUBLIC API =====
   window.SlabLayout = {
+    // Lifecycle
     init,
     open,
     close,
     toggle,
+
+    // Piece management
     importFromDesign,
     addPieceManually,
-    autoOptimize,
-    generateCutSheet,
     selectPiece,
     rotatePieceByIndex,
     removePieceByIndex,
+
+    // Layout operations
+    autoOptimize,
+    generateCutSheet,
+
+    // Slab configuration
     updateSlabSize,
     applyPreset,
+
+    // UI controls
     showSourceTab,
     searchInventory,
     selectInventorySlab,
@@ -1478,10 +1679,12 @@
     zoomIn,
     zoomOut,
     fitToView,
-    toggleAutoSeams: (enabled) => { state.autoSeams = enabled; },
-    getState: () => state,
-    getPieces: () => state.pieces,
-    getYield: calculateYield
+
+    // State accessors (read-only)
+    getState: () => ({ ...state }), // Return copy to prevent mutation
+    getPieces: () => [...state.pieces], // Return copy
+    getYield: calculateYield,
+    isActive: () => state.isActive
   };
 
   // Auto-initialize when DOM is ready
