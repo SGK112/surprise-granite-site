@@ -39048,11 +39048,10 @@
 
         document.getElementById('cal-event-description').value = event.description || '';
 
-        // Load meeting format and trigger change handler
-        if (event.meeting_format) {
-          document.getElementById('cal-event-meeting-format').value = event.meeting_format;
-          handleMeetingFormatChange();
-        }
+        // Load meeting format from metadata and trigger change handler
+        const meetingFormat = event.metadata?.meeting_format || 'in_person';
+        document.getElementById('cal-event-meeting-format').value = meetingFormat;
+        handleMeetingFormatChange();
 
         // Load meeting details from metadata
         if (event.metadata && event.metadata.meeting_details) {
@@ -39094,7 +39093,7 @@
 
           if (contactName || contactEmail || contactPhone) {
             // Extract address from location for in-person meetings
-            const contactAddress = (event.meeting_format === 'in_person') ? (event.location || '') : '';
+            const contactAddress = (meetingFormat === 'in_person') ? (event.location || '') : '';
             selectCalEventContact(contactType, contactId, contactName, contactEmail, contactPhone, contactAddress);
           }
         }
@@ -41246,13 +41245,13 @@
           created_by: user.id,
           title,
           event_type: eventType,
-          meeting_format: meetingFormat,
           status: 'scheduled',
           start_time: startDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           location: location || null,
           description: description || null,
           metadata: {
+            meeting_format: meetingFormat,
             contact_name: contactName,
             contact_email: contactEmail,
             contact_phone: contactPhone,
