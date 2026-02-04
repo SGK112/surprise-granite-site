@@ -42,7 +42,7 @@ const getSmsService = () => {
 };
 
 // Default admin email
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mike@surprisegranite.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com';
 
 // Notification types and their default settings
 const NOTIFICATION_TYPES = {

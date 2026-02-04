@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const reminderService = require('../services/reminderService');
+const schedulerService = require('../services/schedulerService');
 const logger = require('../utils/logger');
 const { asyncHandler } = require('../middleware/errorHandler');
 
@@ -137,6 +138,92 @@ router.get('/stats', asyncHandler(async (req, res) => {
     success: true,
     period: 'last_7_days',
     stats: summary
+  });
+}));
+
+/**
+ * Get scheduler status
+ * GET /api/reminders/scheduler/status
+ */
+router.get('/scheduler/status', asyncHandler(async (req, res) => {
+  const status = schedulerService.getStatus();
+  res.json({ success: true, scheduler: status });
+}));
+
+/**
+ * Control scheduler (start/stop)
+ * POST /api/reminders/scheduler/control
+ */
+router.post('/scheduler/control', asyncHandler(async (req, res) => {
+  const cronSecret = req.headers['x-cron-secret'];
+  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+
+  if (cronSecret !== expectedSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { action, config } = req.body;
+
+  switch (action) {
+    case 'start':
+      schedulerService.start();
+      break;
+    case 'stop':
+      schedulerService.stop();
+      break;
+    case 'restart':
+      schedulerService.stop();
+      schedulerService.start();
+      break;
+    case 'update-config':
+      if (config) {
+        schedulerService.updateConfig(config);
+      }
+      break;
+    default:
+      return res.status(400).json({ error: 'Invalid action. Use: start, stop, restart, update-config' });
+  }
+
+  const status = schedulerService.getStatus();
+  res.json({
+    success: true,
+    message: `Scheduler ${action} completed`,
+    scheduler: status
+  });
+}));
+
+/**
+ * Force run reminders now (bypasses interval)
+ * POST /api/reminders/run-now
+ */
+router.post('/run-now', asyncHandler(async (req, res) => {
+  const cronSecret = req.headers['x-cron-secret'];
+  const expectedSecret = process.env.CRON_SECRET || 'sg-reminder-cron-2024';
+
+  if (cronSecret !== expectedSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { type = 'all' } = req.body;
+
+  let result;
+  switch (type) {
+    case 'appointments':
+      result = await schedulerService.runAppointmentReminders();
+      break;
+    case 'full':
+      result = await schedulerService.runFullReminders();
+      break;
+    case 'all':
+    default:
+      result = await reminderService.processAllReminders();
+      break;
+  }
+
+  res.json({
+    success: true,
+    message: `Ran ${type} reminders`,
+    result
   });
 }));
 

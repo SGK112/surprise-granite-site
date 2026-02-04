@@ -36,6 +36,23 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
 // VALIDATION SCHEMAS
 // ============================================================
 
+// Recurrence rule schema (RRULE-like format)
+const recurrenceRuleSchema = Joi.object({
+  frequency: Joi.string().valid('daily', 'weekly', 'monthly', 'yearly').required(),
+  interval: Joi.number().integer().min(1).max(100).default(1),
+  daysOfWeek: Joi.array().items(Joi.number().integer().min(0).max(6)).allow(null), // 0=Sun, 6=Sat
+  dayOfMonth: Joi.number().integer().min(1).max(31).allow(null),
+  monthOfYear: Joi.number().integer().min(1).max(12).allow(null),
+  weekOfMonth: Joi.number().integer().min(-1).max(5).allow(null), // -1=last
+  endType: Joi.string().valid('never', 'count', 'until').default('never'),
+  count: Joi.number().integer().min(1).max(365).when('endType', {
+    is: 'count', then: Joi.required(), otherwise: Joi.optional()
+  }),
+  until: Joi.date().iso().when('endType', {
+    is: 'until', then: Joi.required(), otherwise: Joi.optional()
+  })
+});
+
 const schemas = {
   createEvent: Joi.object({
     title: Joi.string().max(200).trim().required(),
@@ -63,7 +80,12 @@ const schemas = {
       phone: Joi.string().max(50).allow('', null),
       role: Joi.string().max(50).allow('', null),
       participant_type: Joi.string().valid('organizer', 'attendee', 'optional', 'resource').default('attendee')
-    })).default([])
+    })).default([]),
+    // Recurrence fields
+    is_recurring: Joi.boolean().default(false),
+    recurrence_rule: recurrenceRuleSchema.allow(null).when('is_recurring', {
+      is: true, then: Joi.required(), otherwise: Joi.optional()
+    })
   }),
 
   updateEvent: Joi.object({
@@ -340,24 +362,25 @@ function isBusinessDay(date) {
 }
 
 /**
- * Generate time slots for a given date
+ * Generate time slots for a given date (Arizona timezone)
  */
 function generateTimeSlots(date, durationMinutes = 60) {
   const slots = [];
   const dateStr = date.toISOString().split('T')[0];
 
   for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
-    // Generate slots at the start of each hour
-    const slotStart = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00`);
+    // Generate slots at the start of each hour (Arizona timezone - MST, no DST)
+    const slotStart = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00${ARIZONA_TIMEZONE_OFFSET}`);
     const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60 * 1000);
 
-    // Only add slot if it ends within business hours
-    if (slotEnd.getHours() <= BUSINESS_HOURS.end) {
+    // Only add slot if it ends within business hours (check in Arizona time)
+    const endHourAZ = new Date(slotEnd.toLocaleString('en-US', { timeZone: 'America/Phoenix' })).getHours();
+    if (endHourAZ <= BUSINESS_HOURS.end) {
       slots.push({
         start: slotStart.toISOString(),
         end: slotEnd.toISOString(),
         startTime: `${hour.toString().padStart(2, '0')}:00`,
-        endTime: `${slotEnd.getHours().toString().padStart(2, '0')}:${slotEnd.getMinutes().toString().padStart(2, '0')}`
+        endTime: `${String(endHourAZ).padStart(2, '0')}:${String(slotEnd.getMinutes()).padStart(2, '0')}`
       });
     }
   }
@@ -372,10 +395,196 @@ async function getCalendarOwnerId(supabaseClient) {
   const { data: adminUser } = await supabaseClient
     .from('sg_users')
     .select('id')
-    .eq('email', process.env.ADMIN_EMAIL || 'mike@surprisegranite.com')
+    .eq('email', process.env.ADMIN_EMAIL || 'joshb@surprisegranite.com')
     .single();
 
   return adminUser?.id || '00000000-0000-0000-0000-000000000000';
+}
+
+/**
+ * Arizona timezone offset (MST, no DST)
+ */
+const ARIZONA_TIMEZONE_OFFSET = '-07:00';
+
+// ============================================================
+// RECURRENCE HELPER FUNCTIONS
+// ============================================================
+
+/**
+ * Generate occurrence dates for a recurring event
+ * @param {Date} startTime - Original event start time
+ * @param {Object} recurrenceRule - Recurrence rule object
+ * @param {Date} rangeStart - Start of date range to generate
+ * @param {Date} rangeEnd - End of date range to generate
+ * @param {Array} excludedDates - Dates to skip
+ * @returns {Array} Array of occurrence Date objects
+ */
+function generateRecurrenceOccurrences(startTime, recurrenceRule, rangeStart, rangeEnd, excludedDates = []) {
+  const occurrences = [];
+  const maxOccurrences = 365; // Safety limit
+
+  if (!recurrenceRule || !recurrenceRule.frequency) {
+    return occurrences;
+  }
+
+  const { frequency, interval = 1, daysOfWeek, endType, count, until } = recurrenceRule;
+  let current = new Date(startTime);
+  let occurrenceCount = 0;
+
+  // For weekly recurrence with specific days, track week boundaries
+  let weekStartDate = null;
+  if (frequency === 'weekly' && daysOfWeek && daysOfWeek.length > 0) {
+    weekStartDate = new Date(current);
+  }
+
+  while (occurrenceCount < maxOccurrences) {
+    // Check termination conditions
+    if (endType === 'count' && occurrenceCount >= count) break;
+    if (endType === 'until' && current > new Date(until)) break;
+    if (current > rangeEnd) break;
+
+    // Check if within range and not excluded
+    const currentStr = current.toISOString().split('T')[0];
+    const isExcluded = excludedDates.some(d => {
+      const exDate = new Date(d);
+      return exDate.toISOString().split('T')[0] === currentStr;
+    });
+
+    if (current >= rangeStart && current <= rangeEnd && !isExcluded) {
+      // For weekly with specific days, check if day matches
+      if (frequency === 'weekly' && daysOfWeek && daysOfWeek.length > 0) {
+        if (daysOfWeek.includes(current.getDay())) {
+          occurrences.push(new Date(current));
+        }
+      } else {
+        occurrences.push(new Date(current));
+      }
+    }
+
+    occurrenceCount++;
+
+    // Calculate next occurrence
+    switch (frequency) {
+      case 'daily':
+        current = new Date(current.getTime() + interval * 24 * 60 * 60 * 1000);
+        break;
+      case 'weekly':
+        if (daysOfWeek && daysOfWeek.length > 0) {
+          // Move to next day, staying within the interval-week pattern
+          current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+          // If we've passed a week boundary, jump ahead by interval-1 weeks
+          const daysSinceStart = Math.floor((current - weekStartDate) / (24 * 60 * 60 * 1000));
+          if (daysSinceStart >= 7 * interval) {
+            weekStartDate = new Date(current);
+          }
+        } else {
+          current = new Date(current.getTime() + interval * 7 * 24 * 60 * 60 * 1000);
+        }
+        break;
+      case 'monthly':
+        current.setMonth(current.getMonth() + interval);
+        break;
+      case 'yearly':
+        current.setFullYear(current.getFullYear() + interval);
+        break;
+    }
+  }
+
+  return occurrences;
+}
+
+/**
+ * Expand a recurring event into virtual instances for a date range
+ * @param {Object} event - The master recurring event
+ * @param {Date} rangeStart - Start of range
+ * @param {Date} rangeEnd - End of range
+ * @param {Array} existingExceptions - Existing exception instances
+ * @returns {Array} Array of expanded event instances
+ */
+function expandRecurringEvent(event, rangeStart, rangeEnd, existingExceptions = []) {
+  if (!event.is_recurring || !event.recurrence_rule) {
+    return [event];
+  }
+
+  const eventDuration = new Date(event.end_time) - new Date(event.start_time);
+  const occurrences = generateRecurrenceOccurrences(
+    new Date(event.start_time),
+    event.recurrence_rule,
+    rangeStart,
+    rangeEnd,
+    event.excluded_dates || []
+  );
+
+  // Get dates that have exceptions
+  const exceptionDates = new Set(
+    existingExceptions.map(ex =>
+      new Date(ex.original_start_time || ex.start_time).toISOString().split('T')[0]
+    )
+  );
+
+  const expandedEvents = [];
+
+  for (const occurrenceDate of occurrences) {
+    const dateStr = occurrenceDate.toISOString().split('T')[0];
+
+    // Skip if there's an exception for this date
+    if (exceptionDates.has(dateStr)) {
+      continue;
+    }
+
+    // Create virtual instance
+    expandedEvents.push({
+      ...event,
+      id: `${event.id}_${dateStr}`, // Virtual ID
+      start_time: occurrenceDate.toISOString(),
+      end_time: new Date(occurrenceDate.getTime() + eventDuration).toISOString(),
+      recurring_event_id: event.id,
+      original_start_time: occurrenceDate.toISOString(),
+      is_virtual_instance: true // Flag to indicate this isn't stored in DB
+    });
+  }
+
+  return expandedEvents;
+}
+
+/**
+ * Get human-readable recurrence description
+ * @param {Object} rule - Recurrence rule
+ * @returns {string} Human-readable description
+ */
+function getRecurrenceDescription(rule) {
+  if (!rule) return '';
+
+  const { frequency, interval = 1, daysOfWeek, endType, count, until } = rule;
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  let desc = '';
+
+  // Frequency
+  if (interval === 1) {
+    desc = frequency === 'daily' ? 'Daily' :
+           frequency === 'weekly' ? 'Weekly' :
+           frequency === 'monthly' ? 'Monthly' :
+           frequency === 'yearly' ? 'Yearly' : '';
+  } else {
+    desc = `Every ${interval} ${frequency.replace('ly', '')}s`;
+  }
+
+  // Days of week for weekly
+  if (frequency === 'weekly' && daysOfWeek && daysOfWeek.length > 0) {
+    const days = daysOfWeek.map(d => dayNames[d]).join(', ');
+    desc += ` on ${days}`;
+  }
+
+  // End condition
+  if (endType === 'count') {
+    desc += `, ${count} times`;
+  } else if (endType === 'until') {
+    const untilDate = new Date(until);
+    desc += `, until ${untilDate.toLocaleDateString()}`;
+  }
+
+  return desc;
 }
 
 // ============================================================
@@ -629,8 +838,8 @@ router.post('/book',
       return res.status(400).json({ error: 'Invalid phone format' });
     }
 
-    // Parse and validate the requested datetime
-    const requestedStart = new Date(`${date}T${time}:00`);
+    // Parse and validate the requested datetime (Arizona timezone - MST, no DST)
+    const requestedStart = new Date(`${date}T${time}:00${ARIZONA_TIMEZONE_OFFSET}`);
     const requestedEnd = new Date(requestedStart.getTime() + duration_minutes * 60 * 1000);
     const now = new Date();
 
@@ -856,20 +1065,31 @@ router.post('/events',
   validateBody(schemas.createEvent),
   asyncHandler(async (req, res) => {
     const eventData = req.body;
-    const { participants, ...eventFields } = eventData;
+    // Extract participants and recurrence fields separately
+    const { participants, is_recurring, recurrence_rule, ...eventFields } = eventData;
 
     // Validate time range
     if (new Date(eventFields.end_time) <= new Date(eventFields.start_time)) {
       return res.status(400).json({ error: 'End time must be after start time' });
     }
 
+    // Build insert data - only include recurrence fields if provided
+    const insertData = {
+      ...eventFields,
+      created_by: req.user.id
+    };
+
+    // Add recurrence fields if the feature is being used
+    // (These columns must exist in DB after running recurring-events-migration.sql)
+    if (is_recurring) {
+      insertData.is_recurring = is_recurring;
+      insertData.recurrence_rule = recurrence_rule;
+    }
+
     // Create event
     const { data: event, error: eventError } = await supabase
       .from('calendar_events')
-      .insert({
-        ...eventFields,
-        created_by: req.user.id
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -949,15 +1169,35 @@ router.get('/events', verifyUser, asyncHandler(async (req, res) => {
     offset = 0
   } = req.query;
 
+  // Check if user is admin/super_admin - they see all events
+  const isAdmin = req.profile.role === 'super_admin' || req.profile.role === 'admin' || req.profile.account_type === 'admin' || req.profile.account_type === 'super_admin';
+
+  // First get events created by user
   let query = supabase
     .from('calendar_events')
     .select(`
       *,
       participants:calendar_event_participants(*)
     `)
-    .eq('created_by', req.user.id)
     .order('start_time', { ascending: true })
     .range(offset, parseInt(offset) + parseInt(limit) - 1);
+
+  // Admins see all events, regular users see only their own or where they're participants
+  if (!isAdmin) {
+    // Get event IDs where user is a participant
+    const { data: participantEvents } = await supabase
+      .from('calendar_event_participants')
+      .select('event_id')
+      .or(`user_id.eq.${req.user.id},email.ilike.${req.profile.email}`);
+
+    const participantEventIds = (participantEvents || []).map(p => p.event_id);
+
+    if (participantEventIds.length > 0) {
+      query = query.or(`created_by.eq.${req.user.id},id.in.(${participantEventIds.join(',')})`);
+    } else {
+      query = query.eq('created_by', req.user.id);
+    }
+  }
 
   if (start_date) {
     query = query.gte('start_time', start_date);
@@ -1003,18 +1243,38 @@ router.get('/events/upcoming', verifyUser, asyncHandler(async (req, res) => {
   const now = new Date();
   const endDate = new Date(now.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
 
-  const { data: events, error } = await supabase
+  // Check if user is admin - they see all events
+  const isAdmin = req.profile.role === 'super_admin' || req.profile.role === 'admin' || req.profile.account_type === 'admin' || req.profile.account_type === 'super_admin';
+
+  let query = supabase
     .from('calendar_events')
     .select(`
       id, title, event_type, start_time, end_time, location, status, color,
       participants:calendar_event_participants(id, name, email, response_status)
     `)
-    .eq('created_by', req.user.id)
     .gte('start_time', now.toISOString())
     .lte('start_time', endDate.toISOString())
     .neq('status', 'cancelled')
     .order('start_time', { ascending: true })
     .limit(20);
+
+  // Admins see all, others see only their own or where they're participants
+  if (!isAdmin) {
+    const { data: participantEvents } = await supabase
+      .from('calendar_event_participants')
+      .select('event_id')
+      .or(`user_id.eq.${req.user.id},email.ilike.${req.profile.email}`);
+
+    const participantEventIds = (participantEvents || []).map(p => p.event_id);
+
+    if (participantEventIds.length > 0) {
+      query = query.or(`created_by.eq.${req.user.id},id.in.(${participantEventIds.join(',')})`);
+    } else {
+      query = query.eq('created_by', req.user.id);
+    }
+  }
+
+  const { data: events, error } = await query;
 
   if (error) throw error;
 
@@ -1843,5 +2103,434 @@ async function autoCreateProjectEvent(supabaseClient, projectId, eventType, user
 
 // Export helper for use in other modules
 router.autoCreateProjectEvent = autoCreateProjectEvent;
+
+// ============================================================
+// RECURRING EVENTS MANAGEMENT
+// ============================================================
+
+/**
+ * GET /api/calendar/events/:id/recurrence
+ * Get recurrence info and upcoming occurrences
+ */
+router.get('/events/:id/recurrence', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { preview_days = 90 } = req.query;
+
+  const { data: event, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (!event.is_recurring) {
+    return res.status(400).json({ error: 'Event is not recurring' });
+  }
+
+  // Generate preview of upcoming occurrences
+  const now = new Date();
+  const rangeEnd = new Date(now.getTime() + parseInt(preview_days) * 24 * 60 * 60 * 1000);
+
+  // Get existing exceptions
+  const { data: exceptions } = await supabase
+    .from('calendar_events')
+    .select('id, start_time, original_start_time, is_exception, status')
+    .eq('recurring_event_id', id);
+
+  const occurrences = generateRecurrenceOccurrences(
+    new Date(event.start_time),
+    event.recurrence_rule,
+    now,
+    rangeEnd,
+    event.excluded_dates || []
+  );
+
+  res.json({
+    success: true,
+    event: {
+      id: event.id,
+      title: event.title,
+      is_recurring: true,
+      recurrence_rule: event.recurrence_rule,
+      recurrence_description: getRecurrenceDescription(event.recurrence_rule),
+      excluded_dates: event.excluded_dates || []
+    },
+    upcoming_occurrences: occurrences.map(d => d.toISOString()),
+    exceptions: exceptions || [],
+    preview_days: parseInt(preview_days)
+  });
+}));
+
+/**
+ * POST /api/calendar/events/:id/recurrence/exception
+ * Create an exception (modified instance) for a recurring event
+ */
+router.post('/events/:id/recurrence/exception', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { original_date, ...updates } = req.body;
+
+  if (!original_date) {
+    return res.status(400).json({ error: 'original_date is required' });
+  }
+
+  // Get the master event
+  const { data: masterEvent, error: masterError } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (masterError || !masterEvent) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (!masterEvent.is_recurring) {
+    return res.status(400).json({ error: 'Event is not recurring' });
+  }
+
+  // Check authorization
+  if (masterEvent.created_by !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  // Calculate the original occurrence time
+  const eventDuration = new Date(masterEvent.end_time) - new Date(masterEvent.start_time);
+  const originalStartTime = new Date(`${original_date}T${new Date(masterEvent.start_time).toISOString().split('T')[1]}`);
+  const originalEndTime = new Date(originalStartTime.getTime() + eventDuration);
+
+  // Create the exception event
+  const exceptionData = {
+    ...masterEvent,
+    id: undefined, // Let DB generate new ID
+    recurring_event_id: id,
+    original_start_time: originalStartTime.toISOString(),
+    is_exception: true,
+    is_recurring: false,
+    recurrence_rule: null,
+    excluded_dates: null,
+    start_time: updates.start_time || originalStartTime.toISOString(),
+    end_time: updates.end_time || originalEndTime.toISOString(),
+    title: updates.title || masterEvent.title,
+    description: updates.description !== undefined ? updates.description : masterEvent.description,
+    location: updates.location !== undefined ? updates.location : masterEvent.location,
+    location_address: updates.location_address !== undefined ? updates.location_address : masterEvent.location_address,
+    status: updates.status || masterEvent.status,
+    notes: updates.notes !== undefined ? updates.notes : masterEvent.notes,
+    created_at: undefined,
+    updated_at: undefined
+  };
+
+  const { data: exception, error: exError } = await supabase
+    .from('calendar_events')
+    .insert(exceptionData)
+    .select()
+    .single();
+
+  if (exError) throw exError;
+
+  logger.info('Recurring event exception created', {
+    masterId: id, exceptionId: exception.id, originalDate: original_date
+  });
+
+  res.status(201).json({ success: true, exception });
+}));
+
+/**
+ * DELETE /api/calendar/events/:id/recurrence/occurrence/:date
+ * Delete a single occurrence (add to excluded dates)
+ */
+router.delete('/events/:id/recurrence/occurrence/:date', verifyUser, asyncHandler(async (req, res) => {
+  const { id, date } = req.params;
+
+  // Get the master event
+  const { data: event, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (!event.is_recurring) {
+    return res.status(400).json({ error: 'Event is not recurring' });
+  }
+
+  // Check authorization
+  if (event.created_by !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  // Add date to excluded dates
+  const excludedDates = event.excluded_dates || [];
+  const excludeDateTime = new Date(`${date}T${new Date(event.start_time).toISOString().split('T')[1]}`);
+
+  if (!excludedDates.some(d => new Date(d).toISOString() === excludeDateTime.toISOString())) {
+    excludedDates.push(excludeDateTime.toISOString());
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from('calendar_events')
+    .update({ excluded_dates: excludedDates })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+
+  // Also delete any exception for this date
+  await supabase
+    .from('calendar_events')
+    .delete()
+    .eq('recurring_event_id', id)
+    .gte('original_start_time', `${date}T00:00:00`)
+    .lt('original_start_time', `${date}T23:59:59`);
+
+  logger.info('Recurring event occurrence deleted', { eventId: id, date });
+
+  res.json({ success: true, message: 'Occurrence deleted', excluded_dates: excludedDates });
+}));
+
+/**
+ * PATCH /api/calendar/events/:id/recurrence/rule
+ * Update the recurrence rule (affects future occurrences)
+ */
+router.patch('/events/:id/recurrence/rule', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { recurrence_rule, apply_to_future_only = false } = req.body;
+
+  // Get the master event
+  const { data: event, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (!event.is_recurring) {
+    return res.status(400).json({ error: 'Event is not recurring' });
+  }
+
+  // Check authorization
+  if (event.created_by !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  // Validate the new rule
+  const { error: validationError } = recurrenceRuleSchema.validate(recurrence_rule);
+  if (validationError) {
+    return res.status(400).json({ error: validationError.message });
+  }
+
+  const updates = { recurrence_rule };
+
+  // If applying to future only, exclude all past occurrences
+  if (apply_to_future_only) {
+    const now = new Date();
+    const pastOccurrences = generateRecurrenceOccurrences(
+      new Date(event.start_time),
+      event.recurrence_rule,
+      new Date(event.start_time),
+      now,
+      event.excluded_dates || []
+    );
+
+    const excludedDates = [...(event.excluded_dates || [])];
+    for (const occ of pastOccurrences) {
+      if (!excludedDates.some(d => new Date(d).toISOString() === occ.toISOString())) {
+        excludedDates.push(occ.toISOString());
+      }
+    }
+    updates.excluded_dates = excludedDates;
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from('calendar_events')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+
+  logger.info('Recurring event rule updated', { eventId: id });
+
+  res.json({
+    success: true,
+    event: updated,
+    recurrence_description: getRecurrenceDescription(recurrence_rule)
+  });
+}));
+
+/**
+ * DELETE /api/calendar/events/:id/recurrence/series
+ * Delete entire recurring series
+ */
+router.delete('/events/:id/recurrence/series', verifyUser, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { include_exceptions = true } = req.query;
+
+  // Get the master event
+  const { data: event, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (!event.is_recurring) {
+    return res.status(400).json({ error: 'Event is not recurring. Use regular delete.' });
+  }
+
+  // Check authorization
+  if (event.created_by !== req.user.id && req.profile.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+
+  // Delete exceptions if requested
+  if (include_exceptions === 'true') {
+    await supabase
+      .from('calendar_events')
+      .delete()
+      .eq('recurring_event_id', id);
+  }
+
+  // Delete the master event
+  const { error: deleteError } = await supabase
+    .from('calendar_events')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) throw deleteError;
+
+  logger.info('Recurring event series deleted', { eventId: id, includeExceptions: include_exceptions });
+
+  res.json({ success: true, message: 'Recurring series deleted' });
+}));
+
+/**
+ * GET /api/calendar/events/expanded
+ * Get events with recurring events expanded into instances
+ */
+router.get('/events/expanded', verifyUser, asyncHandler(async (req, res) => {
+  const {
+    start_date,
+    end_date,
+    event_type,
+    status,
+    project_id
+  } = req.query;
+
+  if (!start_date || !end_date) {
+    return res.status(400).json({ error: 'start_date and end_date are required' });
+  }
+
+  const rangeStart = new Date(start_date);
+  const rangeEnd = new Date(end_date);
+
+  // Limit range to 1 year max
+  const maxRange = 365 * 24 * 60 * 60 * 1000;
+  if (rangeEnd - rangeStart > maxRange) {
+    return res.status(400).json({ error: 'Date range cannot exceed 1 year' });
+  }
+
+  const isAdmin = req.profile.role === 'super_admin' || req.profile.role === 'admin';
+
+  // Build query for non-recurring events and recurring masters
+  let query = supabase
+    .from('calendar_events')
+    .select(`*, participants:calendar_event_participants(*)`);
+
+  // Filter by user unless admin
+  if (!isAdmin) {
+    const { data: participantEvents } = await supabase
+      .from('calendar_event_participants')
+      .select('event_id')
+      .or(`user_id.eq.${req.user.id},email.ilike.${req.profile.email}`);
+
+    const participantEventIds = (participantEvents || []).map(p => p.event_id);
+
+    if (participantEventIds.length > 0) {
+      query = query.or(`created_by.eq.${req.user.id},id.in.(${participantEventIds.join(',')})`);
+    } else {
+      query = query.eq('created_by', req.user.id);
+    }
+  }
+
+  // Get events that are:
+  // 1. Non-recurring and within the date range, OR
+  // 2. Recurring masters (will be expanded), OR
+  // 3. Exceptions/instances of recurring events
+  query = query.or(`and(is_recurring.eq.false,start_time.gte.${start_date},start_time.lte.${end_date}),is_recurring.eq.true,recurring_event_id.not.is.null`);
+
+  if (event_type) query = query.eq('event_type', event_type);
+  if (status) query = query.eq('status', status);
+  else query = query.neq('status', 'cancelled');
+  if (project_id) query = query.eq('project_id', project_id);
+
+  const { data: events, error } = await query;
+  if (error) throw error;
+
+  // Separate recurring masters, exceptions, and regular events
+  const recurringMasters = [];
+  const exceptions = [];
+  const regularEvents = [];
+
+  for (const event of (events || [])) {
+    if (event.is_recurring && !event.recurring_event_id) {
+      recurringMasters.push(event);
+    } else if (event.recurring_event_id) {
+      exceptions.push(event);
+    } else {
+      regularEvents.push(event);
+    }
+  }
+
+  // Expand recurring events
+  const expandedEvents = [...regularEvents];
+
+  for (const master of recurringMasters) {
+    const masterExceptions = exceptions.filter(e => e.recurring_event_id === master.id);
+    const instances = expandRecurringEvent(master, rangeStart, rangeEnd, masterExceptions);
+    expandedEvents.push(...instances);
+  }
+
+  // Add exceptions that are within range
+  for (const exception of exceptions) {
+    const exStart = new Date(exception.start_time);
+    if (exStart >= rangeStart && exStart <= rangeEnd) {
+      expandedEvents.push(exception);
+    }
+  }
+
+  // Sort by start time
+  expandedEvents.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+  res.json({
+    success: true,
+    events: expandedEvents,
+    meta: {
+      range: { start: start_date, end: end_date },
+      recurring_masters: recurringMasters.length,
+      exceptions: exceptions.length,
+      total_instances: expandedEvents.length
+    }
+  });
+}));
+
+// Export recurrence helpers for use in other modules
+router.generateRecurrenceOccurrences = generateRecurrenceOccurrences;
+router.expandRecurringEvent = expandRecurringEvent;
+router.getRecurrenceDescription = getRecurrenceDescription;
 
 module.exports = router;

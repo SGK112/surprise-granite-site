@@ -25,6 +25,9 @@ if (SUPABASE_URL && (SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY)) {
 // Make supabase available to routes
 app.set('supabase', supabase);
 
+// Arizona timezone offset (MST, no DST)
+const ARIZONA_TIMEZONE_OFFSET = '-07:00';
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -388,11 +391,14 @@ function isBusinessDay(date) {
 
 function generateTimeSlots(date, durationMinutes = 60) {
   const slots = [];
+  const dateStr = date.toISOString().split('T')[0];
   for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
-    const slotStart = new Date(date);
-    slotStart.setHours(hour, 0, 0, 0);
+    // Create slot in Arizona timezone (MST, no DST)
+    const slotStart = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00${ARIZONA_TIMEZONE_OFFSET}`);
     const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
-    if (slotEnd.getHours() <= BUSINESS_HOURS.end) {
+    // Check end hour in Arizona time
+    const endHourAZ = new Date(slotEnd.toLocaleString('en-US', { timeZone: 'America/Phoenix' })).getHours();
+    if (endHourAZ <= BUSINESS_HOURS.end) {
       slots.push({
         start: slotStart.toISOString(),
         end: slotEnd.toISOString(),
@@ -566,8 +572,8 @@ app.post('/api/calendar/book', async (req, res) => {
       return res.status(400).json({ error: 'Invalid time format' });
     }
 
-    // Create datetime
-    const startTime = new Date(`${date}T${time}:00`);
+    // Create datetime (Arizona timezone - MST, no DST)
+    const startTime = new Date(`${date}T${time}:00${ARIZONA_TIMEZONE_OFFSET}`);
     const duration = parseInt(duration_minutes) || 60;
     const endTime = new Date(startTime.getTime() + duration * 60000);
 
@@ -859,4 +865,13 @@ try {
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+
+    // Start the scheduler service for automated reminders
+    try {
+      const schedulerService = require('./api/services/schedulerService');
+      schedulerService.start();
+      console.log('Scheduler service started');
+    } catch (err) {
+      console.warn('Scheduler service not available:', err.message);
+    }
 });

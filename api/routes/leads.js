@@ -13,6 +13,11 @@ const emailService = require('../services/emailService');
 const notificationService = require('../services/notificationService');
 
 /**
+ * Arizona timezone offset (MST, no DST)
+ */
+const ARIZONA_TIMEZONE_OFFSET = '-07:00';
+
+/**
  * Convert 12-hour time format to 24-hour format
  * @param {string} time12h - Time in format "10:00 AM" or "2:30 PM"
  * @returns {string} Time in format "10:00:00" or "14:30:00"
@@ -163,8 +168,8 @@ router.post('/', leadRateLimiter, asyncHandler(async (req, res) => {
         // Create calendar event if appointment was scheduled
         if (isAppointment && lead) {
           try {
-            // Parse appointment date and time to create proper datetime
-            const appointmentDateTime = new Date(`${appointment_date}T${convertTo24Hour(appointment_time)}`);
+            // Parse appointment date and time to create proper datetime (Arizona timezone - MST, no DST)
+            const appointmentDateTime = new Date(`${appointment_date}T${convertTo24Hour(appointment_time)}${ARIZONA_TIMEZONE_OFFSET}`);
             const appointmentEndTime = new Date(appointmentDateTime.getTime() + 60 * 60 * 1000); // 1 hour duration
 
             // Validate the appointment is not in the past

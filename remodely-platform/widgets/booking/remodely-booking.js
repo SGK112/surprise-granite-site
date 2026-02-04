@@ -1063,34 +1063,92 @@
       };
 
       try {
-        // Send to Supabase directly
-        const supabaseUrl = this.config.supabaseUrl || 'https://ypeypgwsycxcagncgdur.supabase.co';
-        const supabaseKey = this.config.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+        // API base URL - use configured or detect from current location
+        const apiBase = this.config.apiUrl ||
+          (window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://www.surprisegranite.com');
 
-        const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/leads`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(leadData)
-        });
+        // Build full address string
+        const fullAddress = serviceAddr.street ?
+          [serviceAddr.street, serviceAddr.city, serviceAddr.state, serviceAddr.zip].filter(Boolean).join(', ') :
+          null;
 
-        if (!supabaseResponse.ok) {
-          const errorText = await supabaseResponse.text();
-          console.error('Supabase error:', supabaseResponse.status, errorText);
-        } else {
-          console.log('Lead saved to Supabase successfully');
+        // Format date for calendar API (YYYY-MM-DD)
+        const dateStr = this.state.date.toISOString().split('T')[0];
+        // Format time for calendar API (HH:MM in 24-hour format)
+        const timeStr = this.state.time.includes(':') ? this.state.time : `${this.state.time}:00`;
+
+        // First, try to book via the calendar API (creates both lead AND calendar event)
+        const calendarBookingData = {
+          name: `${this.state.contact.firstName} ${this.state.contact.lastName}`,
+          email: this.state.contact.email,
+          phone: this.state.contact.phone,
+          date: dateStr,
+          time: timeStr,
+          event_type: 'consultation',
+          project_type: this.state.service,
+          address: fullAddress,
+          notes: `Service: ${this.state.service}\nTimeline: ${this.state.answers?.timeline?.value || this.state.answers?.timeline || 'Not specified'}\nBudget: ${this.state.answers?.budget?.value || this.state.answers?.budget || 'Not specified'}\nLead Score: ${this.state.leadScore}`,
+          duration_minutes: 60
+        };
+
+        let calendarBooked = false;
+        try {
+          const calendarResponse = await fetch(`${apiBase}/api/calendar/book`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(calendarBookingData)
+          });
+
+          if (calendarResponse.ok) {
+            const result = await calendarResponse.json();
+            console.log('Calendar booking successful:', result);
+            calendarBooked = true;
+          } else {
+            console.warn('Calendar booking failed, falling back to lead API');
+          }
+        } catch (calErr) {
+          console.warn('Calendar API error, falling back:', calErr);
         }
 
-        // Also send to Email API
-        await fetch('https://surprise-granite-email-api.onrender.com/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadData)
-        }).catch(e => console.log('Email API error:', e));
+        // If calendar booking failed, fall back to leads API (which also creates calendar events)
+        if (!calendarBooked) {
+          const leadsResponse = await fetch(`${apiBase}/api/leads`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              homeowner_name: `${this.state.contact.firstName} ${this.state.contact.lastName}`,
+              homeowner_email: this.state.contact.email,
+              homeowner_phone: this.state.contact.phone,
+              project_type: this.state.service,
+              project_zip: serviceAddr.zip || null,
+              project_address: fullAddress,
+              project_details: `Timeline: ${this.state.answers?.timeline?.value || 'Not specified'}\nBudget: ${this.state.answers?.budget?.value || 'Not specified'}`,
+              appointment_date: dateStr,
+              appointment_time: scheduledTime, // 12-hour format for leads API
+              source: 'remodely-booking-widget'
+            })
+          });
+
+          if (leadsResponse.ok) {
+            console.log('Lead + calendar created via leads API');
+          } else {
+            // Final fallback: direct Supabase insert (no calendar event, but at least saves lead)
+            const supabaseUrl = this.config.supabaseUrl || 'https://ypeypgwsycxcagncgdur.supabase.co';
+            const supabaseKey = this.config.supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZXlwZ3dzeWN4Y2FnbmNnZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTQ4MjMsImV4cCI6MjA4MzMzMDgyM30.R13pNv2FDtGhfeu7gUcttYNrQAbNYitqR4FIq3O2-ME';
+
+            await fetch(`${supabaseUrl}/rest/v1/leads`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify(leadData)
+            });
+            console.log('Lead saved to Supabase (fallback, no calendar event)');
+          }
+        }
 
         // Send to webhook if configured
         if (this.config.webhookUrl) {
@@ -1105,7 +1163,7 @@
         this.showSuccess();
       } catch (e) {
         console.error('Booking error:', e);
-        alert('There was an error submitting your booking. Please call us at (602) 833-3189.');
+        alert('There was an error submitting your booking. Please call us at (623) 466-8066.');
         nextBtn.disabled = false;
         nextBtn.innerHTML = 'Confirm Booking <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
       }
