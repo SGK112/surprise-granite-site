@@ -8,6 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.prod.website-files.com/6456ce4476abb25581fbad0c/6456ce4476abb269c6fbb176_Surprise-Granite-favicon-32x32px.png" rel="shortcut icon" type="image/x-icon"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
   <link href="/css/account/mobile-nav.css?v=20260119" rel="stylesheet"/>
   <script src="/js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
@@ -1213,6 +1214,25 @@
 
     .card-body {
       padding: 24px;
+    }
+
+    /* Leads Grid Spacing */
+    #leads-table {
+      margin-top: 16px;
+    }
+
+    #leads-table .leads-grid {
+      padding: 4px;
+    }
+
+    #leads-table .lead-card {
+      margin-bottom: 0;
+    }
+
+    /* Calendar Events Container Spacing */
+    .calendar-events {
+      margin-top: 4px;
+      padding-bottom: 4px;
     }
 
     /* Vendor Onboarding Banner */
@@ -3377,21 +3397,32 @@
     }
 
     /* Calendar Drag & Drop Styles */
+    .calendar-event {
+      will-change: transform, opacity;
+    }
+
     .calendar-event.dragging {
-      opacity: 0.4;
-      transform: scale(0.9);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      opacity: 0.5;
+      transform: scale(0.95);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .calendar-day {
+      transition: background-color 0.1s ease-out, border-color 0.1s ease-out;
+      will-change: background-color, border-color;
     }
 
     .calendar-day.drop-target-ready {
-      transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+      background: rgba(249, 203, 0, 0.03);
     }
 
     .calendar-day.drag-over {
-      background: rgba(249, 203, 0, 0.2) !important;
+      background: rgba(249, 203, 0, 0.12) !important;
       border: 2px dashed var(--gold-primary) !important;
-      border-radius: 8px;
-      transform: scale(1.02);
+      border-radius: 6px;
+      transform: scale(1.01);
     }
 
     .calendar-day.drag-over .calendar-day-number {
@@ -3400,53 +3431,53 @@
     }
 
     /* Quick Add Toolbar */
+    .quick-add-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
     .quick-add-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      border-radius: 8px;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 6px;
       cursor: grab;
       user-select: none;
-      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
       font-size: 13px;
       font-weight: 500;
+      color: var(--text-primary);
+      background: color-mix(in srgb, var(--item-color) 15%, transparent);
+      border-left: 3px solid var(--item-color);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      will-change: transform;
+    }
+
+    .quick-add-item i {
+      font-size: 14px;
+      color: var(--item-color);
+      width: 18px;
+      text-align: center;
     }
 
     .quick-add-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: color-mix(in srgb, var(--item-color) 22%, transparent);
     }
 
-    .quick-add-item:active {
-      cursor: grabbing;
-      transform: scale(0.95);
-    }
-
+    .quick-add-item:active,
     .quick-add-item.dragging {
-      opacity: 0.5;
-      transform: scale(0.9);
+      cursor: grabbing;
+      transform: scale(0.98);
+      opacity: 0.7;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .quick-add-icon {
-      font-size: 16px;
-    }
-
-    .quick-add-label {
-      color: var(--text-primary);
-    }
-
-    /* Calendar day accepting new event drop */
-    .calendar-day.drop-new-event {
-      background: rgba(249, 203, 0, 0.25) !important;
-      border: 2px solid var(--gold-primary) !important;
-      border-radius: 8px;
-      animation: pulse-drop 1s infinite;
-    }
-
-    @keyframes pulse-drop {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(249, 203, 0, 0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(249, 203, 0, 0); }
+    /* Smooth drag ghost */
+    .quick-add-item[draggable="true"] {
+      -webkit-user-drag: element;
     }
 
     .calendar-event-dot {
@@ -3454,6 +3485,157 @@
       height: 12px;
       border-radius: 50%;
       display: inline-block;
+    }
+
+    /* Context Menu Styles */
+    .context-menu {
+      position: fixed;
+      z-index: 10000;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 8px 0;
+      min-width: 200px;
+      max-width: 280px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      display: none;
+    }
+
+    .context-menu.visible {
+      display: block;
+    }
+
+    .context-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9999;
+      background: transparent;
+    }
+
+    .context-menu-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    .context-menu-header .title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .context-menu-header .subtitle {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .context-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text-primary);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .context-menu-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .context-menu-item i {
+      width: 18px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .context-menu-item svg {
+      width: 16px;
+      height: 16px;
+      color: var(--text-secondary);
+    }
+
+    .context-menu-item.primary {
+      color: var(--gold-primary);
+    }
+
+    .context-menu-item.primary i,
+    .context-menu-item.primary svg {
+      color: var(--gold-primary);
+    }
+
+    .context-menu-item.success {
+      color: #10b981;
+    }
+
+    .context-menu-item.success i,
+    .context-menu-item.success svg {
+      color: #10b981;
+    }
+
+    .context-menu-item.warning {
+      color: #f59e0b;
+    }
+
+    .context-menu-item.warning i,
+    .context-menu-item.warning svg {
+      color: #f59e0b;
+    }
+
+    .context-menu-item.danger {
+      color: #ef4444;
+    }
+
+    .context-menu-item.danger i,
+    .context-menu-item.danger svg {
+      color: #ef4444;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 8px 0;
+    }
+
+    .context-menu-item.has-submenu {
+      position: relative;
+    }
+
+    .context-submenu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background: var(--dark-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 0;
+      min-width: 160px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .context-menu-item.has-submenu:hover .context-submenu {
+      display: block;
+    }
+
+    .context-active {
+      background: rgba(249, 203, 0, 0.1) !important;
     }
 
     /* Trust Score Badge */
@@ -13436,75 +13618,76 @@
           </div>
 
           <!-- Quick Add Toolbar - Drag & Drop Event Types -->
-          <div class="card" style="margin-top: 20px;">
-            <div class="card-header">
-              <h3 class="card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -3px; margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                Quick Add - Drag to Calendar
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header" style="padding: 14px 20px;">
+              <h3 class="card-title" style="font-size: 14px; font-weight: 600;">
+                <i class="fa-solid fa-grip-vertical" style="margin-right: 8px; color: var(--text-muted);"></i>
+                Quick Add
               </h3>
+              <span style="font-size: 12px; color: var(--text-muted);">Drag to calendar</span>
             </div>
-            <div class="card-body" style="padding: 12px 16px;">
-              <div id="quick-add-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div class="quick-add-item" draggable="true" data-event-type="appointment" data-event-color="#f9cb00"
+            <div class="card-body" style="padding: 16px 20px;">
+              <div id="quick-add-toolbar" class="quick-add-grid">
+                <div class="quick-add-item" draggable="true" data-event-type="appointment"
                      ondragstart="handleQuickAddDragStart(event, 'appointment', 'Appointment', '#f9cb00')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(249, 203, 0, 0.3) 0%, rgba(249, 203, 0, 0.15) 100%); border-left: 3px solid #f9cb00;">
-                  <span class="quick-add-icon">📅</span>
-                  <span class="quick-add-label">Appointment</span>
+                     style="--item-color: #f9cb00;">
+                  <i class="fa-regular fa-calendar-check"></i>
+                  <span>Appointment</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="consultation" data-event-color="#ec4899"
+                <div class="quick-add-item" draggable="true" data-event-type="consultation"
                      ondragstart="handleQuickAddDragStart(event, 'consultation', 'Consultation', '#ec4899')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.3) 0%, rgba(236, 72, 153, 0.15) 100%); border-left: 3px solid #ec4899;">
-                  <span class="quick-add-icon">💬</span>
-                  <span class="quick-add-label">Consultation</span>
+                     style="--item-color: #ec4899;">
+                  <i class="fa-regular fa-comments"></i>
+                  <span>Consultation</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="measurement" data-event-color="#f59e0b"
+                <div class="quick-add-item" draggable="true" data-event-type="measurement"
                      ondragstart="handleQuickAddDragStart(event, 'measurement', 'Measurement', '#f59e0b')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.15) 100%); border-left: 3px solid #f59e0b;">
-                  <span class="quick-add-icon">📐</span>
-                  <span class="quick-add-label">Measurement</span>
+                     style="--item-color: #f59e0b;">
+                  <i class="fa-solid fa-ruler-combined"></i>
+                  <span>Measurement</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="installation" data-event-color="#10b981"
+                <div class="quick-add-item" draggable="true" data-event-type="installation"
                      ondragstart="handleQuickAddDragStart(event, 'installation', 'Installation', '#10b981')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%); border-left: 3px solid #10b981;">
-                  <span class="quick-add-icon">🔧</span>
-                  <span class="quick-add-label">Installation</span>
+                     style="--item-color: #10b981;">
+                  <i class="fa-solid fa-screwdriver-wrench"></i>
+                  <span>Installation</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="meeting" data-event-color="#8b5cf6"
+                <div class="quick-add-item" draggable="true" data-event-type="meeting"
                      ondragstart="handleQuickAddDragStart(event, 'meeting', 'Meeting', '#8b5cf6')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.15) 100%); border-left: 3px solid #8b5cf6;">
-                  <span class="quick-add-icon">👥</span>
-                  <span class="quick-add-label">Meeting</span>
+                     style="--item-color: #8b5cf6;">
+                  <i class="fa-solid fa-users"></i>
+                  <span>Meeting</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="follow_up" data-event-color="#3b82f6"
+                <div class="quick-add-item" draggable="true" data-event-type="follow_up"
                      ondragstart="handleQuickAddDragStart(event, 'follow_up', 'Follow-up', '#3b82f6')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.15) 100%); border-left: 3px solid #3b82f6;">
-                  <span class="quick-add-icon">📞</span>
-                  <span class="quick-add-label">Follow-up</span>
+                     style="--item-color: #3b82f6;">
+                  <i class="fa-solid fa-phone"></i>
+                  <span>Follow-up</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="site_visit" data-event-color="#14b8a6"
+                <div class="quick-add-item" draggable="true" data-event-type="site_visit"
                      ondragstart="handleQuickAddDragStart(event, 'site_visit', 'Site Visit', '#14b8a6')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.3) 0%, rgba(20, 184, 166, 0.15) 100%); border-left: 3px solid #14b8a6;">
-                  <span class="quick-add-icon">📍</span>
-                  <span class="quick-add-label">Site Visit</span>
+                     style="--item-color: #14b8a6;">
+                  <i class="fa-solid fa-location-dot"></i>
+                  <span>Site Visit</span>
                 </div>
-                <div class="quick-add-item" draggable="true" data-event-type="delivery" data-event-color="#06b6d4"
+                <div class="quick-add-item" draggable="true" data-event-type="delivery"
                      ondragstart="handleQuickAddDragStart(event, 'delivery', 'Delivery', '#06b6d4')"
                      ondragend="handleQuickAddDragEnd(event)"
-                     style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(6, 182, 212, 0.15) 100%); border-left: 3px solid #06b6d4;">
-                  <span class="quick-add-icon">🚚</span>
-                  <span class="quick-add-label">Delivery</span>
+                     style="--item-color: #06b6d4;">
+                  <i class="fa-solid fa-truck"></i>
+                  <span>Delivery</span>
                 </div>
               </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; margin-bottom: 0;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Drag any event type onto a calendar date to quickly create an event. Right-click events for more options.
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 12px; margin-bottom: 0;">
+                <i class="fa-solid fa-circle-info" style="margin-right: 6px;"></i>
+                Drag to calendar or right-click events for quick actions
               </p>
             </div>
           </div>
@@ -13708,55 +13891,55 @@
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                 <!-- Main Dashboards -->
                 <a href="/account/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🏠</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f9cb00 0%, #cca600 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-house" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Customer Account</div><div style="font-size: 12px; color: var(--text-muted);">/account/</div></div>
                 </a>
                 <a href="/account/pro-dashboard/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">💼</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-briefcase" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Pro Dashboard</div><div style="font-size: 12px; color: var(--text-muted);">/account/pro-dashboard/</div></div>
                 </a>
                 <a href="/distributor/dashboard/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🏢</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-building" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Distributor Portal</div><div style="font-size: 12px; color: var(--text-muted);">/distributor/dashboard/</div></div>
                 </a>
                 <a href="/distributor/signup/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">📝</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-pen-to-square" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Distributor Signup</div><div style="font-size: 12px; color: var(--text-muted);">/distributor/signup/</div></div>
                 </a>
                 <!-- Admin Dashboards -->
                 <a href="/admin/products/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">📦</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Product Admin</div><div style="font-size: 12px; color: var(--text-muted);">/admin/products/</div></div>
                 </a>
                 <a href="/admin/orders/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🧾</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-receipt" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Order Admin</div><div style="font-size: 12px; color: var(--text-muted);">/admin/orders/</div></div>
                 </a>
                 <!-- Tools -->
                 <a href="/tools/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🛠️</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-screwdriver-wrench" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Tools Hub</div><div style="font-size: 12px; color: var(--text-muted);">/tools/</div></div>
                 </a>
                 <a href="/tools/room-designer/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🎨</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-palette" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Room Designer</div><div style="font-size: 12px; color: var(--text-muted);">/tools/room-designer/</div></div>
                 </a>
                 <!-- Stone Yards -->
                 <a href="/stone-yards/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #78716c 0%, #57534e 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🪨</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #78716c 0%, #57534e 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-mountain" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Stone Yards</div><div style="font-size: 12px; color: var(--text-muted);">/stone-yards/</div></div>
                 </a>
                 <!-- Auth -->
                 <a href="/log-in/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🔐</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-lock" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Login Page</div><div style="font-size: 12px; color: var(--text-muted);">/log-in/</div></div>
                 </a>
                 <a href="/sign-up/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">✨</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-user-plus" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Sign Up Page</div><div style="font-size: 12px; color: var(--text-muted);">/sign-up/</div></div>
                 </a>
                 <a href="/auth/callback/" class="god-view-link" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.2s;">
-                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🔄</div>
+                  <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-rotate" style="color: #fff;"></i></div>
                   <div><div style="font-weight: 600;">Auth Callback</div><div style="font-size: 12px; color: var(--text-muted);">/auth/callback/</div></div>
                 </a>
               </div>
@@ -16843,22 +17026,22 @@
             <div class="form-group" style="margin-bottom: 0;">
               <label style="font-size: 13px; margin-bottom: 4px;">Type</label>
               <select id="cal-event-type" class="input-modern">
-                <option value="appointment">📅 Appointment</option>
-                <option value="consultation">💬 Consultation</option>
-                <option value="measurement">📐 Measurement</option>
-                <option value="template">📋 Template</option>
-                <option value="fabrication">⚙️ Fabrication</option>
-                <option value="installation">🔧 Installation</option>
-                <option value="plumbing_disconnect">🔌 Plumbing Disconnect</option>
-                <option value="plumbing_reconnect">🚿 Plumbing Reconnect</option>
-                <option value="sealer_application">💧 Sealer Application</option>
-                <option value="walk_through">🚶 Walk-Through</option>
-                <option value="final_inspection">✅ Final Inspection</option>
-                <option value="delivery">🚚 Delivery</option>
-                <option value="site_visit">📍 Site Visit</option>
-                <option value="meeting">👥 Meeting</option>
-                <option value="follow_up">📞 Follow-up</option>
-                <option value="other">📌 Other</option>
+                <option value="appointment">Appointment</option>
+                <option value="consultation">Consultation</option>
+                <option value="measurement">Measurement</option>
+                <option value="template">Template</option>
+                <option value="fabrication">Fabrication</option>
+                <option value="installation">Installation</option>
+                <option value="plumbing_disconnect">Plumbing Disconnect</option>
+                <option value="plumbing_reconnect">Plumbing Reconnect</option>
+                <option value="sealer_application">Sealer Application</option>
+                <option value="walk_through">Walk-Through</option>
+                <option value="final_inspection">Final Inspection</option>
+                <option value="delivery">Delivery</option>
+                <option value="site_visit">Site Visit</option>
+                <option value="meeting">Meeting</option>
+                <option value="follow_up">Follow-up</option>
+                <option value="other">Other</option>
               </select>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
@@ -16885,10 +17068,10 @@
           <div class="form-group" style="margin-bottom: 12px;">
             <label style="font-size: 13px; margin-bottom: 4px;">Meeting Format</label>
             <select id="cal-event-meeting-format" class="input-modern">
-              <option value="in_person">🏠 In Person</option>
-              <option value="phone_call">📞 Phone Call</option>
-              <option value="video_call">📹 Video Call</option>
-              <option value="conference_call">📱 Conference Call</option>
+              <option value="in_person">In Person</option>
+              <option value="phone_call">Phone Call</option>
+              <option value="video_call">Video Call</option>
+              <option value="conference_call">Conference Call</option>
             </select>
           </div>
 
@@ -19551,29 +19734,29 @@
             <div class="subtitle">${data.estimate_number || 'Estimate'}</div>
           </div>
           <button class="context-menu-item" data-action="view">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <i class="fa-regular fa-eye"></i>
             View Estimate
           </button>
           <button class="context-menu-item" data-action="edit">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            <i class="fa-regular fa-pen-to-square"></i>
             Edit Estimate
           </button>
           <button class="context-menu-item primary" data-action="convert-invoice">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <i class="fa-solid fa-file-invoice-dollar"></i>
             Convert to Invoice
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item" data-action="duplicate">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <i class="fa-regular fa-clone"></i>
             Duplicate
           </button>
           <button class="context-menu-item" data-action="send">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <i class="fa-regular fa-envelope"></i>
             Send to Customer
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item danger" data-action="delete">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <i class="fa-regular fa-trash-can"></i>
             Delete Estimate
           </button>
         `;
@@ -19595,15 +19778,15 @@
             <div class="subtitle">${data.name || 'Lead'}</div>
           </div>
           <button class="context-menu-item" data-action="view">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <i class="fa-regular fa-user"></i>
             View Lead
           </button>
           <button class="context-menu-item primary" data-action="create-estimate">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <i class="fa-regular fa-file-lines"></i>
             Create Estimate
           </button>
           <button class="context-menu-item has-submenu">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <i class="fa-solid fa-arrows-rotate"></i>
             Change Status
             <div class="context-submenu">
               ${statusOptions.map(s => `
@@ -19616,12 +19799,12 @@
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item success" data-action="convert-customer">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            <i class="fa-solid fa-user-plus"></i>
             Convert to Customer
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item danger" data-action="delete">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <i class="fa-regular fa-trash-can"></i>
             Delete Lead
           </button>
         `;
@@ -19631,12 +19814,12 @@
         const isApiEvent = !!data.apiEventId;
         const isJobEvent = !!data.jobId && !data.apiEventId;
         const statusOptions = [
-          { value: 'scheduled', label: 'Scheduled', icon: '📅' },
-          { value: 'confirmed', label: 'Confirmed', icon: '✅' },
-          { value: 'completed', label: 'Completed', icon: '🎉' },
-          { value: 'cancelled', label: 'Cancelled', icon: '❌' },
-          { value: 'rescheduled', label: 'Rescheduled', icon: '🔄' },
-          { value: 'no_show', label: 'No Show', icon: '👻' }
+          { value: 'scheduled', label: 'Scheduled', icon: 'fa-regular fa-calendar' },
+          { value: 'confirmed', label: 'Confirmed', icon: 'fa-solid fa-circle-check' },
+          { value: 'completed', label: 'Completed', icon: 'fa-solid fa-flag-checkered' },
+          { value: 'cancelled', label: 'Cancelled', icon: 'fa-solid fa-circle-xmark' },
+          { value: 'rescheduled', label: 'Rescheduled', icon: 'fa-solid fa-rotate' },
+          { value: 'no_show', label: 'No Show', icon: 'fa-solid fa-user-slash' }
         ];
 
         return `
@@ -19645,21 +19828,21 @@
             <div class="subtitle">${escapeHtml(data.title || 'Event')}</div>
           </div>
           <button class="context-menu-item" data-action="view">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <i class="fa-regular fa-eye"></i>
             View Details
           </button>
           ${isApiEvent ? `
           <button class="context-menu-item" data-action="edit">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            <i class="fa-regular fa-pen-to-square"></i>
             Edit Event
           </button>
           <button class="context-menu-item has-submenu">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <i class="fa-solid fa-arrows-rotate"></i>
             Change Status
             <div class="context-submenu">
               ${statusOptions.map(s => `
                 <button class="context-menu-item" data-action="status" data-status="${s.value}">
-                  <span style="margin-right: 6px;">${s.icon}</span>
+                  <i class="${s.icon}" style="width: 16px; margin-right: 8px;"></i>
                   ${s.label}
                 </button>
               `).join('')}
@@ -19667,34 +19850,34 @@
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item" data-action="reschedule">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <i class="fa-regular fa-calendar-days"></i>
             Reschedule
           </button>
           <button class="context-menu-item" data-action="duplicate">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <i class="fa-regular fa-clone"></i>
             Duplicate Event
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item success" data-action="confirm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <i class="fa-solid fa-circle-check"></i>
             Mark Confirmed
           </button>
           <button class="context-menu-item" data-action="complete">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <i class="fa-solid fa-flag-checkered"></i>
             Mark Completed
           </button>
           <div class="context-menu-divider"></div>
           <button class="context-menu-item danger" data-action="delete">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <i class="fa-regular fa-trash-can"></i>
             Delete Event
           </button>
           ` : `
           <button class="context-menu-item" data-action="view-job">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <i class="fa-regular fa-clipboard"></i>
             Open Job Details
           </button>
           <button class="context-menu-item" data-action="create-event">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            <i class="fa-solid fa-calendar-plus"></i>
             Create Calendar Event
           </button>
           `}
