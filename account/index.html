@@ -17113,34 +17113,16 @@
             <div id="location-in-person" style="display: block;">
               <label style="font-size: 13px; margin-bottom: 8px; display: block;">Location</label>
               <div style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Location type radio buttons -->
-                <div style="display: flex; gap: 12px; margin-bottom: 4px;">
-                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
-                    <input type="radio" name="location-type" value="contact" id="location-type-contact" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" />
-                    <span>Contact Address</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
-                    <input type="radio" name="location-type" value="showroom" id="location-type-showroom" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" />
-                    <span>Showroom</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary);">
-                    <input type="radio" name="location-type" value="other" id="location-type-other" style="accent-color: var(--gold-primary);" onchange="handleLocationTypeChange()" checked />
-                    <span>Other</span>
-                  </label>
-                </div>
-                <!-- Contact address display (shown when contact is selected and has address) -->
-                <div id="contact-address-display" style="display: none; padding: 10px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Contact address option (only shown when contact has address) -->
+                <div id="contact-address-option" style="display: none;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; margin-bottom: 8px;">
+                    <input type="checkbox" id="use-contact-address" style="accent-color: #10b981;" onchange="handleUseContactAddress()" />
                     <i class="fa-solid fa-location-dot" style="color: #10b981;"></i>
-                    <span id="contact-address-text" style="font-size: 13px; color: var(--text-primary);"></span>
-                  </div>
-                </div>
-                <!-- Showroom address (preset) -->
-                <div id="showroom-address-display" style="display: none; padding: 10px 12px; background: rgba(249, 203, 0, 0.1); border: 1px solid rgba(249, 203, 0, 0.3); border-radius: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-store" style="color: var(--gold-primary);"></i>
-                    <span style="font-size: 13px; color: var(--text-primary);">14050 N 83rd Ave Suite 290, Peoria, AZ 85381</span>
-                  </div>
+                    <span style="flex: 1;">
+                      <span style="font-size: 12px; color: var(--text-muted); display: block;">Use contact address:</span>
+                      <span id="contact-address-text" style="font-size: 13px; color: var(--text-primary);"></span>
+                    </span>
+                  </label>
                 </div>
                 <!-- Manual location input -->
                 <input type="text" id="cal-event-location" class="input-modern" placeholder="Enter address or location" />
@@ -38567,11 +38549,13 @@
       if (meetingFormatSelect) {
         meetingFormatSelect.value = 'in_person';
       }
-      // Reset location type to "other"
-      const locationTypeOther = document.getElementById('location-type-other');
-      if (locationTypeOther) locationTypeOther.checked = true;
       handleMeetingFormatChange();
-      handleLocationTypeChange();
+
+      // Hide contact address option (will show if contact with address is selected)
+      const contactAddressOption = document.getElementById('contact-address-option');
+      const useContactCheckbox = document.getElementById('use-contact-address');
+      if (contactAddressOption) contactAddressOption.style.display = 'none';
+      if (useContactCheckbox) useContactCheckbox.checked = false;
 
       // Clear video/conference fields
       const videoLink = document.getElementById('cal-event-video-link');
@@ -38635,14 +38619,8 @@
               prefillData.contactPhone || '',
               prefillData.contactAddress || prefillData.location || ''
             );
-            // If contact has address, select contact address option for in-person meetings
-            if ((prefillData.contactAddress || prefillData.location) && document.getElementById('cal-event-meeting-format').value === 'in_person') {
-              const locationTypeContact = document.getElementById('location-type-contact');
-              if (locationTypeContact) {
-                locationTypeContact.checked = true;
-                handleLocationTypeChange();
-              }
-            }
+            // selectCalEventContact already handles showing the contact address option
+            // and auto-filling the location field
           }
           if (prefillData.location && !prefillData.contactName) {
             document.getElementById('cal-event-location').value = prefillData.location;
@@ -38829,29 +38807,20 @@
       document.getElementById('cal-event-contact-email').value = email || '';
       document.getElementById('cal-event-contact-phone').value = phone || '';
 
-      // Update contact address display for in-person meetings
-      const contactAddressDisplay = document.getElementById('contact-address-display');
-      const contactAddressText = document.getElementById('contact-address-text');
-      const locationTypeContact = document.getElementById('location-type-contact');
+      // Update contact address option visibility
+      updateContactAddressOption();
 
-      if (address && contactAddressDisplay && contactAddressText) {
-        contactAddressText.textContent = address;
-        // If contact has address, select the contact address option
-        if (locationTypeContact) {
-          locationTypeContact.checked = true;
-          handleLocationTypeChange();
-        }
+      // Auto-fill location if contact has address
+      const locationField = document.getElementById('cal-event-location');
+      if (address && locationField) {
+        locationField.value = address;
+        // Check the "use contact address" checkbox
+        const useContactCheckbox = document.getElementById('use-contact-address');
+        if (useContactCheckbox) useContactCheckbox.checked = true;
       }
 
       // Update phone call display
       updatePhoneCallDisplay(phone);
-
-      // Auto-fill location if address provided and location type is "other"
-      const locationField = document.getElementById('cal-event-location');
-      const locationTypeOther = document.getElementById('location-type-other');
-      if (address && locationField && locationTypeOther && locationTypeOther.checked) {
-        locationField.value = address;
-      }
 
       // Show selected contact chip
       const chip = document.getElementById('cal-event-contact-chip');
@@ -38908,47 +38877,34 @@
       }
     }
 
-    // Handle location type radio change (contact address vs showroom vs other)
-    function handleLocationTypeChange() {
-      const locationType = document.querySelector('input[name="location-type"]:checked')?.value;
+    // Handle "Use contact address" checkbox change
+    function handleUseContactAddress() {
+      const checkbox = document.getElementById('use-contact-address');
       const locationField = document.getElementById('cal-event-location');
-      const contactAddressDisplay = document.getElementById('contact-address-display');
-      const showroomAddressDisplay = document.getElementById('showroom-address-display');
 
-      // Hide all displays first
-      if (contactAddressDisplay) contactAddressDisplay.style.display = 'none';
-      if (showroomAddressDisplay) showroomAddressDisplay.style.display = 'none';
-      if (locationField) locationField.style.display = 'block';
+      if (checkbox && checkbox.checked && selectedContactData.address) {
+        // Fill location with contact address
+        if (locationField) {
+          locationField.value = selectedContactData.address;
+        }
+      }
+      // If unchecked, leave the field as-is (user can clear manually)
+    }
 
-      switch (locationType) {
-        case 'contact':
-          if (selectedContactData.address) {
-            if (contactAddressDisplay) contactAddressDisplay.style.display = 'block';
-            if (locationField) {
-              locationField.style.display = 'none';
-              locationField.value = selectedContactData.address;
-            }
-          } else {
-            // No address, fall back to other
-            const otherRadio = document.getElementById('location-type-other');
-            if (otherRadio) otherRadio.checked = true;
-            if (locationField) locationField.placeholder = 'Enter contact address';
-          }
-          break;
-        case 'showroom':
-          if (showroomAddressDisplay) showroomAddressDisplay.style.display = 'block';
-          if (locationField) {
-            locationField.style.display = 'none';
-            locationField.value = '14050 N 83rd Ave Suite 290, Peoria, AZ 85381';
-          }
-          break;
-        case 'other':
-        default:
-          if (locationField) {
-            locationField.style.display = 'block';
-            locationField.placeholder = 'Enter address or location';
-          }
-          break;
+    // Show/hide contact address option based on whether contact has address
+    function updateContactAddressOption() {
+      const contactAddressOption = document.getElementById('contact-address-option');
+      const contactAddressText = document.getElementById('contact-address-text');
+      const useContactCheckbox = document.getElementById('use-contact-address');
+
+      if (selectedContactData.address && contactAddressOption) {
+        contactAddressOption.style.display = 'block';
+        if (contactAddressText) {
+          contactAddressText.textContent = selectedContactData.address;
+        }
+      } else if (contactAddressOption) {
+        contactAddressOption.style.display = 'none';
+        if (useContactCheckbox) useContactCheckbox.checked = false;
       }
     }
 
@@ -39022,12 +38978,11 @@
       if (emailField) emailField.value = '';
       if (phoneField) phoneField.value = '';
 
-      // Reset location type to "other"
-      const locationTypeOther = document.getElementById('location-type-other');
-      if (locationTypeOther) {
-        locationTypeOther.checked = true;
-        handleLocationTypeChange();
-      }
+      // Hide contact address option and uncheck
+      const contactAddressOption = document.getElementById('contact-address-option');
+      const useContactCheckbox = document.getElementById('use-contact-address');
+      if (contactAddressOption) contactAddressOption.style.display = 'none';
+      if (useContactCheckbox) useContactCheckbox.checked = false;
 
       // Clear phone call display
       updatePhoneCallDisplay('');
