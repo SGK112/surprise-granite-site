@@ -3291,6 +3291,7 @@
     }
 
     .calendar-event {
+      position: relative;
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 11px;
@@ -3298,13 +3299,18 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
     }
 
     .calendar-event:hover {
       transform: translateX(2px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .calendar-event:active {
+      cursor: grabbing;
     }
 
     .calendar-event.job {
@@ -3368,6 +3374,79 @@
       color: #d1d5db;
       border-left: 3px solid #6b7280;
       box-shadow: inset 0 0 0 1px rgba(107, 114, 128, 0.3);
+    }
+
+    /* Calendar Drag & Drop Styles */
+    .calendar-event.dragging {
+      opacity: 0.4;
+      transform: scale(0.9);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .calendar-day.drop-target-ready {
+      transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+    }
+
+    .calendar-day.drag-over {
+      background: rgba(249, 203, 0, 0.2) !important;
+      border: 2px dashed var(--gold-primary) !important;
+      border-radius: 8px;
+      transform: scale(1.02);
+    }
+
+    .calendar-day.drag-over .calendar-day-number {
+      color: var(--gold-primary);
+      font-weight: 700;
+    }
+
+    /* Quick Add Toolbar */
+    .quick-add-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .quick-add-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .quick-add-item:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+
+    .quick-add-item.dragging {
+      opacity: 0.5;
+      transform: scale(0.9);
+    }
+
+    .quick-add-icon {
+      font-size: 16px;
+    }
+
+    .quick-add-label {
+      color: var(--text-primary);
+    }
+
+    /* Calendar day accepting new event drop */
+    .calendar-day.drop-new-event {
+      background: rgba(249, 203, 0, 0.25) !important;
+      border: 2px solid var(--gold-primary) !important;
+      border-radius: 8px;
+      animation: pulse-drop 1s infinite;
+    }
+
+    @keyframes pulse-drop {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(249, 203, 0, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(249, 203, 0, 0); }
     }
 
     .calendar-event-dot {
@@ -13356,42 +13435,77 @@
             </div>
           </div>
 
-          <!-- Calendar Legend -->
+          <!-- Quick Add Toolbar - Drag & Drop Event Types -->
           <div class="card" style="margin-top: 20px;">
             <div class="card-header">
-              <h3 class="card-title">Legend</h3>
+              <h3 class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -3px; margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Quick Add - Drag to Calendar
+              </h3>
             </div>
-            <div class="card-body">
-              <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #3b82f6;"></span>
-                  <span style="font-size: 13px;">Appointment</span>
+            <div class="card-body" style="padding: 12px 16px;">
+              <div id="quick-add-toolbar" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <div class="quick-add-item" draggable="true" data-event-type="appointment" data-event-color="#f9cb00"
+                     ondragstart="handleQuickAddDragStart(event, 'appointment', 'Appointment', '#f9cb00')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(249, 203, 0, 0.3) 0%, rgba(249, 203, 0, 0.15) 100%); border-left: 3px solid #f9cb00;">
+                  <span class="quick-add-icon">📅</span>
+                  <span class="quick-add-label">Appointment</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #f59e0b;"></span>
-                  <span style="font-size: 13px;">Measurement</span>
+                <div class="quick-add-item" draggable="true" data-event-type="consultation" data-event-color="#ec4899"
+                     ondragstart="handleQuickAddDragStart(event, 'consultation', 'Consultation', '#ec4899')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.3) 0%, rgba(236, 72, 153, 0.15) 100%); border-left: 3px solid #ec4899;">
+                  <span class="quick-add-icon">💬</span>
+                  <span class="quick-add-label">Consultation</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #10b981;"></span>
-                  <span style="font-size: 13px;">Installation</span>
+                <div class="quick-add-item" draggable="true" data-event-type="measurement" data-event-color="#f59e0b"
+                     ondragstart="handleQuickAddDragStart(event, 'measurement', 'Measurement', '#f59e0b')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.15) 100%); border-left: 3px solid #f59e0b;">
+                  <span class="quick-add-icon">📐</span>
+                  <span class="quick-add-label">Measurement</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #8b5cf6;"></span>
-                  <span style="font-size: 13px;">Meeting</span>
+                <div class="quick-add-item" draggable="true" data-event-type="installation" data-event-color="#10b981"
+                     ondragstart="handleQuickAddDragStart(event, 'installation', 'Installation', '#10b981')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%); border-left: 3px solid #10b981;">
+                  <span class="quick-add-icon">🔧</span>
+                  <span class="quick-add-label">Installation</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #ec4899;"></span>
-                  <span style="font-size: 13px;">Consultation</span>
+                <div class="quick-add-item" draggable="true" data-event-type="meeting" data-event-color="#8b5cf6"
+                     ondragstart="handleQuickAddDragStart(event, 'meeting', 'Meeting', '#8b5cf6')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.15) 100%); border-left: 3px solid #8b5cf6;">
+                  <span class="quick-add-icon">👥</span>
+                  <span class="quick-add-label">Meeting</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #06b6d4;"></span>
-                  <span style="font-size: 13px;">Delivery</span>
+                <div class="quick-add-item" draggable="true" data-event-type="follow_up" data-event-color="#3b82f6"
+                     ondragstart="handleQuickAddDragStart(event, 'follow_up', 'Follow-up', '#3b82f6')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.15) 100%); border-left: 3px solid #3b82f6;">
+                  <span class="quick-add-icon">📞</span>
+                  <span class="quick-add-label">Follow-up</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="calendar-event-dot" style="background: #6b7280;"></span>
-                  <span style="font-size: 13px;">Other</span>
+                <div class="quick-add-item" draggable="true" data-event-type="site_visit" data-event-color="#14b8a6"
+                     ondragstart="handleQuickAddDragStart(event, 'site_visit', 'Site Visit', '#14b8a6')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.3) 0%, rgba(20, 184, 166, 0.15) 100%); border-left: 3px solid #14b8a6;">
+                  <span class="quick-add-icon">📍</span>
+                  <span class="quick-add-label">Site Visit</span>
+                </div>
+                <div class="quick-add-item" draggable="true" data-event-type="delivery" data-event-color="#06b6d4"
+                     ondragstart="handleQuickAddDragStart(event, 'delivery', 'Delivery', '#06b6d4')"
+                     ondragend="handleQuickAddDragEnd(event)"
+                     style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(6, 182, 212, 0.15) 100%); border-left: 3px solid #06b6d4;">
+                  <span class="quick-add-icon">🚚</span>
+                  <span class="quick-add-label">Delivery</span>
                 </div>
               </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px; margin-bottom: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Drag any event type onto a calendar date to quickly create an event. Right-click events for more options.
+              </p>
             </div>
           </div>
 
@@ -16767,10 +16881,36 @@
           <input type="hidden" id="cal-event-end-date" value="" />
           <input type="hidden" id="cal-event-status" value="scheduled" />
 
-          <!-- Contact (optional) -->
+          <!-- Meeting Format -->
           <div class="form-group" style="margin-bottom: 12px;">
-            <label style="font-size: 13px; margin-bottom: 4px;">Contact Name</label>
-            <input type="text" id="cal-event-contact-name" class="input-modern" placeholder="Customer or contact name" />
+            <label style="font-size: 13px; margin-bottom: 4px;">Meeting Format</label>
+            <select id="cal-event-meeting-format" class="input-modern">
+              <option value="in_person">🏠 In Person</option>
+              <option value="phone_call">📞 Phone Call</option>
+              <option value="video_call">📹 Video Call</option>
+              <option value="conference_call">📱 Conference Call</option>
+            </select>
+          </div>
+
+          <!-- Contact (optional) - Searchable -->
+          <div class="form-group" style="margin-bottom: 12px; position: relative;">
+            <label style="font-size: 13px; margin-bottom: 4px;">Contact</label>
+            <input type="hidden" id="cal-event-contact-type" value="" />
+            <input type="hidden" id="cal-event-contact-id" value="" />
+            <!-- Selected contact chip (shown when contact is selected) -->
+            <div id="cal-event-contact-chip" style="display: none; padding: 8px 12px; background: var(--gold-primary)22; border: 1px solid var(--gold-primary); border-radius: 8px; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <span id="cal-event-contact-chip-name" style="font-weight: 600; color: var(--text-primary);"></span>
+                  <span id="cal-event-contact-chip-badge" style="font-size: 10px; padding: 2px 6px; border-radius: 10px; background: var(--gold-primary); color: #000; margin-left: 6px;"></span>
+                </div>
+                <button type="button" onclick="clearCalEventContact()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 16px;">&times;</button>
+              </div>
+            </div>
+            <!-- Search input -->
+            <input type="text" id="cal-event-contact-search" class="input-modern" placeholder="Search leads, customers, contractors..." oninput="searchCalEventContacts(this.value)" onfocus="searchCalEventContacts(this.value)" />
+            <!-- Suggestions dropdown -->
+            <div id="cal-event-contact-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--dark-elevated); border: 1px solid var(--border-color); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
@@ -19267,7 +19407,8 @@
           invoice: this.buildInvoiceMenu(itemData),
           customer: this.buildCustomerMenu(itemData),
           estimate: this.buildEstimateMenu(itemData),
-          lead: this.buildLeadMenu(itemData)
+          lead: this.buildLeadMenu(itemData),
+          calendar_event: this.buildCalendarEventMenu(itemData)
         };
         return menus[type] || '';
       },
@@ -19486,6 +19627,80 @@
         `;
       },
 
+      buildCalendarEventMenu(data) {
+        const isApiEvent = !!data.apiEventId;
+        const isJobEvent = !!data.jobId && !data.apiEventId;
+        const statusOptions = [
+          { value: 'scheduled', label: 'Scheduled', icon: '📅' },
+          { value: 'confirmed', label: 'Confirmed', icon: '✅' },
+          { value: 'completed', label: 'Completed', icon: '🎉' },
+          { value: 'cancelled', label: 'Cancelled', icon: '❌' },
+          { value: 'rescheduled', label: 'Rescheduled', icon: '🔄' },
+          { value: 'no_show', label: 'No Show', icon: '👻' }
+        ];
+
+        return `
+          <div class="context-menu-header">
+            <div class="title">${isJobEvent ? 'Job Event' : 'Calendar Event'}</div>
+            <div class="subtitle">${escapeHtml(data.title || 'Event')}</div>
+          </div>
+          <button class="context-menu-item" data-action="view">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            View Details
+          </button>
+          ${isApiEvent ? `
+          <button class="context-menu-item" data-action="edit">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Edit Event
+          </button>
+          <button class="context-menu-item has-submenu">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Change Status
+            <div class="context-submenu">
+              ${statusOptions.map(s => `
+                <button class="context-menu-item" data-action="status" data-status="${s.value}">
+                  <span style="margin-right: 6px;">${s.icon}</span>
+                  ${s.label}
+                </button>
+              `).join('')}
+            </div>
+          </button>
+          <div class="context-menu-divider"></div>
+          <button class="context-menu-item" data-action="reschedule">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Reschedule
+          </button>
+          <button class="context-menu-item" data-action="duplicate">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Duplicate Event
+          </button>
+          <div class="context-menu-divider"></div>
+          <button class="context-menu-item success" data-action="confirm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Mark Confirmed
+          </button>
+          <button class="context-menu-item" data-action="complete">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Mark Completed
+          </button>
+          <div class="context-menu-divider"></div>
+          <button class="context-menu-item danger" data-action="delete">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete Event
+          </button>
+          ` : `
+          <button class="context-menu-item" data-action="view-job">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Open Job Details
+          </button>
+          <button class="context-menu-item" data-action="create-event">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Create Calendar Event
+          </button>
+          `}
+        `;
+      },
+
       attachHandlers() {
         this.menu.querySelectorAll('[data-action]').forEach(btn => {
           btn.addEventListener('click', (e) => {
@@ -19519,6 +19734,9 @@
             break;
           case 'lead':
             this.handleLeadAction(action, item, status);
+            break;
+          case 'calendar_event':
+            this.handleCalendarEventAction(action, item, status);
             break;
         }
       },
@@ -19649,8 +19867,154 @@
             await deleteLead(item.id);
             break;
         }
+      },
+
+      async handleCalendarEventAction(action, item, status) {
+        const eventId = item.apiEventId || item.id;
+        const jobId = item.jobId;
+
+        switch (action) {
+          case 'view':
+            if (item.apiEventId) {
+              openCalendarEventDetailModal(item.apiEventId);
+            } else if (jobId) {
+              openJobDetail(jobId);
+            }
+            break;
+          case 'edit':
+            if (item.apiEventId) {
+              openCalendarEventModal(item.apiEventId);
+            }
+            break;
+          case 'status':
+            if (item.apiEventId && status) {
+              await updateCalendarEventStatus(item.apiEventId, status);
+            }
+            break;
+          case 'reschedule':
+            if (item.apiEventId) {
+              openCalendarEventModal(item.apiEventId);
+            }
+            break;
+          case 'duplicate':
+            if (item.apiEventId) {
+              await duplicateCalendarEvent(item.apiEventId);
+            }
+            break;
+          case 'confirm':
+            if (item.apiEventId) {
+              await updateCalendarEventStatus(item.apiEventId, 'confirmed');
+            }
+            break;
+          case 'complete':
+            if (item.apiEventId) {
+              await updateCalendarEventStatus(item.apiEventId, 'completed');
+            }
+            break;
+          case 'delete':
+            if (item.apiEventId) {
+              await deleteCalendarEvent(item.apiEventId);
+            }
+            break;
+          case 'view-job':
+            if (jobId) {
+              openJobDetail(jobId);
+            }
+            break;
+          case 'create-event':
+            // Create a new calendar event linked to this job
+            openCalendarEventModal(null, item.date, {
+              title: item.title,
+              projectId: jobId,
+              type: item.type === 'measure' ? 'measurement' : item.type === 'install' ? 'installation' : 'appointment'
+            });
+            break;
+        }
       }
     };
+
+    // Calendar event status update helper
+    async function updateCalendarEventStatus(eventId, status) {
+      try {
+        const { error } = await supabaseClient
+          .from('calendar_events')
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq('id', eventId);
+
+        if (error) throw error;
+
+        showToast(`Event marked as ${status}`, 'success');
+        await loadCalendarEvents();
+        await loadAllCalendarEvents();
+      } catch (err) {
+        console.error('Error updating event status:', err);
+        showToast('Failed to update event status', 'error');
+      }
+    }
+
+    // Duplicate calendar event helper
+    async function duplicateCalendarEvent(eventId) {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Fetch original event
+        const { data: original, error: fetchError } = await supabaseClient
+          .from('calendar_events')
+          .select('*')
+          .eq('id', eventId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Create duplicate with new dates (tomorrow)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const originalStart = new Date(original.start_time);
+        const originalEnd = new Date(original.end_time);
+        const duration = originalEnd - originalStart;
+
+        const newStart = new Date(tomorrow);
+        newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+        const newEnd = new Date(newStart.getTime() + duration);
+
+        const duplicateData = {
+          created_by: user.id,
+          title: `${original.title} (Copy)`,
+          description: original.description,
+          event_type: original.event_type,
+          meeting_format: original.meeting_format,
+          start_time: newStart.toISOString(),
+          end_time: newEnd.toISOString(),
+          location: original.location,
+          lead_id: original.lead_id,
+          customer_id: original.customer_id,
+          project_id: original.project_id,
+          metadata: original.metadata,
+          status: 'scheduled'
+        };
+
+        const { data: newEvent, error: insertError } = await supabaseClient
+          .from('calendar_events')
+          .insert(duplicateData)
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        showToast('Event duplicated', 'success');
+
+        // Open the new event for editing
+        openCalendarEventModal(newEvent.id);
+
+        await loadCalendarEvents();
+        await loadAllCalendarEvents();
+      } catch (err) {
+        console.error('Error duplicating event:', err);
+        showToast('Failed to duplicate event', 'error');
+      }
+    }
 
     // Initialize context menu on page load
     document.addEventListener('DOMContentLoaded', () => {
@@ -37934,6 +38298,9 @@
       eventParticipants = [];
       renderEventParticipantChips();
 
+      // Reset contact search
+      clearCalEventContact();
+
       // Hide manual participant form
       const manualForm = document.getElementById('manual-participant-form');
       if (manualForm) manualForm.style.display = 'none';
@@ -37970,9 +38337,18 @@
         if (prefillData) {
           if (prefillData.title) document.getElementById('cal-event-title').value = prefillData.title;
           if (prefillData.type) document.getElementById('cal-event-type').value = prefillData.type;
-          if (prefillData.contactName) document.getElementById('cal-event-contact-name').value = prefillData.contactName;
-          if (prefillData.contactEmail) document.getElementById('cal-event-contact-email').value = prefillData.contactEmail;
-          if (prefillData.contactPhone) document.getElementById('cal-event-contact-phone').value = prefillData.contactPhone;
+          if (prefillData.meetingFormat) document.getElementById('cal-event-meeting-format').value = prefillData.meetingFormat;
+          // If prefill has contact info, set as selected contact
+          if (prefillData.contactName) {
+            selectCalEventContact(
+              prefillData.contactType || 'manual',
+              prefillData.contactId || null,
+              prefillData.contactName,
+              prefillData.contactEmail || '',
+              prefillData.contactPhone || '',
+              prefillData.location || ''
+            );
+          }
           if (prefillData.location) document.getElementById('cal-event-location').value = prefillData.location;
           if (prefillData.leadId) document.getElementById('cal-event-lead').value = prefillData.leadId;
           if (prefillData.customerId) document.getElementById('cal-event-customer').value = prefillData.customerId;
@@ -37983,6 +38359,231 @@
 
       document.getElementById('calendar-event-modal').classList.add('active');
     }
+
+    // ============================================
+    // CALENDAR EVENT CONTACT SEARCH
+    // Search leads, customers, and contractors for contact auto-fill
+    // ============================================
+    let calEventContactsCache = [];
+
+    async function loadCalEventContacts() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return [];
+
+        calEventContactsCache = [];
+
+        // Load leads (RLS handles user filtering)
+        const { data: leads } = await supabaseClient
+          .from('leads')
+          .select('id, full_name, email, phone, address, city, state')
+          .limit(200);
+
+        (leads || []).forEach(l => {
+          const address = [l.address, l.city, l.state].filter(Boolean).join(', ');
+          calEventContactsCache.push({
+            id: l.id,
+            type: 'lead',
+            name: l.full_name || l.email || 'Unknown Lead',
+            email: l.email || '',
+            phone: l.phone || '',
+            address: address,
+            label: 'Lead'
+          });
+        });
+
+        // Load customers
+        const { data: customers } = await supabaseClient
+          .from('customers')
+          .select('id, name, email, phone, address, city, state')
+          .eq('user_id', user.id)
+          .limit(200);
+
+        (customers || []).forEach(c => {
+          const address = [c.address, c.city, c.state].filter(Boolean).join(', ');
+          calEventContactsCache.push({
+            id: c.id,
+            type: 'customer',
+            name: c.name || c.email || 'Unknown Customer',
+            email: c.email || '',
+            phone: c.phone || '',
+            address: address,
+            label: 'Customer'
+          });
+        });
+
+        // Load collaborators/contractors
+        try {
+          const { data: collaborators } = await supabaseClient
+            .from('general_collaborators')
+            .select('id, name, email, phone, company, role')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .limit(200);
+
+          (collaborators || []).forEach(c => {
+            calEventContactsCache.push({
+              id: c.id,
+              type: 'contractor',
+              name: c.name || c.email || 'Unknown',
+              email: c.email || '',
+              phone: c.phone || '',
+              address: c.company || '',
+              label: c.role ? c.role.charAt(0).toUpperCase() + c.role.slice(1) : 'Contractor'
+            });
+          });
+        } catch (e) {
+          console.warn('[CalEvent] Collaborators table not available');
+        }
+
+        console.log('[CalEvent] Loaded', calEventContactsCache.length, 'contacts for search');
+        return calEventContactsCache;
+
+      } catch (err) {
+        console.error('[CalEvent] Failed to load contacts:', err);
+        return [];
+      }
+    }
+
+    async function searchCalEventContacts(query) {
+      const suggestionsEl = document.getElementById('cal-event-contact-suggestions');
+      if (!suggestionsEl) return;
+
+      // Load contacts if not cached
+      if (calEventContactsCache.length === 0) {
+        suggestionsEl.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Loading contacts...</div>';
+        suggestionsEl.style.display = 'block';
+        await loadCalEventContacts();
+      }
+
+      const q = (query || '').toLowerCase().trim();
+
+      // Filter contacts
+      let filtered = calEventContactsCache.filter(c => {
+        if (!q) return true;
+        return (c.name || '').toLowerCase().includes(q) ||
+               (c.email || '').toLowerCase().includes(q) ||
+               (c.phone || '').includes(q) ||
+               (c.label || '').toLowerCase().includes(q);
+      }).slice(0, 10);
+
+      // Build suggestions HTML
+      let html = '';
+
+      const labelColors = {
+        Lead: '#f59e0b',
+        Customer: '#10b981',
+        Contractor: '#3b82f6',
+        Fabricator: '#8b5cf6',
+        Installer: '#f97316',
+        Plumber: '#06b6d4',
+        Designer: '#ec4899'
+      };
+
+      if (filtered.length > 0) {
+        filtered.forEach(c => {
+          const initials = (c.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+          const color = labelColors[c.label] || '#6b7280';
+          const addressStr = c.address ? c.address : '';
+          html += `
+            <div class="cal-contact-suggestion" onclick="selectCalEventContact('${c.type}', '${c.id}', '${escapeHtml(c.name)}', '${escapeHtml(c.email)}', '${escapeHtml(c.phone)}', '${escapeHtml(addressStr)}')" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--dark-tertiary)'" onmouseout="this.style.background='transparent'">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: ${color}22; color: ${color}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px;">${initials}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(c.name)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.email || c.phone || 'No contact info'}</div>
+              </div>
+              <span style="font-size: 10px; padding: 3px 8px; border-radius: 12px; background: ${color}22; color: ${color}; text-transform: uppercase; white-space: nowrap;">${c.label}</span>
+            </div>
+          `;
+        });
+      } else if (q) {
+        // Allow manual entry
+        html = `
+          <div style="padding: 12px; text-align: center; color: var(--text-muted);">
+            No contacts found matching "${escapeHtml(q)}"<br>
+            <small>Type email or phone, or fill fields manually below</small>
+          </div>
+        `;
+      } else {
+        html = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Type to search leads, customers, contractors...</div>';
+      }
+
+      suggestionsEl.innerHTML = html;
+      suggestionsEl.style.display = 'block';
+    }
+
+    function selectCalEventContact(type, id, name, email, phone, address) {
+      // Set hidden fields
+      document.getElementById('cal-event-contact-type').value = type || '';
+      document.getElementById('cal-event-contact-id').value = id || '';
+
+      // Set visible fields
+      document.getElementById('cal-event-contact-email').value = email || '';
+      document.getElementById('cal-event-contact-phone').value = phone || '';
+
+      // Auto-fill location if address provided and location is empty
+      const locationField = document.getElementById('cal-event-location');
+      if (address && !locationField.value) {
+        locationField.value = address;
+      }
+
+      // Show selected contact chip
+      const chip = document.getElementById('cal-event-contact-chip');
+      const chipName = document.getElementById('cal-event-contact-chip-name');
+      const chipBadge = document.getElementById('cal-event-contact-chip-badge');
+      const searchInput = document.getElementById('cal-event-contact-search');
+      const suggestions = document.getElementById('cal-event-contact-suggestions');
+
+      chipName.textContent = name;
+      chipBadge.textContent = type === 'lead' ? 'Lead' : type === 'customer' ? 'Customer' : type === 'contractor' ? 'Contractor' : 'Contact';
+      chip.style.display = 'block';
+      searchInput.style.display = 'none';
+      suggestions.style.display = 'none';
+
+      // Also link to lead/customer if appropriate
+      if (type === 'lead' && id) {
+        document.getElementById('cal-event-lead').value = id;
+      } else if (type === 'customer' && id) {
+        document.getElementById('cal-event-customer').value = id;
+      }
+
+      console.log('[CalEvent] Selected contact:', { type, id, name, email, phone });
+    }
+
+    function clearCalEventContact() {
+      // Clear hidden fields
+      const typeField = document.getElementById('cal-event-contact-type');
+      const idField = document.getElementById('cal-event-contact-id');
+      if (typeField) typeField.value = '';
+      if (idField) idField.value = '';
+
+      // Clear visible fields
+      const emailField = document.getElementById('cal-event-contact-email');
+      const phoneField = document.getElementById('cal-event-contact-phone');
+      if (emailField) emailField.value = '';
+      if (phoneField) phoneField.value = '';
+
+      // Hide chip, show search
+      const chip = document.getElementById('cal-event-contact-chip');
+      const searchInput = document.getElementById('cal-event-contact-search');
+      const suggestions = document.getElementById('cal-event-contact-suggestions');
+
+      if (chip) chip.style.display = 'none';
+      if (searchInput) {
+        searchInput.style.display = 'block';
+        searchInput.value = '';
+      }
+      if (suggestions) suggestions.style.display = 'none';
+    }
+
+    // Close contact suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+      const suggestions = document.getElementById('cal-event-contact-suggestions');
+      const searchInput = document.getElementById('cal-event-contact-search');
+      if (suggestions && searchInput && !suggestions.contains(e.target) && e.target !== searchInput) {
+        suggestions.style.display = 'none';
+      }
+    });
 
     // Load event for editing (simplified version)
     async function loadCalendarEventForEditSimple(eventId) {
@@ -38000,23 +38601,46 @@
 
         if (event.start_time) {
           const start = new Date(event.start_time);
-          document.getElementById('cal-event-start-date').value = start.toISOString().split('T')[0];
-          document.getElementById('cal-event-start-time').value = start.toTimeString().slice(0, 5);
+          // Use local date/time (not UTC) for form fields
+          const startYear = start.getFullYear();
+          const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+          const startDay = String(start.getDate()).padStart(2, '0');
+          const startHours = String(start.getHours()).padStart(2, '0');
+          const startMins = String(start.getMinutes()).padStart(2, '0');
+          document.getElementById('cal-event-start-date').value = `${startYear}-${startMonth}-${startDay}`;
+          document.getElementById('cal-event-start-time').value = `${startHours}:${startMins}`;
         }
         if (event.end_time) {
           const end = new Date(event.end_time);
-          document.getElementById('cal-event-end-date').value = end.toISOString().split('T')[0];
-          document.getElementById('cal-event-end-time').value = end.toTimeString().slice(0, 5);
+          // Use local date/time (not UTC) for form fields
+          const endYear = end.getFullYear();
+          const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+          const endDay = String(end.getDate()).padStart(2, '0');
+          const endHours = String(end.getHours()).padStart(2, '0');
+          const endMins = String(end.getMinutes()).padStart(2, '0');
+          document.getElementById('cal-event-end-date').value = `${endYear}-${endMonth}-${endDay}`;
+          document.getElementById('cal-event-end-time').value = `${endHours}:${endMins}`;
         }
 
         document.getElementById('cal-event-location').value = event.location || '';
         document.getElementById('cal-event-description').value = event.description || '';
 
+        // Load meeting format
+        if (event.meeting_format) {
+          document.getElementById('cal-event-meeting-format').value = event.meeting_format;
+        }
+
         // Load contact info from metadata
         if (event.metadata) {
-          document.getElementById('cal-event-contact-name').value = event.metadata.contact_name || '';
-          document.getElementById('cal-event-contact-email').value = event.metadata.contact_email || '';
-          document.getElementById('cal-event-contact-phone').value = event.metadata.contact_phone || '';
+          const contactName = event.metadata.contact_name || '';
+          const contactEmail = event.metadata.contact_email || '';
+          const contactPhone = event.metadata.contact_phone || '';
+          const contactType = event.metadata.contact_type || 'manual';
+          const contactId = event.metadata.contact_id || null;
+
+          if (contactName || contactEmail || contactPhone) {
+            selectCalEventContact(contactType, contactId, contactName, contactEmail, contactPhone, event.location || '');
+          }
         }
 
         // Set linked entity IDs
@@ -40027,12 +40651,16 @@
       btn.textContent = 'Saving...';
 
       try {
+        // Create proper ISO timestamps with local timezone
+        const startDateTime = new Date(`${startDate}T${startTime}:00`);
+        const endDateTime = new Date(`${endDate}T${endTime}:00`);
+
         const payload = {
           title,
           event_type: eventType,
           status,
-          start_time: `${startDate}T${startTime}:00`,
-          end_time: `${endDate}T${endTime}:00`,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
           location: location || undefined,
           description: description || undefined,
           lead_id: leadId || undefined,
@@ -40081,12 +40709,18 @@
 
         const title = document.getElementById('cal-event-title').value.trim();
         const eventType = document.getElementById('cal-event-type').value;
+        const meetingFormat = document.getElementById('cal-event-meeting-format')?.value || 'in_person';
         const startDate = document.getElementById('cal-event-start-date').value;
         const startTime = document.getElementById('cal-event-start-time').value || '09:00';
         const endTime = document.getElementById('cal-event-end-time').value || '10:00';
         const location = document.getElementById('cal-event-location').value.trim();
         const description = document.getElementById('cal-event-description').value.trim();
-        const contactName = document.getElementById('cal-event-contact-name')?.value?.trim() || '';
+
+        // Get contact info - from selected contact or manual entry
+        const contactType = document.getElementById('cal-event-contact-type')?.value || 'manual';
+        const contactId = document.getElementById('cal-event-contact-id')?.value || null;
+        const contactName = document.getElementById('cal-event-contact-chip-name')?.textContent?.trim() ||
+                           document.getElementById('cal-event-contact-search')?.value?.trim() || '';
         const contactEmail = document.getElementById('cal-event-contact-email')?.value?.trim() || '';
         const contactPhone = document.getElementById('cal-event-contact-phone')?.value?.trim() || '';
 
@@ -40097,19 +40731,26 @@
           return;
         }
 
+        // Create proper ISO timestamps with local timezone
+        const startDateTime = new Date(`${startDate}T${startTime}:00`);
+        const endDateTime = new Date(`${startDate}T${endTime}:00`);
+
         const eventData = {
           created_by: user.id,
           title,
           event_type: eventType,
+          meeting_format: meetingFormat,
           status: 'scheduled',
-          start_time: `${startDate}T${startTime}:00`,
-          end_time: `${startDate}T${endTime}:00`,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
           location: location || null,
           description: description || null,
           metadata: {
             contact_name: contactName,
             contact_email: contactEmail,
-            contact_phone: contactPhone
+            contact_phone: contactPhone,
+            contact_type: contactType,
+            contact_id: contactId
           }
         };
 
@@ -40278,7 +40919,13 @@
 
         // Add fresh events from database
         (events || []).forEach(event => {
-          const date = event.start_time.split('T')[0];
+          // Convert to local date (not UTC) for calendar display
+          const eventDate = new Date(event.start_time);
+          const year = eventDate.getFullYear();
+          const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+          const day = String(eventDate.getDate()).padStart(2, '0');
+          const date = `${year}-${month}-${day}`;
+
           calendarEvents.push({
             date,
             title: event.title,
@@ -40578,10 +41225,22 @@
 
         const startTime = new Date(event.start_time);
         const endTime = new Date(event.end_time);
-        document.getElementById('cal-event-start-date').value = startTime.toISOString().split('T')[0];
-        document.getElementById('cal-event-start-time').value = startTime.toTimeString().slice(0, 5);
-        document.getElementById('cal-event-end-date').value = endTime.toISOString().split('T')[0];
-        document.getElementById('cal-event-end-time').value = endTime.toTimeString().slice(0, 5);
+        // Use local date/time (not UTC) for form fields
+        const startYear = startTime.getFullYear();
+        const startMonth = String(startTime.getMonth() + 1).padStart(2, '0');
+        const startDay = String(startTime.getDate()).padStart(2, '0');
+        const startHours = String(startTime.getHours()).padStart(2, '0');
+        const startMins = String(startTime.getMinutes()).padStart(2, '0');
+        document.getElementById('cal-event-start-date').value = `${startYear}-${startMonth}-${startDay}`;
+        document.getElementById('cal-event-start-time').value = `${startHours}:${startMins}`;
+
+        const endYear = endTime.getFullYear();
+        const endMonth = String(endTime.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endTime.getDate()).padStart(2, '0');
+        const endHours = String(endTime.getHours()).padStart(2, '0');
+        const endMins = String(endTime.getMinutes()).padStart(2, '0');
+        document.getElementById('cal-event-end-date').value = `${endYear}-${endMonth}-${endDay}`;
+        document.getElementById('cal-event-end-time').value = `${endHours}:${endMins}`;
 
         document.getElementById('cal-event-location').value = event.location || '';
         document.getElementById('cal-event-description').value = event.description || '';
@@ -42132,8 +42791,20 @@
               const clickHandler = evt.apiEventId
                 ? `openCalendarEventDetailModal('${evt.apiEventId}')`
                 : (evt.jobId ? `openJobDetail('${evt.jobId}')` : '');
+              const eventData = JSON.stringify({
+                title: evt.title,
+                type: evt.type,
+                date: evt.date,
+                apiEventId: evt.apiEventId || null,
+                jobId: evt.jobId || null,
+                status: evt.status || 'scheduled'
+              }).replace(/"/g, '&quot;');
               return `
-                <div class="list-item-modern" onclick="${clickHandler}" style="cursor: pointer;">
+                <div class="list-item-modern"
+                     data-context-menu="calendar_event"
+                     data-item-id="${evt.apiEventId || evt.jobId || ''}"
+                     data-item-data="${eventData}"
+                     onclick="${clickHandler}" style="cursor: pointer;">
                   <div class="list-item-icon" style="background: ${color}20; color: ${color};">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -42224,15 +42895,36 @@
 
         html += `
           <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}"
-               data-date="${dateStr}" onclick="showDayEvents('${dateStr}')">
+               data-date="${dateStr}"
+               onclick="showDayEvents('${dateStr}')"
+               ondragover="handleCalendarDragOver(event)"
+               ondragleave="handleCalendarDragLeave(event)"
+               ondrop="handleCalendarDrop(event, '${dateStr}')">
             <div class="calendar-day-number">${dayNumber}</div>
             <div class="calendar-events">
               ${dayEvents.slice(0, 3).map(e => {
                 const clickHandler = e.apiEventId
                   ? `openCalendarEventDetailModal('${e.apiEventId}')`
                   : (e.jobId ? `openJobDetail('${e.jobId}')` : `showDayEvents('${dateStr}')`);
+                const eventData = JSON.stringify({
+                  title: e.title,
+                  type: e.type,
+                  date: e.date,
+                  apiEventId: e.apiEventId || null,
+                  jobId: e.jobId || null,
+                  status: e.status || 'scheduled'
+                }).replace(/"/g, '&quot;');
                 return `
-                <div class="calendar-event ${e.type}" onclick="event.stopPropagation(); ${clickHandler}">
+                <div class="calendar-event ${e.type}"
+                     data-context-menu="calendar_event"
+                     data-item-id="${e.apiEventId || e.jobId || ''}"
+                     data-item-data="${eventData}"
+                     data-event-id="${e.apiEventId || ''}"
+                     data-job-id="${e.jobId || ''}"
+                     draggable="true"
+                     ondragstart="handleCalendarDragStart(event, '${e.apiEventId || ''}', '${e.jobId || ''}', '${e.date}')"
+                     ondragend="handleCalendarDragEnd(event)"
+                     onclick="event.stopPropagation(); ${clickHandler}">
                   ${escapeHtml(e.title)}
                 </div>
               `}).join('')}
@@ -42244,6 +42936,240 @@
 
       grid.innerHTML = html;
     }
+
+    // ============================================
+    // CALENDAR DRAG AND DROP
+    // ============================================
+    let draggedEventId = null;
+    let draggedJobId = null;
+    let draggedEventOriginalDate = null;
+
+    function handleCalendarDragStart(event, eventId, jobId, originalDate) {
+      draggedEventId = eventId || null;
+      draggedJobId = jobId || null;
+      draggedEventOriginalDate = originalDate;
+
+      event.target.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', JSON.stringify({ eventId, jobId, originalDate }));
+
+      // Add visual feedback
+      setTimeout(() => {
+        document.querySelectorAll('.calendar-day').forEach(day => {
+          day.classList.add('drop-target-ready');
+        });
+      }, 0);
+    }
+
+    function handleCalendarDragEnd(event) {
+      event.target.classList.remove('dragging');
+      draggedEventId = null;
+      draggedJobId = null;
+      draggedEventOriginalDate = null;
+
+      // Remove visual feedback
+      document.querySelectorAll('.calendar-day').forEach(day => {
+        day.classList.remove('drop-target-ready', 'drag-over');
+      });
+    }
+
+    function handleCalendarDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      event.currentTarget.classList.add('drag-over');
+    }
+
+    function handleCalendarDragLeave(event) {
+      event.currentTarget.classList.remove('drag-over');
+    }
+
+    // ============================================
+    // QUICK ADD - DRAG EVENT TYPES TO CALENDAR
+    // ============================================
+    let quickAddEventType = null;
+    let quickAddEventTitle = null;
+    let quickAddEventColor = null;
+
+    function handleQuickAddDragStart(event, eventType, eventTitle, eventColor) {
+      quickAddEventType = eventType;
+      quickAddEventTitle = eventTitle;
+      quickAddEventColor = eventColor;
+
+      event.target.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'copy';
+      event.dataTransfer.setData('application/json', JSON.stringify({
+        isQuickAdd: true,
+        eventType,
+        eventTitle,
+        eventColor
+      }));
+
+      // Add visual feedback to calendar days
+      setTimeout(() => {
+        document.querySelectorAll('.calendar-day').forEach(day => {
+          day.classList.add('drop-target-ready');
+        });
+      }, 0);
+    }
+
+    function handleQuickAddDragEnd(event) {
+      event.target.classList.remove('dragging');
+      quickAddEventType = null;
+      quickAddEventTitle = null;
+      quickAddEventColor = null;
+
+      // Remove visual feedback
+      document.querySelectorAll('.calendar-day').forEach(day => {
+        day.classList.remove('drop-target-ready', 'drag-over', 'drop-new-event');
+      });
+    }
+
+    // Handle calendar drop - supports both event moves and quick add drops
+    async function handleCalendarDrop(event, newDate) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('drag-over', 'drop-new-event');
+
+      // Check if this is a quick add drop
+      try {
+        const dragData = event.dataTransfer.getData('application/json');
+        if (dragData) {
+          const data = JSON.parse(dragData);
+          if (data.isQuickAdd) {
+            // Open event modal with prefilled data
+            openCalendarEventModal(null, newDate, {
+              type: data.eventType,
+              title: data.eventTitle
+            });
+
+            // Clean up
+            document.querySelectorAll('.calendar-day').forEach(day => {
+              day.classList.remove('drop-target-ready', 'drag-over', 'drop-new-event');
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        // Not JSON data, continue with regular drop
+      }
+
+      // Check if this is a quick add from state
+      if (quickAddEventType) {
+        openCalendarEventModal(null, newDate, {
+          type: quickAddEventType,
+          title: quickAddEventTitle
+        });
+
+        // Clean up
+        quickAddEventType = null;
+        quickAddEventTitle = null;
+        quickAddEventColor = null;
+        document.querySelectorAll('.calendar-day').forEach(day => {
+          day.classList.remove('drop-target-ready', 'drag-over', 'drop-new-event');
+        });
+        return;
+      }
+
+      // Otherwise, handle as event move
+      // Parse drag data for event move
+      let eventId = draggedEventId;
+      let jobId = draggedJobId;
+
+      try {
+        const plainData = event.dataTransfer.getData('text/plain');
+        if (plainData) {
+          const parsed = JSON.parse(plainData);
+          eventId = parsed.eventId || eventId;
+          jobId = parsed.jobId || jobId;
+        }
+      } catch (e) {
+        // Use fallback values
+      }
+
+      if (newDate === draggedEventOriginalDate) {
+        return;
+      }
+
+      // Handle API event (calendar_events table)
+      if (eventId) {
+        try {
+          const { data: original, error: fetchError } = await supabaseClient
+            .from('calendar_events')
+            .select('start_time, end_time')
+            .eq('id', eventId)
+            .single();
+
+          if (fetchError) throw fetchError;
+
+          const oldStart = new Date(original.start_time);
+          const oldEnd = new Date(original.end_time);
+          const duration = oldEnd - oldStart;
+
+          const newStart = new Date(newDate + 'T' + oldStart.toTimeString().slice(0, 8));
+          const newEnd = new Date(newStart.getTime() + duration);
+
+          const { error: updateError } = await supabaseClient
+            .from('calendar_events')
+            .update({
+              start_time: newStart.toISOString(),
+              end_time: newEnd.toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', eventId);
+
+          if (updateError) throw updateError;
+
+          showToast('Event moved to ' + new Date(newDate).toLocaleDateString(), 'success');
+          await loadCalendarEvents();
+          await loadAllCalendarEvents();
+
+        } catch (err) {
+          console.error('Error moving event:', err);
+          showToast('Failed to move event', 'error');
+        }
+        return;
+      }
+
+      // Handle job-based event (projects table)
+      if (jobId) {
+        const draggedEvent = calendarEvents.find(e => e.jobId === jobId && e.date === draggedEventOriginalDate);
+
+        if (!draggedEvent) {
+          showToast('Could not find event to move', 'error');
+          return;
+        }
+
+        try {
+          let updateField = null;
+          if (draggedEvent.type === 'measure') {
+            updateField = 'field_measure_date';
+          } else if (draggedEvent.type === 'install') {
+            updateField = 'install_date';
+          } else if (draggedEvent.type === 'job') {
+            updateField = 'estimated_start_date';
+          }
+
+          if (!updateField) {
+            showToast('Cannot reschedule this event type', 'warning');
+            return;
+          }
+
+          const { error: updateError } = await supabaseClient
+            .from('projects')
+            .update({ [updateField]: newDate })
+            .eq('id', jobId);
+
+          if (updateError) throw updateError;
+
+          showToast(`${draggedEvent.type.charAt(0).toUpperCase() + draggedEvent.type.slice(1)} moved to ${new Date(newDate).toLocaleDateString()}`, 'success');
+          await loadCalendarEvents();
+          await loadAllCalendarEvents();
+
+        } catch (err) {
+          console.error('Error moving job event:', err);
+          showToast('Failed to move event', 'error');
+        }
+      }
+    };
 
     async function loadCalendarEvents() {
       try {
